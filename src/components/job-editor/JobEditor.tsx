@@ -4,30 +4,109 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Upload, Calculator, Calendar, MapPin, Camera } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Plus, Home, Trash2, Edit, Save } from "lucide-react";
+
+interface Room {
+  id: string;
+  name: string;
+  windows: Window[];
+}
+
+interface Window {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  treatment: string;
+  fabric: string;
+  notes: string;
+}
 
 export const JobEditor = () => {
-  const [projectName, setProjectName] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [rooms, setRooms] = useState([]);
-  const { toast } = useToast();
+  const [project, setProject] = useState({
+    name: "",
+    clientName: "",
+    address: "",
+    description: ""
+  });
+
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [activeRoom, setActiveRoom] = useState<string | null>(null);
 
   const addRoom = () => {
-    const newRoom = {
-      id: Date.now(),
+    const newRoom: Room = {
+      id: Date.now().toString(),
       name: `Room ${rooms.length + 1}`,
-      windows: [],
-      treatments: []
+      windows: []
     };
     setRooms([...rooms, newRoom]);
-    toast({
-      title: "Room Added",
-      description: "New room has been added to the project",
-    });
+    setActiveRoom(newRoom.id);
   };
+
+  const deleteRoom = (roomId: string) => {
+    setRooms(rooms.filter(room => room.id !== roomId));
+    if (activeRoom === roomId) {
+      setActiveRoom(rooms.length > 1 ? rooms[0].id : null);
+    }
+  };
+
+  const updateRoom = (roomId: string, name: string) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId ? { ...room, name } : room
+    ));
+  };
+
+  const addWindow = (roomId: string) => {
+    const newWindow: Window = {
+      id: Date.now().toString(),
+      name: "Window 1",
+      width: 36,
+      height: 84,
+      treatment: "",
+      fabric: "",
+      notes: ""
+    };
+
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? { ...room, windows: [...room.windows, newWindow] }
+        : room
+    ));
+  };
+
+  const updateWindow = (roomId: string, windowId: string, updates: Partial<Window>) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? {
+            ...room, 
+            windows: room.windows.map(window => 
+              window.id === windowId ? { ...window, ...updates } : window
+            )
+          }
+        : room
+    ));
+  };
+
+  const deleteWindow = (roomId: string, windowId: string) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? { ...room, windows: room.windows.filter(window => window.id !== windowId) }
+        : room
+    ));
+  };
+
+  const currentRoom = rooms.find(room => room.id === activeRoom);
+
+  const treatmentTypes = [
+    "Curtains", "Drapes", "Valances", "Roman Shades", "Blinds", "Shutters"
+  ];
+
+  const fabricTypes = [
+    "Cotton", "Linen", "Silk", "Velvet", "Polyester", "Blackout"
+  ];
 
   return (
     <div className="space-y-6">
@@ -35,171 +114,262 @@ export const JobEditor = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Job Editor</h2>
           <p className="text-muted-foreground">
-            Create and manage project details, rooms, and treatments
+            Design and plan window treatment projects room by room
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline">
-            <Calculator className="mr-2 h-4 w-4" />
-            Open Calculator
-          </Button>
-          <Button>
-            Save Project
-          </Button>
-        </div>
+        <Button>
+          <Save className="mr-2 h-4 w-4" />
+          Save Project
+        </Button>
       </div>
 
       {/* Project Info */}
       <Card>
         <CardHeader>
           <CardTitle>Project Information</CardTitle>
-          <CardDescription>Basic project details and client information</CardDescription>
+          <CardDescription>Basic project details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="project-name">Project Name</Label>
+              <Label htmlFor="projectName">Project Name</Label>
               <Input
-                id="project-name"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="e.g., Wilson Residence - Living Room"
+                id="projectName"
+                value={project.name}
+                onChange={(e) => setProject({...project, name: e.target.value})}
+                placeholder="Living Room Renovation"
               />
             </div>
             <div>
-              <Label htmlFor="client-name">Client Name</Label>
+              <Label htmlFor="clientName">Client Name</Label>
               <Input
-                id="client-name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="e.g., Sarah Wilson"
+                id="clientName"
+                value={project.clientName}
+                onChange={(e) => setProject({...project, clientName: e.target.value})}
+                placeholder="John & Jane Smith"
               />
             </div>
+          </div>
+          <div>
+            <Label htmlFor="address">Project Address</Label>
+            <Input
+              id="address"
+              value={project.address}
+              onChange={(e) => setProject({...project, address: e.target.value})}
+              placeholder="123 Main Street, City, State 12345"
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Project Description</Label>
+            <Textarea
+              id="description"
+              value={project.description}
+              onChange={(e) => setProject({...project, description: e.target.value})}
+              placeholder="Complete window treatment installation for main floor..."
+            />
           </div>
         </CardContent>
       </Card>
 
-      {/* Rooms & Windows */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Rooms & Windows</CardTitle>
-              <CardDescription>Add rooms and configure windows for each space</CardDescription>
-            </div>
-            <Button onClick={addRoom}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Room
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {rooms.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <MapPin className="mx-auto h-12 w-12 mb-4" />
-              <p>No rooms added yet. Click "Add Room" to get started.</p>
-            </div>
-          ) : (
-            <Tabs defaultValue="room-0" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                {rooms.map((room, index) => (
-                  <TabsTrigger key={room.id} value={`room-${index}`}>
-                    {room.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {rooms.map((room, index) => (
-                <TabsContent key={room.id} value={`room-${index}`} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Room Images */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Room Images</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                          <Camera className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                          <div className="space-y-2">
-                            <p className="text-sm text-gray-600">Upload room images</p>
-                            <Button variant="outline" size="sm">
-                              <Upload className="mr-2 h-4 w-4" />
-                              Choose Files
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Windows */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">Windows</CardTitle>
-                          <Button variant="outline" size="sm">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Window
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="text-sm text-muted-foreground">
-                            No windows added yet
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Treatments */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Treatments</CardTitle>
-                        <Button variant="outline" size="sm">
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Treatment
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-sm text-muted-foreground">
-                        No treatments added yet
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              ))}
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Services & Calendar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Rooms Section */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Room List */}
         <Card>
           <CardHeader>
-            <CardTitle>Services</CardTitle>
-            <CardDescription>Add measuring, fitting, and other services</CardDescription>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center">
+                <Home className="mr-2 h-5 w-5" />
+                Rooms
+              </span>
+              <Button size="sm" onClick={addRoom}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Service
-            </Button>
+            {rooms.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Home className="mx-auto h-12 w-12 mb-4" />
+                <p>No rooms added yet</p>
+                <p className="text-sm">Click the + button to add a room</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {rooms.map((room) => (
+                  <div
+                    key={room.id}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      activeRoom === room.id 
+                        ? 'border-primary bg-primary/5' 
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => setActiveRoom(room.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{room.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {room.windows.length} window{room.windows.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="flex space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newName = prompt("Enter room name:", room.name);
+                            if (newName) updateRoom(room.id, newName);
+                          }}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRoom(room.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Window Details */}
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Calendar Events</CardTitle>
-            <CardDescription>Schedule appointments and deadlines</CardDescription>
+            <CardTitle className="flex items-center justify-between">
+              <span>
+                {currentRoom ? `${currentRoom.name} - Windows` : 'Select a Room'}
+              </span>
+              {currentRoom && (
+                <Button size="sm" onClick={() => addWindow(currentRoom.id)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Window
+                </Button>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full">
-              <Calendar className="mr-2 h-4 w-4" />
-              Schedule Event
-            </Button>
+            {!currentRoom ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Home className="mx-auto h-12 w-12 mb-4" />
+                <p>Select a room to manage windows</p>
+              </div>
+            ) : currentRoom.windows.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Plus className="mx-auto h-12 w-12 mb-4" />
+                <p>No windows in this room</p>
+                <p className="text-sm">Click "Add Window" to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {currentRoom.windows.map((window) => (
+                  <div key={window.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium">{window.name}</h4>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteWindow(currentRoom.id, window.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Window Name</Label>
+                        <Input
+                          value={window.name}
+                          onChange={(e) => updateWindow(currentRoom.id, window.id, { name: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label>Width (in)</Label>
+                          <Input
+                            type="number"
+                            value={window.width}
+                            onChange={(e) => updateWindow(currentRoom.id, window.id, { width: parseFloat(e.target.value) })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Height (in)</Label>
+                          <Input
+                            type="number"
+                            value={window.height}
+                            onChange={(e) => updateWindow(currentRoom.id, window.id, { height: parseFloat(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Treatment Type</Label>
+                        <Select
+                          value={window.treatment}
+                          onValueChange={(value) => updateWindow(currentRoom.id, window.id, { treatment: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select treatment" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {treatmentTypes.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Fabric Type</Label>
+                        <Select
+                          value={window.fabric}
+                          onValueChange={(value) => updateWindow(currentRoom.id, window.id, { fabric: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select fabric" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fabricTypes.map((fabric) => (
+                              <SelectItem key={fabric} value={fabric}>
+                                {fabric}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Notes</Label>
+                        <Textarea
+                          value={window.notes}
+                          onChange={(e) => updateWindow(currentRoom.id, window.id, { notes: e.target.value })}
+                          placeholder="Special requirements, hardware notes, etc."
+                        />
+                      </div>
+                    </div>
+                    
+                    {window.treatment && window.fabric && (
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="flex space-x-2">
+                          <Badge variant="outline">{window.treatment}</Badge>
+                          <Badge variant="outline">{window.fabric}</Badge>
+                          <Badge variant="outline">{window.width}" × {window.height}"</Badge>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

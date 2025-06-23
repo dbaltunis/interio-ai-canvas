@@ -1,220 +1,189 @@
 
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, DollarSign, FileText, Users, Brain } from "lucide-react";
+import { Settings, User, Bell, Shield, Palette } from "lucide-react";
 
 export const SettingsView = () => {
-  const [settings, setSettings] = useState({
-    companyName: "InterioApp Ltd",
-    currency: "USD",
-    vatRate: "20",
-    units: "metric",
-    aiAssistant: true,
-    emailNotifications: true,
-    autoQuoteReminders: false
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">
-            Configure your company preferences and system settings
+            Manage your account and application preferences
           </p>
         </div>
-        <Button>
-          Save Changes
-        </Button>
       </div>
 
-      <Tabs defaultValue="company" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="company">Company</TabsTrigger>
-          <TabsTrigger value="finance">Finance</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="ai">AI Settings</TabsTrigger>
-        </TabsList>
-
-        {/* Company Settings */}
-        <TabsContent value="company" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Building className="mr-2 h-5 w-5" />
-                Company Information
-              </CardTitle>
-              <CardDescription>Update your company details and branding</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input
-                    id="company-name"
-                    value={settings.companyName}
-                    onChange={(e) => setSettings({...settings, companyName: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="units">Measurement Units</Label>
-                  <Select value={settings.units} onValueChange={(value) => setSettings({...settings, units: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="metric">Metric (cm, m)</SelectItem>
-                      <SelectItem value="imperial">Imperial (in, ft)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+      <div className="grid gap-6">
+        {/* Profile Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <User className="mr-2 h-5 w-5" />
+              Profile Settings
+            </CardTitle>
+            <CardDescription>Update your personal information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input id="firstName" placeholder="John" />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Finance Settings */}
-        <TabsContent value="finance" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <DollarSign className="mr-2 h-5 w-5" />
-                Financial Settings
-              </CardTitle>
-              <CardDescription>Configure currency, VAT, and pricing preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select value={settings.currency} onValueChange={(value) => setSettings({...settings, currency: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD ($)</SelectItem>
-                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                      <SelectItem value="GBP">GBP (£)</SelectItem>
-                      <SelectItem value="AUD">AUD (A$)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="vat-rate">VAT Rate (%)</Label>
-                  <Input
-                    id="vat-rate"
-                    value={settings.vatRate}
-                    onChange={(e) => setSettings({...settings, vatRate: e.target.value})}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" placeholder="Doe" />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="john@example.com" />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
+            </div>
+            <div>
+              <Label htmlFor="company">Company Name</Label>
+              <Input id="company" placeholder="Your Company LLC" />
+            </div>
+            <div>
+              <Label htmlFor="address">Business Address</Label>
+              <Textarea id="address" placeholder="123 Main St, City, State 12345" />
+            </div>
+            <Button>Save Profile</Button>
+          </CardContent>
+        </Card>
 
-        {/* Templates */}
-        <TabsContent value="templates" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="mr-2 h-5 w-5" />
-                Quote Templates
-              </CardTitle>
-              <CardDescription>Customize your quote layouts and email templates</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <Button variant="outline" className="w-full">
-                  Edit Simple Template
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Edit Detailed Template
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Edit Custom Template
-                </Button>
+        {/* Notification Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bell className="mr-2 h-5 w-5" />
+              Notifications
+            </CardTitle>
+            <CardDescription>Configure how you receive notifications</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Email Notifications</h4>
+                <p className="text-sm text-muted-foreground">Receive email updates about your projects</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Permissions */}
-        <TabsContent value="permissions" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2 h-5 w-5" />
-                Role Permissions
-              </CardTitle>
-              <CardDescription>Manage user roles and access permissions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                Role management interface coming soon
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Quote Reminders</h4>
+                <p className="text-sm text-muted-foreground">Get reminded about expiring quotes</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* AI Settings */}
-        <TabsContent value="ai" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Brain className="mr-2 h-5 w-5" />
-                AI Assistant Settings
-              </CardTitle>
-              <CardDescription>Configure AI features and automation preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="ai-assistant">AI Assistant</Label>
-                    <p className="text-sm text-muted-foreground">Enable AI-powered recommendations and suggestions</p>
-                  </div>
-                  <Switch
-                    id="ai-assistant"
-                    checked={settings.aiAssistant}
-                    onCheckedChange={(checked) => setSettings({...settings, aiAssistant: checked})}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="email-notifications">Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive AI-generated alerts and insights</p>
-                  </div>
-                  <Switch
-                    id="email-notifications"
-                    checked={settings.emailNotifications}
-                    onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="auto-reminders">Auto Quote Reminders</Label>
-                    <p className="text-sm text-muted-foreground">Automatically send follow-up emails for pending quotes</p>
-                  </div>
-                  <Switch
-                    id="auto-reminders"
-                    checked={settings.autoQuoteReminders}
-                    onCheckedChange={(checked) => setSettings({...settings, autoQuoteReminders: checked})}
-                  />
-                </div>
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Appointment Alerts</h4>
+                <p className="text-sm text-muted-foreground">Notifications for upcoming appointments</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <Switch defaultChecked />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Low Stock Alerts</h4>
+                <p className="text-sm text-muted-foreground">Alert when inventory is running low</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Business Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Settings className="mr-2 h-5 w-5" />
+              Business Settings
+            </CardTitle>
+            <CardDescription>Configure business-specific preferences</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+              <Input id="taxRate" type="number" step="0.01" placeholder="8.25" />
+            </div>
+            <div>
+              <Label htmlFor="markup">Default Markup (%)</Label>
+              <Input id="markup" type="number" step="0.01" placeholder="40.00" />
+            </div>
+            <div>
+              <Label htmlFor="laborRate">Default Labor Rate ($/hour)</Label>
+              <Input id="laborRate" type="number" step="0.01" placeholder="45.00" />
+            </div>
+            <div>
+              <Label htmlFor="quoteValidity">Quote Validity (days)</Label>
+              <Input id="quoteValidity" type="number" placeholder="30" />
+            </div>
+            <Button>Save Business Settings</Button>
+          </CardContent>
+        </Card>
+
+        {/* Security */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Shield className="mr-2 h-5 w-5" />
+              Security
+            </CardTitle>
+            <CardDescription>Manage your account security</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input id="currentPassword" type="password" />
+            </div>
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input id="newPassword" type="password" />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input id="confirmPassword" type="password" />
+            </div>
+            <Button>Update Password</Button>
+          </CardContent>
+        </Card>
+
+        {/* Appearance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Palette className="mr-2 h-5 w-5" />
+              Appearance
+            </CardTitle>
+            <CardDescription>Customize the look and feel</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Dark Mode</h4>
+                <p className="text-sm text-muted-foreground">Toggle dark mode interface</p>
+              </div>
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Compact View</h4>
+                <p className="text-sm text-muted-foreground">Use a more compact layout</p>
+              </div>
+              <Switch />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

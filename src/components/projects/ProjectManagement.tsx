@@ -1,55 +1,47 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Plus, Eye, Calendar } from "lucide-react";
-
-const mockProjects = [
-  {
-    id: "PRJ-2024-001",
-    name: "Wilson Residence - Living Room",
-    client: "Sarah Wilson",
-    status: "in-progress",
-    progress: 65,
-    value: "$2,450",
-    margin: "35%",
-    dueDate: "2024-02-15",
-    treatments: ["Velvet Curtains", "Roman Blinds"]
-  },
-  {
-    id: "PRJ-2024-002", 
-    name: "Office Complex - Floor 3",
-    client: "Design Co Ltd",
-    status: "planning",
-    progress: 20,
-    value: "$8,900",
-    margin: "28%", 
-    dueDate: "2024-03-01",
-    treatments: ["Vertical Blinds", "Blackout Curtains"]
-  },
-  {
-    id: "PRJ-2024-003",
-    name: "Chen Home - Bedroom Suite",
-    client: "Michael Chen", 
-    status: "completed",
-    progress: 100,
-    value: "$3,200",
-    margin: "42%",
-    dueDate: "2024-01-20",
-    treatments: ["Silk Curtains", "Motorized Blinds"]
-  }
-];
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Calendar, DollarSign, Clock, CheckCircle } from "lucide-react";
+import { useProjects } from "@/hooks/useProjects";
 
 export const ProjectManagement = () => {
+  const { data: projects, isLoading } = useProjects();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed": return "bg-green-100 text-green-800";
-      case "in-progress": return "bg-blue-100 text-blue-800";
-      case "planning": return "bg-yellow-100 text-yellow-800";
+      case "in-production": return "bg-blue-100 text-blue-800";
+      case "approved": return "bg-purple-100 text-purple-800";
+      case "quoted": return "bg-yellow-100 text-yellow-800";
+      case "measuring": return "bg-orange-100 text-orange-800";
+      case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "urgent": return "bg-red-100 text-red-800";
+      case "high": return "bg-orange-100 text-orange-800";
+      case "medium": return "bg-yellow-100 text-yellow-800";
+      case "low": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  if (isLoading) {
+    return <div>Loading projects...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -57,7 +49,7 @@ export const ProjectManagement = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Project Management</h2>
           <p className="text-muted-foreground">
-            Track project progress, margins, and deliverables
+            Track and manage your window covering projects
           </p>
         </div>
         <Button>
@@ -69,106 +61,140 @@ export const ProjectManagement = () => {
       {/* Project Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">2 due this week</p>
+            <div className="text-2xl font-bold">
+              {projects?.filter(p => !['completed', 'cancelled'].includes(p.status)).length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              In progress
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Average Margin</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">35%</div>
-            <p className="text-xs text-muted-foreground">+5% from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,690</div>
-            <p className="text-xs text-muted-foreground">Active projects</p>
+            <div className="text-2xl font-bold">
+              {formatCurrency(projects?.reduce((sum, project) => sum + (project.total_amount || 0), 0) || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              All projects
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">On Schedule</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Due This Week</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">87%</div>
-            <p className="text-xs text-muted-foreground">Projects on time</p>
+            <div className="text-2xl font-bold">
+              {projects?.filter(project => {
+                if (!project.due_date) return false;
+                const dueDate = new Date(project.due_date);
+                const weekFromNow = new Date();
+                weekFromNow.setDate(weekFromNow.getDate() + 7);
+                return dueDate <= weekFromNow && dueDate >= new Date();
+              }).length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Upcoming deadlines
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {projects?.filter(p => p.status === 'completed').length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Projects Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {mockProjects.map((project) => (
-          <Card key={project.id} className="relative">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{project.name}</CardTitle>
-                  <CardDescription>{project.client}</CardDescription>
-                </div>
-                <Badge className={getStatusColor(project.status)}>
-                  {project.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Progress</span>
-                  <span>{project.progress}%</span>
-                </div>
-                <Progress value={project.progress} className="h-2" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Value</span>
-                  <div className="font-medium">{project.value}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Margin</span>
-                  <div className="font-medium text-green-600">{project.margin}</div>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-sm text-muted-foreground">Treatments</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {project.treatments.map((treatment) => (
-                    <Badge key={treatment} variant="outline" className="text-xs">
-                      {treatment}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Calendar className="mr-1 h-3 w-3" />
-                  Due {project.dueDate}
-                </div>
-                <Button variant="ghost" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Projects Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Projects</CardTitle>
+          <CardDescription>Manage your project pipeline</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!projects || projects.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="mx-auto h-12 w-12 mb-4" />
+              <p>No projects found. Create your first project to get started!</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Project Name</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <div className="font-medium">{project.name}</div>
+                      {project.description && (
+                        <div className="text-sm text-muted-foreground">{project.description}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>Client #{project.client_id.slice(0, 8)}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(project.status)}>
+                        {project.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getPriorityColor(project.priority)}>
+                        {project.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+                    </TableCell>
+                    <TableCell>
+                      {project.total_amount ? formatCurrency(project.total_amount) : 'TBD'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

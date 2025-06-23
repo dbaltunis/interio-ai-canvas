@@ -4,49 +4,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Eye, Edit, Download } from "lucide-react";
-
-const mockQuotes = [
-  {
-    id: "Q-2024-001",
-    client: "Sarah Wilson",
-    project: "Living Room Renovation",
-    total: "$2,450.00",
-    status: "pending",
-    date: "2024-01-15",
-    items: "Velvet curtains, Roman blinds"
-  },
-  {
-    id: "Q-2024-002", 
-    client: "Michael Chen",
-    project: "Office Upgrade",
-    total: "$1,890.00",
-    status: "approved",
-    date: "2024-01-14",
-    items: "Vertical blinds, Blackout curtains"
-  },
-  {
-    id: "Q-2024-003",
-    client: "Emma Thompson",
-    project: "Bedroom Suite",
-    total: "$3,200.00",
-    status: "draft",
-    date: "2024-01-13",
-    items: "Silk curtains, Motorized blinds"
-  }
-];
+import { Plus, FileText, DollarSign, Clock, Eye } from "lucide-react";
+import { useQuotes } from "@/hooks/useQuotes";
 
 export const QuoteManagement = () => {
-  const [quotes] = useState(mockQuotes);
+  const { data: quotes, isLoading } = useQuotes();
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved": return "bg-green-100 text-green-800";
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "draft": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "accepted": return "bg-green-100 text-green-800";
+      case "sent": return "bg-blue-100 text-blue-800";
+      case "viewed": return "bg-purple-100 text-purple-800";
+      case "rejected": return "bg-red-100 text-red-800";
+      case "expired": return "bg-gray-100 text-gray-800";
+      default: return "bg-yellow-100 text-yellow-800";
     }
   };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  if (isLoading) {
+    return <div>Loading quotes...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -54,7 +38,7 @@ export const QuoteManagement = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Quote Management</h2>
           <p className="text-muted-foreground">
-            Create, manage, and track all your quotes in one place
+            Create and manage quotes for your window covering projects
           </p>
         </div>
         <Button>
@@ -63,80 +47,124 @@ export const QuoteManagement = () => {
         </Button>
       </div>
 
-      {/* AI Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">AI Quick Actions</CardTitle>
-          <CardDescription>Let AI help you with common quote tasks</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="h-20 flex-col">
-              <span className="font-medium">Smart Quote</span>
-              <span className="text-xs text-muted-foreground">AI suggests fabrics & pricing</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col">
-              <span className="font-medium">Bulk Pricing</span>
-              <span className="text-xs text-muted-foreground">Calculate multiple treatments</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col">
-              <span className="font-medium">Follow-up</span>
-              <span className="text-xs text-muted-foreground">AI drafts follow-up emails</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Quote Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Quotes</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{quotes?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              All time quotes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Quote Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(quotes?.reduce((sum, quote) => sum + (quote.total_amount || 0), 0) || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total quote value
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {quotes?.filter(q => ['draft', 'sent', 'viewed'].includes(q.status)).length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Awaiting response
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {quotes && quotes.length > 0 
+                ? Math.round((quotes.filter(q => q.status === 'accepted').length / quotes.length) * 100)
+                : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Acceptance rate
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Quotes Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Quotes</CardTitle>
+          <CardTitle>All Quotes</CardTitle>
+          <CardDescription>Manage your project quotes</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Quote ID</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Project</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {quotes.map((quote) => (
-                <TableRow key={quote.id}>
-                  <TableCell className="font-medium">{quote.id}</TableCell>
-                  <TableCell>{quote.client}</TableCell>
-                  <TableCell>{quote.project}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{quote.items}</TableCell>
-                  <TableCell className="font-medium">{quote.total}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(quote.status)}>
-                      {quote.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{quote.date}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {!quotes || quotes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="mx-auto h-12 w-12 mb-4" />
+              <p>No quotes found. Create your first quote to get started!</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Quote #</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Valid Until</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {quotes.map((quote) => (
+                  <TableRow key={quote.id}>
+                    <TableCell className="font-medium">{quote.quote_number}</TableCell>
+                    <TableCell>Client #{quote.client_id.slice(0, 8)}</TableCell>
+                    <TableCell>Project #{quote.project_id.slice(0, 8)}</TableCell>
+                    <TableCell>{formatCurrency(quote.total_amount)}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(quote.status)}>
+                        {quote.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'No expiry'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
