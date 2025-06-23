@@ -3,12 +3,12 @@ import { useState } from "react";
 import { JobsPageHeader } from "./JobsPageHeader";
 import { JobsFilters } from "./JobsFilters";
 import { JobsTable } from "./JobsTable";
-import { ProjectJobsTab } from "@/components/job-creation/ProjectJobsTab";
-import { useProjects } from "@/hooks/useProjects";
+import { ProjectQuoteTab } from "@/components/job-creation/ProjectQuoteTab";
+import { useQuotes } from "@/hooks/useQuotes";
 
 export const JobsPage = () => {
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const { data: projects } = useProjects();
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const { data: quotes } = useQuotes();
   
   // Filter state management
   const [searchClient, setSearchClient] = useState("");
@@ -27,17 +27,17 @@ export const JobsPage = () => {
     setFilterMaker("all");
   };
   
-  // Find the selected project
-  const selectedProject = projects?.find(p => p.id === selectedProjectId);
+  // Find the selected quote
+  const selectedQuote = quotes?.find(q => q.id === selectedQuoteId);
 
-  // If a project is selected, show the ProjectJobsTab
-  if (selectedProject) {
-    return <ProjectJobsTab project={selectedProject} />;
+  // If a quote is selected, show the ProjectQuoteTab
+  if (selectedQuote) {
+    return <ProjectQuoteTab project={selectedQuote} />;
   }
 
   return (
     <div className="space-y-6">
-      <JobsPageHeader onProjectSelect={setSelectedProjectId} />
+      <JobsPageHeader onQuoteSelect={setSelectedQuoteId} />
       <JobsFilters
         searchClient={searchClient}
         setSearchClient={setSearchClient}
@@ -53,7 +53,7 @@ export const JobsPage = () => {
         setFilterMaker={setFilterMaker}
         onClearAll={handleClearAll}
       />
-      <JobsTable onProjectSelect={setSelectedProjectId} />
+      <JobsTable onQuoteSelect={setSelectedQuoteId} />
     </div>
   );
 };
