@@ -6,10 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CalendarDays, DollarSign, Users, TrendingUp, Bell, AlertTriangle, Package, Plus } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 
 export const Dashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: clients } = useClients();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -19,6 +21,11 @@ export const Dashboard = () => {
   };
 
   const recentJobs = projects?.slice(0, 5) || [];
+
+  const getClientName = (clientId: string) => {
+    const client = clients?.find(c => c.id === clientId);
+    return client?.name || 'Unknown Client';
+  };
 
   if (statsLoading) {
     return <div>Loading dashboard...</div>;
@@ -112,14 +119,14 @@ export const Dashboard = () => {
                     recentJobs.map((job, index) => (
                       <TableRow key={job.id}>
                         <TableCell className="font-medium">#{1000 + index}</TableCell>
-                        <TableCell>{job.client_name || 'N/A'}</TableCell>
+                        <TableCell>{getClientName(job.client_id)}</TableCell>
                         <TableCell>
                           <Badge variant={job.status === 'completed' ? 'default' : 'secondary'}>
                             {job.status || 'pending'}
                           </Badge>
                         </TableCell>
                         <TableCell>{new Date(job.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(job.budget || 0)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(job.total_amount || 0)}</TableCell>
                       </TableRow>
                     ))
                   ) : (

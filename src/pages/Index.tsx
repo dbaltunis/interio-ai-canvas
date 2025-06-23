@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { UserProfile } from "@/components/layout/UserProfile";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { JobsPage } from "@/components/jobs/JobsPage";
 import { QuoteManagement } from "@/components/quotes/QuoteManagement";
 import { ClientManagement } from "@/components/clients/ClientManagement";
 import { ProjectManagement } from "@/components/projects/ProjectManagement";
@@ -30,17 +31,18 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "projects", label: "Jobs", icon: FolderOpen },
+    { id: "dashboard", label: "Home", icon: LayoutDashboard },
+    { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "inventory", label: "Library", icon: Package },
-    { id: "clients", label: "CRM", icon: Users },
   ];
 
   const renderActiveComponent = () => {
     switch (activeTab) {
       case "dashboard":
         return <Dashboard />;
+      case "jobs":
+        return <JobsPage />;
       case "projects":
         return <ProjectManagement />;
       case "job-editor":
