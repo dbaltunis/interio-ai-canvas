@@ -1,11 +1,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Users, FileText, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, DollarSign, Users, TrendingUp, Bell, AlertTriangle, Package } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useUnreadNotifications } from "@/hooks/useNotifications";
+import { useLowStockItems } from "@/hooks/useInventory";
+import { useNavigate } from "react-router-dom";
 
 export const Dashboard = () => {
-  const { data: stats, isLoading } = useDashboardStats();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: unreadNotifications } = useUnreadNotifications();
+  const { data: lowStockItems } = useLowStockItems();
+  const navigate = useNavigate();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -14,142 +21,193 @@ export const Dashboard = () => {
     }).format(amount);
   };
 
+  if (statsLoading) {
+    return <div>Loading dashboard...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Welcome back!</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
           <p className="text-muted-foreground">
-            Here's what's happening with your window covering business today.
+            Welcome back! Here's what's happening with your business.
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Quote
-        </Button>
+        
+        {/* Quick Actions */}
+        <div className="flex space-x-2">
+          {unreadNotifications && unreadNotifications.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/notifications')}
+              className="relative"
+            >
+              <Bell className="mr-2 h-4 w-4" />
+              Notifications
+              <Badge className="ml-2">{unreadNotifications.length}</Badge>
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Alert Cards */}
+      {lowStockItems && lowStockItems.length > 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+              <CardTitle className="text-yellow-800">Low Stock Alert</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-yellow-700 mb-3">
+              {lowStockItems.length} item{lowStockItems.length !== 1 ? 's' : ''} running low on stock
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/inventory')}
+              className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+            >
+              <Package className="mr-2 h-4 w-4" />
+              Manage Inventory
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalClients || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Active client relationships
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Quotes</CardTitle>
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.pendingQuotes || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Awaiting client response
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : formatCurrency(stats?.totalRevenue || 0)}
+              {formatCurrency(stats?.totalRevenue || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               From accepted quotes
             </p>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.totalClients || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total clients in system
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Quotes</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.pendingQuotes || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting client response
-            </p>
-          </CardContent>
-        </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.lowStockItems || 0}
+            <div className="text-2xl font-bold text-orange-600">
+              {stats?.lowStockItems || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Needs restocking
+              Need reordering
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      {/* Recent Notifications */}
+      {unreadNotifications && unreadNotifications.length > 0 && (
+        <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle className="flex items-center">
+              <Bell className="mr-2 h-5 w-5" />
+              Recent Notifications
+            </CardTitle>
+            <CardDescription>
+              You have {unreadNotifications.length} unread notification{unreadNotifications.length !== 1 ? 's' : ''}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-8">
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    Welcome to InterioApp!
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Start by adding your first client or inventory item
-                  </p>
+            <div className="space-y-3">
+              {unreadNotifications.slice(0, 3).map((notification) => (
+                <div key={notification.id} className="flex items-center p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{notification.title}</h4>
+                    <p className="text-sm text-muted-foreground">{notification.message}</p>
+                  </div>
+                  <Badge variant="secondary">New</Badge>
                 </div>
-                <div className="ml-auto font-medium">Now</div>
-              </div>
+              ))}
+              {unreadNotifications.length > 3 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/notifications')}
+                  className="w-full"
+                >
+                  View All Notifications
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="col-span-3">
+      )}
+
+      {/* Quick Actions Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate('/projects')}>
           <CardHeader>
-            <CardTitle>AI Insights</CardTitle>
-            <CardDescription>Smart recommendations for your business</CardDescription>
+            <CardTitle className="text-lg">Manage Projects</CardTitle>
+            <CardDescription>View and update project status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-900">
-                  Getting Started
-                </p>
-                <p className="text-xs text-blue-700">
-                  Add your first client to start managing projects
-                </p>
-              </div>
-              
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-sm font-medium text-green-900">
-                  Inventory Setup
-                </p>
-                <p className="text-xs text-green-700">
-                  Stock your inventory to track materials and costs
-                </p>
-              </div>
-              
-              <div className="p-3 bg-orange-50 rounded-lg">
-                <p className="text-sm font-medium text-orange-900">
-                  Quote Management
-                </p>
-                <p className="text-xs text-orange-700">
-                  Create professional quotes for your clients
-                </p>
-              </div>
-            </div>
+            <Button variant="outline" className="w-full">
+              Go to Projects
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate('/quotes')}>
+          <CardHeader>
+            <CardTitle className="text-lg">Create Quote</CardTitle>
+            <CardDescription>Generate new project quotes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              New Quote
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate('/calendar')}>
+          <CardHeader>
+            <CardTitle className="text-lg">Schedule Appointment</CardTitle>
+            <CardDescription>Book client meetings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              Open Calendar
+            </Button>
           </CardContent>
         </Card>
       </div>
