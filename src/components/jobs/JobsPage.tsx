@@ -65,7 +65,7 @@ export const JobsPage = () => {
     if (searchJobNumber && !generateJobNumber(0).includes(searchJobNumber)) {
       return false;
     }
-    if (filterStatus && project.status !== filterStatus) {
+    if (filterStatus && filterStatus !== "all" && project.status !== filterStatus) {
       return false;
     }
     return true;
@@ -129,7 +129,7 @@ export const JobsPage = () => {
                 <SelectValue placeholder="Search by Job Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="quote">Quote</SelectItem>
                 <SelectItem value="order">Order</SelectItem>
                 <SelectItem value="invoice">Invoice</SelectItem>
@@ -143,7 +143,7 @@ export const JobsPage = () => {
                 <SelectValue placeholder="Search by Deposit Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Deposits</SelectItem>
+                <SelectItem value="all">All Deposits</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="none">None</SelectItem>
@@ -154,7 +154,7 @@ export const JobsPage = () => {
                 <SelectValue placeholder="Search by Project Owner" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Owners</SelectItem>
+                <SelectItem value="all">All Owners</SelectItem>
                 <SelectItem value="admin">InterioApp Admin</SelectItem>
                 <SelectItem value="chris">Chris Ogden</SelectItem>
               </SelectContent>
@@ -164,7 +164,7 @@ export const JobsPage = () => {
                 <SelectValue placeholder="Search by Curtain maker" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Makers</SelectItem>
+                <SelectItem value="all">All Makers</SelectItem>
                 <SelectItem value="maker1">Maker 1</SelectItem>
                 <SelectItem value="maker2">Maker 2</SelectItem>
               </SelectContent>
