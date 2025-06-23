@@ -7,10 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Home, Copy, Edit, Save, ArrowLeft } from "lucide-react";
+import { ArrowLeft, User, Briefcase, FileText, Wrench, Calendar } from "lucide-react";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
-import { useRooms } from "@/hooks/useRooms";
 import { ProjectJobsTab } from "./ProjectJobsTab";
 import { ProjectClientTab } from "./ProjectClientTab";
 import { ProjectQuoteTab } from "./ProjectQuoteTab";
@@ -56,10 +55,10 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   };
 
   const navItems = [
-    { id: "client", label: "Client", icon: "👤" },
-    { id: "jobs", label: "Jobs", icon: "📋" },
-    { id: "quote", label: "Quote", icon: "💰" },
-    { id: "workshop", label: "Workshop", icon: "🔧" },
+    { id: "client", label: "Client", icon: User },
+    { id: "jobs", label: "Jobs", icon: Briefcase },
+    { id: "quote", label: "Quote", icon: FileText },
+    { id: "workshop", label: "Workshop", icon: Wrench },
   ];
 
   const renderTabContent = () => {
@@ -169,27 +168,51 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
             <p className="text-muted-foreground">{currentProject.description}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline">{currentProject.status}</Badge>
-          <Badge variant="outline">{currentProject.priority}</Badge>
-          <span className="text-lg font-semibold">Total: $0.00</span>
+        <div className="flex items-center space-x-4">
+          <Select defaultValue="payment">
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="payment">Payment</SelectItem>
+              <SelectItem value="deposit">Deposit</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select defaultValue="quote">
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="quote">Quote</SelectItem>
+              <SelectItem value="order">Order</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button>
+            <Calendar className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
       {/* Project Navigation Tabs */}
       <div className="border-b">
-        <nav className="flex space-x-8">
-          {navItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={activeTab === item.id ? "default" : "ghost"}
-              className={`px-3 py-2 ${activeTab === item.id ? 'border-b-2 border-primary' : ''}`}
-              onClick={() => setActiveTab(item.id)}
-            >
-              <span className="mr-2">{item.icon}</span>
-              {item.label}
-            </Button>
-          ))}
+        <nav className="flex space-x-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.id}
+                variant={activeTab === item.id ? "default" : "ghost"}
+                className={`flex items-center space-x-2 px-4 py-2 ${
+                  activeTab === item.id ? 'bg-primary text-primary-foreground' : ''
+                }`}
+                onClick={() => setActiveTab(item.id)}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+                {item.id === "client" && <span className="text-red-500">🔴</span>}
+              </Button>
+            );
+          })}
         </nav>
       </div>
 
