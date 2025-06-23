@@ -4,48 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, AlertTriangle, TrendingUp, Package } from "lucide-react";
-
-const mockInventory = [
-  {
-    id: "FAB-001",
-    name: "Velvet Navy",
-    type: "Fabric",
-    supplier: "Prestigious Textiles",
-    stock: "5.2m",
-    lowStock: true,
-    price: "$45.00/m",
-    lastOrdered: "2024-01-10"
-  },
-  {
-    id: "LIN-002", 
-    name: "Blackout Standard",
-    type: "Lining",
-    supplier: "Clarke & Clarke",
-    stock: "28.5m", 
-    lowStock: false,
-    price: "$12.00/m",
-    lastOrdered: "2024-01-05"
-  },
-  {
-    id: "HAR-003",
-    name: "Silent Gliss Track",
-    type: "Hardware",
-    supplier: "Silent Gliss",
-    stock: "3 sets",
-    lowStock: true,
-    price: "$89.00/set",
-    lastOrdered: "2023-12-20"
-  }
-];
+import { useInventory, useLowStockItems } from "@/hooks/useInventory";
 
 export const InventoryManagement = () => {
+  const { data: inventory, isLoading } = useInventory();
+  const { data: lowStockItems } = useLowStockItems();
+
+  if (isLoading) {
+    return <div>Loading inventory...</div>;
+  }
+
+  const totalValue = inventory?.reduce((sum, item) => {
+    return sum + ((item.cost_per_unit || 0) * (item.quantity || 0));
+  }, 0) || 0;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Inventory Management</h2>
           <p className="text-muted-foreground">
-            Smart inventory tracking with AI-powered restocking alerts
+            Smart inventory tracking with real-time stock levels
           </p>
         </div>
         <Button>
@@ -62,7 +48,7 @@ export const InventoryManagement = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">127</div>
+            <div className="text-2xl font-bold">{inventory?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               Across all categories
             </p>
@@ -75,7 +61,7 @@ export const InventoryManagement = () => {
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">3</div>
+            <div className="text-2xl font-bold text-orange-600">{lowStockItems?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               Items need restocking
             </p>
@@ -88,7 +74,7 @@ export const InventoryManagement = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$18,420</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
             <p className="text-xs text-muted-foreground">
               Current stock value
             </p>
@@ -97,58 +83,44 @@ export const InventoryManagement = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Turnover Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Categories</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">4.2x</div>
+            <div className="text-2xl font-bold text-green-600">
+              {new Set(inventory?.map(item => item.category)).size || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Annual turnover
+              Different categories
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* AI Recommendations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Inventory Insights</CardTitle>
-          <CardDescription>Smart recommendations based on usage patterns</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <span className="font-medium text-orange-900">Restock Alert</span>
-              </div>
-              <p className="text-sm text-orange-700 mt-1">
-                Velvet Navy is running low - suggest ordering 20m based on usage
-              </p>
+      {lowStockItems && lowStockItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Stock Alerts</CardTitle>
+            <CardDescription>Items requiring attention</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-3">
+              {lowStockItems.slice(0, 3).map((item) => (
+                <div key={item.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <span className="font-medium text-orange-900">Low Stock</span>
+                  </div>
+                  <p className="text-sm text-orange-700 mt-1">
+                    {item.name} - Only {item.quantity} {item.unit} remaining
+                  </p>
+                </div>
+              ))}
             </div>
-
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-900">Trending Item</span>
-              </div>
-              <p className="text-sm text-blue-700 mt-1">
-                Linen textures gaining popularity - consider expanding range
-              </p>
-            </div>
-
-            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center space-x-2">
-                <Package className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-green-900">Substitution</span>
-              </div>
-              <p className="text-sm text-green-700 mt-1">
-                Cotton Navy available as alternative to Velvet Navy
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Inventory Table */}
       <Card>
@@ -156,54 +128,78 @@ export const InventoryManagement = () => {
           <CardTitle>Current Inventory</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Last Ordered</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockInventory.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-muted-foreground">{item.id}</div>
-                  </TableCell>
-                  <TableCell>{item.type}</TableCell>
-                  <TableCell>{item.supplier}</TableCell>
-                  <TableCell className="font-medium">{item.stock}</TableCell>
-                  <TableCell>{item.price}</TableCell>
-                  <TableCell>{item.lastOrdered}</TableCell>
-                  <TableCell>
-                    {item.lowStock ? (
-                      <Badge className="bg-orange-100 text-orange-800">
-                        <AlertTriangle className="w-3 h-3 mr-1" />
-                        Low Stock
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-green-100 text-green-800">
-                        In Stock
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        Reorder
-                      </Button>
-                    </div>
-                  </TableCell>
+          {!inventory || inventory.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="mx-auto h-12 w-12 mb-4" />
+              <p>No inventory items found. Add your first item to get started!</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Cost/Unit</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {inventory.map((item) => {
+                  const isLowStock = lowStockItems?.some(lowItem => lowItem.id === item.id);
+                  
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="font-medium">{item.name}</div>
+                        {item.sku && (
+                          <div className="text-sm text-muted-foreground">{item.sku}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {item.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {item.quantity} {item.unit}
+                      </TableCell>
+                      <TableCell>
+                        {item.cost_per_unit ? formatCurrency(item.cost_per_unit) : "N/A"}
+                      </TableCell>
+                      <TableCell>{item.supplier || "N/A"}</TableCell>
+                      <TableCell>
+                        {isLowStock ? (
+                          <Badge className="bg-orange-100 text-orange-800">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            Low Stock
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-800">
+                            In Stock
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="ghost" size="sm">
+                            Edit
+                          </Button>
+                          {isLowStock && (
+                            <Button variant="outline" size="sm">
+                              Reorder
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
