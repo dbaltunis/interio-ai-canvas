@@ -13,6 +13,7 @@ interface JobsTableProps {
   filterDeposit: string;
   filterOwner: string;
   filterMaker: string;
+  onJobSelect?: (jobId: string) => void;
 }
 
 export const JobsTable = ({ 
@@ -21,7 +22,8 @@ export const JobsTable = ({
   filterStatus,
   filterDeposit,
   filterOwner,
-  filterMaker
+  filterMaker,
+  onJobSelect
 }: JobsTableProps) => {
   const { data: quotes } = useQuotes();
 
@@ -87,7 +89,11 @@ export const JobsTable = ({
       {/* Table Rows */}
       <div className="divide-y">
         {filteredQuotes.map((quote) => (
-          <div key={quote.id} className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50">
+          <div 
+            key={quote.id} 
+            className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
+            onClick={() => onJobSelect?.(quote.id)}
+          >
             <div className="font-medium text-gray-900">{quote.quote_number}</div>
             <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>
             <div className="text-gray-500">-</div>
@@ -107,7 +113,7 @@ export const JobsTable = ({
                 <span>InterioApp Admin</span>
               </div>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="sm">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>

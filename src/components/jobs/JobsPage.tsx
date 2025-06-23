@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
 import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
+import { ProjectPage } from "../projects/ProjectPage";
 
 export const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "client">("jobs");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   
   // Filter state management
   const [searchClient, setSearchClient] = useState("");
@@ -25,6 +27,19 @@ export const JobsPage = () => {
     setFilterOwner("all");
     setFilterMaker("all");
   };
+
+  const handleJobSelect = (jobId: string) => {
+    setSelectedJobId(jobId);
+  };
+
+  const handleBackToJobs = () => {
+    setSelectedJobId(null);
+  };
+
+  // If a job is selected, show the project page
+  if (selectedJobId) {
+    return <ProjectPage projectId={selectedJobId} onBack={handleBackToJobs} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -98,6 +113,7 @@ export const JobsPage = () => {
         filterDeposit={filterDeposit}
         filterOwner={filterOwner}
         filterMaker={filterMaker}
+        onJobSelect={handleJobSelect}
       />
     </div>
   );
