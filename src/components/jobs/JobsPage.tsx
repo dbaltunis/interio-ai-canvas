@@ -5,11 +5,13 @@ import { Filter } from "lucide-react";
 import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
+import { NewJobPage } from "../job-creation/NewJobPage";
 
 export const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "client">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [showNewJob, setShowNewJob] = useState(false);
   
   // Filter state management
   const [searchClient, setSearchClient] = useState("");
@@ -34,7 +36,17 @@ export const JobsPage = () => {
 
   const handleBackToJobs = () => {
     setSelectedJobId(null);
+    setShowNewJob(false);
   };
+
+  const handleNewJob = () => {
+    setShowNewJob(true);
+  };
+
+  // If creating a new job, show the new job page
+  if (showNewJob) {
+    return <NewJobPage onBack={handleBackToJobs} />;
+  }
 
   // If a job is selected, show the job editing page
   if (selectedJobId) {
@@ -73,6 +85,7 @@ export const JobsPage = () => {
         <div className="flex items-center space-x-3">
           <Button 
             className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+            onClick={handleNewJob}
           >
             New Job
           </Button>
