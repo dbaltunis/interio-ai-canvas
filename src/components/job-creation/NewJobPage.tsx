@@ -20,39 +20,37 @@ interface NewJobPageProps {
 }
 
 export const NewJobPage = ({ onBack }: NewJobPageProps) => {
-  const [activeTab, setActiveTab] = useState("client");
+  const [activeTab, setActiveTab] = useState("jobs");
   const [currentProject, setCurrentProject] = useState<any>(null);
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
   
-  // Form state for new project
-  const [projectName, setProjectName] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState("");
-
   const { data: clients } = useClients();
   const createProject = useCreateProject();
 
-  const handleCreateProject = async () => {
-    if (!projectName || !selectedClientId) return;
-
-    setIsCreatingProject(true);
-    try {
-      const newProject = await createProject.mutateAsync({
-        name: projectName,
-        description: projectDescription,
-        client_id: selectedClientId,
-        status: "planning",
-        priority: "medium"
-      });
+  // Create a default project immediately when component mounts
+  useEffect(() => {
+    const createDefaultProject = async () => {
+      if (!clients || clients.length === 0) return;
       
-      setCurrentProject(newProject);
-      setActiveTab("jobs");
-    } catch (error) {
-      console.error("Failed to create project:", error);
-    } finally {
-      setIsCreatingProject(false);
+      try {
+        const defaultClient = clients[0]; // Use first available client
+        const newProject = await createProject.mutateAsync({
+          name: "New Project",
+          description: "",
+          client_id: defaultClient.id,
+          status: "planning",
+          priority: "medium"
+        });
+        
+        setCurrentProject(newProject);
+      } catch (error) {
+        console.error("Failed to create default project:", error);
+      }
+    };
+
+    if (!currentProject && clients && clients.length > 0) {
+      createDefaultProject();
     }
-  };
+  }, [clients, currentProject, createProject]);
 
   const navItems = [
     { id: "client", label: "Client", icon: User },
@@ -78,78 +76,20 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     }
   };
 
+  // Show loading state while creating default project
   if (!currentProject) {
     return (
       <div className="space-y-6">
-        {/* Header with back button */}
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Jobs
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Create New Job</h2>
-            <p className="text-muted-foreground">Start a new project by selecting a client and providing project details</p>
+            <h2 className="text-3xl font-bold tracking-tight">Creating New Job...</h2>
+            <p className="text-muted-foreground">Setting up your new project</p>
           </div>
         </div>
-
-        {/* Project Creation Form */}
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle>Project Information</CardTitle>
-            <CardDescription>Fill in the basic information for your new project</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="client">Select Client *</Label>
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a client..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name} {client.phone && `- ${client.phone}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="projectName">Project Name *</Label>
-              <Input
-                id="projectName"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="Enter project name..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Project Description</Label>
-              <Textarea
-                id="description"
-                value={projectDescription}
-                onChange={(e) => setProjectDescription(e.target.value)}
-                placeholder="Describe the project..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={onBack}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCreateProject}
-                disabled={!projectName || !selectedClientId || isCreatingProject}
-              >
-                {isCreatingProject ? "Creating..." : "Create Project"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
