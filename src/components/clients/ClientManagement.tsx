@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Mail, Phone, MapPin } from "lucide-react";
+import { Plus, Mail, Phone, MapPin, Users } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 
 export const ClientManagement = () => {
