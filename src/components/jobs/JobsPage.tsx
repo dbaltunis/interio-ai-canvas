@@ -32,9 +32,14 @@ export const JobsPage = () => {
   // Find the selected quote
   const selectedQuote = quotes?.find(q => q.id === selectedQuoteId);
 
-  // If a quote is selected, show the job editor
+  // If a quote is selected, show the project detail view
   if (selectedQuote) {
-    return <ProjectJobsTab project={selectedQuote} />;
+    return (
+      <ProjectJobsTab 
+        project={selectedQuote} 
+        onBack={() => setSelectedQuoteId(null)}
+      />
+    );
   }
 
   return (

@@ -44,7 +44,16 @@ export const JobsTable = ({
       case "order": return "bg-blue-100 text-blue-800";
       case "invoice": return "bg-purple-100 text-purple-800";
       case "completed": return "bg-green-100 text-green-800";
-      default: return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "draft": return "Quote";
+      case "accepted": return "Order";
+      case "order": return "Order";
+      default: return status;
     }
   };
 
@@ -53,9 +62,9 @@ export const JobsTable = ({
       <Card>
         <CardContent className="p-8 text-center">
           <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No quotes yet</h3>
+          <h3 className="text-lg font-medium mb-2">No jobs yet</h3>
           <p className="text-muted-foreground">
-            Create your first quote to get started
+            Create your first job to get started
           </p>
         </CardContent>
       </Card>
@@ -81,23 +90,23 @@ export const JobsTable = ({
         {filteredQuotes.map((quote) => (
           <div key={quote.id} className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
                onClick={() => onQuoteSelect?.(quote.id)}>
-            <div className="font-medium">{quote.quote_number}</div>
-            <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>
+            <div className="font-medium text-blue-600">{quote.quote_number}</div>
+            <div className="font-medium">£{quote.total_amount?.toFixed(2) || '0.00'}</div>
             <div className="text-gray-500">-</div>
             <div>Client #{quote.client_id.slice(0, 8)}</div>
             <div className="text-gray-500">-</div>
             <div>{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
             <div>
-              <Badge className={getStatusColor(quote.status)}>
-                {quote.status === 'draft' ? 'Quote' : 
-                 quote.status === 'accepted' ? 'Order' :
-                 quote.status}
+              <Badge className={getStatusColor(quote.status)} variant="secondary">
+                {getStatusLabel(quote.status)}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center text-sm text-gray-600">
-                <div className="w-5 h-5 bg-gray-300 rounded-full mr-2"></div>
-                InterioApp Admin
+                <div className="w-6 h-6 bg-blue-500 rounded-full mr-2 flex items-center justify-center text-white text-xs">
+                  A
+                </div>
+                <span>InterioApp Admin</span>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -107,7 +116,7 @@ export const JobsTable = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onClick={() => onQuoteSelect?.(quote.id)}>
-                    View Quote
+                    View Job
                   </DropdownMenuItem>
                   <DropdownMenuItem>Edit</DropdownMenuItem>
                   <DropdownMenuItem>Delete</DropdownMenuItem>

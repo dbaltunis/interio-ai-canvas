@@ -1,20 +1,21 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Search, Trash2, Copy, Clipboard } from "lucide-react";
+import { Plus, Edit, Search, Trash2, Copy, Clipboard, ArrowLeft, Home } from "lucide-react";
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useWindows, useCreateWindow, useUpdateWindow, useDeleteWindow } from "@/hooks/useWindows";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
 
 interface ProjectJobsTabProps {
   project: any;
+  onBack?: () => void;
 }
 
-export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
+export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   const { data: rooms } = useRooms(project.id);
   const { data: allWindows } = useWindows();
   const { data: allTreatments } = useTreatments();
@@ -27,6 +28,7 @@ export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
   const [copiedRoom, setCopiedRoom] = useState<any>(null);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
+  const [activeTab, setActiveTab] = useState("Client");
 
   // Calculate total amount from all treatments
   const projectTreatments = allTreatments?.filter(t => t.project_id === project.id) || [];
@@ -129,49 +131,138 @@ export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with Total and Actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Total: £{totalAmount.toFixed(2)}</h2>
-          <p className="text-muted-foreground">Project total before GST</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          {copiedRoom && (
-            <Button 
-              onClick={handlePasteRoom}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Clipboard className="h-4 w-4" />
-              <span>Paste Room</span>
-            </Button>
-          )}
-          <Button onClick={handleCreateRoom} className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Add room</span>
-          </Button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="flex items-center space-x-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Jobs</span>
+              </Button>
+              <div className="h-6 w-px bg-gray-300" />
+              <h1 className="text-xl font-semibold">{project.quote_number}</h1>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-green-600">
+                £{totalAmount.toFixed(2)}
+              </div>
+              <div className="text-sm text-gray-500">Project total before GST</div>
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="mt-4 flex space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
+            {["Client", "Quote", "Workshop", "Jobs"].map((tab) => (
+              <Button
+                key={tab}
+                variant={activeTab === tab ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-sm ${
+                  activeTab === tab
+                    ? "bg-white shadow-sm"
+                    : "hover:bg-white/50"
+                }`}
+              >
+                {tab}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Rooms Grid */}
-      <div className="grid gap-6">
-        {rooms?.map((room) => (
-          <RoomCard 
-            key={room.id} 
-            room={room} 
-            projectId={project.id}
-            onUpdateRoom={updateRoom}
-            onDeleteRoom={deleteRoom}
-            onCreateTreatment={handleCreateTreatment}
-            onCopyRoom={handleCopyRoom}
-            editingRoomId={editingRoomId}
-            setEditingRoomId={setEditingRoomId}
-            editingRoomName={editingRoomName}
-            setEditingRoomName={setEditingRoomName}
-            onRenameRoom={handleRenameRoom}
-          />
-        ))}
+      {/* Main Content */}
+      <div className="p-6">
+        {activeTab === "Jobs" && (
+          <>
+            {/* Action Bar */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                {copiedRoom && (
+                  <Button 
+                    onClick={handlePasteRoom}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-2"
+                  >
+                    <Clipboard className="h-4 w-4" />
+                    <span>Paste Room</span>
+                  </Button>
+                )}
+              </div>
+              <Button 
+                onClick={handleCreateRoom} 
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add room</span>
+              </Button>
+            </div>
+
+            {/* Rooms Grid */}
+            <div className="space-y-6">
+              {!rooms || rooms.length === 0 ? (
+                <div className="text-center py-12">
+                  <Home className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
+                  <p className="text-gray-500 mb-4">
+                    Add your first room to start designing window treatments
+                  </p>
+                  <Button onClick={handleCreateRoom} className="flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Add your first room</span>
+                  </Button>
+                </div>
+              ) : (
+                rooms.map((room) => (
+                  <RoomCard 
+                    key={room.id} 
+                    room={room} 
+                    projectId={project.id}
+                    onUpdateRoom={updateRoom}
+                    onDeleteRoom={deleteRoom}
+                    onCreateTreatment={handleCreateTreatment}
+                    onCopyRoom={handleCopyRoom}
+                    editingRoomId={editingRoomId}
+                    setEditingRoomId={setEditingRoomId}
+                    editingRoomName={editingRoomName}
+                    setEditingRoomName={setEditingRoomName}
+                    onRenameRoom={handleRenameRoom}
+                  />
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === "Client" && (
+          <div className="bg-white rounded-lg p-6">
+            <h3 className="text-lg font-medium mb-4">Client Information</h3>
+            <p className="text-gray-500">Client details will be displayed here.</p>
+          </div>
+        )}
+
+        {activeTab === "Quote" && (
+          <div className="bg-white rounded-lg p-6">
+            <h3 className="text-lg font-medium mb-4">Quote Details</h3>
+            <p className="text-gray-500">Quote information will be displayed here.</p>
+          </div>
+        )}
+
+        {activeTab === "Workshop" && (
+          <div className="bg-white rounded-lg p-6">
+            <h3 className="text-lg font-medium mb-4">Workshop Orders</h3>
+            <p className="text-gray-500">Workshop orders will be displayed here.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -239,7 +330,7 @@ const RoomCard = ({
             ) : (
               <CardTitle className="text-xl">{room.name}</CardTitle>
             )}
-            <p className="text-2xl font-bold text-green-600">£{roomTotal.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">£{roomTotal.toFixed(2)}</p>
           </div>
           <div className="flex items-center space-x-2">
             <Button
