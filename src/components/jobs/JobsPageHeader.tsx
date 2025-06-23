@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useCreateProject } from "@/hooks/useProjects";
-import { useClients } from "@/hooks/useClients";
+import { useClients, useCreateClient } from "@/hooks/useClients";
 
 interface JobsPageHeaderProps {
   onProjectSelect?: (projectId: string) => void;
@@ -10,18 +10,27 @@ interface JobsPageHeaderProps {
 
 export const JobsPageHeader = ({ onProjectSelect }: JobsPageHeaderProps) => {
   const createProject = useCreateProject();
+  const createClient = useCreateClient();
   const { data: clients } = useClients();
 
   const handleCreateProject = async () => {
     try {
-      // Create a default client if none exists
       let clientId = clients?.[0]?.id;
       
+      // If no clients exist, create a default one first
       if (!clientId) {
-        // For demo purposes, we'll create a project without a client
-        // In a real app, you'd want to handle this differently
-        console.log("No clients available");
-        return;
+        console.log("No clients found, creating default client");
+        const newClient = await createClient.mutateAsync({
+          name: "Default Client",
+          email: "client@example.com",
+          phone: "",
+          address: "",
+          city: "",
+          state: "",
+          zip_code: "",
+          notes: "Auto-created default client"
+        });
+        clientId = newClient.id;
       }
 
       const newProject = await createProject.mutateAsync({
