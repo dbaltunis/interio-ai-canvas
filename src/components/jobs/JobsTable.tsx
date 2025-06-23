@@ -1,16 +1,52 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuotes } from "@/hooks/useQuotes";
-import { FileText } from "lucide-react";
+import { FileText, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface JobsTableProps {
   onQuoteSelect?: (quoteId: string) => void;
+  searchClient: string;
+  searchJobNumber: string;
+  filterStatus: string;
+  filterDeposit: string;
+  filterOwner: string;
+  filterMaker: string;
 }
 
-export const JobsTable = ({ onQuoteSelect }: JobsTableProps) => {
+export const JobsTable = ({ 
+  onQuoteSelect,
+  searchClient,
+  searchJobNumber,
+  filterStatus,
+  filterDeposit,
+  filterOwner,
+  filterMaker
+}: JobsTableProps) => {
   const { data: quotes } = useQuotes();
+
+  // Filter quotes based on search and filter criteria
+  const filteredQuotes = quotes?.filter(quote => {
+    const matchesClient = !searchClient || 
+      quote.client_id.toLowerCase().includes(searchClient.toLowerCase());
+    const matchesJobNumber = !searchJobNumber || 
+      quote.quote_number.toLowerCase().includes(searchJobNumber.toLowerCase());
+    const matchesStatus = filterStatus === "all" || quote.status === filterStatus;
+    
+    return matchesClient && matchesJobNumber && matchesStatus;
+  }) || [];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "accepted": return "bg-blue-100 text-blue-800";
+      case "order": return "bg-blue-100 text-blue-800";
+      case "invoice": return "bg-purple-100 text-purple-800";
+      case "completed": return "bg-green-100 text-green-800";
+      default: return "bg-red-100 text-red-800";
+    }
+  };
 
   if (!quotes || quotes.length === 0) {
     return (
@@ -27,37 +63,60 @@ export const JobsTable = ({ onQuoteSelect }: JobsTableProps) => {
   }
 
   return (
-    <div className="grid gap-4">
-      {quotes.map((quote) => (
-        <Card key={quote.id} className="cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">{quote.quote_number}</CardTitle>
-                <p className="text-muted-foreground">
-                  Client ID: {quote.client_id.slice(0, 8)}...
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge variant={quote.status === 'accepted' ? 'default' : 'secondary'}>
-                  {quote.status}
-                </Badge>
-                <Button 
-                  onClick={() => onQuoteSelect?.(quote.id)}
-                  variant="outline"
-                >
-                  Open Quote
-                </Button>
-              </div>
+    <div className="bg-white rounded-lg border">
+      {/* Table Header */}
+      <div className="grid grid-cols-8 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-600">
+        <div>No.</div>
+        <div>Quote Total</div>
+        <div>Payment</div>
+        <div>Client Name</div>
+        <div>Mobile</div>
+        <div>Calendar</div>
+        <div>Status</div>
+        <div>Team</div>
+      </div>
+
+      {/* Table Rows */}
+      <div className="divide-y">
+        {filteredQuotes.map((quote) => (
+          <div key={quote.id} className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
+               onClick={() => onQuoteSelect?.(quote.id)}>
+            <div className="font-medium">{quote.quote_number}</div>
+            <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>
+            <div className="text-gray-500">-</div>
+            <div>Client #{quote.client_id.slice(0, 8)}</div>
+            <div className="text-gray-500">-</div>
+            <div>{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
+            <div>
+              <Badge className={getStatusColor(quote.status)}>
+                {quote.status === 'draft' ? 'Quote' : 
+                 quote.status === 'accepted' ? 'Order' :
+                 quote.status}
+              </Badge>
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">
-              ${quote.total_amount.toFixed(2)}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="w-5 h-5 bg-gray-300 rounded-full mr-2"></div>
+                InterioApp Admin
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => onQuoteSelect?.(quote.id)}>
+                    View Quote
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>Edit</DropdownMenuItem>
+                  <DropdownMenuItem>Delete</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
