@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Filter, Plus, MoreVertical, Copy, Trash2, Users, Calendar, FileText, List } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
+import { NewJobPage } from "@/components/job-creation/NewJobPage";
 
 export const JobsPage = () => {
   const { data: projects, isLoading } = useProjects();
@@ -21,6 +21,12 @@ export const JobsPage = () => {
   const [filterOwner, setFilterOwner] = useState("");
   const [filterMaker, setFilterMaker] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [showNewJob, setShowNewJob] = useState(false);
+
+  // Show new job page if user clicked "New Job"
+  if (showNewJob) {
+    return <NewJobPage onBack={() => setShowNewJob(false)} />;
+  }
 
   const getClientName = (clientId: string) => {
     const client = clients?.find(c => c.id === clientId);
@@ -97,7 +103,10 @@ export const JobsPage = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button className="bg-slate-600 hover:bg-slate-700 text-white">
+          <Button 
+            className="bg-slate-600 hover:bg-slate-700 text-white"
+            onClick={() => setShowNewJob(true)}
+          >
             New Job
           </Button>
           <Button
