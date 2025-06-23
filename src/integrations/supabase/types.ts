@@ -499,6 +499,207 @@ export type Database = {
           },
         ]
       }
+      rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          measurements: Json | null
+          name: string
+          notes: string | null
+          project_id: string
+          room_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          measurements?: Json | null
+          name: string
+          notes?: string | null
+          project_id: string
+          room_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          measurements?: Json | null
+          name?: string
+          notes?: string | null
+          project_id?: string
+          room_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatments: {
+        Row: {
+          color: string | null
+          created_at: string
+          fabric_type: string | null
+          hardware: string | null
+          id: string
+          measurements: Json | null
+          mounting_type: string | null
+          notes: string | null
+          pattern: string | null
+          project_id: string
+          quantity: number | null
+          room_id: string
+          status: string | null
+          total_price: number | null
+          treatment_type: string
+          unit_price: number | null
+          updated_at: string
+          user_id: string
+          window_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          fabric_type?: string | null
+          hardware?: string | null
+          id?: string
+          measurements?: Json | null
+          mounting_type?: string | null
+          notes?: string | null
+          pattern?: string | null
+          project_id: string
+          quantity?: number | null
+          room_id: string
+          status?: string | null
+          total_price?: number | null
+          treatment_type: string
+          unit_price?: number | null
+          updated_at?: string
+          user_id: string
+          window_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          fabric_type?: string | null
+          hardware?: string | null
+          id?: string
+          measurements?: Json | null
+          mounting_type?: string | null
+          notes?: string | null
+          pattern?: string | null
+          project_id?: string
+          quantity?: number | null
+          room_id?: string
+          status?: string | null
+          total_price?: number | null
+          treatment_type?: string
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string
+          window_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatments_window_id_fkey"
+            columns: ["window_id"]
+            isOneToOne: false
+            referencedRelation: "windows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      windows: {
+        Row: {
+          created_at: string
+          depth: number | null
+          height: number | null
+          id: string
+          location: string | null
+          measurements: Json | null
+          name: string
+          notes: string | null
+          project_id: string
+          room_id: string
+          updated_at: string
+          user_id: string
+          width: number | null
+          window_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          depth?: number | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          measurements?: Json | null
+          name: string
+          notes?: string | null
+          project_id: string
+          room_id: string
+          updated_at?: string
+          user_id: string
+          width?: number | null
+          window_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          depth?: number | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          measurements?: Json | null
+          name?: string
+          notes?: string | null
+          project_id?: string
+          room_id?: string
+          updated_at?: string
+          user_id?: string
+          width?: number | null
+          window_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "windows_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "windows_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_orders: {
         Row: {
           actual_hours: number | null
