@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Search, Trash2, Copy, Paste } from "lucide-react";
+import { Plus, Edit, Search, Trash2, Copy, Clipboard } from "lucide-react";
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useWindows, useCreateWindow, useUpdateWindow, useDeleteWindow } from "@/hooks/useWindows";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
@@ -144,7 +143,7 @@ export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
               variant="outline"
               className="flex items-center space-x-2"
             >
-              <Paste className="h-4 w-4" />
+              <Clipboard className="h-4 w-4" />
               <span>Paste Room</span>
             </Button>
           )}
