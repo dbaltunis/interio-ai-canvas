@@ -12,6 +12,7 @@ import { JobEditor } from "@/components/job-editor/JobEditor";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalculatorView } from "@/components/calculator/CalculatorView";
 import { SettingsView } from "@/components/settings/SettingsView";
+import { LibraryPage } from "@/components/library/LibraryPage";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Button } from "@/components/ui/button";
 import { 
@@ -52,7 +53,7 @@ const Index = () => {
       case "workshop":
         return <WorkshopManagement />;
       case "inventory":
-        return <InventoryManagement />;
+        return <LibraryPage />;
       case "calendar":
         return <CalendarView />;
       case "clients":
