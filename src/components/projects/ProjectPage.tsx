@@ -2,9 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Plus, Trash2, Copy, Edit, ChevronDown, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Copy, Edit, ChevronDown, Calendar } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 
 interface ProjectPageProps {
@@ -19,9 +17,9 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
   // Find the project/quote data
   const project = quotes?.find(q => q.id === projectId) || {
     id: "1",
-    quote_number: "24-12-0001",
-    client_id: "Christine Ogden",
-    total_amount: 8145.27
+    quote_number: "c54b7a3c-0565-4443-8498-4d137b10f39f",
+    client_id: "c54b7a3c-0565-4443-8498-4d137b10f39f",
+    total_amount: 0
   };
 
   const navItems = [
@@ -30,17 +28,16 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
     { id: "Workshop", label: "Workshop" }
   ];
 
-  // Mock room data matching your design
+  // Mock room data matching your exact design
   const mockRooms = [
     {
       id: "1",
       name: "Dining Room",
-      total: 3626.80,
+      total: 3626.8,
       treatments: [
         {
           id: "1",
           type: "Curtains",
-          image: "/lovable-uploads/1ac27f03-ddd5-4b5d-8d03-c48007a3ba62.png",
           details: {
             railWidth: "300 cm",
             curtainDrop: "200 cm",
@@ -57,13 +54,8 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
         {
           id: "2",
           type: "Above Kitchen Sink",
-          image: "/lovable-uploads/1ac27f03-ddd5-4b5d-8d03-c48007a3ba62.png",
           details: {
-            recess: "Inside mount (Recess Fit)",
-            mechanismWidth: "200 cm",
-            height: "150 cm",
-            fabricArticle: "OSL/01 Pepper",
-            fabricPrice: "$358.54"
+            fabricArticle: "OSL/01 Pepper"
           }
         }
       ]
@@ -76,7 +68,6 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
         {
           id: "3",
           type: "Curtains",
-          image: "/lovable-uploads/1ac27f03-ddd5-4b5d-8d03-c48007a3ba62.png",
           details: {
             railWidth: "200 cm",
             curtainDrop: "250 cm",
@@ -110,18 +101,17 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back</span>
               </Button>
-              <div className="h-6 w-px bg-gray-300" />
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  👤
+                  C
                 </div>
-                <h1 className="text-2xl font-semibold text-gray-900">{project.client_id}</h1>
+                <h1 className="text-lg font-medium text-gray-900">{project.quote_number}</h1>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
               <Select defaultValue="payment">
-                <SelectTrigger className="w-32 bg-white border-gray-300">
+                <SelectTrigger className="w-32 bg-white border-gray-300 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -130,7 +120,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
                 </SelectContent>
               </Select>
               <Select defaultValue="order">
-                <SelectTrigger className="w-32 bg-white border-gray-300">
+                <SelectTrigger className="w-32 bg-white border-gray-300 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -152,7 +142,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveTab(item.id)}
-                className={`px-6 py-2 rounded-none border-b-2 ${
+                className={`px-4 py-2 rounded-none border-b-2 text-sm ${
                   activeTab === item.id
                     ? "border-blue-500 text-blue-600 bg-blue-50"
                     : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -166,38 +156,38 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="px-6 py-6">
         {/* Total and Add Room Button */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-1">
-              Total: ${project.total_amount?.toFixed(2) || '8145.27'} (before GST)
+            <h2 className="text-3xl font-bold text-gray-900">
+              Total: $0.00 (before GST)
             </h2>
           </div>
-          <Button className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2">
+          <Button className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 text-sm">
             <Plus className="h-4 w-4 mr-2" />
             Add room
           </Button>
         </div>
 
-        {/* Rooms Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Rooms Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {mockRooms.map((room) => (
             <div key={room.id} className="space-y-6">
               {/* Room Header */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-1">{room.name}</h3>
-                  <p className="text-3xl font-bold text-gray-900">${room.total}</p>
+                  <p className="text-2xl font-bold text-gray-900">${room.total}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button size="sm" variant="ghost" className="text-gray-500 hover:text-red-500">
+                  <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-600">
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-gray-500">
+                  <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-600">
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-gray-500">
+                  <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-600">
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
@@ -205,121 +195,105 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
 
               {/* Treatments */}
               {room.treatments.map((treatment) => (
-                <Card key={treatment.id} className="bg-white border border-gray-200 shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-6">
-                      {/* Fabric Image */}
-                      <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={treatment.image}
-                          alt="Fabric sample" 
-                          className="w-full h-full object-cover"
-                        />
+                <div key={treatment.id} className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-start space-x-4">
+                    {/* Fabric Image */}
+                    <div className="w-20 h-20 bg-gray-100 rounded border flex-shrink-0">
+                      <img 
+                        src="/lovable-uploads/1ac27f03-ddd5-4b5d-8d03-c48007a3ba62.png"
+                        alt="Fabric sample" 
+                        className="w-full h-full object-cover rounded"
+                      />
+                    </div>
+                    
+                    {/* Treatment Details */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-medium text-gray-900">{treatment.type}</h4>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-blue-600 hover:text-blue-700 text-sm"
+                          >
+                            Full details
+                            <ChevronDown className="h-3 w-3 ml-1" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-600">
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       
-                      {/* Treatment Details */}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-lg font-medium text-gray-900">{treatment.type}</h4>
-                          <div className="flex items-center space-x-3">
-                            <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700">
-                              Full details
-                              <ChevronDown className="h-3 w-3 ml-1" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-gray-500 hover:text-red-500">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-gray-500">
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Treatment Details Grid */}
-                        <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm">
-                          {treatment.details.railWidth && (
-                            <>
-                              <span className="text-gray-600">Rail width</span>
-                              <span className="text-gray-900">{treatment.details.railWidth}</span>
-                            </>
-                          )}
-                          {treatment.details.curtainDrop && (
-                            <>
-                              <span className="text-gray-600">Curtain drop</span>
-                              <span className="text-gray-900">{treatment.details.curtainDrop}</span>
-                            </>
-                          )}
-                          {treatment.details.headingName && (
-                            <>
-                              <span className="text-gray-600">Heading name</span>
-                              <span className="text-gray-900">{treatment.details.headingName}</span>
-                            </>
-                          )}
-                          {treatment.details.lining && (
-                            <>
-                              <span className="text-gray-600">Lining</span>
-                              <span className="text-gray-900">{treatment.details.lining}</span>
-                            </>
-                          )}
-                          {treatment.details.eyeletRing && (
-                            <>
-                              <span className="text-gray-600">Eyelet Ring</span>
-                              <span className="text-gray-900">{treatment.details.eyeletRing}</span>
-                            </>
-                          )}
-                          {treatment.details.fabricArticle && (
-                            <>
-                              <span className="text-gray-600">Fabric article</span>
-                              <span className="text-gray-900">{treatment.details.fabricArticle}</span>
-                            </>
-                          )}
-                          {treatment.details.fabricPrice && (
-                            <>
-                              <span className="text-gray-600">Fabric price</span>
-                              <span className="text-gray-900 font-medium">{treatment.details.fabricPrice}</span>
-                            </>
-                          )}
-                          {treatment.details.liningPrice && (
-                            <>
-                              <span className="text-gray-600">Lining price</span>
-                              <span className="text-gray-900">{treatment.details.liningPrice}</span>
-                            </>
-                          )}
-                          {treatment.details.manufacturingPrice && (
-                            <>
-                              <span className="text-gray-600">Manufacturing price</span>
-                              <span className="text-gray-900">{treatment.details.manufacturingPrice}</span>
-                            </>
-                          )}
-                          {treatment.details.totalPrice && (
-                            <>
-                              <span className="text-gray-600">Total price</span>
-                              <span className="text-gray-900 font-semibold">{treatment.details.totalPrice}</span>
-                            </>
-                          )}
-                          {treatment.details.recess && (
-                            <>
-                              <span className="text-gray-600">Recess</span>
-                              <span className="text-gray-900">{treatment.details.recess}</span>
-                            </>
-                          )}
-                          {treatment.details.mechanismWidth && (
-                            <>
-                              <span className="text-gray-600">Mechanism width</span>
-                              <span className="text-gray-900">{treatment.details.mechanismWidth}</span>
-                            </>
-                          )}
-                          {treatment.details.height && (
-                            <>
-                              <span className="text-gray-600">Height</span>
-                              <span className="text-gray-900">{treatment.details.height}</span>
-                            </>
-                          )}
-                        </div>
+                      {/* Treatment Details Grid */}
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
+                        {treatment.details.railWidth && (
+                          <>
+                            <span className="text-gray-600">Rail width</span>
+                            <span className="text-gray-900">{treatment.details.railWidth}</span>
+                          </>
+                        )}
+                        {treatment.details.curtainDrop && (
+                          <>
+                            <span className="text-gray-600">Curtain drop</span>
+                            <span className="text-gray-900">{treatment.details.curtainDrop}</span>
+                          </>
+                        )}
+                        {treatment.details.headingName && (
+                          <>
+                            <span className="text-gray-600">Heading name</span>
+                            <span className="text-gray-900">{treatment.details.headingName}</span>
+                          </>
+                        )}
+                        {treatment.details.lining && (
+                          <>
+                            <span className="text-gray-600">Lining</span>
+                            <span className="text-gray-900">{treatment.details.lining}</span>
+                          </>
+                        )}
+                        {treatment.details.eyeletRing && (
+                          <>
+                            <span className="text-gray-600">Eyelet Ring</span>
+                            <span className="text-gray-900">{treatment.details.eyeletRing}</span>
+                          </>
+                        )}
+                        {treatment.details.fabricArticle && (
+                          <>
+                            <span className="text-gray-600">Fabric article</span>
+                            <span className="text-gray-900">{treatment.details.fabricArticle}</span>
+                          </>
+                        )}
+                        {treatment.details.fabricPrice && (
+                          <>
+                            <span className="text-gray-600">Fabric price</span>
+                            <span className="text-gray-900 font-medium">{treatment.details.fabricPrice}</span>
+                          </>
+                        )}
+                        {treatment.details.liningPrice && (
+                          <>
+                            <span className="text-gray-600">Lining price</span>
+                            <span className="text-gray-900">{treatment.details.liningPrice}</span>
+                          </>
+                        )}
+                        {treatment.details.manufacturingPrice && (
+                          <>
+                            <span className="text-gray-600">Manufacturing price</span>
+                            <span className="text-gray-900">{treatment.details.manufacturingPrice}</span>
+                          </>
+                        )}
+                        {treatment.details.totalPrice && (
+                          <>
+                            <span className="text-gray-600">Total price</span>
+                            <span className="text-gray-900 font-semibold">{treatment.details.totalPrice}</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
 
               {/* Add Product Button */}
