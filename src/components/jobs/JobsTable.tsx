@@ -7,7 +7,6 @@ import { FileText, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface JobsTableProps {
-  onQuoteSelect?: (quoteId: string) => void;
   searchClient: string;
   searchJobNumber: string;
   filterStatus: string;
@@ -17,7 +16,6 @@ interface JobsTableProps {
 }
 
 export const JobsTable = ({ 
-  onQuoteSelect,
   searchClient,
   searchJobNumber,
   filterStatus,
@@ -40,20 +38,21 @@ export const JobsTable = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "accepted": return "bg-blue-100 text-blue-800";
+      case "draft": return "bg-pink-100 text-pink-800";
       case "order": return "bg-blue-100 text-blue-800";
       case "invoice": return "bg-purple-100 text-purple-800";
       case "completed": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      default: return "bg-pink-100 text-pink-800";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "draft": return "Quote";
-      case "accepted": return "Order";
       case "order": return "Order";
-      default: return status;
+      case "invoice": return "Invoice";
+      case "completed": return "Completed";
+      default: return "Quote";
     }
   };
 
@@ -74,7 +73,7 @@ export const JobsTable = ({
   return (
     <div className="bg-white rounded-lg border">
       {/* Table Header */}
-      <div className="grid grid-cols-8 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-600">
+      <div className="grid grid-cols-8 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-700">
         <div>No.</div>
         <div>Quote Total</div>
         <div>Payment</div>
@@ -88,22 +87,21 @@ export const JobsTable = ({
       {/* Table Rows */}
       <div className="divide-y">
         {filteredQuotes.map((quote) => (
-          <div key={quote.id} className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
-               onClick={() => onQuoteSelect?.(quote.id)}>
-            <div className="font-medium text-blue-600">{quote.quote_number}</div>
-            <div className="font-medium">£{quote.total_amount?.toFixed(2) || '0.00'}</div>
+          <div key={quote.id} className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50">
+            <div className="font-medium text-gray-900">{quote.quote_number}</div>
+            <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>
             <div className="text-gray-500">-</div>
-            <div>Client #{quote.client_id.slice(0, 8)}</div>
+            <div className="text-gray-900">Client #{quote.client_id.slice(0, 8)}</div>
             <div className="text-gray-500">-</div>
-            <div>{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
+            <div className="text-gray-900">{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
             <div>
-              <Badge className={getStatusColor(quote.status)} variant="secondary">
+              <Badge className={`${getStatusColor(quote.status)} border-0`} variant="secondary">
                 {getStatusLabel(quote.status)}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center text-sm text-gray-600">
-                <div className="w-6 h-6 bg-blue-500 rounded-full mr-2 flex items-center justify-center text-white text-xs">
+              <div className="flex items-center text-sm text-gray-700">
+                <div className="w-6 h-6 bg-slate-600 rounded-full mr-2 flex items-center justify-center text-white text-xs">
                   A
                 </div>
                 <span>InterioApp Admin</span>
@@ -114,10 +112,8 @@ export const JobsTable = ({
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => onQuoteSelect?.(quote.id)}>
-                    View Job
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="bg-white">
+                  <DropdownMenuItem>View Job</DropdownMenuItem>
                   <DropdownMenuItem>Edit</DropdownMenuItem>
                   <DropdownMenuItem>Delete</DropdownMenuItem>
                 </DropdownMenuContent>
