@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Plus, Trash2, Copy, Edit, ChevronDown } from "lucide-react";
-import { useProjects } from "@/hooks/useProjects";
-import { useRooms } from "@/hooks/useRooms";
-import { useTreatments } from "@/hooks/useTreatments";
+import { Calendar, Plus, Trash2, Copy, Edit, ChevronDown, ArrowLeft } from "lucide-react";
+import { useQuotes } from "@/hooks/useQuotes";
 
 interface ProjectPageProps {
   projectId?: string;
@@ -16,28 +14,23 @@ interface ProjectPageProps {
 
 export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
   const [activeTab, setActiveTab] = useState("Jobs");
-  const { data: projects } = useProjects();
-  const { data: rooms } = useRooms(projectId);
-  const { data: allTreatments } = useTreatments();
+  const { data: quotes } = useQuotes();
 
-  // Mock data for demonstration - replace with actual project data
-  const project = projects?.find(p => p.id === projectId) || {
+  // Find the project/quote data
+  const project = quotes?.find(q => q.id === projectId) || {
     id: "1",
-    name: "Christine Ogden",
-    client_id: "client-1",
+    quote_number: "24-12-0001",
+    client_id: "Christine Ogden",
     total_amount: 8145.27
   };
 
-  const projectTreatments = allTreatments?.filter(t => t.project_id === projectId) || [];
-  const totalAmount = projectTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-
   const navItems = [
-    { id: "Jobs", label: "Jobs", active: true },
-    { id: "Invoice", label: "Invoice", active: false },
-    { id: "Workshop", label: "Workshop", active: false }
+    { id: "Jobs", label: "Jobs" },
+    { id: "Invoice", label: "Invoice" },
+    { id: "Workshop", label: "Workshop" }
   ];
 
-  // Mock room data with treatments
+  // Mock room data matching your design
   const mockRooms = [
     {
       id: "1",
@@ -101,56 +94,68 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
+    <div className="min-h-screen bg-white">
+      {/* Header Section */}
+      <div className="border-b border-gray-200 bg-white">
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+          {/* Top Header with Client Info */}
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
+              </Button>
+              <div className="h-6 w-px bg-gray-300" />
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                   👤
                 </div>
-                <h1 className="text-xl font-semibold">{project.name}</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">{project.client_id}</h1>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            <div className="flex items-center space-x-3">
               <Select defaultValue="payment">
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 bg-white border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   <SelectItem value="payment">Payment</SelectItem>
                   <SelectItem value="deposit">Deposit</SelectItem>
                 </SelectContent>
               </Select>
               <Select defaultValue="order">
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 bg-white border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   <SelectItem value="order">Order</SelectItem>
                   <SelectItem value="quote">Quote</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="bg-white border-gray-300">
                 <Calendar className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex space-x-1">
+          <div className="flex space-x-0">
             {navItems.map((item) => (
               <Button
                 key={item.id}
-                variant={activeTab === item.id ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
                 onClick={() => setActiveTab(item.id)}
-                className={`px-4 py-2 ${
+                className={`px-6 py-2 rounded-none border-b-2 ${
                   activeTab === item.id
-                    ? "bg-blue-100 text-blue-700 border border-blue-200"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "border-blue-500 text-blue-600 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 {item.label}
@@ -163,36 +168,36 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
       {/* Main Content */}
       <div className="p-6">
         {/* Total and Add Room Button */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Total: ${totalAmount.toFixed(2)} (before GST)
+            <h2 className="text-4xl font-bold text-gray-900 mb-1">
+              Total: ${project.total_amount?.toFixed(2) || '8145.27'} (before GST)
             </h2>
           </div>
-          <Button className="bg-slate-600 hover:bg-slate-700 text-white">
+          <Button className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2">
             <Plus className="h-4 w-4 mr-2" />
             Add room
           </Button>
         </div>
 
         {/* Rooms Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {mockRooms.map((room) => (
-            <div key={room.id} className="space-y-4">
+            <div key={room.id} className="space-y-6">
               {/* Room Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{room.name}</h3>
-                  <p className="text-2xl font-bold text-gray-900">${room.total}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{room.name}</h3>
+                  <p className="text-3xl font-bold text-gray-900">${room.total}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button size="sm" variant="ghost">
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                  <Button size="sm" variant="ghost" className="text-gray-500 hover:text-red-500">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost">
+                  <Button size="sm" variant="ghost" className="text-gray-500">
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost">
+                  <Button size="sm" variant="ghost" className="text-gray-500">
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
@@ -200,11 +205,11 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
 
               {/* Treatments */}
               {room.treatments.map((treatment) => (
-                <Card key={treatment.id} className="bg-white">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-4">
+                <Card key={treatment.id} className="bg-white border border-gray-200 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-6">
                       {/* Fabric Image */}
-                      <div className="w-20 h-20 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                      <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         <img 
                           src={treatment.image}
                           alt="Fabric sample" 
@@ -214,24 +219,24 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
                       
                       {/* Treatment Details */}
                       <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{treatment.type}</h4>
-                          <div className="flex items-center space-x-2">
-                            <Button size="sm" variant="ghost" className="text-blue-600">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-lg font-medium text-gray-900">{treatment.type}</h4>
+                          <div className="flex items-center space-x-3">
+                            <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700">
                               Full details
                               <ChevronDown className="h-3 w-3 ml-1" />
                             </Button>
-                            <Button size="sm" variant="ghost">
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                            <Button size="sm" variant="ghost" className="text-gray-500 hover:text-red-500">
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="ghost">
+                            <Button size="sm" variant="ghost" className="text-gray-500">
                               <Copy className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
                         
                         {/* Treatment Details Grid */}
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
+                        <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm">
                           {treatment.details.railWidth && (
                             <>
                               <span className="text-gray-600">Rail width</span>
@@ -289,7 +294,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
                           {treatment.details.totalPrice && (
                             <>
                               <span className="text-gray-600">Total price</span>
-                              <span className="text-gray-900 font-medium">{treatment.details.totalPrice}</span>
+                              <span className="text-gray-900 font-semibold">{treatment.details.totalPrice}</span>
                             </>
                           )}
                           {treatment.details.recess && (
@@ -320,10 +325,10 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
               {/* Add Product Button */}
               <div className="flex justify-center">
                 <Select>
-                  <SelectTrigger className="w-48 bg-gray-100 border-gray-300">
+                  <SelectTrigger className="w-64 bg-gray-50 border-gray-300 text-gray-600">
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white">
                     <SelectItem value="curtains">Curtains</SelectItem>
                     <SelectItem value="blinds">Blinds</SelectItem>
                     <SelectItem value="shutters">Shutters</SelectItem>
