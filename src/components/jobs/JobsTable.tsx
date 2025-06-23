@@ -1,143 +1,63 @@
 
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Trash2, Users, Calendar, FileText, List, MoreVertical } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useProjects } from "@/hooks/useProjects";
+import { FolderOpen } from "lucide-react";
 
 interface JobsTableProps {
-  projects: any[];
-  clients: any[];
+  onProjectSelect?: (projectId: string) => void;
 }
 
-export const JobsTable = ({ projects, clients }: JobsTableProps) => {
-  const getClientName = (clientId: string) => {
-    const client = clients?.find(c => c.id === clientId);
-    return client?.name || 'Unknown Client';
-  };
+export const JobsTable = ({ onProjectSelect }: JobsTableProps) => {
+  const { data: projects } = useProjects();
 
-  const getClientPhone = (clientId: string) => {
-    const client = clients?.find(c => c.id === clientId);
-    return client?.phone || '-';
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusStyles: { [key: string]: string } = {
-      quote: "bg-pink-100 text-pink-800 hover:bg-pink-200",
-      order: "bg-blue-100 text-blue-800 hover:bg-blue-200",
-      invoice: "bg-purple-100 text-purple-800 hover:bg-purple-200",
-      completed: "bg-green-100 text-green-800 hover:bg-green-200",
-    };
-
+  if (!projects || projects.length === 0) {
     return (
-      <Badge className={statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-800"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
+      <Card>
+        <CardContent className="p-8 text-center">
+          <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">No projects yet</h3>
+          <p className="text-muted-foreground">
+            Create your first project to get started
+          </p>
+        </CardContent>
+      </Card>
     );
-  };
-
-  const generateJobNumber = (index: number) => {
-    return `QUOTE-${String(1000 + index).padStart(4, '0')}`;
-  };
+  }
 
   return (
-    <div className="bg-white rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>No.</TableHead>
-            <TableHead>Quote Total</TableHead>
-            <TableHead>Payment</TableHead>
-            <TableHead>Client Name</TableHead>
-            <TableHead>Mobile</TableHead>
-            <TableHead>Calendar</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Team</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {projects.length > 0 ? (
-            projects.map((project, index) => (
-              <TableRow key={project.id}>
-                <TableCell className="font-medium">
-                  {generateJobNumber(index)}
-                </TableCell>
-                <TableCell className="font-medium">
-                  {formatCurrency(project.total_amount || 0)}
-                </TableCell>
-                <TableCell>
-                  {formatCurrency(project.total_amount || 0)}
-                </TableCell>
-                <TableCell>{getClientName(project.client_id)}</TableCell>
-                <TableCell>{getClientPhone(project.client_id)}</TableCell>
-                <TableCell>
-                  {project.due_date ? new Date(project.due_date).toLocaleDateString('en-GB') : '-'}
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(project.status === 'planning' ? 'quote' : project.status)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-white">IA</span>
-                    </div>
-                    <span className="text-sm">InterioApp Admin</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Users className="h-4 w-4 mr-2" />
-                        Invite team members
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Client details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <List className="h-4 w-4 mr-2" />
-                        Progress <Badge variant="secondary" className="ml-1 text-xs">Beta</Badge>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Note
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center text-gray-500 py-8">
-                No jobs found. Create your first job to get started!
-              </TableCell>
-            </TableRow>
+    <div className="grid gap-4">
+      {projects.map((project) => (
+        <Card key={project.id} className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">{project.name}</CardTitle>
+                <p className="text-muted-foreground">{project.description}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant={project.status === 'completed' ? 'default' : 'secondary'}>
+                  {project.status}
+                </Badge>
+                <Button 
+                  onClick={() => onProjectSelect?.(project.id)}
+                  variant="outline"
+                >
+                  Open Project
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          {project.total_amount && (
+            <CardContent>
+              <p className="text-2xl font-bold text-green-600">
+                £{project.total_amount.toFixed(2)}
+              </p>
+            </CardContent>
           )}
-        </TableBody>
-      </Table>
+        </Card>
+      ))}
     </div>
   );
 };
