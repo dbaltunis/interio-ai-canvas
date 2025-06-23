@@ -10,6 +10,23 @@ export const JobsPage = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const { data: projects } = useProjects();
   
+  // Filter state management
+  const [searchClient, setSearchClient] = useState("");
+  const [searchJobNumber, setSearchJobNumber] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDeposit, setFilterDeposit] = useState("all");
+  const [filterOwner, setFilterOwner] = useState("all");
+  const [filterMaker, setFilterMaker] = useState("all");
+
+  const handleClearAll = () => {
+    setSearchClient("");
+    setSearchJobNumber("");
+    setFilterStatus("all");
+    setFilterDeposit("all");
+    setFilterOwner("all");
+    setFilterMaker("all");
+  };
+  
   // Find the selected project
   const selectedProject = projects?.find(p => p.id === selectedProjectId);
 
@@ -21,7 +38,21 @@ export const JobsPage = () => {
   return (
     <div className="space-y-6">
       <JobsPageHeader onProjectSelect={setSelectedProjectId} />
-      <JobsFilters />
+      <JobsFilters
+        searchClient={searchClient}
+        setSearchClient={setSearchClient}
+        searchJobNumber={searchJobNumber}
+        setSearchJobNumber={setSearchJobNumber}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        filterDeposit={filterDeposit}
+        setFilterDeposit={setFilterDeposit}
+        filterOwner={filterOwner}
+        setFilterOwner={setFilterOwner}
+        filterMaker={filterMaker}
+        setFilterMaker={setFilterMaker}
+        onClearAll={handleClearAll}
+      />
       <JobsTable onProjectSelect={setSelectedProjectId} />
     </div>
   );
