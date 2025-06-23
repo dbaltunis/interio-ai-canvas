@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
 import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
-import { ProjectPage } from "../projects/ProjectPage";
+import { JobEditPage } from "../job-editor/JobEditPage";
 
 export const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "client">("jobs");
@@ -36,9 +36,9 @@ export const JobsPage = () => {
     setSelectedJobId(null);
   };
 
-  // If a job is selected, show the project page
+  // If a job is selected, show the job editing page
   if (selectedJobId) {
-    return <ProjectPage projectId={selectedJobId} onBack={handleBackToJobs} />;
+    return <JobEditPage jobId={selectedJobId} onBack={handleBackToJobs} />;
   }
 
   return (
