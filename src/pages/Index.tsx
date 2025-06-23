@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { MainNav } from "@/components/layout/MainNav";
 import { UserProfile } from "@/components/layout/UserProfile";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { QuoteManagement } from "@/components/quotes/QuoteManagement";
@@ -13,9 +12,30 @@ import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalculatorView } from "@/components/calculator/CalculatorView";
 import { SettingsView } from "@/components/settings/SettingsView";
 import { AIAssistant } from "@/components/ai/AIAssistant";
+import { Button } from "@/components/ui/button";
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Users, 
+  FolderOpen, 
+  Package, 
+  Wrench,
+  Calendar,
+  Settings,
+  Calculator,
+  BookOpen
+} from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  const navItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "projects", label: "Jobs", icon: FolderOpen },
+    { id: "calendar", label: "Calendar", icon: Calendar },
+    { id: "inventory", label: "Library", icon: Package },
+    { id: "clients", label: "CRM", icon: Users },
+  ];
 
   const renderActiveComponent = () => {
     switch (activeTab) {
@@ -45,15 +65,33 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-white shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation */}
+      <header className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-primary">InterioApp</h1>
-              <span className="text-sm text-muted-foreground">AI Window & Wall Covering Solutions</span>
+            <div className="flex items-center space-x-8">
+              <h1 className="text-xl font-semibold text-gray-900">InterioApp</h1>
+              
+              {/* Navigation Menu */}
+              <nav className="flex space-x-1">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Button
+                      key={item.id}
+                      variant={activeTab === item.id ? "default" : "ghost"}
+                      className="flex items-center space-x-2 px-3 py-2"
+                      onClick={() => setActiveTab(item.id)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Button>
+                  );
+                })}
+              </nav>
             </div>
+            
             <div className="flex items-center space-x-4">
               <AIAssistant />
               <UserProfile />
@@ -62,17 +100,10 @@ const Index = () => {
         </div>
       </header>
 
-      <div className="flex">
-        {/* Sidebar Navigation */}
-        <MainNav activeTab={activeTab} onTabChange={setActiveTab} />
-        
-        {/* Main Content */}
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
-            {renderActiveComponent()}
-          </div>
-        </main>
-      </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {renderActiveComponent()}
+      </main>
     </div>
   );
 };
