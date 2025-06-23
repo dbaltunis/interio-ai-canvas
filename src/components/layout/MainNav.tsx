@@ -9,7 +9,10 @@ import {
   Package, 
   Wrench,
   Calendar,
-  Settings
+  Settings,
+  Calculator,
+  BookOpen,
+  PlusCircle
 } from "lucide-react";
 
 interface MainNavProps {
@@ -18,13 +21,15 @@ interface MainNavProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "quotes", label: "Quotes", icon: FileText },
-  { id: "clients", label: "Clients", icon: Users },
+  { id: "dashboard", label: "Homepage", icon: LayoutDashboard },
   { id: "projects", label: "Projects", icon: FolderOpen },
-  { id: "inventory", label: "Inventory", icon: Package },
-  { id: "workshop", label: "Workshop", icon: Wrench },
+  { id: "job-editor", label: "Job Editor", icon: PlusCircle },
+  { id: "quotes", label: "Quote Builder", icon: FileText },
+  { id: "workshop", label: "Work Orders", icon: Wrench },
+  { id: "inventory", label: "Product Library", icon: Package },
   { id: "calendar", label: "Calendar", icon: Calendar },
+  { id: "clients", label: "CRM", icon: Users },
+  { id: "calculator", label: "Calculator", icon: Calculator },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 

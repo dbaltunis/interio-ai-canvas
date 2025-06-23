@@ -7,6 +7,10 @@ import { ClientManagement } from "@/components/clients/ClientManagement";
 import { ProjectManagement } from "@/components/projects/ProjectManagement";
 import { InventoryManagement } from "@/components/inventory/InventoryManagement";
 import { WorkshopManagement } from "@/components/workshop/WorkshopManagement";
+import { JobEditor } from "@/components/job-editor/JobEditor";
+import { CalendarView } from "@/components/calendar/CalendarView";
+import { CalculatorView } from "@/components/calculator/CalculatorView";
+import { SettingsView } from "@/components/settings/SettingsView";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Card } from "@/components/ui/card";
 
@@ -17,16 +21,24 @@ const Index = () => {
     switch (activeTab) {
       case "dashboard":
         return <Dashboard />;
-      case "quotes":
-        return <QuoteManagement />;
-      case "clients":
-        return <ClientManagement />;
       case "projects":
         return <ProjectManagement />;
-      case "inventory":
-        return <InventoryManagement />;
+      case "job-editor":
+        return <JobEditor />;
+      case "quotes":
+        return <QuoteManagement />;
       case "workshop":
         return <WorkshopManagement />;
+      case "inventory":
+        return <InventoryManagement />;
+      case "calendar":
+        return <CalendarView />;
+      case "clients":
+        return <ClientManagement />;
+      case "calculator":
+        return <CalculatorView />;
+      case "settings":
+        return <SettingsView />;
       default:
         return <Dashboard />;
     }
