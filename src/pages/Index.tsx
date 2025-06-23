@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { MainNav } from "@/components/layout/MainNav";
+import { UserProfile } from "@/components/layout/UserProfile";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { QuoteManagement } from "@/components/quotes/QuoteManagement";
 import { ClientManagement } from "@/components/clients/ClientManagement";
@@ -12,7 +13,6 @@ import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalculatorView } from "@/components/calculator/CalculatorView";
 import { SettingsView } from "@/components/settings/SettingsView";
 import { AIAssistant } from "@/components/ai/AIAssistant";
-import { Card } from "@/components/ui/card";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -56,9 +56,7 @@ const Index = () => {
             </div>
             <div className="flex items-center space-x-4">
               <AIAssistant />
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
-                U
-              </div>
+              <UserProfile />
             </div>
           </div>
         </div>
