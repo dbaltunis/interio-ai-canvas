@@ -76,19 +76,82 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     }
   };
 
-  // Show loading state while creating default project
-  if (!currentProject) {
+  // Create a minimal project object if none exists yet
+  if (!currentProject && clients && clients.length > 0) {
+    const tempProject = {
+      id: "temp",
+      name: "New Project",
+      description: "",
+      client_id: clients[0]?.id,
+      status: "planning",
+      priority: "medium"
+    };
+    
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Jobs
-          </Button>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Creating New Job...</h2>
-            <p className="text-muted-foreground">Setting up your new project</p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Jobs
+            </Button>
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">{tempProject.name}</h2>
+              <p className="text-muted-foreground">{tempProject.description}</p>
+            </div>
           </div>
+          <div className="flex items-center space-x-4">
+            <Select defaultValue="payment">
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="payment">Payment</SelectItem>
+                <SelectItem value="deposit">Deposit</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="quote">
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="quote">Quote</SelectItem>
+                <SelectItem value="order">Order</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button>
+              <Calendar className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Project Navigation Tabs */}
+        <div className="border-b">
+          <nav className="flex space-x-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  className={`flex items-center space-x-2 px-4 py-2 ${
+                    activeTab === item.id ? 'bg-primary text-primary-foreground' : ''
+                  }`}
+                  onClick={() => setActiveTab(item.id)}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                  {item.id === "client" && <span className="text-red-500">🔴</span>}
+                </Button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="min-h-[600px]">
+          <ProjectJobsTab project={tempProject} />
         </div>
       </div>
     );
@@ -104,8 +167,8 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
             Back to Jobs
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">{currentProject.name}</h2>
-            <p className="text-muted-foreground">{currentProject.description}</p>
+            <h2 className="text-3xl font-bold tracking-tight">{currentProject?.name || "New Project"}</h2>
+            <p className="text-muted-foreground">{currentProject?.description}</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
