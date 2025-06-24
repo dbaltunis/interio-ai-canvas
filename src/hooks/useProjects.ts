@@ -1,7 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Project = Tables<"projects">;
@@ -24,7 +23,6 @@ export const useProjects = () => {
 
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (project: Omit<ProjectInsert, "user_id">) => {
@@ -42,24 +40,15 @@ export const useCreateProject = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("Failed to create project:", error);
     },
   });
 };
 
 export const useUpdateProject = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Project> & { id: string }) => {
@@ -75,17 +64,9 @@ export const useUpdateProject = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({
-        title: "Success",
-        description: "Project updated successfully",
-      });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("Failed to update project:", error);
     },
   });
 };

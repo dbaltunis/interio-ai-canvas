@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,115 +129,70 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            {onBack && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Jobs</span>
-              </Button>
-            )}
-            <div className="h-6 w-px bg-gray-300" />
-            <h1 className="text-xl font-semibold">{project.name}</h1>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Select defaultValue="payment">
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="payment">Payment</SelectItem>
-                <SelectItem value="deposit">Deposit</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="quote">
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="quote">Quote</SelectItem>
-                <SelectItem value="order">Order</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+    <div className="p-6">
+      {/* Total Amount and Add Room Button */}
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-3xl font-bold text-gray-900">
+          Total: ${totalAmount.toFixed(2)}
+        </h2>
+        <Button 
+          onClick={handleCreateRoom} 
+          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add room</span>
+        </Button>
+      </div>
 
-        {/* Total Amount */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Total: ${totalAmount.toFixed(2)}
-          </h2>
-          <Button 
-            onClick={handleCreateRoom} 
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add room</span>
-          </Button>
+      {/* Action Bar */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
+          {copiedRoom && (
+            <Button 
+              onClick={handlePasteRoom}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              <Clipboard className="h-4 w-4" />
+              <span>Paste Room</span>
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6">
-        {/* Action Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-2">
-            {copiedRoom && (
-              <Button 
-                onClick={handlePasteRoom}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Clipboard className="h-4 w-4" />
-                <span>Paste Room</span>
-              </Button>
-            )}
+      {/* Rooms Grid */}
+      <div className="space-y-6">
+        {!rooms || rooms.length === 0 ? (
+          <div className="text-center py-12">
+            <Home className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
+            <p className="text-gray-500 mb-4">
+              Add your first room to start designing window treatments
+            </p>
+            <Button onClick={handleCreateRoom} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Add your first room</span>
+            </Button>
           </div>
-        </div>
-
-        {/* Rooms Grid */}
-        <div className="space-y-6">
-          {!rooms || rooms.length === 0 ? (
-            <div className="text-center py-12">
-              <Home className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
-              <p className="text-gray-500 mb-4">
-                Add your first room to start designing window treatments
-              </p>
-              <Button onClick={handleCreateRoom} className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add your first room</span>
-              </Button>
-            </div>
-          ) : (
-            rooms.map((room) => (
-              <RoomCard 
-                key={room.id} 
-                room={room} 
-                projectId={project.id}
-                onUpdateRoom={updateRoom}
-                onDeleteRoom={deleteRoom}
-                onCreateTreatment={handleCreateTreatment}
-                onCopyRoom={handleCopyRoom}
-                editingRoomId={editingRoomId}
-                setEditingRoomId={setEditingRoomId}
-                editingRoomName={editingRoomName}
-                setEditingRoomName={setEditingRoomName}
-                onRenameRoom={handleRenameRoom}
-              />
-            ))
-          )}
-        </div>
+        ) : (
+          rooms.map((room) => (
+            <RoomCard 
+              key={room.id} 
+              room={room} 
+              projectId={project.id}
+              onUpdateRoom={updateRoom}
+              onDeleteRoom={deleteRoom}
+              onCreateTreatment={handleCreateTreatment}
+              onCopyRoom={handleCopyRoom}
+              editingRoomId={editingRoomId}
+              setEditingRoomId={setEditingRoomId}
+              editingRoomName={editingRoomName}
+              setEditingRoomName={setEditingRoomName}
+              onRenameRoom={handleRenameRoom}
+            />
+          ))
+        )}
       </div>
     </div>
   );

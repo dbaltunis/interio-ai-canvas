@@ -76,32 +76,38 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     }
   };
 
-  // Create a minimal project object if none exists yet
-  if (!currentProject && clients && clients.length > 0) {
-    const tempProject = {
-      id: "temp",
-      name: "New Project",
-      description: "",
-      client_id: clients[0]?.id,
-      status: "planning",
-      priority: "medium"
-    };
-    
+  // Show loading state if no project yet
+  if (!currentProject) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Creating new project...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Jobs
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Jobs</span>
             </Button>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">{tempProject.name}</h2>
-              <p className="text-muted-foreground">{tempProject.description}</p>
-            </div>
+            <div className="h-6 w-px bg-gray-300" />
+            <h1 className="text-xl font-semibold">{currentProject.name}</h1>
           </div>
-          <div className="flex items-center space-x-4">
+          
+          <div className="flex items-center space-x-3">
             <Select defaultValue="payment">
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -120,103 +126,35 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
                 <SelectItem value="order">Order</SelectItem>
               </SelectContent>
             </Select>
-            <Button>
+            <Button size="sm" variant="outline">
               <Calendar className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         {/* Project Navigation Tabs */}
-        <div className="border-b">
-          <nav className="flex space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Button
-                  key={item.id}
-                  variant={activeTab === item.id ? "default" : "ghost"}
-                  className={`flex items-center space-x-2 px-4 py-2 ${
-                    activeTab === item.id ? 'bg-primary text-primary-foreground' : ''
-                  }`}
-                  onClick={() => setActiveTab(item.id)}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                  {item.id === "client" && <span className="text-red-500">🔴</span>}
-                </Button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        <div className="min-h-[600px]">
-          <ProjectJobsTab project={tempProject} onBack={onBack} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Jobs
-          </Button>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">{currentProject?.name || "New Project"}</h2>
-            <p className="text-muted-foreground">{currentProject?.description}</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Select defaultValue="payment">
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="payment">Payment</SelectItem>
-              <SelectItem value="deposit">Deposit</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="quote">
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="quote">Quote</SelectItem>
-              <SelectItem value="order">Order</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button>
-            <Calendar className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Project Navigation Tabs */}
-      <div className="border-b">
-        <nav className="flex space-x-1">
+        <div className="flex space-x-0">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <Button
                 key={item.id}
-                variant={activeTab === item.id ? "default" : "ghost"}
-                className={`flex items-center space-x-2 px-4 py-2 ${
-                  activeTab === item.id ? 'bg-primary text-primary-foreground' : ''
-                }`}
+                variant="ghost"
+                size="sm"
                 onClick={() => setActiveTab(item.id)}
+                className={`px-6 py-2 rounded-none border-b-2 ${
+                  activeTab === item.id
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4 mr-2" />
                 <span>{item.label}</span>
-                {item.id === "client" && <span className="text-red-500">🔴</span>}
+                {item.id === "client" && <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>}
               </Button>
             );
           })}
-        </nav>
+        </div>
       </div>
 
       {/* Tab Content */}
