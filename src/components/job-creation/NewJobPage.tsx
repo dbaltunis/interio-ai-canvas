@@ -149,9 +149,17 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           </nav>
         </div>
 
-        {/* Tab Content */}
-        <div className="min-h-[600px]">
-          <ProjectJobsTab project={tempProject} />
+        {/* Total amount and content */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-green-600">£0.00</h2>
+            <p className="text-sm text-muted-foreground">Project total before GST</p>
+          </div>
+          
+          {/* Tab Content */}
+          <div className="min-h-[600px]">
+            <ProjectJobsTab project={tempProject} />
+          </div>
         </div>
       </div>
     );
@@ -219,9 +227,17 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <div className="min-h-[600px]">
-        {renderTabContent()}
+      {/* Total amount and content */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-green-600">£0.00</h2>
+          <p className="text-sm text-muted-foreground">Project total before GST</p>
+        </div>
+        
+        {/* Tab Content */}
+        <div className="min-h-[600px]">
+          {renderTabContent()}
+        </div>
       </div>
     </div>
   );
