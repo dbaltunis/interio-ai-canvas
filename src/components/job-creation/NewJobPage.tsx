@@ -6,6 +6,7 @@ import { ProjectHeader } from "./ProjectHeader";
 import { ProjectNavigation } from "./ProjectNavigation";
 import { ProjectLoadingState } from "./ProjectLoadingState";
 import { ProjectTabContent } from "./ProjectTabContent";
+import { useToast } from "@/hooks/use-toast";
 
 interface NewJobPageProps {
   onBack: () => void;
@@ -14,15 +15,18 @@ interface NewJobPageProps {
 export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const [activeTab, setActiveTab] = useState("jobs");
   const [currentProject, setCurrentProject] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
   
   const { data: clients } = useClients();
   const createProject = useCreateProject();
+  const { toast } = useToast();
 
-  // Create a default project immediately when component mounts
+  // Create a default project when component mounts
   useEffect(() => {
     const createDefaultProject = async () => {
-      if (!clients || clients.length === 0) return;
+      if (!clients || clients.length === 0 || currentProject || isCreating) return;
       
+      setIsCreating(true);
       try {
         const defaultClient = clients[0]; // Use first available client
         const newProject = await createProject.mutateAsync({
@@ -34,25 +38,32 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         });
         
         setCurrentProject(newProject);
+        console.log("Created new project:", newProject.id);
       } catch (error) {
         console.error("Failed to create default project:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create project. Please try again.",
+          variant: "destructive"
+        });
+        onBack(); // Return to previous page on error
+      } finally {
+        setIsCreating(false);
       }
     };
 
-    if (!currentProject && clients && clients.length > 0) {
-      createDefaultProject();
-    }
-  }, [clients, currentProject, createProject]);
+    createDefaultProject();
+  }, [clients, currentProject, createProject, isCreating, onBack, toast]);
 
-  // Show loading state if no project yet
-  if (!currentProject) {
+  // Show loading state if no project yet or creating
+  if (!currentProject || isCreating) {
     return <ProjectLoadingState />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <ProjectHeader 
-        projectName={currentProject.name} 
+        projectName={currentProject.name || "New Project"} 
         onBack={onBack} 
       />
       <ProjectNavigation 
@@ -60,7 +71,6 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         onTabChange={setActiveTab} 
       />
       
-      {/* Tab Content */}
       <div className="min-h-[600px]">
         <ProjectTabContent 
           activeTab={activeTab} 

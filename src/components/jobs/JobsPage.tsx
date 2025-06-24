@@ -6,12 +6,14 @@ import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
 import { NewJobPage } from "../job-creation/NewJobPage";
+import { useToast } from "@/hooks/use-toast";
 
 export const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "client">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
+  const { toast } = useToast();
   
   // Filter state management
   const [searchClient, setSearchClient] = useState("");
@@ -40,7 +42,16 @@ export const JobsPage = () => {
   };
 
   const handleNewJob = () => {
-    setShowNewJob(true);
+    try {
+      setShowNewJob(true);
+    } catch (error) {
+      console.error("Error starting new job:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start new job. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // If creating a new job, show the new job page
@@ -100,7 +111,7 @@ export const JobsPage = () => {
         </div>
       </div>
 
-      {/* Filters - Show/Hide based on filter button */}
+      {/* Filters */}
       {showFilters && (
         <JobsFilters
           searchClient={searchClient}

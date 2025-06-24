@@ -15,6 +15,7 @@ import { SettingsView } from "@/components/settings/SettingsView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -25,11 +26,12 @@ import {
   Calendar,
   Settings,
   Calculator,
-  BookOpen
+  LogOut
 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("jobs");
+  const { signOut } = useAuth();
 
   const navItems = [
     { id: "dashboard", label: "Home", icon: LayoutDashboard },
@@ -37,6 +39,10 @@ const Index = () => {
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "inventory", label: "Library", icon: Package },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const renderActiveComponent = () => {
     switch (activeTab) {
@@ -63,7 +69,7 @@ const Index = () => {
       case "settings":
         return <SettingsView />;
       default:
-        return <Dashboard />;
+        return <JobsPage />;
     }
   };
 
@@ -98,6 +104,15 @@ const Index = () => {
             <div className="flex items-center space-x-4">
               <AIAssistant />
               <UserProfile />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </Button>
             </div>
           </div>
         </div>
