@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Clipboard } from "lucide-react";
@@ -107,7 +106,7 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
     }
   };
 
-  const handleCreateTreatment = async (roomId: string, treatmentType: string) => {
+  const handleCreateTreatment = async (roomId: string, treatmentType: string, treatmentData?: any) => {
     try {
       // Find or create a default window for this room
       let roomWindows = allWindows?.filter(w => w.room_id === roomId) || [];
@@ -124,16 +123,40 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
         roomWindows = [newWindow];
       }
 
-      await createTreatment.mutateAsync({
+      // Determine price based on treatment data or defaults
+      let price = treatmentType === "Curtains" ? 75.00 : 
+                  treatmentType === "Blinds" ? 45.00 : 
+                  treatmentType === "Shutters" ? 120.00 : 50.00;
+
+      if (treatmentData?.price) {
+        price = treatmentData.price;
+      }
+
+      // Create treatment with enhanced data
+      const treatmentPayload = {
         window_id: roomWindows[0].id,
         room_id: roomId,
         project_id: project.id,
         treatment_type: treatmentType,
         status: "planned",
-        total_price: treatmentType === "Curtains" ? 75.00 : 
-                    treatmentType === "Blinds" ? 45.00 : 
-                    treatmentType === "Shutters" ? 120.00 : 50.00
-      });
+        total_price: price,
+        // Add calculator-specific data if available
+        ...(treatmentData && {
+          measurements: {
+            railWidth: treatmentData.railWidth,
+            curtainDrop: treatmentData.curtainDrop,
+            curtainPooling: treatmentData.curtainPooling,
+            headingFullness: treatmentData.headingFullness
+          },
+          fabric_type: treatmentData.fabricName,
+          hardware: treatmentData.lining,
+          mounting_type: treatmentData.headingStyle,
+          quantity: treatmentData.quantity || 1,
+          notes: `${treatmentData.windowPosition || ''} ${treatmentData.windowType || ''} configuration`.trim()
+        })
+      };
+
+      await createTreatment.mutateAsync(treatmentPayload);
     } catch (error) {
       console.error("Failed to create treatment:", error);
     }

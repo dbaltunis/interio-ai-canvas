@@ -6,13 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit, Copy, Trash2 } from "lucide-react";
 import { useTreatments } from "@/hooks/useTreatments";
 import { TreatmentCard } from "./TreatmentCard";
+import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+import { useState } from "react";
 
 interface RoomCardProps {
   room: any;
   projectId: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
-  onCreateTreatment: (roomId: string, treatmentType: string) => void;
+  onCreateTreatment: (roomId: string, treatmentType: string, treatmentData?: any) => void;
   onCopyRoom: (room: any) => void;
   editingRoomId: string | null;
   setEditingRoomId: (id: string | null) => void;
@@ -37,6 +39,9 @@ export const RoomCard = ({
   const { data: allTreatments } = useTreatments(projectId);
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
+  
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
 
   const startEditing = () => {
     setEditingRoomId(room.id);
@@ -52,80 +57,77 @@ export const RoomCard = ({
     }
   };
 
+  const handleTreatmentSelection = (treatmentType: string) => {
+    if (treatmentType === "Curtains") {
+      setSelectedTreatmentType(treatmentType);
+      setCalculatorOpen(true);
+    } else {
+      onCreateTreatment(room.id, treatmentType);
+    }
+  };
+
+  const handleCalculatorSave = (treatmentData: any) => {
+    onCreateTreatment(room.id, selectedTreatmentType, treatmentData);
+    setCalculatorOpen(false);
+  };
+
   return (
-    <Card className="bg-gray-100 min-h-[400px] flex flex-col">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            {editingRoomId === room.id ? (
-              <Input
-                value={editingRoomName}
-                onChange={(e) => setEditingRoomName(e.target.value)}
-                onKeyDown={handleKeyPress}
-                onBlur={() => onRenameRoom(room.id, editingRoomName)}
-                className="text-xl font-semibold bg-white"
-                autoFocus
-              />
-            ) : (
-              <CardTitle className="text-xl">{room.name}</CardTitle>
-            )}
-            <p className="text-2xl font-bold text-gray-900 mt-1">${roomTotal.toFixed(2)}</p>
+    <>
+      <Card className="bg-gray-100 min-h-[400px] flex flex-col">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              {editingRoomId === room.id ? (
+                <Input
+                  value={editingRoomName}
+                  onChange={(e) => setEditingRoomName(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  onBlur={() => onRenameRoom(room.id, editingRoomName)}
+                  className="text-xl font-semibold bg-white"
+                  autoFocus
+                />
+              ) : (
+                <CardTitle className="text-xl">{room.name}</CardTitle>
+              )}
+              <p className="text-2xl font-bold text-gray-900 mt-1">${roomTotal.toFixed(2)}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={startEditing}
+                title="Rename room"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onCopyRoom(room)}
+                title="Copy room"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  if (confirm("Delete this room and all its contents?")) {
+                    onDeleteRoom.mutate(room.id);
+                  }
+                }}
+                title="Delete room"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={startEditing}
-              title="Rename room"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onCopyRoom(room)}
-              title="Copy room"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                if (confirm("Delete this room and all its contents?")) {
-                  onDeleteRoom.mutate(room.id);
-                }
-              }}
-              title="Delete room"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
-        {roomTreatments.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-              <SelectTrigger className="w-48 bg-white">
-                <SelectValue placeholder="Select product" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Curtains">Curtains</SelectItem>
-                <SelectItem value="Blinds">Blinds</SelectItem>
-                <SelectItem value="Shutters">Shutters</SelectItem>
-                <SelectItem value="Valances">Valances</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : (
-          <div className="space-y-4 flex-1">
-            {roomTreatments.map((treatment) => (
-              <TreatmentCard key={treatment.id} treatment={treatment} />
-            ))}
-            <div className="mt-auto pt-4">
-              <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-                <SelectTrigger className="w-full bg-white">
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col">
+          {roomTreatments.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Select onValueChange={handleTreatmentSelection}>
+                <SelectTrigger className="w-48 bg-white">
                   <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>
@@ -136,9 +138,35 @@ export const RoomCard = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          ) : (
+            <div className="space-y-4 flex-1">
+              {roomTreatments.map((treatment) => (
+                <TreatmentCard key={treatment.id} treatment={treatment} />
+              ))}
+              <div className="mt-auto pt-4">
+                <Select onValueChange={handleTreatmentSelection}>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Select product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Curtains">Curtains</SelectItem>
+                    <SelectItem value="Blinds">Blinds</SelectItem>
+                    <SelectItem value="Shutters">Shutters</SelectItem>
+                    <SelectItem value="Valances">Valances</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <TreatmentCalculatorDialog
+        isOpen={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+        onSave={handleCalculatorSave}
+        treatmentType={selectedTreatmentType}
+      />
+    </>
   );
 };
