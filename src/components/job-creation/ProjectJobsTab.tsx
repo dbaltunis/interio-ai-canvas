@@ -28,7 +28,6 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   const [copiedRoom, setCopiedRoom] = useState<any>(null);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
-  const [activeTab, setActiveTab] = useState("Client");
 
   // Calculate total amount from all treatments
   const projectTreatments = allTreatments?.filter(t => t.project_id === project.id) || [];
@@ -133,10 +132,10 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            {onBack && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -146,123 +145,100 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back to Jobs</span>
               </Button>
-              <div className="h-6 w-px bg-gray-300" />
-              <h1 className="text-xl font-semibold">{project.quote_number}</h1>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-green-600">
-                £{totalAmount.toFixed(2)}
-              </div>
-              <div className="text-sm text-gray-500">Project total before GST</div>
-            </div>
+            )}
+            <div className="h-6 w-px bg-gray-300" />
+            <h1 className="text-xl font-semibold">{project.name}</h1>
           </div>
+          
+          <div className="flex items-center space-x-3">
+            <Select defaultValue="payment">
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="payment">Payment</SelectItem>
+                <SelectItem value="deposit">Deposit</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="quote">
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="quote">Quote</SelectItem>
+                <SelectItem value="order">Order</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          {/* Tab Navigation */}
-          <div className="mt-4 flex space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
-            {["Client", "Quote", "Workshop", "Jobs"].map((tab) => (
-              <Button
-                key={tab}
-                variant={activeTab === tab ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm ${
-                  activeTab === tab
-                    ? "bg-white shadow-sm"
-                    : "hover:bg-white/50"
-                }`}
-              >
-                {tab}
-              </Button>
-            ))}
-          </div>
+        {/* Total Amount */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-gray-900">
+            Total: ${totalAmount.toFixed(2)}
+          </h2>
+          <Button 
+            onClick={handleCreateRoom} 
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add room</span>
+          </Button>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="p-6">
-        {activeTab === "Jobs" && (
-          <>
-            {/* Action Bar */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                {copiedRoom && (
-                  <Button 
-                    onClick={handlePasteRoom}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-2"
-                  >
-                    <Clipboard className="h-4 w-4" />
-                    <span>Paste Room</span>
-                  </Button>
-                )}
-              </div>
+        {/* Action Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            {copiedRoom && (
               <Button 
-                onClick={handleCreateRoom} 
+                onClick={handlePasteRoom}
+                variant="outline"
                 size="sm"
                 className="flex items-center space-x-2"
               >
+                <Clipboard className="h-4 w-4" />
+                <span>Paste Room</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Rooms Grid */}
+        <div className="space-y-6">
+          {!rooms || rooms.length === 0 ? (
+            <div className="text-center py-12">
+              <Home className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
+              <p className="text-gray-500 mb-4">
+                Add your first room to start designing window treatments
+              </p>
+              <Button onClick={handleCreateRoom} className="flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
-                <span>Add room</span>
+                <span>Add your first room</span>
               </Button>
             </div>
-
-            {/* Rooms Grid */}
-            <div className="space-y-6">
-              {!rooms || rooms.length === 0 ? (
-                <div className="text-center py-12">
-                  <Home className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
-                  <p className="text-gray-500 mb-4">
-                    Add your first room to start designing window treatments
-                  </p>
-                  <Button onClick={handleCreateRoom} className="flex items-center space-x-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Add your first room</span>
-                  </Button>
-                </div>
-              ) : (
-                rooms.map((room) => (
-                  <RoomCard 
-                    key={room.id} 
-                    room={room} 
-                    projectId={project.id}
-                    onUpdateRoom={updateRoom}
-                    onDeleteRoom={deleteRoom}
-                    onCreateTreatment={handleCreateTreatment}
-                    onCopyRoom={handleCopyRoom}
-                    editingRoomId={editingRoomId}
-                    setEditingRoomId={setEditingRoomId}
-                    editingRoomName={editingRoomName}
-                    setEditingRoomName={setEditingRoomName}
-                    onRenameRoom={handleRenameRoom}
-                  />
-                ))
-              )}
-            </div>
-          </>
-        )}
-
-        {activeTab === "Client" && (
-          <div className="bg-white rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4">Client Information</h3>
-            <p className="text-gray-500">Client details will be displayed here.</p>
-          </div>
-        )}
-
-        {activeTab === "Quote" && (
-          <div className="bg-white rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4">Quote Details</h3>
-            <p className="text-gray-500">Quote information will be displayed here.</p>
-          </div>
-        )}
-
-        {activeTab === "Workshop" && (
-          <div className="bg-white rounded-lg p-6">
-            <h3 className="text-lg font-medium mb-4">Workshop Orders</h3>
-            <p className="text-gray-500">Workshop orders will be displayed here.</p>
-          </div>
-        )}
+          ) : (
+            rooms.map((room) => (
+              <RoomCard 
+                key={room.id} 
+                room={room} 
+                projectId={project.id}
+                onUpdateRoom={updateRoom}
+                onDeleteRoom={deleteRoom}
+                onCreateTreatment={handleCreateTreatment}
+                onCopyRoom={handleCopyRoom}
+                editingRoomId={editingRoomId}
+                setEditingRoomId={setEditingRoomId}
+                editingRoomName={editingRoomName}
+                setEditingRoomName={setEditingRoomName}
+                onRenameRoom={handleRenameRoom}
+              />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
@@ -314,7 +290,7 @@ const RoomCard = ({
   };
 
   return (
-    <Card>
+    <Card className="bg-gray-100">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -324,13 +300,13 @@ const RoomCard = ({
                 onChange={(e) => setEditingRoomName(e.target.value)}
                 onKeyDown={handleKeyPress}
                 onBlur={() => onRenameRoom(room.id, editingRoomName)}
-                className="text-xl font-semibold"
+                className="text-xl font-semibold bg-white"
                 autoFocus
               />
             ) : (
               <CardTitle className="text-xl">{room.name}</CardTitle>
             )}
-            <p className="text-2xl font-bold text-green-600 mt-1">£{roomTotal.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">${roomTotal.toFixed(2)}</p>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -348,9 +324,6 @@ const RoomCard = ({
               title="Copy room"
             >
               <Copy className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="ghost" title="Search">
-              <Search className="h-4 w-4" />
             </Button>
             <Button
               size="sm"
@@ -371,7 +344,7 @@ const RoomCard = ({
         {roomTreatments.length === 0 ? (
           <div className="text-center py-8">
             <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-              <SelectTrigger className="w-48 mx-auto">
+              <SelectTrigger className="w-48 mx-auto bg-white">
                 <SelectValue placeholder="Select product" />
               </SelectTrigger>
               <SelectContent>
@@ -389,7 +362,7 @@ const RoomCard = ({
             ))}
             <div className="text-center">
               <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-48 bg-white">
                   <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>
@@ -417,7 +390,7 @@ const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
       case "Curtains":
         return {
           railWidth: "300 cm",
-          heading: "Eyelet Curtain",
+          heading: "Eyelet Curtain", 
           eyeletRing: "Gold rings 8mm",
           drop: "200 cm",
           lining: "Blackout",
@@ -430,7 +403,7 @@ const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
           heading: "Pencil Pleat",
           eyeletRing: "Standard rings",
           drop: "250 cm",
-          lining: "Blackout",
+          lining: "Blackout", 
           fabric: "Sky Gray 01",
           price: `£${treatment.total_price?.toFixed(2) || "0.00"}`
         };
