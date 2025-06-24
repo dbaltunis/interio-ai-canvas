@@ -34,8 +34,8 @@ export const RoomCard = ({
   setEditingRoomName,
   onRenameRoom
 }: RoomCardProps) => {
-  const { data: treatments } = useTreatments();
-  const roomTreatments = treatments?.filter(t => t.room_id === room.id) || [];
+  const { data: allTreatments } = useTreatments(projectId);
+  const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
   const startEditing = () => {
@@ -53,7 +53,7 @@ export const RoomCard = ({
   };
 
   return (
-    <Card className="bg-gray-100">
+    <Card className="bg-gray-100 min-h-[400px] flex flex-col">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -103,11 +103,11 @@ export const RoomCard = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {roomTreatments.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="flex-1 flex items-center justify-center">
             <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-              <SelectTrigger className="w-48 mx-auto bg-white">
+              <SelectTrigger className="w-48 bg-white">
                 <SelectValue placeholder="Select product" />
               </SelectTrigger>
               <SelectContent>
@@ -119,13 +119,13 @@ export const RoomCard = ({
             </Select>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1">
             {roomTreatments.map((treatment) => (
               <TreatmentCard key={treatment.id} treatment={treatment} />
             ))}
-            <div className="text-center">
+            <div className="mt-auto pt-4">
               <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-                <SelectTrigger className="w-48 bg-white">
+                <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>

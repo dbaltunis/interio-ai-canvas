@@ -14,9 +14,9 @@ interface ProjectJobsTabProps {
 }
 
 export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
-  const { data: rooms } = useRooms(project.id);
-  const { data: allWindows } = useWindows();
-  const { data: allTreatments } = useTreatments();
+  const { data: rooms, isLoading: roomsLoading } = useRooms(project.id);
+  const { data: allWindows } = useWindows(project.id);
+  const { data: allTreatments } = useTreatments(project.id);
   const createRoom = useCreateRoom();
   const updateRoom = useUpdateRoom();
   const deleteRoom = useDeleteRoom();
@@ -27,17 +27,25 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
 
-  // Calculate total amount from all treatments
+  console.log("Project ID:", project.id);
+  console.log("Rooms:", rooms);
+  console.log("All treatments:", allTreatments);
+
+  // Calculate total amount from all treatments for this project
   const projectTreatments = allTreatments?.filter(t => t.project_id === project.id) || [];
   const totalAmount = projectTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
   const handleCreateRoom = async () => {
-    const roomNumber = (rooms?.length || 0) + 1;
-    await createRoom.mutateAsync({
-      project_id: project.id,
-      name: `Room ${roomNumber}`,
-      room_type: "living_room"
-    });
+    try {
+      const roomNumber = (rooms?.length || 0) + 1;
+      await createRoom.mutateAsync({
+        project_id: project.id,
+        name: `Room ${roomNumber}`,
+        room_type: "living_room"
+      });
+    } catch (error) {
+      console.error("Failed to create room:", error);
+    }
   };
 
   const handleRenameRoom = async (roomId: string, newName: string) => {
@@ -100,32 +108,46 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   };
 
   const handleCreateTreatment = async (roomId: string, treatmentType: string) => {
-    // Find or create a default window for this room
-    let roomWindows = allWindows?.filter(w => w.room_id === roomId) || [];
-    
-    if (roomWindows.length === 0) {
-      // Create a default window if none exists
-      const newWindow = await createWindow.mutateAsync({
+    try {
+      // Find or create a default window for this room
+      let roomWindows = allWindows?.filter(w => w.room_id === roomId) || [];
+      
+      if (roomWindows.length === 0) {
+        // Create a default window if none exists
+        const newWindow = await createWindow.mutateAsync({
+          room_id: roomId,
+          project_id: project.id,
+          name: "Window 1",
+          width: 200,
+          height: 250
+        });
+        roomWindows = [newWindow];
+      }
+
+      await createTreatment.mutateAsync({
+        window_id: roomWindows[0].id,
         room_id: roomId,
         project_id: project.id,
-        name: "Window 1",
-        width: 200,
-        height: 250
+        treatment_type: treatmentType,
+        status: "planned",
+        total_price: treatmentType === "Curtains" ? 75.00 : 
+                    treatmentType === "Blinds" ? 45.00 : 
+                    treatmentType === "Shutters" ? 120.00 : 50.00
       });
-      roomWindows = [newWindow];
+    } catch (error) {
+      console.error("Failed to create treatment:", error);
     }
-
-    await createTreatment.mutateAsync({
-      window_id: roomWindows[0].id,
-      room_id: roomId,
-      project_id: project.id,
-      treatment_type: treatmentType,
-      status: "planned",
-      total_price: treatmentType === "Curtains" ? 75.00 : 
-                  treatmentType === "Blinds" ? 45.00 : 
-                  treatmentType === "Shutters" ? 120.00 : 50.00
-    });
   };
+
+  if (roomsLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg">Loading rooms...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -137,9 +159,10 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
         <Button 
           onClick={handleCreateRoom} 
           className="bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2"
+          disabled={createRoom.isPending}
         >
           <Plus className="h-4 w-4" />
-          <span>Add room</span>
+          <span>{createRoom.isPending ? "Adding..." : "Add room"}</span>
         </Button>
       </div>
 
@@ -160,10 +183,12 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
         </div>
       </div>
 
-      {/* Rooms Grid */}
-      <div className="space-y-6">
+      {/* Rooms Grid - Responsive: 2 columns on desktop, 1 on mobile/tablet */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {!rooms || rooms.length === 0 ? (
-          <EmptyRoomsState onCreateRoom={handleCreateRoom} />
+          <div className="lg:col-span-2">
+            <EmptyRoomsState onCreateRoom={handleCreateRoom} />
+          </div>
         ) : (
           rooms.map((room) => (
             <RoomCard 
