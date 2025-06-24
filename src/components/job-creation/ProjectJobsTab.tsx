@@ -1,13 +1,12 @@
+
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Search, Trash2, Copy, Clipboard, ArrowLeft, Home } from "lucide-react";
+import { Plus, Clipboard } from "lucide-react";
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
-import { useWindows, useCreateWindow, useUpdateWindow, useDeleteWindow } from "@/hooks/useWindows";
-import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
+import { useWindows, useCreateWindow } from "@/hooks/useWindows";
+import { useTreatments, useCreateTreatment } from "@/hooks/useTreatments";
+import { RoomCard } from "./RoomCard";
+import { EmptyRoomsState } from "./EmptyRoomsState";
 
 interface ProjectJobsTabProps {
   project: any;
@@ -164,17 +163,7 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
       {/* Rooms Grid */}
       <div className="space-y-6">
         {!rooms || rooms.length === 0 ? (
-          <div className="text-center py-12">
-            <Home className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
-            <p className="text-gray-500 mb-4">
-              Add your first room to start designing window treatments
-            </p>
-            <Button onClick={handleCreateRoom} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Add your first room</span>
-            </Button>
-          </div>
+          <EmptyRoomsState onCreateRoom={handleCreateRoom} />
         ) : (
           rooms.map((room) => (
             <RoomCard 
@@ -193,228 +182,6 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
             />
           ))
         )}
-      </div>
-    </div>
-  );
-};
-
-interface RoomCardProps {
-  room: any;
-  projectId: string;
-  onUpdateRoom: any;
-  onDeleteRoom: any;
-  onCreateTreatment: (roomId: string, treatmentType: string) => void;
-  onCopyRoom: (room: any) => void;
-  editingRoomId: string | null;
-  setEditingRoomId: (id: string | null) => void;
-  editingRoomName: string;
-  setEditingRoomName: (name: string) => void;
-  onRenameRoom: (roomId: string, newName: string) => void;
-}
-
-const RoomCard = ({ 
-  room, 
-  projectId, 
-  onUpdateRoom, 
-  onDeleteRoom, 
-  onCreateTreatment, 
-  onCopyRoom,
-  editingRoomId,
-  setEditingRoomId,
-  editingRoomName,
-  setEditingRoomName,
-  onRenameRoom
-}: RoomCardProps) => {
-  const { data: treatments } = useTreatments();
-  const roomTreatments = treatments?.filter(t => t.room_id === room.id) || [];
-  const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-
-  const startEditing = () => {
-    setEditingRoomId(room.id);
-    setEditingRoomName(room.name);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onRenameRoom(room.id, editingRoomName);
-    } else if (e.key === 'Escape') {
-      setEditingRoomId(null);
-      setEditingRoomName("");
-    }
-  };
-
-  return (
-    <Card className="bg-gray-100">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            {editingRoomId === room.id ? (
-              <Input
-                value={editingRoomName}
-                onChange={(e) => setEditingRoomName(e.target.value)}
-                onKeyDown={handleKeyPress}
-                onBlur={() => onRenameRoom(room.id, editingRoomName)}
-                className="text-xl font-semibold bg-white"
-                autoFocus
-              />
-            ) : (
-              <CardTitle className="text-xl">{room.name}</CardTitle>
-            )}
-            <p className="text-2xl font-bold text-gray-900 mt-1">${roomTotal.toFixed(2)}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={startEditing}
-              title="Rename room"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onCopyRoom(room)}
-              title="Copy room"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                if (confirm("Delete this room and all its contents?")) {
-                  onDeleteRoom.mutate(room.id);
-                }
-              }}
-              title="Delete room"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {roomTreatments.length === 0 ? (
-          <div className="text-center py-8">
-            <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-              <SelectTrigger className="w-48 mx-auto bg-white">
-                <SelectValue placeholder="Select product" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Curtains">Curtains</SelectItem>
-                <SelectItem value="Blinds">Blinds</SelectItem>
-                <SelectItem value="Shutters">Shutters</SelectItem>
-                <SelectItem value="Valances">Valances</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {roomTreatments.map((treatment) => (
-              <TreatmentCard key={treatment.id} treatment={treatment} />
-            ))}
-            <div className="text-center">
-              <Select onValueChange={(value) => onCreateTreatment(room.id, value)}>
-                <SelectTrigger className="w-48 bg-white">
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Curtains">Curtains</SelectItem>
-                  <SelectItem value="Blinds">Blinds</SelectItem>
-                  <SelectItem value="Shutters">Shutters</SelectItem>
-                  <SelectItem value="Valances">Valances</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-interface TreatmentCardProps {
-  treatment: any;
-}
-
-const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
-  const getFabricDetails = (treatmentType: string) => {
-    switch (treatmentType) {
-      case "Curtains":
-        return {
-          railWidth: "300 cm",
-          heading: "Eyelet Curtain", 
-          eyeletRing: "Gold rings 8mm",
-          drop: "200 cm",
-          lining: "Blackout",
-          fabric: "SAG/02 Monday Blues",
-          price: "£76.67"
-        };
-      default:
-        return {
-          railWidth: "200 cm",
-          heading: "Pencil Pleat",
-          eyeletRing: "Standard rings",
-          drop: "250 cm",
-          lining: "Blackout", 
-          fabric: "Sky Gray 01",
-          price: `£${treatment.total_price?.toFixed(2) || "0.00"}`
-        };
-    }
-  };
-
-  const details = getFabricDetails(treatment.treatment_type);
-
-  return (
-    <div className="flex items-start space-x-4 p-4 border rounded-lg bg-white">
-      {/* Fabric Image */}
-      <div className="w-20 h-20 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
-        <img 
-          src="/placeholder.svg" 
-          alt="Fabric sample" 
-          className="w-full h-full object-cover"
-        />
-      </div>
-      
-      {/* Treatment Details Grid */}
-      <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-        <div>
-          <p className="font-medium text-gray-900">{treatment.treatment_type}</p>
-          <p className="text-gray-600 mt-1">Rail width</p>
-          <p className="text-gray-600">Heading name</p>
-          <p className="text-gray-600">Eyelet Ring</p>
-        </div>
-        
-        <div>
-          <p className="text-gray-900">{details.railWidth}</p>
-          <p className="text-gray-900 mt-1">{details.heading}</p>
-          <p className="text-gray-900">{details.eyeletRing}</p>
-        </div>
-        
-        <div>
-          <p className="text-gray-600">Curtain drop</p>
-          <p className="text-gray-600 mt-1">Lining</p>
-          <p className="text-gray-600">Fabric article</p>
-          <p className="text-gray-600">Fabric price</p>
-        </div>
-        
-        <div>
-          <p className="text-gray-900">{details.drop}</p>
-          <p className="text-gray-900 mt-1">{details.lining}</p>
-          <p className="text-gray-900">{details.fabric}</p>
-          <p className="text-gray-900 font-medium">{details.price}</p>
-        </div>
-      </div>
-      
-      {/* Actions */}
-      <div className="flex items-center space-x-2">
-        <Button size="sm" variant="ghost" title="View details">
-          <Search className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" title="Delete treatment">
-          <Trash2 className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );
