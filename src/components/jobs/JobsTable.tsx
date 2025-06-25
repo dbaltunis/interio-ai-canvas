@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 import { FileText, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -26,13 +28,20 @@ export const JobsTable = ({
   onJobSelect
 }: JobsTableProps) => {
   const { data: quotes } = useQuotes();
+  const { data: projects } = useProjects();
+  const { data: clients } = useClients();
 
   // Filter quotes based on search and filter criteria
   const filteredQuotes = quotes?.filter(quote => {
+    const project = projects?.find(p => p.id === quote.project_id);
+    const client = clients?.find(c => c.id === quote.client_id);
+    
     const matchesClient = !searchClient || 
-      quote.client_id.toLowerCase().includes(searchClient.toLowerCase());
+      (client?.name?.toLowerCase().includes(searchClient.toLowerCase()) ||
+       client?.company_name?.toLowerCase().includes(searchClient.toLowerCase()));
     const matchesJobNumber = !searchJobNumber || 
-      quote.quote_number.toLowerCase().includes(searchJobNumber.toLowerCase());
+      (quote.quote_number.toLowerCase().includes(searchJobNumber.toLowerCase()) ||
+       project?.job_number?.toLowerCase().includes(searchJobNumber.toLowerCase()));
     const matchesStatus = filterStatus === "all" || quote.status === filterStatus;
     
     return matchesClient && matchesJobNumber && matchesStatus;
@@ -76,7 +85,7 @@ export const JobsTable = ({
     <div className="bg-white rounded-lg border">
       {/* Table Header */}
       <div className="grid grid-cols-8 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-700">
-        <div>No.</div>
+        <div>Job No.</div>
         <div>Quote Total</div>
         <div>Payment</div>
         <div>Client Name</div>
@@ -88,45 +97,61 @@ export const JobsTable = ({
 
       {/* Table Rows */}
       <div className="divide-y">
-        {filteredQuotes.map((quote) => (
-          <div 
-            key={quote.id} 
-            className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
-            onClick={() => onJobSelect?.(quote.id)}
-          >
-            <div className="font-medium text-gray-900">{quote.quote_number}</div>
-            <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>
-            <div className="text-gray-500">-</div>
-            <div className="text-gray-900">Client #{quote.client_id.slice(0, 8)}</div>
-            <div className="text-gray-500">-</div>
-            <div className="text-gray-900">{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
-            <div>
-              <Badge className={`${getStatusColor(quote.status)} border-0`} variant="secondary">
-                {getStatusLabel(quote.status)}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center text-sm text-gray-700">
-                <div className="w-6 h-6 bg-slate-600 rounded-full mr-2 flex items-center justify-center text-white text-xs">
-                  A
-                </div>
-                <span>InterioApp Admin</span>
+        {filteredQuotes.map((quote) => {
+          const project = projects?.find(p => p.id === quote.project_id);
+          const client = clients?.find(c => c.id === quote.client_id);
+          const displayName = client?.client_type === 'B2B' ? client?.company_name : client?.name;
+          
+          return (
+            <div 
+              key={quote.id} 
+              className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
+              onClick={() => onJobSelect?.(quote.id)}
+            >
+              <div className="font-medium text-gray-900">
+                <div>{project?.job_number || 'No Job #'}</div>
+                <div className="text-xs text-gray-500">{quote.quote_number}</div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white">
-                  <DropdownMenuItem>View Job</DropdownMenuItem>
-                  <DropdownMenuItem>Edit</DropdownMenuItem>
-                  <DropdownMenuItem>Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>
+              <div className="text-gray-500">-</div>
+              <div className="text-gray-900">
+                <div>{displayName || 'Unknown Client'}</div>
+                {client?.client_type && (
+                  <Badge variant="outline" className="text-xs mt-1">
+                    {client.client_type}
+                  </Badge>
+                )}
+              </div>
+              <div className="text-gray-500">{client?.phone || '-'}</div>
+              <div className="text-gray-900">{new Date(quote.created_at).toLocaleDateString('en-GB')}</div>
+              <div>
+                <Badge className={`${getStatusColor(quote.status)} border-0`} variant="secondary">
+                  {getStatusLabel(quote.status)}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center text-sm text-gray-700">
+                  <div className="w-6 h-6 bg-slate-600 rounded-full mr-2 flex items-center justify-center text-white text-xs">
+                    A
+                  </div>
+                  <span>InterioApp Admin</span>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white">
+                    <DropdownMenuItem>View Job</DropdownMenuItem>
+                    <DropdownMenuItem>Edit</DropdownMenuItem>
+                    <DropdownMenuItem>Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   );

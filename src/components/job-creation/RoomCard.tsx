@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Copy, Trash2 } from "lucide-react";
+import { Edit, Copy, Trash2, Plus } from "lucide-react";
 import { useTreatments } from "@/hooks/useTreatments";
-import { TreatmentCard } from "./TreatmentCard";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { SurfaceCard } from "./SurfaceCard";
+import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { useState } from "react";
 
@@ -14,7 +16,10 @@ interface RoomCardProps {
   projectId: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
-  onCreateTreatment: (roomId: string, treatmentType: string, treatmentData?: any) => void;
+  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
+  onCreateSurface: (roomId: string, surfaceType: string) => void;
+  onUpdateSurface: (surfaceId: string, updates: any) => void;
+  onDeleteSurface: (surfaceId: string) => void;
   onCopyRoom: (room: any) => void;
   editingRoomId: string | null;
   setEditingRoomId: (id: string | null) => void;
@@ -28,7 +33,10 @@ export const RoomCard = ({
   projectId, 
   onUpdateRoom, 
   onDeleteRoom, 
-  onCreateTreatment, 
+  onCreateTreatment,
+  onCreateSurface,
+  onUpdateSurface,
+  onDeleteSurface,
   onCopyRoom,
   editingRoomId,
   setEditingRoomId,
@@ -37,11 +45,16 @@ export const RoomCard = ({
   onRenameRoom
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
+  const { data: allSurfaces } = useSurfaces(projectId);
+  const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
   
+  const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
+  const [selectedSurfaceId, setSelectedSurfaceId] = useState("");
+  const [selectedSurfaceType, setSelectedSurfaceType] = useState("");
 
   const startEditing = () => {
     setEditingRoomId(room.id);
@@ -57,23 +70,32 @@ export const RoomCard = ({
     }
   };
 
-  const handleTreatmentSelection = (treatmentType: string) => {
+  const handleAddTreatment = (surfaceId: string, treatmentType: string) => {
+    const surface = roomSurfaces.find(s => s.id === surfaceId);
+    setSelectedSurfaceId(surfaceId);
+    setSelectedTreatmentType(treatmentType);
+    setSelectedSurfaceType(surface?.surface_type || 'window');
+    
     if (treatmentType === "Curtains") {
-      setSelectedTreatmentType(treatmentType);
       setCalculatorOpen(true);
     } else {
-      onCreateTreatment(room.id, treatmentType);
+      setPricingFormOpen(true);
     }
   };
 
+  const handlePricingFormSave = (treatmentData: any) => {
+    onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
+    setPricingFormOpen(false);
+  };
+
   const handleCalculatorSave = (treatmentData: any) => {
-    onCreateTreatment(room.id, selectedTreatmentType, treatmentData);
+    onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
     setCalculatorOpen(false);
   };
 
   return (
     <>
-      <Card className="bg-gray-100 min-h-[400px] flex flex-col">
+      <Card className="bg-gray-100 min-h-[500px] flex flex-col">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -123,43 +145,67 @@ export const RoomCard = ({
             </div>
           </div>
         </CardHeader>
+        
         <CardContent className="flex-1 flex flex-col">
-          {roomTreatments.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Select onValueChange={handleTreatmentSelection}>
-                <SelectTrigger className="w-48 bg-white">
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Curtains">Curtains</SelectItem>
-                  <SelectItem value="Blinds">Blinds</SelectItem>
-                  <SelectItem value="Shutters">Shutters</SelectItem>
-                  <SelectItem value="Valances">Valances</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-4 flex-1">
+            {/* Add Surface Buttons */}
+            <div className="flex space-x-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onCreateSurface(room.id, 'window')}
+                className="flex items-center space-x-1"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Window</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onCreateSurface(room.id, 'wall')}
+                className="flex items-center space-x-1"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Wall</span>
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-4 flex-1">
-              {roomTreatments.map((treatment) => (
-                <TreatmentCard key={treatment.id} treatment={treatment} />
-              ))}
-              <div className="mt-auto pt-4">
-                <Select onValueChange={handleTreatmentSelection}>
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Select product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Curtains">Curtains</SelectItem>
-                    <SelectItem value="Blinds">Blinds</SelectItem>
-                    <SelectItem value="Shutters">Shutters</SelectItem>
-                    <SelectItem value="Valances">Valances</SelectItem>
-                  </SelectContent>
-                </Select>
+
+            {/* Surfaces */}
+            {roomSurfaces.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <p className="mb-2">No surfaces added yet</p>
+                  <p className="text-sm">Add windows or walls to get started</p>
+                </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="space-y-3">
+                {roomSurfaces.map((surface) => {
+                  const surfaceTreatments = roomTreatments.filter(t => t.window_id === surface.id);
+                  return (
+                    <SurfaceCard
+                      key={surface.id}
+                      surface={surface}
+                      treatments={surfaceTreatments}
+                      onAddTreatment={handleAddTreatment}
+                      onDeleteSurface={onDeleteSurface}
+                      onUpdateSurface={onUpdateSurface}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <TreatmentPricingForm
+        isOpen={pricingFormOpen}
+        onClose={() => setPricingFormOpen(false)}
+        onSave={handlePricingFormSave}
+        treatmentType={selectedTreatmentType}
+        surfaceType={selectedSurfaceType}
+      />
 
       <TreatmentCalculatorDialog
         isOpen={calculatorOpen}

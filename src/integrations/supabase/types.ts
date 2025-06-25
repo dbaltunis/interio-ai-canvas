@@ -83,6 +83,9 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          client_type: string | null
+          company_name: string | null
+          contact_person: string | null
           created_at: string
           email: string | null
           id: string
@@ -97,6 +100,9 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          client_type?: string | null
+          company_name?: string | null
+          contact_person?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -111,6 +117,9 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          client_type?: string | null
+          company_name?: string | null
+          contact_person?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -324,6 +333,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          job_number: string | null
           name: string
           priority: string
           start_date: string | null
@@ -339,6 +349,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          job_number?: string | null
           name: string
           priority?: string
           start_date?: string | null
@@ -354,6 +365,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          job_number?: string | null
           name?: string
           priority?: string
           start_date?: string | null
@@ -546,6 +558,81 @@ export type Database = {
           },
         ]
       }
+      surfaces: {
+        Row: {
+          created_at: string
+          depth: number | null
+          height: number | null
+          id: string
+          location: string | null
+          measurements: Json | null
+          name: string
+          notes: string | null
+          project_id: string
+          room_id: string
+          surface_height: number | null
+          surface_type: string | null
+          surface_width: number | null
+          updated_at: string
+          user_id: string
+          width: number | null
+          window_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          depth?: number | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          measurements?: Json | null
+          name: string
+          notes?: string | null
+          project_id: string
+          room_id: string
+          surface_height?: number | null
+          surface_type?: string | null
+          surface_width?: number | null
+          updated_at?: string
+          user_id: string
+          width?: number | null
+          window_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          depth?: number | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          measurements?: Json | null
+          name?: string
+          notes?: string | null
+          project_id?: string
+          room_id?: string
+          surface_height?: number | null
+          surface_type?: string | null
+          surface_width?: number | null
+          updated_at?: string
+          user_id?: string
+          width?: number | null
+          window_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "windows_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "windows_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treatments: {
         Row: {
           color: string | null
@@ -553,10 +640,13 @@ export type Database = {
           fabric_type: string | null
           hardware: string | null
           id: string
+          labor_cost: number | null
+          material_cost: number | null
           measurements: Json | null
           mounting_type: string | null
           notes: string | null
           pattern: string | null
+          product_name: string | null
           project_id: string
           quantity: number | null
           room_id: string
@@ -574,10 +664,13 @@ export type Database = {
           fabric_type?: string | null
           hardware?: string | null
           id?: string
+          labor_cost?: number | null
+          material_cost?: number | null
           measurements?: Json | null
           mounting_type?: string | null
           notes?: string | null
           pattern?: string | null
+          product_name?: string | null
           project_id: string
           quantity?: number | null
           room_id: string
@@ -595,10 +688,13 @@ export type Database = {
           fabric_type?: string | null
           hardware?: string | null
           id?: string
+          labor_cost?: number | null
+          material_cost?: number | null
           measurements?: Json | null
           mounting_type?: string | null
           notes?: string | null
           pattern?: string | null
+          product_name?: string | null
           project_id?: string
           quantity?: number | null
           room_id?: string
@@ -629,73 +725,7 @@ export type Database = {
             foreignKeyName: "treatments_window_id_fkey"
             columns: ["window_id"]
             isOneToOne: false
-            referencedRelation: "windows"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      windows: {
-        Row: {
-          created_at: string
-          depth: number | null
-          height: number | null
-          id: string
-          location: string | null
-          measurements: Json | null
-          name: string
-          notes: string | null
-          project_id: string
-          room_id: string
-          updated_at: string
-          user_id: string
-          width: number | null
-          window_type: string | null
-        }
-        Insert: {
-          created_at?: string
-          depth?: number | null
-          height?: number | null
-          id?: string
-          location?: string | null
-          measurements?: Json | null
-          name: string
-          notes?: string | null
-          project_id: string
-          room_id: string
-          updated_at?: string
-          user_id: string
-          width?: number | null
-          window_type?: string | null
-        }
-        Update: {
-          created_at?: string
-          depth?: number | null
-          height?: number | null
-          id?: string
-          location?: string | null
-          measurements?: Json | null
-          name?: string
-          notes?: string | null
-          project_id?: string
-          room_id?: string
-          updated_at?: string
-          user_id?: string
-          width?: number | null
-          window_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "windows_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "windows_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
+            referencedRelation: "surfaces"
             referencedColumns: ["id"]
           },
         ]
@@ -777,6 +807,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_job_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_quote_number: {
         Args: Record<PropertyKey, never>
         Returns: string
