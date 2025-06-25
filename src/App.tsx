@@ -37,25 +37,27 @@ function App() {
       <AuthProvider>
         <Router>
           <ProtectedRoute>
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-gray-50">
               <MainNav />
-              <main className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/jobs" element={<JobsPage />} />
-                  <Route path="/jobs/new" element={<NewJobPageWrapper />} />
-                  <Route path="/jobs/:id/edit" element={<JobEditPageWrapper />} />
-                  <Route path="/projects/:id" element={<ProjectPage />} />
-                  <Route path="/clients" element={<EnhancedClientManagement />} />
-                  <Route path="/quotes" element={<QuoteManagement />} />
-                  <Route path="/inventory" element={<InventoryManagement />} />
-                  <Route path="/workshop" element={<WorkshopManagement />} />
-                  <Route path="/calendar" element={<CalendarView />} />
-                  <Route path="/calculator" element={<CalculatorView />} />
-                  <Route path="/library" element={<LibraryPage />} />
-                  <Route path="/settings" element={<SettingsView />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+              <main className="flex-1 pb-safe">
+                <div className="container mx-auto px-4 py-6 max-w-7xl">
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/jobs" element={<JobsPage />} />
+                    <Route path="/jobs/new" element={<NewJobPageWrapper />} />
+                    <Route path="/jobs/:id/edit" element={<JobEditPageWrapper />} />
+                    <Route path="/projects/:id" element={<ProjectPage />} />
+                    <Route path="/clients" element={<EnhancedClientManagement />} />
+                    <Route path="/quotes" element={<QuoteManagement />} />
+                    <Route path="/inventory" element={<InventoryManagement />} />
+                    <Route path="/workshop" element={<WorkshopManagement />} />
+                    <Route path="/calendar" element={<CalendarView />} />
+                    <Route path="/calculator" element={<CalculatorView />} />
+                    <Route path="/library" element={<LibraryPage />} />
+                    <Route path="/settings" element={<SettingsView />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
               </main>
             </div>
           </ProtectedRoute>

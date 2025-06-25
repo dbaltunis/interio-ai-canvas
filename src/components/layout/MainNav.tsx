@@ -53,6 +53,7 @@ export const MainNav = () => {
             onClick={() => mobile && setOpen(false)}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              mobile ? "w-full" : "",
               isActive
                 ? "bg-brand-primary text-white"
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -72,17 +73,57 @@ export const MainNav = () => {
   );
 
   return (
-    <div className="border-b bg-white">
-      <div className="flex h-16 items-center px-4">
-        <BrandHeader />
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 mx-6">
+    <div className="sticky top-0 z-50 border-b bg-white shadow-sm">
+      <div className="flex h-16 items-center px-4 lg:px-6">
+        <div className="flex items-center gap-4">
+          <BrandHeader />
+          
+          {/* Mobile Navigation Trigger */}
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                className="lg:hidden"
+                size="icon"
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <div className="flex flex-col h-full">
+                <div className="p-6 border-b">
+                  <BrandHeader />
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-1">
+                    <NavItems mobile />
+                  </div>
+                </div>
+                <div className="p-4 border-t">
+                  <Button
+                    asChild
+                    className="w-full bg-brand-primary hover:bg-brand-secondary"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Link to="/jobs/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Quote
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Desktop Navigation - Hidden on mobile */}
+        <nav className="hidden lg:flex items-center space-x-2 ml-6">
           <NavItems />
         </nav>
 
-        <div className="ml-auto flex items-center space-x-4">
-          {/* Quick Action Button */}
+        <div className="ml-auto flex items-center space-x-2 sm:space-x-4">
+          {/* Quick Action Button - Hidden on small screens */}
           <Button
             asChild
             size="sm"
@@ -99,42 +140,6 @@ export const MainNav = () => {
 
           {/* User Profile */}
           <UserProfile />
-
-          {/* Mobile Navigation */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                className="md:hidden"
-                size="icon"
-              >
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72">
-              <div className="flex flex-col space-y-4 py-4">
-                <div className="px-3 py-2">
-                  <h2 className="mb-2 px-4 text-lg font-semibold">Navigation</h2>
-                  <div className="space-y-1">
-                    <NavItems mobile />
-                  </div>
-                </div>
-                <div className="px-3">
-                  <Button
-                    asChild
-                    className="w-full bg-brand-primary hover:bg-brand-secondary"
-                    onClick={() => setOpen(false)}
-                  >
-                    <Link to="/jobs/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Quote
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
     </div>

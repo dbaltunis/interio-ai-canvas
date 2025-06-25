@@ -54,17 +54,17 @@ export const Dashboard = () => {
   // Show regular dashboard for existing users
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-brand-primary">Dashboard</h2>
-          <p className="text-brand-neutral">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-brand-primary">Dashboard</h2>
+          <p className="text-brand-neutral mt-1">
             Welcome back! Here's what's happening with your business today.
           </p>
         </div>
       </div>
 
       {/* Key Performance Indicators */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Revenue"
           value={stats?.totalRevenue || 0}
@@ -94,11 +94,11 @@ export const Dashboard = () => {
       </div>
 
       {/* Charts and Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
+        <div className="lg:col-span-4">
           <RevenueChart data={revenueData} />
         </div>
-        <div className="col-span-3">
+        <div className="lg:col-span-3">
           <PipelineOverview data={pipelineData} totalValue={totalPipelineValue} />
         </div>
       </div>
