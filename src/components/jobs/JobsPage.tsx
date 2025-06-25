@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
-import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
 import { NewJobPage } from "../job-creation/NewJobPage";
 import { EnhancedClientManagement } from "../clients/EnhancedClientManagement";
+import { EnhancedJobsManagement } from "./EnhancedJobsManagement";
+import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
@@ -16,6 +17,7 @@ export const JobsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
+  const [showNewClient, setShowNewClient] = useState(false);
   const { toast } = useToast();
   
   // Get actual data for counts
@@ -46,6 +48,7 @@ export const JobsPage = () => {
   const handleBackToJobs = () => {
     setSelectedJobId(null);
     setShowNewJob(false);
+    setShowNewClient(false);
   };
 
   const handleNewJob = () => {
@@ -61,6 +64,19 @@ export const JobsPage = () => {
     }
   };
 
+  const handleNewClient = () => {
+    try {
+      setShowNewClient(true);
+    } catch (error) {
+      console.error("Error starting new client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start new client. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Calculate actual counts
   const jobsCount = quotes?.length || 0;
   const clientsCount = clients?.length || 0;
@@ -68,6 +84,11 @@ export const JobsPage = () => {
   // If creating a new job, show the new job page
   if (showNewJob) {
     return <NewJobPage onBack={handleBackToJobs} />;
+  }
+
+  // If creating a new client, show the new client page
+  if (showNewClient) {
+    return <ClientCreateForm onBack={handleBackToJobs} />;
   }
 
   // If a job is selected, show the job editing page
@@ -115,7 +136,7 @@ export const JobsPage = () => {
           ) : (
             <Button 
               className="bg-slate-600 hover:bg-slate-700 text-white px-6"
-              onClick={() => {/* Handle new client creation */}}
+              onClick={handleNewClient}
             >
               New Client
             </Button>
@@ -152,14 +173,15 @@ export const JobsPage = () => {
       
       {/* Content based on active tab */}
       {activeTab === "jobs" ? (
-        <JobsTable 
+        <EnhancedJobsManagement 
+          onNewJob={handleNewJob}
+          onJobSelect={handleJobSelect}
           searchClient={searchClient}
           searchJobNumber={searchJobNumber}
           filterStatus={filterStatus}
           filterDeposit={filterDeposit}
           filterOwner={filterOwner}
           filterMaker={filterMaker}
-          onJobSelect={handleJobSelect}
         />
       ) : (
         <EnhancedClientManagement />
