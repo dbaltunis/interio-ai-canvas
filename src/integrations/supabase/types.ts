@@ -79,6 +79,114 @@ export type Database = {
           },
         ]
       }
+      business_settings: {
+        Row: {
+          abn: string | null
+          auto_calculate_fabric: boolean | null
+          auto_generate_work_orders: boolean | null
+          business_address: string | null
+          business_email: string | null
+          business_phone: string | null
+          closing_time: string | null
+          company_name: string | null
+          created_at: string
+          default_markup: number | null
+          default_tax_rate: number | null
+          email_quote_notifications: boolean | null
+          id: string
+          installation_lead_days: number | null
+          labor_rate: number | null
+          low_stock_alerts: boolean | null
+          opening_time: string | null
+          quote_validity_days: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abn?: string | null
+          auto_calculate_fabric?: boolean | null
+          auto_generate_work_orders?: boolean | null
+          business_address?: string | null
+          business_email?: string | null
+          business_phone?: string | null
+          closing_time?: string | null
+          company_name?: string | null
+          created_at?: string
+          default_markup?: number | null
+          default_tax_rate?: number | null
+          email_quote_notifications?: boolean | null
+          id?: string
+          installation_lead_days?: number | null
+          labor_rate?: number | null
+          low_stock_alerts?: boolean | null
+          opening_time?: string | null
+          quote_validity_days?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abn?: string | null
+          auto_calculate_fabric?: boolean | null
+          auto_generate_work_orders?: boolean | null
+          business_address?: string | null
+          business_email?: string | null
+          business_phone?: string | null
+          closing_time?: string | null
+          company_name?: string | null
+          created_at?: string
+          default_markup?: number | null
+          default_tax_rate?: number | null
+          email_quote_notifications?: boolean | null
+          id?: string
+          installation_lead_days?: number | null
+          labor_rate?: number | null
+          low_stock_alerts?: boolean | null
+          opening_time?: string | null
+          quote_validity_days?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calculation_formulas: {
+        Row: {
+          active: boolean | null
+          category: string
+          created_at: string
+          description: string | null
+          formula_expression: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          created_at?: string
+          description?: string | null
+          formula_expression: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          formula_expression?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -207,6 +315,48 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_settings: {
+        Row: {
+          active: boolean | null
+          api_credentials: Json | null
+          configuration: Json
+          created_at: string
+          id: string
+          integration_type: string
+          last_sync: string | null
+          sync_settings: Json | null
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          api_credentials?: Json | null
+          configuration?: Json
+          created_at?: string
+          id?: string
+          integration_type: string
+          last_sync?: string | null
+          sync_settings?: Json | null
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          api_credentials?: Json | null
+          configuration?: Json
+          created_at?: string
+          id?: string
+          integration_type?: string
+          last_sync?: string | null
+          sync_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           category: string
@@ -316,6 +466,149 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      pricing_rules: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          conditions: Json | null
+          created_at: string
+          formula: string | null
+          id: string
+          name: string
+          priority: number | null
+          rule_type: string
+          updated_at: string
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          conditions?: Json | null
+          created_at?: string
+          formula?: string | null
+          id?: string
+          name: string
+          priority?: number | null
+          rule_type: string
+          updated_at?: string
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          conditions?: Json | null
+          created_at?: string
+          formula?: string | null
+          id?: string
+          name?: string
+          priority?: number | null
+          rule_type?: string
+          updated_at?: string
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: []
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          markup_percentage: number | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          markup_percentage?: number | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          markup_percentage?: number | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          base_price: number
+          category_id: string | null
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          id: string
+          images: Json | null
+          markup_percentage: number | null
+          name: string
+          options: Json | null
+          sku: string | null
+          specifications: Json | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+          variants: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number
+          category_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: Json | null
+          markup_percentage?: number | null
+          name: string
+          options?: Json | null
+          sku?: string | null
+          specifications?: Json | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+          variants?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number
+          category_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: Json | null
+          markup_percentage?: number | null
+          name?: string
+          options?: Json | null
+          sku?: string | null
+          specifications?: Json | null
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+          variants?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -741,6 +1034,54 @@ export type Database = {
         }
         Relationships: []
       }
+      treatment_types: {
+        Row: {
+          active: boolean | null
+          category: string
+          complexity: string | null
+          created_at: string
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          labor_rate: number | null
+          name: string
+          required_materials: Json | null
+          specifications: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          complexity?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          labor_rate?: number | null
+          name: string
+          required_materials?: Json | null
+          specifications?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          complexity?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          labor_rate?: number | null
+          name?: string
+          required_materials?: Json | null
+          specifications?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       treatments: {
         Row: {
           color: string | null
@@ -837,6 +1178,123 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendor_products: {
+        Row: {
+          availability_status: string | null
+          created_at: string
+          id: string
+          last_updated: string | null
+          lead_time_days: number | null
+          minimum_order_quantity: number | null
+          product_id: string | null
+          user_id: string
+          vendor_id: string | null
+          vendor_price: number | null
+          vendor_sku: string | null
+        }
+        Insert: {
+          availability_status?: string | null
+          created_at?: string
+          id?: string
+          last_updated?: string | null
+          lead_time_days?: number | null
+          minimum_order_quantity?: number | null
+          product_id?: string | null
+          user_id: string
+          vendor_id?: string | null
+          vendor_price?: number | null
+          vendor_sku?: string | null
+        }
+        Update: {
+          availability_status?: string | null
+          created_at?: string
+          id?: string
+          last_updated?: string | null
+          lead_time_days?: number | null
+          minimum_order_quantity?: number | null
+          product_id?: string | null
+          user_id?: string
+          vendor_id?: string | null
+          vendor_price?: number | null
+          vendor_sku?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_products_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          discount_percentage: number | null
+          email: string | null
+          id: string
+          lead_time_days: number | null
+          name: string
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          product_categories: string[] | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          email?: string | null
+          id?: string
+          lead_time_days?: number | null
+          name: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          product_categories?: string[] | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          email?: string | null
+          id?: string
+          lead_time_days?: number | null
+          name?: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          product_categories?: string[] | null
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
       }
       work_order_checkpoints: {
         Row: {
