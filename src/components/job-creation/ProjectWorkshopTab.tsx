@@ -1,295 +1,51 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Wrench, Package, Users, ClipboardList } from "lucide-react";
-import { useRooms } from "@/hooks/useRooms";
-import { useSurfaces } from "@/hooks/useSurfaces";
-import { useTreatments } from "@/hooks/useTreatments";
-import { useClients } from "@/hooks/useClients";
-import { useWorkOrders, useCreateWorkOrder, useUpdateWorkOrder } from "@/hooks/useWorkOrders";
-import { useFabricOrders, useCreateFabricOrder, useUpdateFabricOrder } from "@/hooks/useFabricOrders";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
-import { useWorkOrderCheckpoints, useUpdateWorkOrderCheckpoint } from "@/hooks/useWorkOrderCheckpoints";
-import { supabase } from "@/integrations/supabase/client";
 import { WorkOrdersByTreatment } from "../workshop/WorkOrdersByTreatment";
 import { SupplierOrderManager } from "../workshop/SupplierOrderManager";
 import { TaskDelegationBoard } from "../workshop/TaskDelegationBoard";
+import { useWorkshopData } from "./workshop/useWorkshopData";
+import { useWorkshopActions } from "./workshop/useWorkshopActions";
+import { ProjectInfoCard } from "./workshop/ProjectInfoCard";
+import { WorkshopOverview } from "./workshop/WorkshopOverview";
 
 interface ProjectWorkshopTabProps {
   project: any;
 }
 
-// Define proper types for transformed data
-interface TransformedFabricOrder {
-  id: string;
-  fabricCode: string;
-  fabricType: string;
-  color: string | null;
-  pattern: string | null;
-  supplier: string;
-  quantity: number;
-  unit: string;
-  unitPrice: number;
-  totalPrice: number;
-  status: "ordered" | "needed" | "received";
-  orderDate: string | null;
-  expectedDelivery: string | null;
-  receivedDate: string | null;
-  workOrderIds: string[];
-  notes: string | null;
-}
-
-interface TransformedTeamMember {
-  id: string;
-  name: string;
-  role: string;
-  expertise: string[];
-  email: string | null;
-  phone: string | null;
-  currentWorkload: number;
-  maxCapacity: number;
-  status: "available" | "busy" | "offline";
-  hourlyRate: number | null;
-  active: boolean;
-}
-
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
-  // Handle case where project might be a quote object with project_id
-  const actualProjectId = project.project_id || project.id;
   console.log("Workshop tab - project object:", project);
+  
+  const {
+    actualProjectId,
+    client,
+    projectTreatments,
+    projectWorkOrders,
+    transformedFabricOrders,
+    transformedTeamMembers,
+    transformedWorkOrders,
+    mockTaskAssignments,
+    rooms,
+    surfaces
+  } = useWorkshopData(project);
+
+  const {
+    generateWorkOrders,
+    handleUpdateWorkOrder,
+    handleToggleCheckpoint,
+    handleUpdateFabricOrder,
+    handleBulkOrder,
+    handleReassignTask,
+    handleUpdateTaskStatus,
+    isGenerating
+  } = useWorkshopActions();
+
   console.log("Workshop tab - using project ID:", actualProjectId);
 
-  const { data: rooms } = useRooms(actualProjectId);
-  const { data: surfaces } = useSurfaces(actualProjectId);
-  const { data: treatments } = useTreatments(actualProjectId);
-  const { data: clients } = useClients();
-  const { data: workOrders } = useWorkOrders(actualProjectId);
-  const { data: fabricOrders } = useFabricOrders();
-  const { data: teamMembers } = useTeamMembers();
-
-  const createWorkOrder = useCreateWorkOrder();
-  const updateWorkOrder = useUpdateWorkOrder();
-  const createFabricOrder = useCreateFabricOrder();
-  const updateFabricOrder = useUpdateFabricOrder();
-  const updateCheckpoint = useUpdateWorkOrderCheckpoint();
-
-  const client = clients?.find(c => c.id === (project.client_id || project.client_id));
-  const projectTreatments = treatments?.filter(t => t.project_id === actualProjectId) || [];
-  const projectWorkOrders = workOrders || [];
-  
-  // Transform fabric orders to match expected interface
-  const transformedFabricOrders: TransformedFabricOrder[] = fabricOrders?.map(order => ({
-    id: order.id,
-    fabricCode: order.fabric_code,
-    fabricType: order.fabric_type,
-    color: order.color,
-    pattern: order.pattern,
-    supplier: order.supplier,
-    quantity: order.quantity,
-    unit: order.unit,
-    unitPrice: order.unit_price,
-    totalPrice: order.total_price,
-    status: order.status as "ordered" | "needed" | "received",
-    orderDate: order.order_date,
-    expectedDelivery: order.expected_delivery,
-    receivedDate: order.received_date,
-    workOrderIds: order.work_order_ids || [],
-    notes: order.notes
-  })) || [];
-
-  // Transform team members to match expected interface
-  const transformedTeamMembers: TransformedTeamMember[] = teamMembers?.map(member => ({
-    id: member.id,
-    name: member.name,
-    role: member.role,
-    expertise: member.skills || [],
-    email: member.email,
-    phone: member.phone,
-    currentWorkload: 0,
-    maxCapacity: 40,
-    status: member.active ? 'available' as const : 'offline' as const,
-    hourlyRate: member.hourly_rate,
-    active: member.active
-  })) || [];
-
-  const generateWorkOrders = async () => {
-    if (!projectTreatments.length) return;
-
-    for (const [index, treatment] of projectTreatments.entries()) {
-      const surface = surfaces?.find(s => s.id === treatment.window_id);
-      const room = rooms?.find(r => r.id === treatment.room_id);
-      
-      const orderNumber = `WO-${String(index + 1).padStart(4, '0')}`;
-      
-      try {
-        await createWorkOrder.mutateAsync({
-          order_number: orderNumber,
-          treatment_type: treatment.treatment_type,
-          project_id: actualProjectId,
-          status: 'pending',
-          priority: 'medium',
-          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          instructions: `${treatment.product_name} for ${room?.name || 'Unknown Room'} - ${surface?.name || 'Unknown Surface'}`,
-          notes: treatment.notes,
-          estimated_hours: 8
-        });
-      } catch (error) {
-        console.error('Error creating work order:', error);
-      }
-    }
-
-    // Generate fabric orders
-    const fabricOrdersMap = new Map();
-    
-    projectTreatments.forEach(treatment => {
-      if (!treatment.fabric_type) return;
-      
-      const key = `${treatment.fabric_type}-${treatment.color}`;
-      if (!fabricOrdersMap.has(key)) {
-        const supplier = getSupplierForFabric(treatment.fabric_type);
-        fabricOrdersMap.set(key, {
-          fabric_code: `FB-${treatment.fabric_type?.slice(0, 3).toUpperCase()}-${treatment.color?.slice(0, 3).toUpperCase()}`,
-          fabric_type: treatment.fabric_type,
-          color: treatment.color,
-          pattern: treatment.pattern,
-          supplier: supplier,
-          quantity: 0,
-          unit: 'yards',
-          unit_price: 25.50,
-          total_price: 0,
-          work_order_ids: []
-        });
-      }
-      
-      const fabricOrder = fabricOrdersMap.get(key);
-      fabricOrder.quantity += 5; // Estimated 5 yards per treatment
-      fabricOrder.total_price = fabricOrder.quantity * fabricOrder.unit_price;
-      fabricOrder.work_order_ids.push(treatment.id);
-    });
-    
-    for (const fabricOrder of fabricOrdersMap.values()) {
-      try {
-        await createFabricOrder.mutateAsync(fabricOrder);
-      } catch (error) {
-        console.error('Error creating fabric order:', error);
-      }
-    }
+  const handleGenerateWorkOrders = () => {
+    generateWorkOrders(projectTreatments, actualProjectId, surfaces, rooms);
   };
-
-  const getSupplierForFabric = (fabricType: string) => {
-    const suppliers = {
-      'Velvet': 'Premium Fabrics Ltd',
-      'Cotton': 'Cotton Mill Co',
-      'Linen': 'Natural Textiles Inc',
-      'Silk': 'Silk Importers Ltd',
-      'Polyester': 'Synthetic Solutions'
-    };
-    return suppliers[fabricType as keyof typeof suppliers] || 'General Suppliers';
-  };
-
-  const handleUpdateWorkOrder = async (id: string, updates: any) => {
-    try {
-      await updateWorkOrder.mutateAsync({ id, ...updates });
-    } catch (error) {
-      console.error('Error updating work order:', error);
-    }
-  };
-
-  const handleToggleCheckpoint = async (orderId: string, checkpointId: string) => {
-    try {
-      // Get current checkpoint status
-      const currentCheckpoints = await supabase
-        .from('work_order_checkpoints')
-        .select('completed')
-        .eq('id', checkpointId)
-        .single();
-
-      if (currentCheckpoints.data) {
-        await updateCheckpoint.mutateAsync({ 
-          id: checkpointId, 
-          completed: !currentCheckpoints.data.completed,
-          completed_at: !currentCheckpoints.data.completed ? new Date().toISOString() : null
-        });
-      }
-    } catch (error) {
-      console.error('Error toggling checkpoint:', error);
-    }
-  };
-
-  const handleUpdateFabricOrder = async (id: string, updates: any) => {
-    try {
-      await updateFabricOrder.mutateAsync({ id, ...updates });
-    } catch (error) {
-      console.error('Error updating fabric order:', error);
-    }
-  };
-
-  const handleBulkOrder = async (supplierName: string, orders: any[]) => {
-    console.log(`Sending bulk order to ${supplierName}:`, orders);
-    
-    for (const order of orders) {
-      try {
-        await updateFabricOrder.mutateAsync({ 
-          id: order.id, 
-          status: 'ordered', 
-          order_date: new Date().toISOString().split('T')[0]
-        });
-      } catch (error) {
-        console.error('Error updating fabric order:', error);
-      }
-    }
-  };
-
-  const handleReassignTask = (taskId: string, newAssignee: string) => {
-    console.log(`Reassigning task ${taskId} to ${newAssignee}`);
-  };
-
-  const handleUpdateTaskStatus = (taskId: string, status: string) => {
-    console.log(`Updating task ${taskId} status to ${status}`);
-  };
-
-  // Transform data for components
-  const transformedWorkOrders = projectWorkOrders.map(wo => ({
-    id: wo.id,
-    orderNumber: wo.order_number,
-    treatmentType: wo.treatment_type,
-    productName: wo.treatment_type,
-    room: 'Project Room',
-    surface: 'Surface',
-    fabricType: 'Cotton',
-    color: 'Natural',
-    pattern: '',
-    hardware: '',
-    measurements: '120" × 84"',
-    priority: wo.priority,
-    status: wo.status,
-    assignedTo: wo.assigned_to || '',
-    dueDate: wo.due_date || new Date().toISOString().split('T')[0],
-    supplier: 'General Suppliers',
-    fabricCode: 'FB-COT-NAT',
-    checkpoints: [
-      { id: '1', task: 'Prepare materials', completed: false },
-      { id: '2', task: 'Assembly', completed: false },
-      { id: '3', task: 'Quality check', completed: false }
-    ]
-  }));
-
-  const mockTaskAssignments = [
-    {
-      id: "1",
-      workOrderId: "WO-001",
-      treatmentType: "Velvet Curtains",
-      projectName: project.name || "Project",
-      assignedTo: "John Smith",
-      estimatedHours: 8,
-      actualHours: 6,
-      status: "in-progress" as const,
-      priority: "high" as const,
-      dueDate: "2025-01-15",
-      skills_required: ["Curtains", "Hand-sewing"],
-      notes: "Client prefers French seams"
-    }
-  ];
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -301,32 +57,14 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
             Organize treatments, manage suppliers, and delegate tasks for {project.name || "Project"}
           </p>
         </div>
-        <Button onClick={generateWorkOrders} disabled={createWorkOrder.isPending}>
+        <Button onClick={handleGenerateWorkOrders} disabled={isGenerating}>
           <Wrench className="h-4 w-4 mr-2" />
-          {createWorkOrder.isPending ? 'Generating...' : 'Generate Work Orders'}
+          {isGenerating ? 'Generating...' : 'Generate Work Orders'}
         </Button>
       </div>
 
       {/* Project Info */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Project Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p><span className="font-medium">Job #:</span> {project.job_number || project.quote_number || 'N/A'}</p>
-              <p><span className="font-medium">Project:</span> {project.name || 'Unnamed Project'}</p>
-              <p><span className="font-medium">Status:</span> {project.status}</p>
-            </div>
-            <div>
-              <p><span className="font-medium">Client:</span> {client?.name}</p>
-              {client?.client_type === 'B2B' && <p><span className="font-medium">Company:</span> {client.company_name}</p>}
-              <p><span className="font-medium">Phone:</span> {client?.phone}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ProjectInfoCard project={project} client={client} />
 
       {/* Tabs for different workshop views */}
       <Tabs defaultValue="work-orders" className="space-y-6">
@@ -375,82 +113,11 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         </TabsContent>
 
         <TabsContent value="overview">
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Production Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Total Work Orders:</span>
-                    <span className="font-medium">{projectWorkOrders.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Completed:</span>
-                    <span className="font-medium text-green-600">{projectWorkOrders.filter(w => w.status === 'completed').length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>In Progress:</span>
-                    <span className="font-medium text-blue-600">{projectWorkOrders.filter(w => w.status === 'in_progress').length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Pending:</span>
-                    <span className="font-medium text-yellow-600">{projectWorkOrders.filter(w => w.status === 'pending').length}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Material Orders</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Items Needed:</span>
-                    <span className="font-medium">{transformedFabricOrders.filter(f => f.status === 'needed').length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Orders Placed:</span>
-                    <span className="font-medium text-blue-600">{transformedFabricOrders.filter(f => f.status === 'ordered').length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Received:</span>
-                    <span className="font-medium text-green-600">{transformedFabricOrders.filter(f => f.status === 'received').length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Value:</span>
-                    <span className="font-medium">${transformedFabricOrders.reduce((sum, f) => sum + (f.totalPrice || 0), 0).toFixed(2)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Team Utilization</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {transformedTeamMembers?.map(member => (
-                    <div key={member.id} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>{member.name}</span>
-                        <span>Available</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full w-1/3" />
-                      </div>
-                    </div>
-                  )) || (
-                    <p className="text-sm text-muted-foreground">No team members added yet</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <WorkshopOverview 
+            projectWorkOrders={projectWorkOrders}
+            transformedFabricOrders={transformedFabricOrders}
+            transformedTeamMembers={transformedTeamMembers}
+          />
         </TabsContent>
       </Tabs>
     </div>
