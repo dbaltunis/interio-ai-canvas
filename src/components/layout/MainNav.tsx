@@ -28,6 +28,14 @@ export const MainNav = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
+  // Add navigation handler for UserProfile
+  const handleNavigate = (section: string) => {
+    // Since this is using React Router, we would need to navigate to different routes
+    // For now, just log the navigation attempt
+    console.log('Navigation requested to:', section);
+    // In a real implementation, you might use navigate() from react-router-dom
+  };
+
   const NavItems = ({ mobile = false }: { mobile?: boolean }) => (
     <>
       {navigation.map((item) => {
@@ -127,7 +135,7 @@ export const MainNav = () => {
           <NotificationDropdown />
 
           {/* User Profile */}
-          <UserProfile />
+          <UserProfile onNavigate={handleNavigate} />
         </div>
       </div>
     </div>
