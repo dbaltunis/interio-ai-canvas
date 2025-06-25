@@ -141,6 +141,72 @@ export type Database = {
           },
         ]
       }
+      fabric_orders: {
+        Row: {
+          color: string | null
+          created_at: string
+          expected_delivery: string | null
+          fabric_code: string
+          fabric_type: string
+          id: string
+          notes: string | null
+          order_date: string | null
+          pattern: string | null
+          quantity: number
+          received_date: string | null
+          status: string
+          supplier: string
+          total_price: number
+          unit: string
+          unit_price: number
+          updated_at: string
+          user_id: string
+          work_order_ids: string[] | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          expected_delivery?: string | null
+          fabric_code: string
+          fabric_type: string
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          pattern?: string | null
+          quantity?: number
+          received_date?: string | null
+          status?: string
+          supplier: string
+          total_price?: number
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+          user_id: string
+          work_order_ids?: string[] | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          expected_delivery?: string | null
+          fabric_code?: string
+          fabric_type?: string
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          pattern?: string | null
+          quantity?: number
+          received_date?: string | null
+          status?: string
+          supplier?: string
+          total_price?: number
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+          user_id?: string
+          work_order_ids?: string[] | null
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           category: string
@@ -633,6 +699,48 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string | null
+          hourly_rate: number | null
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          skills: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          hourly_rate?: number | null
+          id?: string
+          name: string
+          phone?: string | null
+          role: string
+          skills?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          hourly_rate?: number | null
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       treatments: {
         Row: {
           color: string | null
@@ -726,6 +834,137 @@ export type Database = {
             columns: ["window_id"]
             isOneToOne: false
             referencedRelation: "surfaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_checkpoints: {
+        Row: {
+          assigned_to: string | null
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          order_index: number
+          task: string
+          updated_at: string
+          user_id: string
+          work_order_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          task: string
+          updated_at?: string
+          user_id: string
+          work_order_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          task?: string
+          updated_at?: string
+          user_id?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_work_order_checkpoints_work_order"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_items: {
+        Row: {
+          color: string | null
+          created_at: string
+          fabric_code: string | null
+          fabric_type: string | null
+          hardware: string | null
+          id: string
+          measurements: Json | null
+          notes: string | null
+          pattern: string | null
+          product_name: string
+          quantity: number
+          status: string
+          supplier: string | null
+          total_price: number | null
+          treatment_id: string | null
+          unit_price: number | null
+          updated_at: string
+          user_id: string
+          work_order_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          fabric_code?: string | null
+          fabric_type?: string | null
+          hardware?: string | null
+          id?: string
+          measurements?: Json | null
+          notes?: string | null
+          pattern?: string | null
+          product_name: string
+          quantity?: number
+          status?: string
+          supplier?: string | null
+          total_price?: number | null
+          treatment_id?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          user_id: string
+          work_order_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          fabric_code?: string | null
+          fabric_type?: string | null
+          hardware?: string | null
+          id?: string
+          measurements?: Json | null
+          notes?: string | null
+          pattern?: string | null
+          product_name?: string
+          quantity?: number
+          status?: string
+          supplier?: string | null
+          total_price?: number | null
+          treatment_id?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_work_order_items_work_order"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_items_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
             referencedColumns: ["id"]
           },
         ]

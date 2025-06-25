@@ -3,11 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Wrench, Package, Users, ClipboardList } from "lucide-react";
-import { useState } from "react";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useClients } from "@/hooks/useClients";
+import { useWorkOrders, useCreateWorkOrder, useUpdateWorkOrder } from "@/hooks/useWorkOrders";
+import { useFabricOrders, useCreateFabricOrder, useUpdateFabricOrder } from "@/hooks/useFabricOrders";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useWorkOrderCheckpoints, useUpdateWorkOrderCheckpoint } from "@/hooks/useWorkOrderCheckpoints";
 import { WorkOrdersByTreatment } from "../workshop/WorkOrdersByTreatment";
 import { SupplierOrderManager } from "../workshop/SupplierOrderManager";
 import { TaskDelegationBoard } from "../workshop/TaskDelegationBoard";
@@ -17,50 +20,188 @@ interface ProjectWorkshopTabProps {
 }
 
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
-  const [workOrders, setWorkOrders] = useState<any[]>([]);
-  const [fabricOrders, setFabricOrders] = useState<any[]>([]);
-
   const { data: rooms } = useRooms(project.id);
   const { data: surfaces } = useSurfaces(project.id);
   const { data: treatments } = useTreatments(project.id);
   const { data: clients } = useClients();
+  const { data: workOrders } = useWorkOrders(project.id);
+  const { data: fabricOrders } = useFabricOrders();
+  const { data: teamMembers } = useTeamMembers();
+
+  const createWorkOrder = useCreateWorkOrder();
+  const updateWorkOrder = useUpdateWorkOrder();
+  const createFabricOrder = useCreateFabricOrder();
+  const updateFabricOrder = useUpdateFabricOrder();
+  const updateCheckpoint = useUpdateWorkOrderCheckpoint();
 
   const client = clients?.find(c => c.id === project.client_id);
   const projectTreatments = treatments?.filter(t => t.project_id === project.id) || [];
+  const projectWorkOrders = workOrders || [];
+  const projectFabricOrders = fabricOrders || [];
 
-  // Mock team members data
-  const teamMembers = [
-    {
-      id: "1",
-      name: "John Smith",
-      role: "Senior Curtain Maker",
-      expertise: ["Curtains", "Valances", "Swags", "Hand-sewing"],
-      currentWorkload: 32,
-      maxCapacity: 40,
-      status: "available" as const
-    },
-    {
-      id: "2", 
-      name: "Maria Garcia",
-      role: "Blind Specialist",
-      expertise: ["Vertical Blinds", "Horizontal Blinds", "Motorized Systems"],
-      currentWorkload: 38,
-      maxCapacity: 40,
-      status: "busy" as const
-    },
-    {
-      id: "3",
-      name: "David Lee", 
-      role: "Hardware Expert",
-      expertise: ["Installation", "Motorized Blinds", "Rails", "Hardware"],
-      currentWorkload: 20,
-      maxCapacity: 35,
-      status: "available" as const
+  const generateWorkOrders = async () => {
+    if (!projectTreatments.length) return;
+
+    for (const [index, treatment] of projectTreatments.entries()) {
+      const surface = surfaces?.find(s => s.id === treatment.window_id);
+      const room = rooms?.find(r => r.id === treatment.room_id);
+      
+      const orderNumber = `WO-${String(index + 1).padStart(4, '0')}`;
+      
+      try {
+        await createWorkOrder.mutateAsync({
+          order_number: orderNumber,
+          treatment_type: treatment.treatment_type,
+          project_id: project.id,
+          status: 'pending',
+          priority: 'medium',
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          instructions: `${treatment.product_name} for ${room?.name || 'Unknown Room'} - ${surface?.name || 'Unknown Surface'}`,
+          notes: treatment.notes,
+          estimated_hours: 8
+        });
+      } catch (error) {
+        console.error('Error creating work order:', error);
+      }
     }
-  ];
 
-  // Mock task assignments
-  const taskAssignments = [
+    // Generate fabric orders
+    const fabricOrdersMap = new Map();
+    
+    projectTreatments.forEach(treatment => {
+      if (!treatment.fabric_type) return;
+      
+      const key = `${treatment.fabric_type}-${treatment.color}`;
+      if (!fabricOrdersMap.has(key)) {
+        const supplier = getSupplierForFabric(treatment.fabric_type);
+        fabricOrdersMap.set(key, {
+          fabric_code: `FB-${treatment.fabric_type?.slice(0, 3).toUpperCase()}-${treatment.color?.slice(0, 3).toUpperCase()}`,
+          fabric_type: treatment.fabric_type,
+          color: treatment.color,
+          pattern: treatment.pattern,
+          supplier: supplier,
+          quantity: 0,
+          unit: 'yards',
+          unit_price: 25.50,
+          total_price: 0,
+          work_order_ids: []
+        });
+      }
+      
+      const fabricOrder = fabricOrdersMap.get(key);
+      fabricOrder.quantity += 5; // Estimated 5 yards per treatment
+      fabricOrder.total_price = fabricOrder.quantity * fabricOrder.unit_price;
+      fabricOrder.work_order_ids.push(treatment.id);
+    });
+    
+    for (const fabricOrder of fabricOrdersMap.values()) {
+      try {
+        await createFabricOrder.mutateAsync(fabricOrder);
+      } catch (error) {
+        console.error('Error creating fabric order:', error);
+      }
+    }
+  };
+
+  const getSupplierForFabric = (fabricType: string) => {
+    const suppliers = {
+      'Velvet': 'Premium Fabrics Ltd',
+      'Cotton': 'Cotton Mill Co',
+      'Linen': 'Natural Textiles Inc',
+      'Silk': 'Silk Importers Ltd',
+      'Polyester': 'Synthetic Solutions'
+    };
+    return suppliers[fabricType as keyof typeof suppliers] || 'General Suppliers';
+  };
+
+  const handleUpdateWorkOrder = async (id: string, updates: any) => {
+    try {
+      await updateWorkOrder.mutateAsync({ id, ...updates });
+    } catch (error) {
+      console.error('Error updating work order:', error);
+    }
+  };
+
+  const handleToggleCheckpoint = async (orderId: string, checkpointId: string) => {
+    try {
+      // Get current checkpoint status
+      const currentCheckpoints = await supabase
+        .from('work_order_checkpoints')
+        .select('completed')
+        .eq('id', checkpointId)
+        .single();
+
+      if (currentCheckpoints.data) {
+        await updateCheckpoint.mutateAsync({ 
+          id: checkpointId, 
+          completed: !currentCheckpoints.data.completed,
+          completed_at: !currentCheckpoints.data.completed ? new Date().toISOString() : null
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling checkpoint:', error);
+    }
+  };
+
+  const handleUpdateFabricOrder = async (id: string, updates: any) => {
+    try {
+      await updateFabricOrder.mutateAsync({ id, ...updates });
+    } catch (error) {
+      console.error('Error updating fabric order:', error);
+    }
+  };
+
+  const handleBulkOrder = async (supplierName: string, orders: any[]) => {
+    console.log(`Sending bulk order to ${supplierName}:`, orders);
+    
+    for (const order of orders) {
+      try {
+        await updateFabricOrder.mutateAsync({ 
+          id: order.id, 
+          status: 'ordered', 
+          order_date: new Date().toISOString().split('T')[0]
+        });
+      } catch (error) {
+        console.error('Error updating fabric order:', error);
+      }
+    }
+  };
+
+  const handleReassignTask = (taskId: string, newAssignee: string) => {
+    console.log(`Reassigning task ${taskId} to ${newAssignee}`);
+  };
+
+  const handleUpdateTaskStatus = (taskId: string, status: string) => {
+    console.log(`Updating task ${taskId} status to ${status}`);
+  };
+
+  // Transform data for components
+  const transformedWorkOrders = projectWorkOrders.map(wo => ({
+    id: wo.id,
+    orderNumber: wo.order_number,
+    treatmentType: wo.treatment_type,
+    productName: wo.treatment_type,
+    room: 'Project Room',
+    surface: 'Surface',
+    fabricType: 'Cotton',
+    color: 'Natural',
+    pattern: '',
+    hardware: '',
+    measurements: '120" × 84"',
+    priority: wo.priority,
+    status: wo.status,
+    assignedTo: wo.assigned_to || '',
+    dueDate: wo.due_date || new Date().toISOString().split('T')[0],
+    supplier: 'General Suppliers',
+    fabricCode: 'FB-COT-NAT',
+    checkpoints: [
+      { id: '1', task: 'Prepare materials', completed: false },
+      { id: '2', task: 'Assembly', completed: false },
+      { id: '3', task: 'Quality check', completed: false }
+    ]
+  }));
+
+  const mockTaskAssignments = [
     {
       id: "1",
       workOrderId: "WO-001",
@@ -77,152 +218,6 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
     }
   ];
 
-  // Generate comprehensive work orders from treatments
-  const generateWorkOrders = () => {
-    const orders = projectTreatments.map((treatment, index) => {
-      const surface = surfaces?.find(s => s.id === treatment.window_id);
-      const room = rooms?.find(r => r.id === treatment.room_id);
-      
-      return {
-        id: treatment.id,
-        orderNumber: `WO-${String(index + 1).padStart(4, '0')}`,
-        treatmentType: treatment.treatment_type,
-        productName: treatment.product_name,
-        room: room?.name || 'Unknown Room',
-        surface: surface?.name || 'Unknown Surface',
-        fabricType: treatment.fabric_type,
-        color: treatment.color,
-        pattern: treatment.pattern,
-        hardware: treatment.hardware,
-        mountingType: treatment.mounting_type,
-        measurements: surface ? `${surface.width || 0}" × ${surface.height || 0}"` : 'N/A',
-        priority: 'Medium',
-        status: 'Pending',
-        assignedTo: '',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        instructions: treatment.notes || '',
-        materialCost: treatment.material_cost || 0,
-        laborCost: treatment.labor_cost || 0,
-        totalPrice: treatment.total_price || 0,
-        supplier: getSupplierForFabric(treatment.fabric_type),
-        fabricCode: `FB-${treatment.fabric_type?.slice(0, 3).toUpperCase()}-${treatment.color?.slice(0, 3).toUpperCase()}`,
-        checkpoints: generateCheckpoints(treatment.treatment_type)
-      };
-    });
-    setWorkOrders(orders);
-    generateFabricOrders(orders);
-  };
-
-  const getSupplierForFabric = (fabricType: string) => {
-    const suppliers = {
-      'Velvet': 'Premium Fabrics Ltd',
-      'Cotton': 'Cotton Mill Co',
-      'Linen': 'Natural Textiles Inc',
-      'Silk': 'Silk Importers Ltd',
-      'Polyester': 'Synthetic Solutions'
-    };
-    return suppliers[fabricType as keyof typeof suppliers] || 'General Suppliers';
-  };
-
-  const generateCheckpoints = (treatmentType: string) => {
-    const checkpointTemplates = {
-      'Curtains': [
-        { id: '1', task: 'Measure and cut fabric', completed: false },
-        { id: '2', task: 'Sew side hems', completed: false },
-        { id: '3', task: 'Create heading', completed: false },
-        { id: '4', task: 'Attach lining', completed: false },
-        { id: '5', task: 'Quality check', completed: false },
-        { id: '6', task: 'Steam and press', completed: false }
-      ],
-      'Blinds': [
-        { id: '1', task: 'Cut slats to size', completed: false },
-        { id: '2', task: 'Install control mechanism', completed: false },
-        { id: '3', task: 'Thread lift cords', completed: false },
-        { id: '4', task: 'Attach ladder tapes', completed: false },
-        { id: '5', task: 'Test operation', completed: false }
-      ]
-    };
-    return checkpointTemplates[treatmentType as keyof typeof checkpointTemplates] || [
-      { id: '1', task: 'Prepare materials', completed: false },
-      { id: '2', task: 'Assembly', completed: false },
-      { id: '3', task: 'Quality check', completed: false }
-    ];
-  };
-
-  const generateFabricOrders = (orders: any[]) => {
-    const fabricOrdersMap = new Map();
-    
-    orders.forEach(order => {
-      const key = `${order.fabricType}-${order.color}-${order.supplier}`;
-      if (!fabricOrdersMap.has(key)) {
-        fabricOrdersMap.set(key, {
-          id: `fab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          fabricCode: order.fabricCode,
-          fabricType: order.fabricType,
-          color: order.color,
-          pattern: order.pattern,
-          supplier: order.supplier,
-          quantity: 0,
-          unit: 'yards',
-          unitPrice: 25.50,
-          totalPrice: 0,
-          workOrderIds: [],
-          status: 'needed' as const
-        });
-      }
-      
-      const fabricOrder = fabricOrdersMap.get(key);
-      fabricOrder.quantity += 5; // Estimated 5 yards per treatment
-      fabricOrder.totalPrice = fabricOrder.quantity * fabricOrder.unitPrice;
-      fabricOrder.workOrderIds.push(order.id);
-    });
-    
-    setFabricOrders(Array.from(fabricOrdersMap.values()));
-  };
-
-  const handleUpdateWorkOrder = (id: string, updates: any) => {
-    setWorkOrders(prev => prev.map(order => 
-      order.id === id ? { ...order, ...updates } : order
-    ));
-  };
-
-  const handleToggleCheckpoint = (orderId: string, checkpointId: string) => {
-    setWorkOrders(prev => prev.map(order => 
-      order.id === orderId ? {
-        ...order,
-        checkpoints: order.checkpoints.map((checkpoint: any) =>
-          checkpoint.id === checkpointId 
-            ? { ...checkpoint, completed: !checkpoint.completed }
-            : checkpoint
-        )
-      } : order
-    ));
-  };
-
-  const handleUpdateFabricOrder = (id: string, updates: any) => {
-    setFabricOrders(prev => prev.map(order => 
-      order.id === id ? { ...order, ...updates } : order
-    ));
-  };
-
-  const handleBulkOrder = (supplierName: string, orders: any[]) => {
-    console.log(`Sending bulk order to ${supplierName}:`, orders);
-    // Here you would integrate with your supplier ordering system
-    setFabricOrders(prev => prev.map(order => 
-      orders.some(o => o.id === order.id) 
-        ? { ...order, status: 'ordered', orderDate: new Date().toISOString() }
-        : order
-    ));
-  };
-
-  const handleReassignTask = (taskId: string, newAssignee: string) => {
-    console.log(`Reassigning task ${taskId} to ${newAssignee}`);
-  };
-
-  const handleUpdateTaskStatus = (taskId: string, status: string) => {
-    console.log(`Updating task ${taskId} status to ${status}`);
-  };
-
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
@@ -233,9 +228,9 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
             Organize treatments, manage suppliers, and delegate tasks for {project.name}
           </p>
         </div>
-        <Button onClick={generateWorkOrders}>
+        <Button onClick={generateWorkOrders} disabled={createWorkOrder.isPending}>
           <Wrench className="h-4 w-4 mr-2" />
-          Generate Work Orders
+          {createWorkOrder.isPending ? 'Generating...' : 'Generate Work Orders'}
         </Button>
       </div>
 
@@ -283,7 +278,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
 
         <TabsContent value="work-orders">
           <WorkOrdersByTreatment 
-            workOrders={workOrders}
+            workOrders={transformedWorkOrders}
             onUpdateWorkOrder={handleUpdateWorkOrder}
             onToggleCheckpoint={handleToggleCheckpoint}
           />
@@ -291,7 +286,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
 
         <TabsContent value="suppliers">
           <SupplierOrderManager 
-            fabricOrders={fabricOrders}
+            fabricOrders={projectFabricOrders}
             onUpdateOrder={handleUpdateFabricOrder}
             onBulkOrder={handleBulkOrder}
           />
@@ -299,8 +294,8 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
 
         <TabsContent value="delegation">
           <TaskDelegationBoard 
-            teamMembers={teamMembers}
-            taskAssignments={taskAssignments}
+            teamMembers={teamMembers || []}
+            taskAssignments={mockTaskAssignments}
             onReassignTask={handleReassignTask}
             onUpdateTaskStatus={handleUpdateTaskStatus}
           />
@@ -316,19 +311,19 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Total Work Orders:</span>
-                    <span className="font-medium">{workOrders.length}</span>
+                    <span className="font-medium">{projectWorkOrders.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Completed:</span>
-                    <span className="font-medium text-green-600">{workOrders.filter(w => w.status === 'Completed').length}</span>
+                    <span className="font-medium text-green-600">{projectWorkOrders.filter(w => w.status === 'completed').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>In Progress:</span>
-                    <span className="font-medium text-blue-600">{workOrders.filter(w => w.status === 'In Progress').length}</span>
+                    <span className="font-medium text-blue-600">{projectWorkOrders.filter(w => w.status === 'in_progress').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Pending:</span>
-                    <span className="font-medium text-yellow-600">{workOrders.filter(w => w.status === 'Pending').length}</span>
+                    <span className="font-medium text-yellow-600">{projectWorkOrders.filter(w => w.status === 'pending').length}</span>
                   </div>
                 </div>
               </CardContent>
@@ -342,19 +337,19 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Items Needed:</span>
-                    <span className="font-medium">{fabricOrders.filter(f => f.status === 'needed').length}</span>
+                    <span className="font-medium">{projectFabricOrders.filter(f => f.status === 'needed').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Orders Placed:</span>
-                    <span className="font-medium text-blue-600">{fabricOrders.filter(f => f.status === 'ordered').length}</span>
+                    <span className="font-medium text-blue-600">{projectFabricOrders.filter(f => f.status === 'ordered').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Received:</span>
-                    <span className="font-medium text-green-600">{fabricOrders.filter(f => f.status === 'received').length}</span>
+                    <span className="font-medium text-green-600">{projectFabricOrders.filter(f => f.status === 'received').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Total Value:</span>
-                    <span className="font-medium">${fabricOrders.reduce((sum, f) => sum + f.totalPrice, 0).toFixed(2)}</span>
+                    <span className="font-medium">${projectFabricOrders.reduce((sum, f) => sum + (f.total_price || 0), 0).toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -366,20 +361,19 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {teamMembers.map(member => (
+                  {teamMembers?.map(member => (
                     <div key={member.id} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span>{member.name}</span>
-                        <span>{Math.round((member.currentWorkload / member.maxCapacity) * 100)}%</span>
+                        <span>Available</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${(member.currentWorkload / member.maxCapacity) * 100}%` }}
-                        />
+                        <div className="bg-blue-600 h-2 rounded-full w-1/3" />
                       </div>
                     </div>
-                  ))}
+                  )) || (
+                    <p className="text-sm text-muted-foreground">No team members added yet</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
