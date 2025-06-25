@@ -6,7 +6,7 @@ import { BrandsGrid } from "./BrandsGrid";
 import { CollectionsGrid } from "./CollectionsGrid";
 
 interface Fabric {
-  id: number;
+  id: string; // Changed from number to string
   name: string;
   code: string;
   brand: string;
@@ -20,7 +20,7 @@ interface Fabric {
 }
 
 interface Brand {
-  id: number;
+  id: string; // Changed from number to string
   name: string;
   collections: number;
   fabrics: number;
