@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
-import { useWindows, useUpdateWindow } from "@/hooks/useWindows";
+import { useSurfaces, useUpdateSurface } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 
 interface WindowDetailsProps {
@@ -14,34 +14,35 @@ interface WindowDetailsProps {
 }
 
 export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
-  const { data: windows } = useWindows(undefined);
-  const { data: treatments } = useTreatments(selectedWindowId || undefined);
-  const updateWindow = useUpdateWindow();
+  const { data: surfaces } = useSurfaces();
+  const { data: treatments } = useTreatments();
+  const updateSurface = useUpdateSurface();
 
-  const selectedWindow = windows?.find(window => window.id === selectedWindowId);
+  const selectedSurface = surfaces?.find(surface => surface.id === selectedWindowId);
+  const surfaceTreatments = treatments?.filter(treatment => treatment.window_id === selectedWindowId) || [];
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>
-          {selectedWindow ? `${selectedWindow.name} Details` : 'Select a Window'}
+          {selectedSurface ? `${selectedSurface.name} Details` : 'Select a Surface'}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!selectedWindow ? (
+        {!selectedSurface ? (
           <div className="text-center py-12 text-muted-foreground">
             <Plus className="mx-auto h-12 w-12 mb-4" />
-            <p>Select a window to view details</p>
+            <p>Select a surface to view details</p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="grid gap-4">
               <div>
-                <Label>Window Name</Label>
+                <Label>Surface Name</Label>
                 <Input
-                  value={selectedWindow.name}
-                  onBlur={(e) => updateWindow.mutate({ 
-                    id: selectedWindow.id, 
+                  value={selectedSurface.name}
+                  onBlur={(e) => updateSurface.mutate({ 
+                    id: selectedSurface.id, 
                     name: e.target.value 
                   })}
                 />
@@ -51,9 +52,9 @@ export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
                   <Label>Width (in)</Label>
                   <Input
                     type="number"
-                    value={selectedWindow.width || ""}
-                    onBlur={(e) => updateWindow.mutate({ 
-                      id: selectedWindow.id, 
+                    value={selectedSurface.width || ""}
+                    onBlur={(e) => updateSurface.mutate({ 
+                      id: selectedSurface.id, 
                       width: parseFloat(e.target.value) || null
                     })}
                   />
@@ -62,9 +63,9 @@ export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
                   <Label>Height (in)</Label>
                   <Input
                     type="number"
-                    value={selectedWindow.height || ""}
-                    onBlur={(e) => updateWindow.mutate({ 
-                      id: selectedWindow.id, 
+                    value={selectedSurface.height || ""}
+                    onBlur={(e) => updateSurface.mutate({ 
+                      id: selectedSurface.id, 
                       height: parseFloat(e.target.value) || null
                     })}
                   />
@@ -73,12 +74,12 @@ export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
               <div>
                 <Label>Notes</Label>
                 <Textarea
-                  value={selectedWindow.notes || ""}
-                  onBlur={(e) => updateWindow.mutate({ 
-                    id: selectedWindow.id, 
+                  value={selectedSurface.notes || ""}
+                  onBlur={(e) => updateSurface.mutate({ 
+                    id: selectedSurface.id, 
                     notes: e.target.value 
                   })}
-                  placeholder="Window notes..."
+                  placeholder="Surface notes..."
                 />
               </div>
             </div>
@@ -87,15 +88,15 @@ export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium">Treatments</h4>
                 <Button size="sm" onClick={() => {
-                  console.log("Create treatment for window:", selectedWindow.id);
+                  console.log("Create treatment for surface:", selectedSurface.id);
                 }}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               
-              {treatments && treatments.length > 0 ? (
+              {surfaceTreatments && surfaceTreatments.length > 0 ? (
                 <div className="space-y-2">
-                  {treatments.map((treatment) => (
+                  {surfaceTreatments.map((treatment) => (
                     <div key={treatment.id} className="p-2 border rounded">
                       <div className="flex justify-between items-start">
                         <div>

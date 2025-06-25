@@ -1,22 +1,22 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type Window = Tables<"windows">;
-type WindowInsert = TablesInsert<"windows">;
+type Surface = Tables<"surfaces">;
+type SurfaceInsert = TablesInsert<"surfaces">;
 
 export const useWindows = (projectId?: string) => {
   return useQuery({
-    queryKey: ["windows", projectId],
+    queryKey: ["surfaces", projectId],
     queryFn: async () => {
       if (!projectId) {
-        // Fetch all windows for the user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
 
         const { data, error } = await supabase
-          .from("windows")
+          .from("surfaces")
           .select("*")
           .eq("user_id", user.id)
           .order("created_at");
@@ -26,7 +26,7 @@ export const useWindows = (projectId?: string) => {
       }
       
       const { data, error } = await supabase
-        .from("windows")
+        .from("surfaces")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at");
@@ -42,13 +42,13 @@ export const useCreateWindow = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (window: Omit<WindowInsert, "user_id">) => {
+    mutationFn: async (surface: Omit<SurfaceInsert, "user_id">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
       const { data, error } = await supabase
-        .from("windows")
-        .insert({ ...window, user_id: user.id })
+        .from("surfaces")
+        .insert({ ...surface, user_id: user.id })
         .select()
         .single();
 
@@ -56,14 +56,14 @@ export const useCreateWindow = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["windows"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       toast({
         title: "Success",
-        description: "Window created successfully",
+        description: "Surface created successfully",
       });
     },
     onError: (error) => {
-      console.error("Create window error:", error);
+      console.error("Create surface error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -78,9 +78,9 @@ export const useUpdateWindow = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Window> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<Surface> & { id: string }) => {
       const { data, error } = await supabase
-        .from("windows")
+        .from("surfaces")
         .update(updates)
         .eq("id", id)
         .select()
@@ -90,7 +90,7 @@ export const useUpdateWindow = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["windows", data.room_id] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces", data.room_id] });
     },
     onError: (error) => {
       toast({
@@ -109,7 +109,7 @@ export const useDeleteWindow = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("windows")
+        .from("surfaces")
         .delete()
         .eq("id", id);
 
@@ -117,10 +117,10 @@ export const useDeleteWindow = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["windows"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       toast({
         title: "Success",
-        description: "Window deleted successfully",
+        description: "Surface deleted successfully",
       });
     },
     onError: (error) => {

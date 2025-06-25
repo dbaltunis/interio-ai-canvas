@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Home, Trash2 } from "lucide-react";
-import { useWindows, useCreateWindow, useDeleteWindow } from "@/hooks/useWindows";
+import { useSurfaces, useCreateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useRooms } from "@/hooks/useRooms";
 
 interface WindowManagerProps {
@@ -14,20 +14,22 @@ interface WindowManagerProps {
 
 export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWindowSelect }: WindowManagerProps) => {
   const { data: rooms } = useRooms(projectId);
-  const { data: windows } = useWindows(activeRoomId || undefined);
-  const createWindow = useCreateWindow();
-  const deleteWindow = useDeleteWindow();
+  const { data: surfaces } = useSurfaces(projectId);
+  const createSurface = useCreateSurface();
+  const deleteSurface = useDeleteSurface();
 
   const currentRoom = rooms?.find(room => room.id === activeRoomId);
+  const roomSurfaces = surfaces?.filter(surface => surface.room_id === activeRoomId) || [];
 
   const handleCreateWindow = async () => {
     if (!activeRoomId || !projectId) return;
     
-    const windowNumber = (windows?.length || 0) + 1;
-    await createWindow.mutateAsync({
+    const windowNumber = roomSurfaces.length + 1;
+    await createSurface.mutateAsync({
       room_id: activeRoomId,
       project_id: projectId,
       name: `Window ${windowNumber}`,
+      surface_type: 'window',
       width: 36,
       height: 84
     });
@@ -53,7 +55,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
             <Home className="mx-auto h-12 w-12 mb-4" />
             <p>Select a room to manage windows</p>
           </div>
-        ) : !windows || windows.length === 0 ? (
+        ) : !roomSurfaces || roomSurfaces.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Plus className="mx-auto h-12 w-12 mb-4" />
             <p>No windows in this room</p>
@@ -61,21 +63,21 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
           </div>
         ) : (
           <div className="space-y-2">
-            {windows.map((window) => (
+            {roomSurfaces.map((surface) => (
               <div
-                key={window.id}
+                key={surface.id}
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                  selectedWindowId === window.id 
+                  selectedWindowId === surface.id 
                     ? 'border-primary bg-primary/5' 
                     : 'hover:bg-muted'
                 }`}
-                onClick={() => onWindowSelect(window.id)}
+                onClick={() => onWindowSelect(surface.id)}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium">{window.name}</h4>
+                    <h4 className="font-medium">{surface.name}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {window.width}" × {window.height}"
+                      {surface.width || 0}" × {surface.height || 0}"
                     </p>
                   </div>
                   <Button
@@ -83,7 +85,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
                     variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteWindow.mutate(window.id);
+                      deleteSurface.mutate(surface.id);
                     }}
                   >
                     <Trash2 className="h-3 w-3" />
