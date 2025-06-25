@@ -44,10 +44,19 @@ export const useCreateProject = () => {
 
   return useMutation({
     mutationFn: async (project: Omit<ProjectInsert, "user_id"> & { client_id?: string | null }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("You must be logged in to create a project");
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error("Auth error:", userError);
+        throw new Error("Authentication error. Please try logging in again.");
       }
+      
+      if (!user) {
+        console.error("No authenticated user found");
+        throw new Error("You must be logged in to create a project. Please refresh the page and try again.");
+      }
+
+      console.log("Creating project for user:", user.id);
 
       // Allow client_id to be null
       const projectData: ProjectInsert = {

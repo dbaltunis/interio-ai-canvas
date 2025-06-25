@@ -11,14 +11,30 @@ export const useClients = () => {
   return useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .order("name");
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log("No user found for clients query");
+          return [];
+        }
+
+        const { data, error } = await supabase
+          .from("clients")
+          .select("*")
+          .order("name");
+        
+        if (error) {
+          console.error("Clients query error:", error);
+          throw error;
+        }
+        return data || [];
+      } catch (error) {
+        console.error("Error in clients query:", error);
+        return [];
+      }
     },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -28,8 +44,16 @@ export const useCreateClient = () => {
 
   return useMutation({
     mutationFn: async (client: Omit<ClientInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error("Auth error:", userError);
+        throw new Error("Authentication error. Please try logging in again.");
+      }
+      
+      if (!user) {
+        throw new Error("You must be logged in to create a client");
+      }
 
       const { data, error } = await supabase
         .from("clients")
@@ -47,7 +71,7 @@ export const useCreateClient = () => {
         description: "Client created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message,

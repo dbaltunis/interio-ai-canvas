@@ -7,6 +7,7 @@ import { ProjectNavigation } from "./ProjectNavigation";
 import { ProjectLoadingState } from "./ProjectLoadingState";
 import { ProjectTabContent } from "./ProjectTabContent";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewJobPageProps {
   onBack: () => void;
@@ -17,14 +18,54 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const [currentProject, setCurrentProject] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [hasAttemptedCreation, setHasAttemptedCreation] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   const { data: clients, isLoading: clientsLoading } = useClients();
   const createProject = useCreateProject();
   const { toast } = useToast();
 
-  // Create a default project when component mounts
+  // Check authentication first
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error("Auth check error:", error);
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(!!user);
+          console.log("Auth check result:", !!user, user?.id);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Create a default project when component mounts and user is authenticated
   useEffect(() => {
     const createDefaultProject = async () => {
+      // Wait for auth check to complete
+      if (isCheckingAuth) return;
+      
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+        console.error("User not authenticated, cannot create project");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to create a project.",
+          variant: "destructive"
+        });
+        onBack();
+        return;
+      }
+
       // Prevent multiple creation attempts
       if (hasAttemptedCreation || currentProject || isCreating) return;
       
@@ -69,10 +110,10 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     };
 
     createDefaultProject();
-  }, [clients, clientsLoading, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast]);
+  }, [clients, clientsLoading, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
 
-  // Show loading state if no project yet or creating
-  if (clientsLoading || isCreating || !currentProject) {
+  // Show loading state if checking auth, no project yet, or creating
+  if (isCheckingAuth || clientsLoading || isCreating || !currentProject) {
     return <ProjectLoadingState />;
   }
 

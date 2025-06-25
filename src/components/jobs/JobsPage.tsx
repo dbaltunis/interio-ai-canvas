@@ -6,6 +6,7 @@ import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
 import { NewJobPage } from "../job-creation/NewJobPage";
+import { ClientManagement } from "../clients/ClientManagement";
 import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
@@ -74,6 +75,11 @@ export const JobsPage = () => {
     return <JobEditPage jobId={selectedJobId} onBack={handleBackToJobs} />;
   }
 
+  // If client tab is active, show client management
+  if (activeTab === "client") {
+    return <ClientManagement />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
@@ -121,7 +127,7 @@ export const JobsPage = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - only show for jobs tab */}
       {showFilters && (
         <JobsFilters
           searchClient={searchClient}
