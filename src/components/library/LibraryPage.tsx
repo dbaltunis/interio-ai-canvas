@@ -4,47 +4,10 @@ import { LibraryHeader } from "./LibraryHeader";
 import { LibrarySearch } from "./LibrarySearch";
 import { LibraryTabs } from "./LibraryTabs";
 import { LibraryDialogs } from "./LibraryDialogs";
-
-const mockFabrics = [
-  {
-    id: 1,
-    name: "Velvet Luxe",
-    code: "VL-001",
-    brand: "Fibre Naturelle",
-    collection: "Classic Collection",
-    type: "Velvet",
-    color: "Navy Blue",
-    pattern: "Solid",
-    width: 140,
-    price: 45.50,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    name: "Silk Shimmer",
-    code: "SS-002",
-    brand: "KD Design",
-    collection: "Modern Series",
-    type: "Silk",
-    color: "Champagne",
-    pattern: "Textured",
-    width: 150,
-    price: 65.00,
-    image: "/placeholder.svg"
-  },
-];
-
-const mockBrands = [
-  { id: 1, name: "Fibre Naturelle", collections: 8, fabrics: 156 },
-  { id: 2, name: "KD Design", collections: 5, fabrics: 89 },
-  { id: 3, name: "DEKOMA", collections: 12, fabrics: 234 },
-];
-
-const mockCollections = [
-  { id: 1, name: "Classic Collection", brand: "Fibre Naturelle", fabrics: 45 },
-  { id: 2, name: "Modern Series", brand: "KD Design", fabrics: 32 },
-  { id: 3, name: "Heritage Line", brand: "DEKOMA", fabrics: 67 },
-];
+import { DatabaseCheck } from "../debug/DatabaseCheck";
+import { SetupHelper } from "../admin/SetupHelper";
+import { useInventory } from "@/hooks/useInventory";
+import { useVendors } from "@/hooks/useVendors";
 
 export const LibraryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,14 +18,53 @@ export const LibraryPage = () => {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
 
-  const filteredFabrics = mockFabrics.filter(fabric =>
+  // Fetch real data from database
+  const { data: inventory = [] } = useInventory();
+  const { data: vendors = [] } = useVendors();
+
+  // Transform inventory data to fabric format
+  const fabrics = inventory
+    .filter(item => item.category === "Fabric")
+    .map(item => ({
+      id: item.id,
+      name: item.name,
+      code: item.sku || "N/A",
+      brand: item.supplier || "Unknown",
+      collection: "Default",
+      type: item.type || "Unknown",
+      color: item.color || "Unknown",
+      pattern: item.pattern || "Solid",
+      width: item.width || 140,
+      price: item.cost_per_unit || 0,
+      image: "/placeholder.svg"
+    }));
+
+  // Transform vendors to brands format
+  const brands = vendors.map(vendor => ({
+    id: vendor.id,
+    name: vendor.name,
+    collections: 0, // Would need a separate query to count collections
+    fabrics: inventory.filter(item => item.supplier === vendor.name).length
+  }));
+
+  // Mock collections for now
+  const mockCollections = [
+    { id: 1, name: "Classic Collection", brand: "Fibre Naturelle", fabrics: 45 },
+    { id: 2, name: "Modern Series", brand: "KD Design", fabrics: 32 },
+    { id: 3, name: "Heritage Line", brand: "DEKOMA", fabrics: 67 },
+  ];
+
+  const filteredFabrics = fabrics.filter(fabric =>
     fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     fabric.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     fabric.brand.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
+      <SetupHelper />
+      <DatabaseCheck />
+      
       <LibraryHeader
         onFilterClick={() => setShowFilterDialog(true)}
         onCSVUploadClick={() => setShowCSVUpload(true)}
@@ -75,7 +77,7 @@ export const LibraryPage = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         fabrics={filteredFabrics}
-        brands={mockBrands}
+        brands={brands}
         collections={mockCollections}
         onAddBrand={() => setShowBrandForm(true)}
         onAddCollection={() => setShowCollectionForm(true)}
