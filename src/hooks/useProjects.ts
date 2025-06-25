@@ -43,15 +43,22 @@ export const useCreateProject = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (project: Omit<ProjectInsert, "user_id">) => {
+    mutationFn: async (project: Omit<ProjectInsert, "user_id"> & { client_id?: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error("You must be logged in to create a project");
       }
 
+      // Allow client_id to be null
+      const projectData: ProjectInsert = {
+        ...project,
+        user_id: user.id,
+        client_id: project.client_id || null
+      };
+
       const { data, error } = await supabase
         .from("projects")
-        .insert({ ...project, user_id: user.id })
+        .insert(projectData)
         .select()
         .single();
 

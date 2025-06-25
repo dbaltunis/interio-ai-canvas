@@ -7,11 +7,13 @@ import { CalendarDays, DollarSign, Users, TrendingUp, Bell, AlertTriangle, Packa
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
+import { useQuotes } from "@/hooks/useQuotes";
 
 export const Dashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: clients } = useClients();
+  const { data: quotes } = useQuotes();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -20,7 +22,8 @@ export const Dashboard = () => {
     }).format(amount);
   };
 
-  const recentJobs = projects?.slice(0, 5) || [];
+  // Use quotes for recent jobs since that's what shows in the jobs table
+  const recentJobs = quotes?.slice(0, 5) || [];
 
   const getClientName = (clientId: string) => {
     const client = clients?.find(c => c.id === clientId);
@@ -52,8 +55,8 @@ export const Dashboard = () => {
             <CardTitle className="text-sm font-medium text-gray-600">Total Jobs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{projects?.length || 0}</div>
-            <p className="text-xs text-gray-500">Active projects</p>
+            <div className="text-2xl font-bold">{quotes?.length || 0}</div>
+            <p className="text-xs text-gray-500">Active quotes/jobs</p>
           </CardContent>
         </Card>
 
@@ -62,7 +65,7 @@ export const Dashboard = () => {
             <CardTitle className="text-sm font-medium text-gray-600">Pending Quotes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.pendingQuotes || 0}</div>
+            <div className="text-2xl font-bold">{quotes?.filter(q => q.status === 'draft').length || 0}</div>
             <p className="text-xs text-gray-500">Awaiting response</p>
           </CardContent>
         </Card>
@@ -72,8 +75,8 @@ export const Dashboard = () => {
             <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.totalRevenue || 0)}</div>
-            <p className="text-xs text-gray-500">This month</p>
+            <div className="text-2xl font-bold">{formatCurrency(quotes?.reduce((sum, quote) => sum + (quote.total_amount || 0), 0) || 0)}</div>
+            <p className="text-xs text-gray-500">From all quotes</p>
           </CardContent>
         </Card>
 
@@ -82,7 +85,7 @@ export const Dashboard = () => {
             <CardTitle className="text-sm font-medium text-gray-600">Active Clients</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalClients || 0}</div>
+            <div className="text-2xl font-bold">{clients?.length || 0}</div>
             <p className="text-xs text-gray-500">Client relationships</p>
           </CardContent>
         </Card>
@@ -116,19 +119,22 @@ export const Dashboard = () => {
                       <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                     </TableRow>
                   ) : recentJobs.length > 0 ? (
-                    recentJobs.map((job, index) => (
-                      <TableRow key={job.id}>
-                        <TableCell className="font-medium">#{1000 + index}</TableCell>
-                        <TableCell>{getClientName(job.client_id)}</TableCell>
-                        <TableCell>
-                          <Badge variant={job.status === 'completed' ? 'default' : 'secondary'}>
-                            {job.status || 'pending'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(job.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(job.total_amount || 0)}</TableCell>
-                      </TableRow>
-                    ))
+                    recentJobs.map((quote) => {
+                      const project = projects?.find(p => p.id === quote.project_id);
+                      return (
+                        <TableRow key={quote.id}>
+                          <TableCell className="font-medium">{quote.quote_number || 'New Quote'}</TableCell>
+                          <TableCell>{getClientName(quote.client_id)}</TableCell>
+                          <TableCell>
+                            <Badge variant={quote.status === 'completed' ? 'default' : 'secondary'}>
+                              {quote.status || 'draft'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{new Date(quote.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(quote.total_amount || 0)}</TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-gray-500">No recent jobs</TableCell>
@@ -185,19 +191,23 @@ export const Dashboard = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Jobs This Week</span>
-                <span className="font-semibold">12</span>
+                <span className="font-semibold">{quotes?.filter(q => {
+                  const weekAgo = new Date();
+                  weekAgo.setDate(weekAgo.getDate() - 7);
+                  return new Date(q.created_at) > weekAgo;
+                }).length || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Pending Approvals</span>
-                <span className="font-semibold">3</span>
+                <span className="font-semibold">{quotes?.filter(q => q.status === 'draft').length || 0}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Overdue Tasks</span>
-                <span className="font-semibold text-red-600">2</span>
+                <span className="text-sm text-gray-600">Active Projects</span>
+                <span className="font-semibold">{projects?.filter(p => p.status !== 'completed').length || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Completed Jobs</span>
-                <span className="font-semibold text-green-600">8</span>
+                <span className="font-semibold text-green-600">{quotes?.filter(q => q.status === 'completed').length || 0}</span>
               </div>
             </CardContent>
           </Card>

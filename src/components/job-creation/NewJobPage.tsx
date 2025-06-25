@@ -18,7 +18,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [hasAttemptedCreation, setHasAttemptedCreation] = useState(false);
   
-  const { data: clients, isLoading: clientsLoading, error: clientsError } = useClients();
+  const { data: clients, isLoading: clientsLoading } = useClients();
   const createProject = useCreateProject();
   const { toast } = useToast();
 
@@ -28,47 +28,33 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       // Prevent multiple creation attempts
       if (hasAttemptedCreation || currentProject || isCreating) return;
       
-      // Wait for clients to load
+      // Wait for clients to load (but don't require them)
       if (clientsLoading) return;
-      
-      // Handle client loading error
-      if (clientsError) {
-        console.error("Error loading clients:", clientsError);
-        toast({
-          title: "Error",
-          description: "Failed to load clients. Please try again.",
-          variant: "destructive"
-        });
-        onBack();
-        return;
-      }
-      
-      // Check if we have clients
-      if (!clients || clients.length === 0) {
-        toast({
-          title: "No Clients Found",
-          description: "Please create a client first before creating a project.",
-          variant: "destructive"
-        });
-        onBack();
-        return;
-      }
       
       setIsCreating(true);
       setHasAttemptedCreation(true);
       
       try {
-        const defaultClient = clients[0]; // Use first available client
+        // Use first available client if exists, otherwise create project without client
+        const clientId = clients && clients.length > 0 ? clients[0].id : null;
+        
         const newProject = await createProject.mutateAsync({
           name: "New Project",
           description: "",
-          client_id: defaultClient.id,
+          client_id: clientId, // This can be null and set later
           status: "planning",
           priority: "medium"
         });
         
         setCurrentProject(newProject);
         console.log("Created new project:", newProject.id);
+        
+        if (!clientId) {
+          toast({
+            title: "Project Created",
+            description: "Project created successfully. You can assign a client later from the Client tab.",
+          });
+        }
       } catch (error) {
         console.error("Failed to create default project:", error);
         toast({
@@ -83,7 +69,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     };
 
     createDefaultProject();
-  }, [clients, clientsLoading, clientsError, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast]);
+  }, [clients, clientsLoading, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast]);
 
   // Show loading state if no project yet or creating
   if (clientsLoading || isCreating || !currentProject) {

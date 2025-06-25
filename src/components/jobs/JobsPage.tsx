@@ -7,6 +7,8 @@ import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
 import { NewJobPage } from "../job-creation/NewJobPage";
 import { useToast } from "@/hooks/use-toast";
+import { useQuotes } from "@/hooks/useQuotes";
+import { useClients } from "@/hooks/useClients";
 
 export const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "client">("jobs");
@@ -14,6 +16,10 @@ export const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
   const { toast } = useToast();
+  
+  // Get actual data for counts
+  const { data: quotes } = useQuotes();
+  const { data: clients } = useClients();
   
   // Filter state management
   const [searchClient, setSearchClient] = useState("");
@@ -54,6 +60,10 @@ export const JobsPage = () => {
     }
   };
 
+  // Calculate actual counts
+  const jobsCount = quotes?.length || 0;
+  const clientsCount = clients?.length || 0;
+
   // If creating a new job, show the new job page
   if (showNewJob) {
     return <NewJobPage onBack={handleBackToJobs} />;
@@ -78,7 +88,7 @@ export const JobsPage = () => {
             }`}
             onClick={() => setActiveTab("jobs")}
           >
-            Jobs (43)
+            Jobs ({jobsCount})
           </Button>
           <Button
             variant={activeTab === "client" ? "default" : "ghost"}
@@ -89,7 +99,7 @@ export const JobsPage = () => {
             }`}
             onClick={() => setActiveTab("client")}
           >
-            Client (9)
+            Client ({clientsCount})
           </Button>
         </div>
         
