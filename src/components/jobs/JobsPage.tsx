@@ -8,12 +8,13 @@ import { NewJobPage } from "../job-creation/NewJobPage";
 import { EnhancedClientManagement } from "../clients/EnhancedClientManagement";
 import { EnhancedJobsManagement } from "./EnhancedJobsManagement";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
+import { EmailsTab } from "./EmailsTab";
 import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 
 export const JobsPage = () => {
-  const [activeTab, setActiveTab] = useState<"jobs" | "clients">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -86,6 +87,7 @@ export const JobsPage = () => {
   // Calculate actual counts
   const jobsCount = quotes?.length || 0;
   const clientsCount = clients?.length || 0;
+  const emailsCount = 45; // This will be dynamic once we have email data
 
   // If creating a new job, show the new job page
   if (showNewJob) {
@@ -125,7 +127,7 @@ export const JobsPage = () => {
           </Button>
           <Button
             variant={activeTab === "clients" ? "default" : "ghost"}
-            className={`rounded-l-none border-l-0 px-6 py-2 ${
+            className={`rounded-none border-l-0 px-6 py-2 ${
               activeTab === "clients" 
                 ? "bg-gray-100 text-gray-900 border border-gray-300" 
                 : "bg-white text-gray-600 border border-gray-300"
@@ -133,6 +135,17 @@ export const JobsPage = () => {
             onClick={() => setActiveTab("clients")}
           >
             Clients ({clientsCount})
+          </Button>
+          <Button
+            variant={activeTab === "emails" ? "default" : "ghost"}
+            className={`rounded-l-none border-l-0 px-6 py-2 ${
+              activeTab === "emails" 
+                ? "bg-gray-100 text-gray-900 border border-gray-300" 
+                : "bg-white text-gray-600 border border-gray-300"
+            }`}
+            onClick={() => setActiveTab("emails")}
+          >
+            Emails ({emailsCount})
           </Button>
         </div>
         
@@ -144,22 +157,30 @@ export const JobsPage = () => {
             >
               New Job
             </Button>
-          ) : (
+          ) : activeTab === "clients" ? (
             <Button 
               className="bg-slate-600 hover:bg-slate-700 text-white px-6"
               onClick={handleNewClient}
             >
               New Client
             </Button>
+          ) : (
+            <Button 
+              className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+            >
+              New Email
+            </Button>
           )}
           
-          <Button 
-            variant="outline" 
-            className="bg-slate-500 text-white hover:bg-slate-600 px-4"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="w-4 h-4" />
-          </Button>
+          {activeTab === "jobs" && (
+            <Button 
+              variant="outline" 
+              className="bg-slate-500 text-white hover:bg-slate-600 px-4"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -195,8 +216,10 @@ export const JobsPage = () => {
           filterOwner={filterOwner}
           filterMaker={filterMaker}
         />
-      ) : (
+      ) : activeTab === "clients" ? (
         <EnhancedClientManagement />
+      ) : (
+        <EmailsTab />
       )}
     </div>
   );
