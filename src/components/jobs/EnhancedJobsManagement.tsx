@@ -8,12 +8,11 @@ import { Plus, FileText, Phone, MapPin, FolderOpen, Building2, User, DollarSign,
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
-import { NewJobPage } from "../job-creation/NewJobPage";
-import { JobEditPage } from "../job-editor/JobEditPage";
 
 interface EnhancedJobsManagementProps {
   onNewJob: () => void;
   onJobSelect: (jobId: string) => void;
+  onClientEdit?: (clientId: string) => void;
   searchClient: string;
   searchJobNumber: string;
   filterStatus: string;
@@ -25,6 +24,7 @@ interface EnhancedJobsManagementProps {
 export const EnhancedJobsManagement = ({
   onNewJob,
   onJobSelect,
+  onClientEdit,
   searchClient,
   searchJobNumber,
   filterStatus,
@@ -72,6 +72,16 @@ export const EnhancedJobsManagement = ({
       client,
       status: quote?.status || 'draft'
     };
+  };
+
+  const handleJobClick = (jobId: string) => {
+    onJobSelect(jobId);
+  };
+
+  const handleClientClick = (clientId: string) => {
+    if (onClientEdit) {
+      onClientEdit(clientId);
+    }
   };
 
   // Apply filters
@@ -185,7 +195,11 @@ export const EnhancedJobsManagement = ({
                   const project = stats.project;
                   
                   return (
-                    <TableRow key={quote.id}>
+                    <TableRow 
+                      key={quote.id} 
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleJobClick(quote.id)}
+                    >
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">
@@ -205,7 +219,13 @@ export const EnhancedJobsManagement = ({
                       
                       <TableCell>
                         {client ? (
-                          <div className="space-y-1">
+                          <div 
+                            className="space-y-1 cursor-pointer hover:bg-blue-50 p-2 rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClientClick(client.id);
+                            }}
+                          >
                             <div className="font-medium">
                               {client.client_type === 'B2B' ? client.company_name : client.name}
                             </div>
@@ -287,12 +307,15 @@ export const EnhancedJobsManagement = ({
                       </TableCell>
                       
                       <TableCell>
-                        <div className="flex space-x-1">
+                        <div className="flex space-x-1" onClick={(e) => e.stopPropagation()}>
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             title="Edit Job"
-                            onClick={() => onJobSelect(quote.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onJobSelect(quote.id);
+                            }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

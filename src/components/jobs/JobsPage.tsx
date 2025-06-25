@@ -16,6 +16,7 @@ export const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "clients">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
   const [showNewClient, setShowNewClient] = useState(false);
   const { toast } = useToast();
@@ -45,8 +46,13 @@ export const JobsPage = () => {
     setSelectedJobId(jobId);
   };
 
+  const handleClientEdit = (clientId: string) => {
+    setSelectedClientId(clientId);
+  };
+
   const handleBackToJobs = () => {
     setSelectedJobId(null);
+    setSelectedClientId(null);
     setShowNewJob(false);
     setShowNewClient(false);
   };
@@ -89,6 +95,11 @@ export const JobsPage = () => {
   // If creating a new client, show the new client page
   if (showNewClient) {
     return <ClientCreateForm onBack={handleBackToJobs} />;
+  }
+
+  // If editing a client, show the client edit form
+  if (selectedClientId) {
+    return <ClientCreateForm clientId={selectedClientId} onBack={handleBackToJobs} />;
   }
 
   // If a job is selected, show the job editing page
@@ -176,6 +187,7 @@ export const JobsPage = () => {
         <EnhancedJobsManagement 
           onNewJob={handleNewJob}
           onJobSelect={handleJobSelect}
+          onClientEdit={handleClientEdit}
           searchClient={searchClient}
           searchJobNumber={searchJobNumber}
           filterStatus={filterStatus}
