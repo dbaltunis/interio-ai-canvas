@@ -29,34 +29,82 @@ export const DatabaseCheck = () => {
       }
 
       // Test database access for key tables
-      const tests = [
-        { name: "business_settings", table: "business_settings" },
-        { name: "inventory", table: "inventory" },
-        { name: "team_members", table: "team_members" },
-        { name: "vendors", table: "vendors" }
-      ];
-
       const results: any = {};
 
-      for (const test of tests) {
-        try {
-          const { data, error } = await supabase
-            .from(test.table)
-            .select("*")
-            .limit(1);
-          
-          results[test.name] = {
-            success: !error,
-            error: error?.message,
-            hasData: data && data.length > 0
-          };
-          console.log(`${test.name} test:`, { data, error });
-        } catch (err) {
-          results[test.name] = {
-            success: false,
-            error: err.message
-          };
-        }
+      try {
+        const { data: businessData, error: businessError } = await supabase
+          .from("business_settings")
+          .select("*")
+          .limit(1);
+        
+        results.business_settings = {
+          success: !businessError,
+          error: businessError?.message,
+          hasData: businessData && businessData.length > 0
+        };
+        console.log("business_settings test:", { data: businessData, error: businessError });
+      } catch (err: any) {
+        results.business_settings = {
+          success: false,
+          error: err.message
+        };
+      }
+
+      try {
+        const { data: inventoryData, error: inventoryError } = await supabase
+          .from("inventory")
+          .select("*")
+          .limit(1);
+        
+        results.inventory = {
+          success: !inventoryError,
+          error: inventoryError?.message,
+          hasData: inventoryData && inventoryData.length > 0
+        };
+        console.log("inventory test:", { data: inventoryData, error: inventoryError });
+      } catch (err: any) {
+        results.inventory = {
+          success: false,
+          error: err.message
+        };
+      }
+
+      try {
+        const { data: teamData, error: teamError } = await supabase
+          .from("team_members")
+          .select("*")
+          .limit(1);
+        
+        results.team_members = {
+          success: !teamError,
+          error: teamError?.message,
+          hasData: teamData && teamData.length > 0
+        };
+        console.log("team_members test:", { data: teamData, error: teamError });
+      } catch (err: any) {
+        results.team_members = {
+          success: false,
+          error: err.message
+        };
+      }
+
+      try {
+        const { data: vendorsData, error: vendorsError } = await supabase
+          .from("vendors")
+          .select("*")
+          .limit(1);
+        
+        results.vendors = {
+          success: !vendorsError,
+          error: vendorsError?.message,
+          hasData: vendorsData && vendorsData.length > 0
+        };
+        console.log("vendors test:", { data: vendorsData, error: vendorsError });
+      } catch (err: any) {
+        results.vendors = {
+          success: false,
+          error: err.message
+        };
       }
 
       setDbStatus(results);
@@ -75,7 +123,7 @@ export const DatabaseCheck = () => {
           description: "All tables accessible"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Database check failed:", error);
       toast({
         title: "Check Failed",

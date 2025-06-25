@@ -26,7 +26,7 @@ export const LibraryPage = () => {
   const fabrics = inventory
     .filter(item => item.category === "Fabric")
     .map(item => ({
-      id: item.id,
+      id: item.id, // Keep as string
       name: item.name,
       code: item.sku || "N/A",
       brand: item.supplier || "Unknown",
@@ -41,7 +41,7 @@ export const LibraryPage = () => {
 
   // Transform vendors to brands format
   const brands = vendors.map(vendor => ({
-    id: vendor.id,
+    id: vendor.id, // Keep as string
     name: vendor.name,
     collections: 0, // Would need a separate query to count collections
     fabrics: inventory.filter(item => item.supplier === vendor.name).length

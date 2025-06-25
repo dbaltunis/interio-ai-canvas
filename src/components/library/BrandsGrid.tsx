@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 interface Brand {
-  id: number;
+  id: string; // Changed from number to string
   name: string;
   collections: number;
   fabrics: number;
