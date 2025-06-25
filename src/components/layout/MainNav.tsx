@@ -11,14 +11,8 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import {
   LayoutDashboard,
   FolderOpen,
-  Users,
-  FileText,
-  Package,
-  Hammer,
   Calendar,
-  Calculator,
   Library,
-  Settings,
   Menu,
   Plus,
 } from "lucide-react";
@@ -26,14 +20,8 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Jobs", href: "/jobs", icon: FolderOpen },
-  { name: "Clients", href: "/clients", icon: Users },
-  { name: "Quotes", href: "/quotes", icon: FileText },
-  { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Workshop", href: "/workshop", icon: Hammer },
   { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Calculator", href: "/calculator", icon: Calculator },
   { name: "Library", href: "/library", icon: Library },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export const MainNav = () => {
@@ -61,9 +49,9 @@ export const MainNav = () => {
           >
             <Icon className="h-4 w-4" />
             {item.name}
-            {item.name === "Workshop" && (
+            {item.name === "Jobs" && (
               <Badge variant="secondary" className="ml-auto">
-                3
+                4
               </Badge>
             )}
           </Link>

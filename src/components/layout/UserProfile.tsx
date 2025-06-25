@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Settings, LogOut, Building } from "lucide-react";
+import { User, Settings, LogOut, Building, Calculator, Users, Package, Hammer, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const UserProfile = () => {
@@ -64,6 +64,31 @@ export const UserProfile = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {/* Quick Access Menu Items */}
+        <DropdownMenuItem onClick={() => navigate('/clients')}>
+          <Users className="mr-2 h-4 w-4" />
+          <span>Clients</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/quotes')}>
+          <FileText className="mr-2 h-4 w-4" />
+          <span>Quotes</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/inventory')}>
+          <Package className="mr-2 h-4 w-4" />
+          <span>Inventory</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/workshop')}>
+          <Hammer className="mr-2 h-4 w-4" />
+          <span>Workshop</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/calculator')}>
+          <Calculator className="mr-2 h-4 w-4" />
+          <span>Calculator</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
         <DropdownMenuItem onClick={() => navigate('/settings?tab=company')}>
           <Building className="mr-2 h-4 w-4" />
           <span>Company Settings</span>
