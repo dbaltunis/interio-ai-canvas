@@ -1,192 +1,257 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Building, Mail, Phone, MapPin, Globe, Image } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload, Building } from "lucide-react";
 
 export const CompanySetupTab = () => {
+  const { data: settings, isLoading } = useBusinessSettings();
+  const createSettings = useCreateBusinessSettings();
+  const updateSettings = useUpdateBusinessSettings();
   const { toast } = useToast();
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(settings?.company_logo || null);
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [formData, setFormData] = useState({
+    company_name: settings?.company_name || "",
+    business_email: settings?.business_email || "",
+    business_phone: settings?.business_phone || "",
+    business_address: settings?.business_address || "",
+    abn: settings?.abn || "",
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    console.log("Starting logo upload...");
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-company-logo.${fileExt}`;
+
+      console.log("Uploading to storage bucket:", fileName);
+
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(fileName, file, {
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("Upload successful:", uploadData);
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(fileName);
+
+      console.log("Public URL:", publicUrl);
+      setLogoUrl(publicUrl);
+
+      toast({
+        title: "Success",
+        description: "Company logo uploaded successfully",
+      });
+
+    } catch (error: any) {
+      console.error("Logo upload failed:", error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload logo",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Company Information Saved",
-      description: "Your company details have been updated successfully",
-    });
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const settingsData = {
+        ...formData,
+        company_logo: logoUrl,
+      };
+
+      console.log("Saving company settings:", settingsData);
+
+      if (settings?.id) {
+        await updateSettings.mutateAsync({ id: settings.id, ...settingsData });
+      } else {
+        await createSettings.mutateAsync(settingsData);
+      }
+
+      toast({
+        title: "Success",
+        description: "Company settings saved successfully",
+      });
+
+    } catch (error: any) {
+      console.error("Save failed:", error);
+      toast({
+        title: "Save failed",
+        description: error.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-brand-primary">Company Setup</h3>
-          <p className="text-sm text-brand-neutral">Configure your business information and branding</p>
-        </div>
-        <Badge variant="outline" className="text-green-600 border-green-600">
-          Step 1 of 6
-        </Badge>
-      </div>
-
-      {/* Company Logo */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Image className="h-5 w-5 text-brand-primary" />
-            Company Logo
+            <Building className="h-5 w-5" />
+            Company Information
           </CardTitle>
           <CardDescription>
-            Upload your company logo to appear on quotes, invoices, and documents
+            Configure your company details and branding
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-6">
-            <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo preview" className="max-w-full max-h-full object-contain" />
-              ) : (
-                <div className="text-center">
-                  <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">No logo uploaded</p>
-                </div>
+          {/* Company Logo Upload */}
+          <div className="space-y-2">
+            <Label>Company Logo</Label>
+            <div className="flex items-center gap-4">
+              {logoUrl && (
+                <img 
+                  src={logoUrl} 
+                  alt="Company Logo" 
+                  className="h-16 w-16 object-contain border rounded"
+                />
               )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="logoUpload" className="cursor-pointer">
-                <div className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <Upload className="h-4 w-4" />
-                  <span>Upload Logo</span>
-                </div>
-                <input
-                  id="logoUpload"
+              <div>
+                <Input
                   type="file"
                   accept="image/*"
                   onChange={handleLogoUpload}
-                  className="hidden"
+                  disabled={uploading}
+                  className="mb-2"
                 />
-              </Label>
-              <p className="text-xs text-gray-500">
-                Recommended: PNG or JPG, max 2MB, square format works best
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Business Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5 text-brand-primary" />
-            Business Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="companyName">Company Name *</Label>
-              <Input id="companyName" placeholder="Your Window Covering Co." />
-            </div>
-            <div>
-              <Label htmlFor="abn">ABN / Tax ID</Label>
-              <Input id="abn" placeholder="12 345 678 901" />
+                {uploading && (
+                  <p className="text-sm text-gray-500">Uploading...</p>
+                )}
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="businessAddress">Business Address</Label>
-            <Textarea 
-              id="businessAddress" 
-              placeholder="123 Main Street&#10;Suite 100&#10;City, State 12345"
+          {/* Company Name */}
+          <div className="space-y-2">
+            <Label htmlFor="company_name">Company Name</Label>
+            <Input
+              id="company_name"
+              value={formData.company_name}
+              onChange={(e) => handleInputChange("company_name", e.target.value)}
+              placeholder="Your Company Name"
+            />
+          </div>
+
+          {/* Business Email */}
+          <div className="space-y-2">
+            <Label htmlFor="business_email">Business Email</Label>
+            <Input
+              id="business_email"
+              type="email"
+              value={formData.business_email}
+              onChange={(e) => handleInputChange("business_email", e.target.value)}
+              placeholder="business@company.com"
+            />
+          </div>
+
+          {/* Business Phone */}
+          <div className="space-y-2">
+            <Label htmlFor="business_phone">Business Phone</Label>
+            <Input
+              id="business_phone"
+              value={formData.business_phone}
+              onChange={(e) => handleInputChange("business_phone", e.target.value)}
+              placeholder="+1 (555) 123-4567"
+            />
+          </div>
+
+          {/* Business Address */}
+          <div className="space-y-2">
+            <Label htmlFor="business_address">Business Address</Label>
+            <Textarea
+              id="business_address"
+              value={formData.business_address}
+              onChange={(e) => handleInputChange("business_address", e.target.value)}
+              placeholder="123 Business St, City, State, ZIP"
               rows={3}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="businessPhone">Phone Number</Label>
-              <Input id="businessPhone" placeholder="(555) 123-4567" />
-            </div>
-            <div>
-              <Label htmlFor="businessEmail">Email Address</Label>
-              <Input id="businessEmail" type="email" placeholder="info@yourcompany.com" />
-            </div>
+          {/* ABN */}
+          <div className="space-y-2">
+            <Label htmlFor="abn">ABN (Australian Business Number)</Label>
+            <Input
+              id="abn"
+              value={formData.abn}
+              onChange={(e) => handleInputChange("abn", e.target.value)}
+              placeholder="12 345 678 901"
+            />
           </div>
 
-          <div>
-            <Label htmlFor="website">Website (Optional)</Label>
-            <Input id="website" placeholder="https://www.yourcompany.com" />
-          </div>
+          <Button onClick={handleSave} className="w-full">
+            Save Company Settings
+          </Button>
         </CardContent>
       </Card>
-
-      {/* Business Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Business Configuration</CardTitle>
-          <CardDescription>
-            Set up your default business rules and preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="defaultMarkup">Default Markup (%)</Label>
-              <Input id="defaultMarkup" type="number" placeholder="40" />
-            </div>
-            <div>
-              <Label htmlFor="taxRate">Tax Rate (%)</Label>
-              <Input id="taxRate" type="number" step="0.1" placeholder="10.0" />
-            </div>
-            <div>
-              <Label htmlFor="laborRate">Labor Rate ($/hour)</Label>
-              <Input id="laborRate" type="number" placeholder="85" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="quoteValidity">Quote Validity (days)</Label>
-              <Input id="quoteValidity" type="number" placeholder="30" />
-            </div>
-            <div>
-              <Label htmlFor="leadTime">Installation Lead Time (days)</Label>
-              <Input id="leadTime" type="number" placeholder="14" />
-            </div>
-            <div>
-              <Label htmlFor="businessHours">Business Hours</Label>
-              <Input id="businessHours" placeholder="9:00 AM - 5:00 PM" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Buttons */}
-      <div className="flex justify-between">
-        <Button variant="outline">
-          Save as Draft
-        </Button>
-        <Button onClick={handleSave} className="bg-brand-primary hover:bg-brand-accent">
-          Save & Continue to Team Setup
-        </Button>
-      </div>
     </div>
   );
 };

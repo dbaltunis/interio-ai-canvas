@@ -3,395 +3,233 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Download, AlertCircle, CheckCircle, FileText, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFabricImport } from "@/hooks/useFabricImport";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload, FileText, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-interface CSVRow {
-  vendor_name: string;
-  collection_name: string;
-  fabric_name: string;
-  fabric_code: string;
-  width_cm: string;
-  pattern_repeat_v_cm: string;
-  pattern_repeat_h_cm: string;
-  weight: string;
-  type: string;
-  color: string;
-  pattern: string;
-  confidential_price: string;
-  retail_price: string;
-  cost_per_unit: string;
-  initial_quantity: string;
-  reorder_point: string;
-  supplier_sku: string;
-  lead_time_days: string;
-  description: string;
-  tags: string;
-  image_filename: string;
+interface FabricCSVUploadProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-interface ValidationError {
-  row: number;
-  field: string;
-  message: string;
-}
-
-export const FabricCSVUpload = ({ onClose }: { onClose: () => void }) => {
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
-  const [csvData, setCsvData] = useState<CSVRow[]>([]);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+export const FabricCSVUpload = ({ open, onOpenChange }: FabricCSVUploadProps) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
-  const fabricImport = useFabricImport();
 
-  const downloadTemplate = () => {
-    const template = [
-      [
-        "vendor_name", "collection_name", "fabric_name", "fabric_code", "width_cm", 
-        "pattern_repeat_v_cm", "pattern_repeat_h_cm", "weight", "type", "color", 
-        "pattern", "confidential_price", "retail_price", "cost_per_unit", 
-        "initial_quantity", "reorder_point", "supplier_sku", "lead_time_days", 
-        "description", "tags", "image_filename"
-      ],
-      [
-        "Fibre Naturelle", "Classic Collection", "Velvet Royal", "VR-001", "140", 
-        "32", "28", "350gsm", "Velvet", "Navy Blue", "Solid", "25.50", "45.00", 
-        "22.00", "50", "10", "FN-VR-001", "14", "Luxurious velvet fabric perfect for curtains", 
-        "luxury,velvet,curtains", "velvet-royal-navy.jpg"
-      ]
-    ];
-
-    const csvContent = template.map(row => 
-      row.map(cell => `"${cell}"`).join(",")
-    ).join("\n");
-    
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "fabric_import_template.csv";
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const parseCsv = (content: string): CSVRow[] => {
-    const lines = content.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return [];
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    
-    return lines.slice(1).map(line => {
-      const values = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          values.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      values.push(current.trim());
-      
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
-      });
-      return row as CSVRow;
-    });
-  };
-
-  const validateData = (data: CSVRow[]): ValidationError[] => {
-    const errors: ValidationError[] = [];
-    const requiredFields = ['vendor_name', 'fabric_name', 'fabric_code'];
-
-    data.forEach((row, index) => {
-      requiredFields.forEach(field => {
-        if (!row[field as keyof CSVRow]) {
-          errors.push({
-            row: index + 2,
-            field,
-            message: `${field} is required`
-          });
-        }
-      });
-
-      // Validate numeric fields
-      const numericFields = ['width_cm', 'pattern_repeat_v_cm', 'pattern_repeat_h_cm', 'confidential_price', 'retail_price'];
-      numericFields.forEach(field => {
-        const value = row[field as keyof CSVRow];
-        if (value && isNaN(Number(value))) {
-          errors.push({
-            row: index + 2,
-            field,
-            message: `${field} must be a valid number`
-          });
-        }
-      });
-    });
-
-    return errors;
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setCsvFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      try {
-        const data = parseCsv(content);
-        setCsvData(data);
-        const errors = validateData(data);
-        setValidationErrors(errors);
-      } catch (error) {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
         toast({
-          title: "Error",
-          description: "Failed to parse CSV file. Please check the format.",
+          title: "Invalid file type",
+          description: "Please select a CSV file",
           variant: "destructive",
         });
+        return;
       }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setImageFiles(files);
+      setFile(selectedFile);
     }
   };
 
-  const processUpload = async () => {
-    if (validationErrors.length > 0) {
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    const fabrics = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+      const fabric: any = {};
+      
+      headers.forEach((header, index) => {
+        const value = values[index] || '';
+        
+        switch (header) {
+          case 'name':
+          case 'fabric_name':
+            fabric.name = value;
+            break;
+          case 'sku':
+          case 'code':
+          case 'fabric_code':
+            fabric.sku = value;
+            break;
+          case 'supplier':
+          case 'brand':
+          case 'vendor':
+            fabric.supplier = value;
+            break;
+          case 'color':
+            fabric.color = value;
+            break;
+          case 'pattern':
+            fabric.pattern = value;
+            break;
+          case 'type':
+          case 'fabric_type':
+            fabric.type = value;
+            break;
+          case 'width':
+            fabric.width = parseFloat(value) || null;
+            break;
+          case 'cost':
+          case 'price':
+          case 'cost_per_unit':
+            fabric.cost_per_unit = parseFloat(value) || null;
+            break;
+          case 'quantity':
+            fabric.quantity = parseFloat(value) || 0;
+            break;
+        }
+      });
+      
+      // Set defaults and required fields
+      if (fabric.name) {
+        fabric.category = 'Fabric';
+        fabric.unit = 'yard';
+        fabrics.push(fabric);
+      }
+    }
+    
+    return fabrics;
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
       toast({
-        title: "Validation Errors",
-        description: "Please fix all validation errors before proceeding.",
+        title: "No file selected",
+        description: "Please select a CSV file to upload",
         variant: "destructive",
       });
       return;
     }
 
+    setUploading(true);
+    console.log("Starting CSV upload process...");
+
     try {
-      await fabricImport.mutateAsync({
-        csvData,
-        imageFiles: imageFiles || undefined
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in to upload fabrics");
+      }
+      console.log("User authenticated:", user.email);
+
+      // Read file content
+      const csvText = await file.text();
+      console.log("CSV file read successfully, length:", csvText.length);
+      
+      // Parse CSV
+      const fabrics = parseCSV(csvText);
+      console.log("Parsed fabrics:", fabrics.length);
+      
+      if (fabrics.length === 0) {
+        throw new Error("No valid fabric data found in CSV file");
+      }
+
+      // Add user_id to each fabric
+      const fabricsWithUserId = fabrics.map(fabric => ({
+        ...fabric,
+        user_id: user.id
+      }));
+
+      console.log("Inserting fabrics into database...");
+      
+      // Insert fabrics into database
+      const { data, error } = await supabase
+        .from("inventory")
+        .insert(fabricsWithUserId)
+        .select();
+
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
+
+      console.log("Successfully inserted fabrics:", data?.length);
+
+      toast({
+        title: "Success!",
+        description: `Successfully imported ${data?.length || fabrics.length} fabrics`,
       });
-      onClose();
-    } catch (error) {
-      // Error handling is done in the hook
+
+      setFile(null);
+      onOpenChange(false);
+      
+      // Refresh the page to show new data
+      window.location.reload();
+
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload CSV file",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-      <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="upload">Upload</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="images">Images</TabsTrigger>
-        </TabsList>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Fabric CSV
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="csv-file">Select CSV File</Label>
+            <Input
+              id="csv-file"
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+          </div>
 
-        <TabsContent value="upload" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Fabric CSV Import
-              </CardTitle>
-              <CardDescription>
-                Upload a CSV file with fabric data including vendors, collections, and inventory details.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Button variant="outline" onClick={downloadTemplate}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-                <Badge variant="secondary">CSV Format Required</Badge>
-              </div>
-
-              <div>
-                <Label htmlFor="csv-upload">CSV File</Label>
-                <Input
-                  id="csv-upload"
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  className="mt-1"
-                />
-              </div>
-
-              {csvData.length > 0 && (
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Loaded {csvData.length} fabric records from CSV file.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {validationErrors.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Found {validationErrors.length} validation errors. Please review and fix them.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="preview" className="space-y-4">
-          {csvData.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Preview</CardTitle>
-                <CardDescription>
-                  Review the fabric data before importing
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-96 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Vendor</TableHead>
-                        <TableHead>Collection</TableHead>
-                        <TableHead>Fabric Name</TableHead>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Retail Price</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {csvData.slice(0, 10).map((row, index) => {
-                        const rowErrors = validationErrors.filter(e => e.row === index + 2);
-                        return (
-                          <TableRow key={index}>
-                            <TableCell>{row.vendor_name}</TableCell>
-                            <TableCell>{row.collection_name}</TableCell>
-                            <TableCell>{row.fabric_name}</TableCell>
-                            <TableCell>{row.fabric_code}</TableCell>
-                            <TableCell>{row.type}</TableCell>
-                            <TableCell>${row.retail_price}</TableCell>
-                            <TableCell>
-                              {rowErrors.length > 0 ? (
-                                <Badge variant="destructive">Errors</Badge>
-                              ) : (
-                                <Badge variant="secondary">Valid</Badge>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                  {csvData.length > 10 && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Showing first 10 of {csvData.length} records
-                    </p>
-                  )}
-                </div>
-
-                {validationErrors.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="font-medium text-destructive mb-2">Validation Errors:</h4>
-                    <div className="space-y-1 max-h-32 overflow-auto">
-                      {validationErrors.slice(0, 10).map((error, index) => (
-                        <p key={index} className="text-sm text-destructive">
-                          Row {error.row}: {error.field} - {error.message}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No data to preview. Please upload a CSV file first.</p>
-              </CardContent>
-            </Card>
+          {file && (
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <FileText className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-700">{file.name}</span>
+            </div>
           )}
-        </TabsContent>
 
-        <TabsContent value="images" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                Fabric Images
-              </CardTitle>
-              <CardDescription>
-                Upload images for your fabrics. Match filenames to the image_filename column in your CSV.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="images-upload">Fabric Images</Label>
-                <Input
-                  id="images-upload"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="mt-1"
-                />
-              </div>
+          <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5" />
+            <div className="text-sm text-blue-700">
+              <p className="font-medium">CSV Format Requirements:</p>
+              <p>Columns: name, sku, supplier, color, pattern, type, width, cost_per_unit, quantity</p>
+            </div>
+          </div>
 
-              {imageFiles && imageFiles.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Selected Images ({imageFiles.length})</h4>
-                  <div className="grid grid-cols-4 gap-2 max-h-32 overflow-auto">
-                    {Array.from(imageFiles).slice(0, 12).map((file, index) => (
-                      <div key={index} className="text-xs p-2 bg-gray-50 rounded truncate">
-                        {file.name}
-                      </div>
-                    ))}
-                  </div>
-                  {imageFiles.length > 12 && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      And {imageFiles.length - 12} more images...
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      <div className="flex justify-end space-x-3 pt-6 border-t">
-        <Button variant="outline" onClick={onClose} disabled={fabricImport.isPending}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={processUpload} 
-          disabled={csvData.length === 0 || validationErrors.length > 0 || fabricImport.isPending}
-          className="bg-brand-primary hover:bg-brand-secondary"
-        >
-          {fabricImport.isPending ? "Processing..." : `Import ${csvData.length} Fabrics`}
-        </Button>
-      </div>
-    </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleUpload} 
+              disabled={!file || uploading}
+              className="flex-1"
+            >
+              {uploading ? "Uploading..." : "Upload CSV"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={uploading}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
