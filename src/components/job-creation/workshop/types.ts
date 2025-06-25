@@ -65,7 +65,7 @@ export interface TaskAssignment {
   assignedTo: string;
   estimatedHours: number;
   actualHours: number;
-  status: "in-progress" | "completed" | "pending";
+  status: "assigned" | "in-progress" | "completed" | "on-hold";
   priority: "high" | "medium" | "low";
   dueDate: string;
   skills_required: string[];
