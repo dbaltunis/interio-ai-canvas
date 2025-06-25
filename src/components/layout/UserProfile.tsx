@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
+import React, { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,17 +12,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut, Building, Calculator, Users, Package, Hammer, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 export const UserProfile = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  // Get user directly from Supabase instead of using useAuth hook
+  React.useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
 
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
-      await signOut();
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
@@ -41,6 +48,10 @@ export const UserProfile = () => {
 
   const displayName = user?.user_metadata?.full_name || user?.email || 'User';
   const initials = getInitials(displayName);
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <DropdownMenu>
@@ -66,34 +77,34 @@ export const UserProfile = () => {
         <DropdownMenuSeparator />
         
         {/* Quick Access Menu Items */}
-        <DropdownMenuItem onClick={() => navigate('/clients')}>
+        <DropdownMenuItem>
           <Users className="mr-2 h-4 w-4" />
           <span>Clients</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/quotes')}>
+        <DropdownMenuItem>
           <FileText className="mr-2 h-4 w-4" />
           <span>Quotes</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/inventory')}>
+        <DropdownMenuItem>
           <Package className="mr-2 h-4 w-4" />
           <span>Inventory</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/workshop')}>
+        <DropdownMenuItem>
           <Hammer className="mr-2 h-4 w-4" />
           <span>Workshop</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/calculator')}>
+        <DropdownMenuItem>
           <Calculator className="mr-2 h-4 w-4" />
           <span>Calculator</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={() => navigate('/settings?tab=company')}>
+        <DropdownMenuItem>
           <Building className="mr-2 h-4 w-4" />
           <span>Company Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/settings')}>
+        <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
