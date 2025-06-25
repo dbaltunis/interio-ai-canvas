@@ -240,14 +240,10 @@ export const LibraryPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Filter Fabrics</DialogTitle>
-          </DialogHeader>
-          <FilterDialog onClose={() => setShowFilterDialog(false)} />
-        </DialogContent>
-      </Dialog>
+      <FilterDialog 
+        open={showFilterDialog} 
+        onOpenChange={setShowFilterDialog} 
+      />
 
       <Dialog open={showCSVUpload} onOpenChange={setShowCSVUpload}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
