@@ -1,20 +1,21 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateClient } from "@/hooks/useClients";
+import { useCreateClient, useClients, useUpdateClient } from "@/hooks/useClients";
 import { ArrowLeft } from "lucide-react";
 
 interface ClientCreateFormProps {
   onBack: () => void;
   onClientCreated?: (clientId: string) => void;
+  clientId?: string; // Optional prop for editing existing clients
 }
 
-export const ClientCreateForm = ({ onBack, onClientCreated }: ClientCreateFormProps) => {
+export const ClientCreateForm = ({ onBack, onClientCreated, clientId }: ClientCreateFormProps) => {
   const [clientType, setClientType] = useState<"B2B" | "B2C">("B2C");
   const [formData, setFormData] = useState({
     name: "",
@@ -30,6 +31,30 @@ export const ClientCreateForm = ({ onBack, onClientCreated }: ClientCreateFormPr
   });
 
   const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
+  const { data: clients } = useClients();
+  
+  const isEditing = Boolean(clientId);
+  const existingClient = clients?.find(c => c.id === clientId);
+
+  // Load existing client data when editing
+  useEffect(() => {
+    if (isEditing && existingClient) {
+      setClientType(existingClient.client_type as "B2B" | "B2C" || "B2C");
+      setFormData({
+        name: existingClient.name || "",
+        email: existingClient.email || "",
+        phone: existingClient.phone || "",
+        address: existingClient.address || "",
+        city: existingClient.city || "",
+        state: existingClient.state || "",
+        zip_code: existingClient.zip_code || "",
+        company_name: existingClient.company_name || "",
+        contact_person: existingClient.contact_person || "",
+        notes: existingClient.notes || ""
+      });
+    }
+  }, [isEditing, existingClient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,15 +68,20 @@ export const ClientCreateForm = ({ onBack, onClientCreated }: ClientCreateFormPr
         contact_person: clientType === "B2C" ? (formData.contact_person || formData.name) : formData.contact_person
       };
 
-      const newClient = await createClient.mutateAsync(clientData);
-      
-      if (onClientCreated) {
-        onClientCreated(newClient.id);
-      } else {
+      if (isEditing && clientId) {
+        await updateClient.mutateAsync({ id: clientId, ...clientData });
         onBack();
+      } else {
+        const newClient = await createClient.mutateAsync(clientData);
+        
+        if (onClientCreated) {
+          onClientCreated(newClient.id);
+        } else {
+          onBack();
+        }
       }
     } catch (error) {
-      console.error("Failed to create client:", error);
+      console.error(`Failed to ${isEditing ? 'update' : 'create'} client:`, error);
     }
   };
 
@@ -65,7 +95,9 @@ export const ClientCreateForm = ({ onBack, onClientCreated }: ClientCreateFormPr
         <Button variant="ghost" onClick={onBack} className="mr-4">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-bold">Create New Client</h1>
+        <h1 className="text-2xl font-bold">
+          {isEditing ? 'Edit Client' : 'Create New Client'}
+        </h1>
       </div>
 
       <Card>
@@ -199,8 +231,11 @@ export const ClientCreateForm = ({ onBack, onClientCreated }: ClientCreateFormPr
               <Button type="button" variant="outline" onClick={onBack}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createClient.isPending}>
-                {createClient.isPending ? "Creating..." : "Create Client"}
+              <Button type="submit" disabled={createClient.isPending || updateClient.isPending}>
+                {createClient.isPending || updateClient.isPending ? 
+                  (isEditing ? "Updating..." : "Creating...") : 
+                  (isEditing ? "Update Client" : "Create Client")
+                }
               </Button>
             </div>
           </form>
