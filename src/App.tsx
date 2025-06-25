@@ -18,7 +18,8 @@ import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalculatorView } from "@/components/calculator/CalculatorView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { SettingsView } from "@/components/settings/SettingsView";
-import { NotFound } from "@/pages/NotFound";
+import NotFound from "@/pages/NotFound";
+import { useNavigate } from "react-router-dom";
 import "./App.css";
 
 const queryClient = new QueryClient({
@@ -42,8 +43,8 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/jobs" element={<JobsPage />} />
-                  <Route path="/jobs/new" element={<NewJobPage />} />
-                  <Route path="/jobs/:id/edit" element={<JobEditPage />} />
+                  <Route path="/jobs/new" element={<NewJobPageWrapper />} />
+                  <Route path="/jobs/:id/edit" element={<JobEditPageWrapper />} />
                   <Route path="/projects/:id" element={<ProjectPage />} />
                   <Route path="/clients" element={<EnhancedClientManagement />} />
                   <Route path="/quotes" element={<QuoteManagement />} />
@@ -64,5 +65,17 @@ function App() {
     </QueryClientProvider>
   );
 }
+
+// Wrapper components to handle navigation
+const NewJobPageWrapper = () => {
+  const navigate = useNavigate();
+  return <NewJobPage onBack={() => navigate("/jobs")} />;
+};
+
+const JobEditPageWrapper = () => {
+  const navigate = useNavigate();
+  const jobId = window.location.pathname.split('/')[2]; // Extract ID from URL
+  return <JobEditPage jobId={jobId} onBack={() => navigate("/jobs")} />;
+};
 
 export default App;

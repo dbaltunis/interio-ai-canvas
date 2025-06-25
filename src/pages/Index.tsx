@@ -79,7 +79,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <BrandHeader size="sm" />
+              <BrandHeader />
               
               {/* Navigation Menu */}
               <nav className="flex space-x-1">
@@ -106,7 +106,7 @@ const Index = () => {
             
             <div className="flex items-center space-x-4">
               <AIAssistant />
-              <UserProfile onSettingsClick={() => setActiveTab("settings")} />
+              <UserProfile />
             </div>
           </div>
         </div>
