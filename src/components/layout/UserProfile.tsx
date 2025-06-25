@@ -13,7 +13,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut, Building, Calculator, Users, Package, Hammer, FileText } from "lucide-react";
 
-export const UserProfile = () => {
+interface UserProfileProps {
+  onNavigate: (section: string) => void;
+}
+
+export const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -77,34 +81,34 @@ export const UserProfile = () => {
         <DropdownMenuSeparator />
         
         {/* Quick Access Menu Items */}
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('clients')}>
           <Users className="mr-2 h-4 w-4" />
           <span>Clients</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('quotes')}>
           <FileText className="mr-2 h-4 w-4" />
           <span>Quotes</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('inventory')}>
           <Package className="mr-2 h-4 w-4" />
           <span>Inventory</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('workshop')}>
           <Hammer className="mr-2 h-4 w-4" />
           <span>Workshop</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('calculator')}>
           <Calculator className="mr-2 h-4 w-4" />
           <span>Calculator</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('settings')}>
           <Building className="mr-2 h-4 w-4" />
           <span>Company Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onNavigate('settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>

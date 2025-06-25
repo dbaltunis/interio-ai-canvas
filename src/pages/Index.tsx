@@ -24,17 +24,19 @@ import {
   Package, 
   Wrench,
   Calendar,
-  Calculator
+  Calculator,
+  Settings
 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("library");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const navItems = [
     { id: "dashboard", label: "Home", icon: LayoutDashboard },
     { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "library", label: "Library", icon: Package },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const renderActiveComponent = () => {
@@ -57,12 +59,14 @@ const Index = () => {
         return <CalendarView />;
       case "clients":
         return <ClientManagement />;
+      case "inventory":
+        return <InventoryManagement />;
       case "calculator":
         return <CalculatorView />;
       case "settings":
         return <SettingsView />;
       default:
-        return <LibraryPage />;
+        return <Dashboard />;
     }
   };
 
@@ -100,7 +104,7 @@ const Index = () => {
             
             <div className="flex items-center space-x-4">
               <AIAssistant />
-              <UserProfile />
+              <UserProfile onNavigate={setActiveTab} />
             </div>
           </div>
         </div>
