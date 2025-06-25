@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { UserProfile } from "./UserProfile";
 import { BrandHeader } from "./BrandHeader";
-import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -124,7 +124,7 @@ export const MainNav = () => {
           </Button>
 
           {/* Notifications */}
-          <NotificationCenter />
+          <NotificationDropdown />
 
           {/* User Profile */}
           <UserProfile />
