@@ -1,0 +1,108 @@
+
+/* InterioApp Custom Theme Variables */
+:root {
+  /* Brand Colors from uploaded palette */
+  --interio-dark-teal: #415e6b;
+  --interio-white: #ffffff;
+  --interio-sage: #9bb6bc;
+  --interio-burgundy: #733341;
+  --interio-charcoal: #575656;
+  
+  /* Primary brand color mapping */
+  --brand-primary: var(--interio-dark-teal);
+  --brand-secondary: var(--interio-sage);
+  --brand-accent: var(--interio-burgundy);
+  --brand-neutral: var(--interio-charcoal);
+  --brand-light: var(--interio-white);
+  
+  /* Semantic color overrides */
+  --primary: var(--interio-dark-teal);
+  --primary-foreground: var(--interio-white);
+  --secondary: var(--interio-sage);
+  --secondary-foreground: var(--interio-white);
+  --accent: var(--interio-burgundy);
+  --accent-foreground: var(--interio-white);
+  --muted: #f8f9fa;
+  --muted-foreground: var(--interio-charcoal);
+  
+  /* Update existing CSS variables for shadcn components */
+  --background: 250 250 250;
+  --foreground: var(--interio-charcoal);
+  --card: var(--interio-white);
+  --card-foreground: var(--interio-charcoal);
+  --popover: var(--interio-white);
+  --popover-foreground: var(--interio-charcoal);
+  --border: 220 220 220;
+  --input: 220 220 220;
+  --ring: var(--interio-dark-teal);
+}
+
+.dark {
+  --background: var(--interio-charcoal);
+  --foreground: var(--interio-white);
+  --card: var(--interio-dark-teal);
+  --card-foreground: var(--interio-white);
+  --popover: var(--interio-dark-teal);
+  --popover-foreground: var(--interio-white);
+  --primary: var(--interio-sage);
+  --primary-foreground: var(--interio-dark-teal);
+  --secondary: var(--interio-burgundy);
+  --secondary-foreground: var(--interio-white);
+  --muted: var(--interio-charcoal);
+  --muted-foreground: var(--interio-sage);
+  --accent: var(--interio-burgundy);
+  --accent-foreground: var(--interio-white);
+  --border: var(--interio-charcoal);
+  --input: var(--interio-charcoal);
+  --ring: var(--interio-sage);
+}
+
+/* Brand-specific utility classes */
+.bg-brand-primary { background-color: var(--interio-dark-teal); }
+.bg-brand-secondary { background-color: var(--interio-sage); }
+.bg-brand-accent { background-color: var(--interio-burgundy); }
+.bg-brand-neutral { background-color: var(--interio-charcoal); }
+.bg-brand-light { background-color: var(--interio-white); }
+
+.text-brand-primary { color: var(--interio-dark-teal); }
+.text-brand-secondary { color: var(--interio-sage); }
+.text-brand-accent { color: var(--interio-burgundy); }
+.text-brand-neutral { color: var(--interio-charcoal); }
+.text-brand-light { color: var(--interio-white); }
+
+.border-brand-primary { border-color: var(--interio-dark-teal); }
+.border-brand-secondary { border-color: var(--interio-sage); }
+.border-brand-accent { border-color: var(--interio-burgundy); }
+
+/* Professional styling for the industry */
+.interio-gradient {
+  background: linear-gradient(135deg, var(--interio-dark-teal) 0%, var(--interio-sage) 100%);
+}
+
+.interio-card {
+  background: var(--interio-white);
+  border: 1px solid var(--interio-sage);
+  box-shadow: 0 2px 8px rgba(65, 94, 107, 0.1);
+}
+
+.interio-button-primary {
+  background: var(--interio-dark-teal);
+  color: var(--interio-white);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.interio-button-primary:hover {
+  background: var(--interio-burgundy);
+  transform: translateY(-1px);
+}
+
+.interio-button-secondary {
+  background: var(--interio-sage);
+  color: var(--interio-white);
+  border: none;
+}
+
+.interio-button-secondary:hover {
+  background: var(--interio-dark-teal);
+}

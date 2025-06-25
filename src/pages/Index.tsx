@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { UserProfile } from "@/components/layout/UserProfile";
+import { BrandHeader } from "@/components/layout/BrandHeader";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { JobsPage } from "@/components/jobs/JobsPage";
 import { QuoteManagement } from "@/components/quotes/QuoteManagement";
@@ -74,13 +75,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <header className="bg-white border-b shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Top Navigation with Brand Header */}
+      <header className="bg-white border-b border-brand-secondary/20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-gray-900">InterioApp</h1>
+              <BrandHeader size="sm" />
               
               {/* Navigation Menu */}
               <nav className="flex space-x-1">
@@ -90,11 +91,15 @@ const Index = () => {
                     <Button
                       key={item.id}
                       variant={activeTab === item.id ? "default" : "ghost"}
-                      className="flex items-center space-x-2 px-3 py-2"
+                      className={`flex items-center space-x-2 px-4 py-2 transition-all duration-200 ${
+                        activeTab === item.id 
+                          ? "bg-brand-primary text-white hover:bg-brand-accent" 
+                          : "text-brand-neutral hover:bg-brand-secondary/10 hover:text-brand-primary"
+                      }`}
                       onClick={() => setActiveTab(item.id)}
                     >
                       <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
+                      <span className="font-medium">{item.label}</span>
                     </Button>
                   );
                 })}
@@ -108,7 +113,7 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 text-brand-neutral hover:text-brand-accent hover:bg-brand-accent/10"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
@@ -120,7 +125,11 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {renderActiveComponent()}
+        <div className="bg-white rounded-lg shadow-sm border border-brand-secondary/20 min-h-[calc(100vh-8rem)]">
+          <div className="p-6">
+            {renderActiveComponent()}
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -19,6 +19,15 @@ export default {
 		},
 		extend: {
 			colors: {
+				// InterioApp Brand Colors
+				brand: {
+					primary: '#415e6b',
+					secondary: '#9bb6bc',
+					accent: '#733341',
+					neutral: '#575656',
+					light: '#ffffff'
+				},
+				// Keep existing shadcn colors for compatibility
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
