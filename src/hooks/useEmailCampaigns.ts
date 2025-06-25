@@ -39,9 +39,12 @@ export const useCreateEmailCampaign = () => {
 
   return useMutation({
     mutationFn: async (campaignData: Omit<EmailCampaign, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('email_campaigns')
-        .insert([campaignData])
+        .insert([{ ...campaignData, user_id: user.id }])
         .select()
         .single();
 
