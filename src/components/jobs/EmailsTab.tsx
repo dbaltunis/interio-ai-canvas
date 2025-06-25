@@ -18,67 +18,101 @@ import {
   TrendingUp,
   Plus,
   FileText,
-  Calendar
+  Calendar,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useEmails, useEmailKPIs, useCreateEmail } from "@/hooks/useEmails";
+import { useEmailCampaigns, useCreateEmailCampaign } from "@/hooks/useEmailCampaigns";
+import { useEmailTemplates } from "@/hooks/useEmailTemplates";
+import { useClients } from "@/hooks/useClients";
 
 export const EmailsTab = () => {
-  const [emails, setEmails] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [analytics, setAnalytics] = useState({
-    totalSent: 1250,
-    openRate: 68.5,
-    clickRate: 12.3,
-    avgTimeSpent: "2m 34s",
-    delivered: 1205,
-    bounced: 45
+  const [newEmail, setNewEmail] = useState({
+    recipient_email: "",
+    subject: "",
+    content: "",
+    template_id: ""
   });
+
   const { toast } = useToast();
+  const { data: emails, isLoading: emailsLoading } = useEmails();
+  const { data: emailKPIs, isLoading: kpisLoading } = useEmailKPIs();
+  const { data: campaigns } = useEmailCampaigns();
+  const { data: templates } = useEmailTemplates();
+  const { data: clients } = useClients();
+  const createEmailMutation = useCreateEmail();
+  const createCampaignMutation = useCreateEmailCampaign();
 
-  // Mock data for demonstration
-  const recentEmails = [
-    {
-      id: 1,
-      subject: "Quote Follow-up - Living Room Curtains",
-      recipient: "sarah.johnson@email.com",
-      status: "delivered",
-      opens: 3,
-      timeSpent: "1m 45s",
-      sentAt: "2025-01-15 09:30"
-    },
-    {
-      id: 2,
-      subject: "Installation Reminder - Kitchen Blinds",
-      recipient: "mike.chen@email.com",
-      status: "opened",
-      opens: 1,
-      timeSpent: "45s",
-      sentAt: "2025-01-15 08:15"
-    },
-    {
-      id: 3,
-      subject: "New Collection Launch - Spring 2025",
-      recipient: "campaign@bulk.send",
-      status: "campaign",
-      opens: 156,
-      timeSpent: "3m 12s",
-      sentAt: "2025-01-14 16:00"
+  const handleSendEmail = async () => {
+    if (!newEmail.recipient_email || !newEmail.subject || !newEmail.content) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
 
-  const handleSendEmail = () => {
-    toast({
-      title: "Email Sent",
-      description: "Your email has been sent successfully.",
+    createEmailMutation.mutate({
+      recipient_email: newEmail.recipient_email,
+      subject: newEmail.subject,
+      content: newEmail.content,
+      template_id: newEmail.template_id || undefined,
+      status: 'sent',
+      open_count: 0,
+      click_count: 0,
+      time_spent_seconds: 0,
+      sent_at: new Date().toISOString()
+    });
+
+    // Reset form
+    setNewEmail({
+      recipient_email: "",
+      subject: "",
+      content: "",
+      template_id: ""
     });
   };
 
   const handleCreateCampaign = () => {
-    toast({
-      title: "Campaign Created",
-      description: "Your email campaign has been created and scheduled.",
+    createCampaignMutation.mutate({
+      name: "New Campaign",
+      subject: "Campaign Subject",
+      content: "Campaign content...",
+      status: 'draft',
+      recipient_count: 0
     });
   };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'delivered':
+      case 'sent':
+        return 'default';
+      case 'opened':
+        return 'secondary';
+      case 'clicked':
+        return 'outline';
+      case 'bounced':
+      case 'failed':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const formatTimeSpent = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
+  if (kpisLoading) {
+    return <div className="flex items-center justify-center h-64">Loading email data...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -90,7 +124,7 @@ export const EmailsTab = () => {
               <Send className="h-4 w-4 text-blue-600" />
               <div>
                 <p className="text-xs text-gray-600">Total Sent</p>
-                <p className="text-lg font-bold">{analytics.totalSent}</p>
+                <p className="text-lg font-bold">{emailKPIs?.totalSent || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -102,7 +136,7 @@ export const EmailsTab = () => {
               <Eye className="h-4 w-4 text-green-600" />
               <div>
                 <p className="text-xs text-gray-600">Open Rate</p>
-                <p className="text-lg font-bold">{analytics.openRate}%</p>
+                <p className="text-lg font-bold">{emailKPIs?.openRate || 0}%</p>
               </div>
             </div>
           </CardContent>
@@ -114,7 +148,7 @@ export const EmailsTab = () => {
               <MousePointer className="h-4 w-4 text-purple-600" />
               <div>
                 <p className="text-xs text-gray-600">Click Rate</p>
-                <p className="text-lg font-bold">{analytics.clickRate}%</p>
+                <p className="text-lg font-bold">{emailKPIs?.clickRate || 0}%</p>
               </div>
             </div>
           </CardContent>
@@ -126,7 +160,7 @@ export const EmailsTab = () => {
               <Clock className="h-4 w-4 text-orange-600" />
               <div>
                 <p className="text-xs text-gray-600">Avg Time</p>
-                <p className="text-lg font-bold">{analytics.avgTimeSpent}</p>
+                <p className="text-lg font-bold">{emailKPIs?.avgTimeSpent || "0m 0s"}</p>
               </div>
             </div>
           </CardContent>
@@ -135,10 +169,10 @@ export const EmailsTab = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-green-600" />
               <div>
                 <p className="text-xs text-gray-600">Delivered</p>
-                <p className="text-lg font-bold">{analytics.delivered}</p>
+                <p className="text-lg font-bold">{emailKPIs?.delivered || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -147,10 +181,10 @@ export const EmailsTab = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4 text-red-600" />
+              <AlertCircle className="h-4 w-4 text-red-600" />
               <div>
                 <p className="text-xs text-gray-600">Bounced</p>
-                <p className="text-lg font-bold">{analytics.bounced}</p>
+                <p className="text-lg font-bold">{emailKPIs?.bounced || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -193,23 +227,34 @@ export const EmailsTab = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">To</label>
-                  <Input placeholder="recipient@example.com" />
+                  <Input 
+                    placeholder="recipient@example.com" 
+                    value={newEmail.recipient_email}
+                    onChange={(e) => setNewEmail(prev => ({ ...prev, recipient_email: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Template</label>
-                  <select className="w-full p-2 border rounded-md">
+                  <select 
+                    className="w-full p-2 border rounded-md"
+                    value={newEmail.template_id}
+                    onChange={(e) => setNewEmail(prev => ({ ...prev, template_id: e.target.value }))}
+                  >
                     <option value="">Select template...</option>
-                    <option value="quote_followup">Quote Follow-up</option>
-                    <option value="installation_reminder">Installation Reminder</option>
-                    <option value="thank_you">Thank You</option>
-                    <option value="promotion">Promotional</option>
+                    {templates?.map((template) => (
+                      <option key={template.id} value={template.id}>{template.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
               
               <div>
                 <label className="text-sm font-medium">Subject</label>
-                <Input placeholder="Email subject..." />
+                <Input 
+                  placeholder="Email subject..." 
+                  value={newEmail.subject}
+                  onChange={(e) => setNewEmail(prev => ({ ...prev, subject: e.target.value }))}
+                />
               </div>
               
               <div>
@@ -217,6 +262,8 @@ export const EmailsTab = () => {
                 <Textarea 
                   placeholder="Write your email message here..." 
                   className="min-h-[200px]"
+                  value={newEmail.content}
+                  onChange={(e) => setNewEmail(prev => ({ ...prev, content: e.target.value }))}
                 />
               </div>
               
@@ -225,9 +272,13 @@ export const EmailsTab = () => {
                   <Calendar className="h-4 w-4" />
                   Schedule Send
                 </Button>
-                <Button onClick={handleSendEmail} className="flex items-center gap-2">
+                <Button 
+                  onClick={handleSendEmail} 
+                  className="flex items-center gap-2"
+                  disabled={createEmailMutation.isPending}
+                >
                   <Send className="h-4 w-4" />
-                  Send Email
+                  {createEmailMutation.isPending ? "Sending..." : "Send Email"}
                 </Button>
               </div>
             </CardContent>
@@ -239,22 +290,47 @@ export const EmailsTab = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Email Campaigns</h3>
-              <Button onClick={handleCreateCampaign} className="flex items-center gap-2">
+              <Button 
+                onClick={handleCreateCampaign} 
+                className="flex items-center gap-2"
+                disabled={createCampaignMutation.isPending}
+              >
                 <Plus className="h-4 w-4" />
                 New Campaign
               </Button>
             </div>
             
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <h4 className="text-lg font-medium mb-2">No Campaigns Yet</h4>
-                  <p className="text-sm mb-4">Create your first email campaign to reach multiple clients</p>
-                  <Button onClick={handleCreateCampaign}>Create Campaign</Button>
-                </div>
-              </CardContent>
-            </Card>
+            {campaigns && campaigns.length > 0 ? (
+              <div className="grid gap-4">
+                {campaigns.map((campaign) => (
+                  <Card key={campaign.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{campaign.name}</h4>
+                          <p className="text-sm text-gray-600">{campaign.subject}</p>
+                          <p className="text-xs text-gray-500">Recipients: {campaign.recipient_count}</p>
+                        </div>
+                        <Badge variant={campaign.status === 'completed' ? 'default' : 'secondary'}>
+                          {campaign.status}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <h4 className="text-lg font-medium mb-2">No Campaigns Yet</h4>
+                    <p className="text-sm mb-4">Create your first email campaign to reach multiple clients</p>
+                    <Button onClick={handleCreateCampaign}>Create Campaign</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -270,19 +346,29 @@ export const EmailsTab = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {['Quote Follow-up', 'Installation Reminder', 'Thank You', 'Promotional', 'Quote Ready', 'Payment Reminder'].map((template) => (
-                <Card key={template} className="cursor-pointer hover:shadow-md transition-shadow">
+              {templates?.map((template) => (
+                <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">{template}</h4>
-                        <p className="text-sm text-gray-600">Last used 2 days ago</p>
+                        <h4 className="font-medium">{template.name}</h4>
+                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace('_', ' ')}</p>
                       </div>
                       <FileText className="h-5 w-5 text-gray-400" />
                     </div>
                   </CardContent>
                 </Card>
               ))}
+              
+              {(!templates || templates.length === 0) && (
+                <Card className="col-span-full">
+                  <CardContent className="p-6 text-center text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <h4 className="text-lg font-medium mb-2">No Templates Yet</h4>
+                    <p className="text-sm">Create email templates to speed up your workflow</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -296,10 +382,23 @@ export const EmailsTab = () => {
                 <CardDescription>Detailed insights into your email campaigns</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center text-gray-500 py-12">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <h4 className="text-lg font-medium mb-2">Analytics Dashboard</h4>
-                  <p className="text-sm">Detailed analytics will be available once SendGrid integration is complete</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{emailKPIs?.totalOpenCount || 0}</div>
+                    <div className="text-sm text-gray-600">Total Opens</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{emailKPIs?.totalClickCount || 0}</div>
+                    <div className="text-sm text-gray-600">Total Clicks</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{emailKPIs?.deliveryRate || 0}%</div>
+                    <div className="text-sm text-gray-600">Delivery Rate</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">{campaigns?.length || 0}</div>
+                    <div className="text-sm text-gray-600">Campaigns</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -314,40 +413,50 @@ export const EmailsTab = () => {
               <CardDescription>Track all sent emails and their performance</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Recipient</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Opens</TableHead>
-                    <TableHead>Time Spent</TableHead>
-                    <TableHead>Sent At</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentEmails.map((email) => (
-                    <TableRow key={email.id}>
-                      <TableCell className="font-medium">{email.subject}</TableCell>
-                      <TableCell>{email.recipient}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            email.status === 'delivered' ? 'default' : 
-                            email.status === 'opened' ? 'secondary' : 
-                            'outline'
-                          }
-                        >
-                          {email.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{email.opens}</TableCell>
-                      <TableCell>{email.timeSpent}</TableCell>
-                      <TableCell>{email.sentAt}</TableCell>
+              {emailsLoading ? (
+                <div className="text-center py-8">Loading email history...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Opens</TableHead>
+                      <TableHead>Clicks</TableHead>
+                      <TableHead>Time Spent</TableHead>
+                      <TableHead>Sent At</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {emails && emails.length > 0 ? (
+                      emails.map((email) => (
+                        <TableRow key={email.id}>
+                          <TableCell className="font-medium">{email.subject}</TableCell>
+                          <TableCell>{email.recipient_email}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(email.status)}>
+                              {email.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{email.open_count}</TableCell>
+                          <TableCell>{email.click_count}</TableCell>
+                          <TableCell>{formatTimeSpent(email.time_spent_seconds)}</TableCell>
+                          <TableCell>
+                            {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-gray-500">
+                          No emails sent yet
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

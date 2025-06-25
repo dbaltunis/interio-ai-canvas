@@ -15,12 +15,17 @@ import {
   Clock,
   Target,
   Zap,
-  BarChart3
+  BarChart3,
+  Mail,
+  Eye,
+  MousePointer,
+  Send
 } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useEmailKPIs } from "@/hooks/useEmails";
 import { KPICard } from "./KPICard";
 import { RevenueChart } from "./RevenueChart";
 import { QuickActions } from "./QuickActions";
@@ -31,6 +36,7 @@ export const Dashboard = () => {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: clients } = useClients();
   const { data: quotes } = useQuotes();
+  const { data: emailKPIs } = useEmailKPIs();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -98,7 +104,7 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Primary KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title="Total Revenue"
@@ -134,36 +140,78 @@ export const Dashboard = () => {
         />
       </div>
 
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Conversion Rate"
-          value="68%"
-          subtitle="Quote to project ratio"
-          icon={TrendingUp}
-          trend={{ value: 5.2, isPositive: true }}
-        />
-        <KPICard
-          title="Avg Quote Value"
-          value={formatCurrency(totalRevenue / (quotes?.length || 1))}
-          subtitle="Per quote average"
-          icon={Zap}
-          trend={{ value: 3.8, isPositive: true }}
-        />
-        <KPICard
-          title="Completed Jobs"
-          value={completedJobs}
-          subtitle="Successfully finished"
-          icon={Package}
-          trend={{ value: 22.1, isPositive: true }}
-        />
-        <KPICard
-          title="Response Time"
-          value="2.4 hrs"
-          subtitle="Average quote response"
-          icon={Clock}
-          trend={{ value: -15.3, isPositive: true }}
-        />
+      {/* Email KPI Cards */}
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold text-gray-900">Email Performance</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            title="Emails Sent"
+            value={emailKPIs?.totalSent || 0}
+            subtitle="Total emails sent"
+            icon={Send}
+            trend={{ value: 23.1, isPositive: true }}
+            loading={!emailKPIs}
+          />
+          <KPICard
+            title="Open Rate"
+            value={`${emailKPIs?.openRate || 0}%`}
+            subtitle="Email open percentage"
+            icon={Eye}
+            trend={{ value: 5.2, isPositive: true }}
+            loading={!emailKPIs}
+          />
+          <KPICard
+            title="Click Rate"
+            value={`${emailKPIs?.clickRate || 0}%`}
+            subtitle="Email click percentage"
+            icon={MousePointer}
+            trend={{ value: 2.8, isPositive: true }}
+            loading={!emailKPIs}
+          />
+          <KPICard
+            title="Avg. Time Spent"
+            value={emailKPIs?.avgTimeSpent || "0m 0s"}
+            subtitle="Time spent reading emails"
+            icon={Clock}
+            trend={{ value: 15.3, isPositive: true }}
+            loading={!emailKPIs}
+          />
+        </div>
+      </div>
+
+      {/* Business Performance Metrics */}
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold text-gray-900">Business Performance</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            title="Conversion Rate"
+            value="68%"
+            subtitle="Quote to project ratio"
+            icon={TrendingUp}
+            trend={{ value: 5.2, isPositive: true }}
+          />
+          <KPICard
+            title="Avg Quote Value"
+            value={formatCurrency(totalRevenue / (quotes?.length || 1))}
+            subtitle="Per quote average"
+            icon={Zap}
+            trend={{ value: 3.8, isPositive: true }}
+          />
+          <KPICard
+            title="Completed Jobs"
+            value={completedJobs}
+            subtitle="Successfully finished"
+            icon={Package}
+            trend={{ value: 22.1, isPositive: true }}
+          />
+          <KPICard
+            title="Response Time"
+            value="2.4 hrs"
+            subtitle="Average quote response"
+            icon={Clock}
+            trend={{ value: -15.3, isPositive: true }}
+          />
+        </div>
       </div>
 
       {/* Main Content Grid */}
@@ -259,17 +307,17 @@ export const Dashboard = () => {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
               <div>
-                <p className="font-medium text-sm text-orange-900">Low Stock Alert</p>
-                <p className="text-xs text-orange-700">3 fabric types below reorder point</p>
+                <p className="font-medium text-sm text-orange-900">Low Email Engagement</p>
+                <p className="text-xs text-orange-700">Open rate below industry average (25%)</p>
               </div>
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">Action Required</Badge>
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800">Review Templates</Badge>
             </div>
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div>
                 <p className="font-medium text-sm text-blue-900">Quote Follow-up</p>
                 <p className="text-xs text-blue-700">5 quotes sent over 3 days ago</p>
               </div>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">Follow Up</Badge>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">Send Reminder</Badge>
             </div>
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
               <div>
@@ -295,19 +343,19 @@ export const Dashboard = () => {
               <Badge className="bg-green-100 text-green-800">Healthy</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Backup Status</span>
-              <Badge className="bg-green-100 text-green-800">Up to Date</Badge>
-            </div>
-            <div className="flex items-center justify-between">
               <span className="text-sm">Email Service</span>
               <Badge className="bg-green-100 text-green-800">Active</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Shopify Integration</span>
-              <Badge variant="secondary">Not Connected</Badge>
+              <span className="text-sm">Email Delivery Rate</span>
+              <Badge className="bg-green-100 text-green-800">{emailKPIs?.deliveryRate || 0}%</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Last Sync</span>
+              <span className="text-sm">SendGrid Integration</span>
+              <Badge variant="secondary">Setup Required</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Last Email Sync</span>
               <span className="text-xs text-gray-500">2 minutes ago</span>
             </div>
           </CardContent>

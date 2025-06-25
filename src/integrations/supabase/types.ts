@@ -249,6 +249,222 @@ export type Database = {
           },
         ]
       }
+      email_analytics: {
+        Row: {
+          created_at: string
+          email_id: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_id: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_id?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_analytics_email_id_fkey"
+            columns: ["email_id"]
+            isOneToOne: false
+            referencedRelation: "emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          name: string
+          recipient_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          active: boolean | null
+          content: string
+          created_at: string
+          id: string
+          name: string
+          subject: string
+          template_type: string
+          updated_at: string
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+          subject: string
+          template_type?: string
+          updated_at?: string
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+          subject?: string
+          template_type?: string
+          updated_at?: string
+          user_id?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
+      emails: {
+        Row: {
+          bounce_reason: string | null
+          campaign_id: string | null
+          click_count: number | null
+          clicked_at: string | null
+          client_id: string | null
+          content: string
+          created_at: string
+          delivered_at: string | null
+          id: string
+          open_count: number | null
+          opened_at: string | null
+          recipient_email: string
+          recipient_name: string | null
+          sendgrid_message_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          time_spent_seconds: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bounce_reason?: string | null
+          campaign_id?: string | null
+          click_count?: number | null
+          clicked_at?: string | null
+          client_id?: string | null
+          content: string
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          open_count?: number | null
+          opened_at?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          sendgrid_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bounce_reason?: string | null
+          campaign_id?: string | null
+          click_count?: number | null
+          clicked_at?: string | null
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          open_count?: number | null
+          opened_at?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          sendgrid_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emails_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emails_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emails_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fabric_orders: {
         Row: {
           color: string | null
