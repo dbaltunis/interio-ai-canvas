@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Building } from "lucide-react";
+import { DefaultSettingsInitializer } from "../DefaultSettingsInitializer";
 
 export const CompanySetupTab = () => {
   const { data: settings, isLoading } = useBusinessSettings();
@@ -19,12 +20,24 @@ export const CompanySetupTab = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    company_name: settings?.company_name || "",
-    business_email: settings?.business_email || "",
-    business_phone: settings?.business_phone || "",
-    business_address: settings?.business_address || "",
-    abn: settings?.abn || "",
+    company_name: "",
+    business_email: "",
+    business_phone: "",
+    business_address: "",
+    abn: "",
   });
+
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        company_name: settings.company_name || "",
+        business_email: settings.business_email || "",
+        business_phone: settings.business_phone || "",
+        business_address: settings.business_address || "",
+        abn: settings.abn || "",
+      });
+    }
+  }, [settings]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -150,6 +163,11 @@ export const CompanySetupTab = () => {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
       </div>
     );
+  }
+
+  // Show initializer if no settings exist
+  if (!settings) {
+    return <DefaultSettingsInitializer />;
   }
 
   return (
