@@ -16,17 +16,47 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const [activeTab, setActiveTab] = useState("jobs");
   const [currentProject, setCurrentProject] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [hasAttemptedCreation, setHasAttemptedCreation] = useState(false);
   
-  const { data: clients } = useClients();
+  const { data: clients, isLoading: clientsLoading, error: clientsError } = useClients();
   const createProject = useCreateProject();
   const { toast } = useToast();
 
   // Create a default project when component mounts
   useEffect(() => {
     const createDefaultProject = async () => {
-      if (!clients || clients.length === 0 || currentProject || isCreating) return;
+      // Prevent multiple creation attempts
+      if (hasAttemptedCreation || currentProject || isCreating) return;
+      
+      // Wait for clients to load
+      if (clientsLoading) return;
+      
+      // Handle client loading error
+      if (clientsError) {
+        console.error("Error loading clients:", clientsError);
+        toast({
+          title: "Error",
+          description: "Failed to load clients. Please try again.",
+          variant: "destructive"
+        });
+        onBack();
+        return;
+      }
+      
+      // Check if we have clients
+      if (!clients || clients.length === 0) {
+        toast({
+          title: "No Clients Found",
+          description: "Please create a client first before creating a project.",
+          variant: "destructive"
+        });
+        onBack();
+        return;
+      }
       
       setIsCreating(true);
+      setHasAttemptedCreation(true);
+      
       try {
         const defaultClient = clients[0]; // Use first available client
         const newProject = await createProject.mutateAsync({
@@ -53,10 +83,10 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     };
 
     createDefaultProject();
-  }, [clients, currentProject, createProject, isCreating, onBack, toast]);
+  }, [clients, clientsLoading, clientsError, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast]);
 
   // Show loading state if no project yet or creating
-  if (!currentProject || isCreating) {
+  if (clientsLoading || isCreating || !currentProject) {
     return <ProjectLoadingState />;
   }
 

@@ -11,23 +11,30 @@ export const useProjects = () => {
   return useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("No user found for projects query");
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log("No user found for projects query");
+          return [];
+        }
+
+        const { data, error } = await supabase
+          .from("projects")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (error) {
+          console.error("Projects query error:", error);
+          throw error;
+        }
+        return data || [];
+      } catch (error) {
+        console.error("Error in projects query:", error);
         return [];
       }
-
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (error) {
-        console.error("Projects query error:", error);
-        throw error;
-      }
-      return data || [];
     },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -65,7 +72,7 @@ export const useCreateProject = () => {
       console.error("Failed to create project:", error);
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: error.message || "Failed to create project. Please try again.",
         variant: "destructive",
       });
     },

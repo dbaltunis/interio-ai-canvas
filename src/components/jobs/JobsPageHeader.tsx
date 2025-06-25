@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useClients, useCreateClient } from "@/hooks/useClients";
 import { useCreateProject } from "@/hooks/useProjects";
+import { useToast } from "@/hooks/use-toast";
 
 interface JobsPageHeaderProps {
   onQuoteSelect?: (quoteId: string) => void;
@@ -14,6 +15,7 @@ export const JobsPageHeader = ({ onQuoteSelect }: JobsPageHeaderProps) => {
   const createClient = useCreateClient();
   const createProject = useCreateProject();
   const { data: clients } = useClients();
+  const { toast } = useToast();
 
   const handleCreateQuote = async () => {
     try {
@@ -60,6 +62,11 @@ export const JobsPageHeader = ({ onQuoteSelect }: JobsPageHeaderProps) => {
       }
     } catch (error) {
       console.error("Failed to create quote:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create quote. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
