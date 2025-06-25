@@ -2,297 +2,261 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy } from "lucide-react";
+import { Plus, Search, Filter, Package, Palette, Building, Upload, Download } from "lucide-react";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
 import { FilterDialog } from "./FilterDialog";
+import { FabricCSVUpload } from "./FabricCSVUpload";
+
+const mockFabrics = [
+  {
+    id: 1,
+    name: "Velvet Luxe",
+    code: "VL-001",
+    brand: "Fibre Naturelle",
+    collection: "Classic Collection",
+    type: "Velvet",
+    color: "Navy Blue",
+    pattern: "Solid",
+    width: 140,
+    price: 45.50,
+    image: "/placeholder.svg"
+  },
+  {
+    id: 2,
+    name: "Silk Shimmer",
+    code: "SS-002",
+    brand: "KD Design",
+    collection: "Modern Series",
+    type: "Silk",
+    color: "Champagne",
+    pattern: "Textured",
+    width: 150,
+    price: 65.00,
+    image: "/placeholder.svg"
+  },
+];
+
+const mockBrands = [
+  { id: 1, name: "Fibre Naturelle", collections: 8, fabrics: 156 },
+  { id: 2, name: "KD Design", collections: 5, fabrics: 89 },
+  { id: 3, name: "DEKOMA", collections: 12, fabrics: 234 },
+];
+
+const mockCollections = [
+  { id: 1, name: "Classic Collection", brand: "Fibre Naturelle", fabrics: 45 },
+  { id: 2, name: "Modern Series", brand: "KD Design", fabrics: 32 },
+  { id: 3, name: "Heritage Line", brand: "DEKOMA", fabrics: 67 },
+];
 
 export const LibraryPage = () => {
-  const [activeTab, setActiveTab] = useState("fabric");
-  const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("fabrics");
+  const [showFabricForm, setShowFabricForm] = useState(false);
+  const [showBrandForm, setShowBrandForm] = useState(false);
+  const [showCollectionForm, setShowCollectionForm] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [addDialogType, setAddDialogType] = useState<"brand" | "collection" | "fabric">("fabric");
+  const [showCSVUpload, setShowCSVUpload] = useState(false);
 
-  // Mock data for demonstration
-  const brands = [
-    { id: 1, name: "Fibre Naturelle", logo: "/placeholder.svg" },
-    { id: 2, name: "KD Design", logo: "/placeholder.svg" },
-    { id: 3, name: "DEKOMA", logo: "/placeholder.svg" },
-  ];
-
-  const fabrics = [
-    {
-      id: 1,
-      name: "Merlon Custard",
-      code: "K5361/02",
-      price: 120.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "Fibre Naturelle"
-    },
-    {
-      id: 2,
-      name: "Merlon Custard",
-      code: "K5361/02",
-      price: 130.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "Fibre Naturelle"
-    },
-    {
-      id: 3,
-      name: "OSL/04 Cinnamon",
-      code: "OSL/04",
-      price: 91.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "KD Design"
-    },
-    {
-      id: 4,
-      name: "OSL/02 Sage",
-      code: "OSL/02",
-      price: 91.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "KD Design"
-    },
-    {
-      id: 5,
-      name: "OSL/01 Pepper",
-      code: "OSL/01",
-      price: 91.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "DEKOMA"
-    },
-  ];
-
-  const handleAddNew = (type: "brand" | "collection" | "fabric") => {
-    setAddDialogType(type);
-    setShowAddDialog(true);
-  };
-
-  const renderFabricCard = (fabric: any) => (
-    <Card key={fabric.id} className="relative group">
-      <CardHeader className="p-0">
-        <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-          {fabric.image ? (
-            <img 
-              src={fabric.image} 
-              alt={fabric.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              No image available
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <CardTitle className="text-lg font-semibold mb-2">{fabric.name}</CardTitle>
-        <p className="text-sm text-gray-600 mb-1">${fabric.price.toFixed(2)}/{fabric.unit}</p>
-        <p className="text-sm text-gray-500 mb-2">{fabric.code}</p>
-        <p className="text-sm text-gray-500 mb-4">Stock: {fabric.stock}</p>
-        
-        <div className="flex justify-between items-center">
-          <div className="flex space-x-2">
-            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderBrandCard = (brand: any) => (
-    <Card key={brand.id} className="relative group">
-      <CardContent className="p-6">
-        <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-          <span className="text-xl font-semibold text-gray-600">{brand.name}</span>
-        </div>
-        <CardTitle className="text-lg font-semibold text-center">{brand.name}</CardTitle>
-        <div className="flex justify-center space-x-2 mt-4">
-          <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+  const filteredFabrics = mockFabrics.filter(fabric =>
+    fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    fabric.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    fabric.brand.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Library</h1>
-        <div className="flex items-center space-x-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button className="bg-slate-600 hover:bg-slate-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56">
-              <div className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("brand")}
-                >
-                  Create Brand
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("collection")}
-                >
-                  Create Collection
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("fabric")}
-                >
-                  Create Fabric
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  Upload Fabrics via CSV
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          
-          <Button variant="outline" className="bg-slate-600 hover:bg-slate-700 text-white border-slate-600">
-            <Search className="h-4 w-4" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-brand-primary">Fabric Library</h1>
+          <p className="text-brand-neutral">Manage your fabric catalog, brands, and collections</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setShowFilterDialog(true)}>
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
           </Button>
-          
-          <Button 
-            variant="outline" 
-            className="bg-slate-600 hover:bg-slate-700 text-white border-slate-600"
-            onClick={() => setShowFilterDialog(true)}
-          >
-            <Filter className="h-4 w-4" />
+          <Button variant="outline" onClick={() => setShowCSVUpload(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import CSV
+          </Button>
+          <Button className="bg-brand-primary hover:bg-brand-accent" onClick={() => setShowFabricForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Fabric
           </Button>
         </div>
       </div>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search fabrics, codes, or brands..."
+          className="pl-10"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex items-center justify-between">
-          <TabsList className="grid w-fit grid-cols-3">
-            <TabsTrigger value="brands">
-              Fabric brand ({brands.length})
-            </TabsTrigger>
-            <TabsTrigger value="collections">
-              Fabric Collection (13)
-            </TabsTrigger>
-            <TabsTrigger value="fabric">
-              Fabric ({fabrics.length})
-            </TabsTrigger>
-          </TabsList>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4 mr-2" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === "card" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("card")}
-              className="bg-slate-600 hover:bg-slate-700 text-white"
-            >
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Card
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="fabrics" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Fabrics
+          </TabsTrigger>
+          <TabsTrigger value="brands" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            Brands
+          </TabsTrigger>
+          <TabsTrigger value="collections" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Collections
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="fabrics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredFabrics.map((fabric) => (
+              <Card key={fabric.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                  <img
+                    src={fabric.image}
+                    alt={fabric.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div>
+                      <h3 className="font-semibold text-brand-primary">{fabric.name}</h3>
+                      <p className="text-sm text-brand-neutral">Code: {fabric.code}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs">{fabric.type}</Badge>
+                      <Badge variant="secondary" className="text-xs">{fabric.color}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-brand-neutral">{fabric.width}cm wide</span>
+                      <span className="font-semibold text-brand-primary">${fabric.price}</span>
+                    </div>
+                    <p className="text-xs text-brand-neutral">{fabric.brand} - {fabric.collection}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="brands" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-brand-primary">Fabric Brands</h2>
+            <Button onClick={() => setShowBrandForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Brand
             </Button>
           </div>
-        </div>
-
-        {/* Select All Checkbox */}
-        <div className="flex items-center space-x-2 mt-4">
-          <input type="checkbox" id="selectAll" className="rounded" />
-          <label htmlFor="selectAll" className="text-sm text-gray-600">
-            Select all
-          </label>
-        </div>
-
-        {/* Tab Contents */}
-        <TabsContent value="brands" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {brands.map(renderBrandCard)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mockBrands.map((brand) => (
+              <Card key={brand.id}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{brand.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-brand-neutral">Collections:</span>
+                      <span className="font-medium">{brand.collections}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-brand-neutral">Fabrics:</span>
+                      <span className="font-medium">{brand.fabrics}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
 
         <TabsContent value="collections" className="space-y-4">
-          <div className="text-center py-8 text-gray-500">
-            No collections available. Create your first collection to get started!
-          </div>
-        </TabsContent>
-
-        <TabsContent value="fabric" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {fabrics.map(renderFabricCard)}
-          </div>
-          <div className="text-center py-4">
-            <Button variant="ghost" className="text-gray-500">
-              Show more
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-brand-primary">Fabric Collections</h2>
+            <Button onClick={() => setShowCollectionForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Collection
             </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mockCollections.map((collection) => (
+              <Card key={collection.id}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{collection.name}</CardTitle>
+                  <CardDescription>{collection.brand}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-brand-neutral">Fabrics:</span>
+                    <span className="font-medium">{collection.fabrics}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* Filter Dialog */}
-      <FilterDialog 
-        open={showFilterDialog} 
-        onOpenChange={setShowFilterDialog}
-      />
+      {/* Dialogs */}
+      <Dialog open={showFabricForm} onOpenChange={setShowFabricForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Fabric</DialogTitle>
+          </DialogHeader>
+          <FabricForm onClose={() => setShowFabricForm(false)} />
+        </DialogContent>
+      </Dialog>
 
-      {/* Add Dialog */}
-      <Sheet open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <SheetContent className="w-[600px] sm:w-[600px]">
-          <SheetHeader>
-            <SheetTitle>
-              Add {addDialogType === "brand" ? "Brand" : addDialogType === "collection" ? "Collection" : "Fabric"}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            {addDialogType === "fabric" && <FabricForm onClose={() => setShowAddDialog(false)} />}
-            {addDialogType === "brand" && <BrandForm onClose={() => setShowAddDialog(false)} />}
-            {addDialogType === "collection" && <CollectionForm onClose={() => setShowAddDialog(false)} />}
-          </div>
-        </SheetContent>
-      </Sheet>
+      <Dialog open={showBrandForm} onOpenChange={setShowBrandForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Brand</DialogTitle>
+          </DialogHeader>
+          <BrandForm onClose={() => setShowBrandForm(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCollectionForm} onOpenChange={setShowCollectionForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Collection</DialogTitle>
+          </DialogHeader>
+          <CollectionForm onClose={() => setShowCollectionForm(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filter Fabrics</DialogTitle>
+          </DialogHeader>
+          <FilterDialog onClose={() => setShowFilterDialog(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCSVUpload} onOpenChange={setShowCSVUpload}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Fabrics from CSV</DialogTitle>
+          </DialogHeader>
+          <FabricCSVUpload onClose={() => setShowCSVUpload(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
