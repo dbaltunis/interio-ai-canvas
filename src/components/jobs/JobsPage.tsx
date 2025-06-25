@@ -6,13 +6,13 @@ import { JobsTable } from "./JobsTable";
 import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
 import { NewJobPage } from "../job-creation/NewJobPage";
-import { ClientManagement } from "../clients/ClientManagement";
+import { EnhancedClientManagement } from "../clients/EnhancedClientManagement";
 import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 
 export const JobsPage = () => {
-  const [activeTab, setActiveTab] = useState<"jobs" | "client">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "clients">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
@@ -75,14 +75,9 @@ export const JobsPage = () => {
     return <JobEditPage jobId={selectedJobId} onBack={handleBackToJobs} />;
   }
 
-  // If client tab is active, show client management
-  if (activeTab === "client") {
-    return <ClientManagement />;
-  }
-
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Always visible */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-0">
           <Button
@@ -97,25 +92,34 @@ export const JobsPage = () => {
             Jobs ({jobsCount})
           </Button>
           <Button
-            variant={activeTab === "client" ? "default" : "ghost"}
+            variant={activeTab === "clients" ? "default" : "ghost"}
             className={`rounded-l-none border-l-0 px-6 py-2 ${
-              activeTab === "client" 
+              activeTab === "clients" 
                 ? "bg-gray-100 text-gray-900 border border-gray-300" 
                 : "bg-white text-gray-600 border border-gray-300"
             }`}
-            onClick={() => setActiveTab("client")}
+            onClick={() => setActiveTab("clients")}
           >
-            Client ({clientsCount})
+            Clients ({clientsCount})
           </Button>
         </div>
         
         <div className="flex items-center space-x-3">
-          <Button 
-            className="bg-slate-600 hover:bg-slate-700 text-white px-6"
-            onClick={handleNewJob}
-          >
-            New Job
-          </Button>
+          {activeTab === "jobs" ? (
+            <Button 
+              className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+              onClick={handleNewJob}
+            >
+              New Job
+            </Button>
+          ) : (
+            <Button 
+              className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+              onClick={() => {/* Handle new client creation */}}
+            >
+              New Client
+            </Button>
+          )}
           
           <Button 
             variant="outline" 
@@ -128,7 +132,7 @@ export const JobsPage = () => {
       </div>
 
       {/* Filters - only show for jobs tab */}
-      {showFilters && (
+      {showFilters && activeTab === "jobs" && (
         <JobsFilters
           searchClient={searchClient}
           setSearchClient={setSearchClient}
@@ -146,15 +150,20 @@ export const JobsPage = () => {
         />
       )}
       
-      <JobsTable 
-        searchClient={searchClient}
-        searchJobNumber={searchJobNumber}
-        filterStatus={filterStatus}
-        filterDeposit={filterDeposit}
-        filterOwner={filterOwner}
-        filterMaker={filterMaker}
-        onJobSelect={handleJobSelect}
-      />
+      {/* Content based on active tab */}
+      {activeTab === "jobs" ? (
+        <JobsTable 
+          searchClient={searchClient}
+          searchJobNumber={searchJobNumber}
+          filterStatus={filterStatus}
+          filterDeposit={filterDeposit}
+          filterOwner={filterOwner}
+          filterMaker={filterMaker}
+          onJobSelect={handleJobSelect}
+        />
+      ) : (
+        <EnhancedClientManagement />
+      )}
     </div>
   );
 };
