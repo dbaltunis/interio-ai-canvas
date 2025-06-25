@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +10,7 @@ import { useWorkOrders, useCreateWorkOrder, useUpdateWorkOrder } from "@/hooks/u
 import { useFabricOrders, useCreateFabricOrder, useUpdateFabricOrder } from "@/hooks/useFabricOrders";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useWorkOrderCheckpoints, useUpdateWorkOrderCheckpoint } from "@/hooks/useWorkOrderCheckpoints";
+import { supabase } from "@/integrations/supabase/client";
 import { WorkOrdersByTreatment } from "../workshop/WorkOrdersByTreatment";
 import { SupplierOrderManager } from "../workshop/SupplierOrderManager";
 import { TaskDelegationBoard } from "../workshop/TaskDelegationBoard";
@@ -20,11 +20,16 @@ interface ProjectWorkshopTabProps {
 }
 
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
-  const { data: rooms } = useRooms(project.id);
-  const { data: surfaces } = useSurfaces(project.id);
-  const { data: treatments } = useTreatments(project.id);
+  // Handle case where project might be a quote object with project_id
+  const actualProjectId = project.project_id || project.id;
+  console.log("Workshop tab - project object:", project);
+  console.log("Workshop tab - using project ID:", actualProjectId);
+
+  const { data: rooms } = useRooms(actualProjectId);
+  const { data: surfaces } = useSurfaces(actualProjectId);
+  const { data: treatments } = useTreatments(actualProjectId);
   const { data: clients } = useClients();
-  const { data: workOrders } = useWorkOrders(project.id);
+  const { data: workOrders } = useWorkOrders(actualProjectId);
   const { data: fabricOrders } = useFabricOrders();
   const { data: teamMembers } = useTeamMembers();
 
@@ -34,10 +39,28 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
   const updateFabricOrder = useUpdateFabricOrder();
   const updateCheckpoint = useUpdateWorkOrderCheckpoint();
 
-  const client = clients?.find(c => c.id === project.client_id);
-  const projectTreatments = treatments?.filter(t => t.project_id === project.id) || [];
+  const client = clients?.find(c => c.id === (project.client_id || project.client_id));
+  const projectTreatments = treatments?.filter(t => t.project_id === actualProjectId) || [];
   const projectWorkOrders = workOrders || [];
-  const projectFabricOrders = fabricOrders || [];
+  
+  // Transform fabric orders to match expected interface
+  const transformedFabricOrders = fabricOrders?.map(order => ({
+    ...order,
+    fabricCode: order.fabric_code,
+    fabricType: order.fabric_type,
+    unitPrice: order.unit_price,
+    totalPrice: order.total_price,
+    workOrderIds: order.work_order_ids || []
+  })) || [];
+
+  // Transform team members to match expected interface
+  const transformedTeamMembers = teamMembers?.map(member => ({
+    ...member,
+    expertise: member.skills || [],
+    currentWorkload: 0,
+    maxCapacity: 40,
+    status: member.active ? 'available' as const : 'unavailable' as const
+  })) || [];
 
   const generateWorkOrders = async () => {
     if (!projectTreatments.length) return;
@@ -52,7 +75,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         await createWorkOrder.mutateAsync({
           order_number: orderNumber,
           treatment_type: treatment.treatment_type,
-          project_id: project.id,
+          project_id: actualProjectId,
           status: 'pending',
           priority: 'medium',
           due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -206,7 +229,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
       id: "1",
       workOrderId: "WO-001",
       treatmentType: "Velvet Curtains",
-      projectName: project.name,
+      projectName: project.name || "Project",
       assignedTo: "John Smith",
       estimatedHours: 8,
       actualHours: 6,
@@ -225,7 +248,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         <div>
           <h3 className="text-2xl font-bold">Workshop Management</h3>
           <p className="text-muted-foreground">
-            Organize treatments, manage suppliers, and delegate tasks for {project.name}
+            Organize treatments, manage suppliers, and delegate tasks for {project.name || "Project"}
           </p>
         </div>
         <Button onClick={generateWorkOrders} disabled={createWorkOrder.isPending}>
@@ -242,8 +265,8 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         <CardContent>
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <p><span className="font-medium">Job #:</span> {project.job_number}</p>
-              <p><span className="font-medium">Project:</span> {project.name}</p>
+              <p><span className="font-medium">Job #:</span> {project.job_number || project.quote_number || 'N/A'}</p>
+              <p><span className="font-medium">Project:</span> {project.name || 'Unnamed Project'}</p>
               <p><span className="font-medium">Status:</span> {project.status}</p>
             </div>
             <div>
@@ -286,7 +309,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
 
         <TabsContent value="suppliers">
           <SupplierOrderManager 
-            fabricOrders={projectFabricOrders}
+            fabricOrders={transformedFabricOrders}
             onUpdateOrder={handleUpdateFabricOrder}
             onBulkOrder={handleBulkOrder}
           />
@@ -294,7 +317,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
 
         <TabsContent value="delegation">
           <TaskDelegationBoard 
-            teamMembers={teamMembers || []}
+            teamMembers={transformedTeamMembers}
             taskAssignments={mockTaskAssignments}
             onReassignTask={handleReassignTask}
             onUpdateTaskStatus={handleUpdateTaskStatus}
@@ -337,19 +360,19 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Items Needed:</span>
-                    <span className="font-medium">{projectFabricOrders.filter(f => f.status === 'needed').length}</span>
+                    <span className="font-medium">{transformedFabricOrders.filter(f => f.status === 'needed').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Orders Placed:</span>
-                    <span className="font-medium text-blue-600">{projectFabricOrders.filter(f => f.status === 'ordered').length}</span>
+                    <span className="font-medium text-blue-600">{transformedFabricOrders.filter(f => f.status === 'ordered').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Received:</span>
-                    <span className="font-medium text-green-600">{projectFabricOrders.filter(f => f.status === 'received').length}</span>
+                    <span className="font-medium text-green-600">{transformedFabricOrders.filter(f => f.status === 'received').length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Total Value:</span>
-                    <span className="font-medium">${projectFabricOrders.reduce((sum, f) => sum + (f.total_price || 0), 0).toFixed(2)}</span>
+                    <span className="font-medium">${transformedFabricOrders.reduce((sum, f) => sum + (f.totalPrice || 0), 0).toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -361,7 +384,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {teamMembers?.map(member => (
+                  {transformedTeamMembers?.map(member => (
                     <div key={member.id} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span>{member.name}</span>

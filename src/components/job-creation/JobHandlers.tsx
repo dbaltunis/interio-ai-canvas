@@ -4,9 +4,14 @@ import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } fro
 import { useTreatments, useCreateTreatment } from "@/hooks/useTreatments";
 
 export const useJobHandlers = (project: any) => {
-  const { data: rooms, isLoading: roomsLoading } = useRooms(project.id);
-  const { data: allSurfaces } = useSurfaces(project.id);
-  const { data: allTreatments } = useTreatments(project.id);
+  // Handle case where project might be a quote object with project_id
+  const actualProjectId = project.project_id || project.id;
+  console.log("JobHandlers - project object:", project);
+  console.log("JobHandlers - using project ID:", actualProjectId);
+
+  const { data: rooms, isLoading: roomsLoading } = useRooms(actualProjectId);
+  const { data: allSurfaces } = useSurfaces(actualProjectId);
+  const { data: allTreatments } = useTreatments(actualProjectId);
   const createRoom = useCreateRoom();
   const updateRoom = useUpdateRoom();
   const deleteRoom = useDeleteRoom();
@@ -18,8 +23,9 @@ export const useJobHandlers = (project: any) => {
   const handleCreateRoom = async () => {
     try {
       const roomNumber = (rooms?.length || 0) + 1;
+      console.log("Creating room with project_id:", actualProjectId);
       await createRoom.mutateAsync({
-        project_id: project.id,
+        project_id: actualProjectId,
         name: `Room ${roomNumber}`,
         room_type: "living_room"
       });
@@ -42,7 +48,7 @@ export const useJobHandlers = (project: any) => {
       
       await createSurface.mutateAsync({
         room_id: roomId,
-        project_id: project.id,
+        project_id: actualProjectId,
         name: surfaceName,
         surface_type: surfaceType,
         width: surfaceType === 'wall' ? 120 : 60,
@@ -90,7 +96,7 @@ export const useJobHandlers = (project: any) => {
     try {
       const roomNumber = (rooms?.length || 0) + 1;
       const newRoom = await createRoom.mutateAsync({
-        project_id: project.id,
+        project_id: actualProjectId,
         name: `${copiedRoom.room.name} (Copy ${roomNumber})`,
         room_type: copiedRoom.room.room_type
       });
@@ -98,7 +104,7 @@ export const useJobHandlers = (project: any) => {
       for (const surface of copiedRoom.surfaces) {
         const newSurface = await createSurface.mutateAsync({
           room_id: newRoom.id,
-          project_id: project.id,
+          project_id: actualProjectId,
           name: surface.name,
           surface_type: surface.surface_type,
           width: surface.width,
@@ -112,7 +118,7 @@ export const useJobHandlers = (project: any) => {
           await createTreatment.mutateAsync({
             window_id: newSurface.id,
             room_id: newRoom.id,
-            project_id: project.id,
+            project_id: actualProjectId,
             treatment_type: treatment.treatment_type,
             product_name: treatment.product_name,
             material_cost: treatment.material_cost,
@@ -132,7 +138,7 @@ export const useJobHandlers = (project: any) => {
       const treatmentPayload = {
         window_id: surfaceId,
         room_id: roomId,
-        project_id: project.id,
+        project_id: actualProjectId,
         treatment_type: treatmentType,
         status: "planned",
         product_name: treatmentData?.product_name || treatmentType,
