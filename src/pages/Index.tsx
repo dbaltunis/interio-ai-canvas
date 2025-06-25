@@ -25,9 +25,7 @@ import {
   Package, 
   Wrench,
   Calendar,
-  Settings,
-  Calculator,
-  LogOut
+  Calculator
 } from "lucide-react";
 
 const Index = () => {
@@ -39,7 +37,6 @@ const Index = () => {
     { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "inventory", label: "Library", icon: Package },
-    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const handleSignOut = async () => {
@@ -109,16 +106,7 @@ const Index = () => {
             
             <div className="flex items-center space-x-4">
               <AIAssistant />
-              <UserProfile />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 text-brand-neutral hover:text-brand-accent hover:bg-brand-accent/10"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </Button>
+              <UserProfile onSettingsClick={() => setActiveTab("settings")} />
             </div>
           </div>
         </div>

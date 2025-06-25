@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 
-export const UserProfile = () => {
+interface UserProfileProps {
+  onSettingsClick: () => void;
+}
+
+export const UserProfile = ({ onSettingsClick }: UserProfileProps) => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -28,8 +32,8 @@ export const UserProfile = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+          <div className="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white text-sm font-medium border-2 border-brand-secondary/20 hover:border-brand-accent transition-colors">
             {user?.email?.charAt(0).toUpperCase() || 'U'}
           </div>
         </Button>
@@ -49,6 +53,10 @@ export const UserProfile = () => {
         <DropdownMenuItem>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSettingsClick}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
