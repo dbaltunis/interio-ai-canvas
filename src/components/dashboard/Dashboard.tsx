@@ -3,11 +3,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarDays, DollarSign, Users, TrendingUp, Bell, AlertTriangle, Package, Plus } from "lucide-react";
+import { 
+  CalendarDays, 
+  DollarSign, 
+  Users, 
+  TrendingUp, 
+  Bell, 
+  AlertTriangle, 
+  Package, 
+  Plus,
+  Clock,
+  Target,
+  Zap,
+  BarChart3
+} from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useQuotes } from "@/hooks/useQuotes";
+import { KPICard } from "./KPICard";
+import { RevenueChart } from "./RevenueChart";
+import { QuickActions } from "./QuickActions";
+import { PipelineOverview } from "./PipelineOverview";
 
 export const Dashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -22,7 +39,29 @@ export const Dashboard = () => {
     }).format(amount);
   };
 
-  // Use quotes for recent jobs since that's what shows in the jobs table
+  // Calculate KPIs
+  const totalRevenue = quotes?.reduce((sum, quote) => sum + (quote.total_amount || 0), 0) || 0;
+  const pendingQuotes = quotes?.filter(q => q.status === 'draft').length || 0;
+  const activeProjects = projects?.filter(p => p.status !== 'completed').length || 0;
+  const completedJobs = quotes?.filter(q => q.status === 'completed').length || 0;
+  
+  // Mock data for charts (replace with real data later)
+  const revenueData = [
+    { month: 'Jan', revenue: 15000, quotes: 12 },
+    { month: 'Feb', revenue: 18000, quotes: 15 },
+    { month: 'Mar', revenue: 22000, quotes: 18 },
+    { month: 'Apr', revenue: 19000, quotes: 14 },
+    { month: 'May', revenue: 25000, quotes: 20 },
+    { month: 'Jun', revenue: 28000, quotes: 22 },
+  ];
+
+  const pipelineData = [
+    { stage: 'Draft', count: pendingQuotes, value: 15000, color: '#EF4444' },
+    { stage: 'Sent', count: 3, value: 12000, color: '#F59E0B' },
+    { stage: 'Under Review', count: 2, value: 8000, color: '#3B82F6' },
+    { stage: 'Accepted', count: 1, value: 5000, color: '#10B981' },
+  ];
+
   const recentJobs = quotes?.slice(0, 5) || [];
 
   const getClientName = (clientId: string) => {
@@ -30,8 +69,13 @@ export const Dashboard = () => {
     return client?.name || 'Unknown Client';
   };
 
+  const handleQuickAction = (action: string) => {
+    console.log(`Quick action: ${action}`);
+    // These will be implemented to navigate to appropriate sections
+  };
+
   if (statsLoading) {
-    return <div>Loading dashboard...</div>;
+    return <div className="flex items-center justify-center h-64">Loading dashboard...</div>;
   }
 
   return (
@@ -39,179 +83,235 @@ export const Dashboard = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's what's happening with your business.</p>
+          <h1 className="text-3xl font-bold text-brand-primary">Business Dashboard</h1>
+          <p className="text-brand-neutral">Track your business performance and key metrics</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          New Job
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Export Report
+          </Button>
+          <Button className="bg-brand-primary hover:bg-brand-accent flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Quote
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Jobs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quotes?.length || 0}</div>
-            <p className="text-xs text-gray-500">Active quotes/jobs</p>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          title="Total Revenue"
+          value={formatCurrency(totalRevenue)}
+          subtitle="All time revenue"
+          icon={DollarSign}
+          trend={{ value: 12.5, isPositive: true }}
+          loading={statsLoading}
+        />
+        <KPICard
+          title="Active Projects"
+          value={activeProjects}
+          subtitle="Currently in progress"
+          icon={Target}
+          trend={{ value: 8.3, isPositive: true }}
+          loading={projectsLoading}
+        />
+        <KPICard
+          title="Pending Quotes"
+          value={pendingQuotes}
+          subtitle="Awaiting response"
+          icon={Clock}
+          trend={{ value: -2.1, isPositive: false }}
+          loading={statsLoading}
+        />
+        <KPICard
+          title="Total Clients"
+          value={clients?.length || 0}
+          subtitle="Active relationships"
+          icon={Users}
+          trend={{ value: 15.7, isPositive: true }}
+          loading={!clients}
+        />
+      </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Pending Quotes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quotes?.filter(q => q.status === 'draft').length || 0}</div>
-            <p className="text-xs text-gray-500">Awaiting response</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(quotes?.reduce((sum, quote) => sum + (quote.total_amount || 0), 0) || 0)}</div>
-            <p className="text-xs text-gray-500">From all quotes</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Active Clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{clients?.length || 0}</div>
-            <p className="text-xs text-gray-500">Client relationships</p>
-          </CardContent>
-        </Card>
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          title="Conversion Rate"
+          value="68%"
+          subtitle="Quote to project ratio"
+          icon={TrendingUp}
+          trend={{ value: 5.2, isPositive: true }}
+        />
+        <KPICard
+          title="Avg Quote Value"
+          value={formatCurrency(totalRevenue / (quotes?.length || 1))}
+          subtitle="Per quote average"
+          icon={Zap}
+          trend={{ value: 3.8, isPositive: true }}
+        />
+        <KPICard
+          title="Completed Jobs"
+          value={completedJobs}
+          subtitle="Successfully finished"
+          icon={Package}
+          trend={{ value: 22.1, isPositive: true }}
+        />
+        <KPICard
+          title="Response Time"
+          value="2.4 hrs"
+          subtitle="Average quote response"
+          icon={Clock}
+          trend={{ value: -15.3, isPositive: true }}
+        />
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Jobs Table */}
+        {/* Revenue Chart - Spans 2 columns */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Recent Jobs
-                <Button variant="outline" size="sm">View All</Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
+          <RevenueChart data={revenueData} />
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <QuickActions
+            onNewJob={() => handleQuickAction('new-job')}
+            onNewClient={() => handleQuickAction('new-client')}
+            onCalculator={() => handleQuickAction('calculator')}
+            onCalendar={() => handleQuickAction('calendar')}
+            onInventory={() => handleQuickAction('inventory')}
+          />
+        </div>
+      </div>
+
+      {/* Pipeline and Recent Jobs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pipeline Overview */}
+        <PipelineOverview 
+          data={pipelineData}
+          totalValue={pipelineData.reduce((sum, stage) => sum + stage.value, 0)}
+        />
+
+        {/* Recent Jobs Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Recent Jobs
+              <Button variant="outline" size="sm">View All</Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Quote #</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projectsLoading ? (
                   <TableRow>
-                    <TableHead>Job #</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {projectsLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                ) : recentJobs.length > 0 ? (
+                  recentJobs.map((quote) => (
+                    <TableRow key={quote.id}>
+                      <TableCell className="font-medium">{quote.quote_number}</TableCell>
+                      <TableCell>{getClientName(quote.client_id)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            quote.status === 'completed' ? 'default' : 
+                            quote.status === 'sent' ? 'secondary' : 
+                            'outline'
+                          }
+                        >
+                          {quote.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(quote.total_amount || 0)}</TableCell>
                     </TableRow>
-                  ) : recentJobs.length > 0 ? (
-                    recentJobs.map((quote) => {
-                      const project = projects?.find(p => p.id === quote.project_id);
-                      return (
-                        <TableRow key={quote.id}>
-                          <TableCell className="font-medium">{quote.quote_number || 'New Quote'}</TableCell>
-                          <TableCell>{getClientName(quote.client_id)}</TableCell>
-                          <TableCell>
-                            <Badge variant={quote.status === 'completed' ? 'default' : 'secondary'}>
-                              {quote.status || 'draft'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{new Date(quote.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(quote.total_amount || 0)}</TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-gray-500">No recent jobs</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-gray-500">No recent jobs</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Emails Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Emails</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">Quote Request</p>
-                    <p className="text-xs text-gray-500">Sarah Johnson</p>
-                  </div>
-                  <Badge variant="secondary">New</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">Project Update</p>
-                    <p className="text-xs text-gray-500">Mike Davis</p>
-                  </div>
-                  <Badge variant="outline">Read</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">Invoice Payment</p>
-                    <p className="text-xs text-gray-500">Lisa Chen</p>
-                  </div>
-                  <Badge variant="outline">Read</Badge>
-                </div>
+      {/* Alerts and Notifications */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Business Alerts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Business Alerts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div>
+                <p className="font-medium text-sm text-orange-900">Low Stock Alert</p>
+                <p className="text-xs text-orange-700">3 fabric types below reorder point</p>
               </div>
-              <Button variant="outline" className="w-full mt-4" size="sm">
-                View All Emails
-              </Button>
-            </CardContent>
-          </Card>
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800">Action Required</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div>
+                <p className="font-medium text-sm text-blue-900">Quote Follow-up</p>
+                <p className="text-xs text-blue-700">5 quotes sent over 3 days ago</p>
+              </div>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">Follow Up</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+              <div>
+                <p className="font-medium text-sm text-green-900">Installation Due</p>
+                <p className="text-xs text-green-700">2 projects scheduled this week</p>
+              </div>
+              <Badge variant="secondary" className="bg-green-100 text-green-800">Upcoming</Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Jobs This Week</span>
-                <span className="font-semibold">{quotes?.filter(q => {
-                  const weekAgo = new Date();
-                  weekAgo.setDate(weekAgo.getDate() - 7);
-                  return new Date(q.created_at) > weekAgo;
-                }).length || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Pending Approvals</span>
-                <span className="font-semibold">{quotes?.filter(q => q.status === 'draft').length || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Active Projects</span>
-                <span className="font-semibold">{projects?.filter(p => p.status !== 'completed').length || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Completed Jobs</span>
-                <span className="font-semibold text-green-600">{quotes?.filter(q => q.status === 'completed').length || 0}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* System Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-green-500" />
+              System Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Database Connection</span>
+              <Badge className="bg-green-100 text-green-800">Healthy</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Backup Status</span>
+              <Badge className="bg-green-100 text-green-800">Up to Date</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Email Service</span>
+              <Badge className="bg-green-100 text-green-800">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Shopify Integration</span>
+              <Badge variant="secondary">Not Connected</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Last Sync</span>
+              <span className="text-xs text-gray-500">2 minutes ago</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
