@@ -1,13 +1,25 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { Toaster } from "@/components/ui/toaster";
+import { MainNav } from "@/components/layout/MainNav";
+import { Dashboard } from "@/components/dashboard/Dashboard";
+import { JobsPage } from "@/components/jobs/JobsPage";
+import { NewJobPage } from "@/components/job-creation/NewJobPage";
+import { JobEditPage } from "@/components/job-editor/JobEditPage";
+import { ProjectPage } from "@/components/projects/ProjectPage";
+import { EnhancedClientManagement } from "@/components/clients/EnhancedClientManagement";
+import { QuoteManagement } from "@/components/quotes/QuoteManagement";
+import { InventoryManagement } from "@/components/inventory/InventoryManagement";
+import { WorkshopManagement } from "@/components/workshop/WorkshopManagement";
+import { CalendarView } from "@/components/calendar/CalendarView";
+import { CalculatorView } from "@/components/calculator/CalculatorView";
+import { LibraryPage } from "@/components/library/LibraryPage";
+import { SettingsView } from "@/components/settings/SettingsView";
+import { NotFound } from "@/pages/NotFound";
+import "./App.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,25 +30,39 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <ProtectedRoute>
+            <div className="min-h-screen bg-background">
+              <MainNav />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/jobs/new" element={<NewJobPage />} />
+                  <Route path="/jobs/:id/edit" element={<JobEditPage />} />
+                  <Route path="/projects/:id" element={<ProjectPage />} />
+                  <Route path="/clients" element={<EnhancedClientManagement />} />
+                  <Route path="/quotes" element={<QuoteManagement />} />
+                  <Route path="/inventory" element={<InventoryManagement />} />
+                  <Route path="/workshop" element={<WorkshopManagement />} />
+                  <Route path="/calendar" element={<CalendarView />} />
+                  <Route path="/calculator" element={<CalculatorView />} />
+                  <Route path="/library" element={<LibraryPage />} />
+                  <Route path="/settings" element={<SettingsView />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+            </div>
+          </ProtectedRoute>
+          <Toaster />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
