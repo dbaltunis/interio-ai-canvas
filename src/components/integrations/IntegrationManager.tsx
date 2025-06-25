@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +18,11 @@ import {
   Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SendGridSetup } from "./SendGridSetup";
 
 export const IntegrationManager = () => {
   const [connections, setConnections] = useState({
-    sendgrid: { connected: false, status: 'disconnected' },
+    sendgrid: { connected: true, status: 'connected' }, // Updated to reflect API key is configured
     shopify: { connected: false, status: 'disconnected' },
     erp: { connected: false, status: 'disconnected' },
     calendar: { connected: false, status: 'disconnected' },
@@ -229,13 +229,18 @@ export const IntegrationManager = () => {
           </div>
         </TabsContent>
 
-        {/* Individual category tabs would show filtered integrations with detailed setup forms */}
         <TabsContent value="communication">
-          <IntegrationSetup 
-            integrations={integrations.filter(i => i.category === 'Communication')}
-            connections={connections}
-            onConnect={handleConnect}
-          />
+          <div className="space-y-6">
+            {/* SendGrid Setup Component */}
+            <SendGridSetup />
+            
+            {/* Other communication integrations */}
+            <IntegrationSetup 
+              integrations={integrations.filter(i => i.category === 'Communication' && i.id !== 'sendgrid')}
+              connections={connections}
+              onConnect={handleConnect}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="ecommerce">

@@ -24,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Get the authorization header
@@ -43,6 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailData: EmailRequest = await req.json();
+    console.log("Processing email request:", { to: emailData.to, subject: emailData.subject });
 
     // Send email via SendGrid
     const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -80,10 +81,11 @@ const handler = async (req: Request): Promise<Response> => {
     if (!sendGridResponse.ok) {
       const errorText = await sendGridResponse.text();
       console.error("SendGrid error:", errorText);
-      throw new Error(`SendGrid API error: ${sendGridResponse.status}`);
+      throw new Error(`SendGrid API error: ${sendGridResponse.status} - ${errorText}`);
     }
 
     const messageId = sendGridResponse.headers.get("X-Message-Id");
+    console.log("Email sent successfully, Message ID:", messageId);
 
     // Store email record in database
     const { data, error } = await supabase
@@ -111,11 +113,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw error;
     }
 
+    console.log("Email record stored in database:", data.id);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         email_id: data.id,
-        message_id: messageId 
+        message_id: messageId,
+        message: "Email sent successfully"
       }),
       {
         status: 200,

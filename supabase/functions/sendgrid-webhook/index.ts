@@ -19,6 +19,7 @@ interface SendGridEvent {
   template_id?: string;
   campaign_id?: string;
   client_id?: string;
+  reason?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -33,6 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const events: SendGridEvent[] = await req.json();
+    console.log("Received SendGrid webhook events:", events.length);
 
     for (const event of events) {
       console.log("Processing SendGrid event:", event);
@@ -86,6 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (updateError) {
           console.error("Error updating email record:", updateError);
+        } else {
+          console.log("Email record updated successfully:", emailRecord.id);
         }
       }
 
@@ -106,6 +110,8 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (analyticsError) {
         console.error("Error storing analytics:", analyticsError);
+      } else {
+        console.log("Analytics stored successfully for email:", emailRecord.id);
       }
     }
 

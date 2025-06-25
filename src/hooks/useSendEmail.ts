@@ -17,32 +17,32 @@ export const useSendEmail = () => {
 
   return useMutation({
     mutationFn: async (emailData: SendEmailData) => {
+      console.log("Sending email via SendGrid:", emailData);
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('User not authenticated');
 
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(emailData),
+      const response = await supabase.functions.invoke('send-email', {
+        body: emailData,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send email');
+      console.log("SendGrid response:", response);
+
+      if (response.error) {
+        console.error("SendGrid error:", response.error);
+        throw new Error(response.error.message || 'Failed to send email');
       }
 
-      return response.json();
+      return response.data;
     },
     onSuccess: () => {
       toast({
         title: "Email Sent",
-        description: "Your email has been sent successfully",
+        description: "Your email has been sent successfully via SendGrid",
       });
     },
     onError: (error) => {
+      console.error("Email sending error:", error);
       toast({
         title: "Failed to Send Email",
         description: error.message,
