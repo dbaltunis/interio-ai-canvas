@@ -19,6 +19,40 @@ interface ProjectWorkshopTabProps {
   project: any;
 }
 
+// Define proper types for transformed data
+interface TransformedFabricOrder {
+  id: string;
+  fabricCode: string;
+  fabricType: string;
+  color: string | null;
+  pattern: string | null;
+  supplier: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  totalPrice: number;
+  status: "ordered" | "needed" | "received";
+  orderDate: string | null;
+  expectedDelivery: string | null;
+  receivedDate: string | null;
+  workOrderIds: string[];
+  notes: string | null;
+}
+
+interface TransformedTeamMember {
+  id: string;
+  name: string;
+  role: string;
+  expertise: string[];
+  email: string | null;
+  phone: string | null;
+  currentWorkload: number;
+  maxCapacity: number;
+  status: "available" | "busy" | "offline";
+  hourlyRate: number | null;
+  active: boolean;
+}
+
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
   // Handle case where project might be a quote object with project_id
   const actualProjectId = project.project_id || project.id;
@@ -44,22 +78,38 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
   const projectWorkOrders = workOrders || [];
   
   // Transform fabric orders to match expected interface
-  const transformedFabricOrders = fabricOrders?.map(order => ({
-    ...order,
+  const transformedFabricOrders: TransformedFabricOrder[] = fabricOrders?.map(order => ({
+    id: order.id,
     fabricCode: order.fabric_code,
     fabricType: order.fabric_type,
+    color: order.color,
+    pattern: order.pattern,
+    supplier: order.supplier,
+    quantity: order.quantity,
+    unit: order.unit,
     unitPrice: order.unit_price,
     totalPrice: order.total_price,
-    workOrderIds: order.work_order_ids || []
+    status: order.status as "ordered" | "needed" | "received",
+    orderDate: order.order_date,
+    expectedDelivery: order.expected_delivery,
+    receivedDate: order.received_date,
+    workOrderIds: order.work_order_ids || [],
+    notes: order.notes
   })) || [];
 
   // Transform team members to match expected interface
-  const transformedTeamMembers = teamMembers?.map(member => ({
-    ...member,
+  const transformedTeamMembers: TransformedTeamMember[] = teamMembers?.map(member => ({
+    id: member.id,
+    name: member.name,
+    role: member.role,
     expertise: member.skills || [],
+    email: member.email,
+    phone: member.phone,
     currentWorkload: 0,
     maxCapacity: 40,
-    status: member.active ? 'available' as const : 'unavailable' as const
+    status: member.active ? 'available' as const : 'offline' as const,
+    hourlyRate: member.hourly_rate,
+    active: member.active
   })) || [];
 
   const generateWorkOrders = async () => {
