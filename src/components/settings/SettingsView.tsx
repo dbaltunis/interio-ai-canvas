@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Users, Calculator, Wrench, DollarSign, Truck } from "lucide-react";
+import { Settings, Package, Users, Calculator, Wrench, DollarSign, Truck, Zap } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
 import { VendorManagementTab } from "./tabs/VendorManagementTab";
@@ -9,6 +9,7 @@ import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { TreatmentTypesTab } from "./tabs/TreatmentTypesTab";
 import { CalculationEngineTab } from "./tabs/CalculationEngineTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
+import { IntegrationManager } from "../integrations/IntegrationManager";
 
 export const SettingsView = () => {
   return (
@@ -23,7 +24,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Business
@@ -48,8 +49,12 @@ export const SettingsView = () => {
             <Calculator className="h-4 w-4" />
             Calculations
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-2">
+          <TabsTrigger value="legacy-integrations" className="flex items-center gap-2">
             <Truck className="h-4 w-4" />
+            Legacy
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
             Integrations
           </TabsTrigger>
         </TabsList>
@@ -78,8 +83,12 @@ export const SettingsView = () => {
           <CalculationEngineTab />
         </TabsContent>
 
-        <TabsContent value="integrations">
+        <TabsContent value="legacy-integrations">
           <IntegrationsTab />
+        </TabsContent>
+
+        <TabsContent value="integrations">
+          <IntegrationManager />
         </TabsContent>
       </Tabs>
     </div>
