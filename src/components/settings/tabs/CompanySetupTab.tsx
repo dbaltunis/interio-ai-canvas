@@ -16,7 +16,7 @@ export const CompanySetupTab = () => {
   const updateSettings = useUpdateBusinessSettings();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string | null>(settings?.company_logo || null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     company_name: settings?.company_name || "",
@@ -117,7 +117,8 @@ export const CompanySetupTab = () => {
 
       const settingsData = {
         ...formData,
-        company_logo: logoUrl,
+        // Remove company_logo reference since it's not in the database schema yet
+        // company_logo: logoUrl,
       };
 
       console.log("Saving company settings:", settingsData);

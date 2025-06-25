@@ -61,7 +61,7 @@ export const LibraryDialogs = ({
 
   const createInventory = useCreateInventoryItem();
   const createVendor = useCreateVendor();
-  const fabricImport = useFabricImport();
+  const { importFabricsFromCSV, isImporting } = useFabricImport();
   const { toast } = useToast();
 
   const handleFabricSubmit = async (e: React.FormEvent) => {
@@ -138,31 +138,15 @@ export const LibraryDialogs = ({
     }
 
     try {
-      const text = await csvFile.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
+      const result = await importFabricsFromCSV(csvFile);
       
-      const csvData = lines.slice(1)
-        .filter(line => line.trim())
-        .map(line => {
-          const values = line.split(',').map(v => v.trim());
-          const row: any = {};
-          headers.forEach((header, index) => {
-            row[header] = values[index] || '';
-          });
-          return row;
-        });
-
-      console.log("Parsed CSV data:", csvData);
-      
-      await fabricImport.mutateAsync({
-        csvData,
-        imageFiles: imageFiles || undefined,
-      });
-      
-      setShowCSVUpload(false);
-      setCsvFile(null);
-      setImageFiles(null);
+      if (result.success) {
+        setShowCSVUpload(false);
+        setCsvFile(null);
+        setImageFiles(null);
+        // Refresh the page to show new data
+        window.location.reload();
+      }
     } catch (error) {
       console.error("CSV upload failed:", error);
       toast({
@@ -369,14 +353,14 @@ export const LibraryDialogs = ({
               />
             </div>
             <div className="text-sm text-gray-600">
-              <p>CSV should contain columns: vendor_name, collection_name, fabric_name, fabric_code, etc.</p>
+              <p>CSV should contain columns: name, sku, supplier, color, pattern, type, width, cost_per_unit, quantity</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setShowCSVUpload(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={fabricImport.isPending}>
-                {fabricImport.isPending ? "Importing..." : "Import Fabrics"}
+              <Button type="submit" disabled={isImporting}>
+                {isImporting ? "Importing..." : "Import Fabrics"}
               </Button>
             </div>
           </form>
