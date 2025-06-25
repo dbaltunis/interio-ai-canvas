@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Users, Calculator, Wrench, DollarSign, Truck, Zap } from "lucide-react";
+import { Settings, Package, Users, Calculator, Wrench, DollarSign, Truck, Zap, Building, UserPlus } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
 import { VendorManagementTab } from "./tabs/VendorManagementTab";
@@ -10,6 +10,8 @@ import { TreatmentTypesTab } from "./tabs/TreatmentTypesTab";
 import { CalculationEngineTab } from "./tabs/CalculationEngineTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { IntegrationManager } from "../integrations/IntegrationManager";
+import { CompanySetupTab } from "./tabs/CompanySetupTab";
+import { TeamManagementTab } from "./tabs/TeamManagementTab";
 
 export const SettingsView = () => {
   return (
@@ -23,8 +25,16 @@ export const SettingsView = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+      <Tabs defaultValue="company" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-10">
+          <TabsTrigger value="company" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            Company
+          </TabsTrigger>
+          <TabsTrigger value="team" className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            Team
+          </TabsTrigger>
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Business
@@ -58,6 +68,14 @@ export const SettingsView = () => {
             Integrations
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="company">
+          <CompanySetupTab />
+        </TabsContent>
+
+        <TabsContent value="team">
+          <TeamManagementTab />
+        </TabsContent>
 
         <TabsContent value="business">
           <BusinessConfigTab />
