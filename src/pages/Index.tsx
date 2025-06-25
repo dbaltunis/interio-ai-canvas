@@ -16,7 +16,6 @@ import { SettingsView } from "@/components/settings/SettingsView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -29,19 +28,14 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("jobs");
-  const { signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState("library");
 
   const navItems = [
     { id: "dashboard", label: "Home", icon: LayoutDashboard },
     { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
-    { id: "inventory", label: "Library", icon: Package },
+    { id: "library", label: "Library", icon: Package },
   ];
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   const renderActiveComponent = () => {
     switch (activeTab) {
@@ -57,7 +51,7 @@ const Index = () => {
         return <QuoteManagement />;
       case "workshop":
         return <WorkshopManagement />;
-      case "inventory":
+      case "library":
         return <LibraryPage />;
       case "calendar":
         return <CalendarView />;
@@ -68,7 +62,7 @@ const Index = () => {
       case "settings":
         return <SettingsView />;
       default:
-        return <JobsPage />;
+        return <LibraryPage />;
     }
   };
 
