@@ -39,6 +39,7 @@ const Index = () => {
     { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "inventory", label: "Library", icon: Package },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const handleSignOut = async () => {
