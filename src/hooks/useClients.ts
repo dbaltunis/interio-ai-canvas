@@ -80,3 +80,47 @@ export const useCreateClient = () => {
     },
   });
 };
+
+export const useUpdateClient = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...client }: { id: string } & Omit<ClientInsert, "user_id">) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error("Auth error:", userError);
+        throw new Error("Authentication error. Please try logging in again.");
+      }
+      
+      if (!user) {
+        throw new Error("You must be logged in to update a client");
+      }
+
+      const { data, error } = await supabase
+        .from("clients")
+        .update({ ...client, user_id: user.id })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast({
+        title: "Success",
+        description: "Client updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
