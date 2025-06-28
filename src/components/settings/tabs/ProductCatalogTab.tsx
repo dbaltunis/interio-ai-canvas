@@ -9,6 +9,21 @@ import { ProductCategoryFilter } from "./products/ProductCategoryFilter";
 import { ProductList } from "./products/ProductList";
 import { ProductForm } from "./products/ProductForm";
 
+interface Product {
+  id: string;
+  name: string;
+  sku?: string;
+  category_id: string;
+  base_price?: number;
+  variants?: string[];
+  options?: string[];
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
 export const ProductCatalogTab = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -23,12 +38,25 @@ export const ProductCatalogTab = () => {
   const [variants, setVariants] = useState("");
   const [options, setOptions] = useState("");
 
-  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: rawProducts = [], isLoading: productsLoading } = useProducts();
   const { data: categories = [] } = useProductCategories();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const { toast } = useToast();
+
+  // Transform the raw products to match our Product interface
+  const products: Product[] = rawProducts.map(product => ({
+    id: product.id,
+    name: product.name,
+    sku: product.sku || undefined,
+    category_id: product.category_id || "",
+    base_price: product.base_price || undefined,
+    variants: Array.isArray(product.variants) ? product.variants as string[] : 
+              typeof product.variants === 'string' ? [product.variants] : [],
+    options: Array.isArray(product.options) ? product.options as string[] : 
+             typeof product.options === 'string' ? [product.options] : [],
+  }));
 
   // Filter products by selected category
   const filteredProducts = selectedCategoryId 
@@ -100,12 +128,12 @@ export const ProductCatalogTab = () => {
     }
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: Product) => {
     setProductName(product.name);
     setProductSku(product.sku || "");
     setBasePrice(product.base_price?.toString() || "");
-    setCostPrice(product.cost_price?.toString() || "");
-    setDescription(product.description || "");
+    setCostPrice(""); // We don't have cost_price in our Product interface, so leave empty
+    setDescription(""); // We don't have description in our Product interface, so leave empty
     setVariants(Array.isArray(product.variants) ? product.variants.join(', ') : "");
     setOptions(Array.isArray(product.options) ? product.options.join(', ') : "");
     setEditingProduct(product.id);
