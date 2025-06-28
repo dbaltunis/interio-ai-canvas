@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -34,7 +33,7 @@ export const useDashboardStats = () => {
         .from("inventory")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
-        .or("quantity.lte.reorder_point,reorder_point.is.null.and.quantity.lte.5");
+        .or("quantity.lte.reorder_point,and(reorder_point.is.null,quantity.lte.5)");
 
       // Get total revenue (from accepted quotes)
       const { data: acceptedQuotes } = await supabase
