@@ -1,6 +1,5 @@
-
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { useState } from "react";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useProductCategories } from "@/hooks/useProductCategories";
@@ -8,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ProductCategoryFilter } from "./products/ProductCategoryFilter";
 import { ProductList } from "./products/ProductList";
 import { ProductForm } from "./products/ProductForm";
+import { CategoryManagement } from "./products/CategoryManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Product {
   id: string;
@@ -176,57 +177,73 @@ export const ProductCatalogTab = () => {
           <h3 className="text-lg font-semibold text-brand-primary">Product Catalog Management</h3>
           <p className="text-sm text-brand-neutral">Manage your product categories, items, and configurations</p>
         </div>
-        <Button 
-          className="bg-brand-primary hover:bg-brand-accent"
-          onClick={() => setShowAddForm(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add New Product
-        </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
-        <ProductCategoryFilter
-          categories={categoryWithCounts}
-          selectedCategoryId={selectedCategoryId}
-          totalProducts={products.length}
-          onCategorySelect={setSelectedCategoryId}
-        />
+      <Tabs defaultValue="products" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="products" className="space-y-6">
+          <div className="flex items-center justify-end">
+            <Button 
+              className="bg-brand-primary hover:bg-brand-accent"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Product
+            </Button>
+          </div>
 
-        <ProductList
-          products={filteredProducts}
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAddProduct={() => setShowAddForm(true)}
-        />
-      </div>
+          <div className="grid grid-cols-4 gap-6">
+            <ProductCategoryFilter
+              categories={categoryWithCounts}
+              selectedCategoryId={selectedCategoryId}
+              totalProducts={products.length}
+              onCategorySelect={setSelectedCategoryId}
+            />
 
-      {showAddForm && (
-        <ProductForm
-          isEditing={!!editingProduct}
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          productName={productName}
-          productSku={productSku}
-          basePrice={basePrice}
-          costPrice={costPrice}
-          description={description}
-          variants={variants}
-          options={options}
-          onCategoryChange={setSelectedCategoryId}
-          onProductNameChange={setProductName}
-          onProductSkuChange={setProductSku}
-          onBasePriceChange={setBasePrice}
-          onCostPriceChange={setCostPrice}
-          onDescriptionChange={setDescription}
-          onVariantsChange={setVariants}
-          onOptionsChange={setOptions}
-          onSubmit={handleSubmit}
-          onCancel={resetForm}
-        />
-      )}
+            <ProductList
+              products={filteredProducts}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAddProduct={() => setShowAddForm(true)}
+            />
+          </div>
+
+          {showAddForm && (
+            <ProductForm
+              isEditing={!!editingProduct}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              productName={productName}
+              productSku={productSku}
+              basePrice={basePrice}
+              costPrice={costPrice}
+              description={description}
+              variants={variants}
+              options={options}
+              onCategoryChange={setSelectedCategoryId}
+              onProductNameChange={setProductName}
+              onProductSkuChange={setProductSku}
+              onBasePriceChange={setBasePrice}
+              onCostPriceChange={setCostPrice}
+              onDescriptionChange={setDescription}
+              onVariantsChange={setVariants}
+              onOptionsChange={setOptions}
+              onSubmit={handleSubmit}
+              onCancel={resetForm}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="categories" className="space-y-6">
+          <CategoryManagement categories={categories} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
