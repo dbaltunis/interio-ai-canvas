@@ -8,6 +8,7 @@ import { DatabaseCheck } from "../debug/DatabaseCheck";
 import { SetupHelper } from "../admin/SetupHelper";
 import { useInventory } from "@/hooks/useInventory";
 import { useVendors } from "@/hooks/useVendors";
+import { useProductCategories } from "@/hooks/useProductCategories";
 
 export const LibraryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,15 +22,21 @@ export const LibraryPage = () => {
   // Fetch real data from database
   const { data: inventory = [], isLoading: inventoryLoading, error: inventoryError } = useInventory();
   const { data: vendors = [], isLoading: vendorsLoading, error: vendorsError } = useVendors();
+  const { data: categories = [], isLoading: categoriesLoading } = useProductCategories();
 
   console.log("LibraryPage - Inventory data:", inventory);
   console.log("LibraryPage - Vendors data:", vendors);
-  console.log("LibraryPage - Loading states:", { inventoryLoading, vendorsLoading });
+  console.log("LibraryPage - Categories data:", categories);
+  console.log("LibraryPage - Loading states:", { inventoryLoading, vendorsLoading, categoriesLoading });
   console.log("LibraryPage - Errors:", { inventoryError, vendorsError });
 
-  // Transform inventory data to fabric format
+  // Transform inventory data to fabric format with proper filtering
   const fabrics = inventory
-    .filter(item => item.category === "Fabric")
+    .filter(item => {
+      const isFabricCategory = item.category?.toLowerCase().includes('fabric') || 
+                             categories.some(cat => cat.name?.toLowerCase().includes('fabric') && cat.id === item.category);
+      return isFabricCategory;
+    })
     .map(item => ({
       id: item.id,
       name: item.name,
@@ -44,7 +51,7 @@ export const LibraryPage = () => {
       image: "/placeholder.svg"
     }));
 
-  // Transform vendors to brands format
+  // Transform vendors to brands format with real fabric counts
   const brands = vendors.map(vendor => ({
     id: vendor.id,
     name: vendor.name,
@@ -52,12 +59,18 @@ export const LibraryPage = () => {
     fabrics: inventory.filter(item => item.supplier === vendor.name).length
   }));
 
-  // Mock collections for now
-  const mockCollections = [
-    { id: 1, name: "Classic Collection", brand: "Fibre Naturelle", fabrics: 45 },
-    { id: 2, name: "Modern Series", brand: "KD Design", fabrics: 32 },
-    { id: 3, name: "Heritage Line", brand: "DEKOMA", fabrics: 67 },
-  ];
+  // Create collections from inventory data grouped by supplier and category
+  const collections = categories
+    .filter(cat => cat.name?.toLowerCase().includes('fabric'))
+    .map((category, index) => ({
+      id: index + 1,
+      name: category.name,
+      brand: "Various",
+      fabrics: inventory.filter(item => 
+        item.category === category.name || 
+        item.category === category.id
+      ).length
+    }));
 
   const filteredFabrics = fabrics.filter(fabric =>
     fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,7 +79,7 @@ export const LibraryPage = () => {
   );
 
   // Show loading state
-  if (inventoryLoading || vendorsLoading) {
+  if (inventoryLoading || vendorsLoading || categoriesLoading) {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -97,7 +110,7 @@ export const LibraryPage = () => {
         onTabChange={setActiveTab}
         fabrics={filteredFabrics}
         brands={brands}
-        collections={mockCollections}
+        collections={collections}
         onAddBrand={() => setShowBrandForm(true)}
         onAddCollection={() => setShowCollectionForm(true)}
       />

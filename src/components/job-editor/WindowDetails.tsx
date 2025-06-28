@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useSurfaces, useUpdateSurface } from "@/hooks/useSurfaces";
-import { useTreatments } from "@/hooks/useTreatments";
+import { useTreatments, useCreateTreatment } from "@/hooks/useTreatments";
+import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
+import { useState } from "react";
 
 interface WindowDetailsProps {
   selectedWindowId: string | null;
@@ -16,10 +19,42 @@ interface WindowDetailsProps {
 export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
   const { data: surfaces } = useSurfaces();
   const { data: treatments } = useTreatments();
+  const { data: treatmentTypes } = useTreatmentTypes();
   const updateSurface = useUpdateSurface();
+  const createTreatment = useCreateTreatment();
+  const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
 
   const selectedSurface = surfaces?.find(surface => surface.id === selectedWindowId);
   const surfaceTreatments = treatments?.filter(treatment => treatment.window_id === selectedWindowId) || [];
+
+  const handleCreateTreatment = async () => {
+    if (!selectedSurface || !selectedTreatmentType) return;
+
+    const treatmentTypeData = treatmentTypes?.find(tt => tt.id === selectedTreatmentType);
+    if (!treatmentTypeData) return;
+
+    try {
+      const laborCost = (treatmentTypeData.labor_rate || 85) * (treatmentTypeData.estimated_hours || 1);
+      
+      await createTreatment.mutateAsync({
+        window_id: selectedSurface.id,
+        room_id: selectedSurface.room_id,
+        project_id: selectedSurface.project_id,
+        treatment_type: treatmentTypeData.name,
+        status: "planned",
+        product_name: treatmentTypeData.name,
+        material_cost: 0,
+        labor_cost: laborCost,
+        total_price: laborCost,
+        unit_price: laborCost,
+        quantity: 1
+      });
+      
+      setSelectedTreatmentType("");
+    } catch (error) {
+      console.error("Failed to create treatment:", error);
+    }
+  };
 
   return (
     <Card>
@@ -87,21 +122,39 @@ export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium">Treatments</h4>
-                <Button size="sm" onClick={() => {
-                  console.log("Create treatment for surface:", selectedSurface.id);
-                }}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Select value={selectedTreatmentType} onValueChange={setSelectedTreatmentType}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select treatment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {treatmentTypes?.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name} - {type.category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" onClick={handleCreateTreatment} disabled={!selectedTreatmentType}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               
               {surfaceTreatments && surfaceTreatments.length > 0 ? (
                 <div className="space-y-2">
                   {surfaceTreatments.map((treatment) => (
-                    <div key={treatment.id} className="p-2 border rounded">
+                    <div key={treatment.id} className="p-3 border rounded">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">{treatment.treatment_type}</p>
-                          <p className="text-sm text-muted-foreground">{treatment.fabric_type}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {treatment.fabric_type && `${treatment.fabric_type} • `}
+                            Labor: ${treatment.labor_cost || 0} • Material: ${treatment.material_cost || 0}
+                          </p>
+                          <p className="text-sm font-medium text-brand-primary">
+                            Total: ${treatment.total_price || 0}
+                          </p>
                         </div>
                         <Badge variant="outline">{treatment.status}</Badge>
                       </div>

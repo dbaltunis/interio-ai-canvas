@@ -1,7 +1,8 @@
-
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment } from "@/hooks/useTreatments";
+import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export const useJobHandlers = (project: any) => {
   // Handle case where project might be a quote object with project_id
@@ -12,6 +13,8 @@ export const useJobHandlers = (project: any) => {
   const { data: rooms, isLoading: roomsLoading } = useRooms(actualProjectId);
   const { data: allSurfaces } = useSurfaces(actualProjectId);
   const { data: allTreatments } = useTreatments(actualProjectId);
+  const { data: treatmentTypes } = useTreatmentTypes();
+  const { data: businessSettings } = useBusinessSettings();
   const createRoom = useCreateRoom();
   const updateRoom = useUpdateRoom();
   const deleteRoom = useDeleteRoom();
@@ -135,6 +138,10 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     try {
+      // Get treatment type data from database
+      const selectedTreatmentType = treatmentTypes?.find(tt => tt.name === treatmentType);
+      const defaultLaborRate = businessSettings?.labor_rate || 85;
+      
       const treatmentPayload = {
         window_id: surfaceId,
         room_id: roomId,
@@ -143,7 +150,7 @@ export const useJobHandlers = (project: any) => {
         status: "planned",
         product_name: treatmentData?.product_name || treatmentType,
         material_cost: treatmentData?.material_cost || 0,
-        labor_cost: treatmentData?.labor_cost || 0,
+        labor_cost: treatmentData?.labor_cost || (selectedTreatmentType?.labor_rate || defaultLaborRate) * (selectedTreatmentType?.estimated_hours || 1),
         total_price: treatmentData?.total_price || 0,
         unit_price: treatmentData?.unit_price || 0,
         quantity: treatmentData?.quantity || 1,
@@ -169,6 +176,8 @@ export const useJobHandlers = (project: any) => {
     roomsLoading,
     allSurfaces,
     allTreatments,
+    treatmentTypes,
+    businessSettings,
     createRoom,
     updateRoom,
     deleteRoom,
