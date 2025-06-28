@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,9 +252,10 @@ export const ProductCatalogTab = () => {
                       </div>
                     </div>
 
-                    {(product.variants?.length > 0 || product.options?.length > 0) && (
+                    {((Array.isArray(product.variants) && product.variants.length > 0) || 
+                      (Array.isArray(product.options) && product.options.length > 0)) && (
                       <div className="grid grid-cols-2 gap-4">
-                        {product.variants?.length > 0 && (
+                        {Array.isArray(product.variants) && product.variants.length > 0 && (
                           <div>
                             <Label className="text-xs font-medium text-brand-neutral">VARIANTS</Label>
                             <div className="flex flex-wrap gap-1 mt-1">
@@ -267,7 +267,7 @@ export const ProductCatalogTab = () => {
                             </div>
                           </div>
                         )}
-                        {product.options?.length > 0 && (
+                        {Array.isArray(product.options) && product.options.length > 0 && (
                           <div>
                             <Label className="text-xs font-medium text-brand-neutral">OPTIONS</Label>
                             <div className="flex flex-wrap gap-1 mt-1">
