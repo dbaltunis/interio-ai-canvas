@@ -1,16 +1,14 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Copy, Trash2, Plus, Home, Square } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { useTreatments } from "@/hooks/useTreatments";
-import { useSurfaces, useCreateSurface } from "@/hooks/useSurfaces";
-import { SurfaceCard } from "./SurfaceCard";
+import { useSurfaces } from "@/hooks/useSurfaces";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+import { RoomHeader } from "./RoomHeader";
+import { SurfaceCreationButtons } from "./SurfaceCreationButtons";
+import { SurfacesList } from "./SurfacesList";
+import { useSurfaceCreation } from "@/hooks/useSurfaceCreation";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 
 interface RoomCardProps {
   room: any;
@@ -47,8 +45,7 @@ export const RoomCard = ({
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
-  const createSurface = useCreateSurface();
-  const { toast } = useToast();
+  const { handleCreateSurface, isCreating } = useSurfaceCreation();
   
   const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
@@ -74,55 +71,8 @@ export const RoomCard = ({
     }
   };
 
-  const handleCreateSurface = async (surfaceType: 'window' | 'wall') => {
-    console.log("Creating surface with:", { room_id: room.id, project_id: projectId, surface_type: surfaceType });
-    console.log("Room project_id:", room.project_id);
-    
-    if (!room.id || !projectId) {
-      toast({
-        title: "Error",
-        description: "Missing room or project information",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const surfaceCount = roomSurfaces.filter(s => s.surface_type === surfaceType).length;
-      const surfaceName = surfaceType === 'window' 
-        ? `Window ${surfaceCount + 1}`
-        : `Wall ${surfaceCount + 1}`;
-
-      // Use the room's project_id which should be the correct one
-      const actualProjectId = room.project_id || projectId;
-      
-      const surfaceData = {
-        room_id: room.id,
-        project_id: actualProjectId,
-        name: surfaceName,
-        surface_type: surfaceType,
-        width: surfaceType === 'window' ? 36 : 120,
-        height: surfaceType === 'window' ? 60 : 96,
-        surface_width: surfaceType === 'window' ? 36 : 120,
-        surface_height: surfaceType === 'window' ? 60 : 96
-      };
-
-      console.log("Surface data being sent:", surfaceData);
-
-      await createSurface.mutateAsync(surfaceData);
-
-      toast({
-        title: "Success",
-        description: `${surfaceType === 'window' ? 'Window' : 'Wall'} added successfully`,
-      });
-    } catch (error) {
-      console.error("Error creating surface:", error);
-      toast({
-        title: "Error",
-        description: `Failed to add ${surfaceType}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive",
-      });
-    }
+  const handleSurfaceCreation = (surfaceType: 'window' | 'wall') => {
+    handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string) => {
@@ -151,107 +101,33 @@ export const RoomCard = ({
   return (
     <>
       <Card className="bg-gray-100 min-h-[500px] flex flex-col">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              {editingRoomId === room.id ? (
-                <Input
-                  value={editingRoomName}
-                  onChange={(e) => setEditingRoomName(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  onBlur={() => onRenameRoom(room.id, editingRoomName)}
-                  className="text-xl font-semibold bg-white"
-                  autoFocus
-                />
-              ) : (
-                <CardTitle className="text-xl">{room.name}</CardTitle>
-              )}
-              <p className="text-2xl font-bold text-gray-900 mt-1">${roomTotal.toFixed(2)}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={startEditing}
-                title="Rename room"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onCopyRoom(room)}
-                title="Copy room"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  if (confirm("Delete this room and all its contents?")) {
-                    onDeleteRoom.mutate(room.id);
-                  }
-                }}
-                title="Delete room"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
+        <RoomHeader
+          room={room}
+          roomTotal={roomTotal}
+          editingRoomId={editingRoomId}
+          editingRoomName={editingRoomName}
+          setEditingRoomName={setEditingRoomName}
+          onStartEditing={startEditing}
+          onKeyPress={handleKeyPress}
+          onRenameRoom={onRenameRoom}
+          onCopyRoom={onCopyRoom}
+          onDeleteRoom={onDeleteRoom}
+        />
         
         <CardContent className="flex-1 flex flex-col">
           <div className="space-y-4 flex-1">
-            {/* Add Surface Buttons */}
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleCreateSurface('window')}
-                disabled={createSurface.isPending}
-                className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-colors"
-              >
-                <Home className="h-4 w-4" />
-                <span>{createSurface.isPending ? 'Adding Window...' : 'Add Window'}</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleCreateSurface('wall')}
-                disabled={createSurface.isPending}
-                className="flex items-center space-x-2 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700 transition-colors"
-              >
-                <Square className="h-4 w-4" />
-                <span>{createSurface.isPending ? 'Adding Wall...' : 'Add Wall'}</span>
-              </Button>
-            </div>
+            <SurfaceCreationButtons
+              onCreateSurface={handleSurfaceCreation}
+              isCreating={isCreating}
+            />
 
-            {/* Surfaces */}
-            {roomSurfaces.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <p className="mb-2">No surfaces added yet</p>
-                  <p className="text-sm">Add windows or walls to get started</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {roomSurfaces.map((surface) => {
-                  const surfaceTreatments = roomTreatments.filter(t => t.window_id === surface.id);
-                  return (
-                    <SurfaceCard
-                      key={surface.id}
-                      surface={surface}
-                      treatments={surfaceTreatments}
-                      onAddTreatment={handleAddTreatment}
-                      onDeleteSurface={onDeleteSurface}
-                      onUpdateSurface={onUpdateSurface}
-                    />
-                  );
-                })}
-              </div>
-            )}
+            <SurfacesList
+              surfaces={roomSurfaces}
+              treatments={roomTreatments}
+              onAddTreatment={handleAddTreatment}
+              onDeleteSurface={onDeleteSurface}
+              onUpdateSurface={onUpdateSurface}
+            />
           </div>
         </CardContent>
       </Card>
