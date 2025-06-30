@@ -17,7 +17,7 @@ export interface OptionSubcategory {
   category_id: string;
   name: string;
   description?: string;
-  pricing_method: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
+  pricing_method: 'per-unit' | 'per-meter' | 'per-sqm' | 'fabric-based' | 'fixed' | 'percentage';
   base_price: number;
   fullness_ratio?: number;
   extra_fabric_percentage?: number;
