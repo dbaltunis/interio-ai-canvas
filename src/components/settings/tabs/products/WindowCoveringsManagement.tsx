@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ interface WindowCovering {
   fabric_calculation_method: 'standard' | 'pleated' | 'gathered';
   fabric_multiplier: number;
   margin_percentage: number;
+  fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
+  image_url?: string;
   active: boolean;
   optionsCount?: number;
 }
@@ -122,32 +125,44 @@ export const WindowCoveringsManagement = () => {
               <Card key={windowCovering.id}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <h4 className="font-semibold text-brand-primary">{windowCovering.name}</h4>
-                          <div className="flex gap-4 text-sm text-brand-neutral">
-                            <span>Base Cost: £{windowCovering.base_making_cost}</span>
-                            <span>Method: {windowCovering.fabric_calculation_method}</span>
-                            <span>Multiplier: {windowCovering.fabric_multiplier}x</span>
-                            <span>Margin: {windowCovering.margin_percentage}%</span>
+                    <div className="flex gap-4 flex-1">
+                      {windowCovering.image_url && (
+                        <img 
+                          src={windowCovering.image_url} 
+                          alt={windowCovering.name}
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        />
+                      )}
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <h4 className="font-semibold text-brand-primary">{windowCovering.name}</h4>
+                            <div className="flex gap-4 text-sm text-brand-neutral">
+                              <span>Base Cost: £{windowCovering.base_making_cost}</span>
+                              <span>Method: {windowCovering.fabric_calculation_method}</span>
+                              <span>Multiplier: {windowCovering.fabric_multiplier}x</span>
+                              <span>Margin: {windowCovering.margin_percentage}%</span>
+                              {windowCovering.fabrication_pricing_method && (
+                                <span>Pricing: {windowCovering.fabrication_pricing_method.replace('-', ' ')}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      {windowCovering.description && (
-                        <p className="text-sm text-brand-neutral bg-gray-50 p-2 rounded">
-                          {windowCovering.description}
-                        </p>
-                      )}
-                      <div className="flex gap-2">
-                        <Badge variant={windowCovering.active ? "default" : "secondary"}>
-                          {windowCovering.active ? "Active" : "Inactive"}
-                        </Badge>
-                        {windowCovering.optionsCount && (
-                          <Badge variant="outline">
-                            {windowCovering.optionsCount} options
-                          </Badge>
+                        {windowCovering.description && (
+                          <p className="text-sm text-brand-neutral bg-gray-50 p-2 rounded">
+                            {windowCovering.description}
+                          </p>
                         )}
+                        <div className="flex gap-2">
+                          <Badge variant={windowCovering.active ? "default" : "secondary"}>
+                            {windowCovering.active ? "Active" : "Inactive"}
+                          </Badge>
+                          {windowCovering.optionsCount && (
+                            <Badge variant="outline">
+                              {windowCovering.optionsCount} options
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2">

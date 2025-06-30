@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WindowCovering {
@@ -17,6 +18,8 @@ interface WindowCovering {
   fabric_calculation_method: 'standard' | 'pleated' | 'gathered';
   fabric_multiplier: number;
   margin_percentage: number;
+  fabrication_pricing_method: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
+  image_url?: string;
   active: boolean;
 }
 
@@ -34,11 +37,15 @@ interface FormData {
   fabric_calculation_method: 'standard' | 'pleated' | 'gathered';
   fabric_multiplier: number;
   margin_percentage: number;
+  fabrication_pricing_method: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
+  image_url: string;
   active: boolean;
 }
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
   const { toast } = useToast();
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -47,6 +54,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     fabric_calculation_method: 'standard',
     fabric_multiplier: 1.0,
     margin_percentage: 40.0,
+    fabrication_pricing_method: 'per-panel',
+    image_url: '',
     active: true
   });
 
@@ -59,10 +68,35 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
         fabric_calculation_method: windowCovering.fabric_calculation_method,
         fabric_multiplier: windowCovering.fabric_multiplier,
         margin_percentage: windowCovering.margin_percentage,
+        fabrication_pricing_method: windowCovering.fabrication_pricing_method || 'per-panel',
+        image_url: windowCovering.image_url || '',
         active: windowCovering.active
       });
+      if (windowCovering.image_url) {
+        setImagePreview(windowCovering.image_url);
+      }
     }
   }, [windowCovering]);
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+        setFormData(prev => ({ ...prev, image_url: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, image_url: '' }));
+  };
 
   const handleSave = () => {
     if (!formData.name.trim()) {
@@ -82,6 +116,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       fabric_calculation_method: formData.fabric_calculation_method,
       fabric_multiplier: formData.fabric_multiplier,
       margin_percentage: formData.margin_percentage,
+      fabrication_pricing_method: formData.fabrication_pricing_method,
+      image_url: formData.image_url || undefined,
       active: formData.active
     };
 
@@ -129,7 +165,49 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        {/* Image Upload */}
+        <div>
+          <Label>Treatment Image</Label>
+          <div className="mt-2">
+            {imagePreview ? (
+              <div className="relative inline-block">
+                <img 
+                  src={imagePreview} 
+                  alt="Window covering preview" 
+                  className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                />
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                  onClick={handleRemoveImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-brand-primary transition-colors">
+                <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600 mb-2">Upload treatment image</p>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Label 
+                  htmlFor="image-upload" 
+                  className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Choose File
+                </Label>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label>Fabric Calculation Method</Label>
             <Select
@@ -148,6 +226,29 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Fabrication Pricing Method</Label>
+            <Select
+              value={formData.fabrication_pricing_method}
+              onValueChange={(value: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid') => 
+                setFormData(prev => ({ ...prev, fabrication_pricing_method: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="per-panel">Per Panel</SelectItem>
+                <SelectItem value="per-drop">Per Drop</SelectItem>
+                <SelectItem value="per-meter">Per Linear Meter</SelectItem>
+                <SelectItem value="per-yard">Per Linear Yard</SelectItem>
+                <SelectItem value="pricing-grid">Pricing Grid (CSV Upload)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="fabric_multiplier">Fabric Multiplier</Label>
             <Input
