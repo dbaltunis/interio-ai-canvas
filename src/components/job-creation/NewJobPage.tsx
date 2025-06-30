@@ -94,6 +94,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           await createQuote.mutateAsync({
             project_id: newProject.id,
             client_id: clientId || newProject.client_id,
+            quote_number: "", // Empty string will trigger auto-generation
             status: "draft",
             subtotal: 0,
             tax_rate: 0,
