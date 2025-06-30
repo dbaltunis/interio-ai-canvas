@@ -1,61 +1,76 @@
 
-import { useState } from "react";
-import { useBusinessSettings, useUpdateBusinessSettings, useCreateBusinessSettings, type MeasurementUnits, defaultMeasurementUnits } from "@/hooks/useBusinessSettings";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings, defaultMeasurementUnits, type MeasurementUnits } from "@/hooks/useBusinessSettings";
+import { toast } from "sonner";
 
 export const useMeasurementUnitsForm = () => {
-  const { data: businessSettings } = useBusinessSettings();
-  const updateSettings = useUpdateBusinessSettings();
+  const { data: businessSettings, isLoading } = useBusinessSettings();
   const createSettings = useCreateBusinessSettings();
-  const { toast } = useToast();
+  const updateSettings = useUpdateBusinessSettings();
 
-  const currentUnits: MeasurementUnits = (businessSettings as any)?.measurement_units ? 
-    JSON.parse((businessSettings as any).measurement_units) : defaultMeasurementUnits;
+  const [units, setUnits] = useState<MeasurementUnits>(defaultMeasurementUnits);
 
-  const [units, setUnits] = useState<MeasurementUnits>(currentUnits);
+  useEffect(() => {
+    if (businessSettings?.measurement_units) {
+      try {
+        const parsedUnits = JSON.parse(businessSettings.measurement_units);
+        setUnits({ ...defaultMeasurementUnits, ...parsedUnits });
+      } catch (error) {
+        console.error("Failed to parse measurement units:", error);
+        setUnits(defaultMeasurementUnits);
+      }
+    }
+  }, [businessSettings]);
 
   const handleSystemChange = (system: 'metric' | 'imperial') => {
-    const newUnits: MeasurementUnits = {
-      system,
-      length: system === 'metric' ? 'cm' : 'inches',
-      area: system === 'metric' ? 'sq_cm' : 'sq_inches', 
-      fabric: system === 'metric' ? 'm' : 'yards'
-    };
+    const newUnits = { ...units, system };
+    
+    // Auto-adjust units based on system
+    if (system === 'metric') {
+      newUnits.length = 'cm';
+      newUnits.area = 'sq_cm';
+      newUnits.fabric = 'cm';
+    } else {
+      newUnits.length = 'inches';
+      newUnits.area = 'sq_inches';
+      newUnits.fabric = 'yards';
+    }
+    
     setUnits(newUnits);
+  };
+
+  const handleUnitChange = (unitType: keyof MeasurementUnits, value: string) => {
+    setUnits(prev => ({ ...prev, [unitType]: value }));
   };
 
   const handleSave = async () => {
     try {
-      const settingsData = {
-        measurement_units: JSON.stringify(units)
-      } as any;
-
-      if (businessSettings?.id) {
+      const measurementUnitsJson = JSON.stringify(units);
+      
+      if (businessSettings) {
         await updateSettings.mutateAsync({
           id: businessSettings.id,
-          ...settingsData
+          measurement_units: measurementUnitsJson
         });
       } else {
-        await createSettings.mutateAsync(settingsData);
+        await createSettings.mutateAsync({
+          measurement_units: measurementUnitsJson
+        });
       }
-
-      toast({
-        title: "Settings saved",
-        description: "Measurement units have been updated successfully.",
-      });
+      
+      toast.success("Measurement units updated successfully");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save measurement units settings.",
-        variant: "destructive",
-      });
+      console.error("Failed to save measurement units:", error);
+      toast.error("Failed to save measurement units");
     }
   };
 
   return {
     units,
-    setUnits,
+    isLoading,
+    isSaving: createSettings.isPending || updateSettings.isPending,
     handleSystemChange,
+    handleUnitChange,
     handleSave
   };
 };

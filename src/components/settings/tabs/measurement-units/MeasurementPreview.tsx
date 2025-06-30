@@ -23,6 +23,18 @@ export const MeasurementPreview = ({ units }: MeasurementPreviewProps) => {
     return unitMap[unit] || unit;
   };
 
+  const formatCurrency = (value: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${value.toFixed(2)}`;
+  };
+
   return (
     <div className="p-4 bg-gray-50 rounded-lg">
       <h4 className="font-medium mb-2">Preview</h4>
@@ -30,6 +42,7 @@ export const MeasurementPreview = ({ units }: MeasurementPreviewProps) => {
         <p>Length: 150 {formatUnit(units.length)}</p>
         <p>Area: 2.5 {formatUnit(units.area)}</p>
         <p>Fabric: 3.5 {formatUnit(units.fabric)}</p>
+        <p>Price: {formatCurrency(125.50)}</p>
       </div>
     </div>
   );

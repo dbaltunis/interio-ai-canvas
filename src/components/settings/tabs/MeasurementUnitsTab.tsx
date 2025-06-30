@@ -1,22 +1,39 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Ruler, Save } from "lucide-react";
-import { useMeasurementUnitsForm } from "./measurement-units/useMeasurementUnitsForm";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Settings } from "lucide-react";
 import { UnitSelector } from "./measurement-units/UnitSelector";
 import { MeasurementPreview } from "./measurement-units/MeasurementPreview";
-import {
-  metricLengthOptions,
-  imperialLengthOptions,
-  metricAreaOptions,
-  imperialAreaOptions,
-  metricFabricOptions,
-  imperialFabricOptions
+import { useMeasurementUnitsForm } from "./measurement-units/useMeasurementUnitsForm";
+import { 
+  metricLengthOptions, 
+  imperialLengthOptions, 
+  metricAreaOptions, 
+  imperialAreaOptions, 
+  metricFabricOptions, 
+  imperialFabricOptions,
+  currencyOptions
 } from "./measurement-units/MeasurementUnitOptions";
 
 export const MeasurementUnitsTab = () => {
-  const { units, setUnits, handleSystemChange, handleSave } = useMeasurementUnitsForm();
+  const {
+    units,
+    isLoading,
+    isSaving,
+    handleSystemChange,
+    handleUnitChange,
+    handleSave
+  } = useMeasurementUnitsForm();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-lg">Loading measurement units...</div>
+      </div>
+    );
+  }
 
   const lengthOptions = units.system === 'metric' ? metricLengthOptions : imperialLengthOptions;
   const areaOptions = units.system === 'metric' ? metricAreaOptions : imperialAreaOptions;
@@ -24,63 +41,81 @@ export const MeasurementUnitsTab = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-brand-primary">Measurement Units</h3>
+          <p className="text-sm text-brand-neutral">Configure your preferred measurement units and currency</p>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Ruler className="h-5 w-5" />
-            Measurement Units
+            <Settings className="h-5 w-5 text-brand-primary" />
+            Unit System
           </CardTitle>
-          <CardDescription>
-            Configure how measurements are displayed throughout the application
-          </CardDescription>
+          <CardDescription>Choose your preferred measurement system</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* System Selection */}
-          <UnitSelector
-            id="system"
-            label="Measurement System"
-            value={units.system}
-            options={[
-              { value: 'metric', label: 'Metric System' },
-              { value: 'imperial', label: 'Imperial System' }
-            ]}
-            onValueChange={handleSystemChange}
-          />
+          <RadioGroup 
+            value={units.system} 
+            onValueChange={(value: 'metric' | 'imperial') => handleSystemChange(value)}
+            className="flex space-x-6"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="metric" id="metric" />
+              <Label htmlFor="metric">Metric System</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="imperial" id="imperial" />
+              <Label htmlFor="imperial">Imperial System</Label>
+            </div>
+          </RadioGroup>
 
-          {/* Length Units */}
-          <UnitSelector
-            id="length"
-            label="Length Measurements"
-            value={units.length}
-            options={lengthOptions}
-            onValueChange={(value) => setUnits({ ...units, length: value as any })}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <UnitSelector
+              id="length"
+              label="Length Units"
+              value={units.length}
+              options={lengthOptions}
+              onValueChange={(value) => handleUnitChange('length', value)}
+            />
 
-          {/* Area Units */}
-          <UnitSelector
-            id="area"
-            label="Area Measurements"
-            value={units.area}
-            options={areaOptions}
-            onValueChange={(value) => setUnits({ ...units, area: value as any })}
-          />
+            <UnitSelector
+              id="area"
+              label="Area Units"
+              value={units.area}
+              options={areaOptions}
+              onValueChange={(value) => handleUnitChange('area', value)}
+            />
 
-          {/* Fabric Units */}
-          <UnitSelector
-            id="fabric"
-            label="Fabric Measurements"
-            value={units.fabric}
-            options={fabricOptions}
-            onValueChange={(value) => setUnits({ ...units, fabric: value as any })}
-          />
+            <UnitSelector
+              id="fabric"
+              label="Fabric Units"
+              value={units.fabric}
+              options={fabricOptions}
+              onValueChange={(value) => handleUnitChange('fabric', value)}
+            />
 
-          {/* Preview */}
-          <MeasurementPreview units={units} />
+            <UnitSelector
+              id="currency"
+              label="Currency"
+              value={units.currency}
+              options={currencyOptions}
+              onValueChange={(value) => handleUnitChange('currency', value)}
+            />
+          </div>
 
-          <Button onClick={handleSave} className="w-full">
-            <Save className="h-4 w-4 mr-2" />
-            Save Measurement Units
-          </Button>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <MeasurementPreview units={units} />
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-brand-primary hover:bg-brand-accent"
+            >
+              {isSaving ? "Saving..." : "Save Settings"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

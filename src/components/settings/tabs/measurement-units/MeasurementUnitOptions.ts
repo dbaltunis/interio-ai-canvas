@@ -30,3 +30,12 @@ export const imperialFabricOptions = [
   { value: 'inches', label: 'Inches (")' },
   { value: 'yards', label: 'Yards (yd)' }
 ];
+
+export const currencyOptions = [
+  { value: 'NZD', label: 'New Zealand Dollar (NZD)' },
+  { value: 'AUD', label: 'Australian Dollar (AUD)' },
+  { value: 'USD', label: 'US Dollar (USD)' },
+  { value: 'GBP', label: 'British Pound (GBP)' },
+  { value: 'EUR', label: 'Euro (EUR)' },
+  { value: 'ZAR', label: 'South African Rand (ZAR)' }
+];

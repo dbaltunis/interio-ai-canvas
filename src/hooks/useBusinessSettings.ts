@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -12,13 +11,15 @@ export interface MeasurementUnits {
   length: 'mm' | 'cm' | 'm' | 'inches' | 'feet';
   area: 'sq_mm' | 'sq_cm' | 'sq_m' | 'sq_inches' | 'sq_feet';
   fabric: 'cm' | 'm' | 'inches' | 'yards';
+  currency: 'NZD' | 'AUD' | 'USD' | 'GBP' | 'EUR' | 'ZAR';
 }
 
 export const defaultMeasurementUnits: MeasurementUnits = {
   system: 'imperial',
   length: 'inches',
   area: 'sq_inches', 
-  fabric: 'yards'
+  fabric: 'yards',
+  currency: 'USD'
 };
 
 export const useBusinessSettings = () => {
@@ -125,4 +126,17 @@ export const formatMeasurement = (value: number, unit: string): string => {
   };
 
   return `${value.toFixed(2)} ${unitLabels[unit] || unit}`;
+};
+
+export const formatCurrency = (value: number, currency: string): string => {
+  const currencySymbols: Record<string, string> = {
+    'NZD': 'NZ$',
+    'AUD': 'A$',
+    'USD': '$',
+    'GBP': '£',
+    'EUR': '€',
+    'ZAR': 'R'
+  };
+
+  return `${currencySymbols[currency] || currency}${value.toFixed(2)}`;
 };
