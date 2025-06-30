@@ -194,7 +194,7 @@ export const WindowCoveringCalculator = () => {
         <div>
           {selectedWindowCovering ? (
             <WindowCoveringPriceCalculator 
-              windowCovering={selectedWindowCovering}
+              windowCovering={selectedWindowCovering as any}
               selectedOptions={selectedOptions}
               availableOptions={availableOptions}
             />
