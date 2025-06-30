@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useCreateProject } from "@/hooks/useProjects";
+import { useCreateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { ProjectHeader } from "./ProjectHeader";
 import { ProjectNavigation } from "./ProjectNavigation";
@@ -23,6 +24,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   
   const { data: clients, isLoading: clientsLoading } = useClients();
   const createProject = useCreateProject();
+  const createQuote = useCreateQuote();
   const { toast } = useToast();
 
   // Check authentication first
@@ -88,29 +90,19 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         });
         
         // Create a quote for this project so it appears in job management
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && newProject) {
-          const { data: quote, error: quoteError } = await supabase
-            .from("quotes")
-            .insert({
-              user_id: user.id,
-              project_id: newProject.id,
-              client_id: clientId || newProject.client_id,
-              status: "draft",
-              subtotal: 0,
-              tax_rate: 0,
-              tax_amount: 0,
-              total_amount: 0,
-              notes: "New job created"
-            })
-            .select()
-            .single();
-
-          if (quoteError) {
-            console.error("Failed to create quote:", quoteError);
-          } else {
-            console.log("Quote created successfully:", quote);
-          }
+        if (newProject) {
+          await createQuote.mutateAsync({
+            project_id: newProject.id,
+            client_id: clientId || newProject.client_id,
+            status: "draft",
+            subtotal: 0,
+            tax_rate: 0,
+            tax_amount: 0,
+            total_amount: 0,
+            notes: "New job created"
+          });
+          
+          console.log("Quote created successfully for project:", newProject.id);
         }
         
         setCurrentProject(newProject);
@@ -136,7 +128,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     };
 
     createDefaultProjectAndQuote();
-  }, [clients, clientsLoading, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
+  }, [clients, clientsLoading, currentProject, createProject, createQuote, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
 
   // Show loading state if checking auth, no project yet, or creating
   if (isCheckingAuth || clientsLoading || isCreating || !currentProject) {
