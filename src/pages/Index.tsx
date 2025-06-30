@@ -16,6 +16,7 @@ import { SettingsView } from "@/components/settings/SettingsView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -24,20 +25,23 @@ import {
   Package, 
   Wrench,
   Calendar,
-  Calculator,
-  Settings
+  Calculator
 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("jobs");
+  const { signOut } = useAuth();
 
   const navItems = [
     { id: "dashboard", label: "Home", icon: LayoutDashboard },
     { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
-    { id: "library", label: "Library", icon: Package },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "inventory", label: "Library", icon: Package },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const renderActiveComponent = () => {
     switch (activeTab) {
@@ -53,20 +57,18 @@ const Index = () => {
         return <QuoteManagement />;
       case "workshop":
         return <WorkshopManagement />;
-      case "library":
+      case "inventory":
         return <LibraryPage />;
       case "calendar":
         return <CalendarView />;
       case "clients":
         return <ClientManagement />;
-      case "inventory":
-        return <InventoryManagement />;
       case "calculator":
         return <CalculatorView />;
       case "settings":
         return <SettingsView />;
       default:
-        return <Dashboard />;
+        return <JobsPage />;
     }
   };
 
@@ -77,7 +79,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <BrandHeader />
+              <BrandHeader size="sm" />
               
               {/* Navigation Menu */}
               <nav className="flex space-x-1">
@@ -104,7 +106,7 @@ const Index = () => {
             
             <div className="flex items-center space-x-4">
               <AIAssistant />
-              <UserProfile onNavigate={setActiveTab} />
+              <UserProfile onSettingsClick={() => setActiveTab("settings")} />
             </div>
           </div>
         </div>

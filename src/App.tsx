@@ -1,9 +1,13 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthWrapper } from '@/components/auth/AuthWrapper';
-import Index from '@/pages/Index';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,21 +18,25 @@ const queryClient = new QueryClient({
   },
 });
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <AuthWrapper>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
-              <Route path="/" element={<Index />} />
-            </Routes>
-          </div>
-        </AuthWrapper>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
         <Toaster />
-      </Router>
-    </QueryClientProvider>
-  );
-}
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

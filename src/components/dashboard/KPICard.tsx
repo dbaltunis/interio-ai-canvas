@@ -1,39 +1,21 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, DollarSign, Users, FileText, Package } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface KPICardProps {
   title: string;
   value: string | number;
-  change?: number;
-  format?: "currency" | "number";
+  subtitle?: string;
+  icon: LucideIcon;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
   loading?: boolean;
 }
 
-export const KPICard = ({ title, value, change, format = "number", loading }: KPICardProps) => {
-  const getIcon = () => {
-    if (title.toLowerCase().includes("revenue") || title.toLowerCase().includes("month")) {
-      return DollarSign;
-    }
-    if (title.toLowerCase().includes("project")) {
-      return Package;
-    }
-    if (title.toLowerCase().includes("quote")) {
-      return FileText;
-    }
-    return Users;
-  };
-
-  const Icon = getIcon();
-
-  const formatValue = (val: string | number) => {
-    if (format === "currency") {
-      return `$${Number(val).toLocaleString()}`;
-    }
-    return val.toString();
-  };
-
+export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: KPICardProps) => {
   if (loading) {
     return (
       <Card>
@@ -62,19 +44,17 @@ export const KPICard = ({ title, value, change, format = "number", loading }: KP
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-brand-primary">{formatValue(value)}</div>
-        {change !== undefined && (
-          <div className="mt-2 flex items-center gap-1">
-            {change >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            )}
+        <div className="text-2xl font-bold text-brand-primary">{value}</div>
+        {subtitle && (
+          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+        )}
+        {trend && (
+          <div className="mt-2">
             <Badge 
-              variant={change >= 0 ? "default" : "destructive"}
+              variant={trend.isPositive ? "default" : "destructive"}
               className="text-xs"
             >
-              {change >= 0 ? "+" : ""}{change}%
+              {trend.isPositive ? "+" : ""}{trend.value}%
             </Badge>
           </div>
         )}

@@ -1,17 +1,42 @@
 
-import { Link } from "react-router-dom";
-import { Building } from "lucide-react";
+import React from 'react';
 
-export const BrandHeader = () => {
+interface BrandHeaderProps {
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
+  showTagline?: boolean;
+}
+
+export const BrandHeader = ({ className = "", size = "md", showTagline = false }: BrandHeaderProps) => {
+  const sizeClasses = {
+    sm: "h-8",
+    md: "h-12", 
+    lg: "h-16"
+  };
+
+  const textSizeClasses = {
+    sm: "text-xl",
+    md: "text-2xl",
+    lg: "text-3xl"
+  };
+
   return (
-    <Link to="/" className="flex items-center space-x-2">
-      <div className="bg-brand-primary rounded-lg p-2">
-        <Building className="h-6 w-6 text-white" />
-      </div>
+    <div className={`flex items-center space-x-3 ${className}`}>
+      <img 
+        src="/lovable-uploads/8a183542-3c01-459f-ae93-d9f91bb41f35.png" 
+        alt="InterioApp Logo" 
+        className={`${sizeClasses[size]} w-auto object-contain`}
+      />
       <div className="flex flex-col">
-        <span className="text-lg font-bold text-brand-primary">InterioApp</span>
-        <span className="text-xs text-gray-500 leading-none">Window Coverings</span>
+        <h1 className={`font-bold text-brand-primary ${textSizeClasses[size]} leading-tight`}>
+          InterioApp
+        </h1>
+        {showTagline && (
+          <p className="text-sm text-brand-neutral">
+            Professional Window & Wall Covering Solutions
+          </p>
+        )}
       </div>
-    </Link>
+    </div>
   );
 };
