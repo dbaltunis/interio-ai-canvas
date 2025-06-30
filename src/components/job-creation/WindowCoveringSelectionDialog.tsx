@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
-import { CheckCircle2, Circle, Search } from "lucide-react";
+import { CheckCircle2, Circle, Search, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface WindowCoveringSelectionDialogProps {
@@ -25,30 +25,21 @@ export const WindowCoveringSelectionDialog = ({
 }: WindowCoveringSelectionDialogProps) => {
   const { windowCoverings, isLoading } = useWindowCoverings();
   const [selectedWindowCovering, setSelectedWindowCovering] = useState<any>(null);
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   
   const { options: availableOptions } = useWindowCoveringOptions(selectedWindowCovering?.id || '');
 
   const handleWindowCoveringSelect = (windowCovering: any) => {
     setSelectedWindowCovering(windowCovering);
-    setSelectedOptions([]);
-  };
-
-  const handleOptionToggle = (optionId: string) => {
-    setSelectedOptions(prev => 
-      prev.includes(optionId) 
-        ? prev.filter(id => id !== optionId)
-        : [...prev, optionId]
-    );
   };
 
   const handleConfirm = () => {
     if (selectedWindowCovering) {
-      onSelect(selectedWindowCovering, selectedOptions);
+      // Include all available options by default
+      const allOptionIds = availableOptions.map(option => option.id);
+      onSelect(selectedWindowCovering, allOptionIds);
       onOpenChange(false);
       setSelectedWindowCovering(null);
-      setSelectedOptions([]);
       setSearchQuery("");
     }
   };
@@ -81,7 +72,7 @@ export const WindowCoveringSelectionDialog = ({
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl font-semibold">Select Window Covering</DialogTitle>
-          <p className="text-sm text-gray-600 mt-1">Choose a window covering and configure its options</p>
+          <p className="text-sm text-gray-600 mt-1">Choose a window covering with all variants included</p>
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden">
@@ -139,8 +130,8 @@ export const WindowCoveringSelectionDialog = ({
                                 {windowCovering.margin_percentage}% margin
                               </Badge>
                               {windowCovering.optionsCount > 0 && (
-                                <Badge variant="outline" className="text-xs text-blue-600">
-                                  {windowCovering.optionsCount} options
+                                <Badge variant="outline" className="text-xs text-green-600">
+                                  {windowCovering.optionsCount} variants included
                                 </Badge>
                               )}
                             </div>
@@ -161,85 +152,103 @@ export const WindowCoveringSelectionDialog = ({
               </div>
             </div>
 
-            {/* Options Selection */}
+            {/* Treatment Preview & Options */}
             <div className="space-y-4 flex flex-col border-l pl-6">
-              <h3 className="text-lg font-medium">Options & Variants</h3>
+              <h3 className="text-lg font-medium">Treatment Preview</h3>
               
               {!selectedWindowCovering ? (
                 <div className="flex-1 flex items-center justify-center text-center py-12">
                   <div className="max-w-sm">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Circle className="h-8 w-8 text-gray-400" />
+                      <Package className="h-8 w-8 text-gray-400" />
                     </div>
-                    <p className="text-gray-600">Select a window covering to view available options</p>
-                  </div>
-                </div>
-              ) : availableOptions.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-center py-12">
-                  <div className="max-w-sm">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle2 className="h-8 w-8 text-green-500" />
-                    </div>
-                    <p className="text-gray-600">No additional options available for this window covering</p>
-                    <p className="text-sm text-gray-500 mt-1">You can proceed to add it to your project</p>
+                    <p className="text-gray-600">Select a window covering to preview</p>
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                  {availableOptions.map(option => (
-                    <Card 
-                      key={option.id}
-                      className={`cursor-pointer transition-all duration-200 ${
-                        selectedOptions.includes(option.id)
-                          ? 'ring-2 ring-green-500 bg-green-50 border-green-200'
-                          : option.is_required
-                          ? 'border-orange-300 bg-orange-50'
-                          : 'hover:bg-gray-50 border-gray-200'
-                      } ${option.is_required ? 'opacity-75' : ''}`}
-                      onClick={() => !option.is_required && handleOptionToggle(option.id)}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 flex-1">
-                            {!option.is_required && (
-                              selectedOptions.includes(option.id) ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                              )
-                            )}
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">{option.name}</h4>
-                              {option.description && (
-                                <p className="text-sm text-gray-600 mt-1">{option.description}</p>
-                              )}
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {option.option_type}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  {option.cost_type}
-                                </Badge>
-                                {option.is_required && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    Required
-                                  </Badge>
-                                )}
-                                {option.is_default && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Default
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right ml-3">
-                            <span className="font-semibold text-gray-900">${option.base_cost}</span>
-                          </div>
+                <div className="flex-1 overflow-y-auto space-y-4">
+                  {/* Treatment Display Card */}
+                  <Card className="border-2 border-green-200 bg-green-50">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border">
+                          {selectedWindowCovering.image_url ? (
+                            <img 
+                              src={selectedWindowCovering.image_url} 
+                              alt={selectedWindowCovering.name}
+                              className="w-10 h-10 object-cover rounded"
+                            />
+                          ) : (
+                            <Package className="h-6 w-6 text-gray-500" />
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        <div>
+                          <CardTitle className="text-lg text-green-800">{selectedWindowCovering.name}</CardTitle>
+                          <p className="text-sm text-green-600">Ready to add with all variants</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  {/* Included Variants */}
+                  {availableOptions.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900 flex items-center">
+                        <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                        Included Variants ({availableOptions.length})
+                      </h4>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {availableOptions.map(option => (
+                          <Card key={option.id} className="border border-green-200 bg-green-25">
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start space-x-3 flex-1">
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
+                                    <h5 className="font-medium text-gray-900 text-sm">{option.name}</h5>
+                                    {option.description && (
+                                      <p className="text-xs text-gray-600 mt-1">{option.description}</p>
+                                    )}
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {option.option_type}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {option.cost_type}
+                                      </Badge>
+                                      {option.is_required && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          Required
+                                        </Badge>
+                                      )}
+                                      {option.is_default && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          Default
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right ml-3">
+                                  <span className="font-semibold text-sm text-gray-900">${option.base_cost}</span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {availableOptions.length === 0 && (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <CheckCircle2 className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <p className="text-gray-600 text-sm">No additional variants available</p>
+                      <p className="text-xs text-gray-500 mt-1">This treatment is ready to add as-is</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -249,10 +258,11 @@ export const WindowCoveringSelectionDialog = ({
         <div className="flex justify-between items-center pt-4 border-t mt-6">
           <div className="text-sm text-gray-600">
             {selectedWindowCovering && (
-              <span>
-                Selected: <strong>{selectedWindowCovering.name}</strong>
-                {selectedOptions.length > 0 && (
-                  <span> with {selectedOptions.length} option{selectedOptions.length !== 1 ? 's' : ''}</span>
+              <span className="flex items-center">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                <strong>{selectedWindowCovering.name}</strong> selected
+                {availableOptions.length > 0 && (
+                  <span className="ml-1">with {availableOptions.length} variant{availableOptions.length !== 1 ? 's' : ''}</span>
                 )}
               </span>
             )}
@@ -264,9 +274,9 @@ export const WindowCoveringSelectionDialog = ({
             <Button 
               onClick={handleConfirm}
               disabled={!selectedWindowCovering}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-green-600 hover:bg-green-700"
             >
-              Add to Project
+              Add Treatment
             </Button>
           </div>
         </div>
