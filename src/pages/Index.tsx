@@ -12,7 +12,6 @@ import { WorkshopManagement } from "@/components/workshop/WorkshopManagement";
 import { JobEditor } from "@/components/job-editor/JobEditor";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalculatorView } from "@/components/calculator/CalculatorView";
-import { SettingsView } from "@/components/settings/SettingsView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,8 @@ import {
   Package, 
   Wrench,
   Calendar,
-  Calculator
+  Calculator,
+  Settings
 } from "lucide-react";
 
 const Index = () => {
@@ -41,6 +41,10 @@ const Index = () => {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleSettingsClick = () => {
+    window.location.href = "/settings";
   };
 
   const renderActiveComponent = () => {
@@ -65,8 +69,6 @@ const Index = () => {
         return <ClientManagement />;
       case "calculator":
         return <CalculatorView />;
-      case "settings":
-        return <SettingsView />;
       default:
         return <JobsPage />;
     }
@@ -106,7 +108,15 @@ const Index = () => {
             
             <div className="flex items-center space-x-4">
               <AIAssistant />
-              <UserProfile onSettingsClick={() => setActiveTab("settings")} />
+              <Button
+                variant="ghost"
+                onClick={handleSettingsClick}
+                className="flex items-center space-x-2 text-brand-neutral hover:bg-brand-secondary/10 hover:text-brand-primary"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="font-medium">Settings</span>
+              </Button>
+              <UserProfile onSettingsClick={handleSettingsClick} />
             </div>
           </div>
         </div>
