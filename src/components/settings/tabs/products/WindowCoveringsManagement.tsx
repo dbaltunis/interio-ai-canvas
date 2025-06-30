@@ -19,13 +19,12 @@ interface WindowCovering {
   name: string;
   description?: string;
   base_making_cost: number;
-  fabric_calculation_method: 'standard' | 'pleated' | 'gathered';
-  fabric_multiplier: number;
   margin_percentage: number;
   fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
   image_url?: string;
   active: boolean;
   optionsCount?: number;
+  pricing_grid_data?: string;
 }
 
 export const WindowCoveringsManagement = () => {
@@ -139,8 +138,6 @@ export const WindowCoveringsManagement = () => {
                             <h4 className="font-semibold text-brand-primary">{windowCovering.name}</h4>
                             <div className="flex gap-4 text-sm text-brand-neutral">
                               <span>Base Cost: £{windowCovering.base_making_cost}</span>
-                              <span>Method: {windowCovering.fabric_calculation_method}</span>
-                              <span>Multiplier: {windowCovering.fabric_multiplier}x</span>
                               <span>Margin: {windowCovering.margin_percentage}%</span>
                               {windowCovering.fabrication_pricing_method && (
                                 <span>Pricing: {windowCovering.fabrication_pricing_method.replace('-', ' ')}</span>
@@ -160,6 +157,11 @@ export const WindowCoveringsManagement = () => {
                           {windowCovering.optionsCount && (
                             <Badge variant="outline">
                               {windowCovering.optionsCount} options
+                            </Badge>
+                          )}
+                          {windowCovering.fabrication_pricing_method === 'pricing-grid' && windowCovering.pricing_grid_data && (
+                            <Badge variant="outline">
+                              CSV Grid Uploaded
                             </Badge>
                           )}
                         </div>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WindowCovering {
@@ -15,12 +15,11 @@ interface WindowCovering {
   name: string;
   description?: string;
   base_making_cost: number;
-  fabric_calculation_method: 'standard' | 'pleated' | 'gathered';
-  fabric_multiplier: number;
   margin_percentage: number;
-  fabrication_pricing_method: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
+  fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
   image_url?: string;
   active: boolean;
+  pricing_grid_data?: string;
 }
 
 interface WindowCoveringFormProps {
@@ -34,29 +33,28 @@ interface FormData {
   name: string;
   description: string;
   base_making_cost: number;
-  fabric_calculation_method: 'standard' | 'pleated' | 'gathered';
-  fabric_multiplier: number;
   margin_percentage: number;
   fabrication_pricing_method: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
   image_url: string;
   active: boolean;
+  pricing_grid_data: string;
 }
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
     base_making_cost: 0,
-    fabric_calculation_method: 'standard',
-    fabric_multiplier: 1.0,
     margin_percentage: 40.0,
     fabrication_pricing_method: 'per-panel',
     image_url: '',
-    active: true
+    active: true,
+    pricing_grid_data: ''
   });
 
   useEffect(() => {
@@ -65,12 +63,11 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
         name: windowCovering.name,
         description: windowCovering.description || '',
         base_making_cost: windowCovering.base_making_cost,
-        fabric_calculation_method: windowCovering.fabric_calculation_method,
-        fabric_multiplier: windowCovering.fabric_multiplier,
         margin_percentage: windowCovering.margin_percentage,
         fabrication_pricing_method: windowCovering.fabrication_pricing_method || 'per-panel',
         image_url: windowCovering.image_url || '',
-        active: windowCovering.active
+        active: windowCovering.active,
+        pricing_grid_data: windowCovering.pricing_grid_data || ''
       });
       if (windowCovering.image_url) {
         setImagePreview(windowCovering.image_url);
@@ -92,10 +89,65 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     }
   };
 
+  const handleCsvSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        toast({
+          title: "Error",
+          description: "Please select a CSV file",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setSelectedCsvFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setFormData(prev => ({ ...prev, pricing_grid_data: result }));
+        toast({
+          title: "Success",
+          description: "CSV file uploaded successfully"
+        });
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const handleRemoveImage = () => {
     setSelectedImage(null);
     setImagePreview('');
     setFormData(prev => ({ ...prev, image_url: '' }));
+  };
+
+  const handleRemoveCsv = () => {
+    setSelectedCsvFile(null);
+    setFormData(prev => ({ ...prev, pricing_grid_data: '' }));
+  };
+
+  const downloadCsvTemplate = () => {
+    const csvContent = `Drop/Width,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500
+100,23,46,69,92,115,138,161,184,207,230,253,276,299,322,345
+200,46,92,138,184,230,276,322,368,414,460,506,552,598,644,690
+300,69,138,207,276,345,414,483,552,621,690,759,828,897,966,1035
+400,92,184,276,368,460,552,644,736,828,920,1012,1104,1196,1288,1380
+500,115,230,345,460,575,690,805,920,1035,1150,1265,1380,1495,1610,1725
+600,138,276,414,552,690,828,966,1104,1242,1380,1518,1656,1794,1932,2070
+700,161,322,483,644,805,966,1127,1288,1449,1610,1771,1932,2093,2254,2415
+800,184,368,552,736,920,1104,1288,1472,1656,1840,2024,2208,2392,2576,2760
+900,207,414,621,828,1035,1242,1449,1656,1863,2070,2277,2484,2691,2898,3105
+1000,230,460,690,920,1150,1380,1610,1840,2070,2300,2530,2760,2990,3220,3450`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pricing_grid_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   const handleSave = () => {
@@ -108,17 +160,25 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       return;
     }
 
+    if (formData.fabrication_pricing_method === 'pricing-grid' && !formData.pricing_grid_data) {
+      toast({
+        title: "Error",
+        description: "Please upload a pricing grid CSV file",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const newWindowCovering: WindowCovering = {
       id: windowCovering?.id || Date.now().toString(),
       name: formData.name,
       description: formData.description || undefined,
       base_making_cost: formData.base_making_cost,
-      fabric_calculation_method: formData.fabric_calculation_method,
-      fabric_multiplier: formData.fabric_multiplier,
       margin_percentage: formData.margin_percentage,
       fabrication_pricing_method: formData.fabrication_pricing_method,
       image_url: formData.image_url || undefined,
-      active: formData.active
+      active: formData.active,
+      pricing_grid_data: formData.pricing_grid_data || undefined
     };
 
     onSave(newWindowCovering);
@@ -209,24 +269,6 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Fabric Calculation Method</Label>
-            <Select
-              value={formData.fabric_calculation_method}
-              onValueChange={(value: 'standard' | 'pleated' | 'gathered') => 
-                setFormData(prev => ({ ...prev, fabric_calculation_method: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="pleated">Pleated</SelectItem>
-                <SelectItem value="gathered">Gathered</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
             <Label>Fabrication Pricing Method</Label>
             <Select
               value={formData.fabrication_pricing_method}
@@ -246,20 +288,6 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="fabric_multiplier">Fabric Multiplier</Label>
-            <Input
-              id="fabric_multiplier"
-              type="number"
-              step="0.1"
-              value={formData.fabric_multiplier}
-              onChange={(e) => setFormData(prev => ({ ...prev, fabric_multiplier: Number(e.target.value) }))}
-              placeholder="1.0"
-            />
-          </div>
           <div>
             <Label htmlFor="margin_percentage">Margin Percentage (%)</Label>
             <Input
@@ -272,6 +300,73 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
             />
           </div>
         </div>
+
+        {/* CSV Upload for Pricing Grid */}
+        {formData.fabrication_pricing_method === 'pricing-grid' && (
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Pricing Grid (CSV File) *</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadCsvTemplate}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download Template
+                </Button>
+              </div>
+              
+              {selectedCsvFile ? (
+                <div className="flex items-center justify-between p-3 border border-green-300 rounded-lg bg-green-50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-green-700">{selectedCsvFile.name}</span>
+                    <span className="text-xs text-green-600">({(selectedCsvFile.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveCsv}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-brand-primary transition-colors">
+                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600 mb-2">Upload pricing grid CSV file</p>
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCsvSelect}
+                    className="hidden"
+                    id="csv-upload"
+                  />
+                  <Label 
+                    htmlFor="csv-upload" 
+                    className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Choose CSV File
+                  </Label>
+                </div>
+              )}
+              
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700 font-medium mb-1">CSV File Format:</p>
+                <p className="text-xs text-blue-600">
+                  First row should contain width values (100, 200, 300, etc.)
+                  <br />
+                  First column should contain drop/height values (100, 200, 300, etc.)
+                  <br />
+                  Each cell should contain the corresponding price for that width/drop combination
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center space-x-2">
           <Switch
