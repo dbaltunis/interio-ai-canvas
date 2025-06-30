@@ -14,8 +14,8 @@ export const MeasurementUnitsTab = () => {
   const createSettings = useCreateBusinessSettings();
   const { toast } = useToast();
 
-  const currentUnits: MeasurementUnits = businessSettings?.measurement_units ? 
-    JSON.parse(businessSettings.measurement_units) : defaultMeasurementUnits;
+  const currentUnits: MeasurementUnits = (businessSettings as any)?.measurement_units ? 
+    JSON.parse((businessSettings as any).measurement_units) : defaultMeasurementUnits;
 
   const [units, setUnits] = useState<MeasurementUnits>(currentUnits);
 
@@ -65,7 +65,7 @@ export const MeasurementUnitsTab = () => {
     try {
       const settingsData = {
         measurement_units: JSON.stringify(units)
-      };
+      } as any;
 
       if (businessSettings?.id) {
         await updateSettings.mutateAsync({

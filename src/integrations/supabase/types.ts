@@ -97,6 +97,7 @@ export type Database = {
           installation_lead_days: number | null
           labor_rate: number | null
           low_stock_alerts: boolean | null
+          measurement_units: string | null
           opening_time: string | null
           quote_validity_days: number | null
           updated_at: string
@@ -119,6 +120,7 @@ export type Database = {
           installation_lead_days?: number | null
           labor_rate?: number | null
           low_stock_alerts?: boolean | null
+          measurement_units?: string | null
           opening_time?: string | null
           quote_validity_days?: number | null
           updated_at?: string
@@ -141,6 +143,7 @@ export type Database = {
           installation_lead_days?: number | null
           labor_rate?: number | null
           low_stock_alerts?: boolean | null
+          measurement_units?: string | null
           opening_time?: string | null
           quote_validity_days?: number | null
           updated_at?: string
