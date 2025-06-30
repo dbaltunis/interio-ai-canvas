@@ -14,7 +14,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProfileProps {
-  onSettingsClick: () => void;
+  onSettingsClick?: () => void;
 }
 
 export const UserProfile = ({ onSettingsClick }: UserProfileProps) => {
@@ -54,10 +54,12 @@ export const UserProfile = ({ onSettingsClick }: UserProfileProps) => {
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onSettingsClick}>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem>
+        {onSettingsClick && (
+          <DropdownMenuItem onClick={onSettingsClick}>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
