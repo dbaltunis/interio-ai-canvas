@@ -4,6 +4,7 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { ProjectHeader } from "../job-creation/ProjectHeader";
 import { ProjectNavigation } from "../job-creation/ProjectNavigation";
 import { ProjectTabContent } from "../job-creation/ProjectTabContent";
+import { NewJobPage } from "../job-creation/NewJobPage";
 
 interface JobEditPageProps {
   jobId: string;
@@ -13,6 +14,11 @@ interface JobEditPageProps {
 export const JobEditPage = ({ jobId, onBack }: JobEditPageProps) => {
   const [activeTab, setActiveTab] = useState("jobs");
   const { data: quotes } = useQuotes();
+
+  // If jobId is "new", show the new job creation page
+  if (jobId === "new") {
+    return <NewJobPage onBack={onBack} />;
+  }
 
   const job = quotes?.find(q => q.id === jobId);
 
