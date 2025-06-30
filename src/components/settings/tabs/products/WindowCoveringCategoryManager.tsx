@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Edit, Trash2, FolderTree } from "lucide-react";
+import { Plus, Edit, Trash2, FolderTree, Info } from "lucide-react";
 import { useWindowCoveringCategories } from "@/hooks/useWindowCoveringCategories";
 
 export const WindowCoveringCategoryManager = () => {
@@ -83,6 +83,28 @@ export const WindowCoveringCategoryManager = () => {
       // Error handling is done in the hook
     }
   };
+
+  const getPricingMethodDescription = (method: string) => {
+    switch (method) {
+      case 'per-unit':
+        return 'Fixed price per unit/panel';
+      case 'per-meter':
+        return 'Price per linear meter of track/rail width';
+      case 'per-sqm':
+        return 'Price per square meter (width × drop)';
+      case 'fabric-based':
+        return 'Price based on main fabric usage (width × drop × fullness)';
+      case 'fixed':
+        return 'One-time fixed cost regardless of size';
+      case 'percentage':
+        return 'Percentage of total fabric cost';
+      default:
+        return '';
+    }
+  };
+
+  const selectedCategory = categories.find(c => c.id === subcategoryForm.category_id);
+  const isHeadingCategory = selectedCategory?.name.toLowerCase().includes('heading');
 
   if (isLoading) {
     return <div className="text-center py-8">Loading categories...</div>;
@@ -185,6 +207,7 @@ export const WindowCoveringCategoryManager = () => {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="subcategory_name">Subcategory Name</Label>
@@ -205,15 +228,28 @@ export const WindowCoveringCategoryManager = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="per-unit">Per Unit</SelectItem>
-                    <SelectItem value="per-meter">Per Meter</SelectItem>
+                    <SelectItem value="per-unit">Per Unit/Panel</SelectItem>
+                    <SelectItem value="per-meter">Per Linear Meter</SelectItem>
                     <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+                    <SelectItem value="fabric-based">Fabric-Based Calculation</SelectItem>
                     <SelectItem value="fixed">Fixed Price</SelectItem>
-                    <SelectItem value="percentage">Percentage</SelectItem>
+                    <SelectItem value="percentage">Percentage of Fabric Cost</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
+            {subcategoryForm.pricing_method && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-700">
+                    <strong>How this works:</strong> {getPricingMethodDescription(subcategoryForm.pricing_method)}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="subcategory_description">Description</Label>
               <Textarea
@@ -223,40 +259,59 @@ export const WindowCoveringCategoryManager = () => {
                 placeholder="Optional description"
               />
             </div>
+            
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="subcategory_price">Base Price (£)</Label>
+                <Label htmlFor="subcategory_price">
+                  Base Price (£)
+                  {subcategoryForm.pricing_method === 'percentage' && (
+                    <span className="text-xs text-gray-500 ml-1">(as %)</span>
+                  )}
+                </Label>
                 <Input
                   id="subcategory_price"
                   type="number"
-                  step="0.01"
+                  step={subcategoryForm.pricing_method === 'percentage' ? "1" : "0.01"}
                   value={subcategoryForm.base_price}
                   onChange={(e) => setSubcategoryForm(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
                 />
               </div>
-              <div>
-                <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
-                <Input
-                  id="fullness_ratio"
-                  type="number"
-                  step="0.1"
-                  value={subcategoryForm.fullness_ratio || ''}
-                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, fullness_ratio: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                  placeholder="e.g., 2.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="extra_fabric">Extra Fabric %</Label>
-                <Input
-                  id="extra_fabric"
-                  type="number"
-                  step="1"
-                  value={subcategoryForm.extra_fabric_percentage || ''}
-                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, extra_fabric_percentage: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                  placeholder="e.g., 10"
-                />
-              </div>
+              
+              {/* Only show fullness ratio and extra fabric for heading categories */}
+              {isHeadingCategory && (
+                <>
+                  <div>
+                    <Label htmlFor="fullness_ratio">
+                      Fullness Ratio
+                      <span className="text-xs text-gray-500 ml-1">(optional)</span>
+                    </Label>
+                    <Input
+                      id="fullness_ratio"
+                      type="number"
+                      step="0.1"
+                      value={subcategoryForm.fullness_ratio || ''}
+                      onChange={(e) => setSubcategoryForm(prev => ({ ...prev, fullness_ratio: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      placeholder="e.g., 2.0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="extra_fabric">
+                      Extra Fabric %
+                      <span className="text-xs text-gray-500 ml-1">(optional)</span>
+                    </Label>
+                    <Input
+                      id="extra_fabric"
+                      type="number"
+                      step="1"
+                      value={subcategoryForm.extra_fabric_percentage || ''}
+                      onChange={(e) => setSubcategoryForm(prev => ({ ...prev, extra_fabric_percentage: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                </>
+              )}
             </div>
+            
             <div className="flex gap-2">
               <Button onClick={handleCreateSubcategory} className="bg-brand-primary hover:bg-brand-accent">
                 Create Subcategory
