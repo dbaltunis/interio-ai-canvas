@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, X, Image } from "lucide-react";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useUploadFile } from "@/hooks/useFileStorage";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface TreatmentPricingFormProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export const TreatmentPricingForm = ({
 
   const { options, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const uploadFile = useUploadFile();
+  const { units, formatLength, formatFabric, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
 
   const calculateFabricUsage = () => {
     const railWidth = parseFloat(formData.rail_width) || 0;
@@ -57,21 +59,27 @@ export const TreatmentPricingForm = ({
     if (railWidth && drop) {
       // Basic calculation: width * (drop + pooling) * fullness factor (2.5 for curtains)
       const totalDrop = drop + pooling;
-      const fabricWidth = 54; // Standard fabric width in inches
+      const fabricWidth = units.system === 'metric' ? 137 : 54; // 137cm or 54 inches standard fabric width
       const fullnessFactor = 2.5;
       
-      const widthInYards = (railWidth * fullnessFactor) / 36;
-      const dropInYards = totalDrop / 36;
+      // Convert to fabric units for calculation
+      const widthInFabricUnits = units.system === 'metric' 
+        ? (railWidth * fullnessFactor) / 100 // convert cm to meters
+        : (railWidth * fullnessFactor) / 36; // convert inches to yards
       
-      return widthInYards * dropInYards;
+      const dropInFabricUnits = units.system === 'metric'
+        ? totalDrop / 100 // convert cm to meters
+        : totalDrop / 36; // convert inches to yards
+      
+      return widthInFabricUnits * dropInFabricUnits;
     }
     return 0;
   };
 
   const calculateCosts = () => {
     const fabricUsage = calculateFabricUsage();
-    const fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
-    const fabricCost = fabricUsage * fabricCostPerYard;
+    const fabricCostPerUnit = parseFloat(formData.fabric_cost_per_yard) || 0;
+    const fabricCost = fabricUsage * fabricCostPerUnit;
     
     // Calculate options cost
     const selectedOptionsCost = options
@@ -91,6 +99,18 @@ export const TreatmentPricingForm = ({
   };
 
   const costs = calculateCosts();
+
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,7 +241,7 @@ export const TreatmentPricingForm = ({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rail_width">Rail Width (inches)</Label>
+                  <Label htmlFor="rail_width">Rail Width ({getLengthUnitLabel()})</Label>
                   <Input
                     id="rail_width"
                     type="number"
@@ -232,7 +252,7 @@ export const TreatmentPricingForm = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="drop">Drop (inches)</Label>
+                  <Label htmlFor="drop">Drop ({getLengthUnitLabel()})</Label>
                   <Input
                     id="drop"
                     type="number"
@@ -243,7 +263,7 @@ export const TreatmentPricingForm = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="pooling">Pooling (inches)</Label>
+                  <Label htmlFor="pooling">Pooling ({getLengthUnitLabel()})</Label>
                   <Input
                     id="pooling"
                     type="number"
@@ -256,7 +276,7 @@ export const TreatmentPricingForm = ({
               </div>
               {costs.fabricUsage !== "0.00" && (
                 <div className="text-sm text-gray-600">
-                  Estimated fabric usage: {costs.fabricUsage} yards
+                  Estimated fabric usage: {costs.fabricUsage} {getFabricUnitLabel()}
                 </div>
               )}
             </CardContent>
@@ -284,7 +304,7 @@ export const TreatmentPricingForm = ({
                       </div>
                     </div>
                     <Badge variant="outline">
-                      ${option.base_cost.toFixed(2)}
+                      {formatCurrency(option.base_cost)}
                     </Badge>
                   </div>
                 ))}
@@ -319,7 +339,7 @@ export const TreatmentPricingForm = ({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fabric_cost_per_yard">Cost per Yard ($)</Label>
+                <Label htmlFor="fabric_cost_per_yard">Cost per {getFabricUnitLabel()} ({units.currency})</Label>
                 <Input
                   id="fabric_cost_per_yard"
                   type="number"
@@ -398,19 +418,19 @@ export const TreatmentPricingForm = ({
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span>Fabric Cost:</span>
-                <span>${costs.fabricCost}</span>
+                <span>{formatCurrency(parseFloat(costs.fabricCost))}</span>
               </div>
               <div className="flex justify-between">
                 <span>Options Cost:</span>
-                <span>${costs.optionsCost}</span>
+                <span>{formatCurrency(parseFloat(costs.optionsCost))}</span>
               </div>
               <div className="flex justify-between">
                 <span>Labor Cost:</span>
-                <span>${costs.laborCost}</span>
+                <span>{formatCurrency(parseFloat(costs.laborCost))}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>Total Cost:</span>
-                <span className="text-green-600">${costs.totalCost}</span>
+                <span className="text-green-600">{formatCurrency(parseFloat(costs.totalCost))}</span>
               </div>
             </CardContent>
           </Card>
