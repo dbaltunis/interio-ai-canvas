@@ -147,14 +147,24 @@ export const useJobHandlers = (project: any) => {
         total_price: treatmentData?.total_price || 0,
         unit_price: treatmentData?.unit_price || 0,
         quantity: treatmentData?.quantity || 1,
-        fabric_type: treatmentData?.fabric_type,
+        fabric_type: treatmentData?.fabric_details?.fabricName,
         color: treatmentData?.color,
         pattern: treatmentData?.pattern,
         hardware: treatmentData?.hardware,
-        mounting_type: treatmentData?.mounting_type,
+        mounting_type: treatmentData?.treatment_details?.mounting,
         notes: treatmentData?.notes,
+        // Store additional structured data as JSON
         ...(treatmentData?.measurements && {
-          measurements: treatmentData.measurements
+          measurements: JSON.stringify(treatmentData.measurements)
+        }),
+        ...(treatmentData?.fabric_details && {
+          fabric_details: JSON.stringify(treatmentData.fabric_details)
+        }),
+        ...(treatmentData?.treatment_details && {
+          treatment_details: JSON.stringify(treatmentData.treatment_details)
+        }),
+        ...(treatmentData?.calculation_details && {
+          calculation_details: JSON.stringify(treatmentData.calculation_details)
         })
       };
 

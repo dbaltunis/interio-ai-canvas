@@ -7,11 +7,12 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WindowCoveringSelectionDialog } from "./WindowCoveringSelectionDialog";
+import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 
 interface SurfaceCardProps {
   surface: any;
   treatments: any[];
-  onAddTreatment: (surfaceId: string, treatmentType: string) => void;
+  onAddTreatment: (surfaceId: string, treatmentType: string, treatmentData?: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
 }
@@ -25,6 +26,8 @@ export const SurfaceCard = ({
 }: SurfaceCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showWindowCoveringDialog, setShowWindowCoveringDialog] = useState(false);
+  const [showTreatmentCalculator, setShowTreatmentCalculator] = useState(false);
+  const [selectedTreatmentType, setSelectedTreatmentType] = useState<string>("");
   const [editData, setEditData] = useState({
     name: surface.name,
     width: surface.width || surface.surface_width || 0,
@@ -54,9 +57,16 @@ export const SurfaceCard = ({
   const handleTreatmentTypeSelect = (treatmentType: string) => {
     if (treatmentType === "Window Covering") {
       setShowWindowCoveringDialog(true);
+    } else if (treatmentType === "Curtains" || treatmentType === "Roman Shades") {
+      setSelectedTreatmentType(treatmentType);
+      setShowTreatmentCalculator(true);
     } else {
       onAddTreatment(surface.id, treatmentType);
     }
+  };
+
+  const handleTreatmentCalculatorSave = (treatmentData: any) => {
+    onAddTreatment(surface.id, selectedTreatmentType, treatmentData);
   };
 
   return (
@@ -159,6 +169,7 @@ export const SurfaceCard = ({
               <SelectContent>
                 <SelectItem value="Window Covering">Window Covering</SelectItem>
                 <SelectItem value="Curtains">Curtains</SelectItem>
+                <SelectItem value="Roman Shades">Roman Shades</SelectItem>
                 <SelectItem value="Blinds">Blinds</SelectItem>
                 <SelectItem value="Shutters">Shutters</SelectItem>
                 <SelectItem value="Valances">Valances</SelectItem>
@@ -175,6 +186,13 @@ export const SurfaceCard = ({
         onOpenChange={setShowWindowCoveringDialog}
         onSelect={handleWindowCoveringSelect}
         surfaceId={surface.id}
+      />
+
+      <TreatmentCalculatorDialog
+        isOpen={showTreatmentCalculator}
+        onClose={() => setShowTreatmentCalculator(false)}
+        onSave={handleTreatmentCalculatorSave}
+        treatmentType={selectedTreatmentType === "Curtains" ? "curtains" : "roman-shades"}
       />
     </>
   );

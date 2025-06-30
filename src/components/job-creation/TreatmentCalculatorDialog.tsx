@@ -21,15 +21,15 @@ export const TreatmentCalculatorDialog = ({
   
   const [formData, setFormData] = useState<TreatmentFormData>({
     // Basic Details
-    treatmentName: treatmentType === 'curtains' ? 'Custom Curtains' : treatmentType === 'roman-shades' ? 'Roman Shades' : treatmentType,
+    treatmentName: treatmentType === 'curtains' ? 'Curtains' : treatmentType === 'roman-shades' ? 'Roman Shades' : treatmentType,
     quantity: 1,
-    windowPosition: "center",
+    windowPosition: "left",
     windowType: "single",
     
     // Treatment Specifications
-    headingStyle: "",
-    headingFullness: "2.5",
-    lining: "",
+    headingStyle: "pencil-pleat",
+    headingFullness: "2",
+    lining: "unlined",
     mounting: "inside",
     
     // Measurements
@@ -39,7 +39,7 @@ export const TreatmentCalculatorDialog = ({
     returnDepth: "4",
     
     // Fabric Selection
-    fabricMode: "library",
+    fabricMode: "manual",
     selectedFabric: null,
     fabricName: "",
     fabricWidth: "140",
@@ -66,11 +66,39 @@ export const TreatmentCalculatorDialog = ({
   const calculation = calculateTotalPrice(formData);
 
   const handleSave = () => {
-    onSave({
-      ...formData,
-      price: calculation.total,
-      calculation: calculation
-    });
+    const treatmentData = {
+      product_name: formData.treatmentName,
+      treatment_type: treatmentType === 'curtains' ? 'Curtains' : 'Roman Shades',
+      quantity: formData.quantity,
+      material_cost: calculation.fabricCost,
+      labor_cost: calculation.laborCost,
+      total_price: calculation.total,
+      unit_price: calculation.total / formData.quantity,
+      measurements: {
+        railWidth: formData.railWidth,
+        curtainDrop: formData.curtainDrop,
+        curtainPooling: formData.curtainPooling,
+        returnDepth: formData.returnDepth
+      },
+      fabric_details: {
+        fabricName: formData.fabricName || formData.selectedFabric?.name,
+        fabricWidth: formData.fabricWidth,
+        fabricPrice: formData.fabricPricePerYard || formData.selectedFabric?.pricePerYard,
+        verticalRepeat: formData.verticalRepeat,
+        horizontalRepeat: formData.horizontalRepeat
+      },
+      treatment_details: {
+        headingStyle: formData.headingStyle,
+        headingFullness: formData.headingFullness,
+        lining: formData.lining,
+        mounting: formData.mounting,
+        windowPosition: formData.windowPosition,
+        windowType: formData.windowType
+      },
+      calculation_details: calculation
+    };
+
+    onSave(treatmentData);
     onClose();
   };
 
