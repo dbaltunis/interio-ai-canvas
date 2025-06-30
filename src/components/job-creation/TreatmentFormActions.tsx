@@ -3,16 +3,15 @@ import { Button } from "@/components/ui/button";
 
 interface TreatmentFormActionsProps {
   onCancel: () => void;
-  onSubmit: () => void;
 }
 
-export const TreatmentFormActions = ({ onCancel, onSubmit }: TreatmentFormActionsProps) => {
+export const TreatmentFormActions = ({ onCancel }: TreatmentFormActionsProps) => {
   return (
     <div className="flex justify-end space-x-4">
       <Button type="button" variant="outline" onClick={onCancel}>
         Cancel
       </Button>
-      <Button type="submit" onClick={onSubmit}>
+      <Button type="submit">
         Add Treatment
       </Button>
     </div>

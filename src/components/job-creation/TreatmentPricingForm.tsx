@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TreatmentFormFields } from "./TreatmentFormFields";
@@ -92,7 +91,6 @@ export const TreatmentPricingForm = ({
 
           <TreatmentFormActions 
             onCancel={onClose}
-            onSubmit={handleSubmit}
           />
         </form>
       </DialogContent>
