@@ -75,6 +75,8 @@ export const RoomCard = ({
   };
 
   const handleCreateSurface = async (surfaceType: 'window' | 'wall') => {
+    console.log("Creating surface with:", { room_id: room.id, project_id: projectId, surface_type: surfaceType });
+    
     if (!room.id || !projectId) {
       toast({
         title: "Error",
@@ -90,14 +92,21 @@ export const RoomCard = ({
         ? `Window ${surfaceCount + 1}`
         : `Wall ${surfaceCount + 1}`;
 
-      await createSurface.mutateAsync({
+      const surfaceData = {
         room_id: room.id,
         project_id: projectId,
         name: surfaceName,
         surface_type: surfaceType,
         width: surfaceType === 'window' ? 36 : 120,
-        height: surfaceType === 'window' ? 60 : 96
-      });
+        height: surfaceType === 'window' ? 60 : 96,
+        // Add surface_width and surface_height to match the schema
+        surface_width: surfaceType === 'window' ? 36 : 120,
+        surface_height: surfaceType === 'window' ? 60 : 96
+      };
+
+      console.log("Surface data being sent:", surfaceData);
+
+      await createSurface.mutateAsync(surfaceData);
 
       toast({
         title: "Success",
@@ -107,7 +116,7 @@ export const RoomCard = ({
       console.error("Error creating surface:", error);
       toast({
         title: "Error",
-        description: `Failed to add ${surfaceType}`,
+        description: `Failed to add ${surfaceType}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     }
