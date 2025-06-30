@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,9 +25,25 @@ interface WindowCovering {
 
 interface CalculatorProps {
   windowCovering: WindowCovering;
+  selectedOptions?: string[];
+  availableOptions?: Option[];
 }
 
-export const WindowCoveringPriceCalculator = ({ windowCovering }: CalculatorProps) => {
+interface Option {
+  id: string;
+  option_type: string;
+  name: string;
+  cost_type: string;
+  base_cost: number;
+  is_required: boolean;
+  is_default: boolean;
+}
+
+export const WindowCoveringPriceCalculator = ({ 
+  windowCovering, 
+  selectedOptions = [], 
+  availableOptions = [] 
+}: CalculatorProps) => {
   const [trackWidth, setTrackWidth] = useState<number>(0);
   const [fullnessRatio, setFullnessRatio] = useState<number>(2.0);
   const [fabricWidth, setFabricWidth] = useState<number>(140);
@@ -36,6 +51,15 @@ export const WindowCoveringPriceCalculator = ({ windowCovering }: CalculatorProp
   const [drop, setDrop] = useState<number>(0);
   const [linearMeasurement, setLinearMeasurement] = useState<number>(0);
   const [calculation, setCalculation] = useState<PriceCalculationResult | null>(null);
+
+  const calculateOptionsTotal = () => {
+    return availableOptions
+      .filter(option => selectedOptions.includes(option.id))
+      .reduce((total, option) => {
+        // Simple calculation for now - could be more complex based on cost_type
+        return total + option.base_cost;
+      }, 0);
+  };
 
   const calculatePrice = () => {
     let basePrice = 0;
@@ -78,12 +102,15 @@ export const WindowCoveringPriceCalculator = ({ windowCovering }: CalculatorProp
         basePrice = 0;
     }
 
-    const marginAmount = (basePrice * windowCovering.margin_percentage) / 100;
-    const finalPrice = basePrice + marginAmount;
+    // Add options cost
+    const optionsTotal = calculateOptionsTotal();
+    
+    const marginAmount = ((basePrice + optionsTotal) * windowCovering.margin_percentage) / 100;
+    const finalPrice = basePrice + optionsTotal + marginAmount;
 
     setCalculation({
       ...calculationDetails,
-      basePrice,
+      basePrice: basePrice + optionsTotal,
       marginAmount,
       finalPrice,
       requiredFabricWidth: calculationDetails.requiredFabricWidth || 0,
@@ -277,20 +304,51 @@ export const WindowCoveringPriceCalculator = ({ windowCovering }: CalculatorProp
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <Label className="text-gray-600">Base Price</Label>
-                <p className="font-medium">£{calculation.basePrice.toFixed(2)}</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Base Price:</span>
+                <span>£{(calculation.basePrice - calculateOptionsTotal()).toFixed(2)}</span>
               </div>
-              <div>
-                <Label className="text-gray-600">Margin ({windowCovering.margin_percentage}%)</Label>
-                <p className="font-medium text-green-600">£{calculation.marginAmount.toFixed(2)}</p>
+              
+              {calculateOptionsTotal() > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Options Total:</span>
+                  <span>£{calculateOptionsTotal().toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span>£{calculation.basePrice.toFixed(2)}</span>
               </div>
-              <div>
-                <Label className="text-gray-600">Final Price</Label>
-                <p className="text-lg font-bold text-primary">£{calculation.finalPrice.toFixed(2)}</p>
+              
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Margin ({windowCovering.margin_percentage}%):</span>
+                <span>£{calculation.marginAmount.toFixed(2)}</span>
+              </div>
+              
+              <div className="flex justify-between font-bold text-lg border-t pt-2">
+                <span>Final Price:</span>
+                <span className="text-primary">£{calculation.finalPrice.toFixed(2)}</span>
               </div>
             </div>
+
+            {selectedOptions.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <h5 className="font-medium text-blue-800 mb-2">Selected Options:</h5>
+                <div className="space-y-1">
+                  {availableOptions
+                    .filter(option => selectedOptions.includes(option.id))
+                    .map(option => (
+                      <div key={option.id} className="flex justify-between text-sm text-blue-700">
+                        <span>{option.name}</span>
+                        <span>£{option.base_cost.toFixed(2)}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
 
             {windowCovering.fabrication_pricing_method === 'per-panel' && (
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">

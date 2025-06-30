@@ -174,6 +174,7 @@ export const WindowCoveringsManagement = () => {
                         variant="outline" 
                         size="sm" 
                         onClick={() => setManagingOptionsId(windowCovering.id)}
+                        title="Manage Options"
                       >
                         <Settings className="h-4 w-4" />
                       </Button>

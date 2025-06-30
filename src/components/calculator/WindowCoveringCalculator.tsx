@@ -92,7 +92,7 @@ export const WindowCoveringCalculator = () => {
 
   useEffect(() => {
     if (selectedWindowCovering) {
-      // Mock options - replace with actual data fetching
+      // Mock options based on window covering - replace with actual data fetching
       const mockOptions: Option[] = [
         {
           id: "1",
@@ -111,6 +111,15 @@ export const WindowCoveringCalculator = () => {
           base_cost: 12.00,
           is_required: false,
           is_default: false
+        },
+        {
+          id: "3",
+          option_type: "border",
+          name: "Contrast Border",
+          cost_type: "per-meter",
+          base_cost: 15.00,
+          is_required: false,
+          is_default: false
         }
       ];
       
@@ -120,11 +129,20 @@ export const WindowCoveringCalculator = () => {
   }, [selectedWindowCovering]);
 
   const handleOptionToggle = (optionId: string) => {
+    const option = availableOptions.find(o => o.id === optionId);
+    if (option?.is_required) return; // Can't toggle required options
+    
     setSelectedOptions(prev => 
       prev.includes(optionId) 
         ? prev.filter(id => id !== optionId)
         : [...prev, optionId]
     );
+  };
+
+  const getSelectedOptionsTotal = () => {
+    return availableOptions
+      .filter(option => selectedOptions.includes(option.id))
+      .reduce((total, option) => total + option.base_cost, 0);
   };
 
   return (
@@ -190,6 +208,9 @@ export const WindowCoveringCalculator = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Options</CardTitle>
+                <CardDescription>
+                  Choose from available options for this window covering
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {availableOptions.map(option => (
@@ -202,7 +223,12 @@ export const WindowCoveringCalculator = () => {
                     />
                     <Label htmlFor={option.id} className="flex-1 cursor-pointer">
                       <div className="flex items-center justify-between">
-                        <span>{option.name}</span>
+                        <div>
+                          <span className="font-medium">{option.name}</span>
+                          <span className="text-sm text-muted-foreground ml-2">
+                            ({option.option_type})
+                          </span>
+                        </div>
                         <div className="flex gap-2">
                           <Badge variant="outline" className="text-xs">
                             £{option.base_cost} {option.cost_type}
@@ -210,11 +236,25 @@ export const WindowCoveringCalculator = () => {
                           {option.is_required && (
                             <Badge variant="destructive" className="text-xs">Required</Badge>
                           )}
+                          {option.is_default && (
+                            <Badge variant="default" className="text-xs">Default</Badge>
+                          )}
                         </div>
                       </div>
                     </Label>
                   </div>
                 ))}
+                
+                {selectedOptions.length > 0 && (
+                  <div className="pt-3 border-t">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Selected Options Total:</span>
+                      <Badge variant="outline" className="font-bold">
+                        £{getSelectedOptionsTotal().toFixed(2)}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -223,7 +263,11 @@ export const WindowCoveringCalculator = () => {
         {/* Calculator Section */}
         <div>
           {selectedWindowCovering ? (
-            <WindowCoveringPriceCalculator windowCovering={selectedWindowCovering} />
+            <WindowCoveringPriceCalculator 
+              windowCovering={selectedWindowCovering}
+              selectedOptions={selectedOptions}
+              availableOptions={availableOptions}
+            />
           ) : (
             <Card>
               <CardHeader>
