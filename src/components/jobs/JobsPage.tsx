@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
 import { JobsFilters } from "./JobsFilters";
 import { JobEditPage } from "../job-editor/JobEditPage";
 import { NewJobPage } from "../job-creation/NewJobPage";
+import { ProjectPage } from "../projects/ProjectPage";
 import { EnhancedClientManagement } from "../clients/EnhancedClientManagement";
 import { EnhancedJobsManagement } from "./EnhancedJobsManagement";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
@@ -20,6 +20,8 @@ export const JobsPage = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
   const [showNewClient, setShowNewClient] = useState(false);
+  const [showProjectPage, setShowProjectPage] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Get actual data for counts
@@ -56,11 +58,14 @@ export const JobsPage = () => {
     setSelectedClientId(null);
     setShowNewJob(false);
     setShowNewClient(false);
+    setShowProjectPage(false);
+    setSelectedProjectId(null);
   };
 
   const handleNewJob = () => {
     try {
-      setShowNewJob(true);
+      setShowProjectPage(true);
+      setSelectedProjectId("new"); // Use "new" to indicate creating a new project
     } catch (error) {
       console.error("Error starting new job:", error);
       toast({
@@ -88,6 +93,11 @@ export const JobsPage = () => {
   const jobsCount = quotes?.length || 0;
   const clientsCount = clients?.length || 0;
   const emailsCount = 45; // This will be dynamic once we have email data
+
+  // If showing project page, show the project page
+  if (showProjectPage) {
+    return <ProjectPage projectId={selectedProjectId} onBack={handleBackToJobs} />;
+  }
 
   // If creating a new job, show the new job page
   if (showNewJob) {

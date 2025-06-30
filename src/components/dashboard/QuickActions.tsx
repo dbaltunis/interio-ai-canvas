@@ -13,7 +13,7 @@ interface QuickActionsProps {
 
 export const QuickActions = ({ onNewJob, onNewClient, onCalculator, onCalendar, onInventory }: QuickActionsProps) => {
   const actions = [
-    { label: "New Quote", icon: Plus, onClick: onNewJob, color: "bg-blue-600 hover:bg-blue-700" },
+    { label: "New Project", icon: Plus, onClick: onNewJob, color: "bg-blue-600 hover:bg-blue-700" },
     { label: "Add Client", icon: Users, onClick: onNewClient, color: "bg-green-600 hover:bg-green-700" },
     { label: "Calculator", icon: Calculator, onClick: onCalculator, color: "bg-purple-600 hover:bg-purple-700" },
     { label: "Calendar", icon: Calendar, onClick: onCalendar, color: "bg-orange-600 hover:bg-orange-700" },
