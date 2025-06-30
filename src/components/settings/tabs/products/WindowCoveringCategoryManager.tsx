@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Edit, Trash2, FolderTree, Info } from "lucide-react";
 import { useWindowCoveringCategories } from "@/hooks/useWindowCoveringCategories";
 
+type PricingMethod = 'per-unit' | 'per-meter' | 'per-sqm' | 'fabric-based' | 'fixed' | 'percentage';
+
 export const WindowCoveringCategoryManager = () => {
   const { 
     categories, 
@@ -36,7 +38,7 @@ export const WindowCoveringCategoryManager = () => {
     category_id: '',
     name: '',
     description: '',
-    pricing_method: 'per-unit' as const,
+    pricing_method: 'per-unit' as PricingMethod,
     base_price: 0,
     fullness_ratio: undefined as number | undefined,
     extra_fabric_percentage: undefined as number | undefined,
@@ -72,7 +74,7 @@ export const WindowCoveringCategoryManager = () => {
         category_id: '',
         name: '',
         description: '',
-        pricing_method: 'per-unit',
+        pricing_method: 'per-unit' as PricingMethod,
         base_price: 0,
         fullness_ratio: undefined,
         extra_fabric_percentage: undefined,
@@ -222,7 +224,7 @@ export const WindowCoveringCategoryManager = () => {
                 <Label htmlFor="subcategory_pricing">Pricing Method</Label>
                 <Select 
                   value={subcategoryForm.pricing_method} 
-                  onValueChange={(value: any) => setSubcategoryForm(prev => ({ ...prev, pricing_method: value }))}
+                  onValueChange={(value: PricingMethod) => setSubcategoryForm(prev => ({ ...prev, pricing_method: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
