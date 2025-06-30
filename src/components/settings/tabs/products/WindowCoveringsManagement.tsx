@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ interface WindowCovering {
   id: string;
   name: string;
   description?: string;
-  base_making_cost: number;
   margin_percentage: number;
   fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
   image_url?: string;
@@ -137,7 +135,6 @@ export const WindowCoveringsManagement = () => {
                           <div>
                             <h4 className="font-semibold text-brand-primary">{windowCovering.name}</h4>
                             <div className="flex gap-4 text-sm text-brand-neutral">
-                              <span>Base Cost: £{windowCovering.base_making_cost}</span>
                               <span>Margin: {windowCovering.margin_percentage}%</span>
                               {windowCovering.fabrication_pricing_method && (
                                 <span>Pricing: {windowCovering.fabrication_pricing_method.replace('-', ' ')}</span>

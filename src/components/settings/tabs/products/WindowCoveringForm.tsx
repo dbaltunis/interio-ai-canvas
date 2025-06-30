@@ -7,14 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Download } from "lucide-react";
+import { Upload, X, Download, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WindowCovering {
   id: string;
   name: string;
   description?: string;
-  base_making_cost: number;
   margin_percentage: number;
   fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
   image_url?: string;
@@ -32,7 +31,6 @@ interface WindowCoveringFormProps {
 interface FormData {
   name: string;
   description: string;
-  base_making_cost: number;
   margin_percentage: number;
   fabrication_pricing_method: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
   image_url: string;
@@ -49,7 +47,6 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
-    base_making_cost: 0,
     margin_percentage: 40.0,
     fabrication_pricing_method: 'per-panel',
     image_url: '',
@@ -62,7 +59,6 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       setFormData({
         name: windowCovering.name,
         description: windowCovering.description || '',
-        base_making_cost: windowCovering.base_making_cost,
         margin_percentage: windowCovering.margin_percentage,
         fabrication_pricing_method: windowCovering.fabrication_pricing_method || 'per-panel',
         image_url: windowCovering.image_url || '',
@@ -173,7 +169,6 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       id: windowCovering?.id || Date.now().toString(),
       name: formData.name,
       description: formData.description || undefined,
-      base_making_cost: formData.base_making_cost,
       margin_percentage: formData.margin_percentage,
       fabrication_pricing_method: formData.fabrication_pricing_method,
       image_url: formData.image_url || undefined,
@@ -184,32 +179,38 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     onSave(newWindowCovering);
   };
 
+  const getPricingMethodDescription = () => {
+    switch (formData.fabrication_pricing_method) {
+      case 'per-panel':
+        return 'Margin will be applied to the per-panel cost';
+      case 'per-drop':
+        return 'Margin will be applied to the per-drop cost';
+      case 'per-meter':
+        return 'Margin will be applied to the per-meter cost';
+      case 'per-yard':
+        return 'Margin will be applied to the per-yard cost';
+      case 'pricing-grid':
+        return 'Margin will be applied to all prices in the uploaded CSV grid';
+      default:
+        return 'Margin will be applied to the calculated cost';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{isEditing ? 'Edit Window Covering' : 'Create New Window Covering'}</CardTitle>
         <CardDescription>Configure the window covering specifications and pricing</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 gap-4">
           <div>
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">Treatment Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g., Roman Blind, Curtains, Roller Blind"
-            />
-          </div>
-          <div>
-            <Label htmlFor="base_making_cost">Base Making Cost (£) *</Label>
-            <Input
-              id="base_making_cost"
-              type="number"
-              step="0.01"
-              value={formData.base_making_cost}
-              onChange={(e) => setFormData(prev => ({ ...prev, base_making_cost: Number(e.target.value) }))}
-              placeholder="0.00"
             />
           </div>
         </div>
@@ -267,38 +268,25 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Fabrication Pricing Method</Label>
-            <Select
-              value={formData.fabrication_pricing_method}
-              onValueChange={(value: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid') => 
-                setFormData(prev => ({ ...prev, fabrication_pricing_method: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="per-panel">Per Panel</SelectItem>
-                <SelectItem value="per-drop">Per Drop</SelectItem>
-                <SelectItem value="per-meter">Per Linear Meter</SelectItem>
-                <SelectItem value="per-yard">Per Linear Yard</SelectItem>
-                <SelectItem value="pricing-grid">Pricing Grid (CSV Upload)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="margin_percentage">Margin Percentage (%)</Label>
-            <Input
-              id="margin_percentage"
-              type="number"
-              step="0.1"
-              value={formData.margin_percentage}
-              onChange={(e) => setFormData(prev => ({ ...prev, margin_percentage: Number(e.target.value) }))}
-              placeholder="40.0"
-            />
-          </div>
+        <div>
+          <Label>Pricing Method</Label>
+          <Select
+            value={formData.fabrication_pricing_method}
+            onValueChange={(value: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid') => 
+              setFormData(prev => ({ ...prev, fabrication_pricing_method: value }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="per-panel">Per Panel</SelectItem>
+              <SelectItem value="per-drop">Per Drop</SelectItem>
+              <SelectItem value="per-meter">Per Linear Meter</SelectItem>
+              <SelectItem value="per-yard">Per Linear Yard</SelectItem>
+              <SelectItem value="pricing-grid">Pricing Grid (CSV Upload)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* CSV Upload for Pricing Grid */}
@@ -361,12 +349,40 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
                   <br />
                   First column should contain drop/height values (100, 200, 300, etc.)
                   <br />
-                  Each cell should contain the corresponding price for that width/drop combination
+                  Each cell should contain the corresponding base price for that width/drop combination
                 </p>
               </div>
             </div>
           </div>
         )}
+
+        {/* Profit Margin Section */}
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="margin_percentage">Profit Margin (%)</Label>
+            <Input
+              id="margin_percentage"
+              type="number"
+              step="0.1"
+              min="0"
+              max="200"
+              value={formData.margin_percentage}
+              onChange={(e) => setFormData(prev => ({ ...prev, margin_percentage: Number(e.target.value) }))}
+              placeholder="40.0"
+            />
+          </div>
+          
+          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-800 mb-1">How this works:</p>
+              <p className="text-amber-700">
+                {getPricingMethodDescription()}. For example, if the base cost is £100 and you set a 40% margin, 
+                the final selling price will be £140.
+              </p>
+            </div>
+          </div>
+        </div>
 
         <div className="flex items-center space-x-2">
           <Switch
