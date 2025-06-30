@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, ChevronRight, ChevronDown, FolderOpen, Folder } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type PricingMethod = 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
 
 interface OptionCategory {
   id: string;
@@ -25,7 +26,7 @@ interface OptionSubcategory {
   category_id: string;
   name: string;
   description?: string;
-  pricing_method: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
+  pricing_method: PricingMethod;
   base_price: number;
   fullness_ratio?: number;
   extra_fabric_percentage?: number;
@@ -39,10 +40,27 @@ interface OptionSubSubcategory {
   subcategory_id: string;
   name: string;
   description?: string;
-  pricing_method: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
+  pricing_method: PricingMethod;
   base_price: number;
   color?: string;
   sort_order: number;
+}
+
+interface SubcategoryFormData {
+  name: string;
+  description: string;
+  pricing_method: PricingMethod;
+  base_price: number;
+  fullness_ratio: number;
+  extra_fabric_percentage: number;
+}
+
+interface SubSubcategoryFormData {
+  name: string;
+  description: string;
+  pricing_method: PricingMethod;
+  base_price: number;
+  color: string;
 }
 
 export const WindowCoveringCategoryManager = () => {
@@ -63,19 +81,19 @@ export const WindowCoveringCategoryManager = () => {
     is_required: false
   });
 
-  const [subcategoryForm, setSubcategoryForm] = useState({
+  const [subcategoryForm, setSubcategoryForm] = useState<SubcategoryFormData>({
     name: '',
     description: '',
-    pricing_method: 'per-unit' as const,
+    pricing_method: 'per-unit',
     base_price: 0,
     fullness_ratio: 1.0,
     extra_fabric_percentage: 0
   });
 
-  const [subSubcategoryForm, setSubSubcategoryForm] = useState({
+  const [subSubcategoryForm, setSubSubcategoryForm] = useState<SubSubcategoryFormData>({
     name: '',
     description: '',
-    pricing_method: 'per-unit' as const,
+    pricing_method: 'per-unit',
     base_price: 0,
     color: ''
   });
@@ -409,7 +427,7 @@ export const WindowCoveringCategoryManager = () => {
                 <Label>Pricing Method</Label>
                 <Select
                   value={subcategoryForm.pricing_method}
-                  onValueChange={(value: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage') => 
+                  onValueChange={(value: PricingMethod) => 
                     setSubcategoryForm(prev => ({ ...prev, pricing_method: value }))
                   }
                 >
