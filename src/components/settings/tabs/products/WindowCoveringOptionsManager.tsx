@@ -34,17 +34,28 @@ interface WindowCoveringOptionsManagerProps {
   onBack: () => void;
 }
 
+interface FormData {
+  option_type: string;
+  name: string;
+  description: string;
+  cost_type: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed';
+  base_cost: number;
+  is_required: boolean;
+  is_default: boolean;
+  specifications: Record<string, any>;
+}
+
 export const WindowCoveringOptionsManager = ({ windowCovering, onBack }: WindowCoveringOptionsManagerProps) => {
   const { toast } = useToast();
   const [options, setOptions] = useState<WindowCoveringOption[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     option_type: '',
     name: '',
     description: '',
-    cost_type: 'per-unit' as const,
+    cost_type: 'per-unit',
     base_cost: 0,
     is_required: false,
     is_default: false,
