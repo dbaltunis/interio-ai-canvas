@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Copy, Trash2, Plus } from "lucide-react";
+import { Edit, Copy, Trash2, Plus, Home, Square } from "lucide-react";
 import { useTreatments } from "@/hooks/useTreatments";
-import { useSurfaces } from "@/hooks/useSurfaces";
+import { useSurfaces, useCreateSurface } from "@/hooks/useSurfaces";
 import { SurfaceCard } from "./SurfaceCard";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface RoomCardProps {
   room: any;
@@ -46,6 +47,9 @@ export const RoomCard = ({
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
+  const createSurface = useCreateSurface();
+  const { toast } = useToast();
+  
   const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
@@ -67,6 +71,45 @@ export const RoomCard = ({
     } else if (e.key === 'Escape') {
       setEditingRoomId(null);
       setEditingRoomName("");
+    }
+  };
+
+  const handleCreateSurface = async (surfaceType: 'window' | 'wall') => {
+    if (!room.id || !projectId) {
+      toast({
+        title: "Error",
+        description: "Missing room or project information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const surfaceCount = roomSurfaces.filter(s => s.surface_type === surfaceType).length;
+      const surfaceName = surfaceType === 'window' 
+        ? `Window ${surfaceCount + 1}`
+        : `Wall ${surfaceCount + 1}`;
+
+      await createSurface.mutateAsync({
+        room_id: room.id,
+        project_id: projectId,
+        name: surfaceName,
+        surface_type: surfaceType,
+        width: surfaceType === 'window' ? 36 : 120,
+        height: surfaceType === 'window' ? 60 : 96
+      });
+
+      toast({
+        title: "Success",
+        description: `${surfaceType === 'window' ? 'Window' : 'Wall'} added successfully`,
+      });
+    } catch (error) {
+      console.error("Error creating surface:", error);
+      toast({
+        title: "Error",
+        description: `Failed to add ${surfaceType}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -153,20 +196,22 @@ export const RoomCard = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onCreateSurface(room.id, 'window')}
-                className="flex items-center space-x-1"
+                onClick={() => handleCreateSurface('window')}
+                disabled={createSurface.isPending}
+                className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
               >
-                <Plus className="h-3 w-3" />
-                <span>Add Window</span>
+                <Home className="h-4 w-4" />
+                <span>{createSurface.isPending ? 'Adding...' : 'Add Window'}</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onCreateSurface(room.id, 'wall')}
-                className="flex items-center space-x-1"
+                onClick={() => handleCreateSurface('wall')}
+                disabled={createSurface.isPending}
+                className="flex items-center space-x-2 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
               >
-                <Plus className="h-3 w-3" />
-                <span>Add Wall</span>
+                <Square className="h-4 w-4" />
+                <span>{createSurface.isPending ? 'Adding...' : 'Add Wall'}</span>
               </Button>
             </div>
 
