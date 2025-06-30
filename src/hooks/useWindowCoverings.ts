@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -81,14 +80,22 @@ export const useWindowCoverings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Remove the id from the data being inserted, let database generate it
+      const insertData = {
+        name: windowCovering.name,
+        description: windowCovering.description,
+        margin_percentage: windowCovering.margin_percentage,
+        fabrication_pricing_method: windowCovering.fabrication_pricing_method,
+        image_url: windowCovering.image_url,
+        active: windowCovering.active,
+        unit_price: windowCovering.unit_price,
+        pricing_grid_data: windowCovering.pricing_grid_data,
+        user_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('window_coverings')
-        .insert([
-          {
-            ...windowCovering,
-            user_id: user.id
-          }
-        ])
+        .insert([insertData])
         .select()
         .single();
 

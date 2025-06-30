@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -178,8 +177,9 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       return;
     }
 
+    // Don't set an ID when creating, let the database generate it
     const newWindowCovering: WindowCovering = {
-      id: windowCovering?.id || Date.now().toString(),
+      id: windowCovering?.id || '', // Only use existing ID for updates
       name: formData.name,
       description: formData.description || undefined,
       margin_percentage: formData.margin_percentage,
