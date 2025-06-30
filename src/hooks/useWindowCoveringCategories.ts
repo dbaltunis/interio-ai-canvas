@@ -46,9 +46,25 @@ export const useWindowCoveringCategories = () => {
       if (subcategoriesError) throw subcategoriesError;
 
       const categoriesWithSubcategories = (categoriesData || []).map(category => ({
-        ...category,
-        subcategories: (subcategoriesData || []).filter(sub => sub.category_id === category.id)
-      }));
+        id: category.id,
+        name: category.name,
+        description: category.description || undefined,
+        is_required: category.is_required,
+        sort_order: category.sort_order,
+        subcategories: (subcategoriesData || [])
+          .filter(sub => sub.category_id === category.id)
+          .map(sub => ({
+            id: sub.id,
+            category_id: sub.category_id,
+            name: sub.name,
+            description: sub.description || undefined,
+            pricing_method: sub.pricing_method as OptionSubcategory['pricing_method'],
+            base_price: sub.base_price,
+            fullness_ratio: sub.fullness_ratio || undefined,
+            extra_fabric_percentage: sub.extra_fabric_percentage || undefined,
+            sort_order: sub.sort_order
+          } as OptionSubcategory))
+      } as OptionCategory));
 
       setCategories(categoriesWithSubcategories);
     } catch (error) {
@@ -81,7 +97,15 @@ export const useWindowCoveringCategories = () => {
 
       if (error) throw error;
 
-      const newCategory = { ...data, subcategories: [] };
+      const newCategory: OptionCategory = {
+        id: data.id,
+        name: data.name,
+        description: data.description || undefined,
+        is_required: data.is_required,
+        sort_order: data.sort_order,
+        subcategories: []
+      };
+
       setCategories(prev => [...prev, newCategory].sort((a, b) => a.sort_order - b.sort_order));
       
       toast({
@@ -119,12 +143,24 @@ export const useWindowCoveringCategories = () => {
 
       if (error) throw error;
 
+      const newSubcategory: OptionSubcategory = {
+        id: data.id,
+        category_id: data.category_id,
+        name: data.name,
+        description: data.description || undefined,
+        pricing_method: data.pricing_method as OptionSubcategory['pricing_method'],
+        base_price: data.base_price,
+        fullness_ratio: data.fullness_ratio || undefined,
+        extra_fabric_percentage: data.extra_fabric_percentage || undefined,
+        sort_order: data.sort_order
+      };
+
       setCategories(prev => 
         prev.map(cat => 
           cat.id === subcategory.category_id
             ? {
                 ...cat,
-                subcategories: [...(cat.subcategories || []), data].sort((a, b) => a.sort_order - b.sort_order)
+                subcategories: [...(cat.subcategories || []), newSubcategory].sort((a, b) => a.sort_order - b.sort_order)
               }
             : cat
         )

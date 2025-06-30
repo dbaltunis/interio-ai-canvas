@@ -5,8 +5,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calculator, Ruler, DollarSign } from "lucide-react";
 import { WindowCoveringPriceCalculator } from "./WindowCoveringPriceCalculator";
-import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
+import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useWindowCoveringOptions, type WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
+
+interface WindowCovering {
+  id: string;
+  name: string;
+  description?: string;
+  margin_percentage: number;
+  fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
+  image_url?: string;
+  active: boolean;
+  unit_price?: number;
+  pricing_grid_data?: string;
+  optionsCount?: number;
+}
 
 interface Fabric {
   id: string;

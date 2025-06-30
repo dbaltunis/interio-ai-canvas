@@ -49,9 +49,17 @@ export const useWindowCoverings = () => {
             .eq('window_covering_id', wc.id);
 
           return {
-            ...wc,
+            id: wc.id,
+            name: wc.name,
+            description: wc.description || undefined,
+            margin_percentage: wc.margin_percentage,
+            fabrication_pricing_method: wc.fabrication_pricing_method as WindowCovering['fabrication_pricing_method'],
+            image_url: wc.image_url || undefined,
+            active: wc.active,
+            unit_price: wc.unit_price || undefined,
+            pricing_grid_data: wc.pricing_grid_data || undefined,
             optionsCount: count || 0
-          };
+          } as WindowCovering;
         })
       );
 
@@ -86,7 +94,19 @@ export const useWindowCoverings = () => {
 
       if (error) throw error;
 
-      const newWindowCovering = { ...data, optionsCount: 0 };
+      const newWindowCovering: WindowCovering = {
+        id: data.id,
+        name: data.name,
+        description: data.description || undefined,
+        margin_percentage: data.margin_percentage,
+        fabrication_pricing_method: data.fabrication_pricing_method as WindowCovering['fabrication_pricing_method'],
+        image_url: data.image_url || undefined,
+        active: data.active,
+        unit_price: data.unit_price || undefined,
+        pricing_grid_data: data.pricing_grid_data || undefined,
+        optionsCount: 0
+      };
+
       setWindowCoverings(prev => [newWindowCovering, ...prev]);
       
       toast({
@@ -117,8 +137,20 @@ export const useWindowCoverings = () => {
 
       if (error) throw error;
 
+      const updatedWindowCovering: WindowCovering = {
+        id: data.id,
+        name: data.name,
+        description: data.description || undefined,
+        margin_percentage: data.margin_percentage,
+        fabrication_pricing_method: data.fabrication_pricing_method as WindowCovering['fabrication_pricing_method'],
+        image_url: data.image_url || undefined,
+        active: data.active,
+        unit_price: data.unit_price || undefined,
+        pricing_grid_data: data.pricing_grid_data || undefined,
+      };
+
       setWindowCoverings(prev => 
-        prev.map(wc => wc.id === id ? { ...wc, ...data } : wc)
+        prev.map(wc => wc.id === id ? { ...wc, ...updatedWindowCovering } : wc)
       );
 
       toast({
