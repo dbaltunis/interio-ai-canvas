@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ interface WindowCovering {
   active: boolean;
   optionsCount?: number;
   pricing_grid_data?: string;
+  unit_price?: number;
 }
 
 export const WindowCoveringsManagement = () => {
@@ -138,6 +140,9 @@ export const WindowCoveringsManagement = () => {
                               <span>Margin: {windowCovering.margin_percentage}%</span>
                               {windowCovering.fabrication_pricing_method && (
                                 <span>Pricing: {windowCovering.fabrication_pricing_method.replace('-', ' ')}</span>
+                              )}
+                              {windowCovering.unit_price && windowCovering.fabrication_pricing_method !== 'pricing-grid' && (
+                                <span>Unit Price: £{windowCovering.unit_price}</span>
                               )}
                             </div>
                           </div>

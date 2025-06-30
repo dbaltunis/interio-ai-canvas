@@ -19,6 +19,7 @@ interface WindowCovering {
   image_url?: string;
   active: boolean;
   pricing_grid_data?: string;
+  unit_price?: number;
 }
 
 interface WindowCoveringFormProps {
@@ -36,6 +37,7 @@ interface FormData {
   image_url: string;
   active: boolean;
   pricing_grid_data: string;
+  unit_price: number;
 }
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
@@ -51,7 +53,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     fabrication_pricing_method: 'per-panel',
     image_url: '',
     active: true,
-    pricing_grid_data: ''
+    pricing_grid_data: '',
+    unit_price: 0
   });
 
   useEffect(() => {
@@ -63,7 +66,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
         fabrication_pricing_method: windowCovering.fabrication_pricing_method || 'per-panel',
         image_url: windowCovering.image_url || '',
         active: windowCovering.active,
-        pricing_grid_data: windowCovering.pricing_grid_data || ''
+        pricing_grid_data: windowCovering.pricing_grid_data || '',
+        unit_price: windowCovering.unit_price || 0
       });
       if (windowCovering.image_url) {
         setImagePreview(windowCovering.image_url);
@@ -165,6 +169,15 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       return;
     }
 
+    if (formData.fabrication_pricing_method !== 'pricing-grid' && !formData.unit_price) {
+      toast({
+        title: "Error",
+        description: "Please enter a unit price",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const newWindowCovering: WindowCovering = {
       id: windowCovering?.id || Date.now().toString(),
       name: formData.name,
@@ -173,7 +186,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       fabrication_pricing_method: formData.fabrication_pricing_method,
       image_url: formData.image_url || undefined,
       active: formData.active,
-      pricing_grid_data: formData.pricing_grid_data || undefined
+      pricing_grid_data: formData.pricing_grid_data || undefined,
+      unit_price: formData.unit_price
     };
 
     onSave(newWindowCovering);
@@ -182,13 +196,30 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
   const getPricingMethodDescription = () => {
     switch (formData.fabrication_pricing_method) {
       case 'per-panel':
-        return 'Margin will be applied to the per-panel cost';
+        return 'Price per panel. The system will calculate the number of panels needed based on track width, fabric width, fullness ratio, and panel split configuration.';
       case 'per-drop':
-        return 'Margin will be applied to the per-drop cost';
+        return 'Price per drop/length of fabric required.';
       case 'per-meter':
-        return 'Margin will be applied to the per-meter cost';
+        return 'Price per linear meter of fabric or track length.';
       case 'per-yard':
-        return 'Margin will be applied to the per-yard cost';
+        return 'Price per linear yard of fabric or track length.';
+      case 'pricing-grid':
+        return 'Uses a CSV pricing grid where prices are determined by width and drop combinations.';
+      default:
+        return 'Select a pricing method above.';
+    }
+  };
+
+  const getMarginDescription = () => {
+    switch (formData.fabrication_pricing_method) {
+      case 'per-panel':
+        return 'Margin will be applied to the calculated cost per panel';
+      case 'per-drop':
+        return 'Margin will be applied to the calculated cost per drop';
+      case 'per-meter':
+        return 'Margin will be applied to the calculated cost per meter';
+      case 'per-yard':
+        return 'Margin will be applied to the calculated cost per yard';
       case 'pricing-grid':
         return 'Margin will be applied to all prices in the uploaded CSV grid';
       default:
@@ -287,7 +318,32 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               <SelectItem value="pricing-grid">Pricing Grid (CSV Upload)</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-sm text-gray-600 mt-1">{getPricingMethodDescription()}</p>
         </div>
+
+        {/* Unit Price for non-grid pricing methods */}
+        {formData.fabrication_pricing_method !== 'pricing-grid' && (
+          <div>
+            <Label htmlFor="unit_price">
+              Unit Price (£) *
+              <span className="text-sm font-normal text-gray-600 ml-2">
+                {formData.fabrication_pricing_method === 'per-panel' && '(per panel)'}
+                {formData.fabrication_pricing_method === 'per-drop' && '(per drop)'}
+                {formData.fabrication_pricing_method === 'per-meter' && '(per meter)'}
+                {formData.fabrication_pricing_method === 'per-yard' && '(per yard)'}
+              </span>
+            </Label>
+            <Input
+              id="unit_price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.unit_price}
+              onChange={(e) => setFormData(prev => ({ ...prev, unit_price: Number(e.target.value) }))}
+              placeholder="0.00"
+            />
+          </div>
+        )}
 
         {/* CSV Upload for Pricing Grid */}
         {formData.fabrication_pricing_method === 'pricing-grid' && (
@@ -377,7 +433,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
             <div className="text-sm">
               <p className="font-medium text-amber-800 mb-1">How this works:</p>
               <p className="text-amber-700">
-                {getPricingMethodDescription()}. For example, if the base cost is £100 and you set a 40% margin, 
+                {getMarginDescription()}. For example, if the base cost is £100 and you set a 40% margin, 
                 the final selling price will be £140.
               </p>
             </div>
