@@ -44,6 +44,7 @@ export const TreatmentPricingForm = ({
     fabric_cost_per_yard: "",
     fabric_width: "137", // Default fabric width in cm
     roll_direction: "horizontal", // horizontal or vertical
+    heading_fullness: "2.5", // Default heading fullness
     selected_options: [] as string[],
     notes: "",
     images: [] as File[]
@@ -63,17 +64,17 @@ export const TreatmentPricingForm = ({
     const drop = parseFloat(formData.drop) || 0;
     const pooling = parseFloat(formData.pooling) || 0;
     const fabricWidth = parseFloat(formData.fabric_width) || 137;
+    const headingFullness = parseFloat(formData.heading_fullness) || 2.5;
     
     if (railWidth && drop) {
       const totalDrop = drop + pooling;
-      const fullnessFactor = 2.5; // Standard fullness for curtains
       
       // Calculate based on roll direction
       let fabricUsage = 0;
       
       if (formData.roll_direction === "horizontal") {
         // Horizontal roll: fabric width runs across the window width
-        const requiredWidth = railWidth * fullnessFactor;
+        const requiredWidth = railWidth * headingFullness;
         const dropsNeeded = Math.ceil(requiredWidth / fabricWidth);
         
         // Convert to fabric units
@@ -84,7 +85,7 @@ export const TreatmentPricingForm = ({
         fabricUsage = dropsNeeded * fabricUnitsPerDrop;
       } else {
         // Vertical roll: fabric width runs along the drop
-        const requiredWidth = railWidth * fullnessFactor;
+        const requiredWidth = railWidth * headingFullness;
         
         // Check if fabric width can accommodate the required width
         if (fabricWidth >= requiredWidth) {
@@ -317,6 +318,22 @@ export const TreatmentPricingForm = ({
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="heading_fullness">Heading Fullness</Label>
+                <Input
+                  id="heading_fullness"
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  max="5"
+                  value={formData.heading_fullness}
+                  onChange={(e) => handleInputChange("heading_fullness", e.target.value)}
+                  placeholder="2.5"
+                />
+                <p className="text-xs text-gray-500">
+                  Typical values: 2.0-2.5 for curtains, 1.5-2.0 for sheers
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -355,6 +372,7 @@ export const TreatmentPricingForm = ({
             <Card>
               <CardHeader>
                 <CardTitle>Window Covering Options</CardTitle>
+                <p className="text-sm text-gray-600">Available options for {windowCovering?.name}</p>
               </CardHeader>
               <CardContent className="space-y-3">
                 {options.map(option => (
@@ -369,6 +387,9 @@ export const TreatmentPricingForm = ({
                         {option.description && (
                           <div className="text-sm text-gray-600">{option.description}</div>
                         )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          Type: {option.option_type} • Cost: {option.cost_type}
+                        </div>
                       </div>
                     </div>
                     <Badge variant="outline">
@@ -376,6 +397,20 @@ export const TreatmentPricingForm = ({
                     </Badge>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Debug info for missing options */}
+          {!optionsLoading && windowCovering && (!options || options.length === 0) && (
+            <Card className="border-yellow-200 bg-yellow-50">
+              <CardContent className="p-4">
+                <p className="text-sm text-yellow-700">
+                  No options found for window covering "{windowCovering.name}" (ID: {windowCovering.id})
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  You may need to configure options for this window covering in the settings.
+                </p>
               </CardContent>
             </Card>
           )}
@@ -448,7 +483,7 @@ export const TreatmentPricingForm = ({
                     Estimated fabric usage: {costs.fabricUsage} {getFabricUnitLabel()}
                   </div>
                   <div className="text-xs text-blue-600 mt-1">
-                    Based on {formData.fabric_width}{getLengthUnitLabel()} fabric width, {formData.roll_direction} roll direction
+                    Based on {formData.fabric_width}{getLengthUnitLabel()} fabric width, {formData.roll_direction} roll direction, {formData.heading_fullness}x fullness
                   </div>
                 </div>
               )}
