@@ -1,8 +1,6 @@
 
 import { useState } from "react";
 import { JobEditPage } from "../job-editor/JobEditPage";
-import { NewJobPage } from "../job-creation/NewJobPage";
-import { ProjectPage } from "../projects/ProjectPage";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { JobsPageTabs } from "./JobsPageTabs";
 import { JobsPageActions } from "./JobsPageActions";
@@ -16,10 +14,8 @@ export const JobsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [showNewJob, setShowNewJob] = useState(false);
   const [showNewClient, setShowNewClient] = useState(false);
-  const [showProjectPage, setShowProjectPage] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isNewJob, setIsNewJob] = useState(false);
   const { toast } = useToast();
   
   // Get actual data for counts
@@ -45,6 +41,7 @@ export const JobsPage = () => {
 
   const handleJobSelect = (jobId: string) => {
     setSelectedJobId(jobId);
+    setIsNewJob(false);
   };
 
   const handleClientEdit = (clientId: string) => {
@@ -54,16 +51,14 @@ export const JobsPage = () => {
   const handleBackToJobs = () => {
     setSelectedJobId(null);
     setSelectedClientId(null);
-    setShowNewJob(false);
     setShowNewClient(false);
-    setShowProjectPage(false);
-    setSelectedProjectId(null);
+    setIsNewJob(false);
   };
 
   const handleNewJob = () => {
     try {
-      setShowProjectPage(true);
-      setSelectedProjectId("new"); // Use "new" to indicate creating a new project
+      setIsNewJob(true);
+      setSelectedJobId("new"); // Use "new" to indicate creating a new job
     } catch (error) {
       console.error("Error starting new job:", error);
       toast({
@@ -92,16 +87,6 @@ export const JobsPage = () => {
   const clientsCount = clients?.length || 0;
   const emailsCount = 45; // This will be dynamic once we have email data
 
-  // If showing project page, show the project page
-  if (showProjectPage) {
-    return <ProjectPage projectId={selectedProjectId} onBack={handleBackToJobs} />;
-  }
-
-  // If creating a new job, show the new job page
-  if (showNewJob) {
-    return <NewJobPage onBack={handleBackToJobs} />;
-  }
-
   // If creating a new client, show the new client page
   if (showNewClient) {
     return <ClientCreateForm onBack={handleBackToJobs} />;
@@ -112,7 +97,7 @@ export const JobsPage = () => {
     return <ClientCreateForm clientId={selectedClientId} onBack={handleBackToJobs} />;
   }
 
-  // If a job is selected, show the job editing page
+  // If a job is selected (new or existing), show the job editing page
   if (selectedJobId) {
     return <JobEditPage jobId={selectedJobId} onBack={handleBackToJobs} />;
   }
