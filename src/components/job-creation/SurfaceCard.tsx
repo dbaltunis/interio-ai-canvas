@@ -6,6 +6,7 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { WindowCoveringSelectionDialog } from "./WindowCoveringSelectionDialog";
 
 interface SurfaceCardProps {
   surface: any;
@@ -23,6 +24,7 @@ export const SurfaceCard = ({
   onUpdateSurface 
 }: SurfaceCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showWindowCoveringDialog, setShowWindowCoveringDialog] = useState(false);
   const [editData, setEditData] = useState({
     name: surface.name,
     width: surface.width || surface.surface_width || 0,
@@ -41,113 +43,139 @@ export const SurfaceCard = ({
     return type === 'wall' ? '🧱' : '🪟';
   };
 
+  const handleWindowCoveringSelect = (windowCovering: any, selectedOptions: string[]) => {
+    console.log("Selected window covering:", windowCovering);
+    console.log("Selected options:", selectedOptions);
+    
+    // Add the window covering as a treatment
+    onAddTreatment(surface.id, windowCovering.name);
+  };
+
+  const handleTreatmentTypeSelect = (treatmentType: string) => {
+    if (treatmentType === "Window Covering") {
+      setShowWindowCoveringDialog(true);
+    } else {
+      onAddTreatment(surface.id, treatmentType);
+    }
+  };
+
   return (
-    <Card className="mb-4 border-l-4 border-l-blue-500">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-lg">{getSurfaceIcon(surface.surface_type || 'window')}</span>
-            {isEditing ? (
-              <div className="flex items-center space-x-2">
-                <Input
-                  value={editData.name}
-                  onChange={(e) => setEditData({...editData, name: e.target.value})}
-                  className="w-32"
-                />
-                <Select 
-                  value={editData.surface_type} 
-                  onValueChange={(value) => setEditData({...editData, surface_type: value})}
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="window">Window</SelectItem>
-                    <SelectItem value="wall">Wall</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <div>
-                <CardTitle className="text-lg">{surface.name}</CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  {surface.surface_type === 'wall' ? 'Wall' : 'Window'}
-                </Badge>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-green-600">${surfaceTotal.toFixed(2)}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onDeleteSurface(surface.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        {isEditing && (
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div>
-              <label className="text-xs text-gray-500">Width</label>
-              <Input
-                type="number"
-                value={editData.width}
-                onChange={(e) => setEditData({...editData, width: parseFloat(e.target.value) || 0})}
-                className="h-8"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">Height</label>
-              <Input
-                type="number"
-                value={editData.height}
-                onChange={(e) => setEditData({...editData, height: parseFloat(e.target.value) || 0})}
-                className="h-8"
-              />
-            </div>
-          </div>
-        )}
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-2">
-          {treatments.map((treatment) => (
-            <div key={treatment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-              <div>
-                <span className="font-medium">{treatment.product_name || treatment.treatment_type}</span>
-                <div className="text-xs text-gray-500">
-                  Material: ${treatment.material_cost || 0} | Labor: ${treatment.labor_cost || 0}
+    <>
+      <Card className="mb-4 border-l-4 border-l-blue-500">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">{getSurfaceIcon(surface.surface_type || 'window')}</span>
+              {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={editData.name}
+                    onChange={(e) => setEditData({...editData, name: e.target.value})}
+                    className="w-32"
+                  />
+                  <Select 
+                    value={editData.surface_type} 
+                    onValueChange={(value) => setEditData({...editData, surface_type: value})}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="window">Window</SelectItem>
+                      <SelectItem value="wall">Wall</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              <span className="font-bold">${treatment.total_price?.toFixed(2) || '0.00'}</span>
+              ) : (
+                <div>
+                  <CardTitle className="text-lg">{surface.name}</CardTitle>
+                  <Badge variant="outline" className="text-xs">
+                    {surface.surface_type === 'wall' ? 'Wall' : 'Window'}
+                  </Badge>
+                </div>
+              )}
             </div>
-          ))}
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-green-600">${surfaceTotal.toFixed(2)}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onDeleteSurface(surface.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           
-          <Select onValueChange={(treatmentType) => onAddTreatment(surface.id, treatmentType)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Add treatment" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Curtains">Curtains</SelectItem>
-              <SelectItem value="Blinds">Blinds</SelectItem>
-              <SelectItem value="Shutters">Shutters</SelectItem>
-              <SelectItem value="Valances">Valances</SelectItem>
-              <SelectItem value="Wall Covering">Wall Covering</SelectItem>
-              <SelectItem value="Paint">Paint</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardContent>
-    </Card>
+          {isEditing && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <label className="text-xs text-gray-500">Width</label>
+                <Input
+                  type="number"
+                  value={editData.width}
+                  onChange={(e) => setEditData({...editData, width: parseFloat(e.target.value) || 0})}
+                  className="h-8"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Height</label>
+                <Input
+                  type="number"
+                  value={editData.height}
+                  onChange={(e) => setEditData({...editData, height: parseFloat(e.target.value) || 0})}
+                  className="h-8"
+                />
+              </div>
+            </div>
+          )}
+        </CardHeader>
+        
+        <CardContent>
+          <div className="space-y-2">
+            {treatments.map((treatment) => (
+              <div key={treatment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div>
+                  <span className="font-medium">{treatment.product_name || treatment.treatment_type}</span>
+                  <div className="text-xs text-gray-500">
+                    Material: ${treatment.material_cost || 0} | Labor: ${treatment.labor_cost || 0}
+                  </div>
+                </div>
+                <span className="font-bold">${treatment.total_price?.toFixed(2) || '0.00'}</span>
+              </div>
+            ))}
+            
+            <Select onValueChange={handleTreatmentTypeSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Add treatment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Window Covering">Window Covering</SelectItem>
+                <SelectItem value="Curtains">Curtains</SelectItem>
+                <SelectItem value="Blinds">Blinds</SelectItem>
+                <SelectItem value="Shutters">Shutters</SelectItem>
+                <SelectItem value="Valances">Valances</SelectItem>
+                <SelectItem value="Wall Covering">Wall Covering</SelectItem>
+                <SelectItem value="Paint">Paint</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <WindowCoveringSelectionDialog
+        open={showWindowCoveringDialog}
+        onOpenChange={setShowWindowCoveringDialog}
+        onSelect={handleWindowCoveringSelect}
+        surfaceId={surface.id}
+      />
+    </>
   );
 };
