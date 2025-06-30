@@ -1,33 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Calculator, Ruler, DollarSign } from "lucide-react";
 import { WindowCoveringPriceCalculator } from "./WindowCoveringPriceCalculator";
-
-interface WindowCovering {
-  id: string;
-  name: string;
-  fabrication_pricing_method: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
-  unit_price: number;
-  margin_percentage: number;
-  pricing_grid_data?: string;
-}
-
-interface Option {
-  id: string;
-  option_type: string;
-  name: string;
-  cost_type: string;
-  base_cost: number;
-  is_required: boolean;
-  is_default: boolean;
-}
+import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
+import { useWindowCoveringOptions, type WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
 
 interface Fabric {
   id: string;
@@ -37,44 +16,17 @@ interface Fabric {
 }
 
 export const WindowCoveringCalculator = () => {
+  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
   const [selectedWindowCovering, setSelectedWindowCovering] = useState<WindowCovering | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [availableOptions, setAvailableOptions] = useState<Option[]>([]);
+  
+  const { 
+    options: availableOptions, 
+    isLoading: optionsLoading 
+  } = useWindowCoveringOptions(selectedWindowCovering?.id || '');
 
-  // Mock data - replace with actual data fetching
-  const mockWindowCoverings: WindowCovering[] = [
-    {
-      id: "1",
-      name: "Roman Blind",
-      fabrication_pricing_method: 'per-panel',
-      unit_price: 45.00,
-      margin_percentage: 40,
-      pricing_grid_data: undefined
-    },
-    {
-      id: "2", 
-      name: "Curtains",
-      fabrication_pricing_method: 'per-panel',
-      unit_price: 65.00,
-      margin_percentage: 45,
-      pricing_grid_data: undefined
-    },
-    {
-      id: "3",
-      name: "Custom Blinds",
-      fabrication_pricing_method: 'pricing-grid',
-      unit_price: 0,
-      margin_percentage: 40,
-      pricing_grid_data: `Drop/Width,100,200,300,400,500
-100,23,46,69,92,115
-200,46,92,138,184,230
-300,69,138,207,276,345
-400,92,184,276,368,460
-500,115,230,345,460,575`
-    }
-  ];
-
+  // Mock fabrics - replace with actual data fetching when fabric management is implemented
   const mockFabrics: Fabric[] = [
     {
       id: "1",
@@ -91,42 +43,20 @@ export const WindowCoveringCalculator = () => {
   ];
 
   useEffect(() => {
-    if (selectedWindowCovering) {
-      // Mock options based on window covering - replace with actual data fetching
-      const mockOptions: Option[] = [
-        {
-          id: "1",
-          option_type: "heading",
-          name: "Pinch Pleat",
-          cost_type: "per-meter",
-          base_cost: 8.50,
-          is_required: true,
-          is_default: true
-        },
-        {
-          id: "2",
-          option_type: "lining",
-          name: "Blackout Lining",
-          cost_type: "per-sqm",
-          base_cost: 12.00,
-          is_required: false,
-          is_default: false
-        },
-        {
-          id: "3",
-          option_type: "border",
-          name: "Contrast Border",
-          cost_type: "per-meter",
-          base_cost: 15.00,
-          is_required: false,
-          is_default: false
-        }
-      ];
-      
-      setAvailableOptions(mockOptions);
-      setSelectedOptions(mockOptions.filter(o => o.is_default).map(o => o.id));
+    if (selectedWindowCovering && availableOptions.length > 0) {
+      // Auto-select default options
+      const defaultOptions = availableOptions
+        .filter(option => option.is_default)
+        .map(option => option.id);
+      setSelectedOptions(defaultOptions);
     }
-  }, [selectedWindowCovering]);
+  }, [selectedWindowCovering, availableOptions]);
+
+  const handleWindowCoveringChange = (windowCoveringId: string) => {
+    const wc = windowCoverings.find(w => w.id === windowCoveringId);
+    setSelectedWindowCovering(wc || null);
+    setSelectedOptions([]); // Reset options when changing window covering
+  };
 
   const handleOptionToggle = (optionId: string) => {
     const option = availableOptions.find(o => o.id === optionId);
@@ -139,11 +69,9 @@ export const WindowCoveringCalculator = () => {
     );
   };
 
-  const getSelectedOptionsTotal = () => {
-    return availableOptions
-      .filter(option => selectedOptions.includes(option.id))
-      .reduce((total, option) => total + option.base_cost, 0);
-  };
+  if (windowCoveringsLoading) {
+    return <div className="text-center py-8">Loading window coverings...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -165,19 +93,18 @@ export const WindowCoveringCalculator = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label>Window Covering Type</Label>
-                <Select onValueChange={(value) => {
-                  const wc = mockWindowCoverings.find(w => w.id === value);
-                  setSelectedWindowCovering(wc || null);
-                }}>
+                <Select onValueChange={handleWindowCoveringChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select window covering" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockWindowCoverings.map(wc => (
-                      <SelectItem key={wc.id} value={wc.id}>
-                        {wc.name} - {wc.fabrication_pricing_method.replace('-', ' ')}
-                      </SelectItem>
-                    ))}
+                    {windowCoverings
+                      .filter(wc => wc.active)
+                      .map(wc => (
+                        <SelectItem key={wc.id} value={wc.id}>
+                          {wc.name} - {wc.fabrication_pricing_method?.replace('-', ' ') || 'No pricing method'}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -204,7 +131,7 @@ export const WindowCoveringCalculator = () => {
           </Card>
 
           {/* Options Selection */}
-          {availableOptions.length > 0 && (
+          {selectedWindowCovering && availableOptions.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Options</CardTitle>
@@ -213,48 +140,51 @@ export const WindowCoveringCalculator = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {availableOptions.map(option => (
-                  <div key={option.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={option.id}
-                      checked={selectedOptions.includes(option.id)}
-                      onCheckedChange={() => handleOptionToggle(option.id)}
-                      disabled={option.is_required}
-                    />
-                    <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium">{option.name}</span>
-                          <span className="text-sm text-muted-foreground ml-2">
-                            ({option.option_type})
-                          </span>
+                {optionsLoading ? (
+                  <div className="text-center py-4">Loading options...</div>
+                ) : (
+                  availableOptions.map(option => (
+                    <div key={option.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={option.id}
+                        checked={selectedOptions.includes(option.id)}
+                        onChange={() => handleOptionToggle(option.id)}
+                        disabled={option.is_required}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-medium">{option.name}</span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ({option.option_type})
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              £{option.base_cost} {option.cost_type}
+                            </span>
+                            {option.is_required && (
+                              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Required</span>
+                            )}
+                            {option.is_default && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            £{option.base_cost} {option.cost_type}
-                          </Badge>
-                          {option.is_required && (
-                            <Badge variant="destructive" className="text-xs">Required</Badge>
-                          )}
-                          {option.is_default && (
-                            <Badge variant="default" className="text-xs">Default</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                ))}
-                
-                {selectedOptions.length > 0 && (
-                  <div className="pt-3 border-t">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Selected Options Total:</span>
-                      <Badge variant="outline" className="font-bold">
-                        £{getSelectedOptionsTotal().toFixed(2)}
-                      </Badge>
+                      </Label>
                     </div>
-                  </div>
+                  ))
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedWindowCovering && availableOptions.length === 0 && !optionsLoading && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No options configured for this window covering.</p>
               </CardContent>
             </Card>
           )}

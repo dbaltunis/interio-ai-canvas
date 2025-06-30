@@ -1,55 +1,40 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Settings, Calculator, FolderTree } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { WindowCoveringForm } from "./WindowCoveringForm";
 import { WindowCoveringOptionsManager } from "./WindowCoveringOptionsManager";
 import { WindowCoveringCategoryManager } from "./WindowCoveringCategoryManager";
-
-interface WindowCovering {
-  id: string;
-  name: string;
-  description?: string;
-  margin_percentage: number;
-  fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
-  image_url?: string;
-  active: boolean;
-  optionsCount?: number;
-  pricing_grid_data?: string;
-  unit_price?: number;
-}
+import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
 
 export const WindowCoveringsManagement = () => {
-  const { toast } = useToast();
-  const [windowCoverings, setWindowCoverings] = useState<WindowCovering[]>([]);
+  const { 
+    windowCoverings, 
+    isLoading, 
+    createWindowCovering, 
+    updateWindowCovering, 
+    deleteWindowCovering 
+  } = useWindowCoverings();
+  
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [managingOptionsId, setManagingOptionsId] = useState<string | null>(null);
 
-  const handleSave = (windowCovering: WindowCovering) => {
-    if (editingId) {
-      setWindowCoverings(prev => prev.map(wc => wc.id === editingId ? windowCovering : wc));
-      toast({
-        title: "Success",
-        description: "Window covering updated successfully"
-      });
-    } else {
-      setWindowCoverings(prev => [...prev, { ...windowCovering, id: Date.now().toString() }]);
-      toast({
-        title: "Success",
-        description: "Window covering created successfully"
-      });
+  const handleSave = async (windowCovering: Omit<WindowCovering, 'id' | 'optionsCount'>) => {
+    try {
+      if (editingId) {
+        await updateWindowCovering(editingId, windowCovering);
+      } else {
+        await createWindowCovering(windowCovering);
+      }
+      setIsCreating(false);
+      setEditingId(null);
+    } catch (error) {
+      // Error handling is done in the hook
     }
-    setIsCreating(false);
-    setEditingId(null);
   };
 
   const handleEdit = (windowCovering: WindowCovering) => {
@@ -57,12 +42,12 @@ export const WindowCoveringsManagement = () => {
     setIsCreating(true);
   };
 
-  const handleDelete = (id: string) => {
-    setWindowCoverings(prev => prev.filter(wc => wc.id !== id));
-    toast({
-      title: "Success",
-      description: "Window covering deleted successfully"
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteWindowCovering(id);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   const handleCancel = () => {
@@ -80,6 +65,10 @@ export const WindowCoveringsManagement = () => {
         onBack={() => setManagingOptionsId(null)}
       />
     );
+  }
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading window coverings...</div>;
   }
 
   return (
@@ -156,7 +145,7 @@ export const WindowCoveringsManagement = () => {
                           <Badge variant={windowCovering.active ? "default" : "secondary"}>
                             {windowCovering.active ? "Active" : "Inactive"}
                           </Badge>
-                          {windowCovering.optionsCount && (
+                          {windowCovering.optionsCount && windowCovering.optionsCount > 0 && (
                             <Badge variant="outline">
                               {windowCovering.optionsCount} options
                             </Badge>
@@ -189,6 +178,20 @@ export const WindowCoveringsManagement = () => {
                 </CardContent>
               </Card>
             ))}
+
+            {windowCoverings.length === 0 && (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-brand-neutral">No window coverings created yet.</p>
+                  <Button 
+                    onClick={() => setIsCreating(true)}
+                    className="mt-4 bg-brand-primary hover:bg-brand-accent"
+                  >
+                    Create Your First Window Covering
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Create/Edit Form */}

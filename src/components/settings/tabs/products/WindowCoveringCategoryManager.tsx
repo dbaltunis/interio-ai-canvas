@@ -1,403 +1,157 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, ChevronRight, ChevronDown, FolderOpen, Folder } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-type PricingMethod = 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
-
-interface OptionCategory {
-  id: string;
-  name: string;
-  description?: string;
-  is_required: boolean;
-  sort_order: number;
-  subcategories: OptionSubcategory[];
-}
-
-interface OptionSubcategory {
-  id: string;
-  category_id: string;
-  name: string;
-  description?: string;
-  pricing_method: PricingMethod;
-  base_price: number;
-  fullness_ratio?: number;
-  extra_fabric_percentage?: number;
-  image_url?: string;
-  sort_order: number;
-  sub_subcategories: OptionSubSubcategory[];
-}
-
-interface OptionSubSubcategory {
-  id: string;
-  subcategory_id: string;
-  name: string;
-  description?: string;
-  pricing_method: PricingMethod;
-  base_price: number;
-  color?: string;
-  sort_order: number;
-}
-
-interface SubcategoryFormData {
-  name: string;
-  description: string;
-  pricing_method: PricingMethod;
-  base_price: number;
-  fullness_ratio: number;
-  extra_fabric_percentage: number;
-}
-
-interface SubSubcategoryFormData {
-  name: string;
-  description: string;
-  pricing_method: PricingMethod;
-  base_price: number;
-  color: string;
-}
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Edit, Trash2, FolderTree } from "lucide-react";
+import { useWindowCoveringCategories } from "@/hooks/useWindowCoveringCategories";
 
 export const WindowCoveringCategoryManager = () => {
-  const { toast } = useToast();
-  const [categories, setCategories] = useState<OptionCategory[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const { 
+    categories, 
+    isLoading, 
+    createCategory, 
+    createSubcategory, 
+    deleteCategory, 
+    deleteSubcategory 
+  } = useWindowCoveringCategories();
+  
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [isCreatingSubcategory, setIsCreatingSubcategory] = useState<string | null>(null);
-  const [isCreatingSubSubcategory, setIsCreatingSubSubcategory] = useState<string | null>(null);
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [editingSubcategoryId, setEditingSubcategoryId] = useState<string | null>(null);
-  const [editingSubSubcategoryId, setEditingSubSubcategoryId] = useState<string | null>(null);
-
+  const [isCreatingSubcategory, setIsCreatingSubcategory] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: '',
-    is_required: false
+    is_required: false,
+    sort_order: 0
   });
 
-  const [subcategoryForm, setSubcategoryForm] = useState<SubcategoryFormData>({
+  const [subcategoryForm, setSubcategoryForm] = useState({
+    category_id: '',
     name: '',
     description: '',
-    pricing_method: 'per-unit',
+    pricing_method: 'per-unit' as const,
     base_price: 0,
-    fullness_ratio: 1.0,
-    extra_fabric_percentage: 0
+    fullness_ratio: undefined as number | undefined,
+    extra_fabric_percentage: undefined as number | undefined,
+    sort_order: 0
   });
 
-  const [subSubcategoryForm, setSubSubcategoryForm] = useState<SubSubcategoryFormData>({
-    name: '',
-    description: '',
-    pricing_method: 'per-unit',
-    base_price: 0,
-    color: ''
-  });
-
-  const toggleCategoryExpansion = (categoryId: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId);
-    } else {
-      newExpanded.add(categoryId);
-    }
-    setExpandedCategories(newExpanded);
-  };
-
-  const toggleSubcategoryExpansion = (subcategoryId: string) => {
-    const newExpanded = new Set(expandedSubcategories);
-    if (newExpanded.has(subcategoryId)) {
-      newExpanded.delete(subcategoryId);
-    } else {
-      newExpanded.add(subcategoryId);
-    }
-    setExpandedSubcategories(newExpanded);
-  };
-
-  const handleSaveCategory = () => {
-    if (!categoryForm.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Category name is required",
-        variant: "destructive"
+  const handleCreateCategory = async () => {
+    try {
+      await createCategory({
+        ...categoryForm,
+        sort_order: categories.length
       });
-      return;
-    }
-
-    const newCategory: OptionCategory = {
-      id: editingCategoryId || Date.now().toString(),
-      name: categoryForm.name,
-      description: categoryForm.description || undefined,
-      is_required: categoryForm.is_required,
-      sort_order: categories.length,
-      subcategories: []
-    };
-
-    if (editingCategoryId) {
-      setCategories(prev => prev.map(cat => cat.id === editingCategoryId ? { ...cat, ...newCategory } : cat));
-      toast({ title: "Success", description: "Category updated successfully" });
-    } else {
-      setCategories(prev => [...prev, newCategory]);
-      toast({ title: "Success", description: "Category created successfully" });
-    }
-
-    resetCategoryForm();
-  };
-
-  const handleSaveSubcategory = () => {
-    if (!subcategoryForm.name.trim() || !isCreatingSubcategory) {
-      toast({
-        title: "Error",
-        description: "Subcategory name is required",
-        variant: "destructive"
+      setCategoryForm({
+        name: '',
+        description: '',
+        is_required: false,
+        sort_order: 0
       });
-      return;
+      setIsCreatingCategory(false);
+    } catch (error) {
+      // Error handling is done in the hook
     }
-
-    const newSubcategory: OptionSubcategory = {
-      id: editingSubcategoryId || Date.now().toString(),
-      category_id: isCreatingSubcategory,
-      name: subcategoryForm.name,
-      description: subcategoryForm.description || undefined,
-      pricing_method: subcategoryForm.pricing_method,
-      base_price: subcategoryForm.base_price,
-      fullness_ratio: subcategoryForm.fullness_ratio,
-      extra_fabric_percentage: subcategoryForm.extra_fabric_percentage,
-      sort_order: 0,
-      sub_subcategories: []
-    };
-
-    setCategories(prev => prev.map(cat => 
-      cat.id === isCreatingSubcategory 
-        ? {
-            ...cat,
-            subcategories: editingSubcategoryId 
-              ? cat.subcategories.map(sub => sub.id === editingSubcategoryId ? newSubcategory : sub)
-              : [...cat.subcategories, newSubcategory]
-          }
-        : cat
-    ));
-
-    toast({ 
-      title: "Success", 
-      description: editingSubcategoryId ? "Subcategory updated successfully" : "Subcategory created successfully" 
-    });
-    resetSubcategoryForm();
   };
 
-  const resetCategoryForm = () => {
-    setCategoryForm({ name: '', description: '', is_required: false });
-    setIsCreatingCategory(false);
-    setEditingCategoryId(null);
+  const handleCreateSubcategory = async () => {
+    try {
+      const category = categories.find(c => c.id === subcategoryForm.category_id);
+      await createSubcategory({
+        ...subcategoryForm,
+        sort_order: category?.subcategories?.length || 0
+      });
+      setSubcategoryForm({
+        category_id: '',
+        name: '',
+        description: '',
+        pricing_method: 'per-unit',
+        base_price: 0,
+        fullness_ratio: undefined,
+        extra_fabric_percentage: undefined,
+        sort_order: 0
+      });
+      setIsCreatingSubcategory(false);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
-  const resetSubcategoryForm = () => {
-    setSubcategoryForm({
-      name: '',
-      description: '',
-      pricing_method: 'per-unit',
-      base_price: 0,
-      fullness_ratio: 1.0,
-      extra_fabric_percentage: 0
-    });
-    setIsCreatingSubcategory(null);
-    setEditingSubcategoryId(null);
-  };
-
-  const handleEditCategory = (category: OptionCategory) => {
-    setCategoryForm({
-      name: category.name,
-      description: category.description || '',
-      is_required: category.is_required
-    });
-    setEditingCategoryId(category.id);
-    setIsCreatingCategory(true);
-  };
-
-  const handleEditSubcategory = (subcategory: OptionSubcategory) => {
-    setSubcategoryForm({
-      name: subcategory.name,
-      description: subcategory.description || '',
-      pricing_method: subcategory.pricing_method,
-      base_price: subcategory.base_price,
-      fullness_ratio: subcategory.fullness_ratio || 1.0,
-      extra_fabric_percentage: subcategory.extra_fabric_percentage || 0
-    });
-    setEditingSubcategoryId(subcategory.id);
-    setIsCreatingSubcategory(subcategory.category_id);
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-    toast({ title: "Success", description: "Category deleted successfully" });
-  };
-
-  const handleDeleteSubcategory = (categoryId: string, subcategoryId: string) => {
-    setCategories(prev => prev.map(cat => 
-      cat.id === categoryId 
-        ? { ...cat, subcategories: cat.subcategories.filter(sub => sub.id !== subcategoryId) }
-        : cat
-    ));
-    toast({ title: "Success", description: "Subcategory deleted successfully" });
-  };
+  if (isLoading) {
+    return <div className="text-center py-8">Loading categories...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-brand-primary">Option Categories</h3>
-          <p className="text-sm text-brand-neutral">Manage reusable option categories and subcategories</p>
+          <h4 className="text-base font-medium text-brand-primary">Option Categories</h4>
+          <p className="text-sm text-brand-neutral">Manage option categories and subcategories for window coverings</p>
         </div>
-        <Button 
-          onClick={() => setIsCreatingCategory(true)}
-          className="bg-brand-primary hover:bg-brand-accent"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Category
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setIsCreatingSubcategory(true)}
+            variant="outline"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Subcategory
+          </Button>
+          <Button 
+            onClick={() => setIsCreatingCategory(true)}
+            className="bg-brand-primary hover:bg-brand-accent"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
       </div>
 
-      {/* Categories Tree */}
-      <div className="space-y-2">
-        {categories.map((category) => (
-          <Card key={category.id} className="overflow-hidden">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleCategoryExpansion(category.id)}
-                    className="p-1"
-                  >
-                    {expandedCategories.has(category.id) ? 
-                      <ChevronDown className="h-4 w-4" /> : 
-                      <ChevronRight className="h-4 w-4" />
-                    }
-                  </Button>
-                  <Folder className="h-4 w-4 text-brand-primary" />
-                  <div>
-                    <h4 className="font-semibold">{category.name}</h4>
-                    {category.description && (
-                      <p className="text-sm text-brand-neutral">{category.description}</p>
-                    )}
-                    <div className="flex gap-2 mt-1">
-                      {category.is_required && <Badge variant="destructive" className="text-xs">Required</Badge>}
-                      <Badge variant="outline" className="text-xs">
-                        {category.subcategories.length} subcategories
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setIsCreatingSubcategory(category.id)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteCategory(category.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Subcategories */}
-              {expandedCategories.has(category.id) && (
-                <div className="ml-6 mt-4 space-y-2">
-                  {category.subcategories.map((subcategory) => (
-                    <div key={subcategory.id} className="p-3 bg-gray-50 rounded border-l-2 border-brand-primary">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <FolderOpen className="h-4 w-4 text-brand-accent" />
-                          <div>
-                            <h5 className="font-medium">{subcategory.name}</h5>
-                            {subcategory.description && (
-                              <p className="text-sm text-brand-neutral">{subcategory.description}</p>
-                            )}
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {subcategory.pricing_method}: £{subcategory.base_price}
-                              </Badge>
-                              {subcategory.fullness_ratio && subcategory.fullness_ratio !== 1 && (
-                                <Badge variant="outline" className="text-xs">
-                                  Fullness: {subcategory.fullness_ratio}x
-                                </Badge>
-                              )}
-                              {subcategory.extra_fabric_percentage && subcategory.extra_fabric_percentage > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  Extra: +{subcategory.extra_fabric_percentage}%
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditSubcategory(subcategory)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteSubcategory(category.id, subcategory.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Create/Edit Category Form */}
+      {/* Create Category Form */}
       {isCreatingCategory && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingCategoryId ? 'Edit Category' : 'Create New Category'}</CardTitle>
-            <CardDescription>Configure the category details</CardDescription>
+            <CardTitle>Create New Category</CardTitle>
+            <CardDescription>Add a new option category for window coverings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="categoryName">Category Name *</Label>
+              <Label htmlFor="category_name">Category Name</Label>
               <Input
-                id="categoryName"
+                id="category_name"
                 value={categoryForm.name}
                 onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Heading, Border, Track"
+                placeholder="e.g., Headings, Linings, Borders"
               />
             </div>
             <div>
-              <Label htmlFor="categoryDescription">Description</Label>
+              <Label htmlFor="category_description">Description</Label>
               <Textarea
-                id="categoryDescription"
+                id="category_description"
                 value={categoryForm.description}
                 onChange={(e) => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description..."
-                rows={2}
+                placeholder="Optional description"
               />
             </div>
             <div className="flex items-center space-x-2">
-              <Switch
-                id="categoryRequired"
+              <Checkbox
+                id="category_required"
                 checked={categoryForm.is_required}
-                onCheckedChange={(checked) => setCategoryForm(prev => ({ ...prev, is_required: checked }))}
+                onCheckedChange={(checked) => setCategoryForm(prev => ({ ...prev, is_required: !!checked }))}
               />
-              <Label htmlFor="categoryRequired">Required Selection</Label>
+              <Label htmlFor="category_required">Required for all window coverings</Label>
             </div>
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSaveCategory} className="bg-brand-primary hover:bg-brand-accent">
-                {editingCategoryId ? 'Update Category' : 'Create Category'}
+            <div className="flex gap-2">
+              <Button onClick={handleCreateCategory} className="bg-brand-primary hover:bg-brand-accent">
+                Create Category
               </Button>
-              <Button variant="outline" onClick={resetCategoryForm}>
+              <Button variant="outline" onClick={() => setIsCreatingCategory(false)}>
                 Cancel
               </Button>
             </div>
@@ -405,31 +159,47 @@ export const WindowCoveringCategoryManager = () => {
         </Card>
       )}
 
-      {/* Create/Edit Subcategory Form */}
+      {/* Create Subcategory Form */}
       {isCreatingSubcategory && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingSubcategoryId ? 'Edit Subcategory' : 'Create New Subcategory'}</CardTitle>
-            <CardDescription>Configure the subcategory specifications and pricing</CardDescription>
+            <CardTitle>Create New Subcategory</CardTitle>
+            <CardDescription>Add a new option subcategory to an existing category</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="subcategory_category">Parent Category</Label>
+              <Select 
+                value={subcategoryForm.category_id} 
+                onValueChange={(value) => setSubcategoryForm(prev => ({ ...prev, category_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select parent category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="subcategoryName">Subcategory Name *</Label>
+                <Label htmlFor="subcategory_name">Subcategory Name</Label>
                 <Input
-                  id="subcategoryName"
+                  id="subcategory_name"
                   value={subcategoryForm.name}
                   onChange={(e) => setSubcategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Pinch Pleat, Machine Finished"
+                  placeholder="e.g., Pinch Pleat, Blackout Lining"
                 />
               </div>
               <div>
-                <Label>Pricing Method</Label>
-                <Select
-                  value={subcategoryForm.pricing_method}
-                  onValueChange={(value: PricingMethod) => 
-                    setSubcategoryForm(prev => ({ ...prev, pricing_method: value }))
-                  }
+                <Label htmlFor="subcategory_pricing">Pricing Method</Label>
+                <Select 
+                  value={subcategoryForm.pricing_method} 
+                  onValueChange={(value: any) => setSubcategoryForm(prev => ({ ...prev, pricing_method: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -438,71 +208,142 @@ export const WindowCoveringCategoryManager = () => {
                     <SelectItem value="per-unit">Per Unit</SelectItem>
                     <SelectItem value="per-meter">Per Meter</SelectItem>
                     <SelectItem value="per-sqm">Per Square Meter</SelectItem>
-                    <SelectItem value="fixed">Fixed Cost</SelectItem>
+                    <SelectItem value="fixed">Fixed Price</SelectItem>
                     <SelectItem value="percentage">Percentage</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
             <div>
-              <Label htmlFor="subcategoryDescription">Description</Label>
+              <Label htmlFor="subcategory_description">Description</Label>
               <Textarea
-                id="subcategoryDescription"
+                id="subcategory_description"
                 value={subcategoryForm.description}
                 onChange={(e) => setSubcategoryForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description..."
-                rows={2}
+                placeholder="Optional description"
               />
             </div>
-
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="basePrice">Base Price (£)</Label>
+                <Label htmlFor="subcategory_price">Base Price (£)</Label>
                 <Input
-                  id="basePrice"
+                  id="subcategory_price"
                   type="number"
                   step="0.01"
                   value={subcategoryForm.base_price}
-                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, base_price: Number(e.target.value) }))}
-                  placeholder="0.00"
+                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
                 />
               </div>
               <div>
-                <Label htmlFor="fullnessRatio">Fullness Ratio</Label>
+                <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
                 <Input
-                  id="fullnessRatio"
+                  id="fullness_ratio"
                   type="number"
                   step="0.1"
-                  value={subcategoryForm.fullness_ratio}
-                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, fullness_ratio: Number(e.target.value) }))}
-                  placeholder="1.0"
+                  value={subcategoryForm.fullness_ratio || ''}
+                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, fullness_ratio: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                  placeholder="e.g., 2.0"
                 />
               </div>
               <div>
-                <Label htmlFor="extraFabric">Extra Fabric (%)</Label>
+                <Label htmlFor="extra_fabric">Extra Fabric %</Label>
                 <Input
-                  id="extraFabric"
+                  id="extra_fabric"
                   type="number"
-                  step="0.1"
-                  value={subcategoryForm.extra_fabric_percentage}
-                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, extra_fabric_percentage: Number(e.target.value) }))}
-                  placeholder="0"
+                  step="1"
+                  value={subcategoryForm.extra_fabric_percentage || ''}
+                  onChange={(e) => setSubcategoryForm(prev => ({ ...prev, extra_fabric_percentage: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                  placeholder="e.g., 10"
                 />
               </div>
             </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSaveSubcategory} className="bg-brand-primary hover:bg-brand-accent">
-                {editingSubcategoryId ? 'Update Subcategory' : 'Create Subcategory'}
+            <div className="flex gap-2">
+              <Button onClick={handleCreateSubcategory} className="bg-brand-primary hover:bg-brand-accent">
+                Create Subcategory
               </Button>
-              <Button variant="outline" onClick={resetSubcategoryForm}>
+              <Button variant="outline" onClick={() => setIsCreatingSubcategory(false)}>
                 Cancel
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Categories List */}
+      <div className="grid gap-4">
+        {categories.map((category) => (
+          <Card key={category.id}>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <FolderTree className="h-5 w-5 text-brand-primary" />
+                    <h4 className="font-semibold text-brand-primary">{category.name}</h4>
+                    {category.is_required && (
+                      <Badge variant="destructive" className="text-xs">Required</Badge>
+                    )}
+                  </div>
+                  {category.description && (
+                    <p className="text-sm text-brand-neutral mt-1">{category.description}</p>
+                  )}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => deleteCategory(category.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Subcategories */}
+              {category.subcategories && category.subcategories.length > 0 && (
+                <div className="grid gap-2 ml-8">
+                  {category.subcategories.map((subcategory) => (
+                    <div key={subcategory.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{subcategory.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            £{subcategory.base_price} {subcategory.pricing_method}
+                          </Badge>
+                        </div>
+                        {subcategory.description && (
+                          <p className="text-sm text-gray-600 mt-1">{subcategory.description}</p>
+                        )}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => deleteSubcategory(subcategory.id, category.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(!category.subcategories || category.subcategories.length === 0) && (
+                <div className="ml-8 p-4 bg-gray-50 rounded-lg text-center">
+                  <p className="text-sm text-gray-600">No subcategories yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+
+        {categories.length === 0 && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <FolderTree className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-brand-neutral mb-4">No option categories created yet.</p>
+              <Button 
+                onClick={() => setIsCreatingCategory(true)}
+                className="bg-brand-primary hover:bg-brand-accent"
+              >
+                Create Your First Category
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

@@ -1620,6 +1620,92 @@ export type Database = {
           },
         ]
       }
+      window_covering_option_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_required: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      window_covering_option_subcategories: {
+        Row: {
+          base_price: number
+          category_id: string
+          created_at: string
+          description: string | null
+          extra_fabric_percentage: number | null
+          fullness_ratio: number | null
+          id: string
+          name: string
+          pricing_method: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_price?: number
+          category_id: string
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          name: string
+          pricing_method: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_price?: number
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          name?: string
+          pricing_method?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "window_covering_option_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "window_covering_option_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       window_covering_options: {
         Row: {
           base_cost: number
@@ -1682,40 +1768,43 @@ export type Database = {
       window_coverings: {
         Row: {
           active: boolean
-          base_making_cost: number
           created_at: string
           description: string | null
-          fabric_calculation_method: string
-          fabric_multiplier: number
+          fabrication_pricing_method: string | null
           id: string
+          image_url: string | null
           margin_percentage: number
           name: string
+          pricing_grid_data: string | null
+          unit_price: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           active?: boolean
-          base_making_cost?: number
           created_at?: string
           description?: string | null
-          fabric_calculation_method?: string
-          fabric_multiplier?: number
+          fabrication_pricing_method?: string | null
           id?: string
+          image_url?: string | null
           margin_percentage?: number
           name: string
+          pricing_grid_data?: string | null
+          unit_price?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           active?: boolean
-          base_making_cost?: number
           created_at?: string
           description?: string | null
-          fabric_calculation_method?: string
-          fabric_multiplier?: number
+          fabrication_pricing_method?: string | null
           id?: string
+          image_url?: string | null
           margin_percentage?: number
           name?: string
+          pricing_grid_data?: string | null
+          unit_price?: number | null
           updated_at?: string
           user_id?: string
         }

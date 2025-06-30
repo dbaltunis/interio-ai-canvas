@@ -1,53 +1,16 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit, Trash2, Save } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface WindowCovering {
-  id: string;
-  name: string;
-}
-
-interface OptionCategory {
-  id: string;
-  name: string;
-  description?: string;
-  is_required: boolean;
-  subcategories: OptionSubcategory[];
-}
-
-interface OptionSubcategory {
-  id: string;
-  category_id: string;
-  name: string;
-  description?: string;
-  pricing_method: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
-  base_price: number;
-  fullness_ratio?: number;
-  extra_fabric_percentage?: number;
-  sort_order: number;
-}
-
-interface WindowCoveringOption {
-  id: string;
-  window_covering_id: string;
-  option_type: string;
-  name: string;
-  description?: string;
-  cost_type: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage';
-  base_cost: number;
-  is_required: boolean;
-  is_default: boolean;
-  sort_order: number;
-  specifications?: any;
-}
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
+import { useWindowCoveringOptions, type WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
+import { useWindowCoveringCategories } from "@/hooks/useWindowCoveringCategories";
+import type { WindowCovering } from "@/hooks/useWindowCoverings";
 
 interface WindowCoveringOptionsManagerProps {
   windowCovering: WindowCovering;
@@ -55,334 +18,277 @@ interface WindowCoveringOptionsManagerProps {
 }
 
 export const WindowCoveringOptionsManager = ({ windowCovering, onBack }: WindowCoveringOptionsManagerProps) => {
-  const { toast } = useToast();
-  const [options, setOptions] = useState<WindowCoveringOption[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<OptionCategory[]>([]);
-  const [isAddingOption, setIsAddingOption] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
-  const [editingOptionId, setEditingOptionId] = useState<string | null>(null);
+  const { options, isLoading: optionsLoading, createOption, updateOption, deleteOption } = useWindowCoveringOptions(windowCovering.id);
+  const { categories, isLoading: categoriesLoading } = useWindowCoveringCategories();
+  
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    option_type: '',
+    name: '',
+    description: '',
+    cost_type: 'per-unit' as const,
+    base_cost: 0,
+    is_required: false,
+    is_default: false,
+    sort_order: 0
+  });
 
-  // Mock data for available categories - replace with actual data fetching
-  useEffect(() => {
-    const mockCategories: OptionCategory[] = [
-      {
-        id: "1",
-        name: "Heading",
-        description: "Top treatment options",
-        is_required: true,
-        subcategories: [
-          {
-            id: "1",
-            category_id: "1",
-            name: "Pinch Pleat",
-            description: "Traditional pinch pleat heading",
-            pricing_method: "per-meter",
-            base_price: 8.50,
-            sort_order: 0
-          },
-          {
-            id: "2",
-            category_id: "1",
-            name: "Eyelet",
-            description: "Modern eyelet heading",
-            pricing_method: "per-meter",
-            base_price: 6.00,
-            sort_order: 1
-          }
-        ]
-      },
-      {
-        id: "2",
-        name: "Lining",
-        description: "Lining options",
-        is_required: false,
-        subcategories: [
-          {
-            id: "3",
-            category_id: "2",
-            name: "Standard Lining",
-            description: "Basic cotton lining",
-            pricing_method: "per-sqm",
-            base_price: 4.50,
-            sort_order: 0
-          },
-          {
-            id: "4",
-            category_id: "2",
-            name: "Blackout Lining",
-            description: "Complete light blocking",
-            pricing_method: "per-sqm",
-            base_price: 12.00,
-            sort_order: 1
-          }
-        ]
-      }
-    ];
-    setAvailableCategories(mockCategories);
-
-    // Mock existing options for this window covering
-    const mockOptions: WindowCoveringOption[] = [
-      {
-        id: "opt1",
+  const handleSave = async () => {
+    try {
+      const optionData = {
+        ...formData,
         window_covering_id: windowCovering.id,
-        option_type: "heading",
-        name: "Pinch Pleat",
-        description: "Traditional pinch pleat heading",
-        cost_type: "per-meter",
-        base_cost: 8.50,
-        is_required: true,
-        is_default: true,
-        sort_order: 0
+        sort_order: options.length
+      };
+
+      if (editingId) {
+        await updateOption(editingId, optionData);
+      } else {
+        await createOption(optionData);
       }
-    ];
-    setOptions(mockOptions);
-  }, [windowCovering.id]);
-
-  const getAvailableSubcategories = () => {
-    if (!selectedCategoryId) return [];
-    const category = availableCategories.find(cat => cat.id === selectedCategoryId);
-    return category?.subcategories || [];
-  };
-
-  const handleAddOption = () => {
-    if (!selectedCategoryId || !selectedSubcategoryId) {
-      toast({
-        title: "Error",
-        description: "Please select a category and subcategory",
-        variant: "destructive"
-      });
-      return;
+      
+      resetForm();
+    } catch (error) {
+      // Error handling is done in the hook
     }
+  };
 
-    const category = availableCategories.find(cat => cat.id === selectedCategoryId);
-    const subcategory = category?.subcategories.find(sub => sub.id === selectedSubcategoryId);
-    
-    if (!category || !subcategory) return;
+  const handleEdit = (option: WindowCoveringOption) => {
+    setFormData({
+      option_type: option.option_type,
+      name: option.name,
+      description: option.description || '',
+      cost_type: option.cost_type as any,
+      base_cost: option.base_cost,
+      is_required: option.is_required,
+      is_default: option.is_default,
+      sort_order: option.sort_order
+    });
+    setEditingId(option.id);
+    setIsCreating(true);
+  };
 
-    const newOption: WindowCoveringOption = {
-      id: Date.now().toString(),
-      window_covering_id: windowCovering.id,
-      option_type: category.name.toLowerCase(),
-      name: subcategory.name,
-      description: subcategory.description,
-      cost_type: subcategory.pricing_method,
-      base_cost: subcategory.base_price,
-      is_required: category.is_required,
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOption(id);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      option_type: '',
+      name: '',
+      description: '',
+      cost_type: 'per-unit',
+      base_cost: 0,
+      is_required: false,
       is_default: false,
-      sort_order: options.length,
-      specifications: {
-        fullness_ratio: subcategory.fullness_ratio,
-        extra_fabric_percentage: subcategory.extra_fabric_percentage
-      }
-    };
-
-    setOptions(prev => [...prev, newOption]);
-    setIsAddingOption(false);
-    setSelectedCategoryId('');
-    setSelectedSubcategoryId('');
-    
-    toast({
-      title: "Success",
-      description: "Option added successfully"
+      sort_order: 0
     });
+    setIsCreating(false);
+    setEditingId(null);
   };
 
-  const handleToggleDefault = (optionId: string) => {
-    setOptions(prev => prev.map(opt => 
-      opt.id === optionId ? { ...opt, is_default: !opt.is_default } : opt
-    ));
-  };
-
-  const handleToggleRequired = (optionId: string) => {
-    setOptions(prev => prev.map(opt => 
-      opt.id === optionId ? { ...opt, is_required: !opt.is_required } : opt
-    ));
-  };
-
-  const handleDeleteOption = (optionId: string) => {
-    setOptions(prev => prev.filter(opt => opt.id !== optionId));
-    toast({
-      title: "Success",
-      description: "Option removed successfully"
-    });
-  };
-
-  const handleSave = () => {
-    // Here you would save the options to the database
-    toast({
-      title: "Success",
-      description: "Options saved successfully"
-    });
-  };
+  if (optionsLoading || categoriesLoading) {
+    return <div className="text-center py-8">Loading options...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Window Coverings
         </Button>
         <div>
           <h3 className="text-lg font-semibold text-brand-primary">
-            Manage Options - {windowCovering.name}
+            Manage Options: {windowCovering.name}
           </h3>
           <p className="text-sm text-brand-neutral">
-            Configure available options for this window covering
+            Add and configure options for this window covering
           </p>
         </div>
       </div>
 
-      {/* Add Option Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Add New Option</CardTitle>
-              <CardDescription>Select from available option categories</CardDescription>
-            </div>
-            <Button
-              onClick={() => setIsAddingOption(!isAddingOption)}
-              className="bg-brand-primary hover:bg-brand-accent"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Option
-            </Button>
-          </div>
-        </CardHeader>
-        {isAddingOption && (
+      {/* Add Option Form */}
+      {isCreating && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingId ? 'Edit Option' : 'Add New Option'}</CardTitle>
+            <CardDescription>
+              Configure an option for this window covering
+            </CardDescription>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Option Category</Label>
-                <Select
-                  value={selectedCategoryId}
-                  onValueChange={(value) => {
-                    setSelectedCategoryId(value);
-                    setSelectedSubcategoryId('');
-                  }}
-                >
+                <Label htmlFor="option_type">Option Type</Label>
+                <Select value={formData.option_type} onValueChange={(value) => setFormData(prev => ({ ...prev, option_type: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder="Select option type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableCategories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name} {category.is_required && "(Required)"}
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.name.toLowerCase()}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Subcategory</Label>
-                <Select
-                  value={selectedSubcategoryId}
-                  onValueChange={setSelectedSubcategoryId}
-                  disabled={!selectedCategoryId}
-                >
+                <Label htmlFor="name">Option Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Blackout Lining"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Optional description"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cost_type">Cost Type</Label>
+                <Select value={formData.cost_type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, cost_type: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select subcategory" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {getAvailableSubcategories().map(subcategory => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name} - £{subcategory.base_price} ({subcategory.pricing_method})
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="per-unit">Per Unit</SelectItem>
+                    <SelectItem value="per-meter">Per Meter</SelectItem>
+                    <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+                    <SelectItem value="fixed">Fixed Price</SelectItem>
+                    <SelectItem value="percentage">Percentage</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="base_cost">Base Cost (£)</Label>
+                <Input
+                  id="base_cost"
+                  type="number"
+                  step="0.01"
+                  value={formData.base_cost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))}
+                />
+              </div>
             </div>
+
+            <div className="flex gap-6">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_required"
+                  checked={formData.is_required}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: !!checked }))}
+                />
+                <Label htmlFor="is_required">Required Option</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_default"
+                  checked={formData.is_default}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_default: !!checked }))}
+                />
+                <Label htmlFor="is_default">Default Selection</Label>
+              </div>
+            </div>
+
             <div className="flex gap-2">
-              <Button onClick={handleAddOption}>Add Option</Button>
-              <Button variant="outline" onClick={() => setIsAddingOption(false)}>
+              <Button onClick={handleSave} className="bg-brand-primary hover:bg-brand-accent">
+                {editingId ? 'Update Option' : 'Add Option'}
+              </Button>
+              <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      )}
 
-      {/* Current Options */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Current Options</CardTitle>
-              <CardDescription>
-                {options.length} option{options.length !== 1 ? 's' : ''} configured
-              </CardDescription>
-            </div>
-            <Button onClick={handleSave} className="bg-brand-primary hover:bg-brand-accent">
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {options.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No options configured yet. Add some options to get started.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {options.map((option) => (
-                <div key={option.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold">{option.name}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {option.option_type}
-                        </Badge>
-                      </div>
-                      {option.description && (
-                        <p className="text-sm text-brand-neutral mb-2">{option.description}</p>
-                      )}
-                      <div className="flex gap-2 text-sm">
-                        <Badge variant="outline">
-                          £{option.base_cost} {option.cost_type}
-                        </Badge>
-                        {option.is_required && (
-                          <Badge variant="destructive" className="text-xs">Required</Badge>
-                        )}
-                        {option.is_default && (
-                          <Badge variant="default" className="text-xs">Default</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleDeleteOption(option.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+      {/* Add Option Button */}
+      {!isCreating && (
+        <Button onClick={() => setIsCreating(true)} className="bg-brand-primary hover:bg-brand-accent">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Option
+        </Button>
+      )}
+
+      {/* Options List */}
+      <div className="grid gap-4">
+        {options.map((option) => (
+          <Card key={option.id}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-semibold text-brand-primary">{option.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {option.option_type}
+                    </Badge>
                   </div>
                   
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`required-${option.id}`}
-                        checked={option.is_required}
-                        onCheckedChange={() => handleToggleRequired(option.id)}
-                      />
-                      <Label htmlFor={`required-${option.id}`} className="text-sm">Required</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`default-${option.id}`}
-                        checked={option.is_default}
-                        onCheckedChange={() => handleToggleDefault(option.id)}
-                      />
-                      <Label htmlFor={`default-${option.id}`} className="text-sm">Default Selection</Label>
-                    </div>
+                  <div className="flex gap-4 text-sm text-brand-neutral mb-2">
+                    <span>Cost: £{option.base_cost} {option.cost_type}</span>
+                    <span>Sort: {option.sort_order}</span>
+                  </div>
+
+                  {option.description && (
+                    <p className="text-sm text-brand-neutral bg-gray-50 p-2 rounded mb-2">
+                      {option.description}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    {option.is_required && (
+                      <Badge variant="destructive" className="text-xs">Required</Badge>
+                    )}
+                    {option.is_default && (
+                      <Badge variant="default" className="text-xs">Default</Badge>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(option)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDelete(option.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {options.length === 0 && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-brand-neutral">No options configured yet.</p>
+              <Button 
+                onClick={() => setIsCreating(true)}
+                className="mt-4 bg-brand-primary hover:bg-brand-accent"
+              >
+                Add Your First Option
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
