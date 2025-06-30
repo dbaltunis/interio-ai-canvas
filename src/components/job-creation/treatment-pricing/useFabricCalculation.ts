@@ -23,26 +23,31 @@ export const useFabricCalculation = (
       let fabricUsage = 0;
       
       if (formData.roll_direction === "horizontal") {
+        // For horizontal cutting, we need multiple drops
         const requiredWidth = railWidth * headingFullness;
         const dropsNeeded = Math.ceil(requiredWidth / fabricWidth);
         
+        // Convert to fabric units (meters or yards)
         const fabricUnitsPerDrop = units.system === 'metric' 
-          ? totalDrop / 100
-          : totalDrop / 36;
+          ? totalDrop / 100  // cm to meters
+          : totalDrop / 36;  // inches to yards
         
         fabricUsage = dropsNeeded * fabricUnitsPerDrop;
       } else {
+        // For vertical cutting, we might need multiple widths
         const requiredWidth = railWidth * headingFullness;
         
         if (fabricWidth >= requiredWidth) {
+          // Single width is sufficient
           fabricUsage = units.system === 'metric' 
-            ? totalDrop / 100
-            : totalDrop / 36;
+            ? totalDrop / 100  // cm to meters
+            : totalDrop / 36;  // inches to yards
         } else {
+          // Multiple widths needed
           const widthsNeeded = Math.ceil(requiredWidth / fabricWidth);
           const fabricUnitsPerWidth = units.system === 'metric' 
-            ? totalDrop / 100
-            : totalDrop / 36;
+            ? totalDrop / 100  // cm to meters
+            : totalDrop / 36;  // inches to yards
           
           fabricUsage = widthsNeeded * fabricUnitsPerWidth;
         }
@@ -58,15 +63,34 @@ export const useFabricCalculation = (
     const fabricCostPerUnit = parseFloat(formData.fabric_cost_per_yard) || 0;
     const fabricCost = fabricUsage * fabricCostPerUnit;
     
-    const windowCoveringOptionsCost = options
-      ?.filter(option => formData.selected_options.includes(option.id))
-      .reduce((total, option) => total + option.base_cost, 0) || 0;
+    // Calculate window covering options cost
+    const windowCoveringOptionsCost = (options || [])
+      .filter(option => formData.selected_options.includes(option.id))
+      .reduce((total, option) => {
+        let optionCost = option.base_cost || 0;
+        
+        // Apply cost calculation based on cost_type
+        if (option.cost_type === 'per-meter' && fabricUsage) {
+          optionCost = optionCost * fabricUsage;
+        } else if (option.cost_type === 'per-sqm' && formData.rail_width && formData.drop) {
+          const area = (parseFloat(formData.rail_width) / 100) * (parseFloat(formData.drop) / 100); // convert cm to m²
+          optionCost = optionCost * area;
+        } else if (option.cost_type === 'percentage') {
+          optionCost = fabricCost * (optionCost / 100);
+        }
+        
+        return total + optionCost;
+      }, 0);
     
+    // Calculate treatment type options cost
     const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
     const treatmentOptions = currentTreatmentType?.specifications?.options || [];
     
     const treatmentOptionsCost = treatmentOptions
-      .filter((option: any) => formData.selected_options.includes(option.id || option.name))
+      .filter((option: any) => {
+        const optionId = option.id || option.name;
+        return formData.selected_options.includes(optionId);
+      })
       .reduce((total: number, option: any) => total + (option.cost || 0), 0);
     
     const totalOptionsCost = windowCoveringOptionsCost + treatmentOptionsCost;

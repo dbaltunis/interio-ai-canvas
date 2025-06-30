@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,22 @@ export const TreatmentPricingForm = ({
 
   const costs = calculateCosts();
 
+  // Auto-select required and default options when window covering changes
+  useEffect(() => {
+    if (windowCovering && options && options.length > 0) {
+      const autoSelectOptions = options
+        .filter(option => option.is_required || option.is_default)
+        .map(option => option.id);
+      
+      if (autoSelectOptions.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          selected_options: [...new Set([...prev.selected_options, ...autoSelectOptions])]
+        }));
+      }
+    }
+  }, [windowCovering, options, setFormData]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -82,7 +98,8 @@ export const TreatmentPricingForm = ({
         fabric_code: formData.fabric_code,
         fabric_cost_per_yard: formData.fabric_cost_per_yard,
         fabric_width: formData.fabric_width,
-        roll_direction: formData.roll_direction
+        roll_direction: formData.roll_direction,
+        heading_fullness: formData.heading_fullness
       },
       selected_options: formData.selected_options,
       notes: formData.notes,
@@ -96,6 +113,9 @@ export const TreatmentPricingForm = ({
   };
 
   const handleOptionToggle = (optionId: string) => {
+    console.log('Toggling option:', optionId);
+    console.log('Current selected options:', formData.selected_options);
+    
     setFormData(prev => ({
       ...prev,
       selected_options: prev.selected_options.includes(optionId)
