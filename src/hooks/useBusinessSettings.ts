@@ -7,6 +7,20 @@ type BusinessSettings = Tables<"business_settings">;
 type BusinessSettingsInsert = TablesInsert<"business_settings">;
 type BusinessSettingsUpdate = TablesUpdate<"business_settings">;
 
+export interface MeasurementUnits {
+  system: 'metric' | 'imperial';
+  length: 'mm' | 'cm' | 'm' | 'inches' | 'feet';
+  area: 'sq_mm' | 'sq_cm' | 'sq_m' | 'sq_inches' | 'sq_feet';
+  fabric: 'cm' | 'm' | 'inches' | 'yards';
+}
+
+export const defaultMeasurementUnits: MeasurementUnits = {
+  system: 'imperial',
+  length: 'inches',
+  area: 'sq_inches', 
+  fabric: 'yards'
+};
+
 export const useBusinessSettings = () => {
   return useQuery({
     queryKey: ["business-settings"],
@@ -64,4 +78,51 @@ export const useUpdateBusinessSettings = () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
     },
   });
+};
+
+// Utility functions for unit conversion
+export const convertLength = (value: number, fromUnit: string, toUnit: string): number => {
+  // Convert everything to mm first, then to target unit
+  const toMm = (val: number, unit: string): number => {
+    switch (unit) {
+      case 'mm': return val;
+      case 'cm': return val * 10;
+      case 'm': return val * 1000;
+      case 'inches': return val * 25.4;
+      case 'feet': return val * 304.8;
+      default: return val;
+    }
+  };
+
+  const fromMm = (val: number, unit: string): number => {
+    switch (unit) {
+      case 'mm': return val;
+      case 'cm': return val / 10;
+      case 'm': return val / 1000;
+      case 'inches': return val / 25.4;
+      case 'feet': return val / 304.8;
+      default: return val;
+    }
+  };
+
+  const mmValue = toMm(value, fromUnit);
+  return fromMm(mmValue, toUnit);
+};
+
+export const formatMeasurement = (value: number, unit: string): string => {
+  const unitLabels: Record<string, string> = {
+    'mm': 'mm',
+    'cm': 'cm', 
+    'm': 'm',
+    'inches': '"',
+    'feet': "'",
+    'yards': 'yd',
+    'sq_mm': 'mm²',
+    'sq_cm': 'cm²',
+    'sq_m': 'm²',
+    'sq_inches': 'in²',
+    'sq_feet': 'ft²'
+  };
+
+  return `${value.toFixed(2)} ${unitLabels[unit] || unit}`;
 };

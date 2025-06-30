@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Users, Calculator, Wrench, DollarSign, Truck, Zap } from "lucide-react";
+import { Settings, Package, Users, Calculator, Wrench, DollarSign, Truck, Zap, Ruler } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
 import { VendorManagementTab } from "./tabs/VendorManagementTab";
@@ -9,6 +9,7 @@ import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { TreatmentTypesTab } from "./tabs/TreatmentTypesTab";
 import { CalculationEngineTab } from "./tabs/CalculationEngineTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
+import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationManager } from "../integrations/IntegrationManager";
 
 export const SettingsView = () => {
@@ -24,10 +25,14 @@ export const SettingsView = () => {
       </div>
 
       <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Business
+          </TabsTrigger>
+          <TabsTrigger value="units" className="flex items-center gap-2">
+            <Ruler className="h-4 w-4" />
+            Units
           </TabsTrigger>
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
@@ -61,6 +66,10 @@ export const SettingsView = () => {
 
         <TabsContent value="business">
           <BusinessConfigTab />
+        </TabsContent>
+
+        <TabsContent value="units">
+          <MeasurementUnitsTab />
         </TabsContent>
 
         <TabsContent value="products">
