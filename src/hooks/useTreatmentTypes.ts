@@ -18,8 +18,14 @@ export interface TreatmentType {
   id: string;
   name: string;
   description?: string;
+  category: string;
   labor_rate?: number;
   specifications?: TreatmentTypeSpecifications;
+  complexity?: string;
+  estimated_hours?: number;
+  required_materials?: any;
+  active?: boolean;
+  user_id: string;
   created_at?: string;
   updated_at?: string;
 }

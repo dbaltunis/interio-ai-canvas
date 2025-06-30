@@ -48,12 +48,12 @@ export const TreatmentPricingForm = ({
   });
 
   const { options, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
-  const { treatmentTypes, isLoading: treatmentTypesLoading } = useTreatmentTypes();
+  const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
   const { units, formatLength, formatFabric, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
 
   // Get the current treatment type data from settings
-  const currentTreatmentType = treatmentTypes?.find(tt => tt.name === treatmentType);
+  const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
   const treatmentOptions = currentTreatmentType?.specifications?.options || [];
 
   const calculateFabricUsage = () => {
