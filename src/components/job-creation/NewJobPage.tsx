@@ -48,9 +48,9 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     checkAuth();
   }, []);
 
-  // Create a default project when component mounts and user is authenticated
+  // Create a default project and quote when component mounts and user is authenticated
   useEffect(() => {
-    const createDefaultProject = async () => {
+    const createDefaultProjectAndQuote = async () => {
       // Wait for auth check to complete
       if (isCheckingAuth) return;
       
@@ -82,10 +82,36 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         const newProject = await createProject.mutateAsync({
           name: "New Project",
           description: "",
-          client_id: clientId, // This can be null and set later
+          client_id: clientId,
           status: "planning",
           priority: "medium"
         });
+        
+        // Create a quote for this project so it appears in job management
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && newProject) {
+          const { data: quote, error: quoteError } = await supabase
+            .from("quotes")
+            .insert({
+              user_id: user.id,
+              project_id: newProject.id,
+              client_id: clientId || newProject.client_id,
+              status: "draft",
+              subtotal: 0,
+              tax_rate: 0,
+              tax_amount: 0,
+              total_amount: 0,
+              notes: "New job created"
+            })
+            .select()
+            .single();
+
+          if (quoteError) {
+            console.error("Failed to create quote:", quoteError);
+          } else {
+            console.log("Quote created successfully:", quote);
+          }
+        }
         
         setCurrentProject(newProject);
         console.log("Created new project:", newProject.id);
@@ -109,7 +135,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       }
     };
 
-    createDefaultProject();
+    createDefaultProjectAndQuote();
   }, [clients, clientsLoading, currentProject, createProject, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
 
   // Show loading state if checking auth, no project yet, or creating

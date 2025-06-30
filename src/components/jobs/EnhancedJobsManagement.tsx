@@ -1,13 +1,23 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileText, Phone, MapPin, FolderOpen, Building2, User, DollarSign, Calendar, MessageSquare, Edit } from "lucide-react";
-import { useQuotes } from "@/hooks/useQuotes";
+import { Plus, FileText, Phone, MapPin, FolderOpen, Building2, User, DollarSign, Calendar, MessageSquare, Edit, Trash2 } from "lucide-react";
+import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface EnhancedJobsManagementProps {
   onNewJob: () => void;
@@ -35,6 +45,7 @@ export const EnhancedJobsManagement = ({
   const { data: quotes, isLoading } = useQuotes();
   const { data: clients } = useClients();
   const { data: projects } = useProjects();
+  const deleteQuote = useDeleteQuote();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -82,6 +93,10 @@ export const EnhancedJobsManagement = ({
     if (onClientEdit) {
       onClientEdit(clientId);
     }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    await deleteQuote.mutateAsync(jobId);
   };
 
   // Apply filters
@@ -319,6 +334,35 @@ export const EnhancedJobsManagement = ({
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Delete Job"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Job</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this job? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteJob(quote.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           <Button variant="ghost" size="sm" title="Send Email">
                             <MessageSquare className="h-4 w-4" />
                           </Button>

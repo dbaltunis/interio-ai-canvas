@@ -1,19 +1,30 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Mail, Phone, MapPin, Users, Building2, User, FileText, DollarSign, Calendar, MessageSquare } from "lucide-react";
-import { useClients } from "@/hooks/useClients";
+import { Plus, Mail, Phone, MapPin, Users, Building2, User, FileText, DollarSign, Calendar, MessageSquare, Trash2 } from "lucide-react";
+import { useClients, useDeleteClient } from "@/hooks/useClients";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { ClientCreateForm } from "./ClientCreateForm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const EnhancedClientManagement = () => {
   const { data: clients, isLoading } = useClients();
   const { data: quotes } = useQuotes();
   const { data: projects } = useProjects();
+  const deleteClient = useDeleteClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const getTypeColor = (type: string) => {
@@ -40,6 +51,10 @@ export const EnhancedClientManagement = () => {
       newestProject,
       projectsCount: clientProjects.length
     };
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    await deleteClient.mutateAsync(clientId);
   };
 
   if (showCreateForm) {
@@ -236,6 +251,35 @@ export const EnhancedClientManagement = () => {
                           <Button variant="ghost" size="sm" title="Call Client">
                             <Phone className="h-4 w-4" />
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Delete Client"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this client? This action cannot be undone and will also delete all associated projects and quotes.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteClient(client.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           <Button variant="ghost" size="sm" title="View Details">
                             <FileText className="h-4 w-4" />
                           </Button>
