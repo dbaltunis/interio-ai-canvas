@@ -42,6 +42,8 @@ export const TreatmentPricingForm = ({
     fabric_type: "",
     fabric_code: "",
     fabric_cost_per_yard: "",
+    fabric_width: "137", // Default fabric width in cm
+    roll_direction: "horizontal", // horizontal or vertical
     selected_options: [] as string[],
     notes: "",
     images: [] as File[]
@@ -60,23 +62,48 @@ export const TreatmentPricingForm = ({
     const railWidth = parseFloat(formData.rail_width) || 0;
     const drop = parseFloat(formData.drop) || 0;
     const pooling = parseFloat(formData.pooling) || 0;
+    const fabricWidth = parseFloat(formData.fabric_width) || 137;
     
     if (railWidth && drop) {
-      // Basic calculation: width * (drop + pooling) * fullness factor (2.5 for curtains)
       const totalDrop = drop + pooling;
-      const fabricWidth = units.system === 'metric' ? 137 : 54; // 137cm or 54 inches standard fabric width
-      const fullnessFactor = 2.5;
+      const fullnessFactor = 2.5; // Standard fullness for curtains
       
-      // Convert to fabric units for calculation
-      const widthInFabricUnits = units.system === 'metric' 
-        ? (railWidth * fullnessFactor) / 100 // convert cm to meters
-        : (railWidth * fullnessFactor) / 36; // convert inches to yards
+      // Calculate based on roll direction
+      let fabricUsage = 0;
       
-      const dropInFabricUnits = units.system === 'metric'
-        ? totalDrop / 100 // convert cm to meters
-        : totalDrop / 36; // convert inches to yards
+      if (formData.roll_direction === "horizontal") {
+        // Horizontal roll: fabric width runs across the window width
+        const requiredWidth = railWidth * fullnessFactor;
+        const dropsNeeded = Math.ceil(requiredWidth / fabricWidth);
+        
+        // Convert to fabric units
+        const fabricUnitsPerDrop = units.system === 'metric' 
+          ? totalDrop / 100 // convert cm to meters
+          : totalDrop / 36; // convert inches to yards
+        
+        fabricUsage = dropsNeeded * fabricUnitsPerDrop;
+      } else {
+        // Vertical roll: fabric width runs along the drop
+        const requiredWidth = railWidth * fullnessFactor;
+        
+        // Check if fabric width can accommodate the required width
+        if (fabricWidth >= requiredWidth) {
+          // Single width can cover the window
+          fabricUsage = units.system === 'metric' 
+            ? totalDrop / 100 // convert cm to meters
+            : totalDrop / 36; // convert inches to yards
+        } else {
+          // Multiple widths needed
+          const widthsNeeded = Math.ceil(requiredWidth / fabricWidth);
+          const fabricUnitsPerWidth = units.system === 'metric' 
+            ? totalDrop / 100 // convert cm to meters
+            : totalDrop / 36; // convert inches to yards
+          
+          fabricUsage = widthsNeeded * fabricUnitsPerWidth;
+        }
+      }
       
-      return widthInFabricUnits * dropInFabricUnits;
+      return fabricUsage;
     }
     return 0;
   };
@@ -161,7 +188,9 @@ export const TreatmentPricingForm = ({
       fabric_details: {
         fabric_type: formData.fabric_type,
         fabric_code: formData.fabric_code,
-        fabric_cost_per_yard: formData.fabric_cost_per_yard
+        fabric_cost_per_yard: formData.fabric_cost_per_yard,
+        fabric_width: formData.fabric_width,
+        roll_direction: formData.roll_direction
       },
       selected_options: formData.selected_options,
       notes: formData.notes,
@@ -182,6 +211,8 @@ export const TreatmentPricingForm = ({
       fabric_type: "",
       fabric_code: "",
       fabric_cost_per_yard: "",
+      fabric_width: "137",
+      roll_direction: "horizontal",
       selected_options: [],
       notes: "",
       images: []
@@ -286,11 +317,6 @@ export const TreatmentPricingForm = ({
                   />
                 </div>
               </div>
-              {costs.fabricUsage !== "0.00" && (
-                <div className="text-sm text-gray-600">
-                  Estimated fabric usage: {costs.fabricUsage} {getFabricUnitLabel()}
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -380,6 +406,31 @@ export const TreatmentPricingForm = ({
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fabric_width">Fabric Width ({getLengthUnitLabel()})</Label>
+                  <Input
+                    id="fabric_width"
+                    type="number"
+                    step="0.5"
+                    value={formData.fabric_width}
+                    onChange={(e) => handleInputChange("fabric_width", e.target.value)}
+                    placeholder="137"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="roll_direction">Roll Direction</Label>
+                  <Select value={formData.roll_direction} onValueChange={(value) => handleInputChange("roll_direction", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select roll direction" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="horizontal">Horizontal</SelectItem>
+                      <SelectItem value="vertical">Vertical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="fabric_cost_per_yard">Cost per {getFabricUnitLabel()} ({units.currency})</Label>
                 <Input
@@ -391,6 +442,16 @@ export const TreatmentPricingForm = ({
                   placeholder="0.00"
                 />
               </div>
+              {costs.fabricUsage !== "0.00" && (
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="text-sm font-medium text-blue-800">
+                    Estimated fabric usage: {costs.fabricUsage} {getFabricUnitLabel()}
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    Based on {formData.fabric_width}{getLengthUnitLabel()} fabric width, {formData.roll_direction} roll direction
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
