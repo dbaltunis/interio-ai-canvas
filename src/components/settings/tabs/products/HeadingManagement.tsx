@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,19 @@ interface Heading {
   unitType: 'metric' | 'imperial';
 }
 
+interface FormData {
+  name: string;
+  image: string;
+  fullnessPercentage: number;
+  fullnessTimes: number;
+  extraFabric: number;
+  notes: string;
+  costType: 'grid' | 'per-unit';
+  unitPrice: number;
+  unitType: 'metric' | 'imperial';
+  pricingGrid: Array<{ quantity: number; price: number }>;
+}
+
 export const HeadingManagement = () => {
   const { toast } = useToast();
   const [headings, setHeadings] = useState<Heading[]>([]);
@@ -32,16 +46,16 @@ export const HeadingManagement = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [fullnessToggle, setFullnessToggle] = useState<'percentage' | 'times'>('percentage');
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     image: '',
     fullnessPercentage: 100,
     fullnessTimes: 2,
     extraFabric: 0,
     notes: '',
-    costType: 'per-unit' as const,
+    costType: 'per-unit',
     unitPrice: 0,
-    unitType: 'metric' as const,
+    unitType: 'metric',
     pricingGrid: [{ quantity: 1, price: 0 }]
   });
 
