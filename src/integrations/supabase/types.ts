@@ -1536,6 +1536,191 @@ export type Database = {
         }
         Relationships: []
       }
+      window_covering_calculations: {
+        Row: {
+          created_at: string
+          drop: number
+          fabric_cost: number
+          fabric_id: string | null
+          fabric_usage: number
+          fabric_waste: number
+          id: string
+          making_cost: number
+          margin_amount: number
+          measurements: Json | null
+          notes: string | null
+          options_cost: number
+          project_id: string | null
+          selected_options: Json | null
+          selling_price: number
+          total_cost: number
+          updated_at: string
+          user_id: string
+          width: number
+          window_covering_id: string
+        }
+        Insert: {
+          created_at?: string
+          drop: number
+          fabric_cost?: number
+          fabric_id?: string | null
+          fabric_usage?: number
+          fabric_waste?: number
+          id?: string
+          making_cost?: number
+          margin_amount?: number
+          measurements?: Json | null
+          notes?: string | null
+          options_cost?: number
+          project_id?: string | null
+          selected_options?: Json | null
+          selling_price?: number
+          total_cost?: number
+          updated_at?: string
+          user_id: string
+          width: number
+          window_covering_id: string
+        }
+        Update: {
+          created_at?: string
+          drop?: number
+          fabric_cost?: number
+          fabric_id?: string | null
+          fabric_usage?: number
+          fabric_waste?: number
+          id?: string
+          making_cost?: number
+          margin_amount?: number
+          measurements?: Json | null
+          notes?: string | null
+          options_cost?: number
+          project_id?: string | null
+          selected_options?: Json | null
+          selling_price?: number
+          total_cost?: number
+          updated_at?: string
+          user_id?: string
+          width?: number
+          window_covering_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "window_covering_calculations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "window_covering_calculations_window_covering_id_fkey"
+            columns: ["window_covering_id"]
+            isOneToOne: false
+            referencedRelation: "window_coverings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      window_covering_options: {
+        Row: {
+          base_cost: number
+          cost_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          is_required: boolean
+          name: string
+          option_type: string
+          sort_order: number
+          specifications: Json | null
+          updated_at: string
+          user_id: string
+          window_covering_id: string
+        }
+        Insert: {
+          base_cost?: number
+          cost_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          is_required?: boolean
+          name: string
+          option_type: string
+          sort_order?: number
+          specifications?: Json | null
+          updated_at?: string
+          user_id: string
+          window_covering_id: string
+        }
+        Update: {
+          base_cost?: number
+          cost_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          is_required?: boolean
+          name?: string
+          option_type?: string
+          sort_order?: number
+          specifications?: Json | null
+          updated_at?: string
+          user_id?: string
+          window_covering_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "window_covering_options_window_covering_id_fkey"
+            columns: ["window_covering_id"]
+            isOneToOne: false
+            referencedRelation: "window_coverings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      window_coverings: {
+        Row: {
+          active: boolean
+          base_making_cost: number
+          created_at: string
+          description: string | null
+          fabric_calculation_method: string
+          fabric_multiplier: number
+          id: string
+          margin_percentage: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          base_making_cost?: number
+          created_at?: string
+          description?: string | null
+          fabric_calculation_method?: string
+          fabric_multiplier?: number
+          id?: string
+          margin_percentage?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          base_making_cost?: number
+          created_at?: string
+          description?: string | null
+          fabric_calculation_method?: string
+          fabric_multiplier?: number
+          id?: string
+          margin_percentage?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       work_order_checkpoints: {
         Row: {
           assigned_to: string | null
