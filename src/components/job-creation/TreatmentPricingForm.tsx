@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { Upload, X, Image } from "lucide-react";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useUploadFile } from "@/hooks/useFileStorage";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
 
 interface TreatmentPricingFormProps {
   isOpen: boolean;
@@ -48,8 +48,13 @@ export const TreatmentPricingForm = ({
   });
 
   const { options, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
+  const { treatmentTypes, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
   const { units, formatLength, formatFabric, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
+
+  // Get the current treatment type data from settings
+  const currentTreatmentType = treatmentTypes?.find(tt => tt.name === treatmentType);
+  const treatmentOptions = currentTreatmentType?.specifications?.options || [];
 
   const calculateFabricUsage = () => {
     const railWidth = parseFloat(formData.rail_width) || 0;
@@ -81,18 +86,25 @@ export const TreatmentPricingForm = ({
     const fabricCostPerUnit = parseFloat(formData.fabric_cost_per_yard) || 0;
     const fabricCost = fabricUsage * fabricCostPerUnit;
     
-    // Calculate options cost
-    const selectedOptionsCost = options
+    // Calculate options cost from window covering options
+    const windowCoveringOptionsCost = options
       ?.filter(option => formData.selected_options.includes(option.id))
       .reduce((total, option) => total + option.base_cost, 0) || 0;
     
-    const laborCost = 150; // Base labor cost
-    const totalCost = fabricCost + selectedOptionsCost + laborCost;
+    // Calculate treatment options cost
+    const treatmentOptionsCost = treatmentOptions
+      .filter(option => formData.selected_options.includes(option.id || option.name))
+      .reduce((total, option) => total + (option.cost || 0), 0);
+    
+    const totalOptionsCost = windowCoveringOptionsCost + treatmentOptionsCost;
+    
+    const laborCost = currentTreatmentType?.labor_rate || 150; // Use treatment type labor rate or default
+    const totalCost = fabricCost + totalOptionsCost + laborCost;
     
     return {
       fabricUsage: fabricUsage.toFixed(2),
       fabricCost: fabricCost.toFixed(2),
-      optionsCost: selectedOptionsCost.toFixed(2),
+      optionsCost: totalOptionsCost.toFixed(2),
       laborCost: laborCost.toFixed(2),
       totalCost: totalCost.toFixed(2)
     };
@@ -282,11 +294,41 @@ export const TreatmentPricingForm = ({
             </CardContent>
           </Card>
 
-          {/* Options Selection */}
+          {/* Treatment Options from Settings */}
+          {!treatmentTypesLoading && treatmentOptions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Treatment Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {treatmentOptions.map((option, index) => (
+                  <div key={option.id || option.name || index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        checked={formData.selected_options.includes(option.id || option.name)}
+                        onCheckedChange={() => handleOptionToggle(option.id || option.name)}
+                      />
+                      <div>
+                        <div className="font-medium">{option.name}</div>
+                        {option.description && (
+                          <div className="text-sm text-gray-600">{option.description}</div>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      {formatCurrency(option.cost || 0)}
+                    </Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Window Covering Options */}
           {!optionsLoading && options && options.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Options & Variants</CardTitle>
+                <CardTitle>Window Covering Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {options.map(option => (
