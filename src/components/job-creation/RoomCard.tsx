@@ -76,6 +76,7 @@ export const RoomCard = ({
 
   const handleCreateSurface = async (surfaceType: 'window' | 'wall') => {
     console.log("Creating surface with:", { room_id: room.id, project_id: projectId, surface_type: surfaceType });
+    console.log("Room project_id:", room.project_id);
     
     if (!room.id || !projectId) {
       toast({
@@ -92,14 +93,16 @@ export const RoomCard = ({
         ? `Window ${surfaceCount + 1}`
         : `Wall ${surfaceCount + 1}`;
 
+      // Use the room's project_id which should be the correct one
+      const actualProjectId = room.project_id || projectId;
+      
       const surfaceData = {
         room_id: room.id,
-        project_id: projectId,
+        project_id: actualProjectId,
         name: surfaceName,
         surface_type: surfaceType,
         width: surfaceType === 'window' ? 36 : 120,
         height: surfaceType === 'window' ? 60 : 96,
-        // Add surface_width and surface_height to match the schema
         surface_width: surfaceType === 'window' ? 36 : 120,
         surface_height: surfaceType === 'window' ? 60 : 96
       };
@@ -207,20 +210,20 @@ export const RoomCard = ({
                 variant="outline"
                 onClick={() => handleCreateSurface('window')}
                 disabled={createSurface.isPending}
-                className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-colors"
               >
                 <Home className="h-4 w-4" />
-                <span>{createSurface.isPending ? 'Adding...' : 'Add Window'}</span>
+                <span>{createSurface.isPending ? 'Adding Window...' : 'Add Window'}</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleCreateSurface('wall')}
                 disabled={createSurface.isPending}
-                className="flex items-center space-x-2 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
+                className="flex items-center space-x-2 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700 transition-colors"
               >
                 <Square className="h-4 w-4" />
-                <span>{createSurface.isPending ? 'Adding...' : 'Add Wall'}</span>
+                <span>{createSurface.isPending ? 'Adding Wall...' : 'Add Wall'}</span>
               </Button>
             </div>
 
