@@ -32,11 +32,16 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
 
-  console.log("Project:", project);
-  console.log("Rooms:", rooms);
+  console.log("ProjectJobsTab - Project object:", project);
+  console.log("ProjectJobsTab - Project ID:", project?.id);
+  console.log("ProjectJobsTab - Rooms:", rooms);
+
+  // Get the actual project ID - handle both project and quote objects
+  const actualProjectId = project?.project_id || project?.id;
+  console.log("ProjectJobsTab - Using project ID:", actualProjectId);
 
   // Calculate total amount from all treatments for this project
-  const projectTreatments = allTreatments?.filter(t => t.project_id === project.id) || [];
+  const projectTreatments = allTreatments?.filter(t => t.project_id === actualProjectId) || [];
   const totalAmount = projectTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
   const handleCopyRoomClick = (room: any) => {
@@ -65,7 +70,7 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-gradient-to-br from-brand-primary/5 to-brand-secondary/5 min-h-screen">
       <JobHeader
         jobNumber={project.job_number}
         totalAmount={totalAmount}
@@ -80,7 +85,7 @@ export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
 
       <RoomsGrid
         rooms={rooms}
-        projectId={project.id}
+        projectId={actualProjectId}
         onUpdateRoom={updateRoom}
         onDeleteRoom={deleteRoom}
         onCreateTreatment={handleCreateTreatment}

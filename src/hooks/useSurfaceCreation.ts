@@ -12,13 +12,27 @@ export const useSurfaceCreation = () => {
     surfaceType: 'window' | 'wall',
     roomSurfaces: any[]
   ) => {
-    console.log("Creating surface with:", { room_id: room.id, project_id: projectId, surface_type: surfaceType });
+    console.log("Creating surface with room:", room);
+    console.log("Project ID from props:", projectId);
     console.log("Room project_id:", room.project_id);
+    console.log("Surface type:", surfaceType);
     
-    if (!room.id || !projectId) {
+    if (!room.id) {
       toast({
         title: "Error",
-        description: "Missing room or project information",
+        description: "Missing room information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Use the project ID from the room if available, otherwise use the passed projectId
+    const actualProjectId = room.project_id || projectId;
+    
+    if (!actualProjectId) {
+      toast({
+        title: "Error",
+        description: "Missing project information",
         variant: "destructive",
       });
       return;
@@ -30,9 +44,6 @@ export const useSurfaceCreation = () => {
         ? `Window ${surfaceCount + 1}`
         : `Wall ${surfaceCount + 1}`;
 
-      // Use the room's project_id which should be the correct one
-      const actualProjectId = room.project_id || projectId;
-      
       const surfaceData = {
         room_id: room.id,
         project_id: actualProjectId,
@@ -44,9 +55,10 @@ export const useSurfaceCreation = () => {
         surface_height: surfaceType === 'window' ? 60 : 96
       };
 
-      console.log("Surface data being sent:", surfaceData);
+      console.log("Final surface data being sent:", surfaceData);
 
-      await createSurface.mutateAsync(surfaceData);
+      const result = await createSurface.mutateAsync(surfaceData);
+      console.log("Surface created successfully:", result);
 
       toast({
         title: "Success",

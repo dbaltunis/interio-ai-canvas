@@ -24,11 +24,12 @@ export const useJobHandlers = (project: any) => {
     try {
       const roomNumber = (rooms?.length || 0) + 1;
       console.log("Creating room with project_id:", actualProjectId);
-      await createRoom.mutateAsync({
+      const newRoom = await createRoom.mutateAsync({
         project_id: actualProjectId,
         name: `Room ${roomNumber}`,
         room_type: "living_room"
       });
+      console.log("Room created successfully:", newRoom);
     } catch (error) {
       console.error("Failed to create room:", error);
     }
@@ -36,7 +37,12 @@ export const useJobHandlers = (project: any) => {
 
   const handleRenameRoom = async (roomId: string, newName: string) => {
     if (newName.trim()) {
-      await updateRoom.mutateAsync({ id: roomId, name: newName.trim() });
+      try {
+        await updateRoom.mutateAsync({ id: roomId, name: newName.trim() });
+        console.log("Room renamed successfully");
+      } catch (error) {
+        console.error("Failed to rename room:", error);
+      }
     }
   };
 
@@ -46,7 +52,7 @@ export const useJobHandlers = (project: any) => {
       const surfaceNumber = roomSurfaces.length + 1;
       const surfaceName = surfaceType === 'wall' ? `Wall ${surfaceNumber}` : `Window ${surfaceNumber}`;
       
-      await createSurface.mutateAsync({
+      const surfaceData = {
         room_id: roomId,
         project_id: actualProjectId,
         name: surfaceName,
@@ -55,7 +61,11 @@ export const useJobHandlers = (project: any) => {
         height: surfaceType === 'wall' ? 96 : 48,
         surface_width: surfaceType === 'wall' ? 120 : 60,
         surface_height: surfaceType === 'wall' ? 96 : 48
-      });
+      };
+
+      console.log("Creating surface with data:", surfaceData);
+      const result = await createSurface.mutateAsync(surfaceData);
+      console.log("Surface created successfully:", result);
     } catch (error) {
       console.error("Failed to create surface:", error);
     }
@@ -63,7 +73,9 @@ export const useJobHandlers = (project: any) => {
 
   const handleUpdateSurface = async (surfaceId: string, updates: any) => {
     try {
+      console.log("Updating surface:", surfaceId, "with:", updates);
       await updateSurface.mutateAsync({ id: surfaceId, ...updates });
+      console.log("Surface updated successfully");
     } catch (error) {
       console.error("Failed to update surface:", error);
     }
@@ -73,6 +85,7 @@ export const useJobHandlers = (project: any) => {
     if (confirm("Delete this surface and all its treatments?")) {
       try {
         await deleteSurface.mutateAsync(surfaceId);
+        console.log("Surface deleted successfully");
       } catch (error) {
         console.error("Failed to delete surface:", error);
       }
@@ -135,6 +148,14 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     try {
+      console.log("Creating treatment with data:", {
+        roomId,
+        surfaceId,
+        treatmentType,
+        treatmentData,
+        actualProjectId
+      });
+
       const treatmentPayload = {
         window_id: surfaceId,
         room_id: roomId,
@@ -168,9 +189,65 @@ export const useJobHandlers = (project: any) => {
         })
       };
 
-      await createTreatment.mutateAsync(treatmentPayload);
+      console.log("Final treatment payload:", treatmentPayload);
+      const result = await createTreatment.mutateAsync(treatmentPayload);
+      console.log("Treatment created successfully:", result);
     } catch (error) {
       console.error("Failed to create treatment:", error);
+    }
+  };
+
+  const handleCopyRoom = (room: any) => {
+    const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
+    const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
+    
+    return {
+      room,
+      surfaces: roomSurfaces,
+      treatments: roomTreatments
+    };
+  };
+
+  const handlePasteRoom = async (copiedRoom: any) => {
+    if (!copiedRoom) return;
+
+    try {
+      const roomNumber = (rooms?.length || 0) + 1;
+      const newRoom = await createRoom.mutateAsync({
+        project_id: actualProjectId,
+        name: `${copiedRoom.room.name} (Copy ${roomNumber})`,
+        room_type: copiedRoom.room.room_type
+      });
+
+      for (const surface of copiedRoom.surfaces) {
+        const newSurface = await createSurface.mutateAsync({
+          room_id: newRoom.id,
+          project_id: actualProjectId,
+          name: surface.name,
+          surface_type: surface.surface_type,
+          width: surface.width,
+          height: surface.height,
+          surface_width: surface.surface_width,
+          surface_height: surface.surface_height
+        });
+
+        const surfaceTreatments = copiedRoom.treatments.filter((t: any) => t.window_id === surface.id);
+        for (const treatment of surfaceTreatments) {
+          await createTreatment.mutateAsync({
+            window_id: newSurface.id,
+            room_id: newRoom.id,
+            project_id: actualProjectId,
+            treatment_type: treatment.treatment_type,
+            product_name: treatment.product_name,
+            material_cost: treatment.material_cost,
+            labor_cost: treatment.labor_cost,
+            total_price: treatment.total_price,
+            status: treatment.status
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to paste room:", error);
     }
   };
 
