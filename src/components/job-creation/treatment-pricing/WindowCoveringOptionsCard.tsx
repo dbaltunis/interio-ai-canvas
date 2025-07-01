@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -83,7 +84,7 @@ export const WindowCoveringOptionsCard = ({
     }
     acc[option.option_type].push(option);
     return acc;
-  }, {});
+  }, {} as Record<string, any[]>);
 
   return (
     <Card>
