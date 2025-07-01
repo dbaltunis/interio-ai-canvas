@@ -1659,6 +1659,118 @@ export type Database = {
         }
         Relationships: []
       }
+      window_covering_option_extras: {
+        Row: {
+          base_price: number
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_default: boolean
+          is_required: boolean
+          name: string
+          pricing_method: string
+          sort_order: number
+          sub_subcategory_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean
+          is_required?: boolean
+          name: string
+          pricing_method?: string
+          sort_order?: number
+          sub_subcategory_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean
+          is_required?: boolean
+          name?: string
+          pricing_method?: string
+          sort_order?: number
+          sub_subcategory_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_extras_sub_subcategory_id"
+            columns: ["sub_subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "window_covering_option_sub_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      window_covering_option_sub_subcategories: {
+        Row: {
+          base_price: number
+          created_at: string
+          description: string | null
+          extra_fabric_percentage: number | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          name: string
+          pricing_method: string
+          sort_order: number
+          subcategory_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          pricing_method?: string
+          sort_order?: number
+          subcategory_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number
+          subcategory_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_sub_subcategories_subcategory_id"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "window_covering_option_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       window_covering_option_subcategories: {
         Row: {
           base_price: number
