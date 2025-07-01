@@ -81,20 +81,25 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       setHasAttemptedCreation(true);
       
       try {
+        console.log("Creating new project without client...");
+        
         // Create project without any client assigned - completely empty
         const newProject = await createProject.mutateAsync({
           name: "New Project",
           description: "",
-          client_id: null, // No client assigned
           status: "planning",
           priority: "medium"
+          // Note: client_id is intentionally omitted to be null
         });
+        
+        console.log("Project created successfully:", newProject);
         
         // Create a quote for this project so it appears in job management
         if (newProject) {
+          console.log("Creating quote for project:", newProject.id);
+          
           await createQuote.mutateAsync({
             project_id: newProject.id,
-            client_id: null, // No client assigned to quote either
             quote_number: "", // Empty string will trigger auto-generation
             status: "draft",
             subtotal: 0,
@@ -102,6 +107,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
             tax_amount: 0,
             total_amount: 0,
             notes: "New job created"
+            // Note: client_id is intentionally omitted to be null
           });
           
           console.log("Quote created successfully for project:", newProject.id);

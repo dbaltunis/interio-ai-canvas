@@ -44,7 +44,7 @@ export const useCreateQuote = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (quote: Omit<QuoteInsert, "user_id">) => {
+    mutationFn: async (quote: Omit<QuoteInsert, "user_id"> & { client_id?: string | null }) => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
@@ -56,13 +56,28 @@ export const useCreateQuote = () => {
         throw new Error("You must be logged in to create a quote");
       }
 
+      console.log("Creating quote with data:", quote);
+
+      const quoteData: QuoteInsert = {
+        ...quote,
+        user_id: user.id,
+        client_id: quote.client_id || null
+      };
+
+      console.log("Final quote data to insert:", quoteData);
+
       const { data, error } = await supabase
         .from("quotes")
-        .insert({ ...quote, user_id: user.id })
+        .insert(quoteData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Create quote error:", error);
+        throw error;
+      }
+      
+      console.log("Quote created successfully:", data);
       return data;
     },
     onSuccess: () => {
@@ -73,9 +88,10 @@ export const useCreateQuote = () => {
       });
     },
     onError: (error: any) => {
+      console.error("Failed to create quote:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create quote. Please try again.",
         variant: "destructive",
       });
     },
@@ -87,28 +103,28 @@ export const useUpdateQuote = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...quote }: { id: string } & QuoteUpdate) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<QuoteUpdate>) => {
       const { data, error } = await supabase
         .from("quotes")
-        .update(quote)
+        .update(updates)
         .eq("id", id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update quote error:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      toast({
-        title: "Success",
-        description: "Quote updated successfully",
-      });
     },
     onError: (error: any) => {
+      console.error("Failed to update quote:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update quote. Please try again.",
         variant: "destructive",
       });
     },
@@ -132,13 +148,13 @@ export const useDeleteQuote = () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       toast({
         title: "Success",
-        description: "Job deleted successfully",
+        description: "Quote deleted successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete job",
+        description: error.message || "Failed to delete quote",
         variant: "destructive",
       });
     },

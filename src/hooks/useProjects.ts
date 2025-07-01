@@ -44,7 +44,7 @@ export const useCreateProject = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (project: Omit<ProjectInsert, "user_id">) => {
+    mutationFn: async (project: Omit<ProjectInsert, "user_id" | "client_id"> & { client_id?: string | null }) => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
@@ -58,12 +58,15 @@ export const useCreateProject = () => {
       }
 
       console.log("Creating project for user:", user.id);
+      console.log("Project data:", project);
 
       const projectData: ProjectInsert = {
         ...project,
         user_id: user.id,
         client_id: project.client_id || null
       };
+
+      console.log("Final project data to insert:", projectData);
 
       const { data, error } = await supabase
         .from("projects")
@@ -101,6 +104,8 @@ export const useUpdateProject = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<ProjectUpdate>) => {
+      console.log("Updating project:", id, "with updates:", updates);
+      
       const { data, error } = await supabase
         .from("projects")
         .update(updates)
@@ -112,6 +117,8 @@ export const useUpdateProject = () => {
         console.error("Update project error:", error);
         throw error;
       }
+      
+      console.log("Project updated successfully:", data);
       return data;
     },
     onSuccess: () => {

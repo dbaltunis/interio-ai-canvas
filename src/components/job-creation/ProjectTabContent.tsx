@@ -21,15 +21,22 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
 
   const handleClientSelect = async (clientId: string) => {
     try {
+      console.log("Selecting client:", clientId, "for project:", project.id);
+      
       await updateProject.mutateAsync({
         id: project.id,
         client_id: clientId
       });
+      
+      // Update the current project object to reflect the change immediately
+      project.client_id = clientId;
+      
       toast({
         title: "Success",
         description: "Client has been assigned to the project",
       });
     } catch (error) {
+      console.error("Failed to assign client:", error);
       toast({
         title: "Error",
         description: "Failed to update project with selected client",
@@ -40,15 +47,22 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
 
   const handleClientRemove = async () => {
     try {
+      console.log("Removing client from project:", project.id);
+      
       await updateProject.mutateAsync({
         id: project.id,
         client_id: null
       });
+      
+      // Update the current project object to reflect the change immediately
+      project.client_id = null;
+      
       toast({
         title: "Success",
         description: "Client has been removed from the project",
       });
     } catch (error) {
+      console.error("Failed to remove client:", error);
       toast({
         title: "Error",
         description: "Failed to remove client from project",
