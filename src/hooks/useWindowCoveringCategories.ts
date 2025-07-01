@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { OptionCategory, OptionSubcategory } from './types/windowCoveringTypes';
@@ -55,6 +54,40 @@ export const useWindowCoveringCategories = () => {
     }
   };
 
+  const updateCategory = async (id: string, updates: Partial<OptionCategory>) => {
+    try {
+      const { data, error } = await supabase
+        .from('window_covering_option_categories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories(prev => 
+        prev.map(cat => 
+          cat.id === id ? { ...cat, ...data } : cat
+        ).sort((a, b) => a.sort_order - b.sort_order)
+      );
+      
+      toast({
+        title: "Success",
+        description: "Category updated successfully"
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update category",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const createSubcategory = async (subcategory: Omit<OptionSubcategory, 'id'>) => {
     try {
       const newSubcategory = await createSubcategoryInDB(subcategory);
@@ -81,6 +114,43 @@ export const useWindowCoveringCategories = () => {
       toast({
         title: "Error",
         description: "Failed to create subcategory",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateSubcategory = async (id: string, updates: Partial<OptionSubcategory>) => {
+    try {
+      const { data, error } = await supabase
+        .from('window_covering_option_subcategories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories(prev => 
+        prev.map(cat => ({
+          ...cat,
+          subcategories: cat.subcategories?.map(sub => 
+            sub.id === id ? { ...sub, ...data } : sub
+          ).sort((a, b) => a.sort_order - b.sort_order)
+        }))
+      );
+      
+      toast({
+        title: "Success",
+        description: "Subcategory updated successfully"
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error updating subcategory:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update subcategory",
         variant: "destructive"
       });
       throw error;
@@ -145,7 +215,9 @@ export const useWindowCoveringCategories = () => {
     categories,
     isLoading,
     createCategory,
+    updateCategory,
     createSubcategory,
+    updateSubcategory,
     deleteCategory,
     deleteSubcategory,
     refetch: fetchCategories

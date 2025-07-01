@@ -2,46 +2,35 @@
 import { supabase } from '@/integrations/supabase/client';
 import { OptionCategory, OptionSubcategory } from '../types/windowCoveringTypes';
 
-export const fetchCategoriesFromDB = async () => {
-  const { data: categoriesData, error: categoriesError } = await supabase
+export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: categories, error: categoriesError } = await supabase
     .from('window_covering_option_categories')
     .select('*')
+    .eq('user_id', user.id)
     .order('sort_order', { ascending: true });
 
   if (categoriesError) throw categoriesError;
 
-  const { data: subcategoriesData, error: subcategoriesError } = await supabase
+  const { data: subcategories, error: subcategoriesError } = await supabase
     .from('window_covering_option_subcategories')
     .select('*')
+    .eq('user_id', user.id)
     .order('sort_order', { ascending: true });
 
   if (subcategoriesError) throw subcategoriesError;
 
-  const categoriesWithSubcategories = (categoriesData || []).map(category => ({
-    id: category.id,
-    name: category.name,
-    description: category.description || undefined,
-    is_required: category.is_required,
-    sort_order: category.sort_order,
-    subcategories: (subcategoriesData || [])
-      .filter(sub => sub.category_id === category.id)
-      .map(sub => ({
-        id: sub.id,
-        category_id: sub.category_id,
-        name: sub.name,
-        description: sub.description || undefined,
-        pricing_method: sub.pricing_method as OptionSubcategory['pricing_method'],
-        base_price: sub.base_price,
-        fullness_ratio: sub.fullness_ratio || undefined,
-        extra_fabric_percentage: sub.extra_fabric_percentage || undefined,
-        sort_order: sub.sort_order
-      } as OptionSubcategory))
-  } as OptionCategory));
+  const categoriesWithSubcategories = categories.map(category => ({
+    ...category,
+    subcategories: subcategories.filter(sub => sub.category_id === category.id)
+  }));
 
   return categoriesWithSubcategories;
 };
 
-export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | 'subcategories'>) => {
+export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | 'subcategories'>): Promise<OptionCategory> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -58,19 +47,10 @@ export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | '
 
   if (error) throw error;
 
-  const newCategory: OptionCategory = {
-    id: data.id,
-    name: data.name,
-    description: data.description || undefined,
-    is_required: data.is_required,
-    sort_order: data.sort_order,
-    subcategories: []
-  };
-
-  return newCategory;
+  return { ...data, subcategories: [] };
 };
 
-export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory, 'id'>) => {
+export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory, 'id'>): Promise<OptionSubcategory> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -87,22 +67,10 @@ export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory,
 
   if (error) throw error;
 
-  const newSubcategory: OptionSubcategory = {
-    id: data.id,
-    category_id: data.category_id,
-    name: data.name,
-    description: data.description || undefined,
-    pricing_method: data.pricing_method as OptionSubcategory['pricing_method'],
-    base_price: data.base_price,
-    fullness_ratio: data.fullness_ratio || undefined,
-    extra_fabric_percentage: data.extra_fabric_percentage || undefined,
-    sort_order: data.sort_order
-  };
-
-  return newSubcategory;
+  return data;
 };
 
-export const deleteCategoryFromDB = async (id: string) => {
+export const deleteCategoryFromDB = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('window_covering_option_categories')
     .delete()
@@ -111,7 +79,7 @@ export const deleteCategoryFromDB = async (id: string) => {
   if (error) throw error;
 };
 
-export const deleteSubcategoryFromDB = async (id: string) => {
+export const deleteSubcategoryFromDB = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('window_covering_option_subcategories')
     .delete()

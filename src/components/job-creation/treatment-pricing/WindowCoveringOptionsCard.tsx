@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -87,43 +86,70 @@ export const WindowCoveringOptionsCard = ({
 
   console.log('WindowCoveringOptionsCard - Rendering options:', options.length);
 
+  // Group options by type for better organization
+  const groupedOptions = options.reduce((acc, option) => {
+    if (!acc[option.option_type]) {
+      acc[option.option_type] = [];
+    }
+    acc[option.option_type].push(option);
+    return acc;
+  }, {} as Record<string, any[]>);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Window Covering Options</CardTitle>
         <p className="text-sm text-gray-600">Available options for {windowCovering?.name}</p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {options.map((option, index) => {
-          console.log(`WindowCoveringOptionsCard - Rendering option ${index}:`, option);
-          const isSelected = selectedOptions.includes(option.id);
-          
-          return (
-            <div key={option.id} className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => onOptionToggle(option.id)}
-                  disabled={option.is_required}
-                />
-                <div>
-                  <div className="font-medium">{option.name}</div>
-                  {option.description && (
-                    <div className="text-sm text-gray-600">{option.description}</div>
-                  )}
-                  <div className="text-xs text-gray-500 mt-1">
-                    Type: {option.option_type} • Cost: {option.cost_type}
-                    {option.is_required && <span className="text-red-600 ml-2">• Required</span>}
-                    {option.is_default && <span className="text-blue-600 ml-2">• Default</span>}
+      <CardContent className="space-y-4">
+        {Object.entries(groupedOptions).map(([optionType, typeOptions]) => (
+          <div key={optionType} className="space-y-3">
+            <h4 className="font-medium text-brand-primary capitalize">{optionType}</h4>
+            <div className="space-y-2">
+              {typeOptions.map((option, index) => {
+                console.log(`WindowCoveringOptionsCard - Rendering option ${index}:`, option);
+                const isSelected = selectedOptions.includes(option.id);
+                
+                return (
+                  <div key={option.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => onOptionToggle(option.id)}
+                        disabled={option.is_required}
+                      />
+                      
+                      {/* Option Image */}
+                      {option.image_url && (
+                        <img 
+                          src={option.image_url} 
+                          alt={option.name}
+                          className="w-12 h-12 object-cover rounded border"
+                        />
+                      )}
+                      
+                      <div>
+                        <div className="font-medium">{option.name}</div>
+                        {option.description && (
+                          <div className="text-sm text-gray-600">{option.description}</div>
+                        )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          Cost: {option.cost_type}
+                          {option.is_required && <span className="text-red-600 ml-2">• Required</span>}
+                          {option.is_default && <span className="text-blue-600 ml-2">• Default</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant={isSelected ? "default" : "outline"}>
+                      {formatCurrency(option.base_cost)}
+                    </Badge>
                   </div>
-                </div>
-              </div>
-              <Badge variant={isSelected ? "default" : "outline"}>
-                {formatCurrency(option.base_cost)}
-              </Badge>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
+        
         <div className="text-xs text-gray-500 mt-4 p-2 bg-gray-50 rounded">
           <p><strong>Debug Summary:</strong></p>
           <p>Total Options: {options.length}</p>
