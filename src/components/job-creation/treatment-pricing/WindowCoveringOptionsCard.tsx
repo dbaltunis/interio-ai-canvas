@@ -57,15 +57,7 @@ export const WindowCoveringOptionsCard = ({
 
   if (!windowCovering) {
     console.log('WindowCoveringOptionsCard - No window covering provided');
-    return (
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardContent className="p-4">
-          <p className="text-sm text-yellow-700">
-            No window covering selected
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null; // Don't show the card if no window covering
   }
 
   if (!options || options.length === 0) {

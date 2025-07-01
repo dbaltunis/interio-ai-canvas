@@ -2,12 +2,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WindowCoveringSelectionDialog } from "./WindowCoveringSelectionDialog";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+import { TreatmentPricingForm } from "./TreatmentPricingForm";
+import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 
 interface SurfaceCardProps {
   surface: any;
@@ -24,10 +26,13 @@ export const SurfaceCard = ({
   onDeleteSurface, 
   onUpdateSurface 
 }: SurfaceCardProps) => {
+  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
   const [isEditing, setIsEditing] = useState(false);
   const [showWindowCoveringDialog, setShowWindowCoveringDialog] = useState(false);
   const [showTreatmentCalculator, setShowTreatmentCalculator] = useState(false);
+  const [showTreatmentPricing, setShowTreatmentPricing] = useState(false);
   const [selectedTreatmentType, setSelectedTreatmentType] = useState<string>("");
+  const [selectedWindowCovering, setSelectedWindowCovering] = useState<any>(null);
   const [editData, setEditData] = useState({
     name: surface.name,
     width: surface.width || surface.surface_width || 0,
@@ -50,24 +55,65 @@ export const SurfaceCard = ({
     console.log("Selected window covering:", windowCovering);
     console.log("Selected options:", selectedOptions);
     
-    // Add the window covering as a treatment
-    onAddTreatment(surface.id, windowCovering.name);
+    // Auto-save the window covering as a treatment
+    const treatmentData = {
+      product_name: windowCovering.name,
+      selected_options: selectedOptions,
+      window_covering: windowCovering
+    };
+    
+    onAddTreatment(surface.id, windowCovering.name, treatmentData);
+    setShowWindowCoveringDialog(false);
   };
 
   const handleTreatmentTypeSelect = (treatmentType: string) => {
-    if (treatmentType === "Window Covering") {
-      setShowWindowCoveringDialog(true);
-    } else if (treatmentType === "Curtains" || treatmentType === "Roman Shades") {
+    // Find the selected window covering
+    const windowCovering = windowCoverings.find(wc => wc.name === treatmentType);
+    
+    if (windowCovering) {
+      setSelectedWindowCovering(windowCovering);
       setSelectedTreatmentType(treatmentType);
-      setShowTreatmentCalculator(true);
-    } else {
-      onAddTreatment(surface.id, treatmentType);
+      setShowTreatmentPricing(true);
     }
   };
 
-  const handleTreatmentCalculatorSave = (treatmentData: any) => {
+  const handleTreatmentPricingSave = (treatmentData: any) => {
     onAddTreatment(surface.id, selectedTreatmentType, treatmentData);
+    setShowTreatmentPricing(false);
+    setSelectedWindowCovering(null);
   };
+
+  const handleTreatmentPricingClose = () => {
+    // Auto-save even if user closes the popup
+    if (selectedWindowCovering) {
+      const treatmentData = {
+        product_name: selectedWindowCovering.name,
+        selected_options: [],
+        window_covering: selectedWindowCovering
+      };
+      onAddTreatment(surface.id, selectedTreatmentType, treatmentData);
+    }
+    setShowTreatmentPricing(false);
+    setSelectedWindowCovering(null);
+  };
+
+  // Filter window coverings based on surface type
+  const getAvailableWindowCoverings = () => {
+    if (windowCoveringsLoading || !windowCoverings) return [];
+    
+    return windowCoverings.filter(wc => {
+      if (surface.surface_type === 'wall') {
+        // For walls, show only wall coverings (you can add a category field to distinguish)
+        // For now, we'll assume all window coverings can be used on walls
+        return wc.active;
+      } else {
+        // For windows, show only window coverings
+        return wc.active;
+      }
+    });
+  };
+
+  const availableWindowCoverings = getAvailableWindowCoverings();
 
   return (
     <>
@@ -164,35 +210,40 @@ export const SurfaceCard = ({
             
             <Select onValueChange={handleTreatmentTypeSelect}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Add treatment" />
+                <SelectValue placeholder={
+                  surface.surface_type === 'wall' 
+                    ? "Add wall covering" 
+                    : "Add window covering"
+                } />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Window Covering">Window Covering</SelectItem>
-                <SelectItem value="Curtains">Curtains</SelectItem>
-                <SelectItem value="Roman Shades">Roman Shades</SelectItem>
-                <SelectItem value="Blinds">Blinds</SelectItem>
-                <SelectItem value="Shutters">Shutters</SelectItem>
-                <SelectItem value="Valances">Valances</SelectItem>
-                <SelectItem value="Wall Covering">Wall Covering</SelectItem>
-                <SelectItem value="Paint">Paint</SelectItem>
+                {windowCoveringsLoading ? (
+                  <SelectItem value="loading" disabled>Loading...</SelectItem>
+                ) : availableWindowCoverings.length > 0 ? (
+                  availableWindowCoverings.map((wc) => (
+                    <SelectItem key={wc.id} value={wc.name}>
+                      {wc.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>
+                    No {surface.surface_type === 'wall' ? 'wall' : 'window'} coverings available
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      <WindowCoveringSelectionDialog
-        open={showWindowCoveringDialog}
-        onOpenChange={setShowWindowCoveringDialog}
-        onSelect={handleWindowCoveringSelect}
-        surfaceId={surface.id}
-      />
-
-      <TreatmentCalculatorDialog
-        isOpen={showTreatmentCalculator}
-        onClose={() => setShowTreatmentCalculator(false)}
-        onSave={handleTreatmentCalculatorSave}
-        treatmentType={selectedTreatmentType === "Curtains" ? "curtains" : "roman-shades"}
+      <TreatmentPricingForm
+        isOpen={showTreatmentPricing}
+        onClose={handleTreatmentPricingClose}
+        onSave={handleTreatmentPricingSave}
+        treatmentType={selectedTreatmentType}
+        surfaceType={surface.surface_type || 'window'}
+        windowCovering={selectedWindowCovering}
+        projectId={surface.project_id}
       />
     </>
   );

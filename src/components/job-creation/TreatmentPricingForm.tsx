@@ -87,6 +87,18 @@ export const TreatmentPricingForm = ({
     }
   }, [windowCovering, options, setFormData]);
 
+  // Auto-save window covering when dialog opens
+  useEffect(() => {
+    if (isOpen && windowCovering) {
+      console.log('Auto-setting window covering data:', windowCovering);
+      setFormData(prev => ({
+        ...prev,
+        product_name: windowCovering.name || prev.product_name,
+        window_covering: windowCovering
+      }));
+    }
+  }, [isOpen, windowCovering, setFormData]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -132,7 +144,8 @@ export const TreatmentPricingForm = ({
       selected_options: formData.selected_options,
       notes: formData.notes,
       images: uploadedImages,
-      status: "planned"
+      status: "planned",
+      window_covering: windowCovering
     };
 
     onSave(treatmentData);
@@ -199,13 +212,15 @@ export const TreatmentPricingForm = ({
             onOptionToggle={handleOptionToggle}
           />
 
-          <WindowCoveringOptionsCard
-            options={options}
-            optionsLoading={optionsLoading}
-            windowCovering={windowCovering}
-            selectedOptions={formData.selected_options}
-            onOptionToggle={handleOptionToggle}
-          />
+          {windowCovering && (
+            <WindowCoveringOptionsCard
+              options={options}
+              optionsLoading={optionsLoading}
+              windowCovering={windowCovering}
+              selectedOptions={formData.selected_options}
+              onOptionToggle={handleOptionToggle}
+            />
+          )}
 
           <FabricDetailsCard 
             formData={formData} 
