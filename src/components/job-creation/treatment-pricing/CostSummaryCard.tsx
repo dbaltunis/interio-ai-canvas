@@ -10,11 +10,13 @@ interface CostSummaryCardProps {
     optionsCost: string;
     laborCost: string;
     totalCost: string;
+    optionDetails?: Array<{ name: string; cost: number; method: string }>;
   };
   treatmentType?: string;
   selectedOptions?: string[];
   availableOptions?: any[];
   hierarchicalOptions?: any[];
+  formData?: any;
 }
 
 export const CostSummaryCard = ({ 
@@ -22,7 +24,8 @@ export const CostSummaryCard = ({
   treatmentType, 
   selectedOptions = [], 
   availableOptions = [],
-  hierarchicalOptions = []
+  hierarchicalOptions = [],
+  formData
 }: CostSummaryCardProps) => {
   const { units } = useMeasurementUnits();
 
@@ -38,16 +41,65 @@ export const CostSummaryCard = ({
     return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
   };
 
-  // Get selected option details
-  const getSelectedOptionDetails = () => {
-    const selectedDetails: Array<{ name: string; cost: number }> = [];
+  const getPricingMethodDescription = (method: string) => {
+    const descriptions: Record<string, string> = {
+      'per-unit': 'Per unit/panel',
+      'per-panel': 'Per panel',
+      'per-meter': 'Per meter of rail width',
+      'per-metre': 'Per metre of rail width',
+      'per-yard': 'Per yard of rail width',
+      'per-sqm': 'Per square meter of area',
+      'per-square-meter': 'Per square meter of area',
+      'per-linear-meter': 'Per linear meter of perimeter',
+      'percentage': 'Percentage of fabric cost',
+      'fixed': 'Fixed cost'
+    };
+    return descriptions[method] || method;
+  };
 
-    // Check traditional options
+  const getMeasurementDetails = (method: string) => {
+    const railWidth = parseFloat(formData?.rail_width) || 0;
+    const drop = parseFloat(formData?.drop) || 0;
+    const quantity = formData?.quantity || 1;
+
+    switch (method) {
+      case 'per-unit':
+      case 'per-panel':
+        return `${quantity} unit(s)`;
+      case 'per-meter':
+      case 'per-metre':
+        return `${(railWidth / 100).toFixed(2)}m width`;
+      case 'per-yard':
+        return `${(railWidth / 91.44).toFixed(2)} yards width`;
+      case 'per-sqm':
+      case 'per-square-meter':
+        return `${((railWidth / 100) * (drop / 100)).toFixed(2)}m² area`;
+      case 'per-linear-meter':
+        return `${((railWidth + 2 * drop) / 100).toFixed(2)}m perimeter`;
+      case 'percentage':
+        return `% of fabric cost`;
+      case 'fixed':
+      default:
+        return 'Fixed amount';
+    }
+  };
+
+  // Get all selected option details including hierarchical ones
+  const getAllSelectedOptionDetails = () => {
+    const selectedDetails: Array<{ name: string; cost: number; method: string }> = [];
+
+    // Use the calculated option details from costs if available
+    if (costs.optionDetails && costs.optionDetails.length > 0) {
+      return costs.optionDetails;
+    }
+
+    // Fallback to basic calculation
     availableOptions.forEach(option => {
       if (selectedOptions.includes(option.id)) {
         selectedDetails.push({
           name: option.name,
-          cost: option.base_cost || 0
+          cost: option.base_cost || 0,
+          method: option.pricing_method || option.cost_type || 'fixed'
         });
       }
     });
@@ -59,7 +111,8 @@ export const CostSummaryCard = ({
           if (selectedOptions.includes(subSub.id)) {
             selectedDetails.push({
               name: subSub.name,
-              cost: subSub.base_price || 0
+              cost: subSub.base_price || 0,
+              method: subSub.pricing_method || 'fixed'
             });
           }
           
@@ -68,7 +121,8 @@ export const CostSummaryCard = ({
             if (selectedOptions.includes(extra.id)) {
               selectedDetails.push({
                 name: extra.name,
-                cost: extra.base_price || 0
+                cost: extra.base_price || 0,
+                method: extra.pricing_method || 'fixed'
               });
             }
           });
@@ -79,7 +133,7 @@ export const CostSummaryCard = ({
     return selectedDetails;
   };
 
-  const selectedOptionDetails = getSelectedOptionDetails();
+  const selectedOptionDetails = getAllSelectedOptionDetails();
 
   return (
     <Card>
@@ -92,14 +146,32 @@ export const CostSummaryCard = ({
           <span>{formatCurrency(parseFloat(costs.fabricCost))}</span>
         </div>
         
-        {/* Itemized Options */}
+        {/* Itemized Options with Calculation Details */}
         {selectedOptionDetails.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="text-sm font-medium text-gray-700">Selected Options:</div>
             {selectedOptionDetails.map((option, index) => (
-              <div key={index} className="flex justify-between text-sm pl-4">
-                <span className="text-gray-600">• {option.name}:</span>
-                <span>{formatCurrency(option.cost)}</span>
+              <div key={index} className="space-y-1">
+                <div className="flex justify-between text-sm pl-4">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-gray-600">• {option.name}:</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p><strong>Pricing:</strong> {getPricingMethodDescription(option.method)}</p>
+                          <p><strong>Calculation:</strong> {getMeasurementDetails(option.method)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <span>{formatCurrency(option.cost)}</span>
+                </div>
+                <div className="text-xs text-gray-500 pl-6">
+                  {getPricingMethodDescription(option.method)} - {getMeasurementDetails(option.method)}
+                </div>
               </div>
             ))}
           </div>
@@ -126,7 +198,7 @@ export const CostSummaryCard = ({
           <span className="text-green-600">{formatCurrency(parseFloat(costs.totalCost))}</span>
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          <p><strong>Note:</strong> Labor cost comes from the treatment type settings. Update it in Settings → Treatments.</p>
+          <p><strong>Note:</strong> Labor cost comes from the treatment type settings. Option costs are calculated based on measurements and pricing methods.</p>
         </div>
       </CardContent>
     </Card>

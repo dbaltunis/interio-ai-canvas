@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,10 @@ interface PriceCalculationResult {
   requiredFabricWidth: number;
   panelsNeeded: number;
   basePrice: number;
+  optionsTotal: number;
   marginAmount: number;
   finalPrice: number;
+  optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }>;
 }
 
 interface WindowCovering {
@@ -37,6 +40,7 @@ interface Option {
   base_cost: number;
   is_required: boolean;
   is_default: boolean;
+  pricing_method?: string;
 }
 
 export const WindowCoveringPriceCalculator = ({ 
@@ -52,13 +56,84 @@ export const WindowCoveringPriceCalculator = ({
   const [linearMeasurement, setLinearMeasurement] = useState<number>(0);
   const [calculation, setCalculation] = useState<PriceCalculationResult | null>(null);
 
+  const calculateOptionCost = (option: Option) => {
+    const baseCost = option.base_cost;
+    const method = option.pricing_method || option.cost_type;
+    
+    console.log(`Calculating cost for option: ${option.name}, method: ${method}, base cost: ${baseCost}`);
+
+    switch (method) {
+      case 'per-unit':
+      case 'per-panel':
+        return {
+          cost: baseCost,
+          calculation: `${baseCost} × 1 unit`
+        };
+      
+      case 'per-meter':
+      case 'per-metre':
+        const widthInMeters = trackWidth / 100;
+        return {
+          cost: baseCost * widthInMeters,
+          calculation: `${baseCost} × ${widthInMeters.toFixed(2)}m`
+        };
+      
+      case 'per-yard':
+        const widthInYards = trackWidth / 91.44;
+        return {
+          cost: baseCost * widthInYards,
+          calculation: `${baseCost} × ${widthInYards.toFixed(2)} yards`
+        };
+      
+      case 'per-sqm':
+      case 'per-square-meter':
+        const areaInSqm = (trackWidth / 100) * (drop / 100);
+        return {
+          cost: baseCost * areaInSqm,
+          calculation: `${baseCost} × ${areaInSqm.toFixed(2)}m²`
+        };
+      
+      case 'per-linear-meter':
+        const perimeterInMeters = (trackWidth + 2 * drop) / 100;
+        return {
+          cost: baseCost * perimeterInMeters,
+          calculation: `${baseCost} × ${perimeterInMeters.toFixed(2)}m perimeter`
+        };
+      
+      case 'percentage':
+        // This would need fabric cost context
+        return {
+          cost: baseCost,
+          calculation: `${baseCost}% of fabric cost`
+        };
+      
+      case 'fixed':
+      default:
+        return {
+          cost: baseCost,
+          calculation: 'Fixed cost'
+        };
+    }
+  };
+
   const calculateOptionsTotal = () => {
-    return availableOptions
+    const optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }> = [];
+    let total = 0;
+
+    availableOptions
       .filter(option => selectedOptions.includes(option.id))
-      .reduce((total, option) => {
-        // Simple calculation for now - could be more complex based on cost_type
-        return total + option.base_cost;
-      }, 0);
+      .forEach(option => {
+        const optionCalc = calculateOptionCost(option);
+        optionDetails.push({
+          name: option.name,
+          cost: optionCalc.cost,
+          method: option.pricing_method || option.cost_type || 'fixed',
+          calculation: optionCalc.calculation
+        });
+        total += optionCalc.cost;
+      });
+
+    return { total, optionDetails };
   };
 
   const calculatePrice = () => {
@@ -102,17 +177,19 @@ export const WindowCoveringPriceCalculator = ({
         basePrice = 0;
     }
 
-    // Add options cost
-    const optionsTotal = calculateOptionsTotal();
+    // Add options cost with detailed calculations
+    const optionsData = calculateOptionsTotal();
     
-    const marginAmount = ((basePrice + optionsTotal) * windowCovering.margin_percentage) / 100;
-    const finalPrice = basePrice + optionsTotal + marginAmount;
+    const marginAmount = ((basePrice + optionsData.total) * windowCovering.margin_percentage) / 100;
+    const finalPrice = basePrice + optionsData.total + marginAmount;
 
     setCalculation({
       ...calculationDetails,
-      basePrice: basePrice + optionsTotal,
+      basePrice,
+      optionsTotal: optionsData.total,
       marginAmount,
       finalPrice,
+      optionDetails: optionsData.optionDetails,
       requiredFabricWidth: calculationDetails.requiredFabricWidth || 0,
       panelsNeeded: calculationDetails.panelsNeeded || 0
     });
@@ -307,19 +384,33 @@ export const WindowCoveringPriceCalculator = ({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Base Price:</span>
-                <span>£{(calculation.basePrice - calculateOptionsTotal()).toFixed(2)}</span>
+                <span>£{calculation.basePrice.toFixed(2)}</span>
               </div>
               
-              {calculateOptionsTotal() > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span>Options Total:</span>
-                  <span>£{calculateOptionsTotal().toFixed(2)}</span>
+              {calculation.optionDetails && calculation.optionDetails.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-gray-700">Options Breakdown:</div>
+                  {calculation.optionDetails.map((option, index) => (
+                    <div key={index} className="space-y-1">
+                      <div className="flex justify-between text-sm pl-4">
+                        <span className="text-gray-600">• {option.name}:</span>
+                        <span>£{option.cost.toFixed(2)}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 pl-6">
+                        {option.method}: {option.calculation}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Options Total:</span>
+                    <span>£{calculation.optionsTotal.toFixed(2)}</span>
+                  </div>
                 </div>
               )}
               
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
-                <span>£{calculation.basePrice.toFixed(2)}</span>
+                <span>£{(calculation.basePrice + calculation.optionsTotal).toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between text-sm text-green-600">
@@ -332,23 +423,6 @@ export const WindowCoveringPriceCalculator = ({
                 <span className="text-primary">£{calculation.finalPrice.toFixed(2)}</span>
               </div>
             </div>
-
-            {selectedOptions.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h5 className="font-medium text-blue-800 mb-2">Selected Options:</h5>
-                <div className="space-y-1">
-                  {availableOptions
-                    .filter(option => selectedOptions.includes(option.id))
-                    .map(option => (
-                      <div key={option.id} className="flex justify-between text-sm text-blue-700">
-                        <span>{option.name}</span>
-                        <span>£{option.base_cost.toFixed(2)}</span>
-                      </div>
-                    ))
-                  }
-                </div>
-              </div>
-            )}
 
             {windowCovering.fabrication_pricing_method === 'per-panel' && (
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">

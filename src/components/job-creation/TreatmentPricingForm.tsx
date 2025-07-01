@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
@@ -53,6 +54,8 @@ export const TreatmentPricingForm = ({
   console.log('Traditional Options Data:', options);
   console.log('Hierarchical Options Data:', hierarchicalOptions);
   console.log('Selected Options:', formData.selected_options);
+  console.log('Form Data:', formData);
+  console.log('Calculated Costs:', costs);
   console.log('=== End Debug ===');
 
   // Auto-select required and default options when window covering changes
@@ -231,6 +234,7 @@ export const TreatmentPricingForm = ({
             selectedOptions={formData.selected_options}
             availableOptions={options}
             hierarchicalOptions={hierarchicalOptions}
+            formData={formData}
           />
 
           <TreatmentFormActions onCancel={onClose} />
