@@ -8,7 +8,7 @@ import { Plus, Edit, Trash2, Settings, Calculator, FolderTree } from "lucide-rea
 import { WindowCoveringForm } from "./WindowCoveringForm";
 import { WindowCoveringOptionsManager } from "./WindowCoveringOptionsManager";
 import { WindowCoveringCategoryManager } from "./WindowCoveringCategoryManager";
-import { SelectedCategoriesInfo } from "../../job-creation/treatment-pricing/window-covering-options/SelectedCategoriesInfo";
+import { SelectedCategoriesInfo } from "../../../job-creation/treatment-pricing/window-covering-options/SelectedCategoriesInfo";
 import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
 
 export const WindowCoveringsManagement = () => {
