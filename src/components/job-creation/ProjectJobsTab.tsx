@@ -1,105 +1,195 @@
 
 import { useState } from "react";
-import { JobHeader } from "./JobHeader";
-import { JobActionBar } from "./JobActionBar";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { useTreatments } from "@/hooks/useTreatments";
+import { useCreateRoom } from "@/hooks/useRooms";
+import { useUpdateProject } from "@/hooks/useProjects";
+import { useToast } from "@/hooks/use-toast";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { RoomsGrid } from "./RoomsGrid";
-import { useJobHandlers } from "./JobHandlers";
+import { EmptyRoomsState } from "./EmptyRoomsState";
+import { JobHeader } from "./JobHeader";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Edit2, Check, X } from "lucide-react";
 
 interface ProjectJobsTabProps {
   project: any;
-  onBack?: () => void;
 }
 
-export const ProjectJobsTab = ({ project, onBack }: ProjectJobsTabProps) => {
-  const {
-    rooms,
-    roomsLoading,
-    allTreatments,
-    createRoom,
-    updateRoom,
-    deleteRoom,
-    handleCreateRoom,
-    handleRenameRoom,
-    handleCreateSurface,
-    handleUpdateSurface,
-    handleDeleteSurface,
-    handleCopyRoom,
-    handlePasteRoom,
-    handleCreateTreatment
-  } = useJobHandlers(project);
+export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(project?.name || "");
+  
+  const { data: rooms = [] } = useRooms(project?.id);
+  const { data: surfaces = [] } = useSurfaces();
+  const { data: treatments = [] } = useTreatments();
+  const { units } = useMeasurementUnits();
+  
+  const createRoom = useCreateRoom();
+  const updateProject = useUpdateProject();
+  const { toast } = useToast();
 
-  const [copiedRoom, setCopiedRoom] = useState<any>(null);
-  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-  const [editingRoomName, setEditingRoomName] = useState("");
+  // Calculate total amount from treatments
+  const totalAmount = treatments
+    .filter(t => t.project_id === project?.id)
+    .reduce((sum, treatment) => sum + (treatment.total_price || 0), 0);
 
-  console.log("ProjectJobsTab - Project object:", project);
-  console.log("ProjectJobsTab - Project ID:", project?.id);
-  console.log("ProjectJobsTab - Rooms:", rooms);
+  // Generate a proper sequential job number
+  const jobNumber = project?.job_number || `${Date.now().toString().slice(-6)}`;
 
-  // Get the actual project ID - handle both project and quote objects
-  const actualProjectId = project?.project_id || project?.id;
-  console.log("ProjectJobsTab - Using project ID:", actualProjectId);
-
-  // Calculate total amount from all treatments for this project
-  const projectTreatments = allTreatments?.filter(t => t.project_id === actualProjectId) || [];
-  const totalAmount = projectTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-
-  const handleCopyRoomClick = (room: any) => {
-    const copiedData = handleCopyRoom(room);
-    setCopiedRoom(copiedData);
+  const handleCreateRoom = async () => {
+    if (!project?.id) return;
+    
+    setIsCreatingRoom(true);
+    try {
+      await createRoom.mutateAsync({
+        name: `Room ${rooms.length + 1}`,
+        project_id: project.id,
+        description: "",
+        room_type: "living_room"
+      });
+      
+      toast({
+        title: "Room Created",
+        description: "New room has been added to your project"
+      });
+    } catch (error) {
+      console.error("Failed to create room:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create room. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingRoom(false);
+    }
   };
 
-  const handlePasteRoomClick = async () => {
-    await handlePasteRoom(copiedRoom);
+  const handleSaveName = async () => {
+    if (!project?.id || !editedName.trim()) return;
+    
+    try {
+      await updateProject.mutateAsync({
+        id: project.id,
+        name: editedName.trim()
+      });
+      
+      setIsEditingName(false);
+      toast({
+        title: "Project Updated",
+        description: "Project name has been updated successfully"
+      });
+    } catch (error) {
+      console.error("Failed to update project name:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update project name. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRenameRoomComplete = async (roomId: string, newName: string) => {
-    await handleRenameRoom(roomId, newName);
-    setEditingRoomId(null);
-    setEditingRoomName("");
+  const handleCancelEdit = () => {
+    setEditedName(project?.name || "");
+    setIsEditingName(false);
   };
 
-  if (roomsLoading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-lg">Loading rooms...</div>
-        </div>
-      </div>
-    );
-  }
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+  };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-brand-primary/5 to-brand-secondary/5 min-h-screen">
-      <JobHeader
-        jobNumber={project.job_number}
-        totalAmount={totalAmount}
-        onCreateRoom={handleCreateRoom}
-        isCreatingRoom={createRoom.isPending}
-      />
+    <div className="p-6 space-y-6">
+      {/* Enhanced Header Section */}
+      <div className="bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg p-6 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              {isEditingName ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder-white/60 focus:bg-white/20"
+                    placeholder="Enter project name"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSaveName}
+                    className="text-white hover:bg-white/10"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    className="text-white hover:bg-white/10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-2xl font-bold">{project?.name || "Untitled Project"}</h1>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsEditingName(true)}
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center space-x-4 text-white/80">
+              <span className="text-sm">Job #{jobNumber}</span>
+              <span className="text-2xl font-semibold">
+                Total: {formatCurrency(totalAmount)}
+              </span>
+            </div>
+          </div>
+          
+          <Button
+            onClick={handleCreateRoom}
+            disabled={isCreatingRoom}
+            className="bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-lg"
+            size="lg"
+          >
+            {isCreatingRoom ? 'Adding Room...' : 'Add Room'}
+          </Button>
+        </div>
+      </div>
 
-      <JobActionBar
-        copiedRoom={copiedRoom}
-        onPasteRoom={handlePasteRoomClick}
-      />
-
-      <RoomsGrid
-        rooms={rooms}
-        projectId={actualProjectId}
-        onUpdateRoom={updateRoom}
-        onDeleteRoom={deleteRoom}
-        onCreateTreatment={handleCreateTreatment}
-        onCreateSurface={handleCreateSurface}
-        onUpdateSurface={handleUpdateSurface}
-        onDeleteSurface={handleDeleteSurface}
-        onCopyRoom={handleCopyRoomClick}
-        editingRoomId={editingRoomId}
-        setEditingRoomId={setEditingRoomId}
-        editingRoomName={editingRoomName}
-        setEditingRoomName={setEditingRoomName}
-        onRenameRoom={handleRenameRoomComplete}
-        onCreateRoom={handleCreateRoom}
-      />
+      {/* Rooms Content */}
+      <div className="min-h-[400px]">
+        {rooms.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-12">
+            <EmptyRoomsState onCreateRoom={handleCreateRoom} />
+          </div>
+        ) : (
+          <RoomsGrid
+            rooms={rooms}
+            surfaces={surfaces}
+            treatments={treatments}
+            projectId={project?.id}
+          />
+        )}
+      </div>
     </div>
   );
 };

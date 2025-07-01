@@ -83,13 +83,26 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       try {
         console.log("Creating new project without client...");
         
+        // Generate a proper job number
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
+
+        // Get count of existing projects to generate sequential job number
+        const { count } = await supabase
+          .from("projects")
+          .select("*", { count: 'exact', head: true })
+          .eq("user_id", user.id);
+        
+        const jobNumber = String(((count || 0) + 1)).padStart(4, '0');
+        
         // Create project without any client assigned - completely empty
         const newProject = await createProject.mutateAsync({
           name: "New Project",
           description: "",
           status: "planning",
           priority: "medium",
-          client_id: null
+          client_id: null,
+          job_number: jobNumber
         });
         
         console.log("Project created successfully:", newProject);
@@ -101,7 +114,6 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           await createQuote.mutateAsync({
             project_id: newProject.id,
             client_id: null,
-            quote_number: "", // Empty string will trigger auto-generation
             status: "draft",
             subtotal: 0,
             tax_rate: 0,
