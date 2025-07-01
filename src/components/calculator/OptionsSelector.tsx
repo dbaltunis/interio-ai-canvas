@@ -22,6 +22,27 @@ export const OptionsSelector = ({
   const hasTraditionalOptions = availableOptions.length > 0;
   const hasHierarchicalOptions = hierarchicalOptions.length > 0;
 
+  // Check if motorised option is selected
+  const isMotori
+Options
+sed = () => {
+    return availableOptions.some(option => 
+      selectedOptions.includes(option.id) && 
+      option.name.toLowerCase().includes('motorised')
+    );
+  };
+
+  // Filter options based on conditions
+  const getFilteredOptions = (options: WindowCoveringOption[]) => {
+    return options.filter(option => {
+      // If this is a "remote" option, only show it when motorised is selected
+      if (option.name.toLowerCase().includes('remote')) {
+        return isMotorisedSelected();
+      }
+      return true;
+    });
+  };
+
   if (!hasTraditionalOptions && !hasHierarchicalOptions && !isLoading) {
     return (
       <Card>
@@ -55,55 +76,64 @@ export const OptionsSelector = ({
         ) : (
           <>
             {/* Traditional Options */}
-            {hasTraditionalOptions && Object.entries(groupedOptions).map(([optionType, options]) => (
-              <div key={optionType} className="space-y-3">
-                <h4 className="font-medium text-brand-primary capitalize">{optionType}</h4>
-                <div className="grid grid-cols-1 gap-3">
-                  {options.map(option => (
-                    <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <input
-                        type="checkbox"
-                        id={option.id}
-                        checked={selectedOptions.includes(option.id)}
-                        onChange={() => onOptionToggle(option.id)}
-                        disabled={option.is_required}
-                        className="rounded border-gray-300"
-                      />
-                      
-                      {option.image_url && (
-                        <img 
-                          src={option.image_url} 
-                          alt={option.name}
-                          className="w-12 h-12 object-cover rounded border"
+            {hasTraditionalOptions && Object.entries(groupedOptions).map(([optionType, options]) => {
+              // Filter options based on current selections
+              const filteredOptions = getFilteredOptions(options);
+              
+              if (filteredOptions.length === 0) {
+                return null;
+              }
+
+              return (
+                <div key={optionType} className="space-y-3">
+                  <h4 className="font-medium text-brand-primary capitalize">{optionType}</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    {filteredOptions.map(option => (
+                      <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <input
+                          type="checkbox"
+                          id={option.id}
+                          checked={selectedOptions.includes(option.id)}
+                          onChange={() => onOptionToggle(option.id)}
+                          disabled={option.is_required}
+                          className="rounded border-gray-300"
                         />
-                      )}
-                      
-                      <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium">{option.name}</span>
-                            {option.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
-                            )}
+                        
+                        {option.image_url && (
+                          <img 
+                            src={option.image_url} 
+                            alt={option.name}
+                            className="w-12 h-12 object-cover rounded border"
+                          />
+                        )}
+                        
+                        <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-medium">{option.name}</span>
+                              {option.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                £{option.base_cost} {option.cost_type}
+                              </Badge>
+                              {option.is_required && (
+                                <Badge variant="destructive" className="text-xs">Required</Badge>
+                              )}
+                              {option.is_default && (
+                                <Badge variant="default" className="text-xs">Default</Badge>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              £{option.base_cost} {option.cost_type}
-                            </Badge>
-                            {option.is_required && (
-                              <Badge variant="destructive" className="text-xs">Required</Badge>
-                            )}
-                            {option.is_default && (
-                              <Badge variant="default" className="text-xs">Default</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Hierarchical Options */}
             {hasHierarchicalOptions && hierarchicalOptions.map((category) => (
@@ -151,43 +181,50 @@ export const OptionsSelector = ({
                           </Label>
                         </div>
 
-                        {/* Extras */}
-                        {subSub.extras?.map((extra) => (
-                          <div key={extra.id} className="ml-6 flex items-center space-x-3 p-2 border rounded-lg bg-gray-50">
-                            <input
-                              type="checkbox"
-                              id={extra.id}
-                              checked={selectedOptions.includes(extra.id)}
-                              onChange={() => onOptionToggle(extra.id)}
-                              disabled={extra.is_required}
-                              className="rounded border-gray-300"
-                            />
-                            
-                            {extra.image_url && (
-                              <img 
-                                src={extra.image_url} 
-                                alt={extra.name}
-                                className="w-8 h-8 object-cover rounded border"
+                        {/* Extras - apply conditional logic */}
+                        {subSub.extras?.map((extra) => {
+                          // Apply same conditional logic for extras
+                          if (extra.name.toLowerCase().includes('remote') && !isMotorisedSelected()) {
+                            return null;
+                          }
+
+                          return (
+                            <div key={extra.id} className="ml-6 flex items-center space-x-3 p-2 border rounded-lg bg-gray-50">
+                              <input
+                                type="checkbox"
+                                id={extra.id}
+                                checked={selectedOptions.includes(extra.id)}
+                                onChange={() => onOptionToggle(extra.id)}
+                                disabled={extra.is_required}
+                                className="rounded border-gray-300"
                               />
-                            )}
-                            
-                            <Label htmlFor={extra.id} className="flex-1 cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="text-sm font-medium">{extra.name}</span>
-                                  {extra.description && (
-                                    <p className="text-xs text-muted-foreground">{extra.description}</p>
-                                  )}
-                                  {extra.is_required && <span className="text-xs text-red-600">• Required</span>}
-                                  {extra.is_default && <span className="text-xs text-blue-600">• Default</span>}
+                              
+                              {extra.image_url && (
+                                <img 
+                                  src={extra.image_url} 
+                                  alt={extra.name}
+                                  className="w-8 h-8 object-cover rounded border"
+                                />
+                              )}
+                              
+                              <Label htmlFor={extra.id} className="flex-1 cursor-pointer">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <span className="text-sm font-medium">{extra.name}</span>
+                                    {extra.description && (
+                                      <p className="text-xs text-muted-foreground">{extra.description}</p>
+                                    )}
+                                    {extra.is_required && <span className="text-xs text-red-600">• Required</span>}
+                                    {extra.is_default && <span className="text-xs text-blue-600">• Default</span>}
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">
+                                    £{extra.base_price}
+                                  </Badge>
                                 </div>
-                                <Badge variant="outline" className="text-xs">
-                                  £{extra.base_price}
-                                </Badge>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
+                              </Label>
+                            </div>
+                          );
+                        })}
                       </div>
                     ))}
                   </div>

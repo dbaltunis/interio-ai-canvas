@@ -36,6 +36,25 @@ export const WindowCoveringOptionsCard = ({
     return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
   };
 
+  // Check if motorised option is selected
+  const isMotorisedSelected = () => {
+    return options.some(option => 
+      selectedOptions.includes(option.id) && 
+      option.name.toLowerCase().includes('motorised')
+    );
+  };
+
+  // Filter options based on conditions
+  const getFilteredOptions = (typeOptions: any[]) => {
+    return typeOptions.filter(option => {
+      // If this is a "remote" option, only show it when motorised is selected
+      if (option.name.toLowerCase().includes('remote')) {
+        return isMotorisedSelected();
+      }
+      return true;
+    });
+  };
+
   if (optionsLoading) {
     return (
       <Card>
@@ -75,53 +94,62 @@ export const WindowCoveringOptionsCard = ({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Traditional Options */}
-        {hasTraditionalOptions && Object.entries(groupedOptions).map(([optionType, typeOptions]) => (
-          <div key={optionType} className="space-y-3">
-            <h4 className="font-medium text-brand-primary capitalize">{optionType}</h4>
-            <div className="space-y-2">
-              {Array.isArray(typeOptions) && typeOptions.map((option, index) => {
-                const isSelected = selectedOptions.includes(option.id);
-                
-                return (
-                  <div key={option.id} className="grid grid-cols-2 gap-4 items-center p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => onOptionToggle(option.id)}
-                        disabled={option.is_required}
-                      />
-                      
-                      {option.image_url && (
-                        <img 
-                          src={option.image_url} 
-                          alt={option.name}
-                          className="w-12 h-12 object-cover rounded border"
+        {hasTraditionalOptions && Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
+          // Filter options based on current selections
+          const filteredOptions = getFilteredOptions(typeOptions);
+          
+          if (filteredOptions.length === 0) {
+            return null;
+          }
+
+          return (
+            <div key={optionType} className="space-y-3">
+              <h4 className="font-medium text-brand-primary capitalize">{optionType}</h4>
+              <div className="space-y-2">
+                {filteredOptions.map((option, index) => {
+                  const isSelected = selectedOptions.includes(option.id);
+                  
+                  return (
+                    <div key={option.id} className="grid grid-cols-2 gap-4 items-center p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => onOptionToggle(option.id)}
+                          disabled={option.is_required}
                         />
-                      )}
-                      
-                      <div>
-                        <div className="font-medium">{option.name}</div>
-                        {option.description && (
-                          <div className="text-sm text-gray-600">{option.description}</div>
+                        
+                        {option.image_url && (
+                          <img 
+                            src={option.image_url} 
+                            alt={option.name}
+                            className="w-12 h-12 object-cover rounded border"
+                          />
                         )}
-                        <div className="text-xs text-gray-500 mt-1">
-                          Cost: {option.cost_type}
-                          {option.is_required && <span className="text-red-600 ml-2">• Required</span>}
-                          {option.is_default && <span className="text-blue-600 ml-2">• Default</span>}
+                        
+                        <div>
+                          <div className="font-medium">{option.name}</div>
+                          {option.description && (
+                            <div className="text-sm text-gray-600">{option.description}</div>
+                          )}
+                          <div className="text-xs text-gray-500 mt-1">
+                            Cost: {option.cost_type}
+                            {option.is_required && <span className="text-red-600 ml-2">• Required</span>}
+                            {option.is_default && <span className="text-blue-600 ml-2">• Default</span>}
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <Badge variant={isSelected ? "default" : "outline"}>
+                          {formatCurrency(option.base_cost)}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant={isSelected ? "default" : "outline"}>
-                        {formatCurrency(option.base_cost)}
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Hierarchical Options */}
         {hasHierarchicalOptions && hierarchicalOptions.map((category) => (
@@ -171,42 +199,49 @@ export const WindowCoveringOptionsCard = ({
                       </div>
                     </div>
 
-                    {/* Extras */}
-                    {subSub.extras?.map((extra) => (
-                      <div key={extra.id} className="ml-6 grid grid-cols-2 gap-4 items-center p-2 border rounded-lg bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={selectedOptions.includes(extra.id)}
-                            onCheckedChange={() => onOptionToggle(extra.id)}
-                            disabled={extra.is_required}
-                          />
-                          
-                          {extra.image_url && (
-                            <img 
-                              src={extra.image_url} 
-                              alt={extra.name}
-                              className="w-8 h-8 object-cover rounded border"
+                    {/* Extras - also apply conditional logic here */}
+                    {subSub.extras?.map((extra) => {
+                      // Apply same conditional logic for extras
+                      if (extra.name.toLowerCase().includes('remote') && !isMotorisedSelected()) {
+                        return null;
+                      }
+
+                      return (
+                        <div key={extra.id} className="ml-6 grid grid-cols-2 gap-4 items-center p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={selectedOptions.includes(extra.id)}
+                              onCheckedChange={() => onOptionToggle(extra.id)}
+                              disabled={extra.is_required}
                             />
-                          )}
-                          
-                          <div>
-                            <div className="text-sm font-medium">{extra.name}</div>
-                            {extra.description && (
-                              <div className="text-xs text-gray-600">{extra.description}</div>
+                            
+                            {extra.image_url && (
+                              <img 
+                                src={extra.image_url} 
+                                alt={extra.name}
+                                className="w-8 h-8 object-cover rounded border"
+                              />
                             )}
-                            <div className="text-xs text-gray-500">
-                              {extra.is_required && <span className="text-red-600">• Required</span>}
-                              {extra.is_default && <span className="text-blue-600">• Default</span>}
+                            
+                            <div>
+                              <div className="text-sm font-medium">{extra.name}</div>
+                              {extra.description && (
+                                <div className="text-xs text-gray-600">{extra.description}</div>
+                              )}
+                              <div className="text-xs text-gray-500">
+                                {extra.is_required && <span className="text-red-600">• Required</span>}
+                                {extra.is_default && <span className="text-blue-600">• Default</span>}
+                              </div>
                             </div>
                           </div>
+                          <div className="text-right">
+                            <Badge variant={selectedOptions.includes(extra.id) ? "default" : "outline"} className="text-xs">
+                              {formatCurrency(extra.base_price)}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <Badge variant={selectedOptions.includes(extra.id) ? "default" : "outline"} className="text-xs">
-                            {formatCurrency(extra.base_price)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ))}
               </div>

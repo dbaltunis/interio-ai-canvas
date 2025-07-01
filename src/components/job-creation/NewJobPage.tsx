@@ -23,7 +23,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   const { data: clients, isLoading: clientsLoading } = useClients();
-  const { data: projects } = useProjects(); // Add this to get fresh project data
+  const { data: projects } = useProjects();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const { toast } = useToast();
@@ -86,14 +86,12 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       // Prevent multiple creation attempts
       if (hasAttemptedCreation || currentProject || isCreating) return;
       
-      // Don't wait for clients to load - we can create without them
       setIsCreating(true);
       setHasAttemptedCreation(true);
       
       try {
         console.log("Creating new project without client...");
         
-        // Generate a proper job number
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated");
 
@@ -103,7 +101,8 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           .select("*", { count: 'exact', head: true })
           .eq("user_id", user.id);
         
-        const jobNumber = String(((count || 0) + 1)).padStart(4, '0');
+        // Generate proper sequential job number starting from 1000
+        const jobNumber = String(1000 + (count || 0) + 1);
         
         // Create project without any client assigned - completely empty
         const newProject = await createProject.mutateAsync({
@@ -140,7 +139,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         
         toast({
           title: "New Job Created",
-          description: "Empty job created successfully. You can assign a client from the Client tab.",
+          description: `Job #${jobNumber} created successfully. You can assign a client from the Client tab.`,
         });
       } catch (error) {
         console.error("Failed to create default project:", error);
