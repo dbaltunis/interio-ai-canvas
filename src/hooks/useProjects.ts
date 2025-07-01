@@ -1,11 +1,11 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Project = Tables<"projects">;
 type ProjectInsert = TablesInsert<"projects">;
+type ProjectUpdate = TablesUpdate<"projects">;
 
 export const useProjects = () => {
   return useQuery({
@@ -89,6 +89,39 @@ export const useCreateProject = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateProject = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<ProjectUpdate>) => {
+      const { data, error } = await supabase
+        .from("projects")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Update project error:", error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+    onError: (error: any) => {
+      console.error("Failed to update project:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update project. Please try again.",
         variant: "destructive",
       });
     },
