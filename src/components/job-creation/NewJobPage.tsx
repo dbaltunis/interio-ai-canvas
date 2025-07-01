@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
@@ -80,13 +81,11 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       setHasAttemptedCreation(true);
       
       try {
-        // Use first available client if exists, otherwise create project without client
-        const clientId = clients && clients.length > 0 ? clients[0].id : null;
-        
+        // Create project without any client assigned - completely empty
         const newProject = await createProject.mutateAsync({
           name: "New Project",
           description: "",
-          client_id: clientId,
+          client_id: null, // No client assigned
           status: "planning",
           priority: "medium"
         });
@@ -95,7 +94,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         if (newProject) {
           await createQuote.mutateAsync({
             project_id: newProject.id,
-            client_id: clientId || newProject.client_id,
+            client_id: null, // No client assigned to quote either
             quote_number: "", // Empty string will trigger auto-generation
             status: "draft",
             subtotal: 0,
@@ -111,12 +110,10 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         setCurrentProject(newProject);
         console.log("Created new project:", newProject.id);
         
-        if (!clientId) {
-          toast({
-            title: "Project Created",
-            description: "Project created successfully. You can assign a client later from the Client tab.",
-          });
-        }
+        toast({
+          title: "New Job Created",
+          description: "Empty job created successfully. You can assign a client from the Client tab.",
+        });
       } catch (error) {
         console.error("Failed to create default project:", error);
         toast({
