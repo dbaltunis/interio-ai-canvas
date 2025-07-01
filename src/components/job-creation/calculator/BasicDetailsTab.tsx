@@ -74,11 +74,16 @@ export const BasicDetailsTab = ({ formData, onInputChange }: BasicDetailsTabProp
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2">2:1 (Economical)</SelectItem>
-                <SelectItem value="2.5">2.5:1 (Standard)</SelectItem>
-                <SelectItem value="3">3:1 (Luxury)</SelectItem>
+                <SelectItem value="1.8">1.8:1 (Minimal - Flat panels)</SelectItem>
+                <SelectItem value="2">2:1 (Economical - Light gathering)</SelectItem>
+                <SelectItem value="2.5">2.5:1 (Standard - Good fullness)</SelectItem>
+                <SelectItem value="3">3:1 (Luxury - Rich gathering)</SelectItem>
+                <SelectItem value="3.5">3.5:1 (Ultra luxury - Maximum fullness)</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Higher ratios create more gathering and luxurious appearance
+            </p>
           </div>
           <div>
             <Label>Lining</Label>
@@ -113,7 +118,16 @@ export const BasicDetailsTab = ({ formData, onInputChange }: BasicDetailsTabProp
 
       <div>
         <Label className="text-base font-medium">Measurements (cm)</Label>
-        <div className="grid grid-cols-4 gap-4 mt-3">
+        <div className="bg-blue-50 p-3 rounded-lg mb-4 mt-2">
+          <h4 className="font-medium text-sm mb-2">Measurement Guide:</h4>
+          <ul className="text-xs text-gray-600 space-y-1">
+            <li>• <strong>Rail Width:</strong> Actual width of the curtain rail/track</li>
+            <li>• <strong>Curtain Drop:</strong> Finished length from rail to bottom hem</li>
+            <li>• <strong>Pooling:</strong> Extra fabric that pools on the floor (luxury effect)</li>
+            <li>• <strong>Return Depth:</strong> How far the curtain returns to the wall</li>
+          </ul>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
           <div>
             <Label htmlFor="railWidth">Rail Width *</Label>
             <Input
@@ -123,6 +137,7 @@ export const BasicDetailsTab = ({ formData, onInputChange }: BasicDetailsTabProp
               onChange={(e) => onInputChange("railWidth", e.target.value)}
               placeholder="e.g. 200"
             />
+            <p className="text-xs text-gray-500 mt-1">Width of rail/track</p>
           </div>
           <div>
             <Label htmlFor="curtainDrop">Curtain Drop *</Label>
@@ -133,6 +148,7 @@ export const BasicDetailsTab = ({ formData, onInputChange }: BasicDetailsTabProp
               onChange={(e) => onInputChange("curtainDrop", e.target.value)}
               placeholder="e.g. 250"
             />
+            <p className="text-xs text-gray-500 mt-1">Finished length</p>
           </div>
           <div>
             <Label htmlFor="curtainPooling">Pooling</Label>
@@ -143,6 +159,7 @@ export const BasicDetailsTab = ({ formData, onInputChange }: BasicDetailsTabProp
               onChange={(e) => onInputChange("curtainPooling", e.target.value)}
               placeholder="0"
             />
+            <p className="text-xs text-gray-500 mt-1">Extra on floor</p>
           </div>
           <div>
             <Label htmlFor="returnDepth">Return Depth</Label>
@@ -153,6 +170,7 @@ export const BasicDetailsTab = ({ formData, onInputChange }: BasicDetailsTabProp
               onChange={(e) => onInputChange("returnDepth", e.target.value)}
               placeholder="4"
             />
+            <p className="text-xs text-gray-500 mt-1">Wall return</p>
           </div>
         </div>
       </div>

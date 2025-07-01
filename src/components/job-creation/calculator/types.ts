@@ -56,6 +56,26 @@ export interface TreatmentFormData {
   markupPercentage: number;
 }
 
+export interface FeatureBreakdown {
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+  calculation: string;
+}
+
+export interface DetailedCalculation {
+  fabricCalculation: string;
+  laborCalculation: string;
+  featureBreakdown: FeatureBreakdown[];
+  totalUnits: number;
+  fabricPricePerYard: number;
+  fabricWidthRequired: number;
+  fabricLengthRequired: number;
+  dropsPerWidth: number;
+  widthsRequired: number;
+}
+
 export interface CalculationResult {
   fabricYards: number;
   fabricCost: number;

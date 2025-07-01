@@ -19,7 +19,7 @@ export const TreatmentCalculatorDialog = ({
 }: TreatmentCalculatorDialogProps) => {
   const [activeTab, setActiveTab] = useState<'basic' | 'fabric' | 'features' | 'calculation'>('basic');
   
-  const [formData, setFormData] = useState<TreatmentFormData>({
+  const getInitialFormData = (): TreatmentFormData => ({
     // Basic Details
     treatmentName: treatmentType === 'curtains' ? 'Curtains' : treatmentType === 'roman-shades' ? 'Roman Shades' : treatmentType,
     quantity: 1,
@@ -28,8 +28,8 @@ export const TreatmentCalculatorDialog = ({
     
     // Treatment Specifications
     headingStyle: "pencil-pleat",
-    headingFullness: "2",
-    lining: "unlined",
+    headingFullness: "2.5",
+    lining: "none",
     mounting: "inside",
     
     // Measurements
@@ -58,6 +58,16 @@ export const TreatmentCalculatorDialog = ({
     laborRate: 65,
     markupPercentage: 40,
   });
+  
+  const [formData, setFormData] = useState<TreatmentFormData>(getInitialFormData());
+
+  // Reset form when dialog opens
+  useState(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      setActiveTab('basic');
+    }
+  });
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -66,6 +76,11 @@ export const TreatmentCalculatorDialog = ({
   const calculation = calculateTotalPrice(formData);
 
   const handleSave = () => {
+    if (!formData.railWidth || !formData.curtainDrop) {
+      alert('Please enter rail width and curtain drop measurements');
+      return;
+    }
+
     const treatmentData = {
       product_name: formData.treatmentName,
       treatment_type: treatmentType === 'curtains' ? 'Curtains' : 'Roman Shades',
@@ -75,17 +90,19 @@ export const TreatmentCalculatorDialog = ({
       total_price: calculation.total,
       unit_price: calculation.total / formData.quantity,
       measurements: {
-        railWidth: formData.railWidth,
-        curtainDrop: formData.curtainDrop,
-        curtainPooling: formData.curtainPooling,
-        returnDepth: formData.returnDepth
+        rail_width: formData.railWidth,
+        drop: formData.curtainDrop,
+        pooling: formData.curtainPooling,
+        return_depth: formData.returnDepth,
+        fabric_usage: calculation.fabricYards.toString()
       },
       fabric_details: {
-        fabricName: formData.fabricName || formData.selectedFabric?.name,
-        fabricWidth: formData.fabricWidth,
-        fabricPrice: formData.fabricPricePerYard || formData.selectedFabric?.pricePerYard,
-        verticalRepeat: formData.verticalRepeat,
-        horizontalRepeat: formData.horizontalRepeat
+        fabric_type: formData.fabricName || formData.selectedFabric?.name || '',
+        fabric_code: formData.selectedFabric?.code || '',
+        fabric_cost_per_yard: formData.fabricPricePerYard || formData.selectedFabric?.pricePerYard?.toString() || '0',
+        fabric_width: formData.fabricWidth,
+        roll_direction: 'horizontal',
+        heading_fullness: formData.headingFullness
       },
       treatment_details: {
         headingStyle: formData.headingStyle,
@@ -93,17 +110,28 @@ export const TreatmentCalculatorDialog = ({
         lining: formData.lining,
         mounting: formData.mounting,
         windowPosition: formData.windowPosition,
-        windowType: formData.windowType
+        windowType: formData.windowType,
+        hardware: formData.hardware,
+        hardwareFinish: formData.hardwareFinish
       },
+      selected_options: formData.additionalFeatures.filter(f => f.selected).map(f => f.id),
+      notes: `Calculator generated treatment. Features: ${formData.additionalFeatures.filter(f => f.selected).map(f => f.name).join(', ')}`,
+      status: "planned",
       calculation_details: calculation
     };
 
     onSave(treatmentData);
+    setFormData(getInitialFormData()); // Reset form
+    onClose();
+  };
+
+  const handleClose = () => {
+    setFormData(getInitialFormData()); // Reset form on close
     onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -154,13 +182,22 @@ export const TreatmentCalculatorDialog = ({
           {/* Footer */}
           <div className="flex justify-between items-center pt-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Total: <span className="font-bold text-lg text-primary">{formatCurrency(calculation.total)}</span>
+              <span>Total: <span className="font-bold text-lg text-primary">{formatCurrency(calculation.total)}</span></span>
+              {calculation.total > 0 && (
+                <span className="ml-4 text-xs">
+                  Per panel: {formatCurrency(calculation.total / formData.quantity)}
+                </span>
+              )}
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} className="bg-slate-600 hover:bg-slate-700">
+              <Button 
+                onClick={handleSave} 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={!formData.railWidth || !formData.curtainDrop}
+              >
                 Save Treatment
               </Button>
             </div>
