@@ -34,7 +34,7 @@ export const HierarchicalOptions = ({
             <p className="text-sm text-gray-600">{category.description}</p>
           )}
 
-          {/* Subcategories as Option Groups */}
+          {/* Display subcategories as dropdowns */}
           {category.subcategories?.map((subcategory) => (
             <div key={subcategory.id} className="space-y-3">
               <div className="flex items-center justify-between">
@@ -63,7 +63,7 @@ export const HierarchicalOptions = ({
                 </div>
               </div>
 
-              {/* Show extras for selected sub-subcategory */}
+              {/* Show sub-subcategory extras only when a sub-subcategory is selected */}
               {hierarchicalSelections[`${category.id}_${subcategory.id}`] && (
                 <div className="ml-4 space-y-2">
                   {subcategory.sub_subcategories?.find(
