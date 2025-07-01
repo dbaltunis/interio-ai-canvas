@@ -34,84 +34,163 @@ export const HierarchicalOptions = ({
             <p className="text-sm text-gray-600">{category.description}</p>
           )}
 
-          {/* Display subcategories as dropdowns */}
-          {category.subcategories?.map((subcategory) => (
-            <div key={subcategory.id} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
-                <div className="w-64">
-                  <Select
-                    value={hierarchicalSelections[`${category.id}_${subcategory.id}`] || ""}
-                    onValueChange={(value) => onHierarchicalSelection(category.id, subcategory.id, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select option..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subcategory.sub_subcategories?.map((subSub) => (
-                        <SelectItem key={subSub.id} value={subSub.id}>
+          {/* Special handling for HEADRAIL category */}
+          {category.name.toLowerCase().includes('headrail') ? (
+            <div className="space-y-4">
+              {/* Main HEADRAIL dropdown */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-medium text-gray-800">Type</h5>
+                  <div className="w-64">
+                    <Select
+                      value={hierarchicalSelections[`${category.id}_type`] || ""}
+                      onValueChange={(value) => onHierarchicalSelection(category.id, "type", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">
                           <div className="flex items-center justify-between w-full">
-                            <span>{subSub.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {formatCurrency(subSub.base_price, currency)}
-                            </Badge>
+                            <span>Standard</span>
                           </div>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        <SelectItem value="motorised">
+                          <div className="flex items-center justify-between w-full">
+                            <span>Motorised</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              {/* Show sub-subcategory extras only when a sub-subcategory is selected */}
-              {hierarchicalSelections[`${category.id}_${subcategory.id}`] && (
-                <div className="ml-4 space-y-2">
-                  {subcategory.sub_subcategories?.find(
-                    subSub => subSub.id === hierarchicalSelections[`${category.id}_${subcategory.id}`]
-                  )?.extras?.map((extra) => {
-                    // Apply conditional logic for extras
-                    if (extra.name.toLowerCase().includes('remote') && !isMotorisedSelected([])) {
-                      return null;
-                    }
-
-                    return (
-                      <div key={extra.id} className="flex items-center justify-between p-2 border rounded-lg bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={selectedOptions.includes(extra.id)}
-                            onCheckedChange={() => onOptionToggle(extra.id)}
-                            disabled={extra.is_required}
-                          />
-                          
-                          {extra.image_url && (
-                            <img 
-                              src={extra.image_url} 
-                              alt={extra.name}
-                              className="w-8 h-8 object-cover rounded border"
-                            />
-                          )}
-                          
-                          <div>
-                            <div className="text-sm font-medium">{extra.name}</div>
-                            {extra.description && (
-                              <div className="text-xs text-gray-600">{extra.description}</div>
-                            )}
-                            <div className="text-xs text-gray-500">
-                              {extra.is_required && <span className="text-red-600">• Required</span>}
-                              {extra.is_default && <span className="text-blue-600">• Default</span>}
+              {/* Show Remote options only when Motorised is selected */}
+              {hierarchicalSelections[`${category.id}_type`] === 'motorised' && (
+                <div className="space-y-3 ml-4">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-medium text-gray-800">Remote</h5>
+                    <div className="w-64">
+                      <Select
+                        value={hierarchicalSelections[`${category.id}_remote`] || ""}
+                        onValueChange={(value) => onHierarchicalSelection(category.id, "remote", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select remote..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="basic_remote">
+                            <div className="flex items-center justify-between w-full">
+                              <span>Basic Remote</span>
+                              <Badge variant="outline" className="ml-2">
+                                {formatCurrency(25, currency)}
+                              </Badge>
                             </div>
-                          </div>
-                        </div>
-                        <Badge variant={selectedOptions.includes(extra.id) ? "default" : "outline"} className="text-xs">
-                          {formatCurrency(extra.base_price, currency)}
-                        </Badge>
-                      </div>
-                    );
-                  })}
+                          </SelectItem>
+                          <SelectItem value="smart_remote">
+                            <div className="flex items-center justify-between w-full">
+                              <span>Smart Remote</span>
+                              <Badge variant="outline" className="ml-2">
+                                {formatCurrency(50, currency)}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="app_control">
+                            <div className="flex items-center justify-between w-full">
+                              <span>App Control</span>
+                              <Badge variant="outline" className="ml-2">
+                                {formatCurrency(75, currency)}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
-          ))}
+          ) : (
+            /* Standard subcategory handling for non-HEADRAIL categories */
+            category.subcategories?.map((subcategory) => (
+              <div key={subcategory.id} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
+                  <div className="w-64">
+                    <Select
+                      value={hierarchicalSelections[`${category.id}_${subcategory.id}`] || ""}
+                      onValueChange={(value) => onHierarchicalSelection(category.id, subcategory.id, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subcategory.sub_subcategories?.map((subSub) => (
+                          <SelectItem key={subSub.id} value={subSub.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{subSub.name}</span>
+                              <Badge variant="outline" className="ml-2">
+                                {formatCurrency(subSub.base_price, currency)}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Show sub-subcategory extras only when a sub-subcategory is selected */}
+                {hierarchicalSelections[`${category.id}_${subcategory.id}`] && (
+                  <div className="ml-4 space-y-2">
+                    {subcategory.sub_subcategories?.find(
+                      subSub => subSub.id === hierarchicalSelections[`${category.id}_${subcategory.id}`]
+                    )?.extras?.map((extra) => {
+                      // Apply conditional logic for extras
+                      if (extra.name.toLowerCase().includes('remote') && !isMotorisedSelected([])) {
+                        return null;
+                      }
+
+                      return (
+                        <div key={extra.id} className="flex items-center justify-between p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={selectedOptions.includes(extra.id)}
+                              onCheckedChange={() => onOptionToggle(extra.id)}
+                              disabled={extra.is_required}
+                            />
+                            
+                            {extra.image_url && (
+                              <img 
+                                src={extra.image_url} 
+                                alt={extra.name}
+                                className="w-8 h-8 object-cover rounded border"
+                              />
+                            )}
+                            
+                            <div>
+                              <div className="text-sm font-medium">{extra.name}</div>
+                              {extra.description && (
+                                <div className="text-xs text-gray-600">{extra.description}</div>
+                              )}
+                              <div className="text-xs text-gray-500">
+                                {extra.is_required && <span className="text-red-600">• Required</span>}
+                                {extra.is_default && <span className="text-blue-600">• Default</span>}
+                              </div>
+                            </div>
+                          </div>
+                          <Badge variant={selectedOptions.includes(extra.id) ? "default" : "outline"} className="text-xs">
+                            {formatCurrency(extra.base_price, currency)}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       ))}
     </>
