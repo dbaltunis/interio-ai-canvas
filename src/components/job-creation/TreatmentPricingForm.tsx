@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useUploadFile } from "@/hooks/useFileStorage";
 import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
-import { TreatmentMeasurementsCard } from "./treatment-pricing/TreatmentMeasurementsCard";
 import { TreatmentOptionsCard } from "./treatment-pricing/TreatmentOptionsCard";
 import { WindowCoveringOptionsCard } from "./treatment-pricing/WindowCoveringOptionsCard";
 import { FabricDetailsCard } from "./treatment-pricing/FabricDetailsCard";
@@ -15,6 +14,7 @@ import { ImageUploadCard } from "./treatment-pricing/ImageUploadCard";
 import { CostSummaryCard } from "./treatment-pricing/CostSummaryCard";
 import { useFabricCalculation } from "./treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "./treatment-pricing/useTreatmentFormData";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface TreatmentPricingFormProps {
   isOpen: boolean;
@@ -40,6 +40,8 @@ export const TreatmentPricingForm = ({
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
   const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType);
+  const { getLengthUnitLabel } = useMeasurementUnits();
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const costs = calculateCosts();
 
@@ -148,24 +150,16 @@ export const TreatmentPricingForm = ({
       window_covering: windowCovering
     };
 
-    // Save the treatment and close the popup
     onSave(treatmentData);
     resetForm();
     onClose();
   };
 
   const handleOptionToggle = (optionId: string) => {
-    console.log('=== Option Toggle Debug ===');
-    console.log('Toggling option:', optionId);
-    console.log('Current selected options:', formData.selected_options);
-    
     setFormData(prev => {
       const newSelectedOptions = prev.selected_options.includes(optionId)
         ? prev.selected_options.filter(id => id !== optionId)
         : [...prev.selected_options, optionId];
-      
-      console.log('New selected options:', newSelectedOptions);
-      console.log('=== End Option Toggle Debug ===');
       
       return {
         ...prev,
@@ -174,36 +168,116 @@ export const TreatmentPricingForm = ({
     });
   };
 
+  const handleNameSave = () => {
+    setIsEditingName(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-3">
-            {windowCovering?.image_url && (
-              <img 
-                src={windowCovering.image_url} 
-                alt={windowCovering.name}
-                className="w-12 h-12 object-cover rounded-lg border"
-              />
-            )}
-            <span>Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}</span>
+          <DialogTitle className="text-center">
+            Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Treatment Name */}
-          <div className="space-y-2">
-            <Label htmlFor="product_name">Treatment Name</Label>
+          {/* Treatment Name - Editable */}
+          <div className="text-center space-y-3">
+            {isEditingName ? (
+              <div className="flex items-center justify-center gap-2">
+                <Input
+                  value={formData.product_name}
+                  onChange={(e) => handleInputChange("product_name", e.target.value)}
+                  className="text-center text-lg font-semibold max-w-md"
+                  autoFocus
+                  onBlur={handleNameSave}
+                  onKeyDown={(e) => e.key === 'Enter' && handleNameSave()}
+                />
+              </div>
+            ) : (
+              <h3 
+                className="text-lg font-semibold cursor-pointer hover:text-brand-primary transition-colors"
+                onClick={() => setIsEditingName(true)}
+              >
+                {formData.product_name}
+              </h3>
+            )}
+            
+            {/* Window Covering Image - Centered and Larger */}
+            {windowCovering?.image_url && (
+              <div className="flex justify-center">
+                <img 
+                  src={windowCovering.image_url} 
+                  alt={windowCovering.name}
+                  className="w-24 h-24 object-cover rounded-lg border shadow-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Quantity */}
+          <div className="grid grid-cols-2 gap-4 items-center">
+            <Label htmlFor="quantity">Quantity</Label>
             <Input
-              id="product_name"
-              value={formData.product_name}
-              onChange={(e) => handleInputChange("product_name", e.target.value)}
-              placeholder="Enter treatment name"
-              required
+              id="quantity"
+              type="number"
+              min="1"
+              value={formData.quantity}
+              onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 1)}
             />
           </div>
 
-          <TreatmentMeasurementsCard formData={formData} onInputChange={handleInputChange} />
+          {/* Measurements - Two Column Layout */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-center">Measurements</h4>
+            <div className="grid grid-cols-2 gap-4 items-center">
+              <Label htmlFor="rail_width">Rail Width ({getLengthUnitLabel()})</Label>
+              <Input
+                id="rail_width"
+                type="number"
+                step="0.25"
+                value={formData.rail_width}
+                onChange={(e) => handleInputChange("rail_width", e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4 items-center">
+              <Label htmlFor="drop">Drop ({getLengthUnitLabel()})</Label>
+              <Input
+                id="drop"
+                type="number"
+                step="0.25"
+                value={formData.drop}
+                onChange={(e) => handleInputChange("drop", e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4 items-center">
+              <Label htmlFor="pooling">Pooling ({getLengthUnitLabel()})</Label>
+              <Input
+                id="pooling"
+                type="number"
+                step="0.25"
+                value={formData.pooling}
+                onChange={(e) => handleInputChange("pooling", e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4 items-center">
+              <Label htmlFor="heading_fullness">Heading Fullness</Label>
+              <Input
+                id="heading_fullness"
+                type="number"
+                step="0.1"
+                min="1"
+                max="5"
+                value={formData.heading_fullness}
+                onChange={(e) => handleInputChange("heading_fullness", e.target.value)}
+                placeholder="2.5"
+              />
+            </div>
+          </div>
 
           <TreatmentOptionsCard 
             treatmentTypesData={treatmentTypesData}
@@ -236,7 +310,7 @@ export const TreatmentPricingForm = ({
           />
 
           {/* Notes */}
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4 items-start">
             <Label htmlFor="notes">Notes</Label>
             <textarea
               id="notes"
