@@ -905,7 +905,7 @@ export type Database = {
       }
       projects: {
         Row: {
-          client_id: string
+          client_id: string | null
           completion_date: string | null
           created_at: string
           description: string | null
@@ -921,7 +921,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           completion_date?: string | null
           created_at?: string
           description?: string | null
@@ -937,7 +937,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           completion_date?: string | null
           created_at?: string
           description?: string | null
