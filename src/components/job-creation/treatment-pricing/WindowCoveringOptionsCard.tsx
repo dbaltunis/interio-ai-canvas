@@ -1,9 +1,12 @@
 
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { HierarchicalOption } from "@/hooks/useWindowCoveringOptions";
+import { useState } from "react";
 
 interface WindowCoveringOptionsCardProps {
   options: any[];
@@ -23,6 +26,7 @@ export const WindowCoveringOptionsCard = ({
   onOptionToggle 
 }: WindowCoveringOptionsCardProps) => {
   const { units } = useMeasurementUnits();
+  const [hierarchicalSelections, setHierarchicalSelections] = useState<Record<string, string>>({});
 
   const formatCurrency = (amount: number) => {
     const currencySymbols: Record<string, string> = {
@@ -41,6 +45,8 @@ export const WindowCoveringOptionsCard = ({
     return options.some(option => 
       selectedOptions.includes(option.id) && 
       option.name.toLowerCase().includes('motorised')
+    ) || Object.values(hierarchicalSelections).some(selection => 
+      selection.toLowerCase().includes('motorised')
     );
   };
 
@@ -53,6 +59,17 @@ export const WindowCoveringOptionsCard = ({
       }
       return true;
     });
+  };
+
+  const handleHierarchicalSelection = (categoryId: string, subcategoryId: string, value: string) => {
+    const selectionKey = `${categoryId}_${subcategoryId}`;
+    setHierarchicalSelections(prev => ({
+      ...prev,
+      [selectionKey]: value
+    }));
+    
+    // Also trigger the option toggle for the selected sub-subcategory
+    onOptionToggle(value);
   };
 
   if (optionsLoading) {
@@ -151,7 +168,7 @@ export const WindowCoveringOptionsCard = ({
           );
         })}
 
-        {/* Hierarchical Options */}
+        {/* Hierarchical Options - Display as Dropdowns */}
         {hasHierarchicalOptions && hierarchicalOptions.map((category) => (
           <div key={category.id} className="space-y-4">
             <h4 className="font-medium text-brand-primary">{category.name}</h4>
@@ -159,55 +176,48 @@ export const WindowCoveringOptionsCard = ({
               <p className="text-sm text-gray-600">{category.description}</p>
             )}
 
-            {/* Subcategories */}
+            {/* Subcategories as Option Groups */}
             {category.subcategories?.map((subcategory) => (
-              <div key={subcategory.id} className="ml-4 space-y-3">
-                <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
-                
-                {/* Sub-subcategories */}
-                {subcategory.sub_subcategories?.map((subSub) => (
-                  <div key={subSub.id} className="ml-4 space-y-2">
-                    <div className="grid grid-cols-2 gap-4 items-center p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          checked={selectedOptions.includes(subSub.id)}
-                          onCheckedChange={() => onOptionToggle(subSub.id)}
-                        />
-                        
-                        {subSub.image_url && (
-                          <img 
-                            src={subSub.image_url} 
-                            alt={subSub.name}
-                            className="w-12 h-12 object-cover rounded border"
-                          />
-                        )}
-                        
-                        <div>
-                          <div className="font-medium">{subSub.name}</div>
-                          {subSub.description && (
-                            <div className="text-sm text-gray-600">{subSub.description}</div>
-                          )}
-                          <div className="text-xs text-gray-500 mt-1">
-                            Cost: {subSub.pricing_method}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={selectedOptions.includes(subSub.id) ? "default" : "outline"}>
-                          {formatCurrency(subSub.base_price)}
-                        </Badge>
-                      </div>
-                    </div>
+              <div key={subcategory.id} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
+                  <div className="w-64">
+                    <Select
+                      value={hierarchicalSelections[`${category.id}_${subcategory.id}`] || ""}
+                      onValueChange={(value) => handleHierarchicalSelection(category.id, subcategory.id, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subcategory.sub_subcategories?.map((subSub) => (
+                          <SelectItem key={subSub.id} value={subSub.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{subSub.name}</span>
+                              <Badge variant="outline" className="ml-2">
+                                {formatCurrency(subSub.base_price)}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-                    {/* Extras - also apply conditional logic here */}
-                    {subSub.extras?.map((extra) => {
-                      // Apply same conditional logic for extras
+                {/* Show extras for selected sub-subcategory */}
+                {hierarchicalSelections[`${category.id}_${subcategory.id}`] && (
+                  <div className="ml-4 space-y-2">
+                    {subcategory.sub_subcategories?.find(
+                      subSub => subSub.id === hierarchicalSelections[`${category.id}_${subcategory.id}`]
+                    )?.extras?.map((extra) => {
+                      // Apply conditional logic for extras
                       if (extra.name.toLowerCase().includes('remote') && !isMotorisedSelected()) {
                         return null;
                       }
 
                       return (
-                        <div key={extra.id} className="ml-6 grid grid-cols-2 gap-4 items-center p-2 border rounded-lg bg-gray-50">
+                        <div key={extra.id} className="flex items-center justify-between p-2 border rounded-lg bg-gray-50">
                           <div className="flex items-center space-x-3">
                             <Checkbox
                               checked={selectedOptions.includes(extra.id)}
@@ -234,16 +244,14 @@ export const WindowCoveringOptionsCard = ({
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <Badge variant={selectedOptions.includes(extra.id) ? "default" : "outline"} className="text-xs">
-                              {formatCurrency(extra.base_price)}
-                            </Badge>
-                          </div>
+                          <Badge variant={selectedOptions.includes(extra.id) ? "default" : "outline"} className="text-xs">
+                            {formatCurrency(extra.base_price)}
+                          </Badge>
                         </div>
                       );
                     })}
                   </div>
-                ))}
+                )}
               </div>
             ))}
           </div>
@@ -252,3 +260,4 @@ export const WindowCoveringOptionsCard = ({
     </Card>
   );
 };
+
