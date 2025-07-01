@@ -50,27 +50,7 @@ export const TreatmentOptionsCard = ({
   }
 
   if (treatmentOptions.length === 0) {
-    return (
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="text-yellow-800">Treatment Options</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-sm text-yellow-700">
-            No options configured for treatment type "{treatmentType}"
-          </p>
-          <p className="text-xs text-yellow-600">
-            You can add options in <strong>Settings → Treatments → {treatmentType}</strong>
-          </p>
-          <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
-            <p><strong>Debug Info:</strong></p>
-            <p>Treatment Types Found: {treatmentTypesData?.length || 0}</p>
-            <p>Current Treatment Type: {currentTreatmentType ? 'Found' : 'Not Found'}</p>
-            <p>Available Treatment Types: {treatmentTypesData?.map(tt => tt.name).join(', ') || 'None'}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (

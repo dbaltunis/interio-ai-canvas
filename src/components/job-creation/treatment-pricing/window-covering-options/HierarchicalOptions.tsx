@@ -34,86 +34,9 @@ export const HierarchicalOptions = ({
             <p className="text-sm text-gray-600">{category.description}</p>
           )}
 
-          {/* Special handling for HEADRAIL category */}
-          {category.name.toLowerCase().includes('headrail') ? (
-            <div className="space-y-4">
-              {/* Main HEADRAIL dropdown */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h5 className="font-medium text-gray-800">Type</h5>
-                  <div className="w-64">
-                    <Select
-                      value={hierarchicalSelections[`${category.id}_type`] || ""}
-                      onValueChange={(value) => onHierarchicalSelection(category.id, "type", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">
-                          <div className="flex items-center justify-between w-full">
-                            <span>Standard</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="motorised">
-                          <div className="flex items-center justify-between w-full">
-                            <span>Motorised</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Show Remote options only when Motorised is selected */}
-              {hierarchicalSelections[`${category.id}_type`] === 'motorised' && (
-                <div className="space-y-3 ml-4">
-                  <div className="flex items-center justify-between">
-                    <h5 className="font-medium text-gray-800">Remote</h5>
-                    <div className="w-64">
-                      <Select
-                        value={hierarchicalSelections[`${category.id}_remote`] || ""}
-                        onValueChange={(value) => onHierarchicalSelection(category.id, "remote", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select remote..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="basic_remote">
-                            <div className="flex items-center justify-between w-full">
-                              <span>Basic Remote</span>
-                              <Badge variant="outline" className="ml-2">
-                                {formatCurrency(25, currency)}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="smart_remote">
-                            <div className="flex items-center justify-between w-full">
-                              <span>Smart Remote</span>
-                              <Badge variant="outline" className="ml-2">
-                                {formatCurrency(50, currency)}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="app_control">
-                            <div className="flex items-center justify-between w-full">
-                              <span>App Control</span>
-                              <Badge variant="outline" className="ml-2">
-                                {formatCurrency(75, currency)}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Standard subcategory handling for non-HEADRAIL categories */
-            category.subcategories?.map((subcategory) => (
+          {/* Apply dropdown pattern to all categories */}
+          <div className="space-y-4">
+            {category.subcategories?.map((subcategory) => (
               <div key={subcategory.id} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
@@ -147,7 +70,7 @@ export const HierarchicalOptions = ({
                     {subcategory.sub_subcategories?.find(
                       subSub => subSub.id === hierarchicalSelections[`${category.id}_${subcategory.id}`]
                     )?.extras?.map((extra) => {
-                      // Apply conditional logic for extras
+                      // Apply conditional logic for extras (e.g., remote options only show when motorised is selected)
                       if (extra.name.toLowerCase().includes('remote') && !isMotorisedSelected([])) {
                         return null;
                       }
@@ -188,9 +111,55 @@ export const HierarchicalOptions = ({
                     })}
                   </div>
                 )}
+
+                {/* Show conditional subcategories (like Remote options for Motorised) */}
+                {category.name.toLowerCase().includes('headrail') && 
+                 hierarchicalSelections[`${category.id}_${subcategory.id}`] === 'motorised' && (
+                  <div className="space-y-3 ml-4">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-medium text-gray-800">Remote</h5>
+                      <div className="w-64">
+                        <Select
+                          value={hierarchicalSelections[`${category.id}_remote`] || ""}
+                          onValueChange={(value) => onHierarchicalSelection(category.id, "remote", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select remote..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basic_remote">
+                              <div className="flex items-center justify-between w-full">
+                                <span>Basic Remote</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {formatCurrency(25, currency)}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="smart_remote">
+                              <div className="flex items-center justify-between w-full">
+                                <span>Smart Remote</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {formatCurrency(50, currency)}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="app_control">
+                              <div className="flex items-center justify-between w-full">
+                                <span>App Control</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {formatCurrency(75, currency)}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
       ))}
     </>
