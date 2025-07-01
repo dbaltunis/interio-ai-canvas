@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,25 +43,46 @@ export const TreatmentPricingForm = ({
 
   const costs = calculateCosts();
 
-  // Debug logging for options
+  // Enhanced debugging for options loading
+  console.log('=== TreatmentPricingForm Debug ===');
   console.log('Treatment Type:', treatmentType);
-  console.log('Treatment Types Data:', treatmentTypesData);
+  console.log('Surface Type:', surfaceType);
   console.log('Window Covering:', windowCovering);
-  console.log('Window Covering Options:', options);
+  console.log('Window Covering ID:', windowCovering?.id);
+  console.log('Options Loading:', optionsLoading);
+  console.log('Options Data:', options);
+  console.log('Options Length:', options?.length);
+  console.log('Treatment Types Data:', treatmentTypesData);
+  console.log('Treatment Types Loading:', treatmentTypesLoading);
   console.log('Selected Options:', formData.selected_options);
+  console.log('Form Data:', formData);
+  console.log('=== End Debug ===');
 
   // Auto-select required and default options when window covering changes
   useEffect(() => {
+    console.log('useEffect - Auto-selecting required/default options');
+    console.log('Window Covering:', windowCovering);
+    console.log('Options:', options);
+    
     if (windowCovering && options && options.length > 0) {
       const autoSelectOptions = options
-        .filter(option => option.is_required || option.is_default)
+        .filter(option => {
+          console.log(`Checking option ${option.name}: required=${option.is_required}, default=${option.is_default}`);
+          return option.is_required || option.is_default;
+        })
         .map(option => option.id);
       
+      console.log('Auto-select options:', autoSelectOptions);
+      
       if (autoSelectOptions.length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          selected_options: [...new Set([...prev.selected_options, ...autoSelectOptions])]
-        }));
+        setFormData(prev => {
+          const newSelectedOptions = [...new Set([...prev.selected_options, ...autoSelectOptions])];
+          console.log('Updating selected options from', prev.selected_options, 'to', newSelectedOptions);
+          return {
+            ...prev,
+            selected_options: newSelectedOptions
+          };
+        });
       }
     }
   }, [windowCovering, options, setFormData]);
@@ -119,15 +141,23 @@ export const TreatmentPricingForm = ({
   };
 
   const handleOptionToggle = (optionId: string) => {
+    console.log('=== Option Toggle Debug ===');
     console.log('Toggling option:', optionId);
     console.log('Current selected options:', formData.selected_options);
     
-    setFormData(prev => ({
-      ...prev,
-      selected_options: prev.selected_options.includes(optionId)
+    setFormData(prev => {
+      const newSelectedOptions = prev.selected_options.includes(optionId)
         ? prev.selected_options.filter(id => id !== optionId)
-        : [...prev.selected_options, optionId]
-    }));
+        : [...prev.selected_options, optionId];
+      
+      console.log('New selected options:', newSelectedOptions);
+      console.log('=== End Option Toggle Debug ===');
+      
+      return {
+        ...prev,
+        selected_options: newSelectedOptions
+      };
+    });
   };
 
   return (

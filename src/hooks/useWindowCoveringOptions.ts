@@ -23,24 +23,43 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
   const { toast } = useToast();
 
   const fetchOptions = async () => {
-    if (!windowCoveringId) return;
+    console.log('useWindowCoveringOptions - fetchOptions called with ID:', windowCoveringId);
+    
+    if (!windowCoveringId) {
+      console.log('useWindowCoveringOptions - No window covering ID provided');
+      setOptions([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
     
     try {
+      console.log('useWindowCoveringOptions - Fetching options for window covering:', windowCoveringId);
+      
       const { data, error } = await supabase
         .from('window_covering_options')
         .select('*')
         .eq('window_covering_id', windowCoveringId)
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      console.log('useWindowCoveringOptions - Query result:', { data, error });
+
+      if (error) {
+        console.error('useWindowCoveringOptions - Database error:', error);
+        throw error;
+      }
+      
+      console.log('useWindowCoveringOptions - Found options:', data?.length || 0);
       setOptions(data || []);
     } catch (error) {
-      console.error('Error fetching options:', error);
+      console.error('useWindowCoveringOptions - Error fetching options:', error);
       toast({
         title: "Error",
         description: "Failed to fetch options",
         variant: "destructive"
       });
+      setOptions([]);
     } finally {
       setIsLoading(false);
     }
@@ -143,8 +162,15 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
   };
 
   useEffect(() => {
+    console.log('useWindowCoveringOptions - useEffect triggered, windowCoveringId:', windowCoveringId);
     fetchOptions();
   }, [windowCoveringId]);
+
+  console.log('useWindowCoveringOptions - Returning:', { 
+    options: options?.length || 0, 
+    isLoading, 
+    windowCoveringId 
+  });
 
   return {
     options,
