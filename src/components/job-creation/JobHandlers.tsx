@@ -197,60 +197,6 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
-  const handleCopyRoom = (room: any) => {
-    const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
-    const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
-    
-    return {
-      room,
-      surfaces: roomSurfaces,
-      treatments: roomTreatments
-    };
-  };
-
-  const handlePasteRoom = async (copiedRoom: any) => {
-    if (!copiedRoom) return;
-
-    try {
-      const roomNumber = (rooms?.length || 0) + 1;
-      const newRoom = await createRoom.mutateAsync({
-        project_id: actualProjectId,
-        name: `${copiedRoom.room.name} (Copy ${roomNumber})`,
-        room_type: copiedRoom.room.room_type
-      });
-
-      for (const surface of copiedRoom.surfaces) {
-        const newSurface = await createSurface.mutateAsync({
-          room_id: newRoom.id,
-          project_id: actualProjectId,
-          name: surface.name,
-          surface_type: surface.surface_type,
-          width: surface.width,
-          height: surface.height,
-          surface_width: surface.surface_width,
-          surface_height: surface.surface_height
-        });
-
-        const surfaceTreatments = copiedRoom.treatments.filter((t: any) => t.window_id === surface.id);
-        for (const treatment of surfaceTreatments) {
-          await createTreatment.mutateAsync({
-            window_id: newSurface.id,
-            room_id: newRoom.id,
-            project_id: actualProjectId,
-            treatment_type: treatment.treatment_type,
-            product_name: treatment.product_name,
-            material_cost: treatment.material_cost,
-            labor_cost: treatment.labor_cost,
-            total_price: treatment.total_price,
-            status: treatment.status
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to paste room:", error);
-    }
-  };
-
   return {
     rooms,
     roomsLoading,
