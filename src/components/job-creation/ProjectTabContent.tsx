@@ -38,10 +38,35 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
     }
   };
 
+  const handleClientRemove = async () => {
+    try {
+      await updateProject.mutateAsync({
+        id: project.id,
+        client_id: null
+      });
+      toast({
+        title: "Success",
+        description: "Client has been removed from the project",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove client from project",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "client":
-        return <ProjectClientTab project={project} onClientSelect={handleClientSelect} />;
+        return (
+          <ProjectClientTab 
+            project={project} 
+            onClientSelect={handleClientSelect}
+            onClientRemove={handleClientRemove}
+          />
+        );
       case "jobs":
         return <ProjectJobsTab project={project} onBack={onBack} />;
       case "quote":

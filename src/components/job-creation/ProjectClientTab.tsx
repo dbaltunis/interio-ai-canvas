@@ -9,15 +9,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useClients, useCreateClient } from "@/hooks/useClients";
-import { CheckCircle, User, Search, Plus, Edit } from "lucide-react";
+import { CheckCircle, User, Search, Plus, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProjectClientTabProps {
   project: any;
   onClientSelect?: (clientId: string) => void;
+  onClientRemove?: () => void;
 }
 
-export const ProjectClientTab = ({ project, onClientSelect }: ProjectClientTabProps) => {
+export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: ProjectClientTabProps) => {
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
@@ -51,6 +52,14 @@ export const ProjectClientTab = ({ project, onClientSelect }: ProjectClientTabPr
     toast({
       title: "Client Selected",
       description: "Client has been assigned to this project",
+    });
+  };
+
+  const handleClientRemove = () => {
+    onClientRemove?.();
+    toast({
+      title: "Client Removed",
+      description: "Client has been removed from this project",
     });
   };
 
@@ -276,6 +285,10 @@ export const ProjectClientTab = ({ project, onClientSelect }: ProjectClientTabPr
           <Button variant="outline" onClick={() => setShowClientSearch(true)}>
             <Search className="h-4 w-4 mr-2" />
             Change Client
+          </Button>
+          <Button variant="outline" onClick={handleClientRemove} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Remove Client
           </Button>
         </div>
       </div>
