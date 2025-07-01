@@ -225,7 +225,13 @@ export const TreatmentPricingForm = ({
             onNotesChange={(notes) => handleInputChange("notes", notes)}
           />
 
-          <CostSummaryCard costs={costs} treatmentType={treatmentType} />
+          <CostSummaryCard 
+            costs={costs} 
+            treatmentType={treatmentType}
+            selectedOptions={formData.selected_options}
+            availableOptions={options}
+            hierarchicalOptions={hierarchicalOptions}
+          />
 
           <TreatmentFormActions onCancel={onClose} />
         </form>

@@ -12,9 +12,18 @@ interface CostSummaryCardProps {
     totalCost: string;
   };
   treatmentType?: string;
+  selectedOptions?: string[];
+  availableOptions?: any[];
+  hierarchicalOptions?: any[];
 }
 
-export const CostSummaryCard = ({ costs, treatmentType }: CostSummaryCardProps) => {
+export const CostSummaryCard = ({ 
+  costs, 
+  treatmentType, 
+  selectedOptions = [], 
+  availableOptions = [],
+  hierarchicalOptions = []
+}: CostSummaryCardProps) => {
   const { units } = useMeasurementUnits();
 
   const formatCurrency = (amount: number) => {
@@ -29,6 +38,49 @@ export const CostSummaryCard = ({ costs, treatmentType }: CostSummaryCardProps) 
     return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
   };
 
+  // Get selected option details
+  const getSelectedOptionDetails = () => {
+    const selectedDetails: Array<{ name: string; cost: number }> = [];
+
+    // Check traditional options
+    availableOptions.forEach(option => {
+      if (selectedOptions.includes(option.id)) {
+        selectedDetails.push({
+          name: option.name,
+          cost: option.base_cost || 0
+        });
+      }
+    });
+
+    // Check hierarchical options
+    hierarchicalOptions.forEach(category => {
+      category.subcategories?.forEach((subcategory: any) => {
+        subcategory.sub_subcategories?.forEach((subSub: any) => {
+          if (selectedOptions.includes(subSub.id)) {
+            selectedDetails.push({
+              name: subSub.name,
+              cost: subSub.base_price || 0
+            });
+          }
+          
+          // Check extras
+          subSub.extras?.forEach((extra: any) => {
+            if (selectedOptions.includes(extra.id)) {
+              selectedDetails.push({
+                name: extra.name,
+                cost: extra.base_price || 0
+              });
+            }
+          });
+        });
+      });
+    });
+
+    return selectedDetails;
+  };
+
+  const selectedOptionDetails = getSelectedOptionDetails();
+
   return (
     <Card>
       <CardHeader>
@@ -39,10 +91,20 @@ export const CostSummaryCard = ({ costs, treatmentType }: CostSummaryCardProps) 
           <span>Fabric Cost:</span>
           <span>{formatCurrency(parseFloat(costs.fabricCost))}</span>
         </div>
-        <div className="flex justify-between">
-          <span>Options Cost:</span>
-          <span>{formatCurrency(parseFloat(costs.optionsCost))}</span>
-        </div>
+        
+        {/* Itemized Options */}
+        {selectedOptionDetails.length > 0 && (
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-gray-700">Selected Options:</div>
+            {selectedOptionDetails.map((option, index) => (
+              <div key={index} className="flex justify-between text-sm pl-4">
+                <span className="text-gray-600">• {option.name}:</span>
+                <span>{formatCurrency(option.cost)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-1">
             <span>Labor Cost:</span>
