@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +22,8 @@ export const useRooms = (projectId?: string) => {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache time
   });
 };
 
@@ -35,27 +36,61 @@ export const useCreateRoom = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      console.log("Creating room with data:", room);
+
       const { data, error } = await supabase
         .from("rooms")
         .insert({ ...room, user_id: user.id })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Room creation error:", error);
+        throw error;
+      }
+      
+      console.log("Room created successfully:", data);
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
-      toast({
-        title: "Success",
-        description: "Room created successfully",
-      });
+    onMutate: async (newRoom) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["rooms", newRoom.project_id] });
+      
+      const previousRooms = queryClient.getQueryData(["rooms", newRoom.project_id]);
+      
+      const optimisticRoom = {
+        id: `temp-${Date.now()}`,
+        ...newRoom,
+        user_id: "current-user",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(["rooms", newRoom.project_id], (old: any) => 
+        old ? [...old, optimisticRoom] : [optimisticRoom]
+      );
+      
+      return { previousRooms, projectId: newRoom.project_id };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousRooms && context.projectId) {
+        queryClient.setQueryData(["rooms", context.projectId], context.previousRooms);
+      }
+      console.error("Failed to create room:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create room. Please try again.",
         variant: "destructive",
+      });
+    },
+    onSuccess: (data) => {
+      // Replace optimistic update with real data
+      queryClient.setQueryData(["rooms", data.project_id], (old: any) => {
+        if (!old) return [data];
+        return old.map((room: any) => 
+          room.id.toString().startsWith('temp-') ? data : room
+        );
       });
     },
   });

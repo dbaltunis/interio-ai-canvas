@@ -41,10 +41,19 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const jobNumber = project?.job_number || `${Date.now().toString().slice(-6)}`;
 
   const handleCreateRoom = async () => {
-    if (!project?.id) return;
+    if (!project?.id) {
+      console.error("No project ID available for room creation");
+      toast({
+        title: "Error",
+        description: "Project not found. Please refresh the page.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsCreatingRoom(true);
     try {
+      console.log("Creating room for project:", project.id);
       await createRoom.mutateAsync({
         name: `Room ${rooms.length + 1}`,
         project_id: project.id,

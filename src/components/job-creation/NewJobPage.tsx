@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useCreateProject } from "@/hooks/useProjects";
+import { useCreateProject, useProjects } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { ProjectHeader } from "./ProjectHeader";
@@ -23,6 +23,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   const { data: clients, isLoading: clientsLoading } = useClients();
+  const { data: projects } = useProjects(); // Add this to get fresh project data
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const { toast } = useToast();
@@ -52,6 +53,17 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
 
     checkAuth();
   }, []);
+
+  // Update current project when projects data changes
+  useEffect(() => {
+    if (currentProject && projects) {
+      const updatedProject = projects.find(p => p.id === currentProject.id);
+      if (updatedProject && updatedProject.name !== currentProject.name) {
+        console.log("Updating current project from projects data:", updatedProject);
+        setCurrentProject(updatedProject);
+      }
+    }
+  }, [projects, currentProject]);
 
   // Create a default project and quote when component mounts and user is authenticated
   useEffect(() => {
@@ -147,6 +159,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   }, [currentProject, createProject, createQuote, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
 
   const handleProjectUpdate = (updatedProject: any) => {
+    console.log("Project update received in NewJobPage:", updatedProject);
     setCurrentProject(updatedProject);
   };
 
