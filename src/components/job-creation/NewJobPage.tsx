@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
@@ -26,6 +25,9 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const { toast } = useToast();
+
+  // Get client data for navigation indicator
+  const client = clients?.find(c => c.id === currentProject?.client_id);
 
   // Check authentication first
   useEffect(() => {
@@ -144,7 +146,9 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       />
       <ProjectNavigation 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+        onTabChange={setActiveTab}
+        project={currentProject}
+        client={client}
       />
       
       <div className="min-h-[600px]">

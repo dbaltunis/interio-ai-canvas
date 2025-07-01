@@ -1,8 +1,11 @@
 
-import { ProjectJobsTab } from "./ProjectJobsTab";
 import { ProjectClientTab } from "./ProjectClientTab";
+import { ProjectJobsTab } from "./ProjectJobsTab";
 import { ProjectQuoteTab } from "./ProjectQuoteTab";
 import { ProjectWorkshopTab } from "./ProjectWorkshopTab";
+import { useClients } from "@/hooks/useClients";
+import { useUpdateProject } from "@/hooks/useProjects";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectTabContentProps {
   activeTab: string;
@@ -11,18 +14,48 @@ interface ProjectTabContentProps {
 }
 
 export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabContentProps) => {
-  if (!project) return null;
+  const { data: clients } = useClients();
+  const updateProject = useUpdateProject();
+  const { toast } = useToast();
+  const client = clients?.find(c => c.id === project.client_id);
 
-  switch (activeTab) {
-    case "client":
-      return <ProjectClientTab project={project} />;
-    case "jobs":
-      return <ProjectJobsTab project={project} onBack={onBack} />;
-    case "quote":
-      return <ProjectQuoteTab project={project} />;
-    case "workshop":
-      return <ProjectWorkshopTab project={project} />;
-    default:
-      return <ProjectJobsTab project={project} onBack={onBack} />;
-  }
+  const handleClientSelect = async (clientId: string) => {
+    try {
+      await updateProject.mutateAsync({
+        id: project.id,
+        client_id: clientId
+      });
+      toast({
+        title: "Success",
+        description: "Client has been assigned to the project",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update project with selected client",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "client":
+        return <ProjectClientTab project={project} onClientSelect={handleClientSelect} />;
+      case "jobs":
+        return <ProjectJobsTab project={project} onBack={onBack} />;
+      case "quote":
+        return <ProjectQuoteTab project={project} />;
+      case "workshop":
+        return <ProjectWorkshopTab project={project} />;
+      default:
+        return <ProjectJobsTab project={project} onBack={onBack} />;
+    }
+  };
+
+  return (
+    <div className="p-6">
+      {renderTabContent()}
+    </div>
+  );
 };
