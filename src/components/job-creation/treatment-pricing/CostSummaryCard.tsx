@@ -29,7 +29,8 @@ export const CostSummaryCard = ({
 }: CostSummaryCardProps) => {
   const { units } = useMeasurementUnits();
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     const currencySymbols: Record<string, string> = {
       'NZD': 'NZ$',
       'AUD': 'A$',
@@ -38,7 +39,7 @@ export const CostSummaryCard = ({
       'EUR': '€',
       'ZAR': 'R'
     };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+    return `${currencySymbols[units.currency] || units.currency}${numAmount.toFixed(2)}`;
   };
 
   const getPricingMethodDescription = (method: string) => {
@@ -119,7 +120,7 @@ export const CostSummaryCard = ({
       <CardContent className="space-y-2">
         <div className="flex justify-between">
           <span>Fabric Cost:</span>
-          <span>{formatCurrency(parseFloat(costs.fabricCost))}</span>
+          <span>{formatCurrency(costs.fabricCost)}</span>
         </div>
         
         {/* Itemized Options with Detailed Calculations */}
@@ -156,7 +157,7 @@ export const CostSummaryCard = ({
             ))}
             <div className="flex justify-between text-sm font-medium border-t pt-1">
               <span>Options Total:</span>
-              <span>{formatCurrency(parseFloat(costs.optionsCost))}</span>
+              <span>{formatCurrency(costs.optionsCost)}</span>
             </div>
           </div>
         )}
@@ -175,11 +176,11 @@ export const CostSummaryCard = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <span>{formatCurrency(parseFloat(costs.laborCost))}</span>
+          <span>{formatCurrency(costs.laborCost)}</span>
         </div>
         <div className="flex justify-between font-bold text-lg border-t pt-2">
           <span>Total Cost:</span>
-          <span className="text-green-600">{formatCurrency(parseFloat(costs.totalCost))}</span>
+          <span className="text-green-600">{formatCurrency(costs.totalCost)}</span>
         </div>
         <div className="text-xs text-gray-500 mt-2">
           <p><strong>Note:</strong> Labor cost comes from the treatment type settings (Settings → Treatments). Option costs are calculated based on measurements and pricing methods.</p>

@@ -87,7 +87,7 @@ export const TreatmentPricingForm = ({
     }
   }, [windowCovering, options, setFormData]);
 
-  // Auto-save window covering when dialog opens
+  // Auto-save window covering when dialog opens and reset form when dialog closes
   useEffect(() => {
     if (isOpen && windowCovering) {
       console.log('Auto-setting window covering data:', windowCovering);
@@ -96,8 +96,12 @@ export const TreatmentPricingForm = ({
         product_name: windowCovering.name || prev.product_name,
         window_covering: windowCovering
       }));
+    } else if (!isOpen) {
+      // Reset form when dialog closes to prevent old data from showing
+      console.log('Dialog closed, resetting form');
+      resetForm();
     }
-  }, [isOpen, windowCovering, setFormData]);
+  }, [isOpen, windowCovering, setFormData, resetForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +157,11 @@ export const TreatmentPricingForm = ({
     onClose();
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   const handleOptionToggle = (optionId: string) => {
     setFormData(prev => {
       const newSelectedOptions = prev.selected_options.includes(optionId)
@@ -167,7 +176,7 @@ export const TreatmentPricingForm = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">
@@ -237,7 +246,7 @@ export const TreatmentPricingForm = ({
             formData={formData}
           />
 
-          <TreatmentFormActions onCancel={onClose} />
+          <TreatmentFormActions onCancel={handleClose} />
         </form>
       </DialogContent>
     </Dialog>

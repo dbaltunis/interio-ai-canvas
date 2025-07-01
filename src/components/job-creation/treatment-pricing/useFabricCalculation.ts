@@ -42,6 +42,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const method = option.pricing_method || option.cost_type;
 
     console.log(`Calculating cost for option: ${option.name}, pricing method: ${method}, base cost: ${baseCost}`);
+    console.log(`Rail width: ${railWidth}, Drop: ${drop}, Quantity: ${quantity}`);
 
     let cost = 0;
     let calculation = '';
@@ -51,37 +52,37 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       case 'per-unit':
       case 'per-panel':
         cost = baseCost * quantity;
-        calculation = `${baseCost} × ${quantity} units = ${cost.toFixed(2)}`;
+        calculation = `${baseCost.toFixed(2)} × ${quantity} units = ${cost.toFixed(2)}`;
         break;
       
       case 'per-meter':
       case 'per-metre':
         // Use rail width converted to meters
         const widthInMeters = railWidth / 100;
-        cost = baseCost * widthInMeters;
-        calculation = `${baseCost} × ${widthInMeters.toFixed(2)}m = ${cost.toFixed(2)}`;
+        cost = baseCost * widthInMeters * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'per-yard':
         // Use rail width converted to yards
         const widthInYards = railWidth / 91.44;
-        cost = baseCost * widthInYards;
-        calculation = `${baseCost} × ${widthInYards.toFixed(2)} yards = ${cost.toFixed(2)}`;
+        cost = baseCost * widthInYards * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'per-sqm':
       case 'per-square-meter':
         // Calculate area in square meters
         const areaInSqm = (railWidth / 100) * (drop / 100);
-        cost = baseCost * areaInSqm;
-        calculation = `${baseCost} × ${areaInSqm.toFixed(2)}m² = ${cost.toFixed(2)}`;
+        cost = baseCost * areaInSqm * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${areaInSqm.toFixed(2)}m² × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'per-linear-meter':
         // Use the perimeter (rail width + 2 * drop)
         const perimeterInMeters = (railWidth + 2 * drop) / 100;
-        cost = baseCost * perimeterInMeters;
-        calculation = `${baseCost} × ${perimeterInMeters.toFixed(2)}m perimeter = ${cost.toFixed(2)}`;
+        cost = baseCost * perimeterInMeters * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${perimeterInMeters.toFixed(2)}m perimeter × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'percentage':
@@ -95,11 +96,12 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       case 'fixed':
       default:
         // Fixed cost regardless of measurements
-        cost = baseCost;
-        calculation = `Fixed cost: ${cost.toFixed(2)}`;
+        cost = baseCost * quantity;
+        calculation = `Fixed cost: ${baseCost.toFixed(2)} × ${quantity} = ${cost.toFixed(2)}`;
         break;
     }
 
+    console.log(`Final calculation for ${option.name}: ${calculation}, Cost: ${cost}`);
     return { cost, calculation };
   };
 
@@ -112,6 +114,10 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     // Options calculation with proper pricing methods
     let optionsCost = 0;
     const optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }> = [];
+
+    console.log('=== OPTIONS CALCULATION DEBUG ===');
+    console.log('Selected options:', formData.selected_options);
+    console.log('Available options:', options);
 
     // Calculate traditional options
     if (options && options.length > 0) {
@@ -135,6 +141,12 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const laborCost = currentTreatmentType?.labor_rate || 0;
 
     const totalCost = fabricCost + optionsCost + laborCost;
+
+    console.log('=== COST BREAKDOWN ===');
+    console.log('Fabric Cost:', fabricCost);
+    console.log('Options Cost:', optionsCost);
+    console.log('Labor Cost:', laborCost);
+    console.log('Total Cost:', totalCost);
 
     return {
       fabricCost: fabricCost.toFixed(2),
