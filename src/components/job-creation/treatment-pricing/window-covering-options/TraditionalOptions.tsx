@@ -28,7 +28,7 @@ export const TraditionalOptions = ({
     }
     acc[option.option_type].push(option);
     return acc;
-  }, {});
+  }, {} as Record<string, any[]>);
 
   return (
     <>
