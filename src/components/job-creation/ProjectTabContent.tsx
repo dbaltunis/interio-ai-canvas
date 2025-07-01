@@ -11,9 +11,10 @@ interface ProjectTabContentProps {
   activeTab: string;
   project: any;
   onBack: () => void;
+  onProjectUpdate?: (updatedProject: any) => void;
 }
 
-export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabContentProps) => {
+export const ProjectTabContent = ({ activeTab, project, onBack, onProjectUpdate }: ProjectTabContentProps) => {
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
@@ -23,13 +24,14 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
     try {
       console.log("Selecting client:", clientId, "for project:", project.id);
       
-      await updateProject.mutateAsync({
+      const updatedProject = await updateProject.mutateAsync({
         id: project.id,
         client_id: clientId
       });
       
       // Update the current project object to reflect the change immediately
       project.client_id = clientId;
+      onProjectUpdate?.(updatedProject);
       
       toast({
         title: "Success",
@@ -49,13 +51,14 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
     try {
       console.log("Removing client from project:", project.id);
       
-      await updateProject.mutateAsync({
+      const updatedProject = await updateProject.mutateAsync({
         id: project.id,
         client_id: null
       });
       
       // Update the current project object to reflect the change immediately
       project.client_id = null;
+      onProjectUpdate?.(updatedProject);
       
       toast({
         title: "Success",
@@ -71,6 +74,10 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
     }
   };
 
+  const handleProjectUpdate = (updatedProject: any) => {
+    onProjectUpdate?.(updatedProject);
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "client":
@@ -82,13 +89,13 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
           />
         );
       case "jobs":
-        return <ProjectJobsTab project={project} />;
+        return <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />;
       case "quote":
         return <ProjectQuoteTab project={project} />;
       case "workshop":
         return <ProjectWorkshopTab project={project} />;
       default:
-        return <ProjectJobsTab project={project} />;
+        return <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />;
     }
   };
 

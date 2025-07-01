@@ -148,6 +148,10 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     createDefaultProjectAndQuote();
   }, [clients, clientsLoading, currentProject, createProject, createQuote, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
 
+  const handleProjectUpdate = (updatedProject: any) => {
+    setCurrentProject(updatedProject);
+  };
+
   // Show loading state if checking auth, no project yet, or creating
   if (isCheckingAuth || clientsLoading || isCreating || !currentProject) {
     return <ProjectLoadingState />;
@@ -171,6 +175,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           activeTab={activeTab} 
           project={currentProject} 
           onBack={onBack} 
+          onProjectUpdate={handleProjectUpdate}
         />
       </div>
     </div>

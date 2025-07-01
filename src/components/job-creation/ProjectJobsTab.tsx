@@ -15,9 +15,10 @@ import { Edit2, Check, X } from "lucide-react";
 
 interface ProjectJobsTabProps {
   project: any;
+  onProjectUpdate?: (updatedProject: any) => void;
 }
 
-export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
+export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps) => {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(project?.name || "");
@@ -71,10 +72,14 @@ export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
     if (!project?.id || !editedName.trim()) return;
     
     try {
-      await updateProject.mutateAsync({
+      const updatedProject = await updateProject.mutateAsync({
         id: project.id,
         name: editedName.trim()
       });
+      
+      // Update the project name locally and notify parent
+      project.name = editedName.trim();
+      onProjectUpdate?.(updatedProject);
       
       setIsEditingName(false);
       toast({
