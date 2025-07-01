@@ -1648,7 +1648,22 @@ export type Database = {
           user_id?: string
           window_covering_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_window_covering_option_assignments_category_id"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "window_covering_option_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_window_covering_option_assignments_window_covering_id"
+            columns: ["window_covering_id"]
+            isOneToOne: false
+            referencedRelation: "window_coverings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       window_covering_option_categories: {
         Row: {

@@ -93,12 +93,26 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
         throw traditionalError;
       }
 
-      // Fetch hierarchical options through assignments
+      // Fetch hierarchical options through assignments - first fetch assignments
       const { data: assignments, error: assignmentsError } = await supabase
         .from('window_covering_option_assignments')
-        .select(`
-          category_id,
-          window_covering_option_categories (
+        .select('category_id')
+        .eq('window_covering_id', windowCoveringId);
+
+      if (assignmentsError) {
+        console.error('useWindowCoveringOptions - Error fetching assignments:', assignmentsError);
+        // Don't throw here, just log and continue with empty hierarchical data
+      }
+
+      let hierarchicalData: HierarchicalOption[] = [];
+
+      // If we have assignments, fetch the full category data
+      if (assignments && assignments.length > 0) {
+        const categoryIds = assignments.map(a => a.category_id);
+        
+        const { data: categories, error: categoriesError } = await supabase
+          .from('window_covering_option_categories')
+          .select(`
             id,
             name,
             description,
@@ -134,64 +148,54 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
                 )
               )
             )
-          )
-        `)
-        .eq('window_covering_id', windowCoveringId);
+          `)
+          .in('id', categoryIds)
+          .order('sort_order', { ascending: true });
 
-      if (assignmentsError) {
-        console.error('useWindowCoveringOptions - Error fetching assignments:', assignmentsError);
-        // Don't throw here, just log and continue with empty hierarchical data
-      }
-
-      // Transform the assignment data into hierarchical options
-      const hierarchicalData: HierarchicalOption[] = [];
-      
-      if (assignments && assignments.length > 0) {
-        assignments.forEach(assignment => {
-          const category = assignment.window_covering_option_categories;
-          if (category) {
-            const hierarchicalOption: HierarchicalOption = {
-              id: category.id,
-              name: category.name,
-              description: category.description,
-              option_type: 'category',
-              base_cost: 0,
-              is_required: category.is_required,
-              is_default: false,
-              sort_order: category.sort_order,
-              image_url: category.image_url,
-              cost_type: 'fixed',
-              pricing_method: 'fixed',
-              subcategories: category.window_covering_option_subcategories?.map(sub => ({
-                id: sub.id,
-                name: sub.name,
-                description: sub.description,
-                base_price: sub.base_price,
-                pricing_method: sub.pricing_method,
-                image_url: sub.image_url,
-                sub_subcategories: sub.window_covering_option_sub_subcategories?.map(subSub => ({
-                  id: subSub.id,
-                  name: subSub.name,
-                  description: subSub.description,
-                  base_price: subSub.base_price,
-                  pricing_method: subSub.pricing_method,
-                  image_url: subSub.image_url,
-                  extras: subSub.window_covering_option_extras?.map(extra => ({
-                    id: extra.id,
-                    name: extra.name,
-                    description: extra.description,
-                    base_price: extra.base_price,
-                    pricing_method: extra.pricing_method,
-                    image_url: extra.image_url,
-                    is_required: extra.is_required,
-                    is_default: extra.is_default
-                  })) || []
+        if (categoriesError) {
+          console.error('useWindowCoveringOptions - Error fetching categories:', categoriesError);
+        } else if (categories) {
+          // Transform the category data into hierarchical options
+          hierarchicalData = categories.map(category => ({
+            id: category.id,
+            name: category.name,
+            description: category.description,
+            option_type: 'category',
+            base_cost: 0,
+            is_required: category.is_required,
+            is_default: false,
+            sort_order: category.sort_order,
+            image_url: category.image_url,
+            cost_type: 'fixed',
+            pricing_method: 'fixed',
+            subcategories: category.window_covering_option_subcategories?.map(sub => ({
+              id: sub.id,
+              name: sub.name,
+              description: sub.description,
+              base_price: sub.base_price,
+              pricing_method: sub.pricing_method,
+              image_url: sub.image_url,
+              sub_subcategories: sub.window_covering_option_sub_subcategories?.map(subSub => ({
+                id: subSub.id,
+                name: subSub.name,
+                description: subSub.description,
+                base_price: subSub.base_price,
+                pricing_method: subSub.pricing_method,
+                image_url: subSub.image_url,
+                extras: subSub.window_covering_option_extras?.map(extra => ({
+                  id: extra.id,
+                  name: extra.name,
+                  description: extra.description,
+                  base_price: extra.base_price,
+                  pricing_method: extra.pricing_method,
+                  image_url: extra.image_url,
+                  is_required: extra.is_required,
+                  is_default: extra.is_default
                 })) || []
               })) || []
-            };
-            hierarchicalData.push(hierarchicalOption);
-          }
-        });
+            })) || []
+          }));
+        }
       }
       
       console.log('useWindowCoveringOptions - Found traditional options:', traditionalOptions?.length || 0);
