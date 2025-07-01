@@ -1,9 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useUploadFile } from "@/hooks/useFileStorage";
 import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
@@ -12,9 +9,13 @@ import { WindowCoveringOptionsCard } from "./treatment-pricing/WindowCoveringOpt
 import { FabricDetailsCard } from "./treatment-pricing/FabricDetailsCard";
 import { ImageUploadCard } from "./treatment-pricing/ImageUploadCard";
 import { CostSummaryCard } from "./treatment-pricing/CostSummaryCard";
+import { TreatmentMeasurementsCard } from "./treatment-pricing/TreatmentMeasurementsCard";
+import { TreatmentPricingHeader } from "./treatment-pricing/TreatmentPricingHeader";
+import { TreatmentQuantityField } from "./treatment-pricing/TreatmentQuantityField";
+import { TreatmentNotesField } from "./treatment-pricing/TreatmentNotesField";
+import { TreatmentFormActions } from "./treatment-pricing/TreatmentFormActions";
 import { useFabricCalculation } from "./treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "./treatment-pricing/useTreatmentFormData";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface TreatmentPricingFormProps {
   isOpen: boolean;
@@ -40,8 +41,6 @@ export const TreatmentPricingForm = ({
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
   const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType);
-  const { getLengthUnitLabel } = useMeasurementUnits();
-  const [isEditingName, setIsEditingName] = useState(false);
 
   const costs = calculateCosts();
 
@@ -168,13 +167,9 @@ export const TreatmentPricingForm = ({
     });
   };
 
-  const handleNameSave = () => {
-    setIsEditingName(false);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">
             Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
@@ -182,102 +177,21 @@ export const TreatmentPricingForm = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Treatment Name - Editable */}
-          <div className="text-center space-y-3">
-            {isEditingName ? (
-              <div className="flex items-center justify-center gap-2">
-                <Input
-                  value={formData.product_name}
-                  onChange={(e) => handleInputChange("product_name", e.target.value)}
-                  className="text-center text-lg font-semibold max-w-md"
-                  autoFocus
-                  onBlur={handleNameSave}
-                  onKeyDown={(e) => e.key === 'Enter' && handleNameSave()}
-                />
-              </div>
-            ) : (
-              <h3 
-                className="text-lg font-semibold cursor-pointer hover:text-brand-primary transition-colors"
-                onClick={() => setIsEditingName(true)}
-              >
-                {formData.product_name}
-              </h3>
-            )}
-            
-            {/* Window Covering Image - Centered and Larger */}
-            {windowCovering?.image_url && (
-              <div className="flex justify-center">
-                <img 
-                  src={windowCovering.image_url} 
-                  alt={windowCovering.name}
-                  className="w-24 h-24 object-cover rounded-lg border shadow-sm"
-                />
-              </div>
-            )}
-          </div>
+          <TreatmentPricingHeader
+            productName={formData.product_name}
+            onNameChange={(name) => handleInputChange("product_name", name)}
+            windowCovering={windowCovering}
+          />
 
-          {/* Quantity */}
-          <div className="grid grid-cols-2 gap-4 items-center">
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 1)}
-            />
-          </div>
+          <TreatmentQuantityField
+            quantity={formData.quantity}
+            onQuantityChange={(quantity) => handleInputChange("quantity", quantity)}
+          />
 
-          {/* Measurements - Two Column Layout */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-center">Measurements</h4>
-            <div className="grid grid-cols-2 gap-4 items-center">
-              <Label htmlFor="rail_width">Rail Width ({getLengthUnitLabel()})</Label>
-              <Input
-                id="rail_width"
-                type="number"
-                step="0.25"
-                value={formData.rail_width}
-                onChange={(e) => handleInputChange("rail_width", e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4 items-center">
-              <Label htmlFor="drop">Drop ({getLengthUnitLabel()})</Label>
-              <Input
-                id="drop"
-                type="number"
-                step="0.25"
-                value={formData.drop}
-                onChange={(e) => handleInputChange("drop", e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4 items-center">
-              <Label htmlFor="pooling">Pooling ({getLengthUnitLabel()})</Label>
-              <Input
-                id="pooling"
-                type="number"
-                step="0.25"
-                value={formData.pooling}
-                onChange={(e) => handleInputChange("pooling", e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4 items-center">
-              <Label htmlFor="heading_fullness">Heading Fullness</Label>
-              <Input
-                id="heading_fullness"
-                type="number"
-                step="0.1"
-                min="1"
-                max="5"
-                value={formData.heading_fullness}
-                onChange={(e) => handleInputChange("heading_fullness", e.target.value)}
-                placeholder="2.5"
-              />
-            </div>
-          </div>
+          <TreatmentMeasurementsCard
+            formData={formData}
+            onInputChange={handleInputChange}
+          />
 
           <TreatmentOptionsCard 
             treatmentTypesData={treatmentTypesData}
@@ -309,30 +223,14 @@ export const TreatmentPricingForm = ({
             onRemoveImage={(index) => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }))}
           />
 
-          {/* Notes */}
-          <div className="grid grid-cols-2 gap-4 items-start">
-            <Label htmlFor="notes">Notes</Label>
-            <textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange("notes", e.target.value)}
-              rows={3}
-              placeholder="Special instructions or notes for the workroom..."
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
+          <TreatmentNotesField
+            notes={formData.notes}
+            onNotesChange={(notes) => handleInputChange("notes", notes)}
+          />
 
           <CostSummaryCard costs={costs} treatmentType={treatmentType} />
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              Save Treatment
-            </Button>
-          </div>
+          <TreatmentFormActions onCancel={onClose} />
         </form>
       </DialogContent>
     </Dialog>

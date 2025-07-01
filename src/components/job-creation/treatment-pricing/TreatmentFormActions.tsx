@@ -12,7 +12,7 @@ export const TreatmentFormActions = ({ onCancel }: TreatmentFormActionsProps) =>
         Cancel
       </Button>
       <Button type="submit">
-        Add Treatment
+        Save Treatment
       </Button>
     </div>
   );
