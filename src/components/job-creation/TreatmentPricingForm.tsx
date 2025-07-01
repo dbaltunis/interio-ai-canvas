@@ -148,9 +148,10 @@ export const TreatmentPricingForm = ({
       window_covering: windowCovering
     };
 
+    // Save the treatment and close the popup
     onSave(treatmentData);
-    onClose();
     resetForm();
+    onClose();
   };
 
   const handleOptionToggle = (optionId: string) => {
