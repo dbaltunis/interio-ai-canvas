@@ -5,15 +5,31 @@ import { User, Briefcase, FileText, Wrench } from "lucide-react";
 interface ProjectNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  project?: any;
+  client?: any;
 }
 
-export const ProjectNavigation = ({ activeTab, onTabChange }: ProjectNavigationProps) => {
+export const ProjectNavigation = ({ activeTab, onTabChange, project, client }: ProjectNavigationProps) => {
   const navItems = [
     { id: "client", label: "Client", icon: User },
     { id: "jobs", label: "Jobs", icon: Briefcase },
     { id: "quote", label: "Quote", icon: FileText },
     { id: "workshop", label: "Workshop", icon: Wrench },
   ];
+
+  const getClientIndicator = () => {
+    if (client) {
+      return (
+        <div className="flex items-center ml-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+          <span className="text-xs font-medium text-green-700">
+            {client.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'CL'}
+          </span>
+        </div>
+      );
+    }
+    return <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>;
+  };
 
   return (
     <div className="flex space-x-0 px-6">
@@ -33,7 +49,7 @@ export const ProjectNavigation = ({ activeTab, onTabChange }: ProjectNavigationP
           >
             <Icon className="h-4 w-4 mr-2" />
             <span>{item.label}</span>
-            {item.id === "client" && <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+            {item.id === "client" && getClientIndicator()}
           </Button>
         );
       })}
