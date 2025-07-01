@@ -3,6 +3,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ChevronDown, ChevronRight, Plus, Trash2, Edit } from "lucide-react";
 import { type OptionCategory, type OptionSubcategory, type OptionSubSubcategory, type OptionExtra } from "@/hooks/types/windowCoveringTypes";
 import { SubcategoryForm } from "./SubcategoryForm";
@@ -126,13 +137,33 @@ export const CategoryList = ({
                   <Plus className="h-3 w-3 mr-1" />
                   Add Subcategory
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDeleteCategory(category.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{category.name}"? This will also delete all subcategories, options, and extras within this category. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => onDeleteCategory(category.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </CardHeader>
@@ -191,18 +222,43 @@ export const CategoryList = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCreatingSubSubcategory(subcategory.id)}
+                          onClick={() => {
+                            setCreatingSubSubcategory(subcategory.id);
+                            if (!expandedSubcategories.has(subcategory.id)) {
+                              toggleSubcategory(subcategory.id);
+                            }
+                          }}
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           Add Option
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => onDeleteSubcategory(subcategory.id, category.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Subcategory</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{subcategory.name}"? This will also delete all options and extras within this subcategory. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => onDeleteSubcategory(subcategory.id, category.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
 
@@ -260,18 +316,43 @@ export const CategoryList = ({
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setCreatingExtra(subSubcategory.id)}
+                                    onClick={() => {
+                                      setCreatingExtra(subSubcategory.id);
+                                      if (!expandedSubSubcategories.has(subSubcategory.id)) {
+                                        toggleSubSubcategory(subSubcategory.id);
+                                      }
+                                    }}
                                   >
                                     <Plus className="h-2 w-2 mr-1" />
                                     Add Extra
                                   </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => onDeleteSubSubcategory?.(subSubcategory.id, subcategory.id)}
-                                  >
-                                    <Trash2 className="h-2 w-2" />
-                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                      >
+                                        <Trash2 className="h-2 w-2" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Option</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete "{subSubcategory.name}"? This will also delete all extras within this option. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => onDeleteSubSubcategory?.(subSubcategory.id, subcategory.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </div>
 
@@ -321,13 +402,33 @@ export const CategoryList = ({
                                           {extra.is_default && (
                                             <Badge variant="default" className="text-xs">Default</Badge>
                                           )}
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => onDeleteExtra?.(extra.id, subSubcategory.id)}
-                                          >
-                                            <Trash2 className="h-2 w-2" />
-                                          </Button>
+                                          <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                              <Button
+                                                variant="destructive"
+                                                size="sm"
+                                              >
+                                                <Trash2 className="h-2 w-2" />
+                                              </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete Extra</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Are you sure you want to delete "{extra.name}"? This action cannot be undone.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction 
+                                                  onClick={() => onDeleteExtra?.(extra.id, subSubcategory.id)}
+                                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                >
+                                                  Delete
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
                                         </div>
                                       </div>
                                     ))}
