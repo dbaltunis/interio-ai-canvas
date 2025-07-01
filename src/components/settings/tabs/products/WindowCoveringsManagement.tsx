@@ -8,6 +8,7 @@ import { Plus, Edit, Trash2, Settings, Calculator, FolderTree } from "lucide-rea
 import { WindowCoveringForm } from "./WindowCoveringForm";
 import { WindowCoveringOptionsManager } from "./WindowCoveringOptionsManager";
 import { WindowCoveringCategoryManager } from "./WindowCoveringCategoryManager";
+import { SelectedCategoriesInfo } from "../../job-creation/treatment-pricing/window-covering-options/SelectedCategoriesInfo";
 import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
 
 export const WindowCoveringsManagement = () => {
@@ -145,16 +146,15 @@ export const WindowCoveringsManagement = () => {
                           <Badge variant={windowCovering.active ? "default" : "secondary"}>
                             {windowCovering.active ? "Active" : "Inactive"}
                           </Badge>
-                          {windowCovering.optionsCount && windowCovering.optionsCount > 0 && (
-                            <Badge variant="outline">
-                              {windowCovering.optionsCount} options
-                            </Badge>
-                          )}
                           {windowCovering.fabrication_pricing_method === 'pricing-grid' && windowCovering.pricing_grid_data && (
                             <Badge variant="outline">
                               CSV Grid Uploaded
                             </Badge>
                           )}
+                        </div>
+                        <div className="pt-2">
+                          <p className="text-xs text-gray-600 mb-1">Option Categories:</p>
+                          <SelectedCategoriesInfo windowCoveringId={windowCovering.id} />
                         </div>
                       </div>
                     </div>
