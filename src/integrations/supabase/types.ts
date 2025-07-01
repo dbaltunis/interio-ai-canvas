@@ -1018,7 +1018,7 @@ export type Database = {
       }
       quotes: {
         Row: {
-          client_id: string
+          client_id: string | null
           created_at: string
           id: string
           notes: string | null
@@ -1034,7 +1034,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1050,7 +1050,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           created_at?: string
           id?: string
           notes?: string | null

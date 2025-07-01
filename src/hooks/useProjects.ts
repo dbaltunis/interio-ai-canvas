@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +43,7 @@ export const useCreateProject = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (project: Omit<ProjectInsert, "user_id" | "client_id"> & { client_id?: string | null }) => {
+    mutationFn: async (project: Omit<ProjectInsert, "user_id">) => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
@@ -62,8 +61,7 @@ export const useCreateProject = () => {
 
       const projectData: ProjectInsert = {
         ...project,
-        user_id: user.id,
-        client_id: project.client_id || null
+        user_id: user.id
       };
 
       console.log("Final project data to insert:", projectData);
