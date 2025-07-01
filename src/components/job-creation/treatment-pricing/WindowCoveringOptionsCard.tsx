@@ -108,7 +108,7 @@ export const WindowCoveringOptionsCard = ({
           <div key={optionType} className="space-y-3">
             <h4 className="font-medium text-brand-primary capitalize">{optionType}</h4>
             <div className="space-y-2">
-              {typeOptions.map((option, index) => {
+              {Array.isArray(typeOptions) && typeOptions.map((option, index) => {
                 console.log(`WindowCoveringOptionsCard - Rendering option ${index}:`, option);
                 const isSelected = selectedOptions.includes(option.id);
                 
