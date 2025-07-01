@@ -23,9 +23,7 @@ export const OptionsSelector = ({
   const hasHierarchicalOptions = hierarchicalOptions.length > 0;
 
   // Check if motorised option is selected
-  const isMotori
-Options
-sed = () => {
+  const isMotorisedSelected = () => {
     return availableOptions.some(option => 
       selectedOptions.includes(option.id) && 
       option.name.toLowerCase().includes('motorised')
