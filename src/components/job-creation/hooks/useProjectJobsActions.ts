@@ -10,48 +10,44 @@ interface UseProjectJobsActionsProps {
   onProjectUpdate?: (updatedProject: any) => void;
 }
 
-export const useProjectJobsActions = ({ 
-  project, 
-  rooms, 
-  onProjectUpdate 
+export const useProjectJobsActions = ({
+  project,
+  rooms,
+  onProjectUpdate
 }: UseProjectJobsActionsProps) => {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-  
   const createRoom = useCreateRoom();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
 
   const handleCreateRoom = async () => {
     if (!project?.id) {
-      console.error("No project ID available for room creation");
       toast({
         title: "Error",
-        description: "Project not found. Please refresh the page.",
-        variant: "destructive"
+        description: "No project selected",
+        variant: "destructive",
       });
       return;
     }
-    
+
     setIsCreatingRoom(true);
     try {
-      console.log("Creating room for project:", project.id);
+      const roomNumber = (rooms?.length || 0) + 1;
+      console.log("Creating room with project_id:", project.id);
+      
       await createRoom.mutateAsync({
-        name: `Room ${rooms.length + 1}`,
         project_id: project.id,
-        description: "",
+        name: `Room ${roomNumber}`,
         room_type: "living_room"
       });
       
-      toast({
-        title: "Room Created",
-        description: "New room has been added to your project"
-      });
+      console.log("Room created successfully");
     } catch (error) {
       console.error("Failed to create room:", error);
       toast({
         title: "Error",
         description: "Failed to create room. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsCreatingRoom(false);
@@ -59,10 +55,17 @@ export const useProjectJobsActions = ({
   };
 
   const handleUpdateProjectName = async (name: string) => {
-    if (!project?.id || !name.trim()) return;
-    
+    if (!project?.id || !name.trim()) {
+      toast({
+        title: "Error",
+        description: "Project name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      console.log("Updating project name from:", project.name, "to:", name.trim());
+      console.log("Updating project name:", { id: project.id, name: name.trim() });
       
       const updatedProject = await updateProject.mutateAsync({
         id: project.id,
@@ -77,17 +80,16 @@ export const useProjectJobsActions = ({
       }
       
       toast({
-        title: "Project Updated",
-        description: "Project name has been updated successfully"
+        title: "Success",
+        description: "Project name updated successfully",
       });
     } catch (error) {
       console.error("Failed to update project name:", error);
       toast({
         title: "Error",
         description: "Failed to update project name. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-      throw error; // Re-throw to handle in component
     }
   };
 

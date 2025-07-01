@@ -21,11 +21,12 @@ export const ProjectJobsHeader = ({
 }: ProjectJobsHeaderProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(project?.name || "");
+  const [isSaving, setIsSaving] = useState(false);
   
   const { units } = useMeasurementUnits();
-  const { data: treatments = [] } = useTreatments();
+  const { data: treatments = [] } = useTreatments(project?.id);
 
-  // Calculate total amount from treatments
+  // Calculate total amount from treatments for this specific project
   const totalAmount = treatments
     .filter(t => t.project_id === project?.id)
     .reduce((sum, treatment) => sum + (treatment.total_price || 0), 0);
@@ -34,19 +35,33 @@ export const ProjectJobsHeader = ({
   const jobNumber = project?.job_number || `${Date.now().toString().slice(-6)}`;
 
   const handleSaveName = async () => {
-    if (!editedName.trim()) return;
+    if (!editedName.trim()) {
+      setIsEditingName(false);
+      setEditedName(project?.name || "");
+      return;
+    }
     
+    setIsSaving(true);
     try {
       await onUpdateName(editedName.trim());
       setIsEditingName(false);
     } catch (error) {
       console.error("Failed to update project name:", error);
+      // Reset to original name on error
+      setEditedName(project?.name || "");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCancelEdit = () => {
     setEditedName(project?.name || "");
     setIsEditingName(false);
+  };
+
+  const handleStartEdit = () => {
+    setEditedName(project?.name || "");
+    setIsEditingName(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -74,11 +89,13 @@ export const ProjectJobsHeader = ({
                   className="bg-white/10 border-white/20 text-white placeholder-white/60 focus:bg-white/20"
                   placeholder="Enter project name"
                   onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
+                  disabled={isSaving}
                 />
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={handleSaveName}
+                  disabled={isSaving}
                   className="text-white hover:bg-white/10"
                 >
                   <Check className="h-4 w-4" />
@@ -87,6 +104,7 @@ export const ProjectJobsHeader = ({
                   size="sm"
                   variant="ghost"
                   onClick={handleCancelEdit}
+                  disabled={isSaving}
                   className="text-white hover:bg-white/10"
                 >
                   <X className="h-4 w-4" />
@@ -98,7 +116,7 @@ export const ProjectJobsHeader = ({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setIsEditingName(true)}
+                  onClick={handleStartEdit}
                   className="text-white/80 hover:text-white hover:bg-white/10"
                 >
                   <Edit2 className="h-4 w-4" />

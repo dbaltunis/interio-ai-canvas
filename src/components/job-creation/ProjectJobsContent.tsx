@@ -1,6 +1,7 @@
 
 import { RoomsGrid } from "./RoomsGrid";
 import { EmptyRoomsState } from "./EmptyRoomsState";
+import { useJobHandlers } from "./JobHandlers";
 
 interface ProjectJobsContentProps {
   rooms: any[];
@@ -9,6 +10,18 @@ interface ProjectJobsContentProps {
 }
 
 export const ProjectJobsContent = ({ rooms, project, onCreateRoom }: ProjectJobsContentProps) => {
+  const {
+    allSurfaces,
+    allTreatments,
+    handleCreateSurface,
+    handleUpdateSurface,
+    handleDeleteSurface,
+    handleRenameRoom,
+    handleCopyRoom,
+    handlePasteRoom,
+    handleCreateTreatment
+  } = useJobHandlers(project);
+
   return (
     <div className="min-h-[400px]">
       {rooms.length === 0 ? (
@@ -21,16 +34,16 @@ export const ProjectJobsContent = ({ rooms, project, onCreateRoom }: ProjectJobs
           projectId={project?.id}
           onUpdateRoom={() => {}}
           onDeleteRoom={() => {}}
-          onCreateTreatment={() => {}}
-          onCreateSurface={() => {}}
-          onUpdateSurface={() => {}}
-          onDeleteSurface={() => {}}
-          onCopyRoom={() => {}}
+          onCreateTreatment={handleCreateTreatment}
+          onCreateSurface={handleCreateSurface}
+          onUpdateSurface={handleUpdateSurface}
+          onDeleteSurface={handleDeleteSurface}
+          onCopyRoom={handleCopyRoom}
           editingRoomId={null}
           setEditingRoomId={() => {}}
           editingRoomName=""
           setEditingRoomName={() => {}}
-          onRenameRoom={() => {}}
+          onRenameRoom={handleRenameRoom}
           onCreateRoom={onCreateRoom}
         />
       )}
