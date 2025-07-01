@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { OptionCategoryCard } from "./OptionCategoryCard";
 import type { OptionCategory } from "@/hooks/types/windowCoveringTypes";
 
@@ -17,6 +19,8 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
   const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
   const [expandedSubSubcategories, setExpandedSubSubcategories] = useState<Set<string>>(new Set());
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [isAttaching, setIsAttaching] = useState(false);
+  const { toast } = useToast();
 
   const toggleExpanded = (id: string, type: 'category' | 'subcategory' | 'subsubcategory') => {
     const setterMap = {
@@ -50,12 +54,41 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
   const handleAttachSelected = async () => {
     if (!windowCoveringId || selectedCategories.size === 0) return;
     
-    // Here you would implement the logic to attach selected categories to the window covering
-    console.log('Attaching categories:', Array.from(selectedCategories), 'to window covering:', windowCoveringId);
+    setIsAttaching(true);
     
-    // For now, just show a success message
-    alert(`Successfully attached ${selectedCategories.size} categories to this window covering!`);
-    setSelectedCategories(new Set());
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Create assignments for each selected category
+      const assignments = Array.from(selectedCategories).map(categoryId => ({
+        window_covering_id: windowCoveringId,
+        category_id: categoryId,
+        user_id: user.id
+      }));
+
+      const { error } = await supabase
+        .from('window_covering_option_assignments')
+        .insert(assignments);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Successfully attached ${selectedCategories.size} categories to this window covering!`
+      });
+      
+      setSelectedCategories(new Set());
+    } catch (error) {
+      console.error('Error attaching categories:', error);
+      toast({
+        title: "Error",
+        description: "Failed to attach categories. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAttaching(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -83,9 +116,10 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
           {windowCoveringId && selectedCategories.size > 0 && (
             <Button 
               onClick={handleAttachSelected}
+              disabled={isAttaching}
               className="bg-brand-primary hover:bg-brand-accent"
             >
-              Attach Selected ({selectedCategories.size})
+              {isAttaching ? 'Attaching...' : `Attach Selected (${selectedCategories.size})`}
             </Button>
           )}
         </div>
@@ -162,7 +196,7 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
             }
           </p>
           <p className="text-xs text-gray-500">
-            Note: The pricing logic for this hierarchical system will be implemented in the calculator and job creation flow.
+            Note: Once attached, these categories will appear in the pricing forms and calculator for this window covering.
           </p>
         </CardContent>
       </Card>

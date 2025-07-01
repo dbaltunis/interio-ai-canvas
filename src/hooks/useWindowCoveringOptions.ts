@@ -93,9 +93,106 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
         throw traditionalError;
       }
 
-      // For now, we'll only work with traditional options since the hierarchical tables don't exist yet
-      // The hierarchical options will be empty until the database structure is created
+      // Fetch hierarchical options through assignments
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('window_covering_option_assignments')
+        .select(`
+          category_id,
+          window_covering_option_categories (
+            id,
+            name,
+            description,
+            is_required,
+            image_url,
+            sort_order,
+            window_covering_option_subcategories (
+              id,
+              name,
+              description,
+              base_price,
+              pricing_method,
+              image_url,
+              sort_order,
+              window_covering_option_sub_subcategories (
+                id,
+                name,
+                description,
+                base_price,
+                pricing_method,
+                image_url,
+                sort_order,
+                window_covering_option_extras (
+                  id,
+                  name,
+                  description,
+                  base_price,
+                  pricing_method,
+                  image_url,
+                  is_required,
+                  is_default,
+                  sort_order
+                )
+              )
+            )
+          )
+        `)
+        .eq('window_covering_id', windowCoveringId);
+
+      if (assignmentsError) {
+        console.error('useWindowCoveringOptions - Error fetching assignments:', assignmentsError);
+        // Don't throw here, just log and continue with empty hierarchical data
+      }
+
+      // Transform the assignment data into hierarchical options
       const hierarchicalData: HierarchicalOption[] = [];
+      
+      if (assignments && assignments.length > 0) {
+        assignments.forEach(assignment => {
+          const category = assignment.window_covering_option_categories;
+          if (category) {
+            const hierarchicalOption: HierarchicalOption = {
+              id: category.id,
+              name: category.name,
+              description: category.description,
+              option_type: 'category',
+              base_cost: 0,
+              is_required: category.is_required,
+              is_default: false,
+              sort_order: category.sort_order,
+              image_url: category.image_url,
+              cost_type: 'fixed',
+              pricing_method: 'fixed',
+              subcategories: category.window_covering_option_subcategories?.map(sub => ({
+                id: sub.id,
+                name: sub.name,
+                description: sub.description,
+                base_price: sub.base_price,
+                pricing_method: sub.pricing_method,
+                image_url: sub.image_url,
+                sub_subcategories: sub.window_covering_option_sub_subcategories?.map(subSub => ({
+                  id: subSub.id,
+                  name: subSub.name,
+                  description: subSub.description,
+                  base_price: subSub.base_price,
+                  pricing_method: subSub.pricing_method,
+                  image_url: subSub.image_url,
+                  extras: subSub.window_covering_option_extras?.map(extra => ({
+                    id: extra.id,
+                    name: extra.name,
+                    description: extra.description,
+                    base_price: extra.base_price,
+                    pricing_method: extra.pricing_method,
+                    image_url: extra.image_url,
+                    is_required: extra.is_required,
+                    is_default: extra.is_default
+                  })) || []
+                })) || []
+              })) || []
+            };
+            hierarchicalData.push(hierarchicalOption);
+          }
+        });
+      }
       
       console.log('useWindowCoveringOptions - Found traditional options:', traditionalOptions?.length || 0);
       console.log('useWindowCoveringOptions - Found hierarchical options:', hierarchicalData.length);

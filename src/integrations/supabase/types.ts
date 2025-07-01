@@ -1623,6 +1623,33 @@ export type Database = {
           },
         ]
       }
+      window_covering_option_assignments: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          window_covering_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          window_covering_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          window_covering_id?: string
+        }
+        Relationships: []
+      }
       window_covering_option_categories: {
         Row: {
           created_at: string
