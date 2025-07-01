@@ -31,10 +31,21 @@ export const ProjectNavigation = ({ activeTab, onTabChange, project, client }: P
     return <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>;
   };
 
+  const getClientLabel = () => {
+    if (client && client.name) {
+      // Show first name only, or full name if it's short
+      const firstName = client.name.split(' ')[0];
+      return firstName.length > 8 ? firstName.slice(0, 8) + '...' : firstName;
+    }
+    return "Client";
+  };
+
   return (
     <div className="flex space-x-0 px-6">
       {navItems.map((item) => {
         const Icon = item.icon;
+        const displayLabel = item.id === "client" ? getClientLabel() : item.label;
+        
         return (
           <Button
             key={item.id}
@@ -48,7 +59,7 @@ export const ProjectNavigation = ({ activeTab, onTabChange, project, client }: P
             }`}
           >
             <Icon className="h-4 w-4 mr-2" />
-            <span>{item.label}</span>
+            <span>{displayLabel}</span>
             {item.id === "client" && getClientIndicator()}
           </Button>
         );
