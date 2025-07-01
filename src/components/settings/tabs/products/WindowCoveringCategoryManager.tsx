@@ -15,8 +15,12 @@ export const WindowCoveringCategoryManager = () => {
     updateCategory,
     createSubcategory, 
     updateSubcategory,
+    createSubSubcategory,
+    createExtra,
     deleteCategory, 
-    deleteSubcategory 
+    deleteSubcategory,
+    deleteSubSubcategory,
+    deleteExtra
   } = useWindowCoveringCategories();
   
   const [isCreating, setIsCreating] = useState(false);
@@ -73,7 +77,11 @@ export const WindowCoveringCategoryManager = () => {
             categories={categories}
             onDeleteCategory={deleteCategory}
             onDeleteSubcategory={deleteSubcategory}
+            onDeleteSubSubcategory={deleteSubSubcategory}
+            onDeleteExtra={deleteExtra}
             onCreateSubcategory={createSubcategory}
+            onCreateSubSubcategory={createSubSubcategory}
+            onCreateExtra={createExtra}
             onUpdateCategory={updateCategory}
             onUpdateSubcategory={updateSubcategory}
           />

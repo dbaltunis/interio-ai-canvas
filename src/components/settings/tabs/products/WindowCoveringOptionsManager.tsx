@@ -30,7 +30,7 @@ export const WindowCoveringOptionsManager = ({ windowCovering, onBack }: WindowC
             Manage Options: {windowCovering.name}
           </h3>
           <p className="text-sm text-brand-neutral">
-            Configure hierarchical options for this window covering
+            Select and configure hierarchical options for this window covering
           </p>
         </div>
       </div>
@@ -38,7 +38,10 @@ export const WindowCoveringOptionsManager = ({ windowCovering, onBack }: WindowC
       {categories.length === 0 ? (
         <EmptyOptionsState onBack={onBack} />
       ) : (
-        <OptionsHierarchyDisplay categories={categories} />
+        <OptionsHierarchyDisplay 
+          categories={categories} 
+          windowCoveringId={windowCovering.id}
+        />
       )}
     </div>
   );

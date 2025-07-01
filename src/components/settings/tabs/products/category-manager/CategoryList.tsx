@@ -219,19 +219,21 @@ export const CategoryList = ({
                         <Badge variant="outline" className="text-xs">
                           ${subcategory.base_price} {subcategory.pricing_method}
                         </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setCreatingSubSubcategory(subcategory.id);
-                            if (!expandedSubcategories.has(subcategory.id)) {
-                              toggleSubcategory(subcategory.id);
-                            }
-                          }}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Option
-                        </Button>
+                        {onCreateSubSubcategory && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setCreatingSubSubcategory(subcategory.id);
+                              if (!expandedSubcategories.has(subcategory.id)) {
+                                toggleSubcategory(subcategory.id);
+                              }
+                            }}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Add Option
+                          </Button>
+                        )}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -313,19 +315,21 @@ export const CategoryList = ({
                                   <Badge variant="outline" className="text-xs">
                                     ${subSubcategory.base_price} {subSubcategory.pricing_method}
                                   </Badge>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setCreatingExtra(subSubcategory.id);
-                                      if (!expandedSubSubcategories.has(subSubcategory.id)) {
-                                        toggleSubSubcategory(subSubcategory.id);
-                                      }
-                                    }}
-                                  >
-                                    <Plus className="h-2 w-2 mr-1" />
-                                    Add Extra
-                                  </Button>
+                                  {onCreateExtra && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setCreatingExtra(subSubcategory.id);
+                                        if (!expandedSubSubcategories.has(subSubcategory.id)) {
+                                          toggleSubSubcategory(subSubcategory.id);
+                                        }
+                                      }}
+                                    >
+                                      <Plus className="h-2 w-2 mr-1" />
+                                      Add Extra
+                                    </Button>
+                                  )}
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button
