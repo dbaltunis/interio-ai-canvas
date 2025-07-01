@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
@@ -53,12 +52,7 @@ export const TreatmentPricingForm = ({
   console.log('Options Loading:', optionsLoading);
   console.log('Traditional Options Data:', options);
   console.log('Hierarchical Options Data:', hierarchicalOptions);
-  console.log('Options Length:', options?.length);
-  console.log('Hierarchical Options Length:', hierarchicalOptions?.length);
-  console.log('Treatment Types Data:', treatmentTypesData);
-  console.log('Treatment Types Loading:', treatmentTypesLoading);
   console.log('Selected Options:', formData.selected_options);
-  console.log('Form Data:', formData);
   console.log('=== End Debug ===');
 
   // Auto-select required and default options when window covering changes
@@ -171,7 +165,7 @@ export const TreatmentPricingForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">
             Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
