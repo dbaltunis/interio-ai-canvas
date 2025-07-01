@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +35,10 @@ export const useProjects = () => {
       }
     },
     retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - increased from 5
+    gcTime: 15 * 60 * 1000, // 15 minutes cache time
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if we have cached data
   });
 };
 
@@ -78,19 +82,51 @@ export const useCreateProject = () => {
       }
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    onMutate: async (newProject) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["projects"] });
+      
+      const previousProjects = queryClient.getQueryData(["projects"]);
+      
+      // Optimistically add the new project
+      const optimisticProject = {
+        id: `temp-${Date.now()}`,
+        ...newProject,
+        user_id: "current-user",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(["projects"], (old: any) => 
+        old ? [optimisticProject, ...old] : [optimisticProject]
+      );
+      
+      return { previousProjects };
+    },
+    onError: (err, newProject, context) => {
+      // Rollback on error
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["projects"], context.previousProjects);
+      }
+      console.error("Failed to create project:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (data) => {
+      // Replace optimistic update with real data
+      queryClient.setQueryData(["projects"], (old: any) => {
+        if (!old) return [data];
+        return old.map((project: any) => 
+          project.id.toString().startsWith('temp-') ? data : project
+        );
+      });
+      
       toast({
         title: "Success",
         description: "Project created successfully",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Failed to create project:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create project. Please try again.",
-        variant: "destructive",
       });
     },
   });
@@ -119,15 +155,41 @@ export const useUpdateProject = () => {
       console.log("Project updated successfully:", data);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    onMutate: async ({ id, ...updates }) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["projects"] });
+      
+      const previousProjects = queryClient.getQueryData(["projects"]);
+      
+      // Optimistically update the project
+      queryClient.setQueryData(["projects"], (old: any) => {
+        if (!old) return old;
+        return old.map((project: any) => 
+          project.id === id ? { ...project, ...updates } : project
+        );
+      });
+      
+      return { previousProjects, id, updates };
     },
-    onError: (error: any) => {
-      console.error("Failed to update project:", error);
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["projects"], context.previousProjects);
+      }
+      console.error("Failed to update project:", err);
       toast({
         title: "Error",
-        description: error.message || "Failed to update project. Please try again.",
+        description: err.message || "Failed to update project. Please try again.",
         variant: "destructive",
+      });
+    },
+    onSuccess: (data) => {
+      // Update with real data
+      queryClient.setQueryData(["projects"], (old: any) => {
+        if (!old) return [data];
+        return old.map((project: any) => 
+          project.id === data.id ? data : project
+        );
       });
     },
   });

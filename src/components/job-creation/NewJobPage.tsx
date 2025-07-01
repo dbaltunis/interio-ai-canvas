@@ -74,9 +74,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
       // Prevent multiple creation attempts
       if (hasAttemptedCreation || currentProject || isCreating) return;
       
-      // Wait for clients to load (but don't require them)
-      if (clientsLoading) return;
-      
+      // Don't wait for clients to load - we can create without them
       setIsCreating(true);
       setHasAttemptedCreation(true);
       
@@ -146,15 +144,24 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
     };
 
     createDefaultProjectAndQuote();
-  }, [clients, clientsLoading, currentProject, createProject, createQuote, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
+  }, [currentProject, createProject, createQuote, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
 
   const handleProjectUpdate = (updatedProject: any) => {
     setCurrentProject(updatedProject);
   };
 
-  // Show loading state if checking auth, no project yet, or creating
-  if (isCheckingAuth || clientsLoading || isCreating || !currentProject) {
-    return <ProjectLoadingState />;
+  // Show minimal loading state
+  if (isCheckingAuth || isCreating || !currentProject) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">
+            {isCheckingAuth ? "Authenticating..." : isCreating ? "Creating project..." : "Loading..."}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -33,7 +33,10 @@ export const useQuotes = () => {
 
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -71,15 +74,44 @@ export const useCreateQuote = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+    onMutate: async (newQuote) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["quotes"] });
+      
+      const previousQuotes = queryClient.getQueryData(["quotes"]);
+      
+      const optimisticQuote = {
+        id: `temp-${Date.now()}`,
+        ...newQuote,
+        user_id: "current-user",
+        quote_number: newQuote.quote_number || `QT-TEMP`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(["quotes"], (old: any) => 
+        old ? [optimisticQuote, ...old] : [optimisticQuote]
+      );
+      
+      return { previousQuotes };
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousQuotes) {
+        queryClient.setQueryData(["quotes"], context.previousQuotes);
+      }
       console.error("Failed to create quote:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create quote. Please try again.",
         variant: "destructive"
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["quotes"], (old: any) => {
+        if (!old) return [data];
+        return old.map((quote: any) => 
+          quote.id.toString().startsWith('temp-') ? data : quote
+        );
       });
     }
   });
@@ -101,15 +133,37 @@ export const useUpdateQuote = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["quotes"] });
+      
+      const previousQuotes = queryClient.getQueryData(["quotes"]);
+      
+      queryClient.setQueryData(["quotes"], (old: any) => {
+        if (!old) return old;
+        return old.map((quote: any) => 
+          quote.id === id ? { ...quote, ...updates } : quote
+        );
+      });
+      
+      return { previousQuotes };
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousQuotes) {
+        queryClient.setQueryData(["quotes"], context.previousQuotes);
+      }
       console.error("Failed to update quote:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to update quote. Please try again.",
         variant: "destructive"
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["quotes"], (old: any) => {
+        if (!old) return [data];
+        return old.map((quote: any) => 
+          quote.id === data.id ? data : quote
+        );
       });
     }
   });
@@ -131,19 +185,33 @@ export const useDeleteQuote = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      toast({
-        title: "Success",
-        description: "Quote deleted successfully",
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["quotes"] });
+      
+      const previousQuotes = queryClient.getQueryData(["quotes"]);
+      
+      queryClient.setQueryData(["quotes"], (old: any) => {
+        if (!old) return old;
+        return old.filter((quote: any) => quote.id !== id);
       });
+      
+      return { previousQuotes };
     },
-    onError: (error: any) => {
+    onError: (error: any, id, context) => {
+      if (context?.previousQuotes) {
+        queryClient.setQueryData(["quotes"], context.previousQuotes);
+      }
       console.error("Failed to delete quote:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete quote. Please try again.",
         variant: "destructive"
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Quote deleted successfully",
       });
     }
   });
