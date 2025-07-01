@@ -10,7 +10,7 @@ interface CostSummaryCardProps {
     optionsCost: string;
     laborCost: string;
     totalCost: string;
-    optionDetails?: Array<{ name: string; cost: number; method: string }>;
+    optionDetails?: Array<{ name: string; cost: number; method: string; calculation?: string }>;
   };
   treatmentType?: string;
   selectedOptions?: string[];
@@ -57,49 +57,23 @@ export const CostSummaryCard = ({
     return descriptions[method] || method;
   };
 
-  const getMeasurementDetails = (method: string) => {
-    const railWidth = parseFloat(formData?.rail_width) || 0;
-    const drop = parseFloat(formData?.drop) || 0;
-    const quantity = formData?.quantity || 1;
-
-    switch (method) {
-      case 'per-unit':
-      case 'per-panel':
-        return `${quantity} unit(s)`;
-      case 'per-meter':
-      case 'per-metre':
-        return `${(railWidth / 100).toFixed(2)}m width`;
-      case 'per-yard':
-        return `${(railWidth / 91.44).toFixed(2)} yards width`;
-      case 'per-sqm':
-      case 'per-square-meter':
-        return `${((railWidth / 100) * (drop / 100)).toFixed(2)}m² area`;
-      case 'per-linear-meter':
-        return `${((railWidth + 2 * drop) / 100).toFixed(2)}m perimeter`;
-      case 'percentage':
-        return `% of fabric cost`;
-      case 'fixed':
-      default:
-        return 'Fixed amount';
-    }
-  };
-
   // Get all selected option details including hierarchical ones
   const getAllSelectedOptionDetails = () => {
-    const selectedDetails: Array<{ name: string; cost: number; method: string }> = [];
-
     // Use the calculated option details from costs if available
     if (costs.optionDetails && costs.optionDetails.length > 0) {
       return costs.optionDetails;
     }
 
     // Fallback to basic calculation
+    const selectedDetails: Array<{ name: string; cost: number; method: string; calculation?: string }> = [];
+
     availableOptions.forEach(option => {
       if (selectedOptions.includes(option.id)) {
         selectedDetails.push({
           name: option.name,
           cost: option.base_cost || 0,
-          method: option.pricing_method || option.cost_type || 'fixed'
+          method: option.pricing_method || option.cost_type || 'fixed',
+          calculation: `Fixed cost: ${(option.base_cost || 0).toFixed(2)}`
         });
       }
     });
@@ -112,7 +86,8 @@ export const CostSummaryCard = ({
             selectedDetails.push({
               name: subSub.name,
               cost: subSub.base_price || 0,
-              method: subSub.pricing_method || 'fixed'
+              method: subSub.pricing_method || 'fixed',
+              calculation: `Fixed cost: ${(subSub.base_price || 0).toFixed(2)}`
             });
           }
           
@@ -122,7 +97,8 @@ export const CostSummaryCard = ({
               selectedDetails.push({
                 name: extra.name,
                 cost: extra.base_price || 0,
-                method: extra.pricing_method || 'fixed'
+                method: extra.pricing_method || 'fixed',
+                calculation: `Fixed cost: ${(extra.base_price || 0).toFixed(2)}`
               });
             }
           });
@@ -146,7 +122,7 @@ export const CostSummaryCard = ({
           <span>{formatCurrency(parseFloat(costs.fabricCost))}</span>
         </div>
         
-        {/* Itemized Options with Calculation Details */}
+        {/* Itemized Options with Detailed Calculations */}
         {selectedOptionDetails.length > 0 && (
           <div className="space-y-2">
             <div className="text-sm font-medium text-gray-700">Selected Options:</div>
@@ -162,18 +138,26 @@ export const CostSummaryCard = ({
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p><strong>Pricing:</strong> {getPricingMethodDescription(option.method)}</p>
-                          <p><strong>Calculation:</strong> {getMeasurementDetails(option.method)}</p>
+                          {option.calculation && (
+                            <p><strong>Calculation:</strong> {option.calculation}</p>
+                          )}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
                   <span>{formatCurrency(option.cost)}</span>
                 </div>
-                <div className="text-xs text-gray-500 pl-6">
-                  {getPricingMethodDescription(option.method)} - {getMeasurementDetails(option.method)}
-                </div>
+                {option.calculation && (
+                  <div className="text-xs text-gray-500 pl-6">
+                    {option.calculation}
+                  </div>
+                )}
               </div>
             ))}
+            <div className="flex justify-between text-sm font-medium border-t pt-1">
+              <span>Options Total:</span>
+              <span>{formatCurrency(parseFloat(costs.optionsCost))}</span>
+            </div>
           </div>
         )}
         
@@ -198,7 +182,7 @@ export const CostSummaryCard = ({
           <span className="text-green-600">{formatCurrency(parseFloat(costs.totalCost))}</span>
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          <p><strong>Note:</strong> Labor cost comes from the treatment type settings. Option costs are calculated based on measurements and pricing methods.</p>
+          <p><strong>Note:</strong> Labor cost comes from the treatment type settings (Settings → Treatments). Option costs are calculated based on measurements and pricing methods.</p>
         </div>
       </CardContent>
     </Card>

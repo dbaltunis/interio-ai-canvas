@@ -38,49 +38,69 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const railWidth = parseFloat(formData.rail_width) || 0;
     const drop = parseFloat(formData.drop) || 0;
     const quantity = formData.quantity || 1;
-    const baseCost = option.base_cost || 0;
+    const baseCost = option.base_cost || option.base_price || 0;
+    const method = option.pricing_method || option.cost_type;
 
-    console.log(`Calculating cost for option: ${option.name}, pricing method: ${option.pricing_method || option.cost_type}, base cost: ${baseCost}`);
+    console.log(`Calculating cost for option: ${option.name}, pricing method: ${method}, base cost: ${baseCost}`);
+
+    let cost = 0;
+    let calculation = '';
 
     // Handle different pricing methods
-    switch (option.pricing_method || option.cost_type) {
+    switch (method) {
       case 'per-unit':
       case 'per-panel':
-        return baseCost * quantity;
+        cost = baseCost * quantity;
+        calculation = `${baseCost} × ${quantity} units = ${cost.toFixed(2)}`;
+        break;
       
       case 'per-meter':
       case 'per-metre':
         // Use rail width converted to meters
         const widthInMeters = railWidth / 100;
-        return baseCost * widthInMeters;
+        cost = baseCost * widthInMeters;
+        calculation = `${baseCost} × ${widthInMeters.toFixed(2)}m = ${cost.toFixed(2)}`;
+        break;
       
       case 'per-yard':
         // Use rail width converted to yards
         const widthInYards = railWidth / 91.44;
-        return baseCost * widthInYards;
+        cost = baseCost * widthInYards;
+        calculation = `${baseCost} × ${widthInYards.toFixed(2)} yards = ${cost.toFixed(2)}`;
+        break;
       
       case 'per-sqm':
       case 'per-square-meter':
         // Calculate area in square meters
         const areaInSqm = (railWidth / 100) * (drop / 100);
-        return baseCost * areaInSqm;
+        cost = baseCost * areaInSqm;
+        calculation = `${baseCost} × ${areaInSqm.toFixed(2)}m² = ${cost.toFixed(2)}`;
+        break;
       
       case 'per-linear-meter':
         // Use the perimeter (rail width + 2 * drop)
         const perimeterInMeters = (railWidth + 2 * drop) / 100;
-        return baseCost * perimeterInMeters;
+        cost = baseCost * perimeterInMeters;
+        calculation = `${baseCost} × ${perimeterInMeters.toFixed(2)}m perimeter = ${cost.toFixed(2)}`;
+        break;
       
       case 'percentage':
         // Calculate as percentage of fabric cost
         const fabricUsage = calculateFabricUsage();
         const fabricCost = fabricUsage.yards * parseFloat(formData.fabric_cost_per_yard || "0");
-        return (fabricCost * baseCost) / 100;
+        cost = (fabricCost * baseCost) / 100;
+        calculation = `${baseCost}% of fabric cost (${fabricCost.toFixed(2)}) = ${cost.toFixed(2)}`;
+        break;
       
       case 'fixed':
       default:
         // Fixed cost regardless of measurements
-        return baseCost;
+        cost = baseCost;
+        calculation = `Fixed cost: ${cost.toFixed(2)}`;
+        break;
     }
+
+    return { cost, calculation };
   };
 
   const calculateCosts = () => {
@@ -91,27 +111,28 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
 
     // Options calculation with proper pricing methods
     let optionsCost = 0;
-    const optionDetails: Array<{ name: string; cost: number; method: string }> = [];
+    const optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }> = [];
 
     // Calculate traditional options
     if (options && options.length > 0) {
       options.forEach(option => {
         if (formData.selected_options.includes(option.id)) {
-          const calculatedCost = calculateOptionCost(option);
-          optionsCost += calculatedCost;
+          const optionCalc = calculateOptionCost(option);
+          optionsCost += optionCalc.cost;
           optionDetails.push({
             name: option.name,
-            cost: calculatedCost,
-            method: option.pricing_method || option.cost_type || 'fixed'
+            cost: optionCalc.cost,
+            method: option.pricing_method || option.cost_type || 'fixed',
+            calculation: optionCalc.calculation
           });
-          console.log(`Option ${option.name}: £${calculatedCost.toFixed(2)} (${option.pricing_method || option.cost_type})`);
+          console.log(`Option ${option.name}: £${optionCalc.cost.toFixed(2)} (${option.pricing_method || option.cost_type})`);
         }
       });
     }
 
     // Labor cost from treatment type
     const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
-    const laborCost = currentTreatmentType?.labor_cost || 0;
+    const laborCost = currentTreatmentType?.labor_rate || 0;
 
     const totalCost = fabricCost + optionsCost + laborCost;
 
