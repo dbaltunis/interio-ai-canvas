@@ -72,16 +72,22 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     if (!project?.id || !editedName.trim()) return;
     
     try {
+      console.log("Updating project name from:", project.name, "to:", editedName.trim());
+      
       const updatedProject = await updateProject.mutateAsync({
         id: project.id,
         name: editedName.trim()
       });
       
-      // Update the project name locally and notify parent
-      project.name = editedName.trim();
-      onProjectUpdate?.(updatedProject);
+      console.log("Project name updated successfully:", updatedProject);
       
       setIsEditingName(false);
+      
+      // Notify parent component of the update
+      if (onProjectUpdate) {
+        onProjectUpdate(updatedProject);
+      }
+      
       toast({
         title: "Project Updated",
         description: "Project name has been updated successfully"
