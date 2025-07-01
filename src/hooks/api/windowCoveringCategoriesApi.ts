@@ -22,9 +22,9 @@ export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
 
   if (subcategoriesError) throw subcategoriesError;
 
-  const categoriesWithSubcategories = categories.map(category => ({
+  const categoriesWithSubcategories = (categories || []).map(category => ({
     ...category,
-    subcategories: subcategories
+    subcategories: (subcategories || [])
       .filter(sub => sub.category_id === category.id)
       .map(sub => ({
         ...sub,
@@ -43,7 +43,11 @@ export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | '
     .from('window_covering_option_categories')
     .insert([
       {
-        ...category,
+        name: category.name,
+        description: category.description || null,
+        is_required: category.is_required || false,
+        sort_order: category.sort_order || 0,
+        image_url: category.image_url || null,
         user_id: user.id
       }
     ])
@@ -63,7 +67,15 @@ export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory,
     .from('window_covering_option_subcategories')
     .insert([
       {
-        ...subcategory,
+        category_id: subcategory.category_id,
+        name: subcategory.name,
+        description: subcategory.description || null,
+        pricing_method: subcategory.pricing_method,
+        base_price: subcategory.base_price,
+        fullness_ratio: subcategory.fullness_ratio || null,
+        extra_fabric_percentage: subcategory.extra_fabric_percentage || null,
+        sort_order: subcategory.sort_order || 0,
+        image_url: subcategory.image_url || null,
         user_id: user.id
       }
     ])

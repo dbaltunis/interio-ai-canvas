@@ -20,10 +20,10 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
     category_id: categoryId,
     name: subcategory?.name || '',
     description: subcategory?.description || '',
-    pricing_method: subcategory?.pricing_method || 'per-unit' as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage',
+    pricing_method: subcategory?.pricing_method || 'per-unit' as const,
     base_price: subcategory?.base_price || 0,
-    fullness_ratio: subcategory?.fullness_ratio || null,
-    extra_fabric_percentage: subcategory?.extra_fabric_percentage || null,
+    fullness_ratio: subcategory?.fullness_ratio || 1,
+    extra_fabric_percentage: subcategory?.extra_fabric_percentage || 0,
     sort_order: subcategory?.sort_order || 0,
     image_url: subcategory?.image_url || ''
   });
@@ -52,7 +52,6 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
     
     // For now, we'll use the preview URL. In a real app, you'd upload to storage
     if (imageFile) {
-      // TODO: Implement actual file upload to Supabase storage
       imageUrl = imagePreview;
     }
     
@@ -71,18 +70,28 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
             id="name"
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="e.g., Pencil Pleat, Blackout"
+            placeholder="e.g., Standard, Premium"
             required
           />
         </div>
         <div>
+          <Label htmlFor="base_price">Base Price</Label>
+          <Input
+            id="base_price"
+            type="number"
+            step="0.01"
+            value={formData.base_price}
+            onChange={(e) => setFormData(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
           <Label htmlFor="pricing_method">Pricing Method</Label>
-          <Select 
-            value={formData.pricing_method} 
-            onValueChange={(value: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage') => 
-              setFormData(prev => ({ ...prev, pricing_method: value }))
-            }
-          >
+          <Select value={formData.pricing_method} onValueChange={(value) => 
+            setFormData(prev => ({ ...prev, pricing_method: value as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage' }))
+          }>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -94,6 +103,15 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
               <SelectItem value="percentage">Percentage</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <Label htmlFor="sort_order">Sort Order</Label>
+          <Input
+            id="sort_order"
+            type="number"
+            value={formData.sort_order}
+            onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+          />
         </div>
       </div>
 
@@ -116,66 +134,31 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
               <img 
                 src={imagePreview} 
                 alt="Subcategory preview"
-                className="w-24 h-24 object-cover rounded border"
+                className="w-24 h-24 object-cover rounded-lg border"
               />
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
               >
-                <X className="h-2 w-2" />
+                <X className="h-3 w-3" />
               </button>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center w-24 h-24 flex flex-col items-center justify-center">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center w-24 h-24 flex flex-col items-center justify-center">
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
-                id={`subcategory-image-upload-${subcategory?.id || 'new'}`}
+                id="subcategory-image-upload"
               />
-              <label htmlFor={`subcategory-image-upload-${subcategory?.id || 'new'}`} className="cursor-pointer">
-                <Upload className="h-4 w-4 text-gray-400 mb-1" />
+              <label htmlFor="subcategory-image-upload" className="cursor-pointer">
+                <Upload className="h-6 w-6 text-gray-400 mb-1" />
                 <p className="text-xs text-gray-600">Upload</p>
               </label>
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="base_price">Base Price (£)</Label>
-          <Input
-            id="base_price"
-            type="number"
-            step="0.01"
-            value={formData.base_price}
-            onChange={(e) => setFormData(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
-          />
-        </div>
-        <div>
-          <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
-          <Input
-            id="fullness_ratio"
-            type="number"
-            step="0.1"
-            value={formData.fullness_ratio || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, fullness_ratio: e.target.value ? parseFloat(e.target.value) : null }))}
-            placeholder="Optional"
-          />
-        </div>
-        <div>
-          <Label htmlFor="extra_fabric_percentage">Extra Fabric %</Label>
-          <Input
-            id="extra_fabric_percentage"
-            type="number"
-            step="0.1"
-            value={formData.extra_fabric_percentage || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, extra_fabric_percentage: e.target.value ? parseFloat(e.target.value) : null }))}
-            placeholder="Optional"
-          />
         </div>
       </div>
 

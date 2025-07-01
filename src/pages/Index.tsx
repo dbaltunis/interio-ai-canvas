@@ -4,27 +4,15 @@ import { UserProfile } from "@/components/layout/UserProfile";
 import { BrandHeader } from "@/components/layout/BrandHeader";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { JobsPage } from "@/components/jobs/JobsPage";
-import { QuoteManagement } from "@/components/quotes/QuoteManagement";
-import { ClientManagement } from "@/components/clients/ClientManagement";
-import { ProjectManagement } from "@/components/projects/ProjectManagement";
-import { InventoryManagement } from "@/components/inventory/InventoryManagement";
-import { WorkshopManagement } from "@/components/workshop/WorkshopManagement";
-import { JobEditor } from "@/components/job-editor/JobEditor";
 import { CalendarView } from "@/components/calendar/CalendarView";
-import { CalculatorView } from "@/components/calculator/CalculatorView";
 import { LibraryPage } from "@/components/library/LibraryPage";
-import { AIAssistant } from "@/components/ai/AIAssistant";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   LayoutDashboard, 
-  FileText, 
-  Users, 
   FolderOpen, 
-  Package, 
-  Wrench,
   Calendar,
-  Calculator,
+  Package,
   Settings
 } from "lucide-react";
 
@@ -36,12 +24,8 @@ const Index = () => {
     { id: "dashboard", label: "Home", icon: LayoutDashboard },
     { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
-    { id: "inventory", label: "Library", icon: Package },
+    { id: "library", label: "Library", icon: Package },
   ];
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   const handleSettingsClick = () => {
     window.location.href = "/settings";
@@ -53,22 +37,10 @@ const Index = () => {
         return <Dashboard />;
       case "jobs":
         return <JobsPage />;
-      case "projects":
-        return <ProjectManagement />;
-      case "job-editor":
-        return <JobEditor />;
-      case "quotes":
-        return <QuoteManagement />;
-      case "workshop":
-        return <WorkshopManagement />;
-      case "inventory":
+      case "library":
         return <LibraryPage />;
       case "calendar":
         return <CalendarView />;
-      case "clients":
-        return <ClientManagement />;
-      case "calculator":
-        return <CalculatorView />;
       default:
         return <JobsPage />;
     }
@@ -107,7 +79,6 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <AIAssistant />
               <Button
                 variant="ghost"
                 onClick={handleSettingsClick}
