@@ -19,11 +19,13 @@ export const useWindowCoveringCategories = () => {
   const { toast } = useToast();
 
   const fetchCategories = async () => {
+    console.log('useWindowCoveringCategories - Fetching categories...');
     try {
       const categoriesWithSubcategories = await fetchCategoriesFromDB();
+      console.log('useWindowCoveringCategories - Categories fetched:', categoriesWithSubcategories);
       setCategories(categoriesWithSubcategories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('useWindowCoveringCategories - Error fetching categories:', error);
       toast({
         title: "Error",
         description: "Failed to fetch option categories",
@@ -35,8 +37,11 @@ export const useWindowCoveringCategories = () => {
   };
 
   const createCategory = async (category: Omit<OptionCategory, 'id' | 'subcategories'>) => {
+    console.log('useWindowCoveringCategories - Creating category:', category);
     try {
       const newCategory = await createCategoryInDB(category);
+      console.log('useWindowCoveringCategories - Category created:', newCategory);
+      
       setCategories(prev => [...prev, newCategory].sort((a, b) => a.sort_order - b.sort_order));
       
       toast({
@@ -46,10 +51,10 @@ export const useWindowCoveringCategories = () => {
 
       return newCategory;
     } catch (error) {
-      console.error('Error creating category:', error);
+      console.error('useWindowCoveringCategories - Error creating category:', error);
       toast({
         title: "Error",
-        description: "Failed to create category",
+        description: `Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;
@@ -57,6 +62,7 @@ export const useWindowCoveringCategories = () => {
   };
 
   const updateCategory = async (id: string, updates: Partial<OptionCategory>) => {
+    console.log('useWindowCoveringCategories - Updating category:', id, updates);
     try {
       const { data, error } = await supabase
         .from('window_covering_option_categories')
@@ -80,10 +86,10 @@ export const useWindowCoveringCategories = () => {
 
       return data;
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('useWindowCoveringCategories - Error updating category:', error);
       toast({
         title: "Error",
-        description: "Failed to update category",
+        description: `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;
@@ -91,8 +97,10 @@ export const useWindowCoveringCategories = () => {
   };
 
   const createSubcategory = async (subcategory: Omit<OptionSubcategory, 'id'>) => {
+    console.log('useWindowCoveringCategories - Creating subcategory:', subcategory);
     try {
       const newSubcategory = await createSubcategoryInDB(subcategory);
+      console.log('useWindowCoveringCategories - Subcategory created:', newSubcategory);
 
       setCategories(prev => 
         prev.map(cat => 
@@ -112,10 +120,10 @@ export const useWindowCoveringCategories = () => {
 
       return newSubcategory;
     } catch (error) {
-      console.error('Error creating subcategory:', error);
+      console.error('useWindowCoveringCategories - Error creating subcategory:', error);
       toast({
         title: "Error",
-        description: "Failed to create subcategory",
+        description: `Failed to create subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;
@@ -123,6 +131,7 @@ export const useWindowCoveringCategories = () => {
   };
 
   const updateSubcategory = async (id: string, updates: Partial<OptionSubcategory>) => {
+    console.log('useWindowCoveringCategories - Updating subcategory:', id, updates);
     try {
       const { data, error } = await supabase
         .from('window_covering_option_subcategories')
@@ -154,10 +163,10 @@ export const useWindowCoveringCategories = () => {
 
       return typedData;
     } catch (error) {
-      console.error('Error updating subcategory:', error);
+      console.error('useWindowCoveringCategories - Error updating subcategory:', error);
       toast({
         title: "Error",
-        description: "Failed to update subcategory",
+        description: `Failed to update subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;
@@ -165,6 +174,7 @@ export const useWindowCoveringCategories = () => {
   };
 
   const deleteCategory = async (id: string) => {
+    console.log('useWindowCoveringCategories - Deleting category:', id);
     try {
       await deleteCategoryFromDB(id);
       setCategories(prev => prev.filter(cat => cat.id !== id));
@@ -174,10 +184,10 @@ export const useWindowCoveringCategories = () => {
         description: "Category deleted successfully"
       });
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error('useWindowCoveringCategories - Error deleting category:', error);
       toast({
         title: "Error",
-        description: "Failed to delete category",
+        description: `Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;
@@ -185,6 +195,7 @@ export const useWindowCoveringCategories = () => {
   };
 
   const deleteSubcategory = async (id: string, categoryId: string) => {
+    console.log('useWindowCoveringCategories - Deleting subcategory:', id, categoryId);
     try {
       await deleteSubcategoryFromDB(id);
 
@@ -204,10 +215,10 @@ export const useWindowCoveringCategories = () => {
         description: "Subcategory deleted successfully"
       });
     } catch (error) {
-      console.error('Error deleting subcategory:', error);
+      console.error('useWindowCoveringCategories - Error deleting subcategory:', error);
       toast({
         title: "Error",
-        description: "Failed to delete subcategory",
+        description: `Failed to delete subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;

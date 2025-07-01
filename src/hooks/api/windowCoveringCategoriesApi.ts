@@ -6,13 +6,20 @@ export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  console.log('Fetching categories for user:', user.id);
+
   const { data: categories, error: categoriesError } = await supabase
     .from('window_covering_option_categories')
     .select('*')
     .eq('user_id', user.id)
     .order('sort_order', { ascending: true });
 
-  if (categoriesError) throw categoriesError;
+  if (categoriesError) {
+    console.error('Error fetching categories:', categoriesError);
+    throw categoriesError;
+  }
+
+  console.log('Fetched categories:', categories);
 
   const { data: subcategories, error: subcategoriesError } = await supabase
     .from('window_covering_option_subcategories')
@@ -20,7 +27,12 @@ export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
     .eq('user_id', user.id)
     .order('sort_order', { ascending: true });
 
-  if (subcategoriesError) throw subcategoriesError;
+  if (subcategoriesError) {
+    console.error('Error fetching subcategories:', subcategoriesError);
+    throw subcategoriesError;
+  }
+
+  console.log('Fetched subcategories:', subcategories);
 
   const categoriesWithSubcategories = (categories || []).map(category => ({
     ...category,
@@ -32,12 +44,15 @@ export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
       }))
   }));
 
+  console.log('Final categories with subcategories:', categoriesWithSubcategories);
   return categoriesWithSubcategories as OptionCategory[];
 };
 
 export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | 'subcategories'>): Promise<OptionCategory> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  console.log('Creating category:', category);
 
   const { data, error } = await supabase
     .from('window_covering_option_categories')
@@ -54,14 +69,20 @@ export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | '
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error creating category:', error);
+    throw error;
+  }
 
+  console.log('Created category:', data);
   return { ...data, subcategories: [] };
 };
 
 export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory, 'id'>): Promise<OptionSubcategory> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  console.log('Creating subcategory:', subcategory);
 
   const { data, error } = await supabase
     .from('window_covering_option_subcategories')
@@ -82,8 +103,12 @@ export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory,
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error creating subcategory:', error);
+    throw error;
+  }
 
+  console.log('Created subcategory:', data);
   return {
     ...data,
     pricing_method: data.pricing_method as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage'
@@ -91,19 +116,33 @@ export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory,
 };
 
 export const deleteCategoryFromDB = async (id: string): Promise<void> => {
+  console.log('Deleting category:', id);
+  
   const { error } = await supabase
     .from('window_covering_option_categories')
     .delete()
     .eq('id', id);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error deleting category:', error);
+    throw error;
+  }
+  
+  console.log('Category deleted successfully');
 };
 
 export const deleteSubcategoryFromDB = async (id: string): Promise<void> => {
+  console.log('Deleting subcategory:', id);
+  
   const { error } = await supabase
     .from('window_covering_option_subcategories')
     .delete()
     .eq('id', id);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error deleting subcategory:', error);
+    throw error;
+  }
+  
+  console.log('Subcategory deleted successfully');
 };

@@ -1628,6 +1628,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           is_required: boolean
           name: string
           sort_order: number
@@ -1638,6 +1639,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_required?: boolean
           name: string
           sort_order?: number
@@ -1648,6 +1650,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_required?: boolean
           name?: string
           sort_order?: number
@@ -1665,6 +1668,7 @@ export type Database = {
           extra_fabric_percentage: number | null
           fullness_ratio: number | null
           id: string
+          image_url: string | null
           name: string
           pricing_method: string
           sort_order: number
@@ -1679,6 +1683,7 @@ export type Database = {
           extra_fabric_percentage?: number | null
           fullness_ratio?: number | null
           id?: string
+          image_url?: string | null
           name: string
           pricing_method: string
           sort_order?: number
@@ -1693,6 +1698,7 @@ export type Database = {
           extra_fabric_percentage?: number | null
           fullness_ratio?: number | null
           id?: string
+          image_url?: string | null
           name?: string
           pricing_method?: string
           sort_order?: number
@@ -1716,6 +1722,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           is_default: boolean
           is_required: boolean
           name: string
@@ -1732,6 +1739,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_default?: boolean
           is_required?: boolean
           name: string
@@ -1748,6 +1756,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_default?: boolean
           is_required?: boolean
           name?: string

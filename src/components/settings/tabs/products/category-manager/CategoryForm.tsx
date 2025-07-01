@@ -43,22 +43,31 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('CategoryForm - Submitting form data:', formData);
+    
     let imageUrl = formData.image_url;
     
     // For now, we'll use the preview URL. In a real app, you'd upload to storage
     if (imageFile) {
-      // TODO: Implement actual file upload to Supabase storage
       imageUrl = imagePreview;
     }
     
-    await onSave({
+    const categoryData = {
       ...formData,
       image_url: imageUrl
-    });
+    };
+    
+    console.log('CategoryForm - Final category data:', categoryData);
+    
+    try {
+      await onSave(categoryData);
+    } catch (error) {
+      console.error('CategoryForm - Error saving category:', error);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg bg-white">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="name">Category Name</Label>
@@ -91,6 +100,15 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
         />
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="is_required"
+          checked={formData.is_required}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: !!checked }))}
+        />
+        <Label htmlFor="is_required">Required Category</Label>
+      </div>
+
       {/* Image Upload Section */}
       <div>
         <Label>Category Image</Label>
@@ -100,7 +118,7 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
               <img 
                 src={imagePreview} 
                 alt="Category preview"
-                className="w-32 h-32 object-cover rounded-lg border"
+                className="w-24 h-24 object-cover rounded-lg border"
               />
               <button
                 type="button"
@@ -111,7 +129,7 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
               </button>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center w-32 h-32 flex flex-col items-center justify-center">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center w-24 h-24 flex flex-col items-center justify-center">
               <input
                 type="file"
                 accept="image/*"
@@ -120,21 +138,12 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
                 id="category-image-upload"
               />
               <label htmlFor="category-image-upload" className="cursor-pointer">
-                <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-xs text-gray-600">Upload Image</p>
+                <Upload className="h-6 w-6 text-gray-400 mb-1" />
+                <p className="text-xs text-gray-600">Upload</p>
               </label>
             </div>
           )}
         </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_required"
-          checked={formData.is_required}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: !!checked }))}
-        />
-        <Label htmlFor="is_required">Required Category</Label>
       </div>
 
       <div className="flex gap-2">
