@@ -82,13 +82,13 @@ export const ProjectTabContent = ({ activeTab, project, onBack }: ProjectTabCont
           />
         );
       case "jobs":
-        return <ProjectJobsTab project={project} onBack={onBack} />;
+        return <ProjectJobsTab project={project} />;
       case "quote":
         return <ProjectQuoteTab project={project} />;
       case "workshop":
         return <ProjectWorkshopTab project={project} />;
       default:
-        return <ProjectJobsTab project={project} onBack={onBack} />;
+        return <ProjectJobsTab project={project} />;
     }
   };
 

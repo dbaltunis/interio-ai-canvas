@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { RoomsGrid } from "./RoomsGrid";
 import { EmptyRoomsState } from "./EmptyRoomsState";
-import { JobHeader } from "./JobHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Edit2, Check, X } from "lucide-react";
@@ -184,9 +183,20 @@ export const ProjectJobsTab = ({ project }: ProjectJobsTabProps) => {
         ) : (
           <RoomsGrid
             rooms={rooms}
-            surfaces={surfaces}
-            treatments={treatments}
             projectId={project?.id}
+            onUpdateRoom={() => {}}
+            onDeleteRoom={() => {}}
+            onCreateTreatment={() => {}}
+            onCreateSurface={() => {}}
+            onUpdateSurface={() => {}}
+            onDeleteSurface={() => {}}
+            onCopyRoom={() => {}}
+            editingRoomId={null}
+            setEditingRoomId={() => {}}
+            editingRoomName=""
+            setEditingRoomName={() => {}}
+            onRenameRoom={() => {}}
+            onCreateRoom={handleCreateRoom}
           />
         )}
       </div>

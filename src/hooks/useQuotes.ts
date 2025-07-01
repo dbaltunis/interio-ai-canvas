@@ -114,3 +114,37 @@ export const useUpdateQuote = () => {
     }
   });
 };
+
+export const useDeleteQuote = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("quotes")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      toast({
+        title: "Success",
+        description: "Quote deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Failed to delete quote:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete quote. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+};
