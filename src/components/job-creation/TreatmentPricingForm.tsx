@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,6 +41,13 @@ export const TreatmentPricingForm = ({
   const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType);
 
   const costs = calculateCosts();
+
+  // Debug logging for options
+  console.log('Treatment Type:', treatmentType);
+  console.log('Treatment Types Data:', treatmentTypesData);
+  console.log('Window Covering:', windowCovering);
+  console.log('Window Covering Options:', options);
+  console.log('Selected Options:', formData.selected_options);
 
   // Auto-select required and default options when window covering changes
   useEffect(() => {
@@ -196,7 +202,7 @@ export const TreatmentPricingForm = ({
             />
           </div>
 
-          <CostSummaryCard costs={costs} />
+          <CostSummaryCard costs={costs} treatmentType={treatmentType} />
 
           {/* Form Actions */}
           <div className="flex justify-end space-x-4">
