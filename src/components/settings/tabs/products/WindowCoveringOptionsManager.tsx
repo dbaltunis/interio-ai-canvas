@@ -2,15 +2,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Plus, Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
-import { useWindowCoveringOptions, type WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
 import { useWindowCoveringCategories } from "@/hooks/useWindowCoveringCategories";
 import type { WindowCovering } from "@/hooks/useWindowCoverings";
+import type { OptionCategory, OptionSubcategory, OptionSubSubcategory, OptionExtra } from "@/hooks/types/windowCoveringTypes";
 
 interface WindowCoveringOptionsManagerProps {
   windowCovering: WindowCovering;
@@ -18,82 +14,48 @@ interface WindowCoveringOptionsManagerProps {
 }
 
 export const WindowCoveringOptionsManager = ({ windowCovering, onBack }: WindowCoveringOptionsManagerProps) => {
-  const { options, isLoading: optionsLoading, createOption, updateOption, deleteOption } = useWindowCoveringOptions(windowCovering.id);
-  const { categories, isLoading: categoriesLoading } = useWindowCoveringCategories();
-  
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    option_type: '',
-    name: '',
-    description: '',
-    cost_type: 'per-unit' as const,
-    base_cost: 0,
-    is_required: false,
-    is_default: false,
-    sort_order: 0
-  });
+  const { categories, isLoading } = useWindowCoveringCategories();
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const [expandedSubSubcategories, setExpandedSubSubcategories] = useState<Set<string>>(new Set());
 
-  const handleSave = async () => {
-    try {
-      const optionData = {
-        ...formData,
-        window_covering_id: windowCovering.id,
-        sort_order: options.length
-      };
-
-      if (editingId) {
-        await updateOption(editingId, optionData);
+  const toggleExpanded = (id: string, type: 'category' | 'subcategory' | 'subsubcategory') => {
+    const setterMap = {
+      category: setExpandedCategories,
+      subcategory: setExpandedSubcategories,
+      subsubcategory: setExpandedSubSubcategories
+    };
+    
+    const setter = setterMap[type];
+    setter(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
       } else {
-        await createOption(optionData);
+        newSet.add(id);
       }
-      
-      resetForm();
-    } catch (error) {
-      // Error handling is done in the hook
-    }
-  };
-
-  const handleEdit = (option: WindowCoveringOption) => {
-    setFormData({
-      option_type: option.option_type,
-      name: option.name,
-      description: option.description || '',
-      cost_type: option.cost_type as any,
-      base_cost: option.base_cost,
-      is_required: option.is_required,
-      is_default: option.is_default,
-      sort_order: option.sort_order
+      return newSet;
     });
-    setEditingId(option.id);
-    setIsCreating(true);
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteOption(id);
-    } catch (error) {
-      // Error handling is done in the hook
-    }
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toFixed(2)}`;
   };
 
-  const resetForm = () => {
-    setFormData({
-      option_type: '',
-      name: '',
-      description: '',
-      cost_type: 'per-unit',
-      base_cost: 0,
-      is_required: false,
-      is_default: false,
-      sort_order: 0
-    });
-    setIsCreating(false);
-    setEditingId(null);
+  const getPricingLabel = (method: string) => {
+    const labels: Record<string, string> = {
+      'per-unit': 'per unit',
+      'per-meter': 'per meter',
+      'per-sqm': 'per sqm',
+      'fixed': 'fixed',
+      'percentage': '%',
+      'per-item': 'per item'
+    };
+    return labels[method] || method;
   };
 
-  if (optionsLoading || categoriesLoading) {
-    return <div className="text-center py-8">Loading options...</div>;
+  if (isLoading) {
+    return <div className="text-center py-8">Loading categories...</div>;
   }
 
   return (
@@ -108,187 +70,221 @@ export const WindowCoveringOptionsManager = ({ windowCovering, onBack }: WindowC
             Manage Options: {windowCovering.name}
           </h3>
           <p className="text-sm text-brand-neutral">
-            Add and configure options for this window covering
+            Configure hierarchical options for this window covering
           </p>
         </div>
       </div>
 
-      {/* Add Option Form */}
-      {isCreating && (
+      {categories.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? 'Edit Option' : 'Add New Option'}</CardTitle>
+            <CardTitle>No Option Categories Found</CardTitle>
             <CardDescription>
-              Configure an option for this window covering
+              You need to create option categories first before you can assign them to window coverings.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="option_type">Option Type</Label>
-                <Select value={formData.option_type} onValueChange={(value) => setFormData(prev => ({ ...prev, option_type: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select option type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.name.toLowerCase()}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="name">Option Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Blackout Lining"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="cost_type">Cost Type</Label>
-                <Select value={formData.cost_type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, cost_type: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="per-unit">Per Unit</SelectItem>
-                    <SelectItem value="per-meter">Per Meter</SelectItem>
-                    <SelectItem value="per-sqm">Per Square Meter</SelectItem>
-                    <SelectItem value="fixed">Fixed Price</SelectItem>
-                    <SelectItem value="percentage">Percentage</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="base_cost">Base Cost (£)</Label>
-                <Input
-                  id="base_cost"
-                  type="number"
-                  step="0.01"
-                  value={formData.base_cost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-6">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_required"
-                  checked={formData.is_required}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: !!checked }))}
-                />
-                <Label htmlFor="is_required">Required Option</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_default"
-                  checked={formData.is_default}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_default: !!checked }))}
-                />
-                <Label htmlFor="is_default">Default Selection</Label>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSave} className="bg-brand-primary hover:bg-brand-accent">
-                {editingId ? 'Update Option' : 'Add Option'}
-              </Button>
-              <Button variant="outline" onClick={resetForm}>
-                Cancel
-              </Button>
-            </div>
+          <CardContent>
+            <p className="text-sm text-brand-neutral mb-4">
+              Go to Settings → Products → Window Coverings → Option Categories to create your first category.
+            </p>
+            <Button 
+              onClick={onBack}
+              className="bg-brand-primary hover:bg-brand-accent"
+            >
+              Go to Category Management
+            </Button>
           </CardContent>
         </Card>
-      )}
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-md font-medium">Available Option Categories</h4>
+            <Badge variant="outline">{categories.length} categories</Badge>
+          </div>
 
-      {/* Add Option Button */}
-      {!isCreating && (
-        <Button onClick={() => setIsCreating(true)} className="bg-brand-primary hover:bg-brand-accent">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Option
-        </Button>
-      )}
-
-      {/* Options List */}
-      <div className="grid gap-4">
-        {options.map((option) => (
-          <Card key={option.id}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-semibold text-brand-primary">{option.name}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {option.option_type}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex gap-4 text-sm text-brand-neutral mb-2">
-                    <span>Cost: £{option.base_cost} {option.cost_type}</span>
-                    <span>Sort: {option.sort_order}</span>
-                  </div>
-
-                  {option.description && (
-                    <p className="text-sm text-brand-neutral bg-gray-50 p-2 rounded mb-2">
-                      {option.description}
-                    </p>
-                  )}
-
-                  <div className="flex gap-2">
-                    {option.is_required && (
-                      <Badge variant="destructive" className="text-xs">Required</Badge>
-                    )}
-                    {option.is_default && (
-                      <Badge variant="default" className="text-xs">Default</Badge>
-                    )}
+          {categories.map((category) => (
+            <Card key={category.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                {/* Category Level */}
+                <div 
+                  className="p-4 border-b bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => toggleExpanded(category.id, 'category')}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {expandedCategories.has(category.id) ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-500" />
+                      )}
+                      {category.image_url && (
+                        <img 
+                          src={category.image_url} 
+                          alt={category.name}
+                          className="w-8 h-8 object-cover rounded border"
+                        />
+                      )}
+                      <div>
+                        <h5 className="font-semibold text-brand-primary">{category.name}</h5>
+                        {category.description && (
+                          <p className="text-sm text-gray-600">{category.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {category.is_required && (
+                        <Badge variant="destructive" className="text-xs">Required</Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {category.subcategories?.length || 0} subcategories
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(option)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(option.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
 
-        {options.length === 0 && (
+                {/* Subcategories */}
+                {expandedCategories.has(category.id) && category.subcategories && (
+                  <div className="ml-4">
+                    {category.subcategories.map((subcategory) => (
+                      <div key={subcategory.id}>
+                        <div 
+                          className="p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => toggleExpanded(subcategory.id, 'subcategory')}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {expandedSubcategories.has(subcategory.id) ? (
+                                <ChevronDown className="h-4 w-4 text-gray-500" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-500" />
+                              )}
+                              {subcategory.image_url && (
+                                <img 
+                                  src={subcategory.image_url} 
+                                  alt={subcategory.name}
+                                  className="w-6 h-6 object-cover rounded border"
+                                />
+                              )}
+                              <div>
+                                <h6 className="font-medium">{subcategory.name}</h6>
+                                {subcategory.description && (
+                                  <p className="text-xs text-gray-600">{subcategory.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {formatCurrency(subcategory.base_price)} {getPricingLabel(subcategory.pricing_method)}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {subcategory.sub_subcategories?.length || 0} options
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sub-subcategories */}
+                        {expandedSubcategories.has(subcategory.id) && subcategory.sub_subcategories && (
+                          <div className="ml-6 bg-gray-25">
+                            {subcategory.sub_subcategories.map((subSubcategory) => (
+                              <div key={subSubcategory.id}>
+                                <div 
+                                  className="p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors"
+                                  onClick={() => toggleExpanded(subSubcategory.id, 'subsubcategory')}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      {expandedSubSubcategories.has(subSubcategory.id) ? (
+                                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4 text-gray-500" />
+                                      )}
+                                      {subSubcategory.image_url && (
+                                        <img 
+                                          src={subSubcategory.image_url} 
+                                          alt={subSubcategory.name}
+                                          className="w-5 h-5 object-cover rounded border"
+                                        />
+                                      )}
+                                      <div>
+                                        <span className="font-medium text-sm">{subSubcategory.name}</span>
+                                        {subSubcategory.description && (
+                                          <p className="text-xs text-gray-600">{subSubcategory.description}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {formatCurrency(subSubcategory.base_price)} {getPricingLabel(subSubcategory.pricing_method)}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {subSubcategory.extras?.length || 0} extras
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Extras */}
+                                {expandedSubSubcategories.has(subSubcategory.id) && subSubcategory.extras && (
+                                  <div className="ml-8 bg-blue-25">
+                                    {subSubcategory.extras.map((extra) => (
+                                      <div key={extra.id} className="p-2 border-b border-gray-100">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            {extra.image_url && (
+                                              <img 
+                                                src={extra.image_url} 
+                                                alt={extra.name}
+                                                className="w-4 h-4 object-cover rounded border"
+                                              />
+                                            )}
+                                            <div>
+                                              <span className="text-sm font-medium">{extra.name}</span>
+                                              {extra.description && (
+                                                <p className="text-xs text-gray-600">{extra.description}</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <Badge variant="secondary" className="text-xs">
+                                              {formatCurrency(extra.base_price)} {getPricingLabel(extra.pricing_method)}
+                                            </Badge>
+                                            {extra.is_required && (
+                                              <Badge variant="destructive" className="text-xs">Required</Badge>
+                                            )}
+                                            {extra.is_default && (
+                                              <Badge variant="default" className="text-xs">Default</Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+
           <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-brand-neutral">No options configured yet.</p>
-              <Button 
-                onClick={() => setIsCreating(true)}
-                className="mt-4 bg-brand-primary hover:bg-brand-accent"
-              >
-                Add Your First Option
-              </Button>
+            <CardContent className="p-6 text-center">
+              <p className="text-sm text-brand-neutral mb-4">
+                This hierarchical structure will be available for selection when customers configure their {windowCovering.name}.
+              </p>
+              <p className="text-xs text-gray-500">
+                Note: The pricing logic for this hierarchical system will be implemented in the calculator and job creation flow.
+              </p>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
