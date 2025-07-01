@@ -88,8 +88,8 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           name: "New Project",
           description: "",
           status: "planning",
-          priority: "medium"
-          // Note: client_id is intentionally omitted to be null
+          priority: "medium",
+          client_id: null
         });
         
         console.log("Project created successfully:", newProject);
@@ -100,6 +100,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           
           await createQuote.mutateAsync({
             project_id: newProject.id,
+            client_id: null,
             quote_number: "", // Empty string will trigger auto-generation
             status: "draft",
             subtotal: 0,
@@ -107,7 +108,6 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
             tax_amount: 0,
             total_amount: 0,
             notes: "New job created"
-            // Note: client_id is intentionally omitted to be null
           });
           
           console.log("Quote created successfully for project:", newProject.id);
