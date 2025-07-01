@@ -24,10 +24,15 @@ export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
 
   const categoriesWithSubcategories = categories.map(category => ({
     ...category,
-    subcategories: subcategories.filter(sub => sub.category_id === category.id)
+    subcategories: subcategories
+      .filter(sub => sub.category_id === category.id)
+      .map(sub => ({
+        ...sub,
+        pricing_method: sub.pricing_method as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage'
+      }))
   }));
 
-  return categoriesWithSubcategories;
+  return categoriesWithSubcategories as OptionCategory[];
 };
 
 export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | 'subcategories'>): Promise<OptionCategory> => {
@@ -67,7 +72,10 @@ export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory,
 
   if (error) throw error;
 
-  return data;
+  return {
+    ...data,
+    pricing_method: data.pricing_method as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage'
+  } as OptionSubcategory;
 };
 
 export const deleteCategoryFromDB = async (id: string): Promise<void> => {

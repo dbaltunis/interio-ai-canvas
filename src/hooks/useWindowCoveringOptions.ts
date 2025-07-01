@@ -14,6 +14,7 @@ export interface WindowCoveringOption {
   is_required: boolean;
   is_default: boolean;
   sort_order: number;
+  image_url?: string;
   specifications?: any;
 }
 

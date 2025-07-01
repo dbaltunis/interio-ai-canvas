@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { OptionCategory, OptionSubcategory } from './types/windowCoveringTypes';
 import { 
@@ -131,11 +133,16 @@ export const useWindowCoveringCategories = () => {
 
       if (error) throw error;
 
+      const typedData = {
+        ...data,
+        pricing_method: data.pricing_method as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage'
+      };
+
       setCategories(prev => 
         prev.map(cat => ({
           ...cat,
           subcategories: cat.subcategories?.map(sub => 
-            sub.id === id ? { ...sub, ...data } : sub
+            sub.id === id ? { ...sub, ...typedData } : sub
           ).sort((a, b) => a.sort_order - b.sort_order)
         }))
       );
@@ -145,7 +152,7 @@ export const useWindowCoveringCategories = () => {
         description: "Subcategory updated successfully"
       });
 
-      return data;
+      return typedData;
     } catch (error) {
       console.error('Error updating subcategory:', error);
       toast({

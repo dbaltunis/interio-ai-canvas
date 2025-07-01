@@ -20,7 +20,7 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
     category_id: categoryId,
     name: subcategory?.name || '',
     description: subcategory?.description || '',
-    pricing_method: subcategory?.pricing_method || 'per-unit',
+    pricing_method: subcategory?.pricing_method || 'per-unit' as 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage',
     base_price: subcategory?.base_price || 0,
     fullness_ratio: subcategory?.fullness_ratio || null,
     extra_fabric_percentage: subcategory?.extra_fabric_percentage || null,
@@ -77,7 +77,12 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
         </div>
         <div>
           <Label htmlFor="pricing_method">Pricing Method</Label>
-          <Select value={formData.pricing_method} onValueChange={(value) => setFormData(prev => ({ ...prev, pricing_method: value }))}>
+          <Select 
+            value={formData.pricing_method} 
+            onValueChange={(value: 'per-unit' | 'per-meter' | 'per-sqm' | 'fixed' | 'percentage') => 
+              setFormData(prev => ({ ...prev, pricing_method: value }))
+            }
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

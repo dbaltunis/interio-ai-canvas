@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -86,8 +87,9 @@ export const WindowCoveringOptionsCard = ({
 
   console.log('WindowCoveringOptionsCard - Rendering options:', options.length);
 
-  // Group options by type for better organization
-  const groupedOptions = options.reduce((acc, option) => {
+  // Group options by type for better organization - ensure options is an array
+  const safeOptions = Array.isArray(options) ? options : [];
+  const groupedOptions = safeOptions.reduce((acc, option) => {
     if (!acc[option.option_type]) {
       acc[option.option_type] = [];
     }
@@ -152,7 +154,7 @@ export const WindowCoveringOptionsCard = ({
         
         <div className="text-xs text-gray-500 mt-4 p-2 bg-gray-50 rounded">
           <p><strong>Debug Summary:</strong></p>
-          <p>Total Options: {options.length}</p>
+          <p>Total Options: {safeOptions.length}</p>
           <p>Selected Options: {selectedOptions.length}</p>
           <p>Window Covering: {windowCovering.name} (ID: {windowCovering.id})</p>
         </div>
