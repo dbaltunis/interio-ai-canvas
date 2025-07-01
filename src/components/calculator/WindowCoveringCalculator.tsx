@@ -22,7 +22,8 @@ export const WindowCoveringCalculator = () => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   
   const { 
-    options: availableOptions, 
+    options: availableOptions,
+    hierarchicalOptions,
     isLoading: optionsLoading 
   } = useWindowCoveringOptions(selectedWindowCovering?.id || '');
 
@@ -77,6 +78,7 @@ export const WindowCoveringCalculator = () => {
           {selectedWindowCovering && (
             <OptionsSelector 
               availableOptions={availableOptions}
+              hierarchicalOptions={hierarchicalOptions}
               selectedOptions={selectedOptions}
               onOptionToggle={handleOptionToggle}
               isLoading={optionsLoading}

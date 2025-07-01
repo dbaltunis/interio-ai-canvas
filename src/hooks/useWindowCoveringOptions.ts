@@ -18,8 +18,50 @@ export interface WindowCoveringOption {
   specifications?: any;
 }
 
+// New interface for hierarchical options
+export interface HierarchicalOption {
+  id: string;
+  name: string;
+  description?: string;
+  option_type: string;
+  base_cost: number;
+  is_required: boolean;
+  is_default: boolean;
+  sort_order: number;
+  image_url?: string;
+  cost_type: string;
+  pricing_method?: string;
+  subcategories?: {
+    id: string;
+    name: string;
+    description?: string;
+    base_price: number;
+    pricing_method: string;
+    image_url?: string;
+    sub_subcategories?: {
+      id: string;
+      name: string;
+      description?: string;
+      base_price: number;
+      pricing_method: string;
+      image_url?: string;
+      extras?: {
+        id: string;
+        name: string;
+        description?: string;
+        base_price: number;
+        pricing_method: string;
+        image_url?: string;
+        is_required: boolean;
+        is_default: boolean;
+      }[];
+    }[];
+  }[];
+}
+
 export const useWindowCoveringOptions = (windowCoveringId: string) => {
   const [options, setOptions] = useState<WindowCoveringOption[]>([]);
+  const [hierarchicalOptions, setHierarchicalOptions] = useState<HierarchicalOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -29,6 +71,7 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
     if (!windowCoveringId) {
       console.log('useWindowCoveringOptions - No window covering ID provided');
       setOptions([]);
+      setHierarchicalOptions([]);
       setIsLoading(false);
       return;
     }
@@ -38,21 +81,135 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
     try {
       console.log('useWindowCoveringOptions - Fetching options for window covering:', windowCoveringId);
       
-      const { data, error } = await supabase
+      // Fetch traditional options
+      const { data: traditionalOptions, error: traditionalError } = await supabase
         .from('window_covering_options')
         .select('*')
         .eq('window_covering_id', windowCoveringId)
         .order('sort_order', { ascending: true });
 
-      console.log('useWindowCoveringOptions - Query result:', { data, error });
+      if (traditionalError) {
+        console.error('useWindowCoveringOptions - Error fetching traditional options:', traditionalError);
+        throw traditionalError;
+      }
 
-      if (error) {
-        console.error('useWindowCoveringOptions - Database error:', error);
-        throw error;
+      // Fetch hierarchical options through window_covering_option_assignments
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('window_covering_option_assignments')
+        .select(`
+          category_id,
+          window_covering_option_categories!inner (
+            id,
+            name,
+            description,
+            is_required,
+            sort_order,
+            image_url
+          )
+        `)
+        .eq('window_covering_id', windowCoveringId);
+
+      if (assignmentsError) {
+        console.error('useWindowCoveringOptions - Error fetching assignments:', assignmentsError);
+        // Don't throw here, just log the error and continue with traditional options
+      }
+
+      // If we have assignments, fetch the full hierarchical data
+      let hierarchicalData: HierarchicalOption[] = [];
+      if (assignments && assignments.length > 0) {
+        const categoryIds = assignments.map(a => a.category_id);
+        
+        const { data: categoriesWithHierarchy, error: hierarchyError } = await supabase
+          .from('window_covering_option_categories')
+          .select(`
+            id,
+            name,
+            description,
+            is_required,
+            sort_order,
+            image_url,
+            window_covering_option_subcategories (
+              id,
+              name,
+              description,
+              base_price,
+              pricing_method,
+              sort_order,
+              image_url,
+              window_covering_option_sub_subcategories (
+                id,
+                name,
+                description,
+                base_price,
+                pricing_method,
+                sort_order,
+                image_url,
+                window_covering_option_extras (
+                  id,
+                  name,
+                  description,
+                  base_price,
+                  pricing_method,
+                  sort_order,
+                  image_url,
+                  is_required,
+                  is_default
+                )
+              )
+            )
+          `)
+          .in('id', categoryIds)
+          .order('sort_order', { ascending: true });
+
+        if (hierarchyError) {
+          console.error('useWindowCoveringOptions - Error fetching hierarchy:', hierarchyError);
+        } else if (categoriesWithHierarchy) {
+          hierarchicalData = categoriesWithHierarchy.map(category => ({
+            id: category.id,
+            name: category.name,
+            description: category.description,
+            option_type: 'category',
+            base_cost: 0,
+            is_required: category.is_required,
+            is_default: false,
+            sort_order: category.sort_order,
+            image_url: category.image_url,
+            cost_type: 'fixed',
+            subcategories: category.window_covering_option_subcategories?.map(sub => ({
+              id: sub.id,
+              name: sub.name,
+              description: sub.description,
+              base_price: sub.base_price,
+              pricing_method: sub.pricing_method,
+              image_url: sub.image_url,
+              sub_subcategories: sub.window_covering_option_sub_subcategories?.map(subSub => ({
+                id: subSub.id,
+                name: subSub.name,
+                description: subSub.description,
+                base_price: subSub.base_price,
+                pricing_method: subSub.pricing_method,
+                image_url: subSub.image_url,
+                extras: subSub.window_covering_option_extras?.map(extra => ({
+                  id: extra.id,
+                  name: extra.name,
+                  description: extra.description,
+                  base_price: extra.base_price,
+                  pricing_method: extra.pricing_method,
+                  image_url: extra.image_url,
+                  is_required: extra.is_required,
+                  is_default: extra.is_default
+                })) || []
+              })) || []
+            })) || []
+          }));
+        }
       }
       
-      console.log('useWindowCoveringOptions - Found options:', data?.length || 0);
-      setOptions(data || []);
+      console.log('useWindowCoveringOptions - Found traditional options:', traditionalOptions?.length || 0);
+      console.log('useWindowCoveringOptions - Found hierarchical options:', hierarchicalData.length);
+      
+      setOptions(traditionalOptions || []);
+      setHierarchicalOptions(hierarchicalData);
     } catch (error) {
       console.error('useWindowCoveringOptions - Error fetching options:', error);
       toast({
@@ -61,6 +218,7 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
         variant: "destructive"
       });
       setOptions([]);
+      setHierarchicalOptions([]);
     } finally {
       setIsLoading(false);
     }
@@ -169,12 +327,14 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
 
   console.log('useWindowCoveringOptions - Returning:', { 
     options: options?.length || 0, 
+    hierarchicalOptions: hierarchicalOptions?.length || 0,
     isLoading, 
     windowCoveringId 
   });
 
   return {
     options,
+    hierarchicalOptions,
     isLoading,
     createOption,
     updateOption,

@@ -37,7 +37,7 @@ export const TreatmentPricingForm = ({
   projectId
 }: TreatmentPricingFormProps) => {
   const { formData, setFormData, handleInputChange, resetForm } = useTreatmentFormData(treatmentType, windowCovering);
-  const { options, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
+  const { options, hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
   const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType);
@@ -51,8 +51,10 @@ export const TreatmentPricingForm = ({
   console.log('Window Covering:', windowCovering);
   console.log('Window Covering ID:', windowCovering?.id);
   console.log('Options Loading:', optionsLoading);
-  console.log('Options Data:', options);
+  console.log('Traditional Options Data:', options);
+  console.log('Hierarchical Options Data:', hierarchicalOptions);
   console.log('Options Length:', options?.length);
+  console.log('Hierarchical Options Length:', hierarchicalOptions?.length);
   console.log('Treatment Types Data:', treatmentTypesData);
   console.log('Treatment Types Loading:', treatmentTypesLoading);
   console.log('Selected Options:', formData.selected_options);
@@ -169,7 +171,7 @@ export const TreatmentPricingForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">
             Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
@@ -204,6 +206,7 @@ export const TreatmentPricingForm = ({
           {windowCovering && (
             <WindowCoveringOptionsCard
               options={options}
+              hierarchicalOptions={hierarchicalOptions}
               optionsLoading={optionsLoading}
               windowCovering={windowCovering}
               selectedOptions={formData.selected_options}
