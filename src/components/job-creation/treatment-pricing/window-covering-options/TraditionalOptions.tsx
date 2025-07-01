@@ -33,7 +33,7 @@ export const TraditionalOptions = ({
   return (
     <>
       {Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
-        const filteredOptions = getFilteredOptions(typeOptions);
+        const filteredOptions = getFilteredOptions(typeOptions as any[]);
         
         if (filteredOptions.length === 0) {
           return null;
