@@ -40,7 +40,7 @@ export const TreatmentPricingForm = ({
   const { options, hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
-  const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType);
+  const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
   const costs = calculateCosts();
 

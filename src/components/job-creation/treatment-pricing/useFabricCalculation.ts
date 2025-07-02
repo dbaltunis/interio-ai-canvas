@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
-export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string) => {
+export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
   const { units } = useMeasurementUnits();
 
   const calculateFabricUsage = () => {
@@ -101,8 +101,88 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
         break;
     }
 
+    return { cost, calculation };
+  };
+
+  const calculateHierarchicalOptionCost = (option: any) => {
+    const railWidth = parseFloat(formData.rail_width) || 0;
+    const drop = parseFloat(formData.drop) || 0;
+    const quantity = formData.quantity || 1;
+    const baseCost = option.base_price || 0;
+    const method = option.pricing_method;
+
+    console.log(`Calculating hierarchical option cost for: ${option.name}, pricing method: ${method}, base cost: ${baseCost}`);
+    console.log(`Rail width: ${railWidth}, Drop: ${drop}, Quantity: ${quantity}`);
+
+    let cost = 0;
+    let calculation = '';
+
+    switch (method) {
+      case 'per-unit':
+        cost = baseCost * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${quantity} units = ${cost.toFixed(2)}`;
+        break;
+      
+      case 'per-linear-meter':
+        const widthInMeters = railWidth / 100;
+        cost = baseCost * widthInMeters * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${cost.toFixed(2)}`;
+        break;
+      
+      case 'per-linear-yard':
+        const widthInYards = railWidth / 91.44;
+        cost = baseCost * widthInYards * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = ${cost.toFixed(2)}`;
+        break;
+      
+      case 'per-sqm':
+        const areaInSqm = (railWidth / 100) * (drop / 100);
+        cost = baseCost * areaInSqm * quantity;
+        calculation = `${baseCost.toFixed(2)} × ${areaInSqm.toFixed(2)}m² × ${quantity} = ${cost.toFixed(2)}`;
+        break;
+      
+      case 'percentage':
+        const fabricUsage = calculateFabricUsage();
+        const fabricCost = fabricUsage.yards * parseFloat(formData.fabric_cost_per_yard || "0");
+        cost = (fabricCost * baseCost) / 100;
+        calculation = `${baseCost}% of fabric cost (${fabricCost.toFixed(2)}) = ${cost.toFixed(2)}`;
+        break;
+      
+      case 'fixed':
+      default:
+        cost = baseCost * quantity;
+        calculation = `Fixed cost: ${baseCost.toFixed(2)} × ${quantity} = ${cost.toFixed(2)}`;
+        break;
+    }
+
     console.log(`Final calculation for ${option.name}: ${calculation}, Cost: ${cost}`);
     return { cost, calculation };
+  };
+
+  const findHierarchicalOptionById = (optionId: string): any => {
+    for (const category of hierarchicalOptions) {
+      for (const subcategory of category.subcategories || []) {
+        for (const subSubcategory of subcategory.sub_subcategories || []) {
+          if (subSubcategory.id === optionId) {
+            return {
+              ...subSubcategory,
+              category_calculation_method: category.calculation_method,
+              pricing_method: category.calculation_method || subSubcategory.pricing_method
+            };
+          }
+          for (const extra of subSubcategory.extras || []) {
+            if (extra.id === optionId) {
+              return {
+                ...extra,
+                category_calculation_method: category.calculation_method,
+                pricing_method: category.calculation_method || extra.pricing_method
+              };
+            }
+          }
+        }
+      }
+    }
+    return null;
   };
 
   const calculateCosts = () => {
@@ -118,6 +198,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     console.log('=== OPTIONS CALCULATION DEBUG ===');
     console.log('Selected options:', formData.selected_options);
     console.log('Available options:', options);
+    console.log('Hierarchical options:', hierarchicalOptions);
 
     // Calculate traditional options
     if (options && options.length > 0) {
@@ -132,6 +213,24 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
             calculation: optionCalc.calculation
           });
           console.log(`Option ${option.name}: £${optionCalc.cost.toFixed(2)} (${option.pricing_method || option.cost_type})`);
+        }
+      });
+    }
+
+    // Calculate hierarchical options
+    if (hierarchicalOptions && hierarchicalOptions.length > 0) {
+      formData.selected_options.forEach((optionId: string) => {
+        const hierarchicalOption = findHierarchicalOptionById(optionId);
+        if (hierarchicalOption) {
+          const optionCalc = calculateHierarchicalOptionCost(hierarchicalOption);
+          optionsCost += optionCalc.cost;
+          optionDetails.push({
+            name: hierarchicalOption.name,
+            cost: optionCalc.cost,
+            method: hierarchicalOption.pricing_method || 'fixed',
+            calculation: optionCalc.calculation
+          });
+          console.log(`Hierarchical Option ${hierarchicalOption.name}: £${optionCalc.cost.toFixed(2)} (${hierarchicalOption.pricing_method})`);
         }
       });
     }
