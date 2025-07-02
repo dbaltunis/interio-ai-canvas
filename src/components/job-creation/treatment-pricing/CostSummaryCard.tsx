@@ -47,11 +47,12 @@ export const CostSummaryCard = ({
       'per-unit': 'Per unit/panel',
       'per-panel': 'Per panel',
       'per-meter': 'Per meter of rail width',
-      'per-metre': 'Per metre of rail width',
+      'per-metre': 'Per metre of rail width', 
+      'per-linear-meter': 'Per linear meter of rail width',
+      'per-linear-yard': 'Per linear yard of rail width',
       'per-yard': 'Per yard of rail width',
       'per-sqm': 'Per square meter of area',
       'per-square-meter': 'Per square meter of area',
-      'per-linear-meter': 'Per linear meter of perimeter',
       'percentage': 'Percentage of fabric cost',
       'fixed': 'Fixed cost'
     };
@@ -148,11 +149,12 @@ export const CostSummaryCard = ({
                   </div>
                   <span>{formatCurrency(option.cost)}</span>
                 </div>
-                {option.calculation && (
-                  <div className="text-xs text-gray-500 pl-6">
-                    {option.calculation}
-                  </div>
-                )}
+                <div className="text-xs text-gray-500 pl-6">
+                  <div className="font-medium text-gray-600">{getPricingMethodDescription(option.method)}</div>
+                  {option.calculation && (
+                    <div className="mt-1">{option.calculation}</div>
+                  )}
+                </div>
               </div>
             ))}
             <div className="flex justify-between text-sm font-medium border-t pt-1">
