@@ -1,8 +1,9 @@
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { calculateFabricUsage } from "./fabric-calculation/fabricUsageCalculator";
 import { calculateOptionCost, calculateHierarchicalOptionCost } from "./fabric-calculation/optionCostCalculator";
+import { calculateIntegratedFabricUsage, type FabricCalculationParams } from "@/hooks/services/makingCostIntegrationService";
 
 export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
   const { units } = useMeasurementUnits();
@@ -73,7 +74,67 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     return null;
   };
 
-  const calculateCosts = () => {
+  const calculateCosts = async () => {
+    // Check if window covering has making cost linked
+    const windowCovering = formData.window_covering;
+    const makingCostId = windowCovering?.making_cost_id;
+    
+    // If making cost is linked, use integrated calculation
+    if (makingCostId && windowCovering?.id) {
+      try {
+        const params: FabricCalculationParams = {
+          windowCoveringId: windowCovering.id,
+          makingCostId,
+          measurements: {
+            railWidth: parseFloat(formData.rail_width) || 0,
+            drop: parseFloat(formData.drop) || 0,
+            pooling: parseFloat(formData.pooling) || 0
+          },
+          selectedOptions: formData.selected_options || [],
+          fabricDetails: {
+            fabricWidth: parseFloat(formData.fabric_width) || 137,
+            fabricCostPerYard: parseFloat(formData.fabric_cost_per_yard) || 0,
+            rollDirection: formData.roll_direction || 'vertical'
+          }
+        };
+        
+        const integratedResult = await calculateIntegratedFabricUsage(params);
+        
+        // Convert to legacy format for compatibility
+        return {
+          fabricCost: integratedResult.costs.fabricCost.toFixed(2),
+          optionsCost: (integratedResult.costs.makingCost + integratedResult.costs.additionalOptionsCost).toFixed(2),
+          laborCost: integratedResult.costs.laborCost.toFixed(2),
+          totalCost: integratedResult.costs.totalCost.toFixed(2),
+          fabricUsage: units.fabric === 'yards' ? integratedResult.fabricUsage.yards.toFixed(1) : integratedResult.fabricUsage.meters.toFixed(1),
+          fabricOrientation: integratedResult.fabricUsage.orientation,
+          costComparison: null, // TODO: Implement if needed
+          warnings: integratedResult.warnings,
+          seamsRequired: integratedResult.fabricUsage.seamsRequired,
+          seamLaborHours: integratedResult.fabricUsage.seamLaborHours,
+          widthsRequired: integratedResult.fabricUsage.widthsRequired,
+          optionDetails: [
+            ...integratedResult.breakdown.makingCostOptions.map(option => ({
+              name: option.name,
+              cost: option.cost,
+              method: 'making_cost',
+              calculation: option.calculation
+            })),
+            ...integratedResult.breakdown.additionalOptions.map(option => ({
+              name: option.name,
+              cost: option.cost,
+              method: 'additional',
+              calculation: option.calculation
+            }))
+          ]
+        };
+      } catch (error) {
+        console.error('Integrated calculation failed, falling back to standard calculation:', error);
+        // Fall through to standard calculation
+      }
+    }
+
+    // Standard calculation (existing logic)
     const fabricUsage = fabricUsageCalculation;
     const fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
     
@@ -162,9 +223,39 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     };
   };
 
+  // Create integrated calculation hook
+  const [integratedCosts, setIntegratedCosts] = useState<any>(null);
+  
+  useEffect(() => {
+    const runIntegratedCalculation = async () => {
+      try {
+        const result = await calculateCosts();
+        setIntegratedCosts(result);
+      } catch (error) {
+        console.error('Integrated calculation error:', error);
+        setIntegratedCosts(null);
+      }
+    };
+    
+    runIntegratedCalculation();
+  }, [formData, hierarchicalOptions, units]);
+
   return {
     calculateFabricUsage: () => fabricUsageCalculation,
-    calculateCosts,
+    calculateCosts: () => integratedCosts || {
+      fabricCost: "0.00",
+      optionsCost: "0.00", 
+      laborCost: "0.00",
+      totalCost: "0.00",
+      fabricUsage: "0.0",
+      fabricOrientation: 'vertical',
+      costComparison: null,
+      warnings: [],
+      seamsRequired: 0,
+      seamLaborHours: 0,
+      widthsRequired: 0,
+      optionDetails: []
+    },
     calculateOptionCost: (option: any) => calculateOptionCost(option, formData)
   };
 };

@@ -468,6 +468,54 @@ export type Database = {
           },
         ]
       }
+      fabric_calculations_cache: {
+        Row: {
+          calculation_hash: string
+          cost_breakdown: Json
+          created_at: string
+          fabric_usage_data: Json
+          id: string
+          making_cost_id: string | null
+          user_id: string
+          window_covering_id: string
+        }
+        Insert: {
+          calculation_hash: string
+          cost_breakdown: Json
+          created_at?: string
+          fabric_usage_data: Json
+          id?: string
+          making_cost_id?: string | null
+          user_id: string
+          window_covering_id: string
+        }
+        Update: {
+          calculation_hash?: string
+          cost_breakdown?: Json
+          created_at?: string
+          fabric_usage_data?: Json
+          id?: string
+          making_cost_id?: string | null
+          user_id?: string
+          window_covering_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fabric_calculations_cache_making_cost_id_fkey"
+            columns: ["making_cost_id"]
+            isOneToOne: false
+            referencedRelation: "making_costs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fabric_calculations_cache_window_covering_id_fkey"
+            columns: ["window_covering_id"]
+            isOneToOne: false
+            referencedRelation: "window_coverings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fabric_orders: {
         Row: {
           color: string | null
@@ -646,6 +694,57 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      making_cost_option_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          is_included: boolean | null
+          making_cost_id: string
+          option_category_id: string
+          option_type: string
+          override_pricing: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_included?: boolean | null
+          making_cost_id: string
+          option_category_id: string
+          option_type: string
+          override_pricing?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_included?: boolean | null
+          making_cost_id?: string
+          option_category_id?: string
+          option_type?: string
+          override_pricing?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "making_cost_option_mappings_making_cost_id_fkey"
+            columns: ["making_cost_id"]
+            isOneToOne: false
+            referencedRelation: "making_costs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "making_cost_option_mappings_option_category_id_fkey"
+            columns: ["option_category_id"]
+            isOneToOne: false
+            referencedRelation: "window_covering_option_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -1780,13 +1879,17 @@ export type Database = {
           category_type: string | null
           created_at: string
           description: string | null
+          fabric_waste_factor: number | null
           fullness_ratio: number | null
           has_fullness_ratio: boolean | null
           id: string
           image_url: string | null
           is_required: boolean
           name: string
+          pattern_repeat_factor: number | null
+          seam_complexity_factor: number | null
           sort_order: number
+          source_preference: string | null
           updated_at: string
           user_id: string
         }
@@ -1797,13 +1900,17 @@ export type Database = {
           category_type?: string | null
           created_at?: string
           description?: string | null
+          fabric_waste_factor?: number | null
           fullness_ratio?: number | null
           has_fullness_ratio?: boolean | null
           id?: string
           image_url?: string | null
           is_required?: boolean
           name: string
+          pattern_repeat_factor?: number | null
+          seam_complexity_factor?: number | null
           sort_order?: number
+          source_preference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1814,13 +1921,17 @@ export type Database = {
           category_type?: string | null
           created_at?: string
           description?: string | null
+          fabric_waste_factor?: number | null
           fullness_ratio?: number | null
           has_fullness_ratio?: boolean | null
           id?: string
           image_url?: string | null
           is_required?: boolean
           name?: string
+          pattern_repeat_factor?: number | null
+          seam_complexity_factor?: number | null
           sort_order?: number
+          source_preference?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2018,9 +2129,11 @@ export type Database = {
           image_url: string | null
           is_default: boolean
           is_required: boolean
+          making_cost_id: string | null
           name: string
           option_type: string
           sort_order: number
+          source_type: string | null
           specifications: Json | null
           updated_at: string
           user_id: string
@@ -2037,9 +2150,11 @@ export type Database = {
           image_url?: string | null
           is_default?: boolean
           is_required?: boolean
+          making_cost_id?: string | null
           name: string
           option_type: string
           sort_order?: number
+          source_type?: string | null
           specifications?: Json | null
           updated_at?: string
           user_id: string
@@ -2056,15 +2171,24 @@ export type Database = {
           image_url?: string | null
           is_default?: boolean
           is_required?: boolean
+          making_cost_id?: string | null
           name?: string
           option_type?: string
           sort_order?: number
+          source_type?: string | null
           specifications?: Json | null
           updated_at?: string
           user_id?: string
           window_covering_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "window_covering_options_making_cost_id_fkey"
+            columns: ["making_cost_id"]
+            isOneToOne: false
+            referencedRelation: "making_costs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "window_covering_options_window_covering_id_fkey"
             columns: ["window_covering_id"]
