@@ -1,16 +1,31 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WindowCoveringsManagement } from "./products/WindowCoveringsManagement";
+import { MakingCostsManager } from "./products/MakingCostsManager";
 
 export const ProductCatalogTab = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-2xl font-semibold text-brand-primary">Window Coverings</h3>
-        <p className="text-brand-neutral">Manage your window covering products and options</p>
+        <h3 className="text-2xl font-semibold text-brand-primary">Product Management</h3>
+        <p className="text-brand-neutral">Manage your window coverings and making cost configurations</p>
       </div>
 
-      <WindowCoveringsManagement />
+      <Tabs defaultValue="making-costs" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="making-costs">Making Costs</TabsTrigger>
+          <TabsTrigger value="window-coverings">Window Coverings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="making-costs">
+          <MakingCostsManager />
+        </TabsContent>
+        
+        <TabsContent value="window-coverings">
+          <WindowCoveringsManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

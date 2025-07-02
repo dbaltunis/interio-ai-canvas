@@ -650,6 +650,57 @@ export type Database = {
           },
         ]
       }
+      making_costs: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          description: string | null
+          drop_ranges: Json | null
+          hardware_options: Json | null
+          heading_options: Json | null
+          id: string
+          include_fabric_selection: boolean | null
+          lining_options: Json | null
+          measurement_type: string
+          name: string
+          pricing_method: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          drop_ranges?: Json | null
+          hardware_options?: Json | null
+          heading_options?: Json | null
+          id?: string
+          include_fabric_selection?: boolean | null
+          lining_options?: Json | null
+          measurement_type?: string
+          name: string
+          pricing_method?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          drop_ranges?: Json | null
+          hardware_options?: Json | null
+          heading_options?: Json | null
+          id?: string
+          include_fabric_selection?: boolean | null
+          lining_options?: Json | null
+          measurement_type?: string
+          name?: string
+          pricing_method?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
