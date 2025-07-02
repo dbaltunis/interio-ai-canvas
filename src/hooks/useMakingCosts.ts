@@ -81,7 +81,7 @@ export const useMakingCosts = () => {
 
   const createMakingCost = async (costData: Omit<MakingCost, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     try {
-      const insertData: MakingCostInsert = {
+      const insertData = {
         name: costData.name,
         pricing_method: costData.pricing_method,
         include_fabric_selection: costData.include_fabric_selection,
@@ -91,13 +91,12 @@ export const useMakingCosts = () => {
         lining_options: costData.lining_options as any,
         drop_ranges: costData.drop_ranges as any,
         description: costData.description,
-        active: costData.active,
-        user_id: '' // Will be overridden by RLS to auth.uid()
+        active: costData.active
       };
 
       const { data, error } = await supabase
         .from('making_costs')
-        .insert([insertData])
+        .insert([insertData as any])
         .select()
         .single();
 
