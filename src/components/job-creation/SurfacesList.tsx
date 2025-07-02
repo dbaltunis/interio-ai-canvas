@@ -4,7 +4,7 @@ import { SurfaceCard } from "./SurfaceCard";
 interface SurfacesListProps {
   surfaces: any[];
   treatments: any[];
-  onAddTreatment: (surfaceId: string, treatmentType: string) => void;
+  onAddTreatment: (surfaceId: string, treatmentType: string, windowCovering?: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
 }

@@ -56,6 +56,7 @@ export const RoomCard = ({
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
   const [selectedSurfaceId, setSelectedSurfaceId] = useState("");
   const [selectedSurfaceType, setSelectedSurfaceType] = useState("");
+  const [selectedWindowCovering, setSelectedWindowCovering] = useState<any>(null);
 
   const startEditing = () => {
     setEditingRoomId(room.id);
@@ -75,11 +76,12 @@ export const RoomCard = ({
     handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
   };
 
-  const handleAddTreatment = (surfaceId: string, treatmentType: string) => {
+  const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
     const surface = roomSurfaces.find(s => s.id === surfaceId);
     setSelectedSurfaceId(surfaceId);
     setSelectedTreatmentType(treatmentType);
     setSelectedSurfaceType(surface?.surface_type || 'window');
+    setSelectedWindowCovering(windowCovering);
     
     setPricingFormOpen(true);
   };
@@ -130,6 +132,8 @@ export const RoomCard = ({
         onSave={handlePricingFormSave}
         treatmentType={selectedTreatmentType}
         surfaceType={selectedSurfaceType}
+        windowCovering={selectedWindowCovering}
+        projectId={projectId}
       />
 
     </>
