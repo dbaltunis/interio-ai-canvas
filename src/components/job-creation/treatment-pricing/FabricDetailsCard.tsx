@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, RotateCw, TrendingDown } from "lucide-react";
+import { AlertTriangle, RotateCw, TrendingDown, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { TreatmentFormData } from "./useTreatmentFormData";
 
@@ -27,6 +27,12 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
 
   const formatCurrency = (amount: number) => `£${amount.toFixed(2)}`;
+
+  // Determine if the current orientation is auto-selected
+  const fabricWidthCm = parseFloat(formData.fabric_width) || 137;
+  const fabricWidthInches = Math.round(fabricWidthCm / 2.54);
+  const autoSelectedOrientation = fabricWidthCm <= 200 ? "vertical" : "horizontal";
+  const isAutoSelected = formData.roll_direction === autoSelectedOrientation;
 
   return (
     <Card>
@@ -65,6 +71,10 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
               onChange={(e) => onInputChange("fabric_width", e.target.value)}
               placeholder="137"
             />
+            <div className="text-xs text-muted-foreground">
+              {fabricWidthCm}cm = {fabricWidthInches}" 
+              {fabricWidthCm <= 200 ? " (Narrow fabric)" : " (Wide fabric)"}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="roll_direction">Roll Direction</Label>
@@ -73,10 +83,26 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
                 <SelectValue placeholder="Select roll direction" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="horizontal">Horizontal (Standard)</SelectItem>
-                <SelectItem value="vertical">Vertical (Rotated)</SelectItem>
+                <SelectItem value="horizontal">
+                  <div className="flex items-center gap-2">
+                    Horizontal (Standard)
+                    {fabricWidthCm > 200 && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
+                  </div>
+                </SelectItem>
+                <SelectItem value="vertical">
+                  <div className="flex items-center gap-2">
+                    Vertical (Rotated)
+                    {fabricWidthCm <= 200 && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
+            {isAutoSelected && (
+              <div className="flex items-center gap-1 text-xs text-blue-600">
+                <Info className="w-3 h-3" />
+                Auto-selected for {fabricWidthCm <= 200 ? "narrow" : "wide"} fabric
+              </div>
+            )}
           </div>
         </div>
         <div className="space-y-2">
@@ -90,6 +116,20 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
             placeholder="0.00"
           />
         </div>
+
+        {/* Fabric Width Guidelines */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="text-sm">
+              <strong>Fabric Width Guidelines:</strong>
+              <div className="mt-1 space-y-1">
+                <div>• <strong>Narrow fabrics (≤200cm/79"):</strong> Default to vertical orientation for better fabric utilization</div>
+                <div>• <strong>Wide fabrics (>200cm/79"):</strong> Default to horizontal orientation for standard curtain making</div>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
 
         {/* Fabric Usage Display */}
         {fabricUsage !== "0.0" && (

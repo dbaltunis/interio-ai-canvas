@@ -26,7 +26,10 @@ export const calculateFabricUsage = (
       details: {},
       fabricOrientation: 'horizontal',
       costComparison: null,
-      warnings: []
+      warnings: [],
+      seamsRequired: 0,
+      seamLaborHours: 0,
+      widthsRequired: 0
     };
   }
 

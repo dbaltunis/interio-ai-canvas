@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface TreatmentFormData {
   product_name: string;
@@ -34,7 +34,7 @@ export const useTreatmentFormData = (treatmentType: string, windowCovering?: any
     fabric_code: "",
     fabric_cost_per_yard: "",
     fabric_width: "137",
-    roll_direction: "horizontal",
+    roll_direction: "vertical", // Default to vertical for narrow fabrics
     heading_fullness: "2.5",
     header_hem: "15",
     bottom_hem: "10",
@@ -45,6 +45,19 @@ export const useTreatmentFormData = (treatmentType: string, windowCovering?: any
     notes: "",
     images: []
   });
+
+  // Auto-set roll direction based on fabric width
+  useEffect(() => {
+    const fabricWidth = parseFloat(formData.fabric_width) || 137;
+    const newRollDirection = fabricWidth <= 200 ? "vertical" : "horizontal";
+    
+    if (formData.roll_direction !== newRollDirection) {
+      setFormData(prev => ({
+        ...prev,
+        roll_direction: newRollDirection
+      }));
+    }
+  }, [formData.fabric_width]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -61,7 +74,7 @@ export const useTreatmentFormData = (treatmentType: string, windowCovering?: any
       fabric_code: "",
       fabric_cost_per_yard: "",
       fabric_width: "137",
-      roll_direction: "horizontal",
+      roll_direction: "vertical", // Default to vertical for narrow fabrics
       heading_fullness: "2.5",
       header_hem: "15",
       bottom_hem: "10",
