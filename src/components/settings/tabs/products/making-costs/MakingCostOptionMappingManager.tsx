@@ -124,6 +124,7 @@ export const MakingCostOptionMappingManager = ({ makingCost, onClose }: MakingCo
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Select category</SelectItem>
                   {availableCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
