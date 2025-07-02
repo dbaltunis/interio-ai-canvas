@@ -7,9 +7,39 @@ import { calculateOptionCost, calculateHierarchicalOptionCost } from "./fabric-c
 export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
   const { units } = useMeasurementUnits();
 
+  // Extract fullness ratio from selected options
+  const getActiveFullnessRatio = () => {
+    let fullnessRatio = parseFloat(formData.heading_fullness) || 2.5;
+    
+    // Check hierarchical options for fullness that affects fabric calculation
+    hierarchicalOptions.forEach(category => {
+      if (category.affects_fabric_calculation) {
+        category.subcategories?.forEach(sub => {
+          sub.sub_subcategories?.forEach(subSub => {
+            if (formData.selected_options.includes(subSub.id) && subSub.fullness_ratio) {
+              fullnessRatio = subSub.fullness_ratio;
+            }
+            subSub.extras?.forEach(extra => {
+              if (formData.selected_options.includes(extra.id) && extra.fullness_ratio) {
+                fullnessRatio = extra.fullness_ratio;
+              }
+            });
+          });
+        });
+      }
+    });
+
+    return fullnessRatio;
+  };
+
   const fabricUsageCalculation = useMemo(() => {
-    return calculateFabricUsage(formData, treatmentTypesData);
-  }, [formData, treatmentTypesData]);
+    const activeFullness = getActiveFullnessRatio();
+    const formDataWithFullness = {
+      ...formData,
+      heading_fullness: activeFullness
+    };
+    return calculateFabricUsage(formDataWithFullness, treatmentTypesData);
+  }, [formData, treatmentTypesData, hierarchicalOptions]);
 
   const findHierarchicalOptionById = (optionId: string): any => {
     for (const category of hierarchicalOptions) {
@@ -19,7 +49,10 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
             return {
               ...subSubcategory,
               category_calculation_method: category.calculation_method,
-              pricing_method: category.calculation_method || subSubcategory.pricing_method
+              pricing_method: subSubcategory.calculation_method === 'inherit' 
+                ? (category.calculation_method || subSubcategory.pricing_method)
+                : subSubcategory.calculation_method || subSubcategory.pricing_method,
+              window_covering_pricing_method: formData.window_covering?.fabrication_pricing_method
             };
           }
           for (const extra of subSubcategory.extras || []) {
@@ -27,7 +60,10 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
               return {
                 ...extra,
                 category_calculation_method: category.calculation_method,
-                pricing_method: category.calculation_method || extra.pricing_method
+                pricing_method: extra.calculation_method === 'inherit' 
+                  ? (category.calculation_method || extra.pricing_method)
+                  : extra.calculation_method || extra.pricing_method,
+                window_covering_pricing_method: formData.window_covering?.fabrication_pricing_method
               };
             }
           }
@@ -53,12 +89,19 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     if (options && options.length > 0) {
       options.forEach(option => {
         if (formData.selected_options.includes(option.id)) {
-          const optionCalc = calculateOptionCost(option, formData);
+          const enhancedOption = {
+            ...option,
+            window_covering_pricing_method: formData.window_covering?.fabrication_pricing_method,
+            pricing_method: option.calculation_method === 'inherit' 
+              ? formData.window_covering?.fabrication_pricing_method || option.pricing_method
+              : option.calculation_method || option.pricing_method
+          };
+          const optionCalc = calculateOptionCost(enhancedOption, formData);
           optionsCost += optionCalc.cost;
           optionDetails.push({
             name: option.name,
             cost: optionCalc.cost,
-            method: option.pricing_method || option.cost_type || 'fixed',
+            method: enhancedOption.pricing_method || option.cost_type || 'fixed',
             calculation: optionCalc.calculation
           });
         }

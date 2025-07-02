@@ -25,7 +25,9 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
     category_type: category?.category_type || 'general',
     has_fullness_ratio: category?.has_fullness_ratio || false,
     fullness_ratio: category?.fullness_ratio || 2.5,
-    calculation_method: category?.calculation_method || 'per-unit'
+    calculation_method: category?.calculation_method || 'per-unit',
+    affects_fabric_calculation: category?.affects_fabric_calculation || false,
+    affects_labor_calculation: category?.affects_labor_calculation || false
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(category?.image_url || '');
@@ -139,13 +141,34 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_required"
-          checked={formData.is_required}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: !!checked }))}
-        />
-        <Label htmlFor="is_required">Required Category</Label>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="is_required"
+            checked={formData.is_required}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_required: !!checked }))}
+          />
+          <Label htmlFor="is_required">Required Category</Label>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="affects_fabric_calculation"
+              checked={formData.affects_fabric_calculation}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, affects_fabric_calculation: !!checked }))}
+            />
+            <Label htmlFor="affects_fabric_calculation">Affects Fabric Calculation</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="affects_labor_calculation"
+              checked={formData.affects_labor_calculation}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, affects_labor_calculation: !!checked }))}
+            />
+            <Label htmlFor="affects_labor_calculation">Affects Labor Calculation</Label>
+          </div>
+        </div>
       </div>
 
       {formData.category_type === 'heading' && (

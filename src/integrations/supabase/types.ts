@@ -1539,6 +1539,62 @@ export type Database = {
         }
         Relationships: []
       }
+      window_covering_calculation_configs: {
+        Row: {
+          base_labor_hours: number | null
+          complexity_multiplier: number | null
+          created_at: string
+          default_fabric_waste_percentage: number | null
+          id: string
+          override_pricing_method: string | null
+          pattern_repeat_allowance_cm: number | null
+          seam_allowance_cm: number | null
+          seam_labor_hours_per_seam: number | null
+          updated_at: string
+          use_window_covering_pricing_method: boolean | null
+          user_id: string
+          window_covering_id: string
+        }
+        Insert: {
+          base_labor_hours?: number | null
+          complexity_multiplier?: number | null
+          created_at?: string
+          default_fabric_waste_percentage?: number | null
+          id?: string
+          override_pricing_method?: string | null
+          pattern_repeat_allowance_cm?: number | null
+          seam_allowance_cm?: number | null
+          seam_labor_hours_per_seam?: number | null
+          updated_at?: string
+          use_window_covering_pricing_method?: boolean | null
+          user_id: string
+          window_covering_id: string
+        }
+        Update: {
+          base_labor_hours?: number | null
+          complexity_multiplier?: number | null
+          created_at?: string
+          default_fabric_waste_percentage?: number | null
+          id?: string
+          override_pricing_method?: string | null
+          pattern_repeat_allowance_cm?: number | null
+          seam_allowance_cm?: number | null
+          seam_labor_hours_per_seam?: number | null
+          updated_at?: string
+          use_window_covering_pricing_method?: boolean | null
+          user_id?: string
+          window_covering_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "window_covering_calculation_configs_window_covering_id_fkey"
+            columns: ["window_covering_id"]
+            isOneToOne: false
+            referencedRelation: "window_coverings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       window_covering_calculations: {
         Row: {
           created_at: string
@@ -1667,6 +1723,8 @@ export type Database = {
       }
       window_covering_option_categories: {
         Row: {
+          affects_fabric_calculation: boolean | null
+          affects_labor_calculation: boolean | null
           calculation_method: string | null
           category_type: string | null
           created_at: string
@@ -1682,6 +1740,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          affects_fabric_calculation?: boolean | null
+          affects_labor_calculation?: boolean | null
           calculation_method?: string | null
           category_type?: string | null
           created_at?: string
@@ -1697,6 +1757,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          affects_fabric_calculation?: boolean | null
+          affects_labor_calculation?: boolean | null
           calculation_method?: string | null
           category_type?: string | null
           created_at?: string
@@ -1716,8 +1778,10 @@ export type Database = {
       window_covering_option_extras: {
         Row: {
           base_price: number
+          calculation_method: string | null
           created_at: string
           description: string | null
+          fullness_ratio: number | null
           id: string
           image_url: string | null
           is_default: boolean
@@ -1731,8 +1795,10 @@ export type Database = {
         }
         Insert: {
           base_price?: number
+          calculation_method?: string | null
           created_at?: string
           description?: string | null
+          fullness_ratio?: number | null
           id?: string
           image_url?: string | null
           is_default?: boolean
@@ -1746,8 +1812,10 @@ export type Database = {
         }
         Update: {
           base_price?: number
+          calculation_method?: string | null
           created_at?: string
           description?: string | null
+          fullness_ratio?: number | null
           id?: string
           image_url?: string | null
           is_default?: boolean
@@ -1772,6 +1840,7 @@ export type Database = {
       window_covering_option_sub_subcategories: {
         Row: {
           base_price: number
+          calculation_method: string | null
           created_at: string
           description: string | null
           extra_fabric_percentage: number | null
@@ -1787,6 +1856,7 @@ export type Database = {
         }
         Insert: {
           base_price?: number
+          calculation_method?: string | null
           created_at?: string
           description?: string | null
           extra_fabric_percentage?: number | null
@@ -1802,6 +1872,7 @@ export type Database = {
         }
         Update: {
           base_price?: number
+          calculation_method?: string | null
           created_at?: string
           description?: string | null
           extra_fabric_percentage?: number | null
@@ -1828,6 +1899,7 @@ export type Database = {
       window_covering_option_subcategories: {
         Row: {
           base_price: number
+          calculation_method: string | null
           category_id: string
           created_at: string
           description: string | null
@@ -1843,6 +1915,7 @@ export type Database = {
         }
         Insert: {
           base_price?: number
+          calculation_method?: string | null
           category_id: string
           created_at?: string
           description?: string | null
@@ -1858,6 +1931,7 @@ export type Database = {
         }
         Update: {
           base_price?: number
+          calculation_method?: string | null
           category_id?: string
           created_at?: string
           description?: string | null
@@ -1884,9 +1958,11 @@ export type Database = {
       window_covering_options: {
         Row: {
           base_cost: number
+          calculation_method: string | null
           cost_type: string
           created_at: string
           description: string | null
+          fullness_ratio: number | null
           id: string
           image_url: string | null
           is_default: boolean
@@ -1901,9 +1977,11 @@ export type Database = {
         }
         Insert: {
           base_cost?: number
+          calculation_method?: string | null
           cost_type?: string
           created_at?: string
           description?: string | null
+          fullness_ratio?: number | null
           id?: string
           image_url?: string | null
           is_default?: boolean
@@ -1918,9 +1996,11 @@ export type Database = {
         }
         Update: {
           base_cost?: number
+          calculation_method?: string | null
           cost_type?: string
           created_at?: string
           description?: string | null
+          fullness_ratio?: number | null
           id?: string
           image_url?: string | null
           is_default?: boolean

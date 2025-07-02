@@ -10,6 +10,8 @@ export interface OptionCategory {
   has_fullness_ratio?: boolean;
   fullness_ratio?: number;
   calculation_method?: 'per-unit' | 'per-linear-meter' | 'per-linear-yard' | 'per-sqm' | 'fixed' | 'percentage';
+  affects_fabric_calculation?: boolean;
+  affects_labor_calculation?: boolean;
   subcategories?: OptionSubcategory[];
 }
 
@@ -24,6 +26,7 @@ export interface OptionSubcategory {
   extra_fabric_percentage?: number;
   sort_order: number;
   image_url?: string;
+  calculation_method?: string;
   sub_subcategories?: OptionSubSubcategory[];
 }
 
@@ -38,6 +41,7 @@ export interface OptionSubSubcategory {
   extra_fabric_percentage?: number;
   sort_order: number;
   image_url?: string;
+  calculation_method?: string;
   extras?: OptionExtra[];
 }
 
@@ -52,4 +56,6 @@ export interface OptionExtra {
   image_url?: string;
   is_required: boolean;
   is_default: boolean;
+  fullness_ratio?: number;
+  calculation_method?: string;
 }

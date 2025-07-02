@@ -4,7 +4,14 @@ export const calculateOptionCost = (option: any, formData: any) => {
   const drop = parseFloat(formData.drop) || 0;
   const quantity = formData.quantity || 1;
   const baseCost = option.base_cost || option.base_price || 0;
-  const method = option.pricing_method || option.cost_type;
+  
+  // Determine which pricing method to use
+  let method = option.pricing_method || option.cost_type;
+  
+  // If option inherits from window covering, use window covering's method
+  if (method === 'inherit' && option.window_covering_pricing_method) {
+    method = option.window_covering_pricing_method;
+  }
 
   console.log(`Calculating cost for option: ${option.name}, pricing method: ${method}, base cost: ${baseCost}`);
 
@@ -13,19 +20,35 @@ export const calculateOptionCost = (option: any, formData: any) => {
 
   switch (method) {
     case 'per-unit':
-    case 'per-panel':
       cost = baseCost * quantity;
       calculation = `${baseCost.toFixed(2)} × ${quantity} units = ${cost.toFixed(2)}`;
       break;
     
+    case 'per-panel':
+      // For per-panel pricing from window covering
+      const fullness = parseFloat(formData.heading_fullness) || 2.5;
+      const fabricWidth = parseFloat(formData.fabric_width) || 137;
+      const panelsNeeded = Math.ceil((railWidth * fullness) / fabricWidth);
+      cost = baseCost * panelsNeeded * quantity;
+      calculation = `${baseCost.toFixed(2)} × ${panelsNeeded} panels × ${quantity} = ${cost.toFixed(2)}`;
+      break;
+      
+    case 'per-drop':
+      // For per-drop pricing from window covering
+      cost = baseCost * quantity;
+      calculation = `${baseCost.toFixed(2)} per drop × ${quantity} = ${cost.toFixed(2)}`;
+      break;
+    
     case 'per-meter':
     case 'per-metre':
+    case 'per-linear-meter':
       const widthInMeters = railWidth / 100;
       cost = baseCost * widthInMeters * quantity;
       calculation = `${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${cost.toFixed(2)}`;
       break;
     
     case 'per-yard':
+    case 'per-linear-yard':
       const widthInYards = railWidth / 91.44;
       cost = baseCost * widthInYards * quantity;
       calculation = `${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = ${cost.toFixed(2)}`;
@@ -38,17 +61,12 @@ export const calculateOptionCost = (option: any, formData: any) => {
       calculation = `${baseCost.toFixed(2)} × ${areaInSqm.toFixed(2)}m² × ${quantity} = ${cost.toFixed(2)}`;
       break;
     
-    case 'per-linear-meter':
-      const perimeterInMeters = (railWidth + 2 * drop) / 100;
-      cost = baseCost * perimeterInMeters * quantity;
-      calculation = `${baseCost.toFixed(2)} × ${perimeterInMeters.toFixed(2)}m perimeter × ${quantity} = ${cost.toFixed(2)}`;
-      break;
-    
     case 'percentage':
-      // This requires fabric usage calculation - we'll need to import that
       const fabricCost = parseFloat(formData.fabric_cost_per_yard || "0") || 0;
-      cost = (fabricCost * baseCost) / 100;
-      calculation = `${baseCost}% of fabric cost (${fabricCost.toFixed(2)}) = ${cost.toFixed(2)}`;
+      const fabricUsage = parseFloat(formData.fabric_usage || "0") || 0;
+      const totalFabricCost = fabricCost * fabricUsage;
+      cost = (baseCost / 100) * totalFabricCost;
+      calculation = `${baseCost}% × £${totalFabricCost.toFixed(2)} fabric cost = ${cost.toFixed(2)}`;
       break;
     
     case 'fixed':
@@ -66,7 +84,16 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
   const drop = parseFloat(formData.drop) || 0;
   const quantity = formData.quantity || 1;
   const baseCost = option.base_price || 0;
-  const method = option.pricing_method;
+  
+  // Determine which pricing method to use
+  let method = option.pricing_method;
+  
+  // If option inherits from window covering or category, use that method
+  if (method === 'inherit' && option.window_covering_pricing_method) {
+    method = option.window_covering_pricing_method;
+  } else if (method === 'inherit' && option.category_calculation_method) {
+    method = option.category_calculation_method;
+  }
 
   console.log(`Calculating hierarchical option cost for: ${option.name}, pricing method: ${method}, base cost: ${baseCost}`);
 
@@ -79,13 +106,28 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
       calculation = `${baseCost.toFixed(2)} × ${quantity} units = ${cost.toFixed(2)}`;
       break;
     
+    case 'per-panel':
+      const fullness = parseFloat(formData.heading_fullness) || 2.5;
+      const fabricWidth = parseFloat(formData.fabric_width) || 137;
+      const panelsNeeded = Math.ceil((railWidth * fullness) / fabricWidth);
+      cost = baseCost * panelsNeeded * quantity;
+      calculation = `${baseCost.toFixed(2)} × ${panelsNeeded} panels × ${quantity} = ${cost.toFixed(2)}`;
+      break;
+      
+    case 'per-drop':
+      cost = baseCost * quantity;
+      calculation = `${baseCost.toFixed(2)} per drop × ${quantity} = ${cost.toFixed(2)}`;
+      break;
+    
     case 'per-linear-meter':
+    case 'per-meter':
       const widthInMeters = railWidth / 100;
       cost = baseCost * widthInMeters * quantity;
       calculation = `${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${cost.toFixed(2)}`;
       break;
     
     case 'per-linear-yard':
+    case 'per-yard':
       const widthInYards = railWidth / 91.44;
       cost = baseCost * widthInYards * quantity;
       calculation = `${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = ${cost.toFixed(2)}`;
@@ -99,8 +141,10 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
     
     case 'percentage':
       const fabricCost = parseFloat(formData.fabric_cost_per_yard || "0") || 0;
-      cost = (fabricCost * baseCost) / 100;
-      calculation = `${baseCost}% of fabric cost (${fabricCost.toFixed(2)}) = ${cost.toFixed(2)}`;
+      const fabricUsage = parseFloat(formData.fabric_usage || "0") || 0;
+      const totalFabricCost = fabricCost * fabricUsage;
+      cost = (baseCost / 100) * totalFabricCost;
+      calculation = `${baseCost}% × £${totalFabricCost.toFixed(2)} fabric cost = ${cost.toFixed(2)}`;
       break;
     
     case 'fixed':

@@ -22,10 +22,11 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
     description: subcategory?.description || '',
     pricing_method: subcategory?.pricing_method || 'per-unit' as const,
     base_price: subcategory?.base_price || 0,
-    fullness_ratio: subcategory?.fullness_ratio || 1,
+    fullness_ratio: subcategory?.fullness_ratio || 1.0,
     extra_fabric_percentage: subcategory?.extra_fabric_percentage || 0,
     sort_order: subcategory?.sort_order || 0,
-    image_url: subcategory?.image_url || ''
+    image_url: subcategory?.image_url || '',
+    calculation_method: subcategory?.calculation_method || 'inherit'
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(subcategory?.image_url || '');
@@ -112,6 +113,44 @@ export const SubcategoryForm = ({ subcategory, categoryId, onSave, onCancel, isE
             value={formData.sort_order}
             onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
           />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="calculation_method">Calculation Method</Label>
+          <Select value={formData.calculation_method} onValueChange={(value) => 
+            setFormData(prev => ({ ...prev, calculation_method: value }))
+          }>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inherit">Inherit from Window Covering</SelectItem>
+              <SelectItem value="per-unit">Per Unit (uses quantity)</SelectItem>
+              <SelectItem value="per-linear-meter">Per Linear Meter (uses rail width)</SelectItem>
+              <SelectItem value="per-linear-yard">Per Linear Yard (uses rail width)</SelectItem>
+              <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+              <SelectItem value="fixed">Fixed Price</SelectItem>
+              <SelectItem value="percentage">Percentage of fabric cost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
+          <Input
+            id="fullness_ratio"
+            type="number"
+            step="0.1"
+            min="1.0"
+            max="5.0"
+            value={formData.fullness_ratio}
+            onChange={(e) => setFormData(prev => ({ ...prev, fullness_ratio: parseFloat(e.target.value) || 1.0 }))}
+            placeholder="e.g., 2.5"
+          />
+          <p className="text-xs text-gray-600 mt-1">
+            Fabric fullness multiplier (e.g., 2.5 for pleated headings)
+          </p>
         </div>
       </div>
 

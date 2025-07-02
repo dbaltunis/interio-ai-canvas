@@ -50,6 +50,10 @@ export const fetchHierarchicalOptions = async (windowCoveringId: string): Promis
       is_required,
       image_url,
       sort_order,
+      category_type,
+      calculation_method,
+      affects_fabric_calculation,
+      affects_labor_calculation,
       window_covering_option_subcategories (
         id,
         name,
@@ -58,6 +62,8 @@ export const fetchHierarchicalOptions = async (windowCoveringId: string): Promis
         pricing_method,
         image_url,
         sort_order,
+        fullness_ratio,
+        calculation_method,
         window_covering_option_sub_subcategories (
           id,
           name,
@@ -66,6 +72,8 @@ export const fetchHierarchicalOptions = async (windowCoveringId: string): Promis
           pricing_method,
           image_url,
           sort_order,
+          fullness_ratio,
+          calculation_method,
           window_covering_option_extras (
             id,
             name,
@@ -75,7 +83,9 @@ export const fetchHierarchicalOptions = async (windowCoveringId: string): Promis
             image_url,
             is_required,
             is_default,
-            sort_order
+            sort_order,
+            fullness_ratio,
+            calculation_method
           )
         )
       )
@@ -105,7 +115,9 @@ const transformCategoriesData = (categories: any[]): HierarchicalOption[] => {
     sort_order: category.sort_order,
     image_url: category.image_url,
     cost_type: 'fixed',
-    pricing_method: 'fixed',
+    pricing_method: category.calculation_method || 'fixed',
+    affects_fabric_calculation: category.affects_fabric_calculation,
+    affects_labor_calculation: category.affects_labor_calculation,
     subcategories: category.window_covering_option_subcategories?.map((sub: any) => ({
       id: sub.id,
       name: sub.name,
@@ -113,6 +125,8 @@ const transformCategoriesData = (categories: any[]): HierarchicalOption[] => {
       base_price: sub.base_price,
       pricing_method: sub.pricing_method,
       image_url: sub.image_url,
+      fullness_ratio: sub.fullness_ratio,
+      calculation_method: sub.calculation_method,
       sub_subcategories: sub.window_covering_option_sub_subcategories?.map((subSub: any) => ({
         id: subSub.id,
         name: subSub.name,
@@ -120,6 +134,8 @@ const transformCategoriesData = (categories: any[]): HierarchicalOption[] => {
         base_price: subSub.base_price,
         pricing_method: subSub.pricing_method,
         image_url: subSub.image_url,
+        fullness_ratio: subSub.fullness_ratio,
+        calculation_method: subSub.calculation_method,
         extras: subSub.window_covering_option_extras?.map((extra: any) => ({
           id: extra.id,
           name: extra.name,
@@ -128,7 +144,9 @@ const transformCategoriesData = (categories: any[]): HierarchicalOption[] => {
           pricing_method: extra.pricing_method,
           image_url: extra.image_url,
           is_required: extra.is_required,
-          is_default: extra.is_default
+          is_default: extra.is_default,
+          fullness_ratio: extra.fullness_ratio,
+          calculation_method: extra.calculation_method
         })) || []
       })) || []
     })) || []
