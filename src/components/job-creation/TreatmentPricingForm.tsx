@@ -179,7 +179,7 @@ export const TreatmentPricingForm = ({
         handleClose();
       }
     }}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-4">
           <DialogTitle className="text-center text-lg font-semibold">
             Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
