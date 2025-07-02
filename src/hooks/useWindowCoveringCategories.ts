@@ -78,7 +78,11 @@ export const useWindowCoveringCategories = () => {
 
       setCategories(prev => 
         prev.map(cat => 
-          cat.id === id ? { ...cat, ...data } : cat
+          cat.id === id ? { 
+            ...cat, 
+            ...data,
+            calculation_method: data.calculation_method as 'per-unit' | 'per-linear-meter' | 'per-linear-yard' | 'per-sqm' | 'fixed' | 'percentage'
+          } : cat
         ).sort((a, b) => a.sort_order - b.sort_order)
       );
       

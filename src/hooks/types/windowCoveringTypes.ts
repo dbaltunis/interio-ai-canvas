@@ -6,6 +6,10 @@ export interface OptionCategory {
   is_required: boolean;
   sort_order: number;
   image_url?: string;
+  category_type?: string;
+  has_fullness_ratio?: boolean;
+  fullness_ratio?: number;
+  calculation_method?: 'per-unit' | 'per-linear-meter' | 'per-linear-yard' | 'per-sqm' | 'fixed' | 'percentage';
   subcategories?: OptionSubcategory[];
 }
 

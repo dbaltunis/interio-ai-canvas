@@ -58,6 +58,7 @@ export const fetchCategoriesFromDB = async (): Promise<OptionCategory[]> => {
   // Build hierarchical structure
   const categoriesWithHierarchy = (categories || []).map(category => ({
     ...category,
+    calculation_method: category.calculation_method as 'per-unit' | 'per-linear-meter' | 'per-linear-yard' | 'per-sqm' | 'fixed' | 'percentage',
     subcategories: (subcategories || [])
       .filter(sub => sub.category_id === category.id)
       .map(sub => ({
@@ -97,6 +98,10 @@ export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | '
         is_required: category.is_required || false,
         sort_order: category.sort_order || 0,
         image_url: category.image_url || null,
+        category_type: category.category_type || 'general',
+        has_fullness_ratio: category.has_fullness_ratio || false,
+        fullness_ratio: category.fullness_ratio || null,
+        calculation_method: category.calculation_method || 'per-unit',
         user_id: user.id
       }
     ])
@@ -109,7 +114,11 @@ export const createCategoryInDB = async (category: Omit<OptionCategory, 'id' | '
   }
 
   console.log('Created category:', data);
-  return { ...data, subcategories: [] };
+  return { 
+    ...data, 
+    calculation_method: data.calculation_method as 'per-unit' | 'per-linear-meter' | 'per-linear-yard' | 'per-sqm' | 'fixed' | 'percentage',
+    subcategories: [] 
+  };
 };
 
 export const createSubcategoryInDB = async (subcategory: Omit<OptionSubcategory, 'id'>): Promise<OptionSubcategory> => {

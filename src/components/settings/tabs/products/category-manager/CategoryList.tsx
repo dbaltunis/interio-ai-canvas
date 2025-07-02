@@ -14,11 +14,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronRight, Plus, Trash2, Edit } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, Edit2 } from "lucide-react";
 import { type OptionCategory, type OptionSubcategory, type OptionSubSubcategory, type OptionExtra } from "@/hooks/types/windowCoveringTypes";
 import { SubcategoryForm } from "./SubcategoryForm";
 import { SubSubcategoryForm } from "./SubSubcategoryForm";
 import { ExtraForm } from "./ExtraForm";
+import { CategoryForm } from "./CategoryForm";
 
 interface CategoryListProps {
   categories: OptionCategory[];
@@ -55,6 +56,7 @@ export const CategoryList = ({
   const [creatingSubcategory, setCreatingSubcategory] = useState<string | null>(null);
   const [creatingSubSubcategory, setCreatingSubSubcategory] = useState<string | null>(null);
   const [creatingExtra, setCreatingExtra] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -123,12 +125,33 @@ export const CategoryList = ({
                   {category.description && (
                     <p className="text-sm text-gray-600 mt-1">{category.description}</p>
                   )}
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Badge variant="outline" className="text-xs">
+                      {category.category_type || 'general'}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {category.calculation_method || 'per-unit'}
+                    </Badge>
+                    {category.has_fullness_ratio && (
+                      <Badge variant="secondary" className="text-xs">
+                        Fullness: {category.fullness_ratio || 2.5}x
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 {category.is_required && (
                   <Badge variant="destructive" className="text-xs">Required</Badge>
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingCategory(editingCategory === category.id ? null : category.id)}
+                >
+                  <Edit2 className="h-3 w-3 mr-1" />
+                  Edit
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -170,6 +193,21 @@ export const CategoryList = ({
 
           {expandedCategories.has(category.id) && (
             <CardContent className="pt-0">
+              {/* Edit Category Form */}
+              {editingCategory === category.id && (
+                <div className="mb-4 p-4 border rounded-lg bg-gray-50">
+                  <CategoryForm
+                    category={category}
+                    onSave={async (categoryData) => {
+                      await onUpdateCategory(category.id, categoryData);
+                      setEditingCategory(null);
+                    }}
+                    onCancel={() => setEditingCategory(null)}
+                    isEditing={true}
+                  />
+                </div>
+              )}
+
               {/* Add Subcategory Form */}
               {creatingSubcategory === category.id && (
                 <div className="mb-4">

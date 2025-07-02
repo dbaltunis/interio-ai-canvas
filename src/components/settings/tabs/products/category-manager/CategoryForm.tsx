@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
 import { type OptionCategory } from "@/hooks/useWindowCoveringCategories";
 
@@ -20,7 +21,11 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
     description: category?.description || '',
     is_required: category?.is_required || false,
     sort_order: category?.sort_order || 0,
-    image_url: category?.image_url || ''
+    image_url: category?.image_url || '',
+    category_type: category?.category_type || 'general',
+    has_fullness_ratio: category?.has_fullness_ratio || false,
+    fullness_ratio: category?.fullness_ratio || 2.5,
+    calculation_method: category?.calculation_method || 'per-unit'
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(category?.image_url || '');
@@ -100,6 +105,40 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Category Type</Label>
+          <Select value={formData.category_type} onValueChange={(value) => setFormData(prev => ({ ...prev, category_type: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="heading">Heading</SelectItem>
+              <SelectItem value="lining">Lining</SelectItem>
+              <SelectItem value="hardware">Hardware</SelectItem>
+              <SelectItem value="services">Services</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Calculation Method</Label>
+          <Select value={formData.calculation_method} onValueChange={(value) => setFormData(prev => ({ ...prev, calculation_method: value as 'per-unit' | 'per-linear-meter' | 'per-linear-yard' | 'per-sqm' | 'fixed' | 'percentage' }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="per-unit">Per Unit (uses quantity)</SelectItem>
+              <SelectItem value="per-linear-meter">Per Linear Meter (uses rail width)</SelectItem>
+              <SelectItem value="per-linear-yard">Per Linear Yard (uses rail width)</SelectItem>
+              <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+              <SelectItem value="fixed">Fixed Price</SelectItem>
+              <SelectItem value="percentage">Percentage of fabric cost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="flex items-center space-x-2">
         <Checkbox
           id="is_required"
@@ -108,6 +147,37 @@ export const CategoryForm = ({ category, onSave, onCancel, isEditing }: Category
         />
         <Label htmlFor="is_required">Required Category</Label>
       </div>
+
+      {formData.category_type === 'heading' && (
+        <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="has_fullness_ratio"
+              checked={formData.has_fullness_ratio}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, has_fullness_ratio: !!checked }))}
+            />
+            <Label htmlFor="has_fullness_ratio">Apply Fullness Ratio (affects fabric calculation)</Label>
+          </div>
+          {formData.has_fullness_ratio && (
+            <div>
+              <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
+              <Input
+                id="fullness_ratio"
+                type="number"
+                step="0.1"
+                min="1"
+                max="5"
+                value={formData.fullness_ratio}
+                onChange={(e) => setFormData(prev => ({ ...prev, fullness_ratio: parseFloat(e.target.value) || 2.5 }))}
+                placeholder="e.g., 2.5"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Multiplier for fabric width calculation (e.g., 2.5 = 2.5x rail width)
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Image Upload Section */}
       <div>

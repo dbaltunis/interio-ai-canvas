@@ -1667,8 +1667,12 @@ export type Database = {
       }
       window_covering_option_categories: {
         Row: {
+          calculation_method: string | null
+          category_type: string | null
           created_at: string
           description: string | null
+          fullness_ratio: number | null
+          has_fullness_ratio: boolean | null
           id: string
           image_url: string | null
           is_required: boolean
@@ -1678,8 +1682,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          calculation_method?: string | null
+          category_type?: string | null
           created_at?: string
           description?: string | null
+          fullness_ratio?: number | null
+          has_fullness_ratio?: boolean | null
           id?: string
           image_url?: string | null
           is_required?: boolean
@@ -1689,8 +1697,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          calculation_method?: string | null
+          category_type?: string | null
           created_at?: string
           description?: string | null
+          fullness_ratio?: number | null
+          has_fullness_ratio?: boolean | null
           id?: string
           image_url?: string | null
           is_required?: boolean
