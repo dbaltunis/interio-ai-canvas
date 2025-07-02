@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Ruler, DollarSign, Package } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calculator, Ruler, DollarSign, Package, Zap } from "lucide-react";
+import { MakingCostQuoteDemo } from "./MakingCostQuoteDemo";
 
 export const CalculatorView = () => {
   const [measurements, setMeasurements] = useState({
@@ -82,14 +84,32 @@ export const CalculatorView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Cost Calculator</h2>
-          <p className="text-muted-foreground">
-            Calculate materials and labor costs for window treatments
-          </p>
-        </div>
-      </div>
+      <Tabs defaultValue="integrated" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="integrated" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Making Cost Integration
+          </TabsTrigger>
+          <TabsTrigger value="traditional" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Traditional Calculator
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="integrated">
+          <MakingCostQuoteDemo />
+        </TabsContent>
+
+        <TabsContent value="traditional">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight">Cost Calculator</h2>
+                <p className="text-muted-foreground">
+                  Calculate materials and labor costs for window treatments
+                </p>
+              </div>
+            </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Input Form */}
@@ -259,6 +279,9 @@ export const CalculatorView = () => {
           </div>
         </CardContent>
       </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
