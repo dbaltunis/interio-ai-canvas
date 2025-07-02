@@ -24,55 +24,61 @@ export const calculateOrientation = (
   let warnings: string[] = [];
   let feasible = true;
 
+  // Calculate total drop including hems and pooling
+  const totalDrop = drop + pooling + headerHem + bottomHem;
+  const totalWidth = railWidth * fullness;
+
   if (orientation === 'horizontal') {
     // Standard orientation: fabric width used for curtain width
     effectiveFabricWidth = fabricWidth;
-    requiredLength = drop + pooling + headerHem + bottomHem;
-    requiredWidth = railWidth * fullness;
+    requiredLength = totalDrop;
+    requiredWidth = totalWidth;
+    
+    // Check if curtain drop exceeds fabric width
+    if (totalDrop > fabricWidth) {
+      warnings.push(`Curtain drop (${totalDrop.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm). Not feasible in horizontal orientation.`);
+      feasible = false;
+    }
   } else {
-    // Rotated orientation: fabric width used for curtain length
+    // Vertical/Rotated orientation: fabric width used for curtain length
     effectiveFabricWidth = fabricWidth;
-    requiredLength = railWidth * fullness;
-    requiredWidth = drop + pooling + headerHem + bottomHem;
+    requiredLength = totalWidth;
+    requiredWidth = totalDrop;
+    
+    // Check if total width exceeds fabric width when rotated
+    if (totalWidth > fabricWidth) {
+      warnings.push(`Required width (${totalWidth.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm) in vertical orientation.`);
+      feasible = false;
+    }
   }
 
-  // Check feasibility
-  if (orientation === 'horizontal' && requiredLength > fabricWidth) {
-    warnings.push(`Curtain drop (${requiredLength.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm). Multiple drops required.`);
-    feasible = false;
-  }
-
-  if (orientation === 'vertical' && requiredWidth > fabricWidth) {
-    warnings.push(`Required width (${requiredWidth.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm) in vertical orientation.`);
-    feasible = false;
-  }
-
-  // Calculate panels needed
-  const panelsNeeded = Math.ceil(requiredWidth / (effectiveFabricWidth - (sideHem * 2)));
+  // Calculate how many panels we need
+  const panelsNeeded = quantity;
   
-  // Calculate widths needed (fabric drops)
+  // Calculate widths needed (fabric lengths)
   let widthsRequired, dropsPerWidth;
   
   if (orientation === 'horizontal') {
-    const panelWidthWithHems = (requiredWidth / quantity) + (sideHem * 2);
-    dropsPerWidth = Math.floor(effectiveFabricWidth / panelWidthWithHems);
-    widthsRequired = Math.ceil(quantity / Math.max(dropsPerWidth, 1));
-  } else {
-    // In vertical orientation, each panel requires its own width
-    widthsRequired = quantity;
+    // Each panel needs its own length of fabric
+    widthsRequired = panelsNeeded;
     dropsPerWidth = 1;
+  } else {
+    // In vertical orientation, we might fit multiple panels across the width
+    const panelWidthWithHems = requiredWidth + (sideHem * 2);
+    dropsPerWidth = Math.floor(effectiveFabricWidth / panelWidthWithHems);
+    widthsRequired = Math.ceil(panelsNeeded / Math.max(dropsPerWidth, 1));
   }
 
   // Calculate seams needed
   const seamsRequired = Math.max(0, widthsRequired - 1);
   const totalSeamAllowance = seamsRequired * seamHem * 2;
   
-  // Total fabric length needed
-  const totalLength = widthsRequired * requiredLength + totalSeamAllowance;
+  // Total fabric length needed in cm
+  const totalLengthCm = (widthsRequired * requiredLength) + totalSeamAllowance;
   
-  // Convert to yards and meters
-  const totalYards = totalLength / 91.44;
-  const totalMeters = totalLength / 100;
+  // Convert to different units
+  const totalYards = totalLengthCm / 91.44; // 1 yard = 91.44 cm
+  const totalMeters = totalLengthCm / 100; // 1 meter = 100 cm
 
   // Calculate additional labor for seams
   const seamLaborHours = seamsRequired * 0.5; // 30 minutes per seam

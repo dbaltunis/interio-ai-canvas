@@ -57,34 +57,27 @@ export const calculateFabricUsage = (
   const horizontalCalc = calculateOrientation('horizontal', params, fabricCostPerYard, laborRate);
   const verticalCalc = calculateOrientation('vertical', params, fabricCostPerYard, laborRate);
 
-  // Determine best orientation based on cost and feasibility
-  let bestOrientation = 'horizontal';
-  let costComparison = null;
+  // Use the selected orientation from form data
+  const currentOrientation = formData.roll_direction || 'vertical';
+  const selectedCalc = currentOrientation === 'vertical' ? verticalCalc : horizontalCalc;
 
+  // Create cost comparison if both orientations are feasible
+  let costComparison = null;
   if (horizontalCalc.feasible && verticalCalc.feasible) {
-    if (verticalCalc.totalCost < horizontalCalc.totalCost) {
-      bestOrientation = 'vertical';
-    }
+    const bestOrientation = verticalCalc.totalCost < horizontalCalc.totalCost ? 'vertical' : 'horizontal';
     costComparison = {
       horizontal: horizontalCalc,
       vertical: verticalCalc,
       savings: Math.abs(horizontalCalc.totalCost - verticalCalc.totalCost),
       recommendation: bestOrientation
     };
-  } else if (verticalCalc.feasible && !horizontalCalc.feasible) {
-    bestOrientation = 'vertical';
-  } else if (!horizontalCalc.feasible && !verticalCalc.feasible) {
-    // Both orientations have issues, use horizontal as fallback
-    bestOrientation = 'horizontal';
   }
-
-  const selectedCalc = bestOrientation === 'vertical' ? verticalCalc : horizontalCalc;
 
   return {
     yards: selectedCalc.totalYards,
     meters: selectedCalc.totalMeters,
     details: selectedCalc.details,
-    fabricOrientation: bestOrientation,
+    fabricOrientation: currentOrientation,
     costComparison,
     warnings: selectedCalc.warnings,
     seamsRequired: selectedCalc.seamsRequired,

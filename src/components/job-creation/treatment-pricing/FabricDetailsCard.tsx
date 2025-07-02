@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +37,10 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
   const isNarrowFabric = fabricWidthCm <= 200;
   const horizontalLabel = isNarrowFabric ? "Horizontal (Rotated)" : "Horizontal (Standard)";
   const verticalLabel = isNarrowFabric ? "Vertical (Standard)" : "Vertical (Rotated)";
+
+  // Get fabric usage in correct units
+  const displayFabricUsage = units.fabric === 'yards' ? fabricUsage : 
+    costs?.fabricOrientation ? (parseFloat(fabricUsage) * 1.094).toFixed(1) : fabricUsage;
 
   return (
     <Card>
@@ -142,7 +145,7 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm font-medium text-blue-800">
-                  Estimated fabric usage: {fabricUsage} {getFabricUnitLabel()}
+                  Estimated fabric usage: {displayFabricUsage} {getFabricUnitLabel()}
                 </div>
                 {costs?.fabricOrientation && (
                   <Badge variant={costs.fabricOrientation === 'vertical' ? 'default' : 'secondary'}>

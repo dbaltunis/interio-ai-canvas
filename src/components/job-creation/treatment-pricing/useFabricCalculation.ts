@@ -40,7 +40,10 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
   const calculateCosts = () => {
     const fabricUsage = fabricUsageCalculation;
     const fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
-    const fabricCost = fabricUsage.yards * fabricCostPerYard;
+    
+    // Use the correct fabric amount based on user's unit preference
+    const fabricAmount = units.fabric === 'yards' ? fabricUsage.yards : fabricUsage.meters;
+    const fabricCost = fabricAmount * fabricCostPerYard;
 
     // Options calculation
     let optionsCost = 0;
@@ -97,12 +100,15 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const laborCost = laborRate * totalHours;
     const totalCost = fabricCost + optionsCost + laborCost;
 
+    // Return fabric usage in the correct unit format
+    const displayFabricUsage = units.fabric === 'yards' ? fabricUsage.yards : fabricUsage.meters;
+
     return {
       fabricCost: fabricCost.toFixed(2),
       optionsCost: optionsCost.toFixed(2),
       laborCost: laborCost.toFixed(2),
       totalCost: totalCost.toFixed(2),
-      fabricUsage: fabricUsage.yards.toFixed(1),
+      fabricUsage: displayFabricUsage.toFixed(1),
       fabricOrientation: fabricUsage.fabricOrientation,
       costComparison: fabricUsage.costComparison,
       warnings: fabricUsage.warnings,
