@@ -53,18 +53,33 @@ export const TreatmentCalculatorDialog = ({
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging
+  console.log("=== TREATMENT CALCULATOR DEBUG ===");
+  console.log("Dialog Open:", isOpen);
+  console.log("Treatment Type:", treatmentType);
+  console.log("Window Coverings Count:", windowCoverings?.length || 0);
+  console.log("Making Costs Count:", makingCosts?.length || 0);
+  console.log("Form Data:", formData);
+  console.log("Selected Window Covering:", selectedWindowCovering);
+  console.log("Making Cost Data:", makingCostData);
+  console.log("Calculations:", calculations);
+
   // Filter window coverings by treatment type with making costs
-  const filteredWindowCoverings = windowCoverings?.filter(wc => 
-    wc.making_cost_id && (
-      wc.name.toLowerCase().includes(treatmentType.toLowerCase()) ||
-      treatmentType === 'curtains' && wc.name.toLowerCase().includes('curtain')
-    )
-  ) || [];
+  const filteredWindowCoverings = windowCoverings?.filter(wc => {
+    const hasMatchingName = wc.name.toLowerCase().includes(treatmentType.toLowerCase()) ||
+                           (treatmentType === 'curtains' && wc.name.toLowerCase().includes('curtain'));
+    const hasMakingCost = Boolean(wc.making_cost_id);
+    console.log(`Filtering ${wc.name}: hasMatchingName=${hasMatchingName}, hasMakingCost=${hasMakingCost}`);
+    return hasMatchingName && hasMakingCost;
+  }) || [];
+
+  console.log("Filtered Window Coverings:", filteredWindowCoverings);
 
   // Load making cost data when window covering changes
   useEffect(() => {
     if (selectedWindowCovering?.making_cost_id && makingCosts) {
       const makingCost = makingCosts.find(mc => mc.id === selectedWindowCovering.making_cost_id);
+      console.log("Loading making cost data:", makingCost);
       setMakingCostData(makingCost || null);
       setFormData(prev => ({
         ...prev,
@@ -76,6 +91,7 @@ export const TreatmentCalculatorDialog = ({
   // Auto-select first window covering when dialog opens
   useEffect(() => {
     if (isOpen && filteredWindowCoverings.length > 0 && !selectedWindowCovering) {
+      console.log("Auto-selecting first window covering:", filteredWindowCoverings[0]);
       setSelectedWindowCovering(filteredWindowCoverings[0]);
     }
   }, [isOpen, filteredWindowCoverings, selectedWindowCovering]);
@@ -84,6 +100,12 @@ export const TreatmentCalculatorDialog = ({
   useEffect(() => {
     const runCalculation = async () => {
       if (!selectedWindowCovering?.making_cost_id || !formData.rail_width || !formData.drop) {
+        console.log("Skipping calculation - missing data:", {
+          windowCovering: !!selectedWindowCovering,
+          makingCostId: selectedWindowCovering?.making_cost_id,
+          railWidth: formData.rail_width,
+          drop: formData.drop
+        });
         setCalculations(null);
         setError(null);
         return;
@@ -93,6 +115,7 @@ export const TreatmentCalculatorDialog = ({
       setError(null);
       
       try {
+        console.log("Starting calculation...");
         const params: FabricCalculationParams = {
           windowCoveringId: selectedWindowCovering.id,
           makingCostId: selectedWindowCovering.making_cost_id,
@@ -127,13 +150,23 @@ export const TreatmentCalculatorDialog = ({
   }, [selectedWindowCovering, formData]);
 
   const handleInputChange = (field: string, value: any) => {
+    console.log(`Input changed: ${field} = ${value}`);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = () => {
     try {
-      if (!formData.rail_width || !formData.drop || !calculations) {
-        alert('Please complete all required measurements');
+      console.log("Submitting treatment data...");
+      
+      if (!formData.rail_width || !formData.drop) {
+        console.log("Missing required measurements");
+        setError('Please complete all required measurements (rail width and drop)');
+        return;
+      }
+
+      if (!calculations) {
+        console.log("No calculations available");
+        setError('Please wait for calculations to complete');
         return;
       }
 
@@ -163,6 +196,7 @@ export const TreatmentCalculatorDialog = ({
         calculation_details: calculations
       };
 
+      console.log("Final treatment data:", treatmentData);
       onSave(treatmentData);
       handleClose();
     } catch (error) {
@@ -172,6 +206,7 @@ export const TreatmentCalculatorDialog = ({
   };
 
   const handleClose = () => {
+    console.log("Closing dialog and resetting state");
     setSelectedWindowCovering(null);
     setMakingCostData(null);
     setCalculations(null);
@@ -195,9 +230,9 @@ export const TreatmentCalculatorDialog = ({
 
   const formatCurrency = (amount: number | undefined) => {
     if (typeof amount !== 'number' || isNaN(amount)) return '£0.00';
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
     }).format(amount);
   };
 
@@ -205,7 +240,33 @@ export const TreatmentCalculatorDialog = ({
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl">
-          <div className="text-center py-8">Loading...</div>
+          <div className="text-center py-8">Loading calculator...</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (filteredWindowCoverings.length === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>No Smart Calculator Available</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                No window coverings with making cost configurations found for "{treatmentType}". 
+                Please create a window covering with making cost configuration in Settings first.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={handleClose}>
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -213,18 +274,18 @@ export const TreatmentCalculatorDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-2">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="pb-3">
           <DialogTitle className="flex items-center text-lg font-semibold">
             <Calculator className="mr-2 h-5 w-5" />
-            {treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
+            Smart {treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Calculate costs with integrated making cost system
+            Integrated making cost calculator with fabric usage
           </p>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Error Display */}
           {error && (
             <Alert variant="destructive">
@@ -232,6 +293,20 @@ export const TreatmentCalculatorDialog = ({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
+          {/* Quick Test - Add manual calculation button */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-3">
+              <div className="text-sm">
+                <strong>Debug Info:</strong><br/>
+                Window Covering: {selectedWindowCovering?.name || 'None'}<br/>
+                Making Cost: {makingCostData?.name || 'None'}<br/>
+                Rail Width: {formData.rail_width || 'Empty'}<br/>
+                Drop: {formData.drop || 'Empty'}<br/>
+                Calculations: {calculations ? 'Available' : 'None'}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Window Covering Selection */}
           <Card>
@@ -242,7 +317,9 @@ export const TreatmentCalculatorDialog = ({
               <Select
                 value={selectedWindowCovering?.id || ''}
                 onValueChange={(value) => {
+                  console.log("Selected window covering ID:", value);
                   const wc = windowCoverings?.find(w => w.id === value);
+                  console.log("Found window covering:", wc);
                   setSelectedWindowCovering(wc || null);
                 }}
               >
@@ -254,7 +331,7 @@ export const TreatmentCalculatorDialog = ({
                     <SelectItem key={wc.id} value={wc.id}>
                       <div className="flex items-center gap-2">
                         <span>{wc.name}</span>
-                        <Badge variant="secondary" className="text-xs">Making Cost</Badge>
+                        <Badge variant="secondary" className="text-xs">Smart</Badge>
                       </div>
                     </SelectItem>
                   ))}
@@ -262,7 +339,7 @@ export const TreatmentCalculatorDialog = ({
               </Select>
               
               {selectedWindowCovering && (
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="product_name">Product Name</Label>
                   <Input
                     id="product_name"
@@ -289,19 +366,21 @@ export const TreatmentCalculatorDialog = ({
                       <Input
                         id="rail_width"
                         type="number"
+                        step="0.1"
                         value={formData.rail_width}
                         onChange={(e) => handleInputChange("rail_width", e.target.value)}
-                        placeholder="Width"
+                        placeholder="e.g. 150"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="drop">Drop *</Label>
+                      <Label htmlFor="drop">Drop (Height) *</Label>
                       <Input
                         id="drop"
                         type="number"
+                        step="0.1"
                         value={formData.drop}
                         onChange={(e) => handleInputChange("drop", e.target.value)}
-                        placeholder="Height"
+                        placeholder="e.g. 200"
                       />
                     </div>
                   </div>
@@ -311,6 +390,7 @@ export const TreatmentCalculatorDialog = ({
                       <Input
                         id="pooling"
                         type="number"
+                        step="0.1"
                         value={formData.pooling}
                         onChange={(e) => handleInputChange("pooling", e.target.value)}
                         placeholder="0"
@@ -334,10 +414,7 @@ export const TreatmentCalculatorDialog = ({
               {makingCostData && (
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Calculator className="h-4 w-4" />
-                      Making Cost Options - {makingCostData.name}
-                    </CardTitle>
+                    <CardTitle className="text-base">Options - {makingCostData.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {/* Heading Options */}
@@ -354,7 +431,7 @@ export const TreatmentCalculatorDialog = ({
                                 <div className="flex items-center justify-between w-full">
                                   <span>{option.name || 'Unnamed Option'}</span>
                                   <span className="text-xs text-muted-foreground ml-2">
-                                    +{formatCurrency(option.base_price || 0)} per {option.pricing_method?.replace('per-', '') || 'unit'}
+                                    +{formatCurrency(option.base_price || 0)}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -378,7 +455,7 @@ export const TreatmentCalculatorDialog = ({
                                 <div className="flex items-center justify-between w-full">
                                   <span>{option.name || 'Unnamed Option'}</span>
                                   <span className="text-xs text-muted-foreground ml-2">
-                                    +{formatCurrency(option.base_price || 0)} per {option.pricing_method?.replace('per-', '') || 'unit'}
+                                    +{formatCurrency(option.base_price || 0)}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -402,7 +479,7 @@ export const TreatmentCalculatorDialog = ({
                                 <div className="flex items-center justify-between w-full">
                                   <span>{option.name || 'Unnamed Option'}</span>
                                   <span className="text-xs text-muted-foreground ml-2">
-                                    +{formatCurrency(option.base_price || 0)} per {option.pricing_method?.replace('per-', '') || 'unit'}
+                                    +{formatCurrency(option.base_price || 0)}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -460,76 +537,63 @@ export const TreatmentCalculatorDialog = ({
               </Card>
 
               {/* Calculation Results */}
-              {calculations && (
+              {(isCalculating || calculations) && (
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Info className="h-4 w-4" />
                       Calculation Results
+                      {isCalculating && <span className="text-sm font-normal text-muted-foreground">Calculating...</span>}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {/* Fabric Usage */}
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <div className="text-sm font-medium mb-2">Fabric Usage</div>
-                      <div className="text-lg font-bold text-blue-600">
-                        {units?.fabric === 'yards' 
-                          ? (calculations.fabricUsage?.yards || 0).toFixed(1) 
-                          : (calculations.fabricUsage?.meters || 0).toFixed(1)
-                        } {units?.fabric || 'meters'}
-                      </div>
-                      {calculations.fabricUsage && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Orientation: {calculations.fabricUsage.orientation || 'vertical'} | 
-                          Widths needed: {calculations.fabricUsage.widthsRequired || 1} | 
-                          Seams: {calculations.fabricUsage.seamsRequired || 0}
+                    {calculations && (
+                      <>
+                        {/* Fabric Usage */}
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <div className="text-sm font-medium mb-2">Fabric Usage</div>
+                          <div className="text-lg font-bold text-blue-600">
+                            {units?.fabric === 'yards' 
+                              ? (calculations.fabricUsage?.yards || 0).toFixed(1) 
+                              : (calculations.fabricUsage?.meters || 0).toFixed(1)
+                            } {units?.fabric || 'meters'}
+                          </div>
+                          {calculations.fabricUsage && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Orientation: {calculations.fabricUsage.orientation || 'vertical'} | 
+                              Widths needed: {calculations.fabricUsage.widthsRequired || 1} | 
+                              Seams: {calculations.fabricUsage.seamsRequired || 0}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Cost Breakdown */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Fabric Cost:</span>
-                        <span>{formatCurrency(calculations.costs?.fabricCost)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Making Cost:</span>
-                        <span>{formatCurrency(calculations.costs?.makingCost)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Labor Cost:</span>
-                        <span>{formatCurrency(calculations.costs?.laborCost)}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between font-bold">
-                        <span>Total Cost:</span>
-                        <span>{formatCurrency(calculations.costs?.totalCost)}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Per unit: {formatCurrency((calculations.costs?.totalCost || 0) / (formData.quantity || 1))}
-                      </div>
-                    </div>
-
-                    {/* Warnings */}
-                    {calculations.warnings && calculations.warnings.length > 0 && (
-                      <Alert>
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          {calculations.warnings.map((warning: string, index: number) => (
-                            <div key={index} className="text-xs">{warning}</div>
-                          ))}
-                        </AlertDescription>
-                      </Alert>
+                        {/* Cost Breakdown */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Fabric Cost:</span>
+                            <span>{formatCurrency(calculations.costs?.fabricCost)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Making Cost:</span>
+                            <span>{formatCurrency(calculations.costs?.makingCost)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Labor Cost:</span>
+                            <span>{formatCurrency(calculations.costs?.laborCost)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-bold">
+                            <span>Total Cost:</span>
+                            <span>{formatCurrency(calculations.costs?.totalCost)}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Per unit: {formatCurrency((calculations.costs?.totalCost || 0) / (formData.quantity || 1))}
+                          </div>
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
-              )}
-
-              {isCalculating && (
-                <div className="text-center py-4">
-                  <div className="text-sm text-muted-foreground">Calculating...</div>
-                </div>
               )}
             </>
           )}
@@ -539,12 +603,9 @@ export const TreatmentCalculatorDialog = ({
         <div className="flex justify-between items-center pt-3 border-t">
           <div className="text-sm text-muted-foreground">
             {calculations && (
-              <>
-                <span>Total: <span className="font-bold text-lg text-primary">{formatCurrency(calculations.costs?.totalCost)}</span></span>
-                <span className="ml-4 text-xs">
-                  Per unit: {formatCurrency((calculations.costs?.totalCost || 0) / (formData.quantity || 1))}
-                </span>
-              </>
+              <span className="font-bold text-lg text-primary">
+                Total: {formatCurrency(calculations.costs?.totalCost)}
+              </span>
             )}
           </div>
           <div className="flex space-x-2">
@@ -554,9 +615,9 @@ export const TreatmentCalculatorDialog = ({
             <Button 
               onClick={handleSubmit} 
               className="bg-green-600 hover:bg-green-700"
-              disabled={!formData.rail_width || !formData.drop || !selectedWindowCovering || !calculations}
+              disabled={!formData.rail_width || !formData.drop || !selectedWindowCovering || isCalculating}
             >
-              Save Treatment
+              {isCalculating ? 'Calculating...' : 'Save Treatment'}
             </Button>
           </div>
         </div>
