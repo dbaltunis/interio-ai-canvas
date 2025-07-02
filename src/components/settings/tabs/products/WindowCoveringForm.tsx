@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ interface WindowCovering {
 
 interface WindowCoveringFormProps {
   windowCovering?: WindowCovering;
-  onSave: (windowCovering: WindowCovering) => void;
+  onSave: (windowCovering: Omit<WindowCovering, 'id' | 'optionsCount'>) => void;
   onCancel: () => void;
   isEditing: boolean;
 }
@@ -44,7 +45,7 @@ interface FormData {
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
   const { toast } = useToast();
-  const { makingCosts } = useMakingCosts();
+  const { makingCosts, isLoading: makingCostsLoading } = useMakingCosts();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
@@ -64,12 +65,12 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
   useEffect(() => {
     if (windowCovering) {
       setFormData({
-        name: windowCovering.name,
+        name: windowCovering.name || '',
         description: windowCovering.description || '',
-        margin_percentage: windowCovering.margin_percentage,
+        margin_percentage: windowCovering.margin_percentage || 40.0,
         fabrication_pricing_method: windowCovering.fabrication_pricing_method || 'per-panel',
         image_url: windowCovering.image_url || '',
-        active: windowCovering.active,
+        active: windowCovering.active !== undefined ? windowCovering.active : true,
         pricing_grid_data: windowCovering.pricing_grid_data || '',
         unit_price: windowCovering.unit_price || 0,
         making_cost_id: windowCovering.making_cost_id || ''
@@ -156,48 +157,55 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
   };
 
   const handleSave = () => {
-    if (!formData.name.trim()) {
+    try {
+      if (!formData.name.trim()) {
+        toast({
+          title: "Error",
+          description: "Window covering name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (formData.fabrication_pricing_method === 'pricing-grid' && !formData.pricing_grid_data) {
+        toast({
+          title: "Error",
+          description: "Please upload a pricing grid CSV file",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (formData.fabrication_pricing_method !== 'pricing-grid' && (!formData.unit_price || formData.unit_price <= 0)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid unit price",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const windowCoveringData = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        margin_percentage: Number(formData.margin_percentage) || 40.0,
+        fabrication_pricing_method: formData.fabrication_pricing_method,
+        image_url: formData.image_url || undefined,
+        active: formData.active,
+        pricing_grid_data: formData.pricing_grid_data || undefined,
+        unit_price: Number(formData.unit_price) || 0,
+        making_cost_id: formData.making_cost_id || undefined
+      };
+
+      onSave(windowCoveringData);
+    } catch (error) {
+      console.error('Error saving window covering:', error);
       toast({
         title: "Error",
-        description: "Window covering name is required",
+        description: "Failed to save window covering",
         variant: "destructive"
       });
-      return;
     }
-
-    if (formData.fabrication_pricing_method === 'pricing-grid' && !formData.pricing_grid_data) {
-      toast({
-        title: "Error",
-        description: "Please upload a pricing grid CSV file",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (formData.fabrication_pricing_method !== 'pricing-grid' && !formData.unit_price) {
-      toast({
-        title: "Error",
-        description: "Please enter a unit price",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Don't set an ID when creating, let the database generate it
-    const newWindowCovering: WindowCovering = {
-      id: windowCovering?.id || '', // Only use existing ID for updates
-      name: formData.name,
-      description: formData.description || undefined,
-      margin_percentage: formData.margin_percentage,
-      fabrication_pricing_method: formData.fabrication_pricing_method,
-      image_url: formData.image_url || undefined,
-      active: formData.active,
-      pricing_grid_data: formData.pricing_grid_data || undefined,
-      unit_price: formData.unit_price,
-      making_cost_id: formData.making_cost_id || undefined
-    };
-
-    onSave(newWindowCovering);
   };
 
   const getPricingMethodDescription = () => {
@@ -234,23 +242,31 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     }
   };
 
+  if (makingCostsLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{isEditing ? 'Edit Window Covering' : 'Create New Window Covering'}</CardTitle>
         <CardDescription>Configure the window covering specifications and pricing</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 gap-4">
-          <div>
-            <Label htmlFor="name">Treatment Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Roman Blind, Curtains, Roller Blind"
-            />
-          </div>
+      <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="name">Treatment Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="e.g., Roman Blind, Curtains, Roller Blind"
+          />
         </div>
 
         <div>
@@ -260,34 +276,34 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
             value={formData.description}
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             placeholder="Optional description of the window covering..."
-            rows={3}
+            rows={2}
           />
         </div>
 
         {/* Image Upload */}
         <div>
           <Label>Treatment Image</Label>
-          <div className="mt-2">
+          <div className="mt-1">
             {imagePreview ? (
               <div className="relative inline-block">
                 <img 
                   src={imagePreview} 
                   alt="Window covering preview" 
-                  className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                  className="w-24 h-24 object-cover rounded-lg border border-gray-300"
                 />
                 <Button
                   variant="destructive"
                   size="sm"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0"
                   onClick={handleRemoveImage}
                 >
                   <X className="h-3 w-3" />
                 </Button>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-brand-primary transition-colors">
-                <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600 mb-2">Upload treatment image</p>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-brand-primary transition-colors">
+                <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                <p className="text-xs text-gray-600 mb-1">Upload image</p>
                 <Input
                   type="file"
                   accept="image/*"
@@ -297,7 +313,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
                 />
                 <Label 
                   htmlFor="image-upload" 
-                  className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Choose File
                 </Label>
@@ -318,14 +334,14 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">No making cost configuration</SelectItem>
-              {makingCosts.map((cost) => (
+              {makingCosts?.map((cost) => (
                 <SelectItem key={cost.id} value={cost.id}>
                   {cost.name} - {cost.pricing_method}
                 </SelectItem>
-              ))}
+              )) || []}
             </SelectContent>
           </Select>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-xs text-gray-600 mt-1">
             Link this window covering to a making cost configuration for bundled options and automated calculations.
           </p>
         </div>
@@ -349,7 +365,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               <SelectItem value="pricing-grid">Pricing Grid (CSV Upload)</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-sm text-gray-600 mt-1">{getPricingMethodDescription()}</p>
+          <p className="text-xs text-gray-600 mt-1">{getPricingMethodDescription()}</p>
         </div>
 
         {/* Unit Price for non-grid pricing methods */}
@@ -357,7 +373,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
           <div>
             <Label htmlFor="unit_price">
               Unit Price (£) *
-              <span className="text-sm font-normal text-gray-600 ml-2">
+              <span className="text-xs font-normal text-gray-600 ml-2">
                 {formData.fabrication_pricing_method === 'per-panel' && '(per panel)'}
                 {formData.fabrication_pricing_method === 'per-drop' && '(per drop)'}
                 {formData.fabrication_pricing_method === 'per-meter' && '(per meter)'}
@@ -369,8 +385,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               type="number"
               step="0.01"
               min="0"
-              value={formData.unit_price}
-              onChange={(e) => setFormData(prev => ({ ...prev, unit_price: Number(e.target.value) }))}
+              value={formData.unit_price || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, unit_price: Number(e.target.value) || 0 }))}
               placeholder="0.00"
             />
           </div>
@@ -378,41 +394,40 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
 
         {/* CSV Upload for Pricing Grid */}
         {formData.fabrication_pricing_method === 'pricing-grid' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1">
                 <Label>Pricing Grid (CSV File) *</Label>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={downloadCsvTemplate}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1 h-7 px-2 text-xs"
                 >
-                  <Download className="h-4 w-4" />
-                  Download Template
+                  <Download className="h-3 w-3" />
+                  Template
                 </Button>
               </div>
               
               {selectedCsvFile ? (
-                <div className="flex items-center justify-between p-3 border border-green-300 rounded-lg bg-green-50">
+                <div className="flex items-center justify-between p-2 border border-green-300 rounded bg-green-50">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-green-700">{selectedCsvFile.name}</span>
-                    <span className="text-xs text-green-600">({(selectedCsvFile.size / 1024).toFixed(1)} KB)</span>
+                    <span className="text-xs font-medium text-green-700">{selectedCsvFile.name}</span>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleRemoveCsv}
-                    className="h-6 w-6 p-0"
+                    className="h-5 w-5 p-0"
                   >
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-brand-primary transition-colors">
-                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">Upload pricing grid CSV file</p>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-brand-primary transition-colors">
+                  <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-600 mb-1">Upload CSV file</p>
                   <Input
                     type="file"
                     accept=".csv"
@@ -422,29 +437,18 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
                   />
                   <Label 
                     htmlFor="csv-upload" 
-                    className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
                     Choose CSV File
                   </Label>
                 </div>
               )}
-              
-              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700 font-medium mb-1">CSV File Format:</p>
-                <p className="text-xs text-blue-600">
-                  First row should contain width values (100, 200, 300, etc.)
-                  <br />
-                  First column should contain drop/height values (100, 200, 300, etc.)
-                  <br />
-                  Each cell should contain the corresponding base price for that width/drop combination
-                </p>
-              </div>
             </div>
           </div>
         )}
 
         {/* Profit Margin Section */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div>
             <Label htmlFor="margin_percentage">Profit Margin (%)</Label>
             <Input
@@ -453,15 +457,15 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               step="0.1"
               min="0"
               max="200"
-              value={formData.margin_percentage}
-              onChange={(e) => setFormData(prev => ({ ...prev, margin_percentage: Number(e.target.value) }))}
+              value={formData.margin_percentage || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, margin_percentage: Number(e.target.value) || 40.0 }))}
               placeholder="40.0"
             />
           </div>
           
-          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
+          <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded">
+            <Info className="h-3 w-3 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-xs">
               <p className="font-medium text-amber-800 mb-1">How this works:</p>
               <p className="text-amber-700">
                 {getMarginDescription()}. For example, if the base cost is £100 and you set a 40% margin, 
@@ -480,7 +484,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
           <Label htmlFor="active">Active</Label>
         </div>
 
-        <div className="flex gap-2 pt-4">
+        <div className="flex gap-2 pt-2">
           <Button onClick={handleSave} className="bg-brand-primary hover:bg-brand-accent">
             {isEditing ? 'Update Window Covering' : 'Create Window Covering'}
           </Button>

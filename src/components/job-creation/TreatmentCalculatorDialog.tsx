@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,8 @@ export const TreatmentCalculatorDialog = ({
   onSave, 
   treatmentType 
 }: TreatmentCalculatorDialogProps) => {
-  const { windowCoverings } = useWindowCoverings();
-  const { makingCosts } = useMakingCosts();
+  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
+  const { makingCosts, isLoading: makingCostsLoading } = useMakingCosts();
   const { units } = useMeasurementUnits();
   
   // State
@@ -50,23 +51,24 @@ export const TreatmentCalculatorDialog = ({
   });
   const [calculations, setCalculations] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter window coverings by treatment type with making costs
-  const filteredWindowCoverings = windowCoverings.filter(wc => 
+  const filteredWindowCoverings = windowCoverings?.filter(wc => 
     wc.making_cost_id && (
       wc.name.toLowerCase().includes(treatmentType.toLowerCase()) ||
       treatmentType === 'curtains' && wc.name.toLowerCase().includes('curtain')
     )
-  );
+  ) || [];
 
   // Load making cost data when window covering changes
   useEffect(() => {
-    if (selectedWindowCovering?.making_cost_id) {
-      const makingCost = makingCosts?.find(mc => mc.id === selectedWindowCovering.making_cost_id);
+    if (selectedWindowCovering?.making_cost_id && makingCosts) {
+      const makingCost = makingCosts.find(mc => mc.id === selectedWindowCovering.making_cost_id);
       setMakingCostData(makingCost || null);
       setFormData(prev => ({
         ...prev,
-        product_name: selectedWindowCovering.name
+        product_name: selectedWindowCovering.name || ''
       }));
     }
   }, [selectedWindowCovering, makingCosts]);
@@ -83,38 +85,45 @@ export const TreatmentCalculatorDialog = ({
     const runCalculation = async () => {
       if (!selectedWindowCovering?.making_cost_id || !formData.rail_width || !formData.drop) {
         setCalculations(null);
+        setError(null);
         return;
       }
 
       setIsCalculating(true);
+      setError(null);
+      
       try {
         const params: FabricCalculationParams = {
           windowCoveringId: selectedWindowCovering.id,
           makingCostId: selectedWindowCovering.making_cost_id,
           measurements: {
-            railWidth: parseFloat(formData.rail_width),
-            drop: parseFloat(formData.drop),
+            railWidth: parseFloat(formData.rail_width) || 0,
+            drop: parseFloat(formData.drop) || 0,
             pooling: parseFloat(formData.pooling) || 0
           },
           selectedOptions: [formData.selected_heading, formData.selected_hardware, formData.selected_lining].filter(Boolean),
           fabricDetails: {
-            fabricWidth: parseFloat(formData.fabric_width),
+            fabricWidth: parseFloat(formData.fabric_width) || 137,
             fabricCostPerYard: parseFloat(formData.fabric_cost_per_yard) || 0,
-            rollDirection: formData.roll_direction
+            rollDirection: formData.roll_direction as 'vertical' | 'horizontal'
           }
         };
 
+        console.log('Calculation params:', params);
         const result = await calculateIntegratedFabricUsage(params);
+        console.log('Calculation result:', result);
         setCalculations(result);
       } catch (error) {
         console.error('Calculation failed:', error);
+        setError(error instanceof Error ? error.message : 'Calculation failed');
         setCalculations(null);
       } finally {
         setIsCalculating(false);
       }
     };
 
-    runCalculation();
+    const timeoutId = setTimeout(runCalculation, 300); // Debounce
+    return () => clearTimeout(timeoutId);
   }, [selectedWindowCovering, formData]);
 
   const handleInputChange = (field: string, value: any) => {
@@ -122,45 +131,51 @@ export const TreatmentCalculatorDialog = ({
   };
 
   const handleSubmit = () => {
-    if (!formData.rail_width || !formData.drop || !calculations) {
-      alert('Please complete all required measurements');
-      return;
+    try {
+      if (!formData.rail_width || !formData.drop || !calculations) {
+        alert('Please complete all required measurements');
+        return;
+      }
+
+      const treatmentData = {
+        product_name: formData.product_name || selectedWindowCovering?.name || '',
+        treatment_type: treatmentType,
+        quantity: formData.quantity || 1,
+        material_cost: calculations.costs?.fabricCost || 0,
+        labor_cost: calculations.costs?.laborCost || 0,
+        total_price: calculations.costs?.totalCost || 0,
+        unit_price: (calculations.costs?.totalCost || 0) / (formData.quantity || 1),
+        measurements: {
+          rail_width: formData.rail_width,
+          drop: formData.drop,
+          pooling: formData.pooling,
+          fabric_usage: units?.fabric === 'yards' ? calculations.fabricUsage?.yards : calculations.fabricUsage?.meters
+        },
+        fabric_details: {
+          fabric_cost_per_yard: formData.fabric_cost_per_yard,
+          fabric_width: formData.fabric_width,
+          roll_direction: formData.roll_direction
+        },
+        selected_options: [formData.selected_heading, formData.selected_hardware, formData.selected_lining].filter(Boolean),
+        notes: formData.notes || `Making cost generated ${treatmentType}`,
+        status: "planned",
+        window_covering: selectedWindowCovering,
+        calculation_details: calculations
+      };
+
+      onSave(treatmentData);
+      handleClose();
+    } catch (error) {
+      console.error('Error saving treatment:', error);
+      setError('Failed to save treatment data');
     }
-
-    const treatmentData = {
-      product_name: formData.product_name,
-      treatment_type: treatmentType,
-      quantity: formData.quantity,
-      material_cost: calculations.costs.fabricCost,
-      labor_cost: calculations.costs.laborCost,
-      total_price: calculations.costs.totalCost,
-      unit_price: calculations.costs.totalCost / formData.quantity,
-      measurements: {
-        rail_width: formData.rail_width,
-        drop: formData.drop,
-        pooling: formData.pooling,
-        fabric_usage: units.fabric === 'yards' ? calculations.fabricUsage.yards : calculations.fabricUsage.meters
-      },
-      fabric_details: {
-        fabric_cost_per_yard: formData.fabric_cost_per_yard,
-        fabric_width: formData.fabric_width,
-        roll_direction: formData.roll_direction
-      },
-      selected_options: [formData.selected_heading, formData.selected_hardware, formData.selected_lining].filter(Boolean),
-      notes: formData.notes || `Making cost generated ${treatmentType}`,
-      status: "planned",
-      window_covering: selectedWindowCovering,
-      calculation_details: calculations
-    };
-
-    onSave(treatmentData);
-    handleClose();
   };
 
   const handleClose = () => {
     setSelectedWindowCovering(null);
     setMakingCostData(null);
     setCalculations(null);
+    setError(null);
     setFormData({
       product_name: "",
       rail_width: "",
@@ -178,41 +193,56 @@ export const TreatmentCalculatorDialog = ({
     onClose();
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined) => {
+    if (typeof amount !== 'number' || isNaN(amount)) return '£0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
   };
 
+  if (windowCoveringsLoading || makingCostsLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl">
+          <div className="text-center py-8">Loading...</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        handleClose();
-      }
-    }}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-4">
-          <DialogTitle className="flex items-center text-center text-lg font-semibold">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center text-lg font-semibold">
             <Calculator className="mr-2 h-5 w-5" />
             {treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
           </DialogTitle>
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-sm text-muted-foreground">
             Calculate costs with integrated making cost system
           </p>
         </DialogHeader>
         
         <div className="space-y-4">
+          {/* Error Display */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Window Covering Selection */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2">
               <CardTitle className="text-base">Window Covering</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Select
                 value={selectedWindowCovering?.id || ''}
                 onValueChange={(value) => {
-                  const wc = windowCoverings.find(w => w.id === value);
+                  const wc = windowCoverings?.find(w => w.id === value);
                   setSelectedWindowCovering(wc || null);
                 }}
               >
@@ -249,8 +279,8 @@ export const TreatmentCalculatorDialog = ({
             <>
               {/* Basic Measurements */}
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Measurements ({units.length})</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Measurements ({units?.length || 'cm'})</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -303,13 +333,13 @@ export const TreatmentCalculatorDialog = ({
               {/* Making Cost Options */}
               {makingCostData && (
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Calculator className="h-4 w-4" />
                       Making Cost Options - {makingCostData.name}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     {/* Heading Options */}
                     {makingCostData.heading_options && makingCostData.heading_options.length > 0 && (
                       <div>
@@ -320,11 +350,11 @@ export const TreatmentCalculatorDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             {makingCostData.heading_options.map((option: any, index: number) => (
-                              <SelectItem key={index} value={option.name}>
+                              <SelectItem key={index} value={option.name || `option-${index}`}>
                                 <div className="flex items-center justify-between w-full">
-                                  <span>{option.name}</span>
+                                  <span>{option.name || 'Unnamed Option'}</span>
                                   <span className="text-xs text-muted-foreground ml-2">
-                                    +{formatCurrency(option.base_price)} per {option.pricing_method?.replace('per-', '')}
+                                    +{formatCurrency(option.base_price || 0)} per {option.pricing_method?.replace('per-', '') || 'unit'}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -344,11 +374,11 @@ export const TreatmentCalculatorDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             {makingCostData.hardware_options.map((option: any, index: number) => (
-                              <SelectItem key={index} value={option.name}>
+                              <SelectItem key={index} value={option.name || `option-${index}`}>
                                 <div className="flex items-center justify-between w-full">
-                                  <span>{option.name}</span>
+                                  <span>{option.name || 'Unnamed Option'}</span>
                                   <span className="text-xs text-muted-foreground ml-2">
-                                    +{formatCurrency(option.base_price)} per {option.pricing_method?.replace('per-', '')}
+                                    +{formatCurrency(option.base_price || 0)} per {option.pricing_method?.replace('per-', '') || 'unit'}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -368,11 +398,11 @@ export const TreatmentCalculatorDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             {makingCostData.lining_options.map((option: any, index: number) => (
-                              <SelectItem key={index} value={option.name}>
+                              <SelectItem key={index} value={option.name || `option-${index}`}>
                                 <div className="flex items-center justify-between w-full">
-                                  <span>{option.name}</span>
+                                  <span>{option.name || 'Unnamed Option'}</span>
                                   <span className="text-xs text-muted-foreground ml-2">
-                                    +{formatCurrency(option.base_price)} per {option.pricing_method?.replace('per-', '')}
+                                    +{formatCurrency(option.base_price || 0)} per {option.pricing_method?.replace('per-', '') || 'unit'}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -387,13 +417,13 @@ export const TreatmentCalculatorDialog = ({
 
               {/* Fabric Details */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base">Fabric Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="fabric_cost_per_yard">Cost Per {units.fabric === 'yards' ? 'Yard' : 'Meter'}</Label>
+                      <Label htmlFor="fabric_cost_per_yard">Cost Per {units?.fabric === 'yards' ? 'Yard' : 'Meter'}</Label>
                       <Input
                         id="fabric_cost_per_yard"
                         type="number"
@@ -432,7 +462,7 @@ export const TreatmentCalculatorDialog = ({
               {/* Calculation Results */}
               {calculations && (
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Info className="h-4 w-4" />
                       Calculation Results
@@ -443,36 +473,41 @@ export const TreatmentCalculatorDialog = ({
                     <div className="p-3 bg-blue-50 rounded-lg">
                       <div className="text-sm font-medium mb-2">Fabric Usage</div>
                       <div className="text-lg font-bold text-blue-600">
-                        {units.fabric === 'yards' ? calculations.fabricUsage.yards.toFixed(1) : calculations.fabricUsage.meters.toFixed(1)} {units.fabric}
+                        {units?.fabric === 'yards' 
+                          ? (calculations.fabricUsage?.yards || 0).toFixed(1) 
+                          : (calculations.fabricUsage?.meters || 0).toFixed(1)
+                        } {units?.fabric || 'meters'}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Orientation: {calculations.fabricUsage.orientation} | 
-                        Widths needed: {calculations.fabricUsage.widthsRequired} | 
-                        Seams: {calculations.fabricUsage.seamsRequired}
-                      </div>
+                      {calculations.fabricUsage && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Orientation: {calculations.fabricUsage.orientation || 'vertical'} | 
+                          Widths needed: {calculations.fabricUsage.widthsRequired || 1} | 
+                          Seams: {calculations.fabricUsage.seamsRequired || 0}
+                        </div>
+                      )}
                     </div>
 
                     {/* Cost Breakdown */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Fabric Cost:</span>
-                        <span>{formatCurrency(calculations.costs.fabricCost)}</span>
+                        <span>{formatCurrency(calculations.costs?.fabricCost)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Making Cost:</span>
-                        <span>{formatCurrency(calculations.costs.makingCost)}</span>
+                        <span>{formatCurrency(calculations.costs?.makingCost)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Labor Cost:</span>
-                        <span>{formatCurrency(calculations.costs.laborCost)}</span>
+                        <span>{formatCurrency(calculations.costs?.laborCost)}</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between font-bold">
                         <span>Total Cost:</span>
-                        <span>{formatCurrency(calculations.costs.totalCost)}</span>
+                        <span>{formatCurrency(calculations.costs?.totalCost)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Per unit: {formatCurrency(calculations.costs.totalCost / formData.quantity)}
+                        Per unit: {formatCurrency((calculations.costs?.totalCost || 0) / (formData.quantity || 1))}
                       </div>
                     </div>
 
@@ -487,20 +522,6 @@ export const TreatmentCalculatorDialog = ({
                         </AlertDescription>
                       </Alert>
                     )}
-
-                    {/* Fabric Calculation Explanation */}
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <div className="text-xs font-medium mb-2">How fabric usage is calculated:</div>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div>• Rail width: {formData.rail_width}cm</div>
-                        <div>• Drop: {formData.drop}cm + {formData.pooling}cm pooling + 25cm allowances</div>
-                        <div>• Fabric width: {formData.fabric_width}cm</div>
-                        <div>• Orientation: {calculations.fabricUsage.orientation}</div>
-                        <div>• Widths required: {calculations.fabricUsage.widthsRequired}</div>
-                        <div>• Total fabric length: {(calculations.fabricUsage.widthsRequired * (parseFloat(formData.drop) + parseFloat(formData.pooling) + 25)).toFixed(0)}cm</div>
-                        <div>• Final usage: {units.fabric === 'yards' ? calculations.fabricUsage.yards.toFixed(1) : calculations.fabricUsage.meters.toFixed(1)} {units.fabric}</div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -515,13 +536,13 @@ export const TreatmentCalculatorDialog = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center pt-3 border-t sticky bottom-0 bg-background">
+        <div className="flex justify-between items-center pt-3 border-t">
           <div className="text-sm text-muted-foreground">
             {calculations && (
               <>
-                <span>Total: <span className="font-bold text-lg text-primary">{formatCurrency(calculations.costs.totalCost)}</span></span>
+                <span>Total: <span className="font-bold text-lg text-primary">{formatCurrency(calculations.costs?.totalCost)}</span></span>
                 <span className="ml-4 text-xs">
-                  Per unit: {formatCurrency(calculations.costs.totalCost / formData.quantity)}
+                  Per unit: {formatCurrency((calculations.costs?.totalCost || 0) / (formData.quantity || 1))}
                 </span>
               </>
             )}
