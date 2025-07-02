@@ -9,8 +9,9 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const railWidth = parseFloat(formData.rail_width) || 0;
     const drop = parseFloat(formData.drop) || 0;
     const fullness = parseFloat(formData.heading_fullness) || 2.5;
-    const fabricWidth = parseFloat(formData.fabric_width) || 140;
+    const fabricWidth = parseFloat(formData.fabric_width) || 137;
     const quantity = formData.quantity || 1;
+    const pooling = parseFloat(formData.pooling) || 0;
 
     // Hem allowances
     const headerHem = parseFloat(formData.header_hem) || 15;
@@ -19,51 +20,155 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const seamHem = parseFloat(formData.seam_hem) || 3;
 
     if (!railWidth || !drop) {
-      return { yards: 0, meters: 0, details: {} };
+      return { 
+        yards: 0, 
+        meters: 0, 
+        details: {},
+        fabricOrientation: 'horizontal',
+        costComparison: null,
+        warnings: []
+      };
     }
 
-    // Calculate finished width per panel
-    const finishedWidthPerPanel = railWidth / quantity;
-    
-    // Calculate fabric width required per panel (including side hems)
-    const fabricWidthPerPanel = (finishedWidthPerPanel * fullness) + (sideHem * 2);
-    
-    // Calculate how many panels fit across fabric width
-    const panelsPerFabricWidth = Math.floor(fabricWidth / fabricWidthPerPanel);
-    
-    // Calculate how many fabric widths needed
-    const fabricWidthsRequired = Math.ceil(quantity / Math.max(panelsPerFabricWidth, 1));
-    
-    // Calculate seam allowances needed (one less seam than fabric widths)
-    const seamsRequired = Math.max(0, fabricWidthsRequired - 1);
-    const totalSeamAllowance = seamsRequired * seamHem * 2; // Both sides of each seam
-    
-    // Calculate length required per fabric width
-    const lengthPerWidth = drop + parseFloat(formData.pooling || "0") + headerHem + bottomHem;
-    
-    // Total fabric needed
-    const totalLengthCm = fabricWidthsRequired * lengthPerWidth;
-    const totalYards = totalLengthCm / 91.44; // Convert cm to yards
-    const totalMeters = totalLengthCm / 100; // Convert cm to meters
+    // Calculate both orientations
+    const horizontalCalc = calculateOrientation('horizontal');
+    const verticalCalc = calculateOrientation('vertical');
 
-    const details = {
-      finishedWidthPerPanel,
-      fabricWidthPerPanel,
-      panelsPerFabricWidth,
-      fabricWidthsRequired,
-      seamsRequired,
-      totalSeamAllowance,
-      lengthPerWidth,
-      headerHem,
-      bottomHem,
-      sideHem,
-      seamHem
-    };
+    // Determine best orientation based on cost and feasibility
+    let bestOrientation = 'horizontal';
+    let costComparison = null;
+
+    if (horizontalCalc.feasible && verticalCalc.feasible) {
+      if (verticalCalc.totalCost < horizontalCalc.totalCost) {
+        bestOrientation = 'vertical';
+      }
+      costComparison = {
+        horizontal: horizontalCalc,
+        vertical: verticalCalc,
+        savings: Math.abs(horizontalCalc.totalCost - verticalCalc.totalCost),
+        recommendation: bestOrientation
+      };
+    } else if (verticalCalc.feasible && !horizontalCalc.feasible) {
+      bestOrientation = 'vertical';
+    } else if (!horizontalCalc.feasible && !verticalCalc.feasible) {
+      // Both orientations have issues, use horizontal as fallback
+      bestOrientation = 'horizontal';
+    }
+
+    const selectedCalc = bestOrientation === 'vertical' ? verticalCalc : horizontalCalc;
+
+    function calculateOrientation(orientation: 'horizontal' | 'vertical') {
+      let effectiveFabricWidth, requiredLength, requiredWidth;
+      let warnings = [];
+      let feasible = true;
+
+      if (orientation === 'horizontal') {
+        // Standard orientation: fabric width used for curtain width
+        effectiveFabricWidth = fabricWidth;
+        requiredLength = drop + pooling + headerHem + bottomHem;
+        requiredWidth = railWidth * fullness;
+      } else {
+        // Rotated orientation: fabric width used for curtain length
+        effectiveFabricWidth = fabricWidth;
+        requiredLength = railWidth * fullness;
+        requiredWidth = drop + pooling + headerHem + bottomHem;
+      }
+
+      // Check if single drop fits
+      if (orientation === 'horizontal' && requiredLength > fabricWidth) {
+        warnings.push(`Curtain drop (${requiredLength.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm). Multiple drops required.`);
+        feasible = false;
+      }
+
+      if (orientation === 'vertical' && requiredWidth > fabricWidth) {
+        warnings.push(`Required width (${requiredWidth.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm) in vertical orientation.`);
+        feasible = false;
+      }
+
+      // Calculate panels needed
+      const panelsNeeded = Math.ceil(requiredWidth / (effectiveFabricWidth - (sideHem * 2)));
+      
+      // Calculate widths needed (fabric drops)
+      let widthsRequired, dropsPerWidth;
+      
+      if (orientation === 'horizontal') {
+        const panelWidthWithHems = (requiredWidth / quantity) + (sideHem * 2);
+        dropsPerWidth = Math.floor(effectiveFabricWidth / panelWidthWithHems);
+        widthsRequired = Math.ceil(quantity / Math.max(dropsPerWidth, 1));
+      } else {
+        // In vertical orientation, each panel requires its own width
+        widthsRequired = quantity;
+        dropsPerWidth = 1;
+      }
+
+      // Calculate seams needed
+      const seamsRequired = Math.max(0, widthsRequired - 1);
+      const totalSeamAllowance = seamsRequired * seamHem * 2;
+      
+      // Total fabric length needed
+      const totalLength = widthsRequired * requiredLength + totalSeamAllowance;
+      
+      // Convert to yards and meters
+      const totalYards = totalLength / 91.44;
+      const totalMeters = totalLength / 100;
+
+      // Calculate additional labor for seams
+      const seamLaborHours = seamsRequired * 0.5; // 30 minutes per seam
+      const fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
+      const fabricCost = totalYards * fabricCostPerYard;
+      
+      // Base labor calculation
+      const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
+      const defaultLaborRate = currentTreatmentType?.labor_rate || 25;
+      const customLaborRate = parseFloat(formData.custom_labor_rate) || 0;
+      const laborRate = customLaborRate > 0 ? customLaborRate : defaultLaborRate;
+      
+      const baseLaborHours = 2 + (railWidth * drop * fullness) / 25000;
+      const totalLaborHours = baseLaborHours + seamLaborHours;
+      const laborCost = totalLaborHours * laborRate;
+      
+      const totalCost = fabricCost + laborCost;
+
+      return {
+        orientation,
+        feasible,
+        warnings,
+        totalYards: Math.ceil(totalYards * 10) / 10,
+        totalMeters: Math.ceil(totalMeters * 10) / 10,
+        widthsRequired,
+        dropsPerWidth,
+        seamsRequired,
+        seamLaborHours,
+        totalLaborHours,
+        fabricCost,
+        laborCost,
+        totalCost,
+        details: {
+          effectiveFabricWidth,
+          requiredLength,
+          requiredWidth,
+          panelsNeeded,
+          totalSeamAllowance,
+          fabricWidthPerPanel: requiredWidth / quantity,
+          lengthPerWidth: requiredLength,
+          headerHem,
+          bottomHem,
+          sideHem,
+          seamHem
+        }
+      };
+    }
 
     return {
-      yards: Math.ceil(totalYards * 10) / 10,
-      meters: Math.ceil(totalMeters * 10) / 10,
-      details
+      yards: selectedCalc.totalYards,
+      meters: selectedCalc.totalMeters,
+      details: selectedCalc.details,
+      fabricOrientation: bestOrientation,
+      costComparison,
+      warnings: selectedCalc.warnings,
+      seamsRequired: selectedCalc.seamsRequired,
+      seamLaborHours: selectedCalc.seamLaborHours,
+      widthsRequired: selectedCalc.widthsRequired
     };
   };
 
@@ -80,7 +185,6 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     let cost = 0;
     let calculation = '';
 
-    // Handle different pricing methods
     switch (method) {
       case 'per-unit':
       case 'per-panel':
@@ -90,14 +194,12 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       
       case 'per-meter':
       case 'per-metre':
-        // Use rail width converted to meters
         const widthInMeters = railWidth / 100;
         cost = baseCost * widthInMeters * quantity;
         calculation = `${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'per-yard':
-        // Use rail width converted to yards
         const widthInYards = railWidth / 91.44;
         cost = baseCost * widthInYards * quantity;
         calculation = `${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = ${cost.toFixed(2)}`;
@@ -105,21 +207,18 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       
       case 'per-sqm':
       case 'per-square-meter':
-        // Calculate area in square meters
         const areaInSqm = (railWidth / 100) * (drop / 100);
         cost = baseCost * areaInSqm * quantity;
         calculation = `${baseCost.toFixed(2)} × ${areaInSqm.toFixed(2)}m² × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'per-linear-meter':
-        // Use the perimeter (rail width + 2 * drop)
         const perimeterInMeters = (railWidth + 2 * drop) / 100;
         cost = baseCost * perimeterInMeters * quantity;
         calculation = `${baseCost.toFixed(2)} × ${perimeterInMeters.toFixed(2)}m perimeter × ${quantity} = ${cost.toFixed(2)}`;
         break;
       
       case 'percentage':
-        // Calculate as percentage of fabric cost
         const fabricUsage = calculateFabricUsage();
         const fabricCost = fabricUsage.yards * parseFloat(formData.fabric_cost_per_yard || "0");
         cost = (fabricCost * baseCost) / 100;
@@ -128,7 +227,6 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       
       case 'fixed':
       default:
-        // Fixed cost regardless of measurements
         cost = baseCost * quantity;
         calculation = `Fixed cost: ${baseCost.toFixed(2)} × ${quantity} = ${cost.toFixed(2)}`;
         break;
@@ -145,7 +243,6 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const method = option.pricing_method;
 
     console.log(`Calculating hierarchical option cost for: ${option.name}, pricing method: ${method}, base cost: ${baseCost}`);
-    console.log(`Rail width: ${railWidth}, Drop: ${drop}, Quantity: ${quantity}`);
 
     let cost = 0;
     let calculation = '';
@@ -188,7 +285,6 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
         break;
     }
 
-    console.log(`Final calculation for ${option.name}: ${calculation}, Cost: ${cost}`);
     return { cost, calculation };
   };
 
@@ -219,19 +315,13 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
   };
 
   const calculateCosts = () => {
-    // Fabric calculation
     const fabricUsage = calculateFabricUsage();
     const fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
     const fabricCost = fabricUsage.yards * fabricCostPerYard;
 
-    // Options calculation with proper pricing methods
+    // Options calculation
     let optionsCost = 0;
     const optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }> = [];
-
-    console.log('=== OPTIONS CALCULATION DEBUG ===');
-    console.log('Selected options:', formData.selected_options);
-    console.log('Available options:', options);
-    console.log('Hierarchical options:', hierarchicalOptions);
 
     // Calculate traditional options
     if (options && options.length > 0) {
@@ -245,7 +335,6 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
             method: option.pricing_method || option.cost_type || 'fixed',
             calculation: optionCalc.calculation
           });
-          console.log(`Option ${option.name}: £${optionCalc.cost.toFixed(2)} (${option.pricing_method || option.cost_type})`);
         }
       });
     }
@@ -263,36 +352,27 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
             method: hierarchicalOption.pricing_method || 'fixed',
             calculation: optionCalc.calculation
           });
-          console.log(`Hierarchical Option ${hierarchicalOption.name}: £${optionCalc.cost.toFixed(2)} (${hierarchicalOption.pricing_method})`);
         }
       });
     }
 
-    // Labor cost - use custom rate if provided, otherwise use treatment type default
+    // Enhanced labor cost calculation including seam work
     const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
-    const defaultLaborRate = currentTreatmentType?.labor_rate || 0;
+    const defaultLaborRate = currentTreatmentType?.labor_rate || 25;
     const customLaborRate = parseFloat(formData.custom_labor_rate) || 0;
     const laborRate = customLaborRate > 0 ? customLaborRate : defaultLaborRate;
     
-    // Calculate labor hours based on complexity and measurements
     const railWidth = parseFloat(formData.rail_width) || 0;
     const drop = parseFloat(formData.drop) || 0;
     const fullness = parseFloat(formData.heading_fullness) || 2.5;
-    const fabricDetails = calculateFabricUsage();
-    const baseHours = 2; // Base setup time
-    const sewingComplexity = (railWidth * drop * fullness) / 25000; // Complexity factor
-    const hemComplexity = (fabricDetails.details as any)?.seamsRequired || 0; // Additional time for seams
-    const totalHours = Math.max(3, baseHours + sewingComplexity + (hemComplexity * 0.5));
+    
+    const baseHours = 2;
+    const sewingComplexity = (railWidth * drop * fullness) / 25000;
+    const seamHours = fabricUsage.seamLaborHours || 0;
+    const totalHours = Math.max(3, baseHours + sewingComplexity + seamHours);
     
     const laborCost = laborRate * totalHours;
-
     const totalCost = fabricCost + optionsCost + laborCost;
-
-    console.log('=== COST BREAKDOWN ===');
-    console.log('Fabric Cost:', fabricCost);
-    console.log('Options Cost:', optionsCost);
-    console.log('Labor Cost:', laborCost);
-    console.log('Total Cost:', totalCost);
 
     return {
       fabricCost: fabricCost.toFixed(2),
@@ -300,6 +380,12 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       laborCost: laborCost.toFixed(2),
       totalCost: totalCost.toFixed(2),
       fabricUsage: fabricUsage.yards.toFixed(1),
+      fabricOrientation: fabricUsage.fabricOrientation,
+      costComparison: fabricUsage.costComparison,
+      warnings: fabricUsage.warnings,
+      seamsRequired: fabricUsage.seamsRequired,
+      seamLaborHours: fabricUsage.seamLaborHours,
+      widthsRequired: fabricUsage.widthsRequired,
       optionDetails
     };
   };

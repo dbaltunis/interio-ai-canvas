@@ -1,8 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Info, AlertTriangle, RotateCw, Scissors } from "lucide-react";
 
 interface CostSummaryCardProps {
   costs: {
@@ -10,183 +11,156 @@ interface CostSummaryCardProps {
     optionsCost: string;
     laborCost: string;
     totalCost: string;
-    optionDetails?: Array<{ name: string; cost: number; method: string; calculation?: string }>;
+    fabricUsage: string;
+    fabricOrientation?: string;
+    costComparison?: any;
+    warnings?: string[];
+    seamsRequired?: number;
+    seamLaborHours?: number;
+    widthsRequired?: number;
+    optionDetails?: Array<{ name: string; cost: number; method: string; calculation: string }>;
   };
-  treatmentType?: string;
-  selectedOptions?: string[];
-  availableOptions?: any[];
-  hierarchicalOptions?: any[];
-  formData?: any;
+  treatmentType: string;
+  selectedOptions: string[];
+  availableOptions: any[];
+  hierarchicalOptions: any[];
+  formData: any;
 }
 
 export const CostSummaryCard = ({ 
   costs, 
   treatmentType, 
-  selectedOptions = [], 
-  availableOptions = [],
-  hierarchicalOptions = [],
-  formData
+  selectedOptions, 
+  availableOptions, 
+  hierarchicalOptions,
+  formData 
 }: CostSummaryCardProps) => {
-  const { units } = useMeasurementUnits();
-
-  const formatCurrency = (amount: number | string) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${numAmount.toFixed(2)}`;
+  const formatCurrency = (amount: string | number) => {
+    const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `£${value.toFixed(2)}`;
   };
-
-  const getPricingMethodDescription = (method: string) => {
-    const descriptions: Record<string, string> = {
-      'per-unit': 'Per unit/panel',
-      'per-panel': 'Per panel',
-      'per-meter': 'Per meter of rail width',
-      'per-metre': 'Per metre of rail width', 
-      'per-linear-meter': 'Per linear meter of rail width',
-      'per-linear-yard': 'Per linear yard of rail width',
-      'per-yard': 'Per yard of rail width',
-      'per-sqm': 'Per square meter of area',
-      'per-square-meter': 'Per square meter of area',
-      'percentage': 'Percentage of fabric cost',
-      'fixed': 'Fixed cost'
-    };
-    return descriptions[method] || method;
-  };
-
-  // Get all selected option details including hierarchical ones
-  const getAllSelectedOptionDetails = () => {
-    // Use the calculated option details from costs if available
-    if (costs.optionDetails && costs.optionDetails.length > 0) {
-      return costs.optionDetails;
-    }
-
-    // Fallback to basic calculation
-    const selectedDetails: Array<{ name: string; cost: number; method: string; calculation?: string }> = [];
-
-    availableOptions.forEach(option => {
-      if (selectedOptions.includes(option.id)) {
-        selectedDetails.push({
-          name: option.name,
-          cost: option.base_cost || 0,
-          method: option.pricing_method || option.cost_type || 'fixed',
-          calculation: `Fixed cost: ${(option.base_cost || 0).toFixed(2)}`
-        });
-      }
-    });
-
-    // Check hierarchical options
-    hierarchicalOptions.forEach(category => {
-      category.subcategories?.forEach((subcategory: any) => {
-        subcategory.sub_subcategories?.forEach((subSub: any) => {
-          if (selectedOptions.includes(subSub.id)) {
-            selectedDetails.push({
-              name: subSub.name,
-              cost: subSub.base_price || 0,
-              method: subSub.pricing_method || 'fixed',
-              calculation: `Fixed cost: ${(subSub.base_price || 0).toFixed(2)}`
-            });
-          }
-          
-          // Check extras
-          subSub.extras?.forEach((extra: any) => {
-            if (selectedOptions.includes(extra.id)) {
-              selectedDetails.push({
-                name: extra.name,
-                cost: extra.base_price || 0,
-                method: extra.pricing_method || 'fixed',
-                calculation: `Fixed cost: ${(extra.base_price || 0).toFixed(2)}`
-              });
-            }
-          });
-        });
-      });
-    });
-
-    return selectedDetails;
-  };
-
-  const selectedOptionDetails = getAllSelectedOptionDetails();
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cost Summary</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Cost Summary</span>
+          <div className="flex items-center space-x-2">
+            {costs.fabricOrientation && (
+              <Badge variant={costs.fabricOrientation === 'vertical' ? 'default' : 'secondary'}>
+                <RotateCw className="w-3 h-3 mr-1" />
+                {costs.fabricOrientation}
+              </Badge>
+            )}
+            {costs.seamsRequired && costs.seamsRequired > 0 && (
+              <Badge variant="outline">
+                <Scissors className="w-3 h-3 mr-1" />
+                {costs.seamsRequired} seam{costs.seamsRequired > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex justify-between">
-          <span>Fabric Cost:</span>
-          <span>{formatCurrency(costs.fabricCost)}</span>
-        </div>
-        
-        {/* Itemized Options with Detailed Calculations */}
-        {selectedOptionDetails.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-700">Selected Options:</div>
-            {selectedOptionDetails.map((option, index) => (
-              <div key={index} className="space-y-1">
-                <div className="flex justify-between text-sm pl-4">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">• {option.name}:</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p><strong>Pricing:</strong> {getPricingMethodDescription(option.method)}</p>
-                          {option.calculation && (
-                            <p><strong>Calculation:</strong> {option.calculation}</p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <span>{formatCurrency(option.cost)}</span>
-                </div>
-                <div className="text-xs text-gray-500 pl-6">
-                  <div className="font-medium text-gray-600">{getPricingMethodDescription(option.method)}</div>
-                  {option.calculation && (
-                    <div className="mt-1">{option.calculation}</div>
-                  )}
-                </div>
+      <CardContent className="space-y-4">
+        {/* Manufacturing Complexity Info */}
+        {(costs.seamsRequired && costs.seamsRequired > 0) && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-1 text-xs">
+                <div><strong>Manufacturing complexity:</strong></div>
+                <div>• {costs.widthsRequired} fabric width{costs.widthsRequired && costs.widthsRequired > 1 ? 's' : ''} required</div>
+                <div>• {costs.seamsRequired} seam{costs.seamsRequired > 1 ? 's' : ''} to join widths</div>
+                <div>• Additional {costs.seamLaborHours?.toFixed(1)}h for seaming work</div>
               </div>
-            ))}
-            <div className="flex justify-between text-sm font-medium border-t pt-1">
-              <span>Options Total:</span>
-              <span>{formatCurrency(costs.optionsCost)}</span>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Warnings */}
+        {costs.warnings && costs.warnings.length > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-1">
+                {costs.warnings.map((warning, index) => (
+                  <div key={index} className="text-xs">{warning}</div>
+                ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Cost Breakdown */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Fabric Cost:</span>
+            <div className="text-right">
+              <div className="font-medium">{formatCurrency(costs.fabricCost)}</div>
+              <div className="text-xs text-gray-500">{costs.fabricUsage} yards</div>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Labor Cost:</span>
+            <div className="text-right">
+              <div className="font-medium">{formatCurrency(costs.laborCost)}</div>
+              {costs.seamLaborHours && costs.seamLaborHours > 0 && (
+                <div className="text-xs text-gray-500">
+                  Inc. {costs.seamLaborHours.toFixed(1)}h seaming
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {parseFloat(costs.optionsCost) > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Options Cost:</span>
+              <span className="font-medium">{formatCurrency(costs.optionsCost)}</span>
+            </div>
+          )}
+          
+          <Separator />
+          
+          <div className="flex justify-between items-center text-lg font-bold">
+            <span>Total Cost:</span>
+            <span className="text-green-600">{formatCurrency(costs.totalCost)}</span>
+          </div>
+          
+          <div className="text-xs text-gray-500 text-right">
+            Per panel: {formatCurrency(parseFloat(costs.totalCost) / (formData?.quantity || 1))}
+          </div>
+        </div>
+
+        {/* Options Details */}
+        {costs.optionDetails && costs.optionDetails.length > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Selected Options:</h4>
+            <div className="space-y-2">
+              {costs.optionDetails.map((option, index) => (
+                <div key={index} className="flex justify-between items-start text-xs">
+                  <div className="flex-1">
+                    <div className="font-medium">{option.name}</div>
+                    <div className="text-gray-500">{option.calculation}</div>
+                  </div>
+                  <div className="font-medium ml-2">{formatCurrency(option.cost)}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
-        
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-1">
-            <span>Labor Cost:</span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="h-4 w-4 text-gray-400" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>Labor cost is set for each treatment type. You can update it in Settings → Treatments → {treatmentType || 'Treatment Types'}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+
+        {/* Cost Optimization Suggestion */}
+        {costs.costComparison && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="text-sm font-medium text-blue-800 mb-2">Cost Optimization</h4>
+            <div className="text-xs text-blue-700 space-y-1">
+              <div>Current: {costs.fabricOrientation} orientation</div>
+              <div>Alternative could save: {formatCurrency(costs.costComparison.savings)}</div>
+              <div className="font-medium">Consider rotating fabric if pattern allows</div>
+            </div>
           </div>
-          <span>{formatCurrency(costs.laborCost)}</span>
-        </div>
-        <div className="flex justify-between font-bold text-lg border-t pt-2">
-          <span>Total Cost:</span>
-          <span className="text-green-600">{formatCurrency(costs.totalCost)}</span>
-        </div>
-        <div className="text-xs text-gray-500 mt-2">
-          <p><strong>Note:</strong> Labor cost comes from the treatment type settings (Settings → Treatments). Option costs are calculated based on measurements and pricing methods.</p>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
