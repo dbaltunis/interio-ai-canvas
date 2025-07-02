@@ -10,27 +10,60 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const drop = parseFloat(formData.drop) || 0;
     const fullness = parseFloat(formData.heading_fullness) || 2.5;
     const fabricWidth = parseFloat(formData.fabric_width) || 140;
+    const quantity = formData.quantity || 1;
+
+    // Hem allowances
+    const headerHem = parseFloat(formData.header_hem) || 15;
+    const bottomHem = parseFloat(formData.bottom_hem) || 10;
+    const sideHem = parseFloat(formData.side_hem) || 5;
+    const seamHem = parseFloat(formData.seam_hem) || 3;
 
     if (!railWidth || !drop) {
-      return { yards: 0, meters: 0 };
+      return { yards: 0, meters: 0, details: {} };
     }
 
-    // Calculate fabric requirements
-    const widthRequired = railWidth * fullness;
-    const lengthRequired = drop + parseFloat(formData.pooling || "0") + 20; // Add allowances
-
-    // Calculate drops per width
-    const dropsPerWidth = Math.floor(fabricWidth / widthRequired);
-    const widthsRequired = Math.ceil(1 / Math.max(dropsPerWidth, 1));
-
+    // Calculate finished width per panel
+    const finishedWidthPerPanel = railWidth / quantity;
+    
+    // Calculate fabric width required per panel (including side hems)
+    const fabricWidthPerPanel = (finishedWidthPerPanel * fullness) + (sideHem * 2);
+    
+    // Calculate how many panels fit across fabric width
+    const panelsPerFabricWidth = Math.floor(fabricWidth / fabricWidthPerPanel);
+    
+    // Calculate how many fabric widths needed
+    const fabricWidthsRequired = Math.ceil(quantity / Math.max(panelsPerFabricWidth, 1));
+    
+    // Calculate seam allowances needed (one less seam than fabric widths)
+    const seamsRequired = Math.max(0, fabricWidthsRequired - 1);
+    const totalSeamAllowance = seamsRequired * seamHem * 2; // Both sides of each seam
+    
+    // Calculate length required per fabric width
+    const lengthPerWidth = drop + parseFloat(formData.pooling || "0") + headerHem + bottomHem;
+    
     // Total fabric needed
-    const totalLengthCm = widthsRequired * lengthRequired;
+    const totalLengthCm = fabricWidthsRequired * lengthPerWidth;
     const totalYards = totalLengthCm / 91.44; // Convert cm to yards
     const totalMeters = totalLengthCm / 100; // Convert cm to meters
 
+    const details = {
+      finishedWidthPerPanel,
+      fabricWidthPerPanel,
+      panelsPerFabricWidth,
+      fabricWidthsRequired,
+      seamsRequired,
+      totalSeamAllowance,
+      lengthPerWidth,
+      headerHem,
+      bottomHem,
+      sideHem,
+      seamHem
+    };
+
     return {
       yards: Math.ceil(totalYards * 10) / 10,
-      meters: Math.ceil(totalMeters * 10) / 10
+      meters: Math.ceil(totalMeters * 10) / 10,
+      details
     };
   };
 
@@ -235,9 +268,23 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       });
     }
 
-    // Labor cost from treatment type
+    // Labor cost - use custom rate if provided, otherwise use treatment type default
     const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
-    const laborCost = currentTreatmentType?.labor_rate || 0;
+    const defaultLaborRate = currentTreatmentType?.labor_rate || 0;
+    const customLaborRate = parseFloat(formData.custom_labor_rate) || 0;
+    const laborRate = customLaborRate > 0 ? customLaborRate : defaultLaborRate;
+    
+    // Calculate labor hours based on complexity and measurements
+    const railWidth = parseFloat(formData.rail_width) || 0;
+    const drop = parseFloat(formData.drop) || 0;
+    const fullness = parseFloat(formData.heading_fullness) || 2.5;
+    const fabricDetails = calculateFabricUsage();
+    const baseHours = 2; // Base setup time
+    const sewingComplexity = (railWidth * drop * fullness) / 25000; // Complexity factor
+    const hemComplexity = (fabricDetails.details as any)?.seamsRequired || 0; // Additional time for seams
+    const totalHours = Math.max(3, baseHours + sewingComplexity + (hemComplexity * 0.5));
+    
+    const laborCost = laborRate * totalHours;
 
     const totalCost = fabricCost + optionsCost + laborCost;
 

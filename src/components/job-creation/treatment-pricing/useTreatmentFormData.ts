@@ -13,6 +13,11 @@ export interface TreatmentFormData {
   fabric_width: string;
   roll_direction: string;
   heading_fullness: string;
+  header_hem: string;
+  bottom_hem: string;
+  side_hem: string;
+  seam_hem: string;
+  custom_labor_rate: string;
   selected_options: string[];
   notes: string;
   images: File[];
@@ -31,6 +36,11 @@ export const useTreatmentFormData = (treatmentType: string, windowCovering?: any
     fabric_width: "137",
     roll_direction: "horizontal",
     heading_fullness: "2.5",
+    header_hem: "15",
+    bottom_hem: "10",
+    side_hem: "5",
+    seam_hem: "3",
+    custom_labor_rate: "",
     selected_options: [],
     notes: "",
     images: []
@@ -53,6 +63,11 @@ export const useTreatmentFormData = (treatmentType: string, windowCovering?: any
       fabric_width: "137",
       roll_direction: "horizontal",
       heading_fullness: "2.5",
+      header_hem: "15",
+      bottom_hem: "10",
+      side_hem: "5",
+      seam_hem: "3",
+      custom_labor_rate: "",
       selected_options: [],
       notes: "",
       images: []

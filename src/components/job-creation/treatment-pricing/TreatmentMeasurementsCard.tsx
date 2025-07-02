@@ -68,6 +68,79 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
         <p className="text-xs text-gray-500 col-span-2">
           Typical values: 2.0-2.5 for curtains, 1.5-2.0 for sheers
         </p>
+
+        {/* Hem Allowances Section */}
+        <div className="col-span-2 border-t pt-4 mt-4">
+          <h4 className="font-medium text-sm mb-3">Hem Allowances ({getLengthUnitLabel()})</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="header_hem">Header Hem</Label>
+              <Input
+                id="header_hem"
+                type="number"
+                step="0.5"
+                value={formData.header_hem || "15"}
+                onChange={(e) => onInputChange("header_hem", e.target.value)}
+                placeholder="15"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bottom_hem">Bottom Hem</Label>
+              <Input
+                id="bottom_hem"
+                type="number"
+                step="0.5"
+                value={formData.bottom_hem || "10"}
+                onChange={(e) => onInputChange("bottom_hem", e.target.value)}
+                placeholder="10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="side_hem">Side Hem (each side)</Label>
+              <Input
+                id="side_hem"
+                type="number"
+                step="0.5"
+                value={formData.side_hem || "5"}
+                onChange={(e) => onInputChange("side_hem", e.target.value)}
+                placeholder="5"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seam_hem">Seam Hem (per join)</Label>
+              <Input
+                id="seam_hem"
+                type="number"
+                step="0.5"
+                value={formData.seam_hem || "3"}
+                onChange={(e) => onInputChange("seam_hem", e.target.value)}
+                placeholder="3"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Seam hems apply when multiple fabric widths need to be joined together
+          </p>
+        </div>
+
+        {/* Custom Labor Rate Section */}
+        <div className="col-span-2 border-t pt-4 mt-4">
+          <h4 className="font-medium text-sm mb-3">Custom Sewing/Labor Rate</h4>
+          <div className="grid grid-cols-2 gap-4 items-center">
+            <Label htmlFor="custom_labor_rate">Override Labor Rate (per hour)</Label>
+            <Input
+              id="custom_labor_rate"
+              type="number"
+              step="0.50"
+              value={formData.custom_labor_rate || ""}
+              onChange={(e) => onInputChange("custom_labor_rate", e.target.value)}
+              placeholder="Leave empty to use default"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Override the default labor rate for this specific treatment if different sewing complexity is required
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
