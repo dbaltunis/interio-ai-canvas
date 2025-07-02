@@ -91,8 +91,8 @@ export const useMakingCosts = () => {
         lining_options: costData.lining_options as any,
         drop_ranges: costData.drop_ranges as any,
         description: costData.description,
-        active: costData.active,
-        user_id: '' // Will be set by RLS
+        active: costData.active
+        // user_id will be set automatically by RLS
       };
 
       const { data, error } = await supabase
