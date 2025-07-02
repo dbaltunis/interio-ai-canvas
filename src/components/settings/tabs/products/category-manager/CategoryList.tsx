@@ -197,7 +197,7 @@ export const CategoryList = ({
               {editingCategory === category.id && (
                 <div className="mb-4 p-4 border rounded-lg bg-gray-50">
                   <CategoryForm
-                    category={category}
+                    initialData={category}
                     onSave={async (categoryData) => {
                       await onUpdateCategory(category.id, categoryData);
                       setEditingCategory(null);
