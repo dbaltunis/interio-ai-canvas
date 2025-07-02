@@ -32,7 +32,7 @@ export const MakingCostOptionMappingManager = ({ makingCost, onClose }: MakingCo
   );
 
   const handleAddMapping = async () => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || selectedCategory === 'none') return;
 
     try {
       await createMapping({
@@ -149,7 +149,7 @@ export const MakingCostOptionMappingManager = ({ makingCost, onClose }: MakingCo
             <div className="flex items-end">
               <Button 
                 onClick={handleAddMapping} 
-                disabled={!selectedCategory}
+                disabled={!selectedCategory || selectedCategory === 'none'}
                 className="w-full"
               >
                 <Plus className="h-4 w-4 mr-2" />

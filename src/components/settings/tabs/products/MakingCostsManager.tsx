@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { MakingCostsForm } from "./making-costs/MakingCostsForm";
+import { MakingCostOptionMappingManager } from "./making-costs/MakingCostOptionMappingManager";
 import { useMakingCosts } from "@/hooks/useMakingCosts";
 
 export const MakingCostsManager = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingCost, setEditingCost] = useState<any>(null);
+  const [managingOptionsId, setManagingOptionsId] = useState<string | null>(null);
   const { makingCosts, isLoading, deleteMakingCost } = useMakingCosts();
 
   const handleEdit = (cost: any) => {
@@ -20,6 +22,16 @@ export const MakingCostsManager = () => {
     setIsCreating(false);
     setEditingCost(null);
   };
+
+  if (managingOptionsId) {
+    const makingCost = makingCosts.find(mc => mc.id === managingOptionsId);
+    return (
+      <MakingCostOptionMappingManager
+        makingCost={makingCost!}
+        onClose={() => setManagingOptionsId(null)}
+      />
+    );
+  }
 
   if (isLoading) {
     return <div className="text-center py-8">Loading making costs...</div>;
@@ -110,26 +122,34 @@ export const MakingCostsManager = () => {
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={cost.include_fabric_selection ? "default" : "secondary"}>
-                      {cost.include_fabric_selection ? "With Fabric" : "No Fabric"}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(cost)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteMakingCost(cost.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                   <div className="flex items-center gap-2">
+                     <Badge variant={cost.include_fabric_selection ? "default" : "secondary"}>
+                       {cost.include_fabric_selection ? "With Fabric" : "No Fabric"}
+                     </Badge>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => setManagingOptionsId(cost.id)}
+                       title="Manage Bundled Options"
+                     >
+                       <Settings className="h-4 w-4" />
+                     </Button>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => handleEdit(cost)}
+                     >
+                       <Edit className="h-4 w-4" />
+                     </Button>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => deleteMakingCost(cost.id)}
+                       className="text-red-600 hover:text-red-700"
+                     >
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+                   </div>
                 </div>
               </CardHeader>
               <CardContent>
