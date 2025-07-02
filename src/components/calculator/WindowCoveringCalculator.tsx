@@ -29,11 +29,11 @@ export const WindowCoveringCalculator = () => {
 
   useEffect(() => {
     if (selectedWindowCovering && availableOptions.length > 0) {
-      // Auto-select default options
-      const defaultOptions = availableOptions
-        .filter(option => option.is_default)
+      // Auto-select default and required options
+      const autoSelectOptions = availableOptions
+        .filter(option => option.is_default || option.is_required)
         .map(option => option.id);
-      setSelectedOptions(defaultOptions);
+      setSelectedOptions(autoSelectOptions);
     }
   }, [selectedWindowCovering, availableOptions]);
 
