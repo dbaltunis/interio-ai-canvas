@@ -87,7 +87,7 @@ export const TreatmentPricingForm = ({
     }
   }, [windowCovering, options, setFormData]);
 
-  // Auto-save window covering when dialog opens and reset form when dialog closes
+  // Auto-save window covering when dialog opens
   useEffect(() => {
     if (isOpen && windowCovering) {
       console.log('Auto-setting window covering data:', windowCovering);
@@ -96,12 +96,8 @@ export const TreatmentPricingForm = ({
         product_name: windowCovering.name || prev.product_name,
         window_covering: windowCovering
       }));
-    } else if (!isOpen) {
-      // Reset form when dialog closes to prevent old data from showing
-      console.log('Dialog closed, resetting form');
-      resetForm();
     }
-  }, [isOpen, windowCovering, setFormData, resetForm]);
+  }, [isOpen, windowCovering, setFormData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +154,7 @@ export const TreatmentPricingForm = ({
   };
 
   const handleClose = () => {
+    console.log('Dialog closed, resetting form');
     resetForm();
     onClose();
   };
@@ -176,7 +173,12 @@ export const TreatmentPricingForm = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log('Dialog onOpenChange called with:', open);
+      if (!open) {
+        handleClose();
+      }
+    }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">
