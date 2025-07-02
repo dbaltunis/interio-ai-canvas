@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
+import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceCreationButtons } from "./SurfaceCreationButtons";
@@ -52,6 +53,7 @@ export const RoomCard = ({
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
+  const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
   
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
   const [selectedSurfaceId, setSelectedSurfaceId] = useState("");
@@ -83,12 +85,22 @@ export const RoomCard = ({
     setSelectedSurfaceType(surface?.surface_type || 'window');
     setSelectedWindowCovering(windowCovering);
     
-    setPricingFormOpen(true);
+    // Check if window covering has making cost - use calculator if it does
+    if (windowCovering?.making_cost_id) {
+      setCalculatorDialogOpen(true);
+    } else {
+      setPricingFormOpen(true);
+    }
   };
 
   const handlePricingFormSave = (treatmentData: any) => {
     onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
     setPricingFormOpen(false);
+  };
+
+  const handleCalculatorSave = (treatmentData: any) => {
+    onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
+    setCalculatorDialogOpen(false);
   };
 
 
@@ -134,6 +146,13 @@ export const RoomCard = ({
         surfaceType={selectedSurfaceType}
         windowCovering={selectedWindowCovering}
         projectId={projectId}
+      />
+
+      <TreatmentCalculatorDialog
+        isOpen={calculatorDialogOpen}
+        onClose={() => setCalculatorDialogOpen(false)}
+        onSave={handleCalculatorSave}
+        treatmentType={selectedTreatmentType}
       />
 
     </>

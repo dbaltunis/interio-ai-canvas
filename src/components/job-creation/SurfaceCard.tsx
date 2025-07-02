@@ -261,7 +261,14 @@ export const SurfaceCard = ({
               ) : availableWindowCoverings.length > 0 ? (
                 availableWindowCoverings.map((wc) => (
                   <SelectItem key={wc.id} value={wc.name}>
-                    {wc.name}
+                    <div className="flex items-center justify-between w-full">
+                      <span>{wc.name}</span>
+                      {wc.making_cost_id && (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
+                          Smart Calculator
+                        </span>
+                      )}
+                    </div>
                   </SelectItem>
                 ))
               ) : (
