@@ -2082,6 +2082,7 @@ export type Database = {
           fabrication_pricing_method: string | null
           id: string
           image_url: string | null
+          making_cost_id: string | null
           margin_percentage: number
           name: string
           pricing_grid_data: string | null
@@ -2096,6 +2097,7 @@ export type Database = {
           fabrication_pricing_method?: string | null
           id?: string
           image_url?: string | null
+          making_cost_id?: string | null
           margin_percentage?: number
           name: string
           pricing_grid_data?: string | null
@@ -2110,6 +2112,7 @@ export type Database = {
           fabrication_pricing_method?: string | null
           id?: string
           image_url?: string | null
+          making_cost_id?: string | null
           margin_percentage?: number
           name?: string
           pricing_grid_data?: string | null
@@ -2117,7 +2120,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "window_coverings_making_cost_id_fkey"
+            columns: ["making_cost_id"]
+            isOneToOne: false
+            referencedRelation: "making_costs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       work_order_checkpoints: {
         Row: {

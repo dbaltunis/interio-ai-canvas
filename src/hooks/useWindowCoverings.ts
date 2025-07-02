@@ -12,6 +12,7 @@ export interface WindowCovering {
   active: boolean;
   unit_price?: number;
   pricing_grid_data?: string;
+  making_cost_id?: string;
   optionsCount?: number;
 }
 
@@ -33,7 +34,8 @@ export const useWindowCoverings = () => {
           image_url,
           active,
           unit_price,
-          pricing_grid_data
+          pricing_grid_data,
+          making_cost_id
         `)
         .order('created_at', { ascending: false });
 
@@ -57,6 +59,7 @@ export const useWindowCoverings = () => {
             active: wc.active,
             unit_price: wc.unit_price || undefined,
             pricing_grid_data: wc.pricing_grid_data || undefined,
+            making_cost_id: wc.making_cost_id || undefined,
             optionsCount: count || 0
           } as WindowCovering;
         })
@@ -90,6 +93,7 @@ export const useWindowCoverings = () => {
         active: windowCovering.active,
         unit_price: windowCovering.unit_price,
         pricing_grid_data: windowCovering.pricing_grid_data,
+        making_cost_id: windowCovering.making_cost_id,
         user_id: user.id
       };
 
@@ -111,6 +115,7 @@ export const useWindowCoverings = () => {
         active: data.active,
         unit_price: data.unit_price || undefined,
         pricing_grid_data: data.pricing_grid_data || undefined,
+        making_cost_id: data.making_cost_id || undefined,
         optionsCount: 0
       };
 
@@ -154,6 +159,7 @@ export const useWindowCoverings = () => {
         active: data.active,
         unit_price: data.unit_price || undefined,
         pricing_grid_data: data.pricing_grid_data || undefined,
+        making_cost_id: data.making_cost_id || undefined,
       };
 
       setWindowCoverings(prev => 

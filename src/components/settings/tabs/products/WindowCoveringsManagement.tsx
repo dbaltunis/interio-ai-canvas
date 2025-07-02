@@ -134,6 +134,9 @@ export const WindowCoveringsManagement = () => {
                               {windowCovering.unit_price && windowCovering.fabrication_pricing_method !== 'pricing-grid' && (
                                 <span>Unit Price: £{windowCovering.unit_price}</span>
                               )}
+                              {windowCovering.making_cost_id && (
+                                <span className="text-blue-600">✓ Making Cost Linked</span>
+                              )}
                             </div>
                           </div>
                         </div>

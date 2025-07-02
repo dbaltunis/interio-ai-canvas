@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Upload, X, Download, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMakingCosts } from "@/hooks/useMakingCosts";
 
 interface WindowCovering {
   id: string;
@@ -19,6 +20,7 @@ interface WindowCovering {
   active: boolean;
   pricing_grid_data?: string;
   unit_price?: number;
+  making_cost_id?: string;
 }
 
 interface WindowCoveringFormProps {
@@ -37,10 +39,12 @@ interface FormData {
   active: boolean;
   pricing_grid_data: string;
   unit_price: number;
+  making_cost_id: string;
 }
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
   const { toast } = useToast();
+  const { makingCosts } = useMakingCosts();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
@@ -53,7 +57,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     image_url: '',
     active: true,
     pricing_grid_data: '',
-    unit_price: 0
+    unit_price: 0,
+    making_cost_id: ''
   });
 
   useEffect(() => {
@@ -66,7 +71,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
         image_url: windowCovering.image_url || '',
         active: windowCovering.active,
         pricing_grid_data: windowCovering.pricing_grid_data || '',
-        unit_price: windowCovering.unit_price || 0
+        unit_price: windowCovering.unit_price || 0,
+        making_cost_id: windowCovering.making_cost_id || ''
       });
       if (windowCovering.image_url) {
         setImagePreview(windowCovering.image_url);
@@ -187,7 +193,8 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       image_url: formData.image_url || undefined,
       active: formData.active,
       pricing_grid_data: formData.pricing_grid_data || undefined,
-      unit_price: formData.unit_price
+      unit_price: formData.unit_price,
+      making_cost_id: formData.making_cost_id || undefined
     };
 
     onSave(newWindowCovering);
@@ -297,6 +304,30 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               </div>
             )}
           </div>
+        </div>
+
+        {/* Making Cost Configuration */}
+        <div>
+          <Label>Making Cost Configuration (Optional)</Label>
+          <Select
+            value={formData.making_cost_id}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, making_cost_id: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a making cost configuration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No making cost configuration</SelectItem>
+              {makingCosts.map((cost) => (
+                <SelectItem key={cost.id} value={cost.id}>
+                  {cost.name} - {cost.pricing_method}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-gray-600 mt-1">
+            Link this window covering to a making cost configuration for bundled options and automated calculations.
+          </p>
         </div>
 
         <div>
