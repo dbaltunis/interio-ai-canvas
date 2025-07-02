@@ -34,6 +34,11 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
   const autoSelectedOrientation = fabricWidthCm <= 200 ? "vertical" : "horizontal";
   const isAutoSelected = formData.roll_direction === autoSelectedOrientation;
 
+  // Dynamic labeling based on recommendation
+  const isNarrowFabric = fabricWidthCm <= 200;
+  const horizontalLabel = isNarrowFabric ? "Horizontal (Rotated)" : "Horizontal (Standard)";
+  const verticalLabel = isNarrowFabric ? "Vertical (Standard)" : "Vertical (Rotated)";
+
   return (
     <Card>
       <CardHeader>
@@ -85,14 +90,14 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
               <SelectContent>
                 <SelectItem value="horizontal">
                   <div className="flex items-center gap-2">
-                    Horizontal (Standard)
-                    {fabricWidthCm > 200 && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
+                    {horizontalLabel}
+                    {!isNarrowFabric && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
                   </div>
                 </SelectItem>
                 <SelectItem value="vertical">
                   <div className="flex items-center gap-2">
-                    Vertical (Rotated)
-                    {fabricWidthCm <= 200 && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
+                    {verticalLabel}
+                    {isNarrowFabric && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
                   </div>
                 </SelectItem>
               </SelectContent>
