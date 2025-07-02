@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
-import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceCreationButtons } from "./SurfaceCreationButtons";
 import { SurfacesList } from "./SurfacesList";
@@ -52,7 +52,7 @@ export const RoomCard = ({
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
-  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
   const [selectedSurfaceId, setSelectedSurfaceId] = useState("");
   const [selectedSurfaceType, setSelectedSurfaceType] = useState("");
@@ -81,11 +81,7 @@ export const RoomCard = ({
     setSelectedTreatmentType(treatmentType);
     setSelectedSurfaceType(surface?.surface_type || 'window');
     
-    if (treatmentType === "Curtains") {
-      setCalculatorOpen(true);
-    } else {
-      setPricingFormOpen(true);
-    }
+    setPricingFormOpen(true);
   };
 
   const handlePricingFormSave = (treatmentData: any) => {
@@ -93,10 +89,6 @@ export const RoomCard = ({
     setPricingFormOpen(false);
   };
 
-  const handleCalculatorSave = (treatmentData: any) => {
-    onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
-    setCalculatorOpen(false);
-  };
 
   return (
     <>
@@ -140,12 +132,6 @@ export const RoomCard = ({
         surfaceType={selectedSurfaceType}
       />
 
-      <TreatmentCalculatorDialog
-        isOpen={calculatorOpen}
-        onClose={() => setCalculatorOpen(false)}
-        onSave={handleCalculatorSave}
-        treatmentType={selectedTreatmentType}
-      />
     </>
   );
 };
