@@ -48,16 +48,13 @@ export const SurfaceCard = ({
     const windowCovering = windowCoverings.find(wc => wc.name === treatmentType);
     
     if (windowCovering) {
-      // Create basic treatment data with window covering info
-      const treatmentData = {
-        product_name: windowCovering.name,
-        selected_options: [],
-        window_covering: windowCovering,
-        material_cost: 0,
-        labor_cost: 0,
-        total_price: windowCovering.unit_price || 0
-      };
-      onAddTreatment(surface.id, treatmentType, treatmentData);
+      // Scroll to top to ensure dialog is visible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Small delay to allow scroll to complete, then open treatment form
+      setTimeout(() => {
+        onAddTreatment(surface.id, treatmentType, windowCovering);
+      }, 300);
     }
   };
 
