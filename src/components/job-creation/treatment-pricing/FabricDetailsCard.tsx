@@ -125,7 +125,7 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
               <strong>Fabric Width Guidelines:</strong>
               <div className="mt-1 space-y-1">
                 <div>• <strong>Narrow fabrics (≤200cm/79"):</strong> Default to vertical orientation for better fabric utilization</div>
-                <div>• <strong>Wide fabrics (>200cm/79"):</strong> Default to horizontal orientation for standard curtain making</div>
+                <div>• <strong>Wide fabrics ({">"}200cm/79"):</strong> Default to horizontal orientation for standard curtain making</div>
               </div>
             </div>
           </AlertDescription>
