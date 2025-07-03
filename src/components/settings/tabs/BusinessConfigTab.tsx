@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,16 +5,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Building, Mail, Phone, MapPin, Clock, Percent } from "lucide-react";
+import { Building, Mail, Phone, MapPin, Clock, Percent, Upload, X } from "lucide-react";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useUploadFile } from "@/hooks/useFileStorage";
 
 export const BusinessConfigTab = () => {
   const { data: settings, isLoading } = useBusinessSettings();
   const createSettings = useCreateBusinessSettings();
   const updateSettings = useUpdateBusinessSettings();
+  const uploadFile = useUploadFile();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -60,6 +62,59 @@ export const BusinessConfigTab = () => {
       });
     }
   }, [settings]);
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be smaller than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const uploadedFile = await uploadFile.mutateAsync({
+        file,
+        projectId: 'company-assets', // Use a fixed project ID for company assets
+        bucketName: 'project-images'
+      });
+
+      // Get the public URL for the uploaded file
+      const logoUrl = `https://ldgrcofffsalkevafbkb.supabase.co/storage/v1/object/public/project-images/${uploadedFile.file_path}`;
+      
+      setFormData(prev => ({ ...prev, company_logo_url: logoUrl }));
+      
+      toast({
+        title: "Success",
+        description: "Logo uploaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload logo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData(prev => ({ ...prev, company_logo_url: "" }));
+  };
 
   const handleSaveCompanyDetails = async () => {
     try {
@@ -220,30 +275,55 @@ export const BusinessConfigTab = () => {
             />
           </div>
 
-          <div>
-            <Label htmlFor="companyLogo">Company Logo URL</Label>
-            <Input 
-              id="companyLogo" 
-              type="url" 
-              value={formData.company_logo_url}
-              onChange={(e) => setFormData({ ...formData, company_logo_url: e.target.value })}
-              placeholder="https://example.com/logo.png" 
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Add your company logo URL for use in emails and quotes. Recommended size: 200x60px
-            </p>
-            {formData.company_logo_url && (
-              <div className="mt-2">
-                <img 
-                  src={formData.company_logo_url} 
-                  alt="Company Logo Preview" 
-                  className="max-h-16 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
+          {/* Company Logo Upload Section */}
+          <div className="space-y-4">
+            <Label>Company Logo</Label>
+            <div className="flex items-start space-x-4">
+              {formData.company_logo_url ? (
+                <div className="relative">
+                  <img 
+                    src={formData.company_logo_url} 
+                    alt="Company Logo" 
+                    className="h-20 w-auto max-w-48 object-contain border border-gray-200 rounded-lg p-2 bg-white"
+                  />
+                  <button
+                    onClick={handleRemoveLogo}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    type="button"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="h-20 w-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                  <span className="text-gray-400 text-sm">No logo</span>
+                </div>
+              )}
+              
+              <div className="flex-1 space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadFile.isPending}
+                  className="flex items-center space-x-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>{uploadFile.isPending ? 'Uploading...' : 'Upload Logo'}</span>
+                </Button>
+                <p className="text-xs text-gray-500">
+                  Upload your company logo for use in quotes and documents.<br />
+                  Recommended size: 200x60px, Max: 2MB (PNG, JPG, SVG)
+                </p>
               </div>
-            )}
+            </div>
           </div>
 
           <Button 

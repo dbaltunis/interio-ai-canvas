@@ -11,6 +11,7 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useClients } from "@/hooks/useClients";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface ProjectQuoteTabProps {
   project: any;
@@ -28,12 +29,13 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
   const { data: surfaces } = useSurfaces(project.id);
   const { data: treatments } = useTreatments(project.id);
   const { data: clients } = useClients();
+  const { data: businessSettings } = useBusinessSettings();
 
   const client = clients?.find(c => c.id === project.client_id);
   const projectTreatments = treatments?.filter(t => t.project_id === project.id) || [];
   
   const subtotal = projectTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-  const taxRate = 0.08; // 8% tax
+  const taxRate = (businessSettings?.default_tax_rate || 8) / 100;
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
 
@@ -70,11 +72,28 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
 
       {/* Quote Document */}
       <div className="border border-gray-200 p-8 print:border-none print:p-0">
-        {/* Company Header */}
+        {/* Company Header with Logo */}
         <div className="text-center border-b pb-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Your Company Name</h1>
+          {businessSettings?.company_logo_url && (
+            <div className="mb-4 flex justify-center">
+              <img 
+                src={businessSettings.company_logo_url} 
+                alt="Company Logo" 
+                className="h-16 w-auto max-w-64 object-contain"
+              />
+            </div>
+          )}
+          <h1 className="text-3xl font-bold text-gray-900">
+            {businessSettings?.company_name || 'Your Company Name'}
+          </h1>
           <p className="text-gray-600">Professional Window Treatments & Interior Design</p>
-          <p className="text-sm text-gray-500">123 Main Street, City, State 12345 | (555) 123-4567 | info@company.com</p>
+          <div className="text-sm text-gray-500 space-y-1">
+            {businessSettings?.business_address && <p>{businessSettings.business_address}</p>}
+            <div className="flex justify-center space-x-4">
+              {businessSettings?.business_phone && <span>{businessSettings.business_phone}</span>}
+              {businessSettings?.business_email && <span>{businessSettings.business_email}</span>}
+            </div>
+          </div>
         </div>
 
         {/* Quote Header */}
