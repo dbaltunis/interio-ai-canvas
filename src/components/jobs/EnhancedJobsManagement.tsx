@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, FileText, Phone, MapPin, FolderOpen, Building2, User, DollarSign, Calendar, MessageSquare, Edit, Trash2, Mail, ExternalLink } from "lucide-react";
-import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
+import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
-import { useProjects } from "@/hooks/useProjects";
+import { useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useEmails } from "@/hooks/useEmails";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,8 @@ export const EnhancedJobsManagement = ({
   const { data: emails } = useEmails();
   const { data: businessSettings } = useBusinessSettings();
   const deleteQuote = useDeleteQuote();
+  const updateQuote = useUpdateQuote();
+  const updateProject = useUpdateProject();
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -106,13 +108,31 @@ export const EnhancedJobsManagement = ({
   };
 
   const formatCurrency = (amount: number) => {
-    const currency = businessSettings?.measurement_units === 'metric' ? 'AUD' : 'USD';
-    return amount.toLocaleString('en-US', { 
-      style: 'currency', 
-      currency,
+    // Parse measurement_units JSON if it exists, otherwise use defaults
+    let currency = 'USD';
+    try {
+      if (businessSettings?.measurement_units) {
+        const units = JSON.parse(businessSettings.measurement_units);
+        currency = units.currency || 'USD';
+      }
+    } catch (e) {
+      console.warn('Could not parse measurement units:', e);
+    }
+    
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$', 
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+
+    const symbol = currencySymbols[currency] || '$';
+    return `${symbol}${amount.toLocaleString('en-US', { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    });
+    })}`;
   };
 
   const handleSendEmail = (clientId: string, quoteId: string) => {

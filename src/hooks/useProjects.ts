@@ -145,11 +145,15 @@ export const useUpdateProject = () => {
         .update(updates)
         .eq("id", id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Update project error:", error);
         throw error;
+      }
+      
+      if (!data) {
+        throw new Error("Project not found or update failed");
       }
       
       console.log("Project updated successfully:", data);
