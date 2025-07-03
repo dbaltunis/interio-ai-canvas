@@ -129,8 +129,17 @@ const handler = async (req: Request): Promise<Response> => {
           value: processedContent
         }],
         tracking_settings: {
-          click_tracking: { enable: true },
-          open_tracking: { enable: true },
+          click_tracking: { 
+            enable: true,
+            enable_text: true 
+          },
+          open_tracking: { 
+            enable: true,
+            substitution_tag: "%opentrack%"
+          },
+          subscription_tracking: {
+            enable: false
+          }
         },
         custom_args: {
           user_id: user.id,

@@ -37,6 +37,7 @@ import { useSendEmail } from "@/hooks/useSendEmail";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useCampaignExecution } from "@/hooks/useCampaignExecution";
+import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { predefinedEmailTemplates } from "@/data/emailTemplates";
 import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
 import { ClientSelector } from "./email-components/ClientSelector";
@@ -80,6 +81,7 @@ export const EmailsTab = () => {
   const createTemplateMutation = useCreateEmailTemplate();
   const updateEmailSettingsMutation = useUpdateEmailSettings();
   const campaignExecutionMutation = useCampaignExecution();
+  const { hasSendGridIntegration } = useIntegrationStatus();
 
   // Load email settings when available
   useEffect(() => {
@@ -318,6 +320,30 @@ export const EmailsTab = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* SendGrid Integration Status */}
+      {!hasSendGridIntegration && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="font-medium text-orange-800">SendGrid Integration Required</p>
+                  <p className="text-sm text-orange-700">Set up SendGrid integration for email delivery tracking and analytics to work properly. Without this, emails will show as "sent" but won't track opens, clicks, or delivery status.</p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => window.open('/settings', '_blank')} 
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Setup Integration
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Email Settings Banner */}
       {!emailSettings?.from_email && (
