@@ -5,7 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Building, Mail, Phone, MapPin, Clock, Percent, Upload, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Building, Mail, Phone, MapPin, Clock, Percent, Upload, X, Info, AlertCircle } from "lucide-react";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +20,7 @@ export const BusinessConfigTab = () => {
   const uploadFile = useUploadFile();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showLogoGuidelines, setShowLogoGuidelines] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -63,36 +66,46 @@ export const BusinessConfigTab = () => {
     }
   }, [settings]);
 
+  const validateLogoFile = (file: File) => {
+    const errors = [];
+    
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      errors.push("Please select an image file (PNG, JPG, or SVG)");
+    }
+    
+    // Check file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
+      errors.push("Image must be smaller than 2MB");
+    }
+    
+    return errors;
+  };
+
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    const validationErrors = validateLogoFile(file);
+    if (validationErrors.length > 0) {
       toast({
-        title: "Error",
-        description: "Please select an image file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (2MB limit)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "Image must be smaller than 2MB",
+        title: "Upload Error",
+        description: validationErrors.join(". "),
         variant: "destructive",
       });
       return;
     }
 
     try {
+      console.log("Starting logo upload...", { fileName: file.name, fileSize: file.size });
+      
       const uploadedFile = await uploadFile.mutateAsync({
         file,
-        projectId: 'company-assets', // Use a fixed project ID for company assets
+        projectId: 'company-assets',
         bucketName: 'project-images'
       });
+
+      console.log("Upload successful:", uploadedFile);
 
       // Get the public URL for the uploaded file
       const logoUrl = `https://ldgrcofffsalkevafbkb.supabase.co/storage/v1/object/public/project-images/${uploadedFile.file_path}`;
@@ -101,12 +114,13 @@ export const BusinessConfigTab = () => {
       
       toast({
         title: "Success",
-        description: "Logo uploaded successfully",
+        description: "Logo uploaded successfully! Remember to save your company details.",
       });
     } catch (error) {
+      console.error("Logo upload error:", error);
       toast({
-        title: "Error",
-        description: "Failed to upload logo",
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload logo. Please try again.",
         variant: "destructive",
       });
     }
@@ -114,6 +128,10 @@ export const BusinessConfigTab = () => {
 
   const handleRemoveLogo = () => {
     setFormData(prev => ({ ...prev, company_logo_url: "" }));
+    toast({
+      title: "Logo Removed",
+      description: "Logo has been removed. Remember to save your changes.",
+    });
   };
 
   const handleSaveCompanyDetails = async () => {
@@ -277,7 +295,20 @@ export const BusinessConfigTab = () => {
 
           {/* Company Logo Upload Section */}
           <div className="space-y-4">
-            <Label>Company Logo</Label>
+            <div className="flex items-center justify-between">
+              <Label>Company Logo</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLogoGuidelines(true)}
+                className="flex items-center space-x-1"
+              >
+                <Info className="h-3 w-3" />
+                <span>Logo Guidelines</span>
+              </Button>
+            </div>
+            
             <div className="flex items-start space-x-4">
               {formData.company_logo_url ? (
                 <div className="relative">
@@ -324,6 +355,15 @@ export const BusinessConfigTab = () => {
                 </p>
               </div>
             </div>
+
+            {uploadFile.isError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Upload failed. Please check your file and try again.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <Button 
@@ -504,6 +544,45 @@ export const BusinessConfigTab = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Logo Guidelines Dialog */}
+      <Dialog open={showLogoGuidelines} onOpenChange={setShowLogoGuidelines}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Logo Upload Guidelines</DialogTitle>
+            <DialogDescription>
+              Follow these guidelines for best results in quotes and documents
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Recommended Specifications:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Size:</strong> 200x60 pixels (landscape orientation)</li>
+                <li>• <strong>Format:</strong> PNG (transparent background preferred)</li>
+                <li>• <strong>File size:</strong> Under 2MB</li>
+                <li>• <strong>Background:</strong> Transparent or white</li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Usage:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Displayed on quotes and invoices</li>
+                <li>• Used in email signatures</li>
+                <li>• Shown on professional documents</li>
+              </ul>
+            </div>
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                For best results, use a high-quality logo with good contrast. Avoid very detailed logos as they may not display well at smaller sizes.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
