@@ -11,18 +11,18 @@ import { Building, Mail, Phone, MapPin, Clock, Percent, Upload, X, Info, AlertCi
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useUploadFile } from "@/hooks/useFileStorage";
+import { supabase } from "@/integrations/supabase/client";
 import { LogoCropDialog } from "./LogoCropDialog";
 
 export const BusinessConfigTab = () => {
   const { data: settings, isLoading } = useBusinessSettings();
   const createSettings = useCreateBusinessSettings();
   const updateSettings = useUpdateBusinessSettings();
-  const uploadFile = useUploadFile();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLogoGuidelines, setShowLogoGuidelines] = useState(false);
   const [showLogoCropDialog, setShowLogoCropDialog] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -86,20 +86,34 @@ export const BusinessConfigTab = () => {
 
   const handleLogoUpload = async (croppedFile: File) => {
     try {
+      setIsUploading(true);
       console.log("Starting cropped logo upload...", { fileName: croppedFile.name, fileSize: croppedFile.size });
       
-      const uploadedFile = await uploadFile.mutateAsync({
-        file: croppedFile,
-        projectId: 'company-assets',
-        bucketName: 'project-images'
-      });
+      // Upload directly to Supabase storage without using the useUploadFile hook
+      const fileExt = croppedFile.name.split('.').pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
 
-      console.log("Upload successful:", uploadedFile);
+      const { data, error } = await supabase.storage
+        .from('project-images')
+        .upload(filePath, croppedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error("Storage upload error:", error);
+        throw error;
+      }
+
+      console.log("Upload successful:", data);
 
       // Get the public URL for the uploaded file
-      const logoUrl = `https://ldgrcofffsalkevafbkb.supabase.co/storage/v1/object/public/project-images/${uploadedFile.file_path}`;
+      const { data: { publicUrl } } = supabase.storage
+        .from('project-images')
+        .getPublicUrl(filePath);
       
-      setFormData(prev => ({ ...prev, company_logo_url: logoUrl }));
+      setFormData(prev => ({ ...prev, company_logo_url: publicUrl }));
       
       toast({
         title: "Success",
@@ -112,6 +126,8 @@ export const BusinessConfigTab = () => {
         description: error instanceof Error ? error.message : "Failed to upload logo. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -325,11 +341,11 @@ export const BusinessConfigTab = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setShowLogoCropDialog(true)}
-                  disabled={uploadFile.isPending}
+                  disabled={isUploading}
                   className="flex items-center space-x-2"
                 >
                   <Upload className="h-4 w-4" />
-                  <span>{uploadFile.isPending ? 'Processing...' : 'Upload & Crop Logo'}</span>
+                  <span>{isUploading ? 'Uploading...' : 'Upload & Crop Logo'}</span>
                 </Button>
                 <p className="text-xs text-gray-500">
                   Upload your logo and crop it to professional standards.<br />
@@ -338,11 +354,11 @@ export const BusinessConfigTab = () => {
               </div>
             </div>
 
-            {uploadFile.isError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
+            {isUploading && (
+              <Alert variant="info">
+                <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Upload failed. Please check your file and try again.
+                  Uploading logo... Please wait.
                 </AlertDescription>
               </Alert>
             )}

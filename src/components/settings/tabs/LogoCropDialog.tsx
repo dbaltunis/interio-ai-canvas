@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Crop, Upload, X, Info } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LogoCropDialogProps {
@@ -90,7 +90,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
   }, []);
 
   // Add event listeners for mouse events
-  useState(() => {
+  useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -99,7 +99,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  });
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const cropAndSaveLogo = async () => {
     if (!selectedFile || !imageRef.current || !canvasRef.current) return;
