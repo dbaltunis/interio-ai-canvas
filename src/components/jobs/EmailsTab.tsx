@@ -68,6 +68,7 @@ export const EmailsTab = () => {
   const { data: templates } = useEmailTemplates();
   const { data: clients } = useClients();
   const { data: emailSettings } = useEmailSettings();
+  const { data: businessSettings } = useBusinessSettings();
   const sendEmailMutation = useSendEmail();
   const createEmailMutation = useCreateEmail();
   const createCampaignMutation = useCreateEmailCampaign();
@@ -435,11 +436,35 @@ export const EmailsTab = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Recipients and Attachments Section */}
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <ClientSelector 
+                    selectedClients={selectedClients}
+                    onSelectionChange={setSelectedClients}
+                  />
+                  <QuoteSelector 
+                    selectedQuotes={selectedQuotes}
+                    onSelectionChange={setSelectedQuotes}
+                    selectedClients={selectedClients}
+                  />
+                </div>
+
+                {/* Auto-populate recipients from selected clients */}
+                {selectedClients.length > 0 && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-700 mb-2">
+                      <strong>Recipients from CRM:</strong> {selectedClients.map(c => c.email).filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">To</label>
+                  <label className="text-sm font-medium">To (Additional Recipients)</label>
                   <Input 
-                    placeholder="recipient@example.com" 
+                    placeholder="additional@example.com" 
                     value={newEmail.recipient_email}
                     onChange={(e) => setNewEmail(prev => ({ ...prev, recipient_email: e.target.value }))}
                   />
@@ -480,12 +505,39 @@ export const EmailsTab = () => {
                   onChange={(e) => setNewEmail(prev => ({ ...prev, content: e.target.value }))}
                 />
               </div>
+
+              {/* Quote Details Summary */}
+              {selectedQuotes.length > 0 && (
+                <Card className="bg-gray-50">
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Attached Quote Details:</h4>
+                    {selectedQuotes.map(quote => (
+                      <div key={quote.id} className="text-sm text-gray-600">
+                        <p><strong>Quote #{quote.quote_number}:</strong> ${quote.total_amount.toLocaleString()}</p>
+                        <p>Client: {quote.clients?.name}</p>
+                        <p>Status: {quote.status}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
               
               <div className="flex justify-between items-center">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Schedule Send
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Schedule Send
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => setPreviewDialogOpen(true)}
+                    disabled={!newEmail.content && !selectedTemplate}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview Email
+                  </Button>
+                </div>
                 <Button 
                   onClick={handleSendEmail} 
                   className="flex items-center gap-2"
@@ -496,6 +548,23 @@ export const EmailsTab = () => {
                 </Button>
               </div>
             </CardContent>
+
+            {/* Email Preview Dialog */}
+            <EmailPreviewDialog
+              open={previewDialogOpen}
+              onOpenChange={setPreviewDialogOpen}
+              template={predefinedEmailTemplates.find(t => t.id === selectedTemplate) || {
+                id: 'custom',
+                name: 'Custom Email',
+                subject: newEmail.subject,
+                content: newEmail.content,
+                category: 'Custom',
+                variables: []
+              }}
+              clientData={selectedClients[0]}
+              quoteData={selectedQuotes[0]}
+              senderInfo={emailSettings}
+            />
           </Card>
         </TabsContent>
 
