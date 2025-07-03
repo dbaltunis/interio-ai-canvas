@@ -687,7 +687,7 @@ export const EmailsTab = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{template.name}</h4>
-                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace('_', ' '))}</p>
+                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace('_', ' ')}</p>
                       </div>
                       <FileText className="h-5 w-5 text-gray-400" />
                     </div>
