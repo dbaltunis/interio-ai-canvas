@@ -65,6 +65,44 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('user_id', user.id)
       .single();
 
+    // Get client data if client_id is provided
+    let clientData = null;
+    if (emailData.client_id) {
+      const { data } = await supabase
+        .from('clients')
+        .select('name, email, company_name')
+        .eq('id', emailData.client_id)
+        .eq('user_id', user.id)
+        .single();
+      clientData = data;
+    }
+
+    // Process template variables in content and subject
+    let processedContent = emailData.content;
+    let processedSubject = emailData.subject;
+    
+    // Replace template variables
+    const replacements = {
+      '{{company_name}}': businessSettings?.company_name || 'Your Company',
+      '{{client_name}}': clientData?.name || 'Valued Client',
+      '{{season}}': 'Spring', // You can make this dynamic
+      '{{discount_percentage}}': '25', // You can make this configurable
+      '{{offer_expires}}': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      '{{fabric_collection_name}}': 'Premium Designer Collection 2025'
+    };
+
+    for (const [placeholder, value] of Object.entries(replacements)) {
+      processedContent = processedContent.replace(new RegExp(placeholder, 'g'), value);
+      processedSubject = processedSubject.replace(new RegExp(placeholder, 'g'), value);
+    }
+
+    console.log("Template variables processed:", {
+      originalSubject: emailData.subject,
+      processedSubject,
+      clientName: clientData?.name,
+      companyName: businessSettings?.company_name
+    });
+
     const fromEmail = emailData.from_email || businessSettings?.business_email || "noreply@interioapp.com";
     const fromName = emailData.from_name || businessSettings?.company_name || "InterioApp";
 
@@ -80,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         personalizations: [{
           to: [{ email: emailData.to }],
-          subject: emailData.subject,
+          subject: processedSubject,
         }],
         from: {
           email: fromEmail,
@@ -88,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         content: [{
           type: "text/html",
-          value: emailData.content
+          value: processedContent
         }],
         tracking_settings: {
           click_tracking: { enable: true },
@@ -115,8 +153,8 @@ const handler = async (req: Request): Promise<Response> => {
         .insert({
           user_id: user.id,
           recipient_email: emailData.to,
-          subject: emailData.subject,
-          content: emailData.content,
+          subject: processedSubject,
+          content: processedContent,
           template_id: emailData.template_id,
           campaign_id: emailData.campaign_id,
           client_id: emailData.client_id,
@@ -136,11 +174,11 @@ const handler = async (req: Request): Promise<Response> => {
     // Store email record in database
     const { data, error } = await supabase
       .from("emails")
-      .insert({
-        user_id: user.id,
-        recipient_email: emailData.to,
-        subject: emailData.subject,
-        content: emailData.content,
+        .insert({
+          user_id: user.id,
+          recipient_email: emailData.to,
+          subject: processedSubject,
+          content: processedContent,
         template_id: emailData.template_id,
         campaign_id: emailData.campaign_id,
         client_id: emailData.client_id,
