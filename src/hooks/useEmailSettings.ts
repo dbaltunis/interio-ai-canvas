@@ -19,12 +19,16 @@ export const useEmailSettings = () => {
   return useQuery({
     queryKey: ['email-settings'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from('email_settings')
         .select('*')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       return data as EmailSettings | null;
     },
   });
