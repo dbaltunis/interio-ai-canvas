@@ -11,15 +11,17 @@ import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 interface WindowCoveringSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (windowCovering: any, selectedOptions: string[]) => void;
+  onSelect: (windowCovering: any, selectedOptions: string[], treatmentType?: string) => void;
   surfaceId: string;
+  defaultTreatmentType?: string;
 }
 
 export const WindowCoveringSelectionDialog = ({
   open,
   onOpenChange,
   onSelect,
-  surfaceId
+  surfaceId,
+  defaultTreatmentType = "Curtains"
 }: WindowCoveringSelectionDialogProps) => {
   const { windowCoverings, isLoading } = useWindowCoverings();
   const [selectedWindowCovering, setSelectedWindowCovering] = useState<any>(null);
@@ -31,7 +33,7 @@ export const WindowCoveringSelectionDialog = ({
 
   const handleConfirm = () => {
     if (selectedWindowCovering) {
-      onSelect(selectedWindowCovering, []);
+      onSelect(selectedWindowCovering, [], selectedWindowCovering.name || defaultTreatmentType);
       onOpenChange(false);
       setSelectedWindowCovering(null);
       setSearchQuery("");
@@ -88,73 +90,107 @@ export const WindowCoveringSelectionDialog = ({
               {filteredWindowCoverings.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>No window coverings found</p>
+                  <p className="text-sm mt-2">You can still create a basic treatment without selecting a window covering</p>
+                  <Button 
+                    onClick={() => {
+                      onSelect(null, [], defaultTreatmentType);
+                      onOpenChange(false);
+                    }}
+                    variant="outline"
+                    className="mt-4"
+                  >
+                    Create Basic {defaultTreatmentType}
+                  </Button>
                 </div>
               ) : (
-                filteredWindowCoverings.map(windowCovering => (
+                <>
+                  {/* Option to create basic treatment without window covering */}
                   <Card 
-                    key={windowCovering.id}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      selectedWindowCovering?.id === windowCovering.id 
-                        ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200' 
-                        : 'hover:bg-gray-50 border-gray-200'
-                    }`}
-                    onClick={() => handleWindowCoveringSelect(windowCovering)}
+                    className="cursor-pointer transition-all duration-200 hover:shadow-md border-dashed border-2 hover:bg-gray-50"
+                    onClick={() => {
+                      onSelect(null, [], defaultTreatmentType);
+                      onOpenChange(false);
+                    }}
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            {selectedWindowCovering?.id === windowCovering.id ? (
-                              <CheckCircle2 className="h-5 w-5 text-blue-600" />
-                            ) : (
-                              <Circle className="h-5 w-5 text-gray-400" />
-                            )}
-                            <div className="flex items-center space-x-3">
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border">
-                                {windowCovering.image_url ? (
-                                  <img 
-                                    src={windowCovering.image_url} 
-                                    alt={windowCovering.name}
-                                    className="w-10 h-10 object-cover rounded"
-                                  />
-                                ) : (
-                                  <Package className="h-6 w-6 text-gray-500" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">{windowCovering.name}</h4>
-                                {windowCovering.description && (
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{windowCovering.description}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2 ml-7">
-                            <Badge variant="outline" className="text-xs">
-                              {windowCovering.fabrication_pricing_method?.replace('-', ' ') || 'Standard pricing'}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {windowCovering.margin_percentage}% margin
-                            </Badge>
-                            {windowCovering.optionsCount > 0 && (
-                              <Badge variant="outline" className="text-xs text-green-600">
-                                {windowCovering.optionsCount} variants available
-                              </Badge>
-                            )}
-                          </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-dashed">
+                          <Package className="h-6 w-6 text-gray-500" />
                         </div>
-                        {windowCovering.unit_price && (
-                          <div className="ml-3 text-right">
-                            <span className="font-semibold text-gray-900">
-                              ${windowCovering.unit_price}
-                            </span>
-                            <p className="text-xs text-gray-500">base price</p>
-                          </div>
-                        )}
+                        <div>
+                          <h4 className="font-medium text-gray-900">Create Basic {defaultTreatmentType}</h4>
+                          <p className="text-sm text-gray-600">Create a simple treatment without advanced options</p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))
+
+                  {filteredWindowCoverings.map(windowCovering => (
+                    <Card 
+                      key={windowCovering.id}
+                      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        selectedWindowCovering?.id === windowCovering.id 
+                          ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200' 
+                          : 'hover:bg-gray-50 border-gray-200'
+                      }`}
+                      onClick={() => handleWindowCoveringSelect(windowCovering)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              {selectedWindowCovering?.id === windowCovering.id ? (
+                                <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-gray-400" />
+                              )}
+                              <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                                  {windowCovering.image_url ? (
+                                    <img 
+                                      src={windowCovering.image_url} 
+                                      alt={windowCovering.name}
+                                      className="w-10 h-10 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <Package className="h-6 w-6 text-gray-500" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{windowCovering.name}</h4>
+                                  {windowCovering.description && (
+                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{windowCovering.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 ml-7">
+                              <Badge variant="outline" className="text-xs">
+                                {windowCovering.fabrication_pricing_method?.replace('-', ' ') || 'Standard pricing'}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                {windowCovering.margin_percentage}% margin
+                              </Badge>
+                              {windowCovering.optionsCount > 0 && (
+                                <Badge variant="outline" className="text-xs text-green-600">
+                                  {windowCovering.optionsCount} variants available
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {windowCovering.unit_price && (
+                            <div className="ml-3 text-right">
+                              <span className="font-semibold text-gray-900">
+                                ${windowCovering.unit_price}
+                              </span>
+                              <p className="text-xs text-gray-500">base price</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </>
               )}
             </div>
           </div>

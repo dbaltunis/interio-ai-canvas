@@ -31,8 +31,8 @@ export const TreatmentPricingForm = ({
   isOpen, 
   onClose, 
   onSave, 
-  treatmentType, 
-  surfaceType,
+  treatmentType = "Curtains", // Default fallback
+  surfaceType = "window", // Default fallback
   windowCovering,
   projectId
 }: TreatmentPricingFormProps) => {
@@ -99,6 +99,16 @@ export const TreatmentPricingForm = ({
     }
   }, [isOpen, windowCovering, setFormData]);
 
+  // Set default product name based on treatment type if none provided
+  useEffect(() => {
+    if (isOpen && !formData.product_name && treatmentType) {
+      setFormData(prev => ({
+        ...prev,
+        product_name: treatmentType
+      }));
+    }
+  }, [isOpen, treatmentType, formData.product_name, setFormData]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -120,7 +130,7 @@ export const TreatmentPricingForm = ({
     }
     
     const treatmentData = {
-      product_name: formData.product_name,
+      product_name: formData.product_name || treatmentType,
       treatment_type: treatmentType,
       quantity: formData.quantity,
       material_cost: parseFloat(costs.fabricCost),
@@ -160,6 +170,9 @@ export const TreatmentPricingForm = ({
   };
 
   const handleOptionToggle = (optionId: string) => {
+    const option = options.find(o => o.id === optionId);
+    if (option?.is_required) return; // Can't toggle required options
+    
     setFormData(prev => {
       const newSelectedOptions = prev.selected_options.includes(optionId)
         ? prev.selected_options.filter(id => id !== optionId)
@@ -172,6 +185,9 @@ export const TreatmentPricingForm = ({
     });
   };
 
+  // Show loading state while form is initializing
+  if (!isOpen) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       console.log('Dialog onOpenChange called with:', open);
@@ -182,7 +198,7 @@ export const TreatmentPricingForm = ({
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-4">
           <DialogTitle className="text-center text-lg font-semibold">
-            Configure {treatmentType} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
+            Configure {treatmentType || 'Treatment'} for {surfaceType === 'wall' ? 'Wall' : 'Window'}
           </DialogTitle>
           <p className="text-sm text-muted-foreground text-center">
             Add measurements, select options, and configure pricing details

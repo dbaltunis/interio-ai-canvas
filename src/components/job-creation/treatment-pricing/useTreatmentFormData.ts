@@ -23,9 +23,9 @@ export interface TreatmentFormData {
   images: File[];
 }
 
-export const useTreatmentFormData = (treatmentType: string, windowCovering?: any) => {
+export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any) => {
   const [formData, setFormData] = useState<TreatmentFormData>({
-    product_name: windowCovering?.name || treatmentType,
+    product_name: windowCovering?.name || treatmentType || "Curtains",
     rail_width: "",
     drop: "",
     pooling: "0",
@@ -65,7 +65,7 @@ export const useTreatmentFormData = (treatmentType: string, windowCovering?: any
 
   const resetForm = () => {
     setFormData({
-      product_name: windowCovering?.name || treatmentType,
+      product_name: windowCovering?.name || treatmentType || "Curtains",
       rail_width: "",
       drop: "",
       pooling: "0",
