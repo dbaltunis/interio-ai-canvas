@@ -149,7 +149,7 @@ export const useUpdateProject = () => {
 
       if (error) {
         console.error("Update project error:", error);
-        throw error;
+        throw new Error(`Failed to update project: ${error.message}`);
       }
       
       if (!data) {
@@ -194,6 +194,11 @@ export const useUpdateProject = () => {
         return old.map((project: any) => 
           project.id === data.id ? data : project
         );
+      });
+      
+      toast({
+        title: "Success",
+        description: "Project updated successfully",
       });
     },
   });

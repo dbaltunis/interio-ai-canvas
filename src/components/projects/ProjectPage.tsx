@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Trash2, Copy, Edit, ChevronDown, Calendar } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface ProjectPageProps {
   projectId?: string;
@@ -12,14 +13,29 @@ interface ProjectPageProps {
 
 export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
   const [activeTab, setActiveTab] = useState("Jobs");
-  const { data: quotes } = useQuotes();
+  const { data: quotes = [] } = useQuotes();
+  const { units } = useMeasurementUnits();
 
   // Find the project/quote data
-  const project = quotes?.find(q => q.id === projectId) || {
+  const project = quotes.find(q => q.id === projectId) || {
     id: "1",
-    quote_number: "c54b7a3c-0565-4443-8498-4d137b10f39f",
+    quote_number: "QT-0048",
     client_id: "c54b7a3c-0565-4443-8498-4d137b10f39f",
     total_amount: 0
+  };
+
+  // Format currency properly
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${amount.toFixed(2)}`;
   };
 
   const navItems = [
@@ -119,13 +135,13 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
                   <SelectItem value="deposit">Deposit</SelectItem>
                 </SelectContent>
               </Select>
-              <Select defaultValue="order">
+              <Select defaultValue="quote">
                 <SelectTrigger className="w-32 bg-white border-gray-300 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  <SelectItem value="order">Order</SelectItem>
                   <SelectItem value="quote">Quote</SelectItem>
+                  <SelectItem value="order">Order</SelectItem>
                 </SelectContent>
               </Select>
               <Button size="sm" variant="outline" className="bg-white border-gray-300">
@@ -161,7 +177,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Total: $0.00 (before GST)
+              Total: {formatCurrency(project.total_amount || 0)} (before GST)
             </h2>
           </div>
           <Button className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 text-sm">
@@ -178,7 +194,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-1">{room.name}</h3>
-                  <p className="text-2xl font-bold text-gray-900">${room.total}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(room.total)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-600">
