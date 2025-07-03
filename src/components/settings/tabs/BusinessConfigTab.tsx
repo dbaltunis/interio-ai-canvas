@@ -12,6 +12,7 @@ import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettin
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUploadFile } from "@/hooks/useFileStorage";
+import { LogoCropDialog } from "./LogoCropDialog";
 
 export const BusinessConfigTab = () => {
   const { data: settings, isLoading } = useBusinessSettings();
@@ -21,6 +22,7 @@ export const BusinessConfigTab = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showLogoGuidelines, setShowLogoGuidelines] = useState(false);
+  const [showLogoCropDialog, setShowLogoCropDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -82,25 +84,12 @@ export const BusinessConfigTab = () => {
     return errors;
   };
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const validationErrors = validateLogoFile(file);
-    if (validationErrors.length > 0) {
-      toast({
-        title: "Upload Error",
-        description: validationErrors.join(". "),
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleLogoUpload = async (croppedFile: File) => {
     try {
-      console.log("Starting logo upload...", { fileName: file.name, fileSize: file.size });
+      console.log("Starting cropped logo upload...", { fileName: croppedFile.name, fileSize: croppedFile.size });
       
       const uploadedFile = await uploadFile.mutateAsync({
-        file,
+        file: croppedFile,
         projectId: 'company-assets',
         bucketName: 'project-images'
       });
@@ -114,7 +103,7 @@ export const BusinessConfigTab = () => {
       
       toast({
         title: "Success",
-        description: "Logo uploaded successfully! Remember to save your company details.",
+        description: "Logo uploaded and optimized successfully! Remember to save your company details.",
       });
     } catch (error) {
       console.error("Logo upload error:", error);
@@ -305,7 +294,7 @@ export const BusinessConfigTab = () => {
                 className="flex items-center space-x-1"
               >
                 <Info className="h-3 w-3" />
-                <span>Logo Guidelines</span>
+                <span>Logo Standards</span>
               </Button>
             </div>
             
@@ -332,26 +321,19 @@ export const BusinessConfigTab = () => {
               )}
               
               <div className="flex-1 space-y-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setShowLogoCropDialog(true)}
                   disabled={uploadFile.isPending}
                   className="flex items-center space-x-2"
                 >
                   <Upload className="h-4 w-4" />
-                  <span>{uploadFile.isPending ? 'Uploading...' : 'Upload Logo'}</span>
+                  <span>{uploadFile.isPending ? 'Processing...' : 'Upload & Crop Logo'}</span>
                 </Button>
                 <p className="text-xs text-gray-500">
-                  Upload your company logo for use in quotes and documents.<br />
-                  Recommended size: 200x60px, Max: 2MB (PNG, JPG, SVG)
+                  Upload your logo and crop it to professional standards.<br />
+                  Final size: 200x60px, optimized for documents
                 </p>
               </div>
             </div>
@@ -549,19 +531,19 @@ export const BusinessConfigTab = () => {
       <Dialog open={showLogoGuidelines} onOpenChange={setShowLogoGuidelines}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Logo Upload Guidelines</DialogTitle>
+            <DialogTitle>Professional Logo Standards</DialogTitle>
             <DialogDescription>
-              Follow these guidelines for best results in quotes and documents
+              Our platform automatically optimizes logos for professional documents
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Recommended Specifications:</h4>
+              <h4 className="font-medium text-sm">Automatic Processing:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• <strong>Size:</strong> 200x60 pixels (landscape orientation)</li>
-                <li>• <strong>Format:</strong> PNG (transparent background preferred)</li>
-                <li>• <strong>File size:</strong> Under 2MB</li>
-                <li>• <strong>Background:</strong> Transparent or white</li>
+                <li>• <strong>Size:</strong> Resized to exactly 200x60 pixels</li>
+                <li>• <strong>Format:</strong> Converted to PNG format</li>
+                <li>• <strong>Quality:</strong> Optimized for fast loading (70% quality)</li>
+                <li>• <strong>Cropping:</strong> You control the exact area to use</li>
               </ul>
             </div>
             
@@ -577,12 +559,19 @@ export const BusinessConfigTab = () => {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                For best results, use a high-quality logo with good contrast. Avoid very detailed logos as they may not display well at smaller sizes.
+                The cropping tool ensures your logo meets professional standards. All logos are automatically processed to the same specifications.
               </AlertDescription>
             </Alert>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Logo Crop Dialog */}
+      <LogoCropDialog
+        open={showLogoCropDialog}
+        onOpenChange={setShowLogoCropDialog}
+        onCropComplete={handleLogoUpload}
+      />
     </div>
   );
 };
