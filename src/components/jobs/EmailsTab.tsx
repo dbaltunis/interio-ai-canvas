@@ -30,16 +30,18 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs, useCreateEmail } from "@/hooks/useEmails";
-import { useEmailCampaigns, useCreateEmailCampaign } from "@/hooks/useEmailCampaigns";
+import { useEmailCampaigns, useCreateEmailCampaign, useUpdateEmailCampaign } from "@/hooks/useEmailCampaigns";
 import { useEmailTemplates, useCreateEmailTemplate } from "@/hooks/useEmailTemplates";
 import { useClients } from "@/hooks/useClients";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useCampaignExecution } from "@/hooks/useCampaignExecution";
 import { predefinedEmailTemplates } from "@/data/emailTemplates";
 import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
 import { ClientSelector } from "./email-components/ClientSelector";
 import { QuoteSelector } from "./email-components/QuoteSelector";
+import { CampaignBuilder } from "./email-components/CampaignBuilder";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -52,6 +54,8 @@ export const EmailsTab = () => {
   const [emailSettingsOpen, setEmailSettingsOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [campaignBuilderOpen, setCampaignBuilderOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [selectedClients, setSelectedClients] = useState<any[]>([]);
   const [selectedQuotes, setSelectedQuotes] = useState<any[]>([]);
   const [newEmailSettings, setNewEmailSettings] = useState({
@@ -72,8 +76,10 @@ export const EmailsTab = () => {
   const sendEmailMutation = useSendEmail();
   const createEmailMutation = useCreateEmail();
   const createCampaignMutation = useCreateEmailCampaign();
+  const updateCampaignMutation = useUpdateEmailCampaign();
   const createTemplateMutation = useCreateEmailTemplate();
   const updateEmailSettingsMutation = useUpdateEmailSettings();
+  const campaignExecutionMutation = useCampaignExecution();
 
   // Load email settings when available
   useEffect(() => {
@@ -147,12 +153,28 @@ export const EmailsTab = () => {
   };
 
   const handleCreateCampaign = () => {
-    createCampaignMutation.mutate({
-      name: "New Campaign",
-      subject: "Campaign Subject",
-      content: "Campaign content...",
-      status: 'draft',
-      recipient_count: 0
+    setEditingCampaign(null);
+    setCampaignBuilderOpen(true);
+  };
+
+  const handleSaveCampaign = (campaignData: any) => {
+    if (editingCampaign) {
+      updateCampaignMutation.mutate({ id: editingCampaign.id, ...campaignData });
+    } else {
+      createCampaignMutation.mutate(campaignData);
+    }
+  };
+
+  const handleLaunchCampaign = (campaignData: any) => {
+    const campaignPromise = editingCampaign 
+      ? updateCampaignMutation.mutateAsync({ id: editingCampaign.id, ...campaignData })
+      : createCampaignMutation.mutateAsync(campaignData);
+
+    campaignPromise.then((campaign) => {
+      campaignExecutionMutation.mutate({
+        campaignId: campaign.id,
+        campaignData
+      });
     });
   };
 
@@ -319,6 +341,9 @@ export const EmailsTab = () => {
       )}
 
       {/* Main Email Interface */}
+      
+      
+      {/* Campaigns Tab */}
       <Tabs defaultValue="compose" className="space-y-4">
         <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="compose" className="flex items-center gap-2">
@@ -662,7 +687,7 @@ export const EmailsTab = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{template.name}</h4>
-                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace('_', ' ')}</p>
+                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace('_', ' '))}</p>
                       </div>
                       <FileText className="h-5 w-5 text-gray-400" />
                     </div>
@@ -701,7 +726,11 @@ export const EmailsTab = () => {
             {campaigns && campaigns.length > 0 ? (
               <div className="grid gap-4">
                 {campaigns.map((campaign) => (
-                  <Card key={campaign.id}>
+                  <Card key={campaign.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => {
+                          setEditingCampaign(campaign);
+                          setCampaignBuilderOpen(true);
+                        }}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -723,8 +752,8 @@ export const EmailsTab = () => {
                   <div className="text-center text-gray-500">
                     <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                     <h4 className="text-lg font-medium mb-2">No Campaigns Yet</h4>
-                    <p className="text-sm mb-4">Create your first email campaign to reach multiple clients</p>
-                    <Button onClick={handleCreateCampaign}>Create Campaign</Button>
+                    <p className="text-sm mb-4">Create professional email campaigns with advanced tracking</p>
+                    <Button onClick={handleCreateCampaign}>Create Your First Campaign</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -820,6 +849,15 @@ export const EmailsTab = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Campaign Builder Dialog */}
+      <CampaignBuilder
+        open={campaignBuilderOpen}
+        onOpenChange={setCampaignBuilderOpen}
+        campaign={editingCampaign}
+        onSave={handleSaveCampaign}
+        onLaunch={handleLaunchCampaign}
+      />
     </div>
   );
 };

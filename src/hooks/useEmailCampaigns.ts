@@ -67,3 +67,33 @@ export const useCreateEmailCampaign = () => {
     },
   });
 };
+
+export const useUpdateEmailCampaign = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Omit<EmailCampaign, 'id' | 'user_id' | 'created_at'>>) => {
+      const { data, error } = await supabase
+        .from('email_campaigns')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+    },
+    onError: (error) => {
+      console.error("Failed to update campaign:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update email campaign",
+        variant: "destructive",
+      });
+    },
+  });
+};
