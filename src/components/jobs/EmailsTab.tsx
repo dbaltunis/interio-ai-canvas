@@ -88,24 +88,52 @@ export const EmailsTab = () => {
   }, [emailSettings]);
 
   const handleSendEmail = async () => {
-    if (!newEmail.recipient_email || !newEmail.subject || !newEmail.content) {
+    // Collect all recipients
+    const allRecipients = [
+      ...selectedClients.filter(client => client.email).map(client => client.email),
+      ...(newEmail.recipient_email ? [newEmail.recipient_email] : [])
+    ].filter(Boolean);
+
+    if (allRecipients.length === 0) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please select clients or enter recipient email addresses",
         variant: "destructive"
       });
       return;
     }
 
-    console.log("Sending email with data:", newEmail);
+    if (!newEmail.subject || !newEmail.content) {
+      toast({
+        title: "Error",
+        description: "Please fill in subject and message content",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    // Use the real send email mutation that calls the edge function
-    sendEmailMutation.mutate({
-      to: newEmail.recipient_email,
+    console.log("Sending email with data:", {
+      recipients: allRecipients,
       subject: newEmail.subject,
       content: newEmail.content,
-      template_id: newEmail.template_id || undefined
+      selectedClients: selectedClients.length,
+      selectedQuotes: selectedQuotes.length
     });
+
+    // Send to each recipient
+    for (const recipient of allRecipients) {
+      try {
+        await sendEmailMutation.mutateAsync({
+          to: recipient,
+          subject: newEmail.subject,
+          content: newEmail.content,
+          template_id: newEmail.template_id || undefined,
+          client_id: selectedClients.find(c => c.email === recipient)?.id
+        });
+      } catch (error) {
+        console.error(`Failed to send email to ${recipient}:`, error);
+      }
+    }
 
     // Reset form
     setNewEmail({
@@ -114,6 +142,8 @@ export const EmailsTab = () => {
       content: "",
       template_id: ""
     });
+    setSelectedClients([]);
+    setSelectedQuotes([]);
   };
 
   const handleCreateCampaign = () => {
@@ -129,6 +159,7 @@ export const EmailsTab = () => {
   const handleUseTemplate = (templateId: string) => {
     const template = predefinedEmailTemplates.find(t => t.id === templateId);
     if (template) {
+      setSelectedTemplate(templateId);
       setNewEmail(prev => ({
         ...prev,
         subject: template.subject,
