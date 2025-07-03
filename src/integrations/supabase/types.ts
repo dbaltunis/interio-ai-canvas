@@ -335,6 +335,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_settings: {
+        Row: {
+          active: boolean
+          created_at: string
+          from_email: string
+          from_name: string
+          id: string
+          reply_to_email: string | null
+          signature: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          from_email: string
+          from_name: string
+          id?: string
+          reply_to_email?: string | null
+          signature?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          reply_to_email?: string | null
+          signature?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           active: boolean | null

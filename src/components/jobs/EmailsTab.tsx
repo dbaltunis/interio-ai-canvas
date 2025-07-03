@@ -95,9 +95,7 @@ export const EmailsTab = () => {
       to: newEmail.recipient_email,
       subject: newEmail.subject,
       content: newEmail.content,
-      template_id: newEmail.template_id || undefined,
-      from_email: emailSettings?.from_email,
-      from_name: emailSettings?.from_name
+      template_id: newEmail.template_id || undefined
     });
 
     // Reset form

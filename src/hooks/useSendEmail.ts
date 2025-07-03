@@ -10,6 +10,8 @@ interface SendEmailData {
   template_id?: string;
   campaign_id?: string;
   client_id?: string;
+  from_email?: string;
+  from_name?: string;
 }
 
 export const useSendEmail = () => {
