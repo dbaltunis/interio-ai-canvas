@@ -25,7 +25,8 @@ import {
   AlertCircle,
   Settings,
   Palette,
-  Copy
+  Copy,
+  Target
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs, useCreateEmail } from "@/hooks/useEmails";
@@ -34,7 +35,11 @@ import { useEmailTemplates, useCreateEmailTemplate } from "@/hooks/useEmailTempl
 import { useClients } from "@/hooks/useClients";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { predefinedEmailTemplates } from "@/data/emailTemplates";
+import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
+import { ClientSelector } from "./email-components/ClientSelector";
+import { QuoteSelector } from "./email-components/QuoteSelector";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -46,6 +51,9 @@ export const EmailsTab = () => {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [emailSettingsOpen, setEmailSettingsOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [selectedClients, setSelectedClients] = useState<any[]>([]);
+  const [selectedQuotes, setSelectedQuotes] = useState<any[]>([]);
   const [newEmailSettings, setNewEmailSettings] = useState({
     from_email: "",
     from_name: "",

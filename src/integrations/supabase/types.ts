@@ -88,6 +88,7 @@ export type Database = {
           business_email: string | null
           business_phone: string | null
           closing_time: string | null
+          company_logo_url: string | null
           company_name: string | null
           created_at: string
           default_markup: number | null
@@ -111,6 +112,7 @@ export type Database = {
           business_email?: string | null
           business_phone?: string | null
           closing_time?: string | null
+          company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           default_markup?: number | null
@@ -134,6 +136,7 @@ export type Database = {
           business_email?: string | null
           business_phone?: string | null
           closing_time?: string | null
+          company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
           default_markup?: number | null

@@ -23,6 +23,7 @@ export const BusinessConfigTab = () => {
     business_email: "",
     business_phone: "",
     business_address: "",
+    company_logo_url: "",
     default_tax_rate: 10.00,
     default_markup: 40.00,
     labor_rate: 85.00,
@@ -44,6 +45,7 @@ export const BusinessConfigTab = () => {
         business_email: settings.business_email || "",
         business_phone: settings.business_phone || "",
         business_address: settings.business_address || "",
+        company_logo_url: settings.company_logo_url || "",
         default_tax_rate: Number(settings.default_tax_rate) || 10.00,
         default_markup: Number(settings.default_markup) || 40.00,
         labor_rate: Number(settings.labor_rate) || 85.00,
@@ -67,6 +69,7 @@ export const BusinessConfigTab = () => {
         business_email: formData.business_email,
         business_phone: formData.business_phone,
         business_address: formData.business_address,
+        company_logo_url: formData.company_logo_url,
       };
 
       if (settings?.id) {
@@ -215,6 +218,32 @@ export const BusinessConfigTab = () => {
               onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
               placeholder="123 Business St, City, State, Postcode" 
             />
+          </div>
+
+          <div>
+            <Label htmlFor="companyLogo">Company Logo URL</Label>
+            <Input 
+              id="companyLogo" 
+              type="url" 
+              value={formData.company_logo_url}
+              onChange={(e) => setFormData({ ...formData, company_logo_url: e.target.value })}
+              placeholder="https://example.com/logo.png" 
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Add your company logo URL for use in emails and quotes. Recommended size: 200x60px
+            </p>
+            {formData.company_logo_url && (
+              <div className="mt-2">
+                <img 
+                  src={formData.company_logo_url} 
+                  alt="Company Logo Preview" 
+                  className="max-h-16 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <Button 
