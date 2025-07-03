@@ -35,7 +35,7 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
   const projectTreatments = treatments?.filter(t => t.project_id === project.id) || [];
   
   const subtotal = projectTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-  const taxRate = (businessSettings?.default_tax_rate || 8) / 100;
+  const taxRate = (businessSettings?.default_tax_rate || 10) / 100;
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
 
@@ -205,7 +205,7 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Tax (8%):</span>
+                <span>Tax ({(businessSettings?.default_tax_rate || 10)}%):</span>
                 <span>{formatCurrency(taxAmount)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2">

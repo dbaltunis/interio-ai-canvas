@@ -106,17 +106,17 @@ export const TreatmentCalculatorDialog = ({
         makingCostTotal = railWidth * 0.5; // £0.50 per cm of width
         
         // Add selected options
-        if (formData.selected_heading && makingCostData.heading_options) {
+        if (formData.selected_heading && formData.selected_heading !== "no-heading" && makingCostData.heading_options) {
           const headingOption = makingCostData.heading_options.find((opt: any) => opt.name === formData.selected_heading);
           if (headingOption) makingCostTotal += headingOption.base_price || 0;
         }
         
-        if (formData.selected_hardware && makingCostData.hardware_options) {
+        if (formData.selected_hardware && formData.selected_hardware !== "no-hardware" && makingCostData.hardware_options) {
           const hardwareOption = makingCostData.hardware_options.find((opt: any) => opt.name === formData.selected_hardware);
           if (hardwareOption) makingCostTotal += hardwareOption.base_price || 0;
         }
         
-        if (formData.selected_lining && makingCostData.lining_options) {
+        if (formData.selected_lining && formData.selected_lining !== "no-lining" && makingCostData.lining_options) {
           const liningOption = makingCostData.lining_options.find((opt: any) => opt.name === formData.selected_lining);
           if (liningOption) makingCostTotal += liningOption.base_price || 0;
         }
@@ -181,7 +181,7 @@ export const TreatmentCalculatorDialog = ({
         fabric_width: formData.fabric_width,
         roll_direction: formData.roll_direction
       },
-      selected_options: [formData.selected_heading, formData.selected_hardware, formData.selected_lining].filter(Boolean),
+      selected_options: [formData.selected_heading, formData.selected_hardware, formData.selected_lining].filter(opt => opt && !opt.startsWith('no-')),
       notes: formData.notes || `Smart calculator generated ${treatmentType}`,
       status: "planned",
       window_covering: selectedWindowCovering,
@@ -359,7 +359,7 @@ export const TreatmentCalculatorDialog = ({
                         <SelectValue placeholder="Select heading" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No heading</SelectItem>
+                        <SelectItem value="no-heading">No heading</SelectItem>
                         {makingCostData.heading_options.map((option: any, index: number) => (
                           <SelectItem key={index} value={option.name}>
                             {option.name} - {formatCurrency(option.base_price)}
@@ -378,7 +378,7 @@ export const TreatmentCalculatorDialog = ({
                         <SelectValue placeholder="Select hardware" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No hardware</SelectItem>
+                        <SelectItem value="no-hardware">No hardware</SelectItem>
                         {makingCostData.hardware_options.map((option: any, index: number) => (
                           <SelectItem key={index} value={option.name}>
                             {option.name} - {formatCurrency(option.base_price)}
@@ -397,7 +397,7 @@ export const TreatmentCalculatorDialog = ({
                         <SelectValue placeholder="Select lining" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No lining</SelectItem>
+                        <SelectItem value="no-lining">No lining</SelectItem>
                         {makingCostData.lining_options.map((option: any, index: number) => (
                           <SelectItem key={index} value={option.name}>
                             {option.name} - {formatCurrency(option.base_price)}

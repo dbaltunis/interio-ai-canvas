@@ -7,7 +7,7 @@ import { createOption as createOptionService, updateOption as updateOptionServic
 
 export type { WindowCoveringOption, HierarchicalOption };
 
-export const useWindowCoveringOptions = (windowCoveringId: string) => {
+export const useWindowCoveringOptions = (windowCoveringId: string | undefined | null | any) => {
   const [options, setOptions] = useState<WindowCoveringOption[]>([]);
   const [hierarchicalOptions, setHierarchicalOptions] = useState<HierarchicalOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,8 +16,12 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
   const fetchOptions = async () => {
     console.log('useWindowCoveringOptions - fetchOptions called with ID:', windowCoveringId);
     
-    if (!windowCoveringId) {
-      console.log('useWindowCoveringOptions - No window covering ID provided');
+    // Handle undefined, null, or object with undefined value
+    const actualId = typeof windowCoveringId === 'string' ? windowCoveringId : 
+                     (windowCoveringId && typeof windowCoveringId === 'object' && windowCoveringId.value !== 'undefined') ? windowCoveringId.value : null;
+    
+    if (!actualId || actualId === 'undefined') {
+      console.log('useWindowCoveringOptions - No valid window covering ID provided');
       setOptions([]);
       setHierarchicalOptions([]);
       setIsLoading(false);
@@ -27,12 +31,12 @@ export const useWindowCoveringOptions = (windowCoveringId: string) => {
     setIsLoading(true);
     
     try {
-      console.log('useWindowCoveringOptions - Fetching options for window covering:', windowCoveringId);
+      console.log('useWindowCoveringOptions - Fetching options for window covering:', actualId);
       
       // Fetch both traditional and hierarchical options
       const [traditionalOptions, hierarchicalData] = await Promise.all([
-        fetchTraditionalOptions(windowCoveringId),
-        fetchHierarchicalOptions(windowCoveringId)
+        fetchTraditionalOptions(actualId),
+        fetchHierarchicalOptions(actualId)
       ]);
       
       console.log('useWindowCoveringOptions - Found traditional options:', traditionalOptions?.length || 0);

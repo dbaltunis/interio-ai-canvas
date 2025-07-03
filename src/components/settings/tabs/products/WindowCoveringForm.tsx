@@ -116,7 +116,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       active: formData.active,
       pricing_grid_data: formData.pricing_grid_data || undefined,
       unit_price: formData.unit_price,
-      making_cost_id: formData.making_cost_id || undefined
+      making_cost_id: formData.making_cost_id === "no-making-cost" ? undefined : formData.making_cost_id || undefined
     });
   };
 
@@ -198,7 +198,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               <SelectValue placeholder="Select making cost (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No making cost</SelectItem>
+              <SelectItem value="no-making-cost">No making cost</SelectItem>
               {makingCosts?.map((cost) => (
                 <SelectItem key={cost.id} value={cost.id}>
                   {cost.name}
