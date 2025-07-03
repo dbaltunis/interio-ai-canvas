@@ -20,9 +20,13 @@ interface SendGridEvent {
   campaign_id?: string;
   client_id?: string;
   reason?: string;
+  type?: string;
+  smtp_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("SendGrid webhook called with method:", req.method);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -47,12 +51,33 @@ const handler = async (req: Request): Promise<Response> => {
         .single();
 
       if (findError) {
-        console.error("Could not find email record:", findError);
-        continue;
+        console.error("Could not find email record for message ID:", event.sg_message_id, findError);
+        
+        // Try to find by email address and recent timestamp if message ID doesn't match
+        const recentTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // Last 24 hours
+        const { data: fallbackRecord, error: fallbackError } = await supabase
+          .from("emails")
+          .select()
+          .eq("recipient_email", event.email)
+          .gte("sent_at", recentTime)
+          .order("sent_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackError || !fallbackRecord) {
+          console.error("Could not find fallback email record:", fallbackError);
+          continue;
+        }
+        
+        // Use the fallback record
+        console.log("Using fallback email record:", fallbackRecord.id);
+        emailRecord = fallbackRecord;
       }
 
       // Update email status and tracking data
-      const updates: any = {};
+      const updates: any = {
+        updated_at: new Date().toISOString()
+      };
       
       switch (event.event) {
         case "delivered":
@@ -70,17 +95,23 @@ const handler = async (req: Request): Promise<Response> => {
           updates.click_count = (emailRecord.click_count || 0) + 1;
           break;
         case "bounce":
+        case "blocked":
         case "dropped":
           updates.status = "bounced";
-          updates.bounce_reason = event.reason || "Unknown bounce reason";
+          updates.bounce_reason = event.reason || `Email ${event.event}: ${event.type || 'Unknown reason'}`;
           break;
         case "unsubscribe":
         case "spamreport":
           updates.status = "failed";
+          updates.bounce_reason = event.reason || `Email marked as ${event.event}`;
+          break;
+        case "deferred":
+          // Deferred is temporary, don't change status to failed
+          updates.bounce_reason = event.reason || "Email temporarily deferred";
           break;
       }
 
-      if (Object.keys(updates).length > 0) {
+      if (Object.keys(updates).length > 1) { // More than just updated_at
         const { error: updateError } = await supabase
           .from("emails")
           .update(updates)
@@ -89,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
         if (updateError) {
           console.error("Error updating email record:", updateError);
         } else {
-          console.log("Email record updated successfully:", emailRecord.id);
+          console.log("Email record updated successfully:", emailRecord.id, "Event:", event.event);
         }
       }
 
@@ -103,6 +134,9 @@ const handler = async (req: Request): Promise<Response> => {
             timestamp: event.timestamp,
             url: event.url,
             useragent: event.useragent,
+            reason: event.reason,
+            type: event.type,
+            smtp_id: event.smtp_id
           },
           ip_address: event.ip,
           user_agent: event.useragent,
