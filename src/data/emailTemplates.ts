@@ -1,4 +1,3 @@
-
 export interface EmailTemplateData {
   id: string;
   name: string;

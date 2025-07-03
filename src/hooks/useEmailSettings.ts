@@ -35,13 +35,25 @@ export const useUpdateEmailSettings = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (settings: Partial<EmailSettings>) => {
+    mutationFn: async (settings: Partial<Omit<EmailSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Ensure required fields are present
+      if (!settings.from_email || !settings.from_name) {
+        throw new Error('from_email and from_name are required');
+      }
+
       const { data, error } = await supabase
         .from('email_settings')
-        .upsert([{ ...settings, user_id: user.id }])
+        .upsert({
+          user_id: user.id,
+          from_email: settings.from_email,
+          from_name: settings.from_name,
+          reply_to_email: settings.reply_to_email,
+          signature: settings.signature,
+          active: settings.active ?? true
+        })
         .select()
         .single();
 
