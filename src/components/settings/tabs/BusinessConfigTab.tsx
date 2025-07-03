@@ -355,7 +355,7 @@ export const BusinessConfigTab = () => {
             </div>
 
             {isUploading && (
-              <Alert variant="info">
+              <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
                   Uploading logo... Please wait.
