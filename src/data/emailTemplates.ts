@@ -82,7 +82,7 @@ export const predefinedEmailTemplates: EmailTemplateData[] = [
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2c5530;">
           <h3 style="color: #2c5530; margin-top: 0;">Quote Summary:</h3>
           <p style="margin: 5px 0; color: #333;"><strong>Quote #:</strong> {{quote_number}}</p>
-          <p style="margin: 5px 0; color: #333;"><strong>Total:</strong> ${{quote_amount}}</p>
+          <p style="margin: 5px 0; color: #333;"><strong>Total:</strong> $\{{quote_amount}}</p>
         </div>
         
         <p style="font-size: 16px; line-height: 1.6; color: #333;">
