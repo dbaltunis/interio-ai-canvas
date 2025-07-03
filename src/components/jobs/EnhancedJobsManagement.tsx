@@ -3,10 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileText, Phone, MapPin, FolderOpen, Building2, User, DollarSign, Calendar, MessageSquare, Edit, Trash2 } from "lucide-react";
+import { Plus, FileText, Phone, MapPin, FolderOpen, Building2, User, DollarSign, Calendar, MessageSquare, Edit, Trash2, Mail, ExternalLink } from "lucide-react";
 import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
+import { useEmails } from "@/hooks/useEmails";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +48,10 @@ export const EnhancedJobsManagement = ({
   const { data: quotes, isLoading } = useQuotes();
   const { data: clients } = useClients();
   const { data: projects } = useProjects();
+  const { data: emails } = useEmails();
+  const { data: businessSettings } = useBusinessSettings();
   const deleteQuote = useDeleteQuote();
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -83,6 +89,50 @@ export const EnhancedJobsManagement = ({
       client,
       status: quote?.status || 'draft'
     };
+  };
+
+  const getCommunicationStats = (quoteId: string, clientId?: string) => {
+    if (!emails || !clientId) return { emailCount: 0, lastContact: null };
+    
+    const clientEmails = emails.filter(email => email.client_id === clientId);
+    const lastEmail = clientEmails.sort((a, b) => 
+      new Date(b.sent_at || b.created_at).getTime() - new Date(a.sent_at || a.created_at).getTime()
+    )[0];
+    
+    return {
+      emailCount: clientEmails.length,
+      lastContact: lastEmail?.sent_at || lastEmail?.created_at || null
+    };
+  };
+
+  const formatCurrency = (amount: number) => {
+    const currency = businessSettings?.measurement_units === 'metric' ? 'AUD' : 'USD';
+    return amount.toLocaleString('en-US', { 
+      style: 'currency', 
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  };
+
+  const handleSendEmail = (clientId: string, quoteId: string) => {
+    const client = clients?.find(c => c.id === clientId);
+    if (!client?.email) {
+      toast({
+        title: "No Email Address",
+        description: "This client doesn't have an email address on file.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Navigate to emails with pre-selected client
+    window.open(`/jobs?tab=emails&client=${clientId}&quote=${quoteId}`, '_blank');
+  };
+
+  const handleViewDocuments = (projectId: string) => {
+    // Navigate to project documents
+    window.open(`/projects/${projectId}?tab=documents`, '_blank');
   };
 
   const handleJobClick = (jobId: string) => {
@@ -208,6 +258,7 @@ export const EnhancedJobsManagement = ({
                   const stats = getJobStats(quote.id);
                   const client = stats.client;
                   const project = stats.project;
+                  const commStats = getCommunicationStats(quote.id, client?.id);
                   
                   return (
                     <TableRow 
@@ -227,8 +278,14 @@ export const EnhancedJobsManagement = ({
                           )}
                           <div className="text-xs text-muted-foreground flex items-center">
                             <FileText className="mr-1 h-3 w-3" />
-                            Quote #{quote.quote_number}
+                            Job #{project?.job_number || 'N/A'}
                           </div>
+                          {project?.due_date && (
+                            <div className="text-xs text-orange-600 flex items-center">
+                              <Calendar className="mr-1 h-3 w-3" />
+                              Due: {new Date(project.due_date).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       
@@ -267,8 +324,20 @@ export const EnhancedJobsManagement = ({
                             <div className="text-sm font-medium">
                               {project.name}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {project.status}
+                            <div className="flex items-center space-x-1">
+                              <Badge variant="outline" className={`text-xs ${
+                                project.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                project.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                project.status === 'planning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                'bg-gray-50 text-gray-700 border-gray-200'
+                              }`}>
+                                {project.status.replace('_', ' ').toUpperCase()}
+                              </Badge>
+                              {project.priority && (
+                                <Badge variant="outline" className="text-xs">
+                                  {project.priority.toUpperCase()}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         ) : (
@@ -278,7 +347,7 @@ export const EnhancedJobsManagement = ({
                       
                       <TableCell>
                         <Badge className={`${getStatusColor(quote.status)} border-0`} variant="secondary">
-                          {quote.status}
+                          {quote.status.toUpperCase()}
                         </Badge>
                       </TableCell>
                       
@@ -286,12 +355,7 @@ export const EnhancedJobsManagement = ({
                         <div className="flex items-center space-x-1">
                           <DollarSign className="h-4 w-4 text-green-600" />
                           <span className="font-medium text-green-600">
-                            {stats.totalValue.toLocaleString('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0
-                            })}
+                            {formatCurrency(stats.totalValue)}
                           </span>
                         </div>
                       </TableCell>
@@ -309,15 +373,24 @@ export const EnhancedJobsManagement = ({
                       </TableCell>
                       
                       <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="text-xs">
-                            <MessageSquare className="mr-1 h-3 w-3" />
-                            0 emails
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            <FileText className="mr-1 h-3 w-3" />
-                            1 quote
-                          </Badge>
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className={`text-xs ${
+                              commStats.emailCount > 0 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'
+                            }`}>
+                              <Mail className="mr-1 h-3 w-3" />
+                              {commStats.emailCount} emails
+                            </Badge>
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              <FileText className="mr-1 h-3 w-3" />
+                              1 quote
+                            </Badge>
+                          </div>
+                          {commStats.lastContact && (
+                            <div className="text-xs text-muted-foreground">
+                              Last contact: {new Date(commStats.lastContact).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       
@@ -363,11 +436,29 @@ export const EnhancedJobsManagement = ({
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                          <Button variant="ghost" size="sm" title="Send Email">
-                            <MessageSquare className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            title="Send Email"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSendEmail(client?.id || '', quote.id);
+                            }}
+                            disabled={!client?.email}
+                          >
+                            <Mail className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="View Documents">
-                            <FileText className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            title="View Documents"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDocuments(project?.id || '');
+                            }}
+                            disabled={!project?.id}
+                          >
+                            <ExternalLink className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
