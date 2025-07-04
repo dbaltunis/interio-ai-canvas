@@ -10,12 +10,8 @@ const corsHeaders = {
 interface EmailRequest {
   to: string;
   subject: string;
-  content: string;
-  template_id?: string;
-  campaign_id?: string;
-  client_id?: string;
-  from_email?: string;
-  from_name?: string;
+  html: string;
+  emailId?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -55,8 +51,15 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Processing email request:", { 
       to: emailData.to, 
       subject: emailData.subject,
-      from: emailData.from_email || "noreply@interioapp.com"
+      hasContent: !!emailData.html
     });
+
+    // Check if SendGrid API key is available
+    const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
+    if (!sendGridApiKey) {
+      console.error("SendGrid API key not found");
+      throw new Error("SendGrid API key not configured");
+    }
 
     // Get user's business settings for from email
     const { data: businessSettings } = await supabase
@@ -65,46 +68,10 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('user_id', user.id)
       .single();
 
-    // Get client data if client_id is provided
-    let clientData = null;
-    if (emailData.client_id) {
-      const { data } = await supabase
-        .from('clients')
-        .select('name, email, company_name')
-        .eq('id', emailData.client_id)
-        .eq('user_id', user.id)
-        .single();
-      clientData = data;
-    }
+    console.log("Business settings:", businessSettings);
 
-    // Process template variables in content and subject
-    let processedContent = emailData.content;
-    let processedSubject = emailData.subject;
-    
-    // Replace template variables
-    const replacements = {
-      '{{company_name}}': businessSettings?.company_name || 'Your Company',
-      '{{client_name}}': clientData?.name || 'Valued Client',
-      '{{season}}': 'Spring', // You can make this dynamic
-      '{{discount_percentage}}': '25', // You can make this configurable
-      '{{offer_expires}}': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      '{{fabric_collection_name}}': 'Premium Designer Collection 2025'
-    };
-
-    for (const [placeholder, value] of Object.entries(replacements)) {
-      processedContent = processedContent.replace(new RegExp(placeholder, 'g'), value);
-      processedSubject = processedSubject.replace(new RegExp(placeholder, 'g'), value);
-    }
-
-    console.log("Template variables processed:", {
-      originalSubject: emailData.subject,
-      processedSubject,
-      clientName: clientData?.name,
-      companyName: businessSettings?.company_name
-    });
-
-    const fromEmail = emailData.from_email || businessSettings?.business_email || "noreply@interioapp.com";
-    const fromName = emailData.from_name || businessSettings?.company_name || "InterioApp";
+    const fromEmail = businessSettings?.business_email || "noreply@interioapp.com";
+    const fromName = businessSettings?.company_name || "InterioApp";
 
     console.log("Sending via SendGrid with from:", fromEmail, fromName);
 
@@ -112,13 +79,13 @@ const handler = async (req: Request): Promise<Response> => {
     const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${Deno.env.get("SENDGRID_API_KEY")}`,
+        "Authorization": `Bearer ${sendGridApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         personalizations: [{
           to: [{ email: emailData.to }],
-          subject: processedSubject,
+          subject: emailData.subject,
         }],
         from: {
           email: fromEmail,
@@ -126,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         content: [{
           type: "text/html",
-          value: processedContent
+          value: emailData.html
         }],
         tracking_settings: {
           click_tracking: { 
@@ -143,9 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         custom_args: {
           user_id: user.id,
-          template_id: emailData.template_id || "",
-          campaign_id: emailData.campaign_id || "",
-          client_id: emailData.client_id || "",
+          email_id: emailData.emailId || ""
         }
       }),
     });
@@ -155,64 +120,33 @@ const handler = async (req: Request): Promise<Response> => {
     if (!sendGridResponse.ok) {
       const errorText = await sendGridResponse.text();
       console.error("SendGrid error response:", errorText);
-      
-      // Store failed email record
-      await supabase
-        .from("emails")
-        .insert({
-          user_id: user.id,
-          recipient_email: emailData.to,
-          subject: processedSubject,
-          content: processedContent,
-          template_id: emailData.template_id,
-          campaign_id: emailData.campaign_id,
-          client_id: emailData.client_id,
-          status: "failed",
-          bounce_reason: `SendGrid API error: ${sendGridResponse.status} - ${errorText}`,
-          open_count: 0,
-          click_count: 0,
-          time_spent_seconds: 0,
-        });
-
       throw new Error(`SendGrid API error: ${sendGridResponse.status} - ${errorText}`);
     }
 
     const messageId = sendGridResponse.headers.get("X-Message-Id");
     console.log("Email sent successfully, Message ID:", messageId);
 
-    // Store email record in database
-    const { data, error } = await supabase
-      .from("emails")
-        .insert({
-          user_id: user.id,
-          recipient_email: emailData.to,
-          subject: processedSubject,
-          content: processedContent,
-        template_id: emailData.template_id,
-        campaign_id: emailData.campaign_id,
-        client_id: emailData.client_id,
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        sendgrid_message_id: messageId,
-        open_count: 0,
-        click_count: 0,
-        time_spent_seconds: 0,
-      })
-      .select()
-      .single();
+    // Update email record in database if emailId is provided
+    if (emailData.emailId) {
+      const { error: updateError } = await supabase
+        .from("emails")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          sendgrid_message_id: messageId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', emailData.emailId);
 
-    if (error) {
-      console.error("Database error:", error);
-      throw error;
+      if (updateError) {
+        console.error("Failed to update email status:", updateError);
+      }
     }
-
-    console.log("Email record stored in database:", data.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        email_id: data.id,
-        message_id: messageId,
+        messageId: messageId,
         message: "Email sent successfully"
       }),
       {
@@ -223,9 +157,11 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error("Error in send-email function:", error);
+    
+    // Return proper error response
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || "Unknown error occurred",
         success: false 
       }),
       {

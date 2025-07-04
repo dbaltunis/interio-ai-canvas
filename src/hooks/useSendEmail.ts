@@ -23,7 +23,7 @@ export const useSendEmail = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // First, create the email record with "queued" status (valid status)
+      // First, create the email record with "queued" status
       const { data: emailRecord, error: createError } = await supabase
         .from('emails')
         .insert({
@@ -34,7 +34,7 @@ export const useSendEmail = () => {
           template_id: emailData.template_id,
           client_id: emailData.client_id,
           campaign_id: emailData.campaign_id,
-          status: 'queued', // Use 'queued' instead of 'sending'
+          status: 'queued',
           created_at: new Date().toISOString()
         })
         .select()
@@ -47,12 +47,12 @@ export const useSendEmail = () => {
 
       console.log("Email record created:", emailRecord);
 
-      // Invalidate queries IMMEDIATELY to show the "queued" status in UI
+      // Invalidate queries to show the "queued" status
       await queryClient.invalidateQueries({ queryKey: ['emails'] });
       await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
       try {
-        // Now send the actual email via SendGrid
+        // Send the email via the edge function
         const { data: sendResponse, error: sendError } = await supabase.functions.invoke('send-email', {
           body: {
             to: emailData.to,
@@ -75,7 +75,6 @@ export const useSendEmail = () => {
             })
             .eq('id', emailRecord.id);
 
-          // Refresh data to show failed status
           await queryClient.invalidateQueries({ queryKey: ['emails'] });
           await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
@@ -84,22 +83,7 @@ export const useSendEmail = () => {
 
         console.log("Email sent successfully:", sendResponse);
 
-        // Update status to sent (SendGrid webhook will update to delivered later)
-        const { error: updateError } = await supabase
-          .from('emails')
-          .update({ 
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            sendgrid_message_id: sendResponse.messageId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', emailRecord.id);
-
-        if (updateError) {
-          console.error("Failed to update email status:", updateError);
-        }
-
-        // Final refresh to show sent status
+        // Final refresh to show updated status
         await queryClient.invalidateQueries({ queryKey: ['emails'] });
         await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
@@ -118,7 +102,6 @@ export const useSendEmail = () => {
           })
           .eq('id', emailRecord.id);
 
-        // Refresh data to show failed status
         await queryClient.invalidateQueries({ queryKey: ['emails'] });
         await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
