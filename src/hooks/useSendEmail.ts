@@ -1,53 +1,134 @@
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface SendEmailData {
+interface SendEmailRequest {
   to: string;
   subject: string;
   content: string;
   template_id?: string;
-  campaign_id?: string;
   client_id?: string;
-  from_email?: string;
-  from_name?: string;
+  campaign_id?: string;
 }
 
 export const useSendEmail = () => {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (emailData: SendEmailData) => {
-      console.log("Sending email via SendGrid:", emailData);
+    mutationFn: async (emailData: SendEmailRequest) => {
+      console.log("Starting email send process...", emailData);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('User not authenticated');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-      const response = await supabase.functions.invoke('send-email', {
-        body: emailData,
-      });
+      // First, create the email record with "sending" status
+      const { data: emailRecord, error: createError } = await supabase
+        .from('emails')
+        .insert({
+          user_id: user.id,
+          recipient_email: emailData.to,
+          subject: emailData.subject,
+          content: emailData.content,
+          template_id: emailData.template_id,
+          client_id: emailData.client_id,
+          campaign_id: emailData.campaign_id,
+          status: 'sending',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-      console.log("SendGrid response:", response);
-
-      if (response.error) {
-        console.error("SendGrid error:", response.error);
-        throw new Error(response.error.message || 'Failed to send email');
+      if (createError) {
+        console.error("Failed to create email record:", createError);
+        throw createError;
       }
 
-      return response.data;
+      console.log("Email record created:", emailRecord);
+
+      // Invalidate queries immediately to show the "sending" status
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+
+      try {
+        // Now send the actual email
+        const { data: sendResponse, error: sendError } = await supabase.functions.invoke('send-email', {
+          body: {
+            to: emailData.to,
+            subject: emailData.subject,
+            html: emailData.content,
+            emailId: emailRecord.id
+          }
+        });
+
+        if (sendError) {
+          console.error("Send email function error:", sendError);
+          
+          // Update status to failed
+          await supabase
+            .from('emails')
+            .update({ 
+              status: 'failed',
+              bounce_reason: sendError.message,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', emailRecord.id);
+
+          throw sendError;
+        }
+
+        console.log("Email sent successfully:", sendResponse);
+
+        // Update status to sent
+        await supabase
+          .from('emails')
+          .update({ 
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            sendgrid_message_id: sendResponse.messageId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', emailRecord.id);
+
+        return { ...emailRecord, ...sendResponse };
+
+      } catch (error) {
+        console.error("Failed to send email:", error);
+        
+        // Update status to failed
+        await supabase
+          .from('emails')
+          .update({ 
+            status: 'failed',
+            bounce_reason: error.message,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', emailRecord.id);
+
+        throw error;
+      }
     },
     onSuccess: () => {
+      // Refresh data after successful send
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+      
       toast({
         title: "Email Sent",
-        description: "Your email has been sent successfully via SendGrid",
+        description: "Your email has been sent successfully",
       });
     },
-    onError: (error) => {
-      console.error("Email sending error:", error);
+    onError: (error: any) => {
+      console.error("Send email mutation error:", error);
+      
+      // Refresh data to show failed status
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+      
       toast({
-        title: "Failed to Send Email",
-        description: error.message,
+        title: "Email Failed",
+        description: error.message || "Failed to send email",
         variant: "destructive",
       });
     },

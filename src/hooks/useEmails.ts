@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface Email {
   id: string;
@@ -13,7 +14,7 @@ export interface Email {
   recipient_name?: string;
   subject: string;
   content: string;
-  status: 'draft' | 'queued' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  status: 'draft' | 'sending' | 'queued' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
   sent_at?: string;
   delivered_at?: string;
   opened_at?: string;
@@ -28,7 +29,9 @@ export interface Email {
 }
 
 export const useEmails = () => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['emails'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,6 +43,33 @@ export const useEmails = () => {
       return data as Email[];
     },
   });
+
+  // Set up real-time subscription for email updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('emails-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'emails'
+        },
+        (payload) => {
+          console.log('Email update received:', payload);
+          // Invalidate and refetch emails when any email changes
+          queryClient.invalidateQueries({ queryKey: ['emails'] });
+          queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 };
 
 export const useEmailKPIs = () => {
@@ -52,11 +82,11 @@ export const useEmailKPIs = () => {
       
       if (error) throw error;
       
-      const totalSent = emails.filter(email => email.status !== 'draft').length;
-      const delivered = emails.filter(email => email.status === 'delivered' || email.status === 'opened' || email.status === 'clicked').length;
+      const totalSent = emails.filter(email => !['draft', 'sending'].includes(email.status)).length;
+      const delivered = emails.filter(email => ['delivered', 'opened', 'clicked', 'sent'].includes(email.status)).length;
       const opened = emails.filter(email => email.open_count > 0).length;
       const clicked = emails.filter(email => email.click_count > 0).length;
-      const bounced = emails.filter(email => email.status === 'bounced').length;
+      const bounced = emails.filter(email => ['bounced', 'failed'].includes(email.status)).length;
       
       const openRate = totalSent > 0 ? (opened / totalSent) * 100 : 0;
       const clickRate = totalSent > 0 ? (clicked / totalSent) * 100 : 0;

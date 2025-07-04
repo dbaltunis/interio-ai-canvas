@@ -27,7 +27,8 @@ import {
   Copy,
   RefreshCw,
   MessageSquare,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs, useCreateEmail } from "@/hooks/useEmails";
@@ -269,10 +270,13 @@ export const EmailsTab = () => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'delivered':
-      case 'sent':
         return 'default';
-      case 'opened':
+      case 'sent':
         return 'secondary';
+      case 'sending':
+        return 'outline';
+      case 'opened':
+        return 'default';
       case 'clicked':
         return 'outline';
       case 'bounced':
@@ -280,6 +284,25 @@ export const EmailsTab = () => {
         return 'destructive';
       default:
         return 'outline';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'sending':
+        return <Loader2 className="h-3 w-3 animate-spin" />;
+      case 'sent':
+      case 'delivered':
+        return <CheckCircle className="h-3 w-3" />;
+      case 'opened':
+        return <Eye className="h-3 w-3" />;
+      case 'clicked':
+        return <MousePointer className="h-3 w-3" />;
+      case 'bounced':
+      case 'failed':
+        return <AlertCircle className="h-3 w-3" />;
+      default:
+        return <Clock className="h-3 w-3" />;
     }
   };
 
@@ -812,7 +835,6 @@ export const EmailsTab = () => {
                       <TableHead>Recipient</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Opens</TableHead>
-                      <TableHead>Clicks</TableHead>
                       <TableHead>Time Spent</TableHead>
                       <TableHead>Sent At</TableHead>
                       <TableHead>Actions</TableHead>
@@ -823,27 +845,28 @@ export const EmailsTab = () => {
                       emails.map((email) => (
                         <TableRow key={email.id} className="cursor-pointer hover:bg-gray-50">
                           <TableCell 
-                            className="font-medium"
+                            className="font-medium max-w-xs"
                             onClick={() => handleEmailClick(email)}
                           >
-                            {email.subject}
+                            <div className="truncate">{email.subject}</div>
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
-                            {email.recipient_email}
+                            <div className="truncate max-w-48">{email.recipient_email}</div>
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
-                            <Badge variant={getStatusBadgeVariant(email.status)}>
-                              {email.status}
+                            <Badge variant={getStatusBadgeVariant(email.status)} className="flex items-center gap-1 w-fit">
+                              {getStatusIcon(email.status)}
+                              <span className="capitalize">{email.status}</span>
                             </Badge>
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
-                            {email.open_count}
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-blue-600" />
+                              <span>{email.open_count}</span>
+                            </div>
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
-                            {email.click_count}
-                          </TableCell>
-                          <TableCell onClick={() => handleEmailClick(email)}>
-                            {formatTimeSpent(email.time_spent_seconds)}
+                            {email.time_spent_seconds > 0 ? formatTimeSpent(email.time_spent_seconds) : '-'}
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
                             {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
@@ -857,7 +880,7 @@ export const EmailsTab = () => {
                                   e.stopPropagation();
                                   handleEmailClick(email);
                                 }}
-                                title="View Details"
+                                title="View Details & Analytics"
                               >
                                 <Eye className="h-3 w-3" />
                               </Button>
@@ -887,29 +910,18 @@ export const EmailsTab = () => {
                                     }
                                   }}
                                   title="Resend Email"
+                                  disabled={sendEmailMutation.isPending}
                                 >
-                                  <RefreshCw className="h-3 w-3" />
+                                  <RefreshCw className={`h-3 w-3 ${sendEmailMutation.isPending ? 'animate-spin' : ''}`} />
                                 </Button>
                               )}
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedEmail(email);
-                                  setEmailDetailOpen(true);
-                                }}
-                                title="Add Follow-up"
-                              >
-                                <MessageSquare className="h-3 w-3" />
-                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-gray-500">
+                        <TableCell colSpan={7} className="text-center text-gray-500">
                           No emails sent yet
                         </TableCell>
                       </TableRow>

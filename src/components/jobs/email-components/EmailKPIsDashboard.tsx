@@ -9,7 +9,8 @@ import {
   CheckCircle, 
   AlertTriangle,
   TrendingUp,
-  Mail
+  Mail,
+  Loader2
 } from "lucide-react";
 
 interface EmailKPIsProps {
@@ -36,7 +37,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: Send,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      description: "Total emails sent"
+      description: "Emails successfully sent"
     },
     {
       title: "Delivered",
@@ -44,7 +45,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      description: "Successfully delivered"
+      description: "Reached recipient inbox"
     },
     {
       title: "Open Rate",
@@ -55,28 +56,28 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       description: "Emails opened by recipients"
     },
     {
-      title: "Click Rate",
-      value: `${kpis.clickRate}%`,
-      icon: MousePointer,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      description: "Links clicked in emails"
-    },
-    {
-      title: "Avg Time",
+      title: "Avg Reading Time",
       value: kpis.avgTimeSpent,
       icon: Clock,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
-      description: "Average reading time"
+      description: "Time spent reading emails"
     },
     {
-      title: "Bounced",
+      title: "Total Opens",
+      value: kpis.totalOpenCount,
+      icon: Mail,
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
+      description: "Total email opens"
+    },
+    {
+      title: "Issues",
       value: kpis.bounced,
       icon: AlertTriangle,
       color: kpis.bounced > 0 ? "text-red-600" : "text-gray-600",
       bgColor: kpis.bounced > 0 ? "bg-red-50" : "bg-gray-50",
-      description: "Failed deliveries"
+      description: "Bounced or failed emails"
     }
   ];
 
@@ -94,7 +95,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
                   <div className={`p-2 rounded-lg ${kpi.bgColor}`}>
                     <IconComponent className={`h-4 w-4 ${kpi.color}`} />
                   </div>
-                  {kpi.title === "Bounced" && numericValue > 0 && (
+                  {kpi.title === "Issues" && numericValue > 0 && (
                     <Badge variant="destructive" className="text-xs">
                       Action Needed
                     </Badge>
@@ -123,9 +124,10 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
               <p className="text-sm text-gray-600">
                 {kpis.deliveryRate >= 95 ? "Excellent" : 
                  kpis.deliveryRate >= 85 ? "Good" : "Needs Improvement"} delivery rate • 
-                {kpis.openRate >= 20 ? "Strong" : 
+                {kpis.openRate >= 25 ? "Excellent" :
+                 kpis.openRate >= 15 ? "Good" : 
                  kpis.openRate >= 10 ? "Average" : "Low"} engagement • 
-                {kpis.bounced === 0 ? "No issues detected" : `${kpis.bounced} bounced emails need attention`}
+                {kpis.bounced === 0 ? "No delivery issues" : `${kpis.bounced} emails need attention`}
               </p>
             </div>
           </div>
