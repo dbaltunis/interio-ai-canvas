@@ -38,6 +38,7 @@ import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
 import { EmailDetailDialog } from "./email-components/EmailDetailDialog";
 import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
 import { EmailComposer } from "./email-components/EmailComposer";
+import { EmailStatusBadge } from "./email-components/EmailStatusBadge";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -199,47 +200,13 @@ export const EmailsTab = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'delivered':
-      case 'sent':
-        return 'default';
-      case 'sending':
-        return 'secondary';
-      case 'opened':
-        return 'default';
-      case 'bounced':
-      case 'failed':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'sending':
-        return <Loader2 className="h-3 w-3 animate-spin" />;
-      case 'sent':
-      case 'delivered':
-        return <CheckCircle className="h-3 w-3" />;
-      case 'opened':
-        return <Eye className="h-3 w-3" />;
-      case 'bounced':
-      case 'failed':
-        return <AlertCircle className="h-3 w-3" />;
-      default:
-        return <Clock className="h-3 w-3" />;
-    }
-  };
-
   if (kpisLoading) {
     return <div className="flex items-center justify-center h-64">Loading email data...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* KPIs Dashboard - Only show overview, detailed analytics moved to campaigns */}
+      {/* Basic KPIs Dashboard */}
       <EmailKPIsDashboard kpis={emailKPIs} />
 
       {/* SendGrid Integration Status */}
@@ -522,11 +489,11 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* Campaigns Tab - Now includes detailed analytics */}
+        {/* Campaigns Tab */}
         <TabsContent value="campaigns">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Email Campaigns & Analytics</h3>
+              <h3 className="text-lg font-semibold">Email Campaigns</h3>
               <Button 
                 onClick={handleCreateCampaign} 
                 className="flex items-center gap-2"
@@ -536,34 +503,6 @@ export const EmailsTab = () => {
                 New Campaign
               </Button>
             </div>
-
-            {/* Detailed Analytics for Campaigns */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Campaign Performance Analytics</CardTitle>
-                <CardDescription>Detailed insights into your email campaigns</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{emailKPIs?.totalSent || 0}</div>
-                    <div className="text-sm text-gray-600">Total Emails Sent</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{emailKPIs?.delivered || 0}</div>
-                    <div className="text-sm text-gray-600">Successfully Delivered</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{emailKPIs?.openRate || 0}%</div>
-                    <div className="text-sm text-gray-600">Open Rate</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">{campaigns?.length || 0}</div>
-                    <div className="text-sm text-gray-600">Total Campaigns</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
             
             {campaigns && campaigns.length > 0 ? (
               <div className="grid gap-4">
@@ -603,12 +542,12 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* History Tab - Simplified */}
+        {/* History Tab with Dynamic Opens and Status */}
         <TabsContent value="history">
           <Card>
             <CardHeader>
               <CardTitle>Email History</CardTitle>
-              <CardDescription>Track all sent emails - click any email for detailed view</CardDescription>
+              <CardDescription>Track all sent emails with real-time status updates</CardDescription>
             </CardHeader>
             <CardContent>
               {emailsLoading ? (
@@ -639,15 +578,22 @@ export const EmailsTab = () => {
                             <div className="truncate max-w-48">{email.recipient_email}</div>
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
-                            <Badge variant={getStatusBadgeVariant(email.status)} className="flex items-center gap-1 w-fit">
-                              {getStatusIcon(email.status)}
-                              <span className="capitalize">{email.status}</span>
-                            </Badge>
+                            <EmailStatusBadge 
+                              status={email.status} 
+                              openCount={email.open_count}
+                            />
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
                             <div className="flex items-center gap-1">
-                              <Eye className="h-3 w-3 text-blue-600" />
-                              <span>{email.open_count}</span>
+                              <Eye className={`h-3 w-3 ${email.open_count > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                              <span className={email.open_count > 0 ? 'font-medium' : 'text-gray-500'}>
+                                {email.open_count}
+                              </span>
+                              {email.open_count > 1 && (
+                                <span className="text-xs text-blue-600 ml-1">
+                                  ({email.open_count}x)
+                                </span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>

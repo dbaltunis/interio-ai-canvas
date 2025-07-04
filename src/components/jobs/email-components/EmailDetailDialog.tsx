@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSendEmail } from "@/hooks/useSendEmail";
+import { EmailStatusBadge } from "./EmailStatusBadge";
 
 interface Email {
   id: string;
@@ -53,17 +54,6 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
   const sendEmailMutation = useSendEmail();
 
   if (!email) return null;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'opened': return 'bg-blue-100 text-blue-800';
-      case 'clicked': return 'bg-purple-100 text-purple-800';
-      case 'bounced': case 'failed': return 'bg-red-100 text-red-800';
-      case 'sent': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const canResend = ['bounced', 'failed'].includes(email.status);
 
@@ -156,19 +146,30 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
                 To: {email.recipient_name || email.recipient_email}
               </DialogDescription>
             </div>
-            <Badge className={getStatusColor(email.status)}>
-              {email.status}
-            </Badge>
+            <EmailStatusBadge status={email.status} openCount={email.open_count} />
           </div>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Email Stats */}
+          {/* Dynamic Email Stats */}
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <Eye className="h-4 w-4 mx-auto mb-1 text-blue-600" />
-              <div className="text-lg font-semibold">{email.open_count}</div>
-              <div className="text-xs text-gray-600">Opens</div>
+              <div className="flex items-center justify-center mb-1">
+                <Eye className={`h-4 w-4 ${email.open_count > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+              </div>
+              <div className="text-lg font-semibold">
+                {email.open_count}
+                {email.open_count > 1 && (
+                  <span className="text-sm text-blue-600 ml-1">
+                    ({email.open_count}x)
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-600">
+                {email.open_count === 0 ? 'Not Opened' : 
+                 email.open_count === 1 ? 'Opened Once' : 
+                 'Multiple Opens'}
+              </div>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <MousePointer className="h-4 w-4 mx-auto mb-1 text-purple-600" />
@@ -189,7 +190,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
             </div>
           </div>
 
-          {/* Timeline */}
+          {/* Real-time Status Timeline */}
           <div className="space-y-3">
             <h4 className="font-semibold">Email Timeline</h4>
             <div className="space-y-2">
@@ -212,6 +213,11 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                   <span className="font-medium">First Opened:</span>
                   <span>{new Date(email.opened_at).toLocaleString()}</span>
+                  {email.open_count > 1 && (
+                    <Badge variant="secondary" className="text-xs ml-2">
+                      {email.open_count} total opens
+                    </Badge>
+                  )}
                 </div>
               )}
               {email.clicked_at && (
