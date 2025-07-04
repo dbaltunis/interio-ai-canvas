@@ -20,8 +20,10 @@ export const useSendEmail = () => {
     mutationFn: async (emailData: SendEmailRequest) => {
       console.log("Starting email send process...", emailData);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('User not authenticated');
+      
+      const user = session.user;
 
       // First, create the email record with "queued" status
       const { data: emailRecord, error: createError } = await supabase
