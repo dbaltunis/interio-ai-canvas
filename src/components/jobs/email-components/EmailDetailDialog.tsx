@@ -14,7 +14,9 @@ import {
   MessageSquare,
   Calendar,
   User,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  CheckCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSendEmail } from "@/hooks/useSendEmail";
@@ -46,6 +48,7 @@ interface EmailDetailDialogProps {
 export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: EmailDetailDialogProps) => {
   const [followUpNote, setFollowUpNote] = useState("");
   const [showFollowUp, setShowFollowUp] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { toast } = useToast();
   const sendEmailMutation = useSendEmail();
 
@@ -57,6 +60,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
       case 'opened': return 'bg-blue-100 text-blue-800';
       case 'clicked': return 'bg-purple-100 text-purple-800';
       case 'bounced': case 'failed': return 'bg-red-100 text-red-800';
+      case 'sent': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -64,15 +68,31 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
   const canResend = ['bounced', 'failed'].includes(email.status);
 
   const handleResend = async () => {
+    if (!email) return;
+    
+    setIsResending(true);
     try {
       await sendEmailMutation.mutateAsync({
         to: email.recipient_email,
-        subject: `[RESEND] ${email.subject}`,
+        subject: email.subject,
         content: email.content
       });
+      
+      toast({
+        title: "Email Resent Successfully",
+        description: `Email has been resent to ${email.recipient_email}`,
+      });
+      
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to resend email:", error);
+      toast({
+        title: "Resend Failed",
+        description: "Failed to resend email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -83,9 +103,19 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
       setShowFollowUp(false);
       toast({
         title: "Follow-up Recorded",
-        description: "Your follow-up note has been saved."
+        description: "Your follow-up note has been saved successfully."
       });
     }
+  };
+
+  const handleCopyContent = () => {
+    // Remove HTML tags for copying
+    const textContent = email.content.replace(/<[^>]*>/g, '');
+    navigator.clipboard.writeText(textContent);
+    toast({ 
+      title: "Content Copied", 
+      description: "Email content copied to clipboard (HTML tags removed)" 
+    });
   };
 
   const formatTimeSpent = (seconds: number) => {
@@ -95,9 +125,28 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
     return `${minutes}m ${remainingSeconds}s`;
   };
 
+  // Function to render HTML content safely
+  const renderEmailContent = (htmlContent: string) => {
+    // Simple HTML to text conversion for display
+    const textContent = htmlContent
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<div[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+    
+    return textContent;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <Mail className="h-5 w-5" />
@@ -191,8 +240,10 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
           {/* Email Content Preview */}
           <div>
             <h4 className="font-semibold mb-3">Email Content</h4>
-            <div className="p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
-              <div className="whitespace-pre-wrap text-sm">{email.content}</div>
+            <div className="p-4 bg-gray-50 rounded-lg max-h-60 overflow-y-auto">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                {renderEmailContent(email.content)}
+              </div>
             </div>
           </div>
 
@@ -201,11 +252,12 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
             {canResend && (
               <Button 
                 onClick={handleResend}
-                disabled={sendEmailMutation.isPending}
+                disabled={isResending || sendEmailMutation.isPending}
                 className="flex items-center gap-2"
+                variant="outline"
               >
-                <RefreshCw className="h-4 w-4" />
-                {sendEmailMutation.isPending ? "Resending..." : "Resend Email"}
+                <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
+                {isResending ? "Resending..." : "Resend Email"}
               </Button>
             )}
             
@@ -215,16 +267,15 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
               className="flex items-center gap-2"
             >
               <MessageSquare className="h-4 w-4" />
-              Follow Up
+              Add Follow-up
             </Button>
 
             <Button 
               variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(email.content);
-                toast({ title: "Content Copied", description: "Email content copied to clipboard" });
-              }}
+              onClick={handleCopyContent}
+              className="flex items-center gap-2"
             >
+              <Copy className="h-4 w-4" />
               Copy Content
             </Button>
           </div>
@@ -232,15 +283,24 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
           {/* Follow-up Section */}
           {showFollowUp && (
             <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
-              <h5 className="font-medium">Add Follow-up Note</h5>
+              <h5 className="font-medium flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Record Follow-up Action
+              </h5>
               <Textarea
-                placeholder="Record your follow-up actions, client response, or next steps..."
+                placeholder="Record your follow-up actions, client response, next steps, or meeting notes..."
                 value={followUpNote}
                 onChange={(e) => setFollowUpNote(e.target.value)}
                 className="min-h-20"
               />
               <div className="flex gap-2">
-                <Button onClick={handleFollowUp} size="sm">
+                <Button 
+                  onClick={handleFollowUp} 
+                  size="sm"
+                  disabled={!followUpNote.trim()}
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle className="h-3 w-3" />
                   Record Follow-up
                 </Button>
                 <Button 

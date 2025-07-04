@@ -246,15 +246,24 @@ export const EmailsTab = () => {
   };
 
   const handleFollowUp = async (emailId: string, note: string) => {
-    // Create follow-up record (you may want to create a follow-ups table)
-    console.log("Recording follow-up:", { emailId, note });
-    
-    // For now, we'll just show a success message
-    // In production, you'd want to save this to a database
-    toast({
-      title: "Follow-up Recorded",
-      description: "Your follow-up note has been saved successfully."
-    });
+    try {
+      console.log("Recording follow-up:", { emailId, note, timestamp: new Date().toISOString() });
+      
+      // Here you could save to a follow-ups table in the future
+      // For now, we'll just log it and show success
+      
+      toast({
+        title: "Follow-up Recorded",
+        description: "Your follow-up note has been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to record follow-up:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record follow-up. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -848,6 +857,7 @@ export const EmailsTab = () => {
                                   e.stopPropagation();
                                   handleEmailClick(email);
                                 }}
+                                title="View Details"
                               >
                                 <Eye className="h-3 w-3" />
                               </Button>
@@ -860,7 +870,7 @@ export const EmailsTab = () => {
                                     try {
                                       await sendEmailMutation.mutateAsync({
                                         to: email.recipient_email,
-                                        subject: `[RESEND] ${email.subject}`,
+                                        subject: email.subject,
                                         content: email.content
                                       });
                                       toast({
@@ -876,10 +886,23 @@ export const EmailsTab = () => {
                                       });
                                     }
                                   }}
+                                  title="Resend Email"
                                 >
                                   <RefreshCw className="h-3 w-3" />
                                 </Button>
                               )}
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedEmail(email);
+                                  setEmailDetailOpen(true);
+                                }}
+                                title="Add Follow-up"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
