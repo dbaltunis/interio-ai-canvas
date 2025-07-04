@@ -13,10 +13,12 @@ import {
   Paperclip, 
   Image as ImageIcon,
   X,
-  Upload
+  Upload,
+  Palette
 } from "lucide-react";
 import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 import { useToast } from "@/hooks/use-toast";
+import { EmailDesignEditor } from "./EmailDesignEditor";
 
 interface EmailComposerProps {
   newEmail: any;
@@ -40,6 +42,7 @@ export const EmailComposer = ({
   emailSettings
 }: EmailComposerProps) => {
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [designEditorOpen, setDesignEditorOpen] = useState(false);
   const { data: templates } = useEmailTemplates();
   const { toast } = useToast();
 
@@ -76,6 +79,17 @@ export const EmailComposer = ({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleDesignSave = (content: string) => {
+    setNewEmail({
+      ...newEmail,
+      content: content
+    });
+    toast({
+      title: "Design Saved",
+      description: "Your email design has been saved."
+    });
   };
 
   return (
@@ -132,12 +146,24 @@ export const EmailComposer = ({
         </div>
         
         <div>
-          <label className="text-sm font-medium">Message</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium">Message</label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDesignEditorOpen(true)}
+            >
+              <Palette className="h-4 w-4 mr-2" />
+              Design Editor
+            </Button>
+          </div>
           <Textarea 
             placeholder="Write your email message here..." 
             className="min-h-[200px]"
             value={newEmail.content}
             onChange={(e) => setNewEmail({ ...newEmail, content: e.target.value })}
+            style={{ whiteSpace: 'pre-wrap' }}
           />
         </div>
 
@@ -252,6 +278,13 @@ export const EmailComposer = ({
             {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
           </Button>
         </div>
+
+        <EmailDesignEditor
+          open={designEditorOpen}
+          onOpenChange={setDesignEditorOpen}
+          initialContent={newEmail.content}
+          onSave={handleDesignSave}
+        />
       </CardContent>
     </Card>
   );

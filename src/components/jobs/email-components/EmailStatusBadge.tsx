@@ -18,11 +18,11 @@ interface EmailStatusBadgeProps {
 export const EmailStatusBadge = ({ status, openCount = 0 }: EmailStatusBadgeProps) => {
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'sending':
+      case 'queued':
         return {
           variant: 'secondary' as const,
-          icon: <Loader2 className="h-3 w-3 animate-spin" />,
-          text: 'Sending...',
+          icon: <Clock className="h-3 w-3" />,
+          text: 'Queued',
           color: 'text-blue-600'
         };
       case 'sent':
@@ -60,6 +60,13 @@ export const EmailStatusBadge = ({ status, openCount = 0 }: EmailStatusBadgeProp
           icon: <Mail className="h-3 w-3" />,
           text: 'Draft',
           color: 'text-gray-500'
+        };
+      case 'clicked':
+        return {
+          variant: 'default' as const,
+          icon: <Eye className="h-3 w-3" />,
+          text: `Clicked ${openCount > 1 ? `(${openCount}x)` : ''}`,
+          color: 'text-purple-600'
         };
       default:
         return {

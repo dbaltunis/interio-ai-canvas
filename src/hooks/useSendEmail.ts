@@ -23,7 +23,7 @@ export const useSendEmail = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // First, create the email record with "sending" status
+      // First, create the email record with "queued" status (valid status)
       const { data: emailRecord, error: createError } = await supabase
         .from('emails')
         .insert({
@@ -34,7 +34,7 @@ export const useSendEmail = () => {
           template_id: emailData.template_id,
           client_id: emailData.client_id,
           campaign_id: emailData.campaign_id,
-          status: 'sending',
+          status: 'queued', // Use 'queued' instead of 'sending'
           created_at: new Date().toISOString()
         })
         .select()
@@ -47,7 +47,7 @@ export const useSendEmail = () => {
 
       console.log("Email record created:", emailRecord);
 
-      // Invalidate queries IMMEDIATELY to show the "sending" status in UI
+      // Invalidate queries IMMEDIATELY to show the "queued" status in UI
       await queryClient.invalidateQueries({ queryKey: ['emails'] });
       await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
