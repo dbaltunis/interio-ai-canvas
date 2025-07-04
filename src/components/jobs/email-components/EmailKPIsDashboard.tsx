@@ -86,6 +86,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {kpiCards.map((kpi) => {
           const IconComponent = kpi.icon;
+          const numericValue = typeof kpi.value === 'number' ? kpi.value : 0;
           return (
             <Card key={kpi.title} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
@@ -93,7 +94,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
                   <div className={`p-2 rounded-lg ${kpi.bgColor}`}>
                     <IconComponent className={`h-4 w-4 ${kpi.color}`} />
                   </div>
-                  {kpi.title === "Bounced" && kpi.value > 0 && (
+                  {kpi.title === "Bounced" && numericValue > 0 && (
                     <Badge variant="destructive" className="text-xs">
                       Action Needed
                     </Badge>
