@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -13,14 +12,12 @@ import {
   Paperclip, 
   Image as ImageIcon,
   X,
-  Upload,
-  Palette,
   Users,
   FileText
 } from "lucide-react";
 import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 import { useToast } from "@/hooks/use-toast";
-import { EmailDesignEditor } from "./EmailDesignEditor";
+import { RichTextEditor } from "./RichTextEditor";
 
 interface EmailComposerProps {
   newEmail: any;
@@ -44,7 +41,6 @@ export const EmailComposer = ({
   emailSettings
 }: EmailComposerProps) => {
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [designEditorOpen, setDesignEditorOpen] = useState(false);
   const { data: templates } = useEmailTemplates();
   const { toast } = useToast();
 
@@ -81,17 +77,6 @@ export const EmailComposer = ({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const handleDesignSave = (content: string) => {
-    setNewEmail({
-      ...newEmail,
-      content: content
-    });
-    toast({
-      title: "Design Saved",
-      description: "Your email design has been saved."
-    });
   };
 
   return (
@@ -161,27 +146,14 @@ export const EmailComposer = ({
         </div>
         
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">Email Content</label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDesignEditorOpen(true)}
-              className="flex items-center gap-2 border-blue-300 text-blue-600 hover:bg-blue-50"
-            >
-              <Palette className="h-4 w-4" />
-              Design Editor
-            </Button>
-          </div>
-          <Textarea 
-            placeholder="Write your email message here... (Press Enter for new lines)" 
-            className="min-h-[200px] border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-mono text-sm"
+          <label className="text-sm font-medium text-gray-700">Email Content</label>
+          <RichTextEditor
             value={newEmail.content}
-            onChange={(e) => setNewEmail({ ...newEmail, content: e.target.value })}
-            style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}
+            onChange={(content) => setNewEmail({ ...newEmail, content })}
+            placeholder="Start typing your email message..."
+            className="min-h-[350px]"
           />
-          <p className="text-xs text-gray-500">Tip: Use the Design Editor for rich formatting and layout options</p>
+          <p className="text-xs text-gray-500">Use the toolbar above to format your email with bold, italic, lists, links, and more</p>
         </div>
 
         {/* File Attachments */}
@@ -314,13 +286,6 @@ export const EmailComposer = ({
             {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
           </Button>
         </div>
-
-        <EmailDesignEditor
-          open={designEditorOpen}
-          onOpenChange={setDesignEditorOpen}
-          initialContent={newEmail.content}
-          onSave={handleDesignSave}
-        />
       </CardContent>
     </Card>
   );
