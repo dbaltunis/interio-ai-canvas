@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,11 +55,11 @@ const handler = async (req: Request): Promise<Response> => {
       hasContent: !!emailData.html
     });
 
-    // Check if SendGrid API key is available
-    const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    if (!sendGridApiKey) {
-      console.error("SendGrid API key not found");
-      throw new Error("SendGrid API key not configured");
+    // Check if Resend API key is available
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("Resend API key not found");
+      throw new Error("Resend API key not configured");
     }
 
     // Get user's business settings for from email
@@ -70,10 +71,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Business settings:", businessSettings);
 
-    const fromEmail = businessSettings?.business_email || "noreply@interioapp.com";
+    const fromEmail = businessSettings?.business_email || "onboarding@resend.dev";
     const fromName = businessSettings?.company_name || "InterioApp";
 
-    console.log("Sending via SendGrid with from:", fromEmail, fromName);
+    console.log("Sending via Resend with from:", fromEmail, fromName);
 
     // Clean up HTML content - remove CSS variables and unsupported styles
     const cleanHtml = emailData.html
@@ -84,55 +85,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Cleaned HTML content:", cleanHtml);
 
-    // Send email via SendGrid
-    const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${sendGridApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        personalizations: [{
-          to: [{ email: emailData.to }],
-          subject: emailData.subject,
-        }],
-        from: {
-          email: fromEmail,
-          name: fromName
-        },
-        content: [{
-          type: "text/html",
-          value: cleanHtml
-        }],
-        tracking_settings: {
-          click_tracking: { 
-            enable: true,
-            enable_text: true 
-          },
-          open_tracking: { 
-            enable: true,
-            substitution_tag: "%opentrack%"
-          },
-          subscription_tracking: {
-            enable: false
-          }
-        },
-        custom_args: {
-          user_id: user.id,
-          email_id: emailData.emailId || ""
-        }
-      }),
+    // Initialize Resend
+    const resend = new Resend(resendApiKey);
+
+    // Send email via Resend
+    const emailResponse = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: [emailData.to],
+      subject: emailData.subject,
+      html: cleanHtml
     });
 
-    console.log("SendGrid response status:", sendGridResponse.status);
+    console.log("Resend response:", emailResponse);
 
-    if (!sendGridResponse.ok) {
-      const errorText = await sendGridResponse.text();
-      console.error("SendGrid error response:", errorText);
-      throw new Error(`SendGrid API error: ${sendGridResponse.status} - ${errorText}`);
+    if (emailResponse.error) {
+      console.error("Resend error:", emailResponse.error);
+      throw new Error(`Resend API error: ${emailResponse.error.message}`);
     }
 
-    const messageId = sendGridResponse.headers.get("X-Message-Id");
+    const messageId = emailResponse.data?.id;
     console.log("Email sent successfully, Message ID:", messageId);
 
     // Update email record in database if emailId is provided
