@@ -47,12 +47,12 @@ export const useSendEmail = () => {
 
       console.log("Email record created:", emailRecord);
 
-      // Invalidate queries immediately to show the "sending" status
-      queryClient.invalidateQueries({ queryKey: ['emails'] });
-      queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+      // Invalidate queries IMMEDIATELY to show the "sending" status in UI
+      await queryClient.invalidateQueries({ queryKey: ['emails'] });
+      await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
       try {
-        // Now send the actual email
+        // Now send the actual email via SendGrid
         const { data: sendResponse, error: sendError } = await supabase.functions.invoke('send-email', {
           body: {
             to: emailData.to,
@@ -75,13 +75,17 @@ export const useSendEmail = () => {
             })
             .eq('id', emailRecord.id);
 
+          // Refresh data to show failed status
+          await queryClient.invalidateQueries({ queryKey: ['emails'] });
+          await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+
           throw sendError;
         }
 
         console.log("Email sent successfully:", sendResponse);
 
-        // Update status to sent
-        await supabase
+        // Update status to sent (SendGrid webhook will update to delivered later)
+        const { error: updateError } = await supabase
           .from('emails')
           .update({ 
             status: 'sent',
@@ -90,6 +94,14 @@ export const useSendEmail = () => {
             updated_at: new Date().toISOString()
           })
           .eq('id', emailRecord.id);
+
+        if (updateError) {
+          console.error("Failed to update email status:", updateError);
+        }
+
+        // Final refresh to show sent status
+        await queryClient.invalidateQueries({ queryKey: ['emails'] });
+        await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
         return { ...emailRecord, ...sendResponse };
 
@@ -101,18 +113,20 @@ export const useSendEmail = () => {
           .from('emails')
           .update({ 
             status: 'failed',
-            bounce_reason: error.message,
+            bounce_reason: error instanceof Error ? error.message : 'Unknown error',
             updated_at: new Date().toISOString()
           })
           .eq('id', emailRecord.id);
+
+        // Refresh data to show failed status
+        await queryClient.invalidateQueries({ queryKey: ['emails'] });
+        await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
         throw error;
       }
     },
     onSuccess: () => {
-      // Refresh data after successful send
-      queryClient.invalidateQueries({ queryKey: ['emails'] });
-      queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+      console.log("Email send mutation completed successfully");
       
       toast({
         title: "Email Sent",
@@ -121,10 +135,6 @@ export const useSendEmail = () => {
     },
     onError: (error: any) => {
       console.error("Send email mutation error:", error);
-      
-      // Refresh data to show failed status
-      queryClient.invalidateQueries({ queryKey: ['emails'] });
-      queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
       
       toast({
         title: "Email Failed",

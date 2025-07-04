@@ -4,11 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Send, 
   Eye, 
-  MousePointer, 
   Clock, 
   CheckCircle, 
   AlertTriangle,
-  TrendingUp,
   Mail,
   Loader2
 } from "lucide-react";
@@ -37,7 +35,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: Send,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      description: "Emails successfully sent"
+      description: "Total emails sent"
     },
     {
       title: "Delivered",
@@ -45,7 +43,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      description: "Reached recipient inbox"
+      description: "Successfully delivered"
     },
     {
       title: "Open Rate",
@@ -53,15 +51,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: Eye,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      description: "Emails opened by recipients"
-    },
-    {
-      title: "Avg Reading Time",
-      value: kpis.avgTimeSpent,
-      icon: Clock,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-      description: "Time spent reading emails"
+      description: "Emails opened"
     },
     {
       title: "Total Opens",
@@ -69,7 +59,15 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: Mail,
       color: "text-cyan-600",
       bgColor: "bg-cyan-50",
-      description: "Total email opens"
+      description: "Number of times opened"
+    },
+    {
+      title: "Avg Reading Time",
+      value: kpis.avgTimeSpent,
+      icon: Clock,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      description: "Time spent reading"
     },
     {
       title: "Issues",
@@ -77,7 +75,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       icon: AlertTriangle,
       color: kpis.bounced > 0 ? "text-red-600" : "text-gray-600",
       bgColor: kpis.bounced > 0 ? "bg-red-50" : "bg-gray-50",
-      description: "Bounced or failed emails"
+      description: "Bounced or failed"
     }
   ];
 
@@ -117,10 +115,10 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white rounded-lg">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <CheckCircle className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900">Performance Summary</h4>
+              <h4 className="font-semibold text-gray-900">Email Performance Summary</h4>
               <p className="text-sm text-gray-600">
                 {kpis.deliveryRate >= 95 ? "Excellent" : 
                  kpis.deliveryRate >= 85 ? "Good" : "Needs Improvement"} delivery rate • 

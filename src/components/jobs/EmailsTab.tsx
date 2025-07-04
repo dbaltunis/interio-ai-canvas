@@ -1,44 +1,33 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Send, 
   Mail, 
   Users, 
-  BarChart3, 
-  Eye, 
+  FileText, 
   Clock, 
-  MousePointer, 
-  Plus,
-  FileText,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
+  CheckCircle, 
+  AlertCircle, 
   Settings,
-  Palette,
-  Copy,
+  Plus,
+  Eye,
   RefreshCw,
-  MessageSquare,
-  ExternalLink,
   Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useEmails, useEmailKPIs, useCreateEmail } from "@/hooks/useEmails";
+import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useEmailCampaigns, useCreateEmailCampaign, useUpdateEmailCampaign } from "@/hooks/useEmailCampaigns";
 import { useEmailTemplates, useCreateEmailTemplate } from "@/hooks/useEmailTemplates";
-import { useClients } from "@/hooks/useClients";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useCampaignExecution } from "@/hooks/useCampaignExecution";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { predefinedEmailTemplates } from "@/data/emailTemplates";
 import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
@@ -48,6 +37,7 @@ import { CampaignBuilder } from "./email-components/CampaignBuilder";
 import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
 import { EmailDetailDialog } from "./email-components/EmailDetailDialog";
 import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
+import { EmailComposer } from "./email-components/EmailComposer";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -79,16 +69,12 @@ export const EmailsTab = () => {
   const { data: emailKPIs, isLoading: kpisLoading } = useEmailKPIs();
   const { data: campaigns } = useEmailCampaigns();
   const { data: templates } = useEmailTemplates();
-  const { data: clients } = useClients();
   const { data: emailSettings } = useEmailSettings();
-  const { data: businessSettings } = useBusinessSettings();
   const sendEmailMutation = useSendEmail();
-  const createEmailMutation = useCreateEmail();
   const createCampaignMutation = useCreateEmailCampaign();
   const updateCampaignMutation = useUpdateEmailCampaign();
   const createTemplateMutation = useCreateEmailTemplate();
   const updateEmailSettingsMutation = useUpdateEmailSettings();
-  const campaignExecutionMutation = useCampaignExecution();
   const { hasSendGridIntegration } = useIntegrationStatus();
 
   useEffect(() => {
@@ -103,7 +89,6 @@ export const EmailsTab = () => {
   }, [emailSettings]);
 
   const handleSendEmail = async () => {
-    // Collect all recipients
     const allRecipients = [
       ...selectedClients.filter(client => client.email).map(client => client.email),
       ...(newEmail.recipient_email ? [newEmail.recipient_email] : [])
@@ -135,7 +120,6 @@ export const EmailsTab = () => {
       selectedQuotes: selectedQuotes.length
     });
 
-    // Send to each recipient
     for (const recipient of allRecipients) {
       try {
         await sendEmailMutation.mutateAsync({
@@ -150,7 +134,6 @@ export const EmailsTab = () => {
       }
     }
 
-    // Reset form
     setNewEmail({
       recipient_email: "",
       subject: "",
@@ -172,54 +155,6 @@ export const EmailsTab = () => {
     } else {
       createCampaignMutation.mutate(campaignData);
     }
-  };
-
-  const handleLaunchCampaign = (campaignData: any) => {
-    const campaignPromise = editingCampaign 
-      ? updateCampaignMutation.mutateAsync({ id: editingCampaign.id, ...campaignData })
-      : createCampaignMutation.mutateAsync(campaignData);
-
-    campaignPromise.then((campaign) => {
-      campaignExecutionMutation.mutate({
-        campaignId: campaign.id,
-        campaignData
-      });
-    });
-  };
-
-  const handleUseTemplate = (template: any) => {
-    // Check if template has variables
-    const hasVariables = template.content?.includes('{{') || template.subject?.includes('{{');
-    
-    if (hasVariables) {
-      setSelectedTemplate(template);
-      setTemplateVariableEditorOpen(true);
-    } else {
-      // Apply template directly
-      setNewEmail(prev => ({
-        ...prev,
-        subject: template.subject,
-        content: template.content
-      }));
-      setTemplateDialogOpen(false);
-      toast({
-        title: "Template Applied",
-        description: `${template.name} template has been applied to your email.`
-      });
-    }
-  };
-
-  const handleApplyTemplateWithVariables = (processedTemplate: any, variables: Record<string, string>) => {
-    setNewEmail(prev => ({
-      ...prev,
-      subject: processedTemplate.subject,
-      content: processedTemplate.content
-    }));
-    
-    toast({
-      title: "Template Applied",
-      description: `${processedTemplate.name} template has been customized and applied.`
-    });
   };
 
   const handleSaveEmailSettings = () => {
@@ -250,9 +185,6 @@ export const EmailsTab = () => {
     try {
       console.log("Recording follow-up:", { emailId, note, timestamp: new Date().toISOString() });
       
-      // Here you could save to a follow-ups table in the future
-      // For now, we'll just log it and show success
-      
       toast({
         title: "Follow-up Recorded",
         description: "Your follow-up note has been saved successfully.",
@@ -270,15 +202,12 @@ export const EmailsTab = () => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'delivered':
-        return 'default';
       case 'sent':
-        return 'secondary';
+        return 'default';
       case 'sending':
-        return 'outline';
+        return 'secondary';
       case 'opened':
         return 'default';
-      case 'clicked':
-        return 'outline';
       case 'bounced':
       case 'failed':
         return 'destructive';
@@ -296,8 +225,6 @@ export const EmailsTab = () => {
         return <CheckCircle className="h-3 w-3" />;
       case 'opened':
         return <Eye className="h-3 w-3" />;
-      case 'clicked':
-        return <MousePointer className="h-3 w-3" />;
       case 'bounced':
       case 'failed':
         return <AlertCircle className="h-3 w-3" />;
@@ -306,20 +233,13 @@ export const EmailsTab = () => {
     }
   };
 
-  const formatTimeSpent = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
-  };
-
   if (kpisLoading) {
     return <div className="flex items-center justify-center h-64">Loading email data...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Enhanced KPIs Dashboard */}
+      {/* KPIs Dashboard - Only show overview, detailed analytics moved to campaigns */}
       <EmailKPIsDashboard kpis={emailKPIs} />
 
       {/* SendGrid Integration Status */}
@@ -369,7 +289,7 @@ export const EmailsTab = () => {
 
       {/* Main Email Interface */}
       <Tabs defaultValue="compose" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="compose" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Compose
@@ -382,10 +302,6 @@ export const EmailsTab = () => {
             <FileText className="h-4 w-4" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             History
@@ -394,240 +310,86 @@ export const EmailsTab = () => {
 
         {/* Compose Email Tab */}
         <TabsContent value="compose">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Compose Email</CardTitle>
-                  <CardDescription>Send individual emails or schedule campaigns</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Palette className="h-4 w-4 mr-2" />
-                        Use Template
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Choose Email Template</DialogTitle>
-                        <DialogDescription>
-                          Select from our professionally designed templates for your industry
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {predefinedEmailTemplates.map((template) => (
-                          <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                            <CardHeader>
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <CardTitle className="text-lg">{template.name}</CardTitle>
-                                  <Badge variant="outline" className="mt-1">{template.category}</Badge>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUseTemplate(template)}
-                                >
-                                  Use Template
-                                </Button>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                              <div className="flex flex-wrap gap-2">
-                                {template.variables.slice(0, 3).map((variable) => (
-                                  <Badge key={variable} variant="secondary" className="text-xs">
-                                    {variable}
-                                  </Badge>
-                                ))}
-                                {template.variables.length > 3 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    +{template.variables.length - 3} more
-                                  </Badge>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Dialog open={emailSettingsOpen} onOpenChange={setEmailSettingsOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Email Settings
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Email Settings</DialogTitle>
-                        <DialogDescription>
-                          Configure your sender information for outgoing emails
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="from_email">From Email Address</Label>
-                          <Input
-                            id="from_email"
-                            type="email"
-                            placeholder="your-email@company.com"
-                            value={newEmailSettings.from_email}
-                            onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_email: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="from_name">From Name</Label>
-                          <Input
-                            id="from_name"
-                            placeholder="Your Company Name"
-                            value={newEmailSettings.from_name}
-                            onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_name: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="reply_to_email">Reply-To Email (Optional)</Label>
-                          <Input
-                            id="reply_to_email"
-                            type="email"
-                            placeholder="replies@company.com"
-                            value={newEmailSettings.reply_to_email}
-                            onChange={(e) => setNewEmailSettings(prev => ({ ...prev, reply_to_email: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="signature">Email Signature (Optional)</Label>
-                          <Textarea
-                            id="signature"
-                            placeholder="Best regards,&#10;Your Name&#10;Your Company"
-                            value={newEmailSettings.signature}
-                            onChange={(e) => setNewEmailSettings(prev => ({ ...prev, signature: e.target.value }))}
-                          />
-                        </div>
-                        <Button onClick={handleSaveEmailSettings} className="w-full">
-                          Save Settings
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Recipients and Attachments Section */}
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <ClientSelector 
-                    selectedClients={selectedClients}
-                    onSelectionChange={setSelectedClients}
-                  />
-                  <QuoteSelector 
-                    selectedQuotes={selectedQuotes}
-                    onSelectionChange={setSelectedQuotes}
-                    selectedClients={selectedClients}
-                  />
-                </div>
+          <div className="space-y-4">
+            {/* Client and Quote Selectors */}
+            <div className="flex gap-3">
+              <ClientSelector 
+                selectedClients={selectedClients}
+                onSelectionChange={setSelectedClients}
+              />
+              <QuoteSelector 
+                selectedQuotes={selectedQuotes}
+                onSelectionChange={setSelectedQuotes}
+                selectedClients={selectedClients}
+              />
+            </div>
 
-                {/* Auto-populate recipients from selected clients */}
-                {selectedClients.length > 0 && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700 mb-2">
-                      <strong>Recipients from CRM:</strong> {selectedClients.map(c => c.email).filter(Boolean).join(", ")}
-                    </p>
+            {/* Email Composer */}
+            <EmailComposer
+              newEmail={newEmail}
+              setNewEmail={setNewEmail}
+              selectedClients={selectedClients}
+              selectedQuotes={selectedQuotes}
+              onSendEmail={handleSendEmail}
+              onPreviewEmail={() => setPreviewDialogOpen(true)}
+              sendEmailMutation={sendEmailMutation}
+              emailSettings={emailSettings}
+            />
+
+            {/* Email Settings Dialog */}
+            <Dialog open={emailSettingsOpen} onOpenChange={setEmailSettingsOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Email Settings</DialogTitle>
+                  <DialogDescription>
+                    Configure your sender information for outgoing emails
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="from_email">From Email Address</Label>
+                    <Input
+                      id="from_email"
+                      type="email"
+                      placeholder="your-email@company.com"
+                      value={newEmailSettings.from_email}
+                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_email: e.target.value }))}
+                    />
                   </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">To (Additional Recipients)</label>
-                  <Input 
-                    placeholder="additional@example.com" 
-                    value={newEmail.recipient_email}
-                    onChange={(e) => setNewEmail(prev => ({ ...prev, recipient_email: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Template</label>
-                  <Select 
-                    value={newEmail.template_id}
-                    onValueChange={(value) => setNewEmail(prev => ({ ...prev, template_id: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select template..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templates?.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Subject</label>
-                <Input 
-                  placeholder="Email subject..." 
-                  value={newEmail.subject}
-                  onChange={(e) => setNewEmail(prev => ({ ...prev, subject: e.target.value }))}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Message</label>
-                <Textarea 
-                  placeholder="Write your email message here..." 
-                  className="min-h-[200px]"
-                  value={newEmail.content}
-                  onChange={(e) => setNewEmail(prev => ({ ...prev, content: e.target.value }))}
-                />
-              </div>
-
-              {/* Quote Details Summary */}
-              {selectedQuotes.length > 0 && (
-                <Card className="bg-gray-50">
-                  <CardContent className="p-4">
-                    <h4 className="font-medium mb-2">Attached Quote Details:</h4>
-                    {selectedQuotes.map(quote => (
-                      <div key={quote.id} className="text-sm text-gray-600">
-                        <p><strong>Quote #{quote.quote_number}:</strong> ${quote.total_amount.toLocaleString()}</p>
-                        <p>Client: {quote.clients?.name}</p>
-                        <p>Status: {quote.status}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-              
-              <div className="flex justify-between items-center">
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Schedule Send
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center gap-2"
-                    onClick={() => setPreviewDialogOpen(true)}
-                    disabled={!newEmail.content && !selectedTemplate}
-                  >
-                    <Eye className="h-4 w-4" />
-                    Preview Email
+                  <div>
+                    <Label htmlFor="from_name">From Name</Label>
+                    <Input
+                      id="from_name"
+                      placeholder="Your Company Name"
+                      value={newEmailSettings.from_name}
+                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="reply_to_email">Reply-To Email (Optional)</Label>
+                    <Input
+                      id="reply_to_email"
+                      type="email"
+                      placeholder="replies@company.com"
+                      value={newEmailSettings.reply_to_email}
+                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, reply_to_email: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="signature">Email Signature (Optional)</Label>
+                    <Textarea
+                      id="signature"
+                      placeholder="Best regards,&#10;Your Name&#10;Your Company"
+                      value={newEmailSettings.signature}
+                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, signature: e.target.value }))}
+                    />
+                  </div>
+                  <Button onClick={handleSaveEmailSettings} className="w-full">
+                    Save Settings
                   </Button>
                 </div>
-                <Button 
-                  onClick={handleSendEmail} 
-                  className="flex items-center gap-2"
-                  disabled={sendEmailMutation.isPending || !emailSettings?.from_email}
-                >
-                  <Send className="h-4 w-4" />
-                  {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
-                </Button>
-              </div>
-            </CardContent>
+              </DialogContent>
+            </Dialog>
 
             {/* Email Preview Dialog */}
             <EmailPreviewDialog
@@ -645,7 +407,7 @@ export const EmailsTab = () => {
               quoteData={selectedQuotes[0]}
               senderInfo={emailSettings}
             />
-          </Card>
+          </div>
         </TabsContent>
 
         {/* Templates Tab */}
@@ -686,12 +448,21 @@ export const EmailsTab = () => {
                             variant="outline"
                             onClick={() => handleCreateTemplateFromPredefined(template)}
                           >
-                            <Copy className="h-3 w-3 mr-1" />
-                            Save
+                            Save Template
                           </Button>
                           <Button 
                             size="sm"
-                            onClick={() => handleUseTemplate(template)}
+                            onClick={() => {
+                              setNewEmail({
+                                ...newEmail,
+                                subject: template.subject,
+                                content: template.content
+                              });
+                              toast({
+                                title: "Template Applied",
+                                description: `${template.name} template has been applied.`
+                              });
+                            }}
                           >
                             Use Now
                           </Button>
@@ -708,12 +479,31 @@ export const EmailsTab = () => {
               {templates?.map((template) => (
                 <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
                         <h4 className="font-medium">{template.name}</h4>
                         <p className="text-sm text-gray-600 capitalize">{template.template_type.replace(/_/g, ' ')}</p>
                       </div>
                       <FileText className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          setNewEmail({
+                            ...newEmail,
+                            subject: template.subject,
+                            content: template.content,
+                            template_id: template.id
+                          });
+                          toast({
+                            title: "Template Applied",
+                            description: `${template.name} template has been applied.`
+                          });
+                        }}
+                      >
+                        Apply Template
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -732,11 +522,11 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* Campaigns Tab */}
+        {/* Campaigns Tab - Now includes detailed analytics */}
         <TabsContent value="campaigns">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Email Campaigns</h3>
+              <h3 className="text-lg font-semibold">Email Campaigns & Analytics</h3>
               <Button 
                 onClick={handleCreateCampaign} 
                 className="flex items-center gap-2"
@@ -746,6 +536,34 @@ export const EmailsTab = () => {
                 New Campaign
               </Button>
             </div>
+
+            {/* Detailed Analytics for Campaigns */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Campaign Performance Analytics</CardTitle>
+                <CardDescription>Detailed insights into your email campaigns</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{emailKPIs?.totalSent || 0}</div>
+                    <div className="text-sm text-gray-600">Total Emails Sent</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{emailKPIs?.delivered || 0}</div>
+                    <div className="text-sm text-gray-600">Successfully Delivered</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{emailKPIs?.openRate || 0}%</div>
+                    <div className="text-sm text-gray-600">Open Rate</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">{campaigns?.length || 0}</div>
+                    <div className="text-sm text-gray-600">Total Campaigns</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
             {campaigns && campaigns.length > 0 ? (
               <div className="grid gap-4">
@@ -785,44 +603,12 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Email Performance Analytics</CardTitle>
-                <CardDescription>Detailed insights into your email campaigns</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{emailKPIs?.totalOpenCount || 0}</div>
-                    <div className="text-sm text-gray-600">Total Opens</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{emailKPIs?.totalClickCount || 0}</div>
-                    <div className="text-sm text-gray-600">Total Clicks</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{emailKPIs?.deliveryRate || 0}%</div>
-                    <div className="text-sm text-gray-600">Delivery Rate</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">{campaigns?.length || 0}</div>
-                    <div className="text-sm text-gray-600">Campaigns</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Enhanced History Tab */}
+        {/* History Tab - Simplified */}
         <TabsContent value="history">
           <Card>
             <CardHeader>
               <CardTitle>Email History</CardTitle>
-              <CardDescription>Track all sent emails and their performance - click any email for detailed analytics</CardDescription>
+              <CardDescription>Track all sent emails - click any email for detailed view</CardDescription>
             </CardHeader>
             <CardContent>
               {emailsLoading ? (
@@ -835,7 +621,6 @@ export const EmailsTab = () => {
                       <TableHead>Recipient</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Opens</TableHead>
-                      <TableHead>Time Spent</TableHead>
                       <TableHead>Sent At</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -864,9 +649,6 @@ export const EmailsTab = () => {
                               <Eye className="h-3 w-3 text-blue-600" />
                               <span>{email.open_count}</span>
                             </div>
-                          </TableCell>
-                          <TableCell onClick={() => handleEmailClick(email)}>
-                            {email.time_spent_seconds > 0 ? formatTimeSpent(email.time_spent_seconds) : '-'}
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
                             {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
@@ -921,7 +703,7 @@ export const EmailsTab = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-gray-500">
+                        <TableCell colSpan={6} className="text-center text-gray-500">
                           No emails sent yet
                         </TableCell>
                       </TableRow>
@@ -940,14 +722,24 @@ export const EmailsTab = () => {
         onOpenChange={setCampaignBuilderOpen}
         campaign={editingCampaign}
         onSave={handleSaveCampaign}
-        onLaunch={handleLaunchCampaign}
+        onLaunch={() => {}}
       />
 
       <TemplateVariableEditor
         open={templateVariableEditorOpen}
         onOpenChange={setTemplateVariableEditorOpen}
         template={selectedTemplate}
-        onApplyTemplate={handleApplyTemplateWithVariables}
+        onApplyTemplate={(template, variables) => {
+          setNewEmail({
+            ...newEmail,
+            subject: template.subject,
+            content: template.content
+          });
+          toast({
+            title: "Template Applied",
+            description: `${template.name} template has been customized and applied.`
+          });
+        }}
       />
 
       <EmailDetailDialog
