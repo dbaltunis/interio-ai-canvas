@@ -9,9 +9,6 @@ import {
   Send, 
   Calendar, 
   Eye, 
-  Paperclip, 
-  Image as ImageIcon,
-  X,
   Users,
   FileText
 } from "lucide-react";
@@ -40,7 +37,6 @@ export const EmailComposer = ({
   sendEmailMutation,
   emailSettings
 }: EmailComposerProps) => {
-  const [attachments, setAttachments] = useState<File[]>([]);
   const { data: templates } = useEmailTemplates();
   const { toast } = useToast();
 
@@ -58,25 +54,6 @@ export const EmailComposer = ({
         description: `${template.name} has been applied to your email.`
       });
     }
-  };
-
-  const handleFileUpload = (files: FileList | null) => {
-    if (files) {
-      const newFiles = Array.from(files);
-      setAttachments(prev => [...prev, ...newFiles]);
-    }
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -154,85 +131,6 @@ export const EmailComposer = ({
             className="min-h-[350px]"
           />
           <p className="text-xs text-gray-500">Use the toolbar above to format your email with bold, italic, lists, links, and more</p>
-        </div>
-
-        {/* File Attachments */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">Attachments</label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('file-upload')?.click()}
-                className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
-              >
-                <Paperclip className="h-4 w-4" />
-                Attach File
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('image-upload')?.click()}
-                className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
-              >
-                <ImageIcon className="h-4 w-4" />
-                Add Image
-              </Button>
-            </div>
-            <input
-              id="file-upload"
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(e) => handleFileUpload(e.target.files)}
-            />
-            <input
-              id="image-upload"
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileUpload(e.target.files)}
-            />
-          </div>
-
-          {attachments.length > 0 && (
-            <div className="space-y-2">
-              {attachments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-3">
-                    {file.type.startsWith('image/') ? (
-                      <div className="p-2 bg-blue-100 rounded">
-                        <ImageIcon className="h-4 w-4 text-blue-600" />
-                      </div>
-                    ) : (
-                      <div className="p-2 bg-gray-100 rounded">
-                        <Paperclip className="h-4 w-4 text-gray-600" />
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-sm font-medium text-gray-800">{file.name}</span>
-                      <Badge variant="secondary" className="text-xs ml-2">
-                        {formatFileSize(file.size)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeAttachment(index)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Quote Details Summary */}
