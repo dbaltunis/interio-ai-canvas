@@ -36,15 +36,13 @@ export const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEditorFocused, setIsEditorFocused] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize content only once when component mounts
+  // Simple initialization - only set content if editor is empty and we have value
   useEffect(() => {
-    if (editorRef.current && !isInitialized && value) {
+    if (editorRef.current && value && !editorRef.current.innerHTML) {
       editorRef.current.innerHTML = value;
-      setIsInitialized(true);
     }
-  }, [value, isInitialized]);
+  }, [value]);
 
   const handleInput = () => {
     if (editorRef.current) {
@@ -118,48 +116,47 @@ export const RichTextEditor = ({
     { icon: ListOrdered, command: 'insertOrderedList', title: 'Numbered List' },
   ];
 
-  // Custom styles for the editor
-  const editorStyles = `
-    .rich-text-editor [contenteditable]:empty:before {
-      content: attr(data-placeholder);
-      color: #9ca3af;
-      font-style: italic;
-    }
-    
-    .rich-text-editor [contenteditable] blockquote {
-      border-left: 4px solid #e5e7eb;
-      margin: 16px 0;
-      padding-left: 16px;
-      color: #6b7280;
-      font-style: italic;
-    }
-    
-    .rich-text-editor [contenteditable] ul,
-    .rich-text-editor [contenteditable] ol {
-      padding-left: 20px;
-      margin: 8px 0;
-    }
-    
-    .rich-text-editor [contenteditable] li {
-      margin: 4px 0;
-    }
-    
-    .rich-text-editor [contenteditable] a {
-      color: #3b82f6;
-      text-decoration: underline;
-    }
-    
-    .rich-text-editor [contenteditable] img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
-      margin: 8px 0;
-    }
-  `;
-
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: editorStyles }} />
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .rich-text-editor [contenteditable]:empty:before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            font-style: italic;
+          }
+          
+          .rich-text-editor [contenteditable] blockquote {
+            border-left: 4px solid #e5e7eb;
+            margin: 16px 0;
+            padding-left: 16px;
+            color: #6b7280;
+            font-style: italic;
+          }
+          
+          .rich-text-editor [contenteditable] ul,
+          .rich-text-editor [contenteditable] ol {
+            padding-left: 20px;
+            margin: 8px 0;
+          }
+          
+          .rich-text-editor [contenteditable] li {
+            margin: 4px 0;
+          }
+          
+          .rich-text-editor [contenteditable] a {
+            color: #3b82f6;
+            text-decoration: underline;
+          }
+          
+          .rich-text-editor [contenteditable] img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin: 8px 0;
+          }
+        `
+      }} />
       <Card className={`border border-gray-200 rich-text-editor ${className}`}>
         {/* Toolbar */}
         <div className="flex items-center gap-1 p-3 border-b border-gray-200 bg-gray-50 flex-wrap">
@@ -335,4 +332,3 @@ export const RichTextEditor = ({
     </>
   );
 };
-
