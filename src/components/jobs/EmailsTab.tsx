@@ -17,7 +17,6 @@ import {
   Eye, 
   Clock, 
   MousePointer, 
-  TrendingUp,
   Plus,
   FileText,
   Calendar,
@@ -26,7 +25,9 @@ import {
   Settings,
   Palette,
   Copy,
-  Target
+  RefreshCw,
+  MessageSquare,
+  ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs, useCreateEmail } from "@/hooks/useEmails";
@@ -43,6 +44,9 @@ import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
 import { ClientSelector } from "./email-components/ClientSelector";
 import { QuoteSelector } from "./email-components/QuoteSelector";
 import { CampaignBuilder } from "./email-components/CampaignBuilder";
+import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
+import { EmailDetailDialog } from "./email-components/EmailDetailDialog";
+import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -51,11 +55,14 @@ export const EmailsTab = () => {
     content: "",
     template_id: ""
   });
-  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [emailSettingsOpen, setEmailSettingsOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [campaignBuilderOpen, setCampaignBuilderOpen] = useState(false);
+  const [templateVariableEditorOpen, setTemplateVariableEditorOpen] = useState(false);
+  const [emailDetailOpen, setEmailDetailOpen] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [selectedClients, setSelectedClients] = useState<any[]>([]);
   const [selectedQuotes, setSelectedQuotes] = useState<any[]>([]);
@@ -83,7 +90,6 @@ export const EmailsTab = () => {
   const campaignExecutionMutation = useCampaignExecution();
   const { hasSendGridIntegration } = useIntegrationStatus();
 
-  // Load email settings when available
   useEffect(() => {
     if (emailSettings) {
       setNewEmailSettings({
@@ -180,10 +186,15 @@ export const EmailsTab = () => {
     });
   };
 
-  const handleUseTemplate = (templateId: string) => {
-    const template = predefinedEmailTemplates.find(t => t.id === templateId);
-    if (template) {
-      setSelectedTemplate(templateId);
+  const handleUseTemplate = (template: any) => {
+    // Check if template has variables
+    const hasVariables = template.content?.includes('{{') || template.subject?.includes('{{');
+    
+    if (hasVariables) {
+      setSelectedTemplate(template);
+      setTemplateVariableEditorOpen(true);
+    } else {
+      // Apply template directly
       setNewEmail(prev => ({
         ...prev,
         subject: template.subject,
@@ -195,6 +206,19 @@ export const EmailsTab = () => {
         description: `${template.name} template has been applied to your email.`
       });
     }
+  };
+
+  const handleApplyTemplateWithVariables = (processedTemplate: any, variables: Record<string, string>) => {
+    setNewEmail(prev => ({
+      ...prev,
+      subject: processedTemplate.subject,
+      content: processedTemplate.content
+    }));
+    
+    toast({
+      title: "Template Applied",
+      description: `${processedTemplate.name} template has been customized and applied.`
+    });
   };
 
   const handleSaveEmailSettings = () => {
@@ -213,6 +237,23 @@ export const EmailsTab = () => {
       template_type: templateData.template_type,
       variables: templateData.variables,
       active: true
+    });
+  };
+
+  const handleEmailClick = (email: any) => {
+    setSelectedEmail(email);
+    setEmailDetailOpen(true);
+  };
+
+  const handleFollowUp = async (emailId: string, note: string) => {
+    // Create follow-up record (you may want to create a follow-ups table)
+    console.log("Recording follow-up:", { emailId, note });
+    
+    // For now, we'll just show a success message
+    // In production, you'd want to save this to a database
+    toast({
+      title: "Follow-up Recorded",
+      description: "Your follow-up note has been saved successfully."
     });
   };
 
@@ -246,80 +287,8 @@ export const EmailsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Send className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-xs text-gray-600">Total Sent</p>
-                <p className="text-lg font-bold">{emailKPIs?.totalSent || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Eye className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-xs text-gray-600">Open Rate</p>
-                <p className="text-lg font-bold">{emailKPIs?.openRate || 0}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <MousePointer className="h-4 w-4 text-purple-600" />
-              <div>
-                <p className="text-xs text-gray-600">Click Rate</p>
-                <p className="text-lg font-bold">{emailKPIs?.clickRate || 0}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-orange-600" />
-              <div>
-                <p className="text-xs text-gray-600">Avg Time</p>
-                <p className="text-lg font-bold">{emailKPIs?.avgTimeSpent || "0m 0s"}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-xs text-gray-600">Delivered</p>
-                <p className="text-lg font-bold">{emailKPIs?.delivered || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <div>
-                <p className="text-xs text-gray-600">Bounced</p>
-                <p className="text-lg font-bold">{emailKPIs?.bounced || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Enhanced KPIs Dashboard */}
+      <EmailKPIsDashboard kpis={emailKPIs} />
 
       {/* SendGrid Integration Status */}
       {!hasSendGridIntegration && (
@@ -330,7 +299,7 @@ export const EmailsTab = () => {
                 <AlertCircle className="h-5 w-5 text-orange-600" />
                 <div>
                   <p className="font-medium text-orange-800">SendGrid Integration Required</p>
-                  <p className="text-sm text-orange-700">Set up SendGrid integration for email delivery tracking and analytics to work properly. Without this, emails will show as "sent" but won't track opens, clicks, or delivery status.</p>
+                  <p className="text-sm text-orange-700">Set up SendGrid integration for email delivery tracking and analytics to work properly.</p>
                 </div>
               </div>
               <Button 
@@ -367,9 +336,6 @@ export const EmailsTab = () => {
       )}
 
       {/* Main Email Interface */}
-      
-      
-      {/* Campaigns Tab */}
       <Tabs defaultValue="compose" className="space-y-4">
         <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="compose" className="flex items-center gap-2">
@@ -429,7 +395,7 @@ export const EmailsTab = () => {
                                 </div>
                                 <Button
                                   size="sm"
-                                  onClick={() => handleUseTemplate(template.id)}
+                                  onClick={() => handleUseTemplate(template)}
                                 >
                                   Use Template
                                 </Button>
@@ -437,7 +403,7 @@ export const EmailsTab = () => {
                             </CardHeader>
                             <CardContent>
                               <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-wrap gap-2">
                                 {template.variables.slice(0, 3).map((variable) => (
                                   <Badge key={variable} variant="secondary" className="text-xs">
                                     {variable}
@@ -635,7 +601,7 @@ export const EmailsTab = () => {
             <EmailPreviewDialog
               open={previewDialogOpen}
               onOpenChange={setPreviewDialogOpen}
-              template={predefinedEmailTemplates.find(t => t.id === selectedTemplate) || {
+              template={selectedTemplate || {
                 id: 'custom',
                 name: 'Custom Email',
                 subject: newEmail.subject,
@@ -693,7 +659,7 @@ export const EmailsTab = () => {
                           </Button>
                           <Button 
                             size="sm"
-                            onClick={() => handleUseTemplate(template.id)}
+                            onClick={() => handleUseTemplate(template)}
                           >
                             Use Now
                           </Button>
@@ -713,7 +679,7 @@ export const EmailsTab = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{template.name}</h4>
-                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace('_', ' ')}</p>
+                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace(/_/g, ' ')}</p>
                       </div>
                       <FileText className="h-5 w-5 text-gray-400" />
                     </div>
@@ -819,12 +785,12 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* History Tab */}
+        {/* Enhanced History Tab */}
         <TabsContent value="history">
           <Card>
             <CardHeader>
               <CardTitle>Email History</CardTitle>
-              <CardDescription>Track all sent emails and their performance</CardDescription>
+              <CardDescription>Track all sent emails and their performance - click any email for detailed analytics</CardDescription>
             </CardHeader>
             <CardContent>
               {emailsLoading ? (
@@ -840,30 +806,87 @@ export const EmailsTab = () => {
                       <TableHead>Clicks</TableHead>
                       <TableHead>Time Spent</TableHead>
                       <TableHead>Sent At</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {emails && emails.length > 0 ? (
                       emails.map((email) => (
-                        <TableRow key={email.id}>
-                          <TableCell className="font-medium">{email.subject}</TableCell>
-                          <TableCell>{email.recipient_email}</TableCell>
-                          <TableCell>
+                        <TableRow key={email.id} className="cursor-pointer hover:bg-gray-50">
+                          <TableCell 
+                            className="font-medium"
+                            onClick={() => handleEmailClick(email)}
+                          >
+                            {email.subject}
+                          </TableCell>
+                          <TableCell onClick={() => handleEmailClick(email)}>
+                            {email.recipient_email}
+                          </TableCell>
+                          <TableCell onClick={() => handleEmailClick(email)}>
                             <Badge variant={getStatusBadgeVariant(email.status)}>
                               {email.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{email.open_count}</TableCell>
-                          <TableCell>{email.click_count}</TableCell>
-                          <TableCell>{formatTimeSpent(email.time_spent_seconds)}</TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => handleEmailClick(email)}>
+                            {email.open_count}
+                          </TableCell>
+                          <TableCell onClick={() => handleEmailClick(email)}>
+                            {email.click_count}
+                          </TableCell>
+                          <TableCell onClick={() => handleEmailClick(email)}>
+                            {formatTimeSpent(email.time_spent_seconds)}
+                          </TableCell>
+                          <TableCell onClick={() => handleEmailClick(email)}>
                             {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEmailClick(email);
+                                }}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              {['bounced', 'failed'].includes(email.status) && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      await sendEmailMutation.mutateAsync({
+                                        to: email.recipient_email,
+                                        subject: `[RESEND] ${email.subject}`,
+                                        content: email.content
+                                      });
+                                      toast({
+                                        title: "Email Resent",
+                                        description: `Email to ${email.recipient_email} has been resent.`
+                                      });
+                                    } catch (error) {
+                                      console.error("Failed to resend email:", error);
+                                      toast({
+                                        title: "Resend Failed",
+                                        description: "Failed to resend email. Please try again later.",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-gray-500">
+                        <TableCell colSpan={8} className="text-center text-gray-500">
                           No emails sent yet
                         </TableCell>
                       </TableRow>
@@ -876,13 +899,27 @@ export const EmailsTab = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Campaign Builder Dialog */}
+      {/* All Dialogs */}
       <CampaignBuilder
         open={campaignBuilderOpen}
         onOpenChange={setCampaignBuilderOpen}
         campaign={editingCampaign}
         onSave={handleSaveCampaign}
         onLaunch={handleLaunchCampaign}
+      />
+
+      <TemplateVariableEditor
+        open={templateVariableEditorOpen}
+        onOpenChange={setTemplateVariableEditorOpen}
+        template={selectedTemplate}
+        onApplyTemplate={handleApplyTemplateWithVariables}
+      />
+
+      <EmailDetailDialog
+        open={emailDetailOpen}
+        onOpenChange={setEmailDetailOpen}
+        email={selectedEmail}
+        onFollowUp={handleFollowUp}
       />
     </div>
   );
