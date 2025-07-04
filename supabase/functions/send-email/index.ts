@@ -75,6 +75,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending via SendGrid with from:", fromEmail, fromName);
 
+    // Clean up HTML content - remove CSS variables and unsupported styles
+    const cleanHtml = emailData.html
+      .replace(/style="[^"]*border-color:\s*hsl\(var\(--border\)\);?[^"]*"/g, '')
+      .replace(/style=""/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim();
+
+    console.log("Cleaned HTML content:", cleanHtml);
+
     // Send email via SendGrid
     const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
@@ -93,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         content: [{
           type: "text/html",
-          value: emailData.html
+          value: cleanHtml
         }],
         tracking_settings: {
           click_tracking: { 
