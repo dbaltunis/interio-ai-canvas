@@ -36,16 +36,20 @@ export const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isEditorFocused, setIsEditorFocused] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialize content only once when component mounts
   useEffect(() => {
-    if (editorRef.current && value !== editorRef.current.innerHTML) {
+    if (editorRef.current && !isInitialized && value) {
       editorRef.current.innerHTML = value;
+      setIsInitialized(true);
     }
-  }, [value]);
+  }, [value, isInitialized]);
 
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const content = editorRef.current.innerHTML;
+      onChange(content);
     }
   };
 
@@ -324,10 +328,11 @@ export const RichTextEditor = ({
           onKeyDown={handleKeyDown}
           onFocus={() => setIsEditorFocused(true)}
           onBlur={() => setIsEditorFocused(false)}
-          dangerouslySetInnerHTML={{ __html: value }}
           data-placeholder={placeholder}
+          suppressContentEditableWarning={true}
         />
       </Card>
     </>
   );
 };
+
