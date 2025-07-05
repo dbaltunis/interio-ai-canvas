@@ -16,6 +16,71 @@ interface EmailTimelineProps {
 }
 
 export const EmailTimeline = ({ email }: EmailTimelineProps) => {
+  // Generate dynamic engagement recommendations based on open count
+  const getEngagementInsight = (openCount: number) => {
+    if (openCount === 0) {
+      return {
+        message: "Email hasn't been opened yet.",
+        recommendation: "Consider sending a follow-up email or checking if the email address is correct.",
+        level: "none",
+        bgColor: "bg-gray-50",
+        borderColor: "border-gray-200",
+        textColor: "text-gray-700",
+        iconColor: "text-gray-500"
+      };
+    } else if (openCount === 1) {
+      return {
+        message: "Email was opened once.",
+        recommendation: "Client showed initial interest. Consider a gentle follow-up in a few days.",
+        level: "initial",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200", 
+        textColor: "text-blue-700",
+        iconColor: "text-blue-600"
+      };
+    } else if (openCount === 2) {
+      return {
+        message: "Email was opened 2 times.",
+        recommendation: "Client is interested! This is a good time for a follow-up call or email.",
+        level: "interested", 
+        bgColor: "bg-green-50",
+        borderColor: "border-green-200",
+        textColor: "text-green-700",
+        iconColor: "text-green-600"
+      };
+    } else if (openCount >= 3 && openCount <= 5) {
+      return {
+        message: `Email was opened ${openCount} times.`,
+        recommendation: "Strong interest detected! Client is actively engaged. Follow up immediately if deal isn't closed yet.",
+        level: "strong",
+        bgColor: "bg-orange-50", 
+        borderColor: "border-orange-200",
+        textColor: "text-orange-700",
+        iconColor: "text-orange-600"
+      };
+    } else if (openCount >= 6 && openCount <= 10) {
+      return {
+        message: `Email was opened ${openCount} times.`,
+        recommendation: "Very high interest! Client is highly engaged. This is an excellent opportunity - reach out now!",
+        level: "very-high",
+        bgColor: "bg-purple-50",
+        borderColor: "border-purple-200", 
+        textColor: "text-purple-700",
+        iconColor: "text-purple-600"
+      };
+    } else {
+      return {
+        message: `Email was opened ${openCount} times.`,
+        recommendation: "Exceptional engagement! Client is extremely interested. This is a hot lead - contact immediately!",
+        level: "exceptional",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-200",
+        textColor: "text-red-700", 
+        iconColor: "text-red-600"
+      };
+    }
+  };
+
   // Create timeline events
   const timelineEvents = [];
 
@@ -127,19 +192,26 @@ export const EmailTimeline = ({ email }: EmailTimelineProps) => {
         })}
       </div>
 
-      {/* Enhanced Open Tracking */}
-      {email.open_count > 1 && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2 mb-2">
-            <Eye className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-blue-800">Multiple Opens Detected</span>
+      {/* Dynamic Engagement Insights */}
+      {(() => {
+        const insight = getEngagementInsight(email.open_count);
+        return (
+          <div className={`mt-4 p-4 rounded-lg border ${insight.bgColor} ${insight.borderColor}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Eye className={`h-4 w-4 ${insight.iconColor}`} />
+              <span className={`font-medium ${insight.textColor}`}>Engagement Analysis</span>
+            </div>
+            <div className="space-y-2">
+              <p className={`text-sm font-medium ${insight.textColor}`}>
+                {insight.message}
+              </p>
+              <p className={`text-sm ${insight.textColor}`}>
+                <strong>Recommendation:</strong> {insight.recommendation}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-blue-700">
-            This email has been opened <strong>{email.open_count} times</strong>. 
-            This suggests strong recipient engagement with your content.
-          </p>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
