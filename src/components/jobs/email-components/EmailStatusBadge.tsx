@@ -50,7 +50,7 @@ export const EmailStatusBadge = ({ status, openCount = 0, clickCount = 0 }: Emai
         return {
           variant: 'default' as const,
           icon: <Eye className="h-3 w-3" />,
-          text: `Opened${openCount > 1 ? ` (${openCount}x)` : ''}`,
+          text: 'Opened',
           bgColor: 'bg-blue-100 dark:bg-blue-900',
           textColor: 'text-blue-800 dark:text-blue-200'
         };
@@ -58,7 +58,7 @@ export const EmailStatusBadge = ({ status, openCount = 0, clickCount = 0 }: Emai
         return {
           variant: 'default' as const,
           icon: <MousePointer className="h-3 w-3" />,
-          text: `Clicked${clickCount > 1 ? ` (${clickCount}x)` : ''}`,
+          text: 'Clicked',
           bgColor: 'bg-purple-100 dark:bg-purple-900',
           textColor: 'text-purple-800 dark:text-purple-200'
         };

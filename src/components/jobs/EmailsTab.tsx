@@ -676,19 +676,14 @@ export const EmailsTab = () => {
                               clickCount={email.click_count}
                             />
                           </TableCell>
-                          <TableCell onClick={() => handleEmailClick(email)}>
-                            <div className="flex items-center gap-1">
-                              <Eye className={`h-3 w-3 ${email.open_count > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
-                              <span className={email.open_count > 0 ? 'font-medium' : 'text-gray-500'}>
-                                {email.open_count}
-                              </span>
-                              {email.open_count > 1 && (
-                                <span className="text-xs text-blue-600 ml-1">
-                                  ({email.open_count}x)
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
+                           <TableCell onClick={() => handleEmailClick(email)}>
+                             <div className="flex items-center gap-1">
+                               <Eye className={`h-3 w-3 ${email.open_count > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                               <span className={email.open_count > 0 ? 'font-medium' : 'text-gray-500'}>
+                                 {email.open_count}
+                               </span>
+                             </div>
+                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
                             {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
                           </TableCell>
