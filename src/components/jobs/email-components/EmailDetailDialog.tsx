@@ -146,7 +146,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
                 To: {email.recipient_name || email.recipient_email}
               </DialogDescription>
             </div>
-            <EmailStatusBadge status={email.status} openCount={email.open_count} />
+            <EmailStatusBadge status={email.status} openCount={email.open_count} clickCount={email.click_count} />
           </div>
         </DialogHeader>
 

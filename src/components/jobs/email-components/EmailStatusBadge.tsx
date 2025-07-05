@@ -13,9 +13,10 @@ import {
 interface EmailStatusBadgeProps {
   status: string;
   openCount?: number;
+  clickCount?: number;
 }
 
-export const EmailStatusBadge = ({ status, openCount = 0 }: EmailStatusBadgeProps) => {
+export const EmailStatusBadge = ({ status, openCount = 0, clickCount = 0 }: EmailStatusBadgeProps) => {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'queued':
@@ -23,28 +24,40 @@ export const EmailStatusBadge = ({ status, openCount = 0 }: EmailStatusBadgeProp
           variant: 'secondary' as const,
           icon: <Clock className="h-3 w-3" />,
           text: 'Queued',
-          color: 'text-blue-600'
+          bgColor: 'bg-blue-100 dark:bg-blue-900',
+          textColor: 'text-blue-800 dark:text-blue-200'
         };
       case 'sent':
         return {
           variant: 'outline' as const,
           icon: <Send className="h-3 w-3" />,
           text: 'Sent',
-          color: 'text-gray-600'
+          bgColor: 'bg-gray-100 dark:bg-gray-800',
+          textColor: 'text-gray-800 dark:text-gray-200'
         };
-      case 'delivered':
+      case 'received':
         return {
           variant: 'default' as const,
           icon: <CheckCircle className="h-3 w-3" />,
-          text: 'Delivered',
-          color: 'text-green-600'
+          text: 'Received',
+          bgColor: 'bg-green-100 dark:bg-green-900',
+          textColor: 'text-green-800 dark:text-green-200'
         };
       case 'opened':
         return {
           variant: 'default' as const,
           icon: <Eye className="h-3 w-3" />,
-          text: `Opened ${openCount > 1 ? `(${openCount}x)` : ''}`,
-          color: 'text-blue-600'
+          text: `Opened${openCount > 1 ? ` (${openCount}x)` : ''}`,
+          bgColor: 'bg-blue-100 dark:bg-blue-900',
+          textColor: 'text-blue-800 dark:text-blue-200'
+        };
+      case 'clicked':
+        return {
+          variant: 'default' as const,
+          icon: <Eye className="h-3 w-3" />,
+          text: `Clicked${clickCount > 1 ? ` (${clickCount}x)` : ''}`,
+          bgColor: 'bg-purple-100 dark:bg-purple-900',
+          textColor: 'text-purple-800 dark:text-purple-200'
         };
       case 'bounced':
       case 'failed':
@@ -52,28 +65,24 @@ export const EmailStatusBadge = ({ status, openCount = 0 }: EmailStatusBadgeProp
           variant: 'destructive' as const,
           icon: <AlertCircle className="h-3 w-3" />,
           text: status === 'bounced' ? 'Bounced' : 'Failed',
-          color: 'text-red-600'
+          bgColor: 'bg-red-100 dark:bg-red-900',
+          textColor: 'text-red-800 dark:text-red-200'
         };
       case 'draft':
         return {
           variant: 'outline' as const,
           icon: <Mail className="h-3 w-3" />,
           text: 'Draft',
-          color: 'text-gray-500'
-        };
-      case 'clicked':
-        return {
-          variant: 'default' as const,
-          icon: <Eye className="h-3 w-3" />,
-          text: `Clicked ${openCount > 1 ? `(${openCount}x)` : ''}`,
-          color: 'text-purple-600'
+          bgColor: 'bg-gray-50 dark:bg-gray-800',
+          textColor: 'text-gray-600 dark:text-gray-400'
         };
       default:
         return {
           variant: 'outline' as const,
           icon: <Clock className="h-3 w-3" />,
           text: 'Unknown',
-          color: 'text-gray-500'
+          bgColor: 'bg-gray-50 dark:bg-gray-800',
+          textColor: 'text-gray-500 dark:text-gray-400'
         };
     }
   };
@@ -81,9 +90,12 @@ export const EmailStatusBadge = ({ status, openCount = 0 }: EmailStatusBadgeProp
   const config = getStatusConfig(status);
 
   return (
-    <Badge variant={config.variant} className={`flex items-center gap-1 w-fit ${config.color}`}>
+    <Badge 
+      variant={config.variant} 
+      className={`flex items-center gap-1 w-fit font-semibold border-0 ${config.bgColor} ${config.textColor}`}
+    >
       {config.icon}
-      <span className="capitalize">{config.text}</span>
+      <span>{config.text}</span>
     </Badge>
   );
 };

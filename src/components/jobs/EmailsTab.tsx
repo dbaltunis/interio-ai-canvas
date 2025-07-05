@@ -581,6 +581,7 @@ export const EmailsTab = () => {
                             <EmailStatusBadge 
                               status={email.status} 
                               openCount={email.open_count}
+                              clickCount={email.click_count}
                             />
                           </TableCell>
                           <TableCell onClick={() => handleEmailClick(email)}>
