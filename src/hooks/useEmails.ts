@@ -14,7 +14,7 @@ export interface Email {
   recipient_name?: string;
   subject: string;
   content: string;
-  status: 'draft' | 'sending' | 'queued' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  status: 'draft' | 'sending' | 'queued' | 'sent' | 'received' | 'opened' | 'clicked' | 'bounced' | 'failed' | 'spam' | 'unsubscribed';
   sent_at?: string;
   delivered_at?: string;
   opened_at?: string;
@@ -83,10 +83,12 @@ export const useEmailKPIs = () => {
       if (error) throw error;
       
       const totalSent = emails.filter(email => !['draft', 'sending'].includes(email.status)).length;
-      const delivered = emails.filter(email => ['delivered', 'opened', 'clicked', 'sent'].includes(email.status)).length;
+      const delivered = emails.filter(email => ['received', 'opened', 'clicked', 'sent'].includes(email.status)).length;
       const opened = emails.filter(email => email.open_count > 0).length;
       const clicked = emails.filter(email => email.click_count > 0).length;
       const bounced = emails.filter(email => ['bounced', 'failed'].includes(email.status)).length;
+      const spam = emails.filter(email => email.status === 'spam').length;
+      const unsubscribed = emails.filter(email => email.status === 'unsubscribed').length;
       
       const openRate = totalSent > 0 ? (opened / totalSent) * 100 : 0;
       const clickRate = totalSent > 0 ? (clicked / totalSent) * 100 : 0;
@@ -99,6 +101,8 @@ export const useEmailKPIs = () => {
         totalSent,
         delivered,
         bounced,
+        spam,
+        unsubscribed,
         openRate: Math.round(openRate * 100) / 100,
         clickRate: Math.round(clickRate * 100) / 100,
         deliveryRate: Math.round(deliveryRate * 100) / 100,

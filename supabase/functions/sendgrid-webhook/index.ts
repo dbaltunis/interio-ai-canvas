@@ -151,9 +151,12 @@ const handler = async (req: Request): Promise<Response> => {
           updates.bounce_reason = event.reason || `Email ${event.event}: ${event.type || 'Unknown reason'}`;
           break;
         case "unsubscribe":
+          updates.status = "unsubscribed";
+          updates.bounce_reason = event.reason || "Recipient unsubscribed";
+          break;
         case "spamreport":
-          updates.status = "failed";
-          updates.bounce_reason = event.reason || `Email marked as ${event.event}`;
+          updates.status = "spam";
+          updates.bounce_reason = event.reason || "Email marked as spam";
           break;
         case "deferred":
           // Deferred is temporary, don't change status to failed

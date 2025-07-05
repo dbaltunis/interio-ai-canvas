@@ -7,7 +7,10 @@ import {
   AlertCircle, 
   Clock,
   Loader2,
-  Mail
+  Mail,
+  Shield,
+  UserX,
+  MousePointer
 } from "lucide-react";
 
 interface EmailStatusBadgeProps {
@@ -54,7 +57,7 @@ export const EmailStatusBadge = ({ status, openCount = 0, clickCount = 0 }: Emai
       case 'clicked':
         return {
           variant: 'default' as const,
-          icon: <Eye className="h-3 w-3" />,
+          icon: <MousePointer className="h-3 w-3" />,
           text: `Clicked${clickCount > 1 ? ` (${clickCount}x)` : ''}`,
           bgColor: 'bg-purple-100 dark:bg-purple-900',
           textColor: 'text-purple-800 dark:text-purple-200'
@@ -67,6 +70,22 @@ export const EmailStatusBadge = ({ status, openCount = 0, clickCount = 0 }: Emai
           text: status === 'bounced' ? 'Bounced' : 'Failed',
           bgColor: 'bg-red-100 dark:bg-red-900',
           textColor: 'text-red-800 dark:text-red-200'
+        };
+      case 'spam':
+        return {
+          variant: 'destructive' as const,
+          icon: <Shield className="h-3 w-3" />,
+          text: 'Spam',
+          bgColor: 'bg-orange-100 dark:bg-orange-900',
+          textColor: 'text-orange-800 dark:text-orange-200'
+        };
+      case 'unsubscribed':
+        return {
+          variant: 'destructive' as const,
+          icon: <UserX className="h-3 w-3" />,
+          text: 'Unsubscribed',
+          bgColor: 'bg-yellow-100 dark:bg-yellow-900',
+          textColor: 'text-yellow-800 dark:text-yellow-200'
         };
       case 'draft':
         return {
