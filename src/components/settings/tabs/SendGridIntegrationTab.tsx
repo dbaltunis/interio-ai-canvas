@@ -50,11 +50,52 @@ export const SendGridIntegrationTab = () => {
 
   const checkConnectionStatus = async () => {
     try {
-      // Simple check - assume connected if we have any successful setup before
-      // This will be enhanced when we add the status checking edge function
-      console.log("Checking connection status...");
+      // Test if SendGrid is configured by making a test API call
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: "test@example.com", // This will fail but tells us if SendGrid is configured
+          subject: "Connection Test",
+          html: "<p>Test</p>"
+        }
+      });
+      
+      // If we get a specific SendGrid error, it means the API key is configured
+      if (error && error.message.includes("SendGrid")) {
+        setConnectionStatus(prev => ({
+          ...prev,
+          hasApiKey: true,
+          isConnected: !error.message.includes("Invalid SendGrid API key"),
+          hasSenderVerified: !error.message.includes("verify your sender email"),
+          error: error.message.includes("Invalid SendGrid API key") ? 
+            "Invalid API key - please check your SendGrid API key" : 
+            error.message.includes("sender email") ? 
+            "Please verify your sender email in SendGrid" : null
+        }));
+      } else if (!error) {
+        // Unlikely but if no error, everything is configured
+        setConnectionStatus(prev => ({
+          ...prev,
+          hasApiKey: true,
+          isConnected: true,
+          hasSenderVerified: true,
+          error: null
+        }));
+      } else {
+        // No SendGrid configured
+        setConnectionStatus(prev => ({
+          ...prev,
+          hasApiKey: false,
+          isConnected: false,
+          hasSenderVerified: false,
+          error: "SendGrid API key not configured"
+        }));
+      }
     } catch (error) {
       console.error("Failed to check connection status:", error);
+      setConnectionStatus(prev => ({
+        ...prev,
+        error: "Unable to check connection status"
+      }));
     }
   };
 
