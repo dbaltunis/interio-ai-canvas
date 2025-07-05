@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { EmailStatusBadge } from "./EmailStatusBadge";
+import { EmailTimeline } from "./EmailTimeline";
 
 interface Email {
   id: string;
@@ -185,45 +186,8 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
             </div>
           </div>
 
-          {/* Real-time Status Timeline */}
-          <div className="space-y-3">
-            <h4 className="font-semibold">Email Timeline</h4>
-            <div className="space-y-2">
-              {email.sent_at && (
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="font-medium">Sent:</span>
-                  <span>{new Date(email.sent_at).toLocaleString()}</span>
-                </div>
-              )}
-              {email.delivered_at && (
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="font-medium">Delivered:</span>
-                  <span>{new Date(email.delivered_at).toLocaleString()}</span>
-                </div>
-              )}
-              {email.opened_at && (
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="font-medium">First Opened:</span>
-                  <span>{new Date(email.opened_at).toLocaleString()}</span>
-                  {email.open_count > 1 && (
-                    <Badge variant="secondary" className="text-xs ml-2">
-                      {email.open_count} total opens
-                    </Badge>
-                  )}
-                </div>
-              )}
-              {email.clicked_at && (
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="font-medium">First Clicked:</span>
-                  <span>{new Date(email.clicked_at).toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Enhanced Email Timeline */}
+          <EmailTimeline email={email} />
 
           {/* Bounce/Error Info */}
           {email.bounce_reason && (
@@ -296,11 +260,11 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
             
             <Button 
               variant="outline"
-              onClick={() => setShowFollowUp(!showFollowUp)}
+              onClick={() => onFollowUp?.(email.id, "")}
               className="flex items-center gap-2"
             >
               <MessageSquare className="h-4 w-4" />
-              Add Follow-up
+              Send Follow-up Email
             </Button>
 
             <Button 
@@ -313,39 +277,6 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
             </Button>
           </div>
 
-          {/* Follow-up Section */}
-          {showFollowUp && (
-            <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
-              <h5 className="font-medium flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Record Follow-up Action
-              </h5>
-              <Textarea
-                placeholder="Record your follow-up actions, client response, next steps, or meeting notes..."
-                value={followUpNote}
-                onChange={(e) => setFollowUpNote(e.target.value)}
-                className="min-h-20"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleFollowUp} 
-                  size="sm"
-                  disabled={!followUpNote.trim()}
-                  className="flex items-center gap-2"
-                >
-                  <CheckCircle className="h-3 w-3" />
-                  Record Follow-up
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowFollowUp(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

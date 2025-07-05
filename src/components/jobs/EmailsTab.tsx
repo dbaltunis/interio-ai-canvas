@@ -40,6 +40,7 @@ import { TemplateVariableEditor } from "./email-components/TemplateVariableEdito
 import { EmailComposer } from "./email-components/EmailComposer";
 import { EmailStatusBadge } from "./email-components/EmailStatusBadge";
 import { RichTextEditor } from "./email-components/RichTextEditor";
+import { EmailRowActions } from "./email-components/EmailRowActions";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -72,6 +73,7 @@ export const EmailsTab = () => {
     content: "",
     template_type: "custom" as const
   });
+  const [activeTabValue, setActiveTabValue] = useState("compose");
 
   const { toast } = useToast();
   const { data: emails, isLoading: emailsLoading } = useEmails();
@@ -190,22 +192,22 @@ export const EmailsTab = () => {
     setEmailDetailOpen(true);
   };
 
-  const handleFollowUp = async (emailId: string, note: string) => {
-    try {
-      console.log("Recording follow-up:", { emailId, note, timestamp: new Date().toISOString() });
-      
-      toast({
-        title: "Follow-up Recorded",
-        description: "Your follow-up note has been saved successfully.",
-      });
-    } catch (error) {
-      console.error("Failed to record follow-up:", error);
-      toast({
-        title: "Error",
-        description: "Failed to record follow-up. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleFollowUp = async (email: any) => {
+    // Set up a new email with the same recipient
+    setNewEmail({
+      recipient_email: email.recipient_email,
+      subject: `Re: ${email.subject}`,
+      content: `<p>Following up on our previous conversation...</p><br><br><p>---</p><p>Original email sent on ${new Date(email.sent_at).toLocaleDateString()}:</p><blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0; color: #666;">${email.content}</blockquote>`,
+      template_id: ""
+    });
+    
+    // Switch to compose tab
+    setActiveTabValue("compose");
+    
+    toast({
+      title: "Follow-up Email Started",
+      description: "Compose your follow-up email below.",
+    });
   };
 
   const handleCreateCustomTemplate = () => {
@@ -278,7 +280,7 @@ export const EmailsTab = () => {
       )}
 
       {/* Main Email Interface */}
-      <Tabs defaultValue="compose" className="space-y-4">
+      <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
           <TabsTrigger value="compose" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
@@ -690,52 +692,34 @@ export const EmailsTab = () => {
                           <TableCell onClick={() => handleEmailClick(email)}>
                             {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEmailClick(email);
-                                }}
-                                title="View Details & Analytics"
-                              >
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              {['bounced', 'failed'].includes(email.status) && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      await sendEmailMutation.mutateAsync({
-                                        to: email.recipient_email,
-                                        subject: email.subject,
-                                        content: email.content
-                                      });
-                                      toast({
-                                        title: "Email Resent",
-                                        description: `Email to ${email.recipient_email} has been resent.`
-                                      });
-                                    } catch (error) {
-                                      console.error("Failed to resend email:", error);
-                                      toast({
-                                        title: "Resend Failed",
-                                        description: "Failed to resend email. Please try again later.",
-                                        variant: "destructive"
-                                      });
-                                    }
-                                  }}
-                                  title="Resend Email"
-                                  disabled={sendEmailMutation.isPending}
-                                >
-                                  <RefreshCw className={`h-3 w-3 ${sendEmailMutation.isPending ? 'animate-spin' : ''}`} />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
+                           <TableCell>
+                             <EmailRowActions 
+                               email={email}
+                               onView={() => handleEmailClick(email)}
+                               onFollowUp={() => handleFollowUp(email)}
+                               onResend={async () => {
+                                 try {
+                                   await sendEmailMutation.mutateAsync({
+                                     to: email.recipient_email,
+                                     subject: email.subject,
+                                     content: email.content
+                                   });
+                                   toast({
+                                     title: "Email Resent",
+                                     description: `Email to ${email.recipient_email} has been resent.`
+                                   });
+                                 } catch (error) {
+                                   console.error("Failed to resend email:", error);
+                                   toast({
+                                     title: "Resend Failed",
+                                     description: "Failed to resend email. Please try again later.",
+                                     variant: "destructive"
+                                   });
+                                 }
+                               }}
+                               isResending={sendEmailMutation.isPending}
+                             />
+                           </TableCell>
                         </TableRow>
                       ))
                     ) : (

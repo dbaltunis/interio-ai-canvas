@@ -82,6 +82,11 @@ export const JobsPage = () => {
     }
   };
 
+  const handleNewEmail = () => {
+    setActiveTab("emails");
+    // The EmailsTab will handle showing the compose view
+  };
+
   // Calculate actual counts
   const jobsCount = quotes?.length || 0;
   const clientsCount = clients?.length || 0;
@@ -120,6 +125,7 @@ export const JobsPage = () => {
           setShowFilters={setShowFilters}
           onNewJob={handleNewJob}
           onNewClient={handleNewClient}
+          onNewEmail={handleNewEmail}
         />
       </div>
 
