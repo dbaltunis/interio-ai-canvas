@@ -159,11 +159,6 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
               </div>
               <div className="text-lg font-semibold">
                 {email.open_count}
-                {email.open_count > 1 && (
-                  <span className="text-sm text-blue-600 ml-1">
-                    ({email.open_count}x)
-                  </span>
-                )}
               </div>
               <div className="text-xs text-gray-600">
                 {email.open_count === 0 ? 'Not Opened' : 
@@ -178,8 +173,8 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <Clock className="h-4 w-4 mx-auto mb-1 text-orange-600" />
-              <div className="text-lg font-semibold">{formatTimeSpent(email.time_spent_seconds)}</div>
-              <div className="text-xs text-gray-600">Time Spent</div>
+              <div className="text-lg font-semibold">N/A</div>
+              <div className="text-xs text-gray-600">Time Spent*</div>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <Calendar className="h-4 w-4 mx-auto mb-1 text-green-600" />
@@ -232,14 +227,46 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
 
           {/* Bounce/Error Info */}
           {email.bounce_reason && (
-            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+            <div className={`p-4 rounded-lg border ${
+              email.bounce_reason.includes('temporarily deferred') 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-red-50 border-red-200'
+            }`}>
               <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="font-medium text-red-800">Delivery Issue</span>
+                <AlertCircle className={`h-4 w-4 ${
+                  email.bounce_reason.includes('temporarily deferred')
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }`} />
+                <span className={`font-medium ${
+                  email.bounce_reason.includes('temporarily deferred')
+                    ? 'text-yellow-800'
+                    : 'text-red-800'
+                }`}>
+                  {email.bounce_reason.includes('temporarily deferred') 
+                    ? 'Delivery Delayed' 
+                    : 'Delivery Issue'}
+                </span>
               </div>
-              <p className="text-sm text-red-700">{email.bounce_reason}</p>
+              <p className={`text-sm ${
+                email.bounce_reason.includes('temporarily deferred')
+                  ? 'text-yellow-700'
+                  : 'text-red-700'
+              }`}>
+                {email.bounce_reason}
+                {email.bounce_reason.includes('temporarily deferred') && (
+                  <span className="block mt-1 text-xs">
+                    This is temporary - the email will be retried automatically.
+                  </span>
+                )}
+              </p>
             </div>
           )}
+          
+          {/* Time Spent Disclaimer */}
+          <div className="text-xs text-gray-500 mt-2">
+            *Time spent tracking is not available with current email provider
+          </div>
 
           <Separator />
 
