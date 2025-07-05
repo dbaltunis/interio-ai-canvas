@@ -7,18 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Mail, 
-  Settings, 
-  ExternalLink, 
-  Loader2,
-  AlertTriangle,
-  Check,
-  X,
-  Play
-} from "lucide-react";
+import { CheckCircle, AlertCircle, Mail, Settings, ExternalLink, Loader2, AlertTriangle, Check, X, Play, Copy } from "lucide-react";
 
 interface ConnectionStatus {
   isConnected: boolean;
@@ -377,7 +366,7 @@ export const SendGridIntegrationTab = () => {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  <strong>Great!</strong> Your SendGrid integration is ready to use.
+                  <strong>Great!</strong> Your SendGrid integration is ready to use. Email tracking is active for opens, clicks, delivery status, and bounces.
                   {connectionStatus.lastTested && (
                     <span className="block text-sm mt-1">
                       Last tested: {new Date(connectionStatus.lastTested).toLocaleString()}
@@ -385,6 +374,30 @@ export const SendGridIntegrationTab = () => {
                   )}
                 </AlertDescription>
               </Alert>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium">Webhook Configuration</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  SendGrid is configured to send email events to this webhook for tracking:
+                </p>
+                <div className="flex gap-2">
+                  <Input 
+                    value="https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/sendgrid-webhook"
+                    readOnly 
+                    className="font-mono text-xs"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => {
+                      navigator.clipboard.writeText("https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/sendgrid-webhook");
+                      toast({ title: "Copied", description: "Webhook URL copied to clipboard" });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               
               <Button 
                 onClick={handleTestConnection}

@@ -22,6 +22,8 @@ interface SendGridEvent {
   reason?: string;
   type?: string;
   smtp_id?: string;
+  // Custom args passed from send-email function
+  email_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -43,17 +45,59 @@ const handler = async (req: Request): Promise<Response> => {
     for (const event of events) {
       console.log("Processing SendGrid event:", event);
 
-      // Find the email record by SendGrid message ID
-      const { data: emailRecord, error: findError } = await supabase
-        .from("emails")
-        .select()
-        .eq("sendgrid_message_id", event.sg_message_id)
-        .single();
+      let emailRecord = null;
 
-      if (findError) {
-        console.error("Could not find email record for message ID:", event.sg_message_id, findError);
+      // First try to find by email_id from custom args (most reliable)
+      if (event.email_id) {
+        const { data: directRecord, error: directError } = await supabase
+          .from("emails")
+          .select()
+          .eq("id", event.email_id)
+          .single();
+
+        if (!directError && directRecord) {
+          emailRecord = directRecord;
+          console.log("Found email record by email_id:", event.email_id);
+        }
+      }
+
+      // Also check custom_args field in the event data (SendGrid passes custom args differently)
+      if (!emailRecord) {
+        // Sometimes SendGrid passes custom args in a nested way or flattened
+        const customArgs = event as any;
+        const emailId = customArgs.email_id || (customArgs.custom_args && customArgs.custom_args.email_id);
         
-        // Try to find by email address and recent timestamp if message ID doesn't match
+        if (emailId) {
+          const { data: customRecord, error: customError } = await supabase
+            .from("emails")
+            .select()
+            .eq("id", emailId)
+            .maybeSingle();
+
+          if (!customError && customRecord) {
+            emailRecord = customRecord;
+            console.log("Found email record by custom args email_id:", emailId);
+          }
+        }
+      }
+
+      // Fall back to SendGrid message ID if no direct match
+      if (!emailRecord) {
+        const { data: messageRecord, error: messageError } = await supabase
+          .from("emails")
+          .select()
+          .eq("sendgrid_message_id", event.sg_message_id)
+          .maybeSingle();
+
+        if (!messageError && messageRecord) {
+          emailRecord = messageRecord;
+          console.log("Found email record by message ID:", event.sg_message_id);
+        }
+      }
+
+      // Final fallback: try to find by email address and recent timestamp
+      if (!emailRecord) {
+        console.log("Trying fallback search for email:", event.email);
         const recentTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // Last 24 hours
         const { data: fallbackRecord, error: fallbackError } = await supabase
           .from("emails")
@@ -64,14 +108,15 @@ const handler = async (req: Request): Promise<Response> => {
           .limit(1)
           .maybeSingle();
 
-        if (fallbackError || !fallbackRecord) {
-          console.error("Could not find fallback email record:", fallbackError);
-          continue;
+        if (!fallbackError && fallbackRecord) {
+          emailRecord = fallbackRecord;
+          console.log("Found email record by fallback search:", fallbackRecord.id);
         }
-        
-        // Use the fallback record
-        console.log("Using fallback email record:", fallbackRecord.id);
-        emailRecord = fallbackRecord;
+      }
+
+      if (!emailRecord) {
+        console.error("Could not find email record for event:", event.email, event.sg_message_id);
+        continue;
       }
 
       // Update email status and tracking data
@@ -85,7 +130,10 @@ const handler = async (req: Request): Promise<Response> => {
           updates.delivered_at = new Date(event.timestamp * 1000).toISOString();
           break;
         case "open":
-          updates.status = "opened";
+          // Only update status to opened if it's not already clicked
+          if (emailRecord.status !== "clicked") {
+            updates.status = "opened";
+          }
           updates.opened_at = new Date(event.timestamp * 1000).toISOString();
           updates.open_count = (emailRecord.open_count || 0) + 1;
           break;
@@ -136,7 +184,9 @@ const handler = async (req: Request): Promise<Response> => {
             useragent: event.useragent,
             reason: event.reason,
             type: event.type,
-            smtp_id: event.smtp_id
+            smtp_id: event.smtp_id,
+            sg_message_id: event.sg_message_id,
+            custom_args: (event as any).custom_args || {}
           },
           ip_address: event.ip,
           user_agent: event.useragent,
