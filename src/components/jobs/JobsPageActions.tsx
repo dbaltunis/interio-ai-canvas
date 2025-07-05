@@ -8,6 +8,7 @@ interface JobsPageActionsProps {
   setShowFilters: (show: boolean) => void;
   onNewJob: () => void;
   onNewClient: () => void;
+  onNewEmail?: () => void;
 }
 
 export const JobsPageActions = ({
@@ -15,7 +16,8 @@ export const JobsPageActions = ({
   showFilters,
   setShowFilters,
   onNewJob,
-  onNewClient
+  onNewClient,
+  onNewEmail
 }: JobsPageActionsProps) => {
   return (
     <div className="flex items-center space-x-3">
@@ -36,6 +38,7 @@ export const JobsPageActions = ({
       ) : (
         <Button 
           className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+          onClick={onNewEmail}
         >
           New Email
         </Button>

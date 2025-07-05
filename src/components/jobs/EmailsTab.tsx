@@ -39,6 +39,7 @@ import { EmailDetailDialog } from "./email-components/EmailDetailDialog";
 import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
 import { EmailComposer } from "./email-components/EmailComposer";
 import { EmailStatusBadge } from "./email-components/EmailStatusBadge";
+import { RichTextEditor } from "./email-components/RichTextEditor";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -63,6 +64,13 @@ export const EmailsTab = () => {
     from_name: "",
     reply_to_email: "",
     signature: ""
+  });
+  const [customTemplateDialogOpen, setCustomTemplateDialogOpen] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({
+    name: "",
+    subject: "",
+    content: "",
+    template_type: "custom" as const
   });
 
   const { toast } = useToast();
@@ -200,6 +208,21 @@ export const EmailsTab = () => {
     }
   };
 
+  const handleCreateCustomTemplate = () => {
+    createTemplateMutation.mutate({
+      ...newTemplate,
+      variables: [],
+      active: true
+    });
+    setNewTemplate({
+      name: "",
+      subject: "",
+      content: "",
+      template_type: "custom"
+    });
+    setCustomTemplateDialogOpen(false);
+  };
+
   if (kpisLoading) {
     return <div className="flex items-center justify-center h-64">Loading email data...</div>;
   }
@@ -256,22 +279,26 @@ export const EmailsTab = () => {
 
       {/* Main Email Interface */}
       <Tabs defaultValue="compose" className="space-y-4">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
           <TabsTrigger value="compose" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
-            Compose
+            <span className="hidden sm:inline">Compose</span>
+            <span className="sm:hidden">Email</span>
           </TabsTrigger>
           <TabsTrigger value="campaigns" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Campaigns
+            <span className="hidden sm:inline">Campaigns</span>
+            <span className="sm:hidden">Camps</span>
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Templates
+            <span className="hidden sm:inline">Templates</span>
+            <span className="sm:hidden">Temps</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            History
+            <span className="hidden sm:inline">History</span>
+            <span className="sm:hidden">Hist</span>
           </TabsTrigger>
         </TabsList>
 
@@ -279,7 +306,7 @@ export const EmailsTab = () => {
         <TabsContent value="compose">
           <div className="space-y-4">
             {/* Client and Quote Selectors */}
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <ClientSelector 
                 selectedClients={selectedClients}
                 onSelectionChange={setSelectedClients}
@@ -380,9 +407,12 @@ export const EmailsTab = () => {
         {/* Templates Tab */}
         <TabsContent value="templates">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h3 className="text-lg font-semibold">Email Templates</h3>
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2 w-full sm:w-auto"
+                onClick={() => setCustomTemplateDialogOpen(true)}
+              >
                 <Plus className="h-4 w-4" />
                 New Template
               </Button>
@@ -397,28 +427,30 @@ export const EmailsTab = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {predefinedEmailTemplates.map((template) => (
                     <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h4 className="font-medium">{template.name}</h4>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium truncate">{template.name}</h4>
                             <Badge variant="outline" className="text-xs mt-1">{template.category}</Badge>
                           </div>
-                          <FileText className="h-5 w-5 text-gray-400" />
+                          <FileText className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
                         </div>
-                        <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                        <div className="flex gap-2">
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{template.description}</p>
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Button 
                             size="sm" 
                             variant="outline"
+                            className="w-full sm:w-auto"
                             onClick={() => handleCreateTemplateFromPredefined(template)}
                           >
                             Save Template
                           </Button>
                           <Button 
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => {
                               setNewEmail({
                                 ...newEmail,
@@ -442,20 +474,21 @@ export const EmailsTab = () => {
             </Card>
 
             {/* User Templates Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {templates?.map((template) => (
                 <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-medium">{template.name}</h4>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-medium truncate">{template.name}</h4>
                         <p className="text-sm text-gray-600 capitalize">{template.template_type.replace(/_/g, ' ')}</p>
                       </div>
-                      <FileText className="h-5 w-5 text-gray-400" />
+                      <FileText className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
                     </div>
                     <div className="flex gap-2 mt-3">
                       <Button 
                         size="sm"
+                        className="w-full"
                         onClick={() => {
                           setNewEmail({
                             ...newEmail,
@@ -486,6 +519,63 @@ export const EmailsTab = () => {
                 </Card>
               )}
             </div>
+
+            {/* Custom Template Creation Dialog */}
+            <Dialog open={customTemplateDialogOpen} onOpenChange={setCustomTemplateDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create Custom Template</DialogTitle>
+                  <DialogDescription>
+                    Create a reusable email template for your business
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="template_name">Template Name</Label>
+                    <Input
+                      id="template_name"
+                      placeholder="e.g., Quote Follow-up"
+                      value={newTemplate.name}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="template_subject">Subject Line</Label>
+                    <Input
+                      id="template_subject"
+                      placeholder="Email subject..."
+                      value={newTemplate.subject}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="template_content">Email Content</Label>
+                    <RichTextEditor
+                      value={newTemplate.content}
+                      onChange={(content) => setNewTemplate(prev => ({ ...prev, content }))}
+                      placeholder="Start typing your template content..."
+                      className="min-h-[250px]"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-end gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCustomTemplateDialogOpen(false)}
+                      className="w-full sm:w-auto"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleCreateCustomTemplate}
+                      disabled={!newTemplate.name || !newTemplate.subject || !newTemplate.content || createTemplateMutation.isPending}
+                      className="w-full sm:w-auto"
+                    >
+                      {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </TabsContent>
 
