@@ -126,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       switch (event.event) {
         case "delivered":
-          updates.status = "delivered";
+          updates.status = "received";
           updates.delivered_at = new Date(event.timestamp * 1000).toISOString();
           break;
         case "open":
@@ -134,7 +134,9 @@ const handler = async (req: Request): Promise<Response> => {
           if (emailRecord.status !== "clicked") {
             updates.status = "opened";
           }
-          updates.opened_at = new Date(event.timestamp * 1000).toISOString();
+          if (!emailRecord.opened_at) {
+            updates.opened_at = new Date(event.timestamp * 1000).toISOString();
+          }
           updates.open_count = (emailRecord.open_count || 0) + 1;
           break;
         case "click":
