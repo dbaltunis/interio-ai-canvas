@@ -22,7 +22,7 @@ interface EmailComposerProps {
   setNewEmail: (email: any) => void;
   selectedClients: any[];
   selectedQuotes: any[];
-  onSendEmail: () => void;
+  onSendEmail: (attachments?: File[]) => void;
   onPreviewEmail: () => void;
   sendEmailMutation: any;
   emailSettings: any;
@@ -266,7 +266,7 @@ export const EmailComposer = ({
             </Button>
           </div>
           <Button 
-            onClick={onSendEmail} 
+            onClick={() => onSendEmail(attachments)} 
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 min-w-[120px] justify-center"
             disabled={sendEmailMutation.isPending || !emailSettings?.from_email}
           >

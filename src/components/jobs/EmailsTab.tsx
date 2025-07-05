@@ -99,7 +99,7 @@ export const EmailsTab = () => {
     }
   }, [emailSettings]);
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (attachments: File[] = []) => {
     const allRecipients = [
       ...selectedClients.filter(client => client.email).map(client => client.email),
       ...(newEmail.recipient_email ? [newEmail.recipient_email] : [])
@@ -128,7 +128,8 @@ export const EmailsTab = () => {
       subject: newEmail.subject,
       content: newEmail.content,
       selectedClients: selectedClients.length,
-      selectedQuotes: selectedQuotes.length
+      selectedQuotes: selectedQuotes.length,
+      attachments: attachments.length
     });
 
     for (const recipient of allRecipients) {
@@ -138,7 +139,8 @@ export const EmailsTab = () => {
           subject: newEmail.subject,
           content: newEmail.content,
           template_id: newEmail.template_id || undefined,
-          client_id: selectedClients.find(c => c.email === recipient)?.id
+          client_id: selectedClients.find(c => c.email === recipient)?.id,
+          attachments: attachments
         });
       } catch (error) {
         console.error(`Failed to send email to ${recipient}:`, error);

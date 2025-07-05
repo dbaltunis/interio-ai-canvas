@@ -10,6 +10,7 @@ interface SendEmailRequest {
   template_id?: string;
   client_id?: string;
   campaign_id?: string;
+  attachments?: File[];
 }
 
 export const useSendEmail = () => {
@@ -54,13 +55,38 @@ export const useSendEmail = () => {
       await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
 
       try {
+        // Upload attachments to storage if any
+        let attachmentPaths: string[] = [];
+        if (emailData.attachments && emailData.attachments.length > 0) {
+          console.log("Uploading attachments:", emailData.attachments.length);
+          
+          for (const file of emailData.attachments) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('email-attachments')
+              .upload(fileName, file);
+            
+            if (uploadError) {
+              console.error("File upload error:", uploadError);
+              throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+            }
+            
+            attachmentPaths.push(uploadData.path);
+          }
+          
+          console.log("Attachments uploaded:", attachmentPaths);
+        }
+
         // Send the email via the edge function
         const { data: sendResponse, error: sendError } = await supabase.functions.invoke('send-email', {
           body: {
             to: emailData.to,
             subject: emailData.subject,
             html: emailData.content,
-            emailId: emailRecord.id
+            emailId: emailRecord.id,
+            attachmentPaths: attachmentPaths.length > 0 ? attachmentPaths : undefined
           }
         });
 

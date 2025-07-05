@@ -12,6 +12,7 @@ interface EmailRequest {
   subject: string;
   html: string;
   emailId?: string;
+  attachmentPaths?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -51,8 +52,48 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Processing email request:", { 
       to: emailData.to, 
       subject: emailData.subject,
-      hasContent: !!emailData.html
+      hasContent: !!emailData.html,
+      attachments: emailData.attachmentPaths?.length || 0
     });
+
+    // Process attachments if any
+    let attachments: any[] = [];
+    if (emailData.attachmentPaths && emailData.attachmentPaths.length > 0) {
+      console.log("Processing attachments:", emailData.attachmentPaths);
+      
+      for (const path of emailData.attachmentPaths) {
+        try {
+          // Download file from storage
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('email-attachments')  
+            .download(path);
+          
+          if (downloadError) {
+            console.error("Failed to download attachment:", downloadError);
+            continue;
+          }
+          
+          // Convert to base64
+          const buffer = await fileData.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+          
+          // Extract filename from path
+          const filename = path.split('/').pop() || 'attachment';
+          
+          attachments.push({
+            content: base64,
+            filename: filename,
+            type: fileData.type || 'application/octet-stream',
+            disposition: 'attachment'
+          });
+          
+        } catch (error) {
+          console.error("Error processing attachment:", error);
+        }
+      }
+      
+      console.log("Processed attachments:", attachments.length);
+    }
 
     // Check if SendGrid API key is available
     const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
@@ -87,43 +128,51 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Cleaned HTML content:", cleanHtml);
 
     // Send email via SendGrid
+    const emailPayload: any = {
+      personalizations: [{
+        to: [{ email: emailData.to }],
+        subject: emailData.subject,
+      }],
+      from: {
+        email: fromEmail,
+        name: fromName
+      },
+      content: [{
+        type: "text/html",
+        value: cleanHtml
+      }],
+      tracking_settings: {
+        click_tracking: { 
+          enable: true,
+          enable_text: true 
+        },
+        open_tracking: { 
+          enable: true,
+          substitution_tag: "%opentrack%"
+        },
+        subscription_tracking: {
+          enable: false
+        }
+      },
+      custom_args: {
+        user_id: user.id,
+        email_id: emailData.emailId || ""
+      }
+    };
+
+    // Add attachments if any
+    if (attachments.length > 0) {
+      emailPayload.attachments = attachments;
+      console.log("Adding attachments to email:", attachments.length);
+    }
+
     const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${sendGridApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        personalizations: [{
-          to: [{ email: emailData.to }],
-          subject: emailData.subject,
-        }],
-        from: {
-          email: fromEmail,
-          name: fromName
-        },
-        content: [{
-          type: "text/html",
-          value: cleanHtml
-        }],
-        tracking_settings: {
-          click_tracking: { 
-            enable: true,
-            enable_text: true 
-          },
-          open_tracking: { 
-            enable: true,
-            substitution_tag: "%opentrack%"
-          },
-          subscription_tracking: {
-            enable: false
-          }
-        },
-        custom_args: {
-          user_id: user.id,
-          email_id: emailData.emailId || ""
-        }
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
     console.log("SendGrid response status:", sendGridResponse.status);
