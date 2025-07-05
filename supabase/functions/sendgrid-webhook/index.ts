@@ -65,7 +65,20 @@ const handler = async (req: Request): Promise<Response> => {
       if (!emailRecord) {
         // Sometimes SendGrid passes custom args in a nested way or flattened
         const customArgs = event as any;
-        const emailId = customArgs.email_id || (customArgs.custom_args && customArgs.custom_args.email_id);
+        let emailId = customArgs.email_id || 
+                     (customArgs.custom_args && customArgs.custom_args.email_id) ||
+                     customArgs.user_id || // Sometimes sent as user_id
+                     (customArgs.custom_args && customArgs.custom_args.user_id);
+        
+        // Also check if custom_args is a string (sometimes SendGrid sends it as JSON string)
+        if (!emailId && customArgs.custom_args && typeof customArgs.custom_args === 'string') {
+          try {
+            const parsedCustomArgs = JSON.parse(customArgs.custom_args);
+            emailId = parsedCustomArgs.email_id || parsedCustomArgs.user_id;
+          } catch (e) {
+            console.log("Could not parse custom_args as JSON:", customArgs.custom_args);
+          }
+        }
         
         if (emailId) {
           const { data: customRecord, error: customError } = await supabase
@@ -115,7 +128,41 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       if (!emailRecord) {
-        console.error("Could not find email record for event:", event.email, event.sg_message_id);
+        console.error("Could not find email record for event:", {
+          email: event.email,
+          sg_message_id: event.sg_message_id,
+          event_type: event.event,
+          timestamp: event.timestamp,
+          custom_args: (event as any).custom_args,
+          email_id: event.email_id
+        });
+        
+        // Store orphaned events for debugging
+        const { error: orphanedError } = await supabase
+          .from("email_analytics")
+          .insert({
+            email_id: "00000000-0000-0000-0000-000000000000", // Placeholder for orphaned events
+            event_type: `orphaned_${event.event}`,
+            event_data: {
+              timestamp: event.timestamp,
+              email: event.email,
+              sg_message_id: event.sg_message_id,
+              event: event.event,
+              custom_args: (event as any).custom_args || {},
+              debug_info: {
+                reason: "Could not find matching email record",
+                searched_email_id: event.email_id,
+                searched_sg_message_id: event.sg_message_id,
+                searched_recipient: event.email
+              }
+            },
+            ip_address: event.ip,
+            user_agent: event.useragent,
+          });
+        
+        if (orphanedError) {
+          console.error("Error storing orphaned event:", orphanedError);
+        }
         continue;
       }
 
