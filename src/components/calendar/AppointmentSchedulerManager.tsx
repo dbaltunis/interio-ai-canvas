@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus, Edit, Upload, Image } from "lucide-react";
+import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus, Edit, Upload, Image, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
 import { useUploadFile } from "@/hooks/useFileStorage";
@@ -25,6 +25,13 @@ interface DayAvailability {
   day: string;
   enabled: boolean;
   timeSlots: TimeSlot[];
+}
+
+interface LocationSettings {
+  inPerson?: { enabled: boolean; address?: string };
+  googleMeet?: { enabled: boolean };
+  zoom?: { enabled: boolean; meetingId?: string };
+  phone?: { enabled: boolean };
 }
 
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -61,7 +68,7 @@ export const AppointmentSchedulerManager = () => {
       googleMeet: { enabled: false },
       zoom: { enabled: false, meetingId: '' },
       phone: { enabled: false }
-    }
+    } as LocationSettings
   });
 
   const generateSlug = (name: string) => {
@@ -165,6 +172,8 @@ export const AppointmentSchedulerManager = () => {
   };
 
   const handleEditScheduler = (scheduler: any) => {
+    const locations = scheduler.locations as LocationSettings || {};
+    
     setActiveScheduler({
       name: scheduler.name,
       description: scheduler.description || '',
@@ -179,11 +188,11 @@ export const AppointmentSchedulerManager = () => {
         enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
         timeSlots: [{ id: crypto.randomUUID(), startTime: '09:00', endTime: '17:00' }]
       })),
-      locations: scheduler.locations || {
-        inPerson: { enabled: true, address: '' },
-        googleMeet: { enabled: false },
-        zoom: { enabled: false, meetingId: '' },
-        phone: { enabled: false }
+      locations: {
+        inPerson: locations.inPerson || { enabled: true, address: '' },
+        googleMeet: locations.googleMeet || { enabled: false },
+        zoom: locations.zoom || { enabled: false, meetingId: '' },
+        phone: locations.phone || { enabled: false }
       }
     });
     setEditingId(scheduler.id);
@@ -288,81 +297,84 @@ export const AppointmentSchedulerManager = () => {
       {/* Existing Schedulers */}
       {schedulers && schedulers.length > 0 && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {schedulers.map((scheduler) => (
-            <Card key={scheduler.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start gap-3">
-                  {scheduler.image_url && (
-                    <img 
-                      src={scheduler.image_url} 
-                      alt={scheduler.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{scheduler.name}</CardTitle>
-                    <p className="text-sm text-gray-600">{scheduler.description}</p>
+          {schedulers.map((scheduler) => {
+            const locations = scheduler.locations as LocationSettings || {};
+            return (
+              <Card key={scheduler.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    {scheduler.image_url && (
+                      <img 
+                        src={scheduler.image_url} 
+                        alt={scheduler.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{scheduler.name}</CardTitle>
+                      <p className="text-sm text-gray-600">{scheduler.description}</p>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span>{scheduler.duration} minutes</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <span>{scheduler.duration} minutes</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {locations.inPerson?.enabled && (
+                        <Badge variant="secondary" className="text-xs">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          In-Person
+                        </Badge>
+                      )}
+                      {locations.googleMeet?.enabled && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Video className="w-3 h-3 mr-1" />
+                          Google Meet
+                        </Badge>
+                      )}
+                      {locations.zoom?.enabled && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Video className="w-3 h-3 mr-1" />
+                          Zoom
+                        </Badge>
+                      )}
+                      {locations.phone?.enabled && (
+                        <Badge variant="secondary" className="text-xs">Phone</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {scheduler.locations?.inPerson?.enabled && (
-                      <Badge variant="secondary" className="text-xs">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        In-Person
-                      </Badge>
-                    )}
-                    {scheduler.locations?.googleMeet?.enabled && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Video className="w-3 h-3 mr-1" />
-                        Google Meet
-                      </Badge>
-                    )}
-                    {scheduler.locations?.zoom?.enabled && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Video className="w-3 h-3 mr-1" />
-                        Zoom
-                      </Badge>
-                    )}
-                    {scheduler.locations?.phone?.enabled && (
-                      <Badge variant="secondary" className="text-xs">Phone</Badge>
-                    )}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyBookingLink(scheduler.name, scheduler.id)}
+                      className="flex-1"
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Link
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEditScheduler(scheduler)}
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleDeleteScheduler(scheduler.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyBookingLink(scheduler.name, scheduler.id)}
-                    className="flex-1"
-                  >
-                    <Copy className="w-3 h-3 mr-1" />
-                    Copy Link
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleEditScheduler(scheduler)}
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleDeleteScheduler(scheduler.id)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
