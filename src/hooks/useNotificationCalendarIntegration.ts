@@ -16,6 +16,17 @@ interface CreateAppointmentFromNotificationRequest {
   projectId?: string;
 }
 
+// Valid appointment types based on database constraints
+const VALID_APPOINTMENT_TYPES = [
+  'consultation',
+  'measurement', 
+  'installation',
+  'follow-up',
+  'reminder',
+  'meeting',
+  'call'
+];
+
 export const useCreateAppointmentFromNotification = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -24,11 +35,16 @@ export const useCreateAppointmentFromNotification = () => {
 
   return useMutation({
     mutationFn: async (data: CreateAppointmentFromNotificationRequest) => {
+      // Ensure we use a valid appointment type
+      const appointmentType = data.appointmentType && VALID_APPOINTMENT_TYPES.includes(data.appointmentType) 
+        ? data.appointmentType 
+        : 'reminder';
+
       // Create the appointment
       const appointment = await createAppointment.mutateAsync({
         title: data.title,
         description: data.description,
-        appointment_type: data.appointmentType || 'reminder',
+        appointment_type: appointmentType,
         start_time: data.startTime.toISOString(),
         end_time: data.endTime.toISOString(),
         location: data.location || null,
@@ -51,9 +67,10 @@ export const useCreateAppointmentFromNotification = () => {
       });
     },
     onError: (error) => {
+      console.error('Failed to create appointment from notification:', error);
       toast({
         title: "Failed to Create Event",
-        description: error.message,
+        description: "There was an error creating the calendar event. Please try again.",
         variant: "destructive",
       });
     },
@@ -89,6 +106,14 @@ export const useScheduleNotificationReminder = () => {
       toast({
         title: "Reminder Scheduled",
         description: "Calendar reminder created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to schedule reminder:', error);
+      toast({
+        title: "Failed to Schedule Reminder",
+        description: "There was an error scheduling your reminder. Please try again.",
+        variant: "destructive",
       });
     },
   });

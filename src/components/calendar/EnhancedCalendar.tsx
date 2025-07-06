@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Plus, Clock, MapPin, User, Bell } from "lucide-react";
+import { CalendarDays, Plus, Clock, MapPin } from "lucide-react";
 import { useAppointments, useCreateAppointment } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationsPanelCard } from "./NotificationsPanelCard";
 
 export const EnhancedCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -36,13 +36,15 @@ export const EnhancedCalendar = () => {
   const { data: notifications } = useNotifications();
   const createAppointment = useCreateAppointment();
 
+  // Valid appointment types that match database constraints
   const appointmentTypes = [
     { value: 'consultation', label: 'Consultation' },
     { value: 'measurement', label: 'Measurement' },
     { value: 'installation', label: 'Installation' },
     { value: 'follow-up', label: 'Follow-up' },
     { value: 'reminder', label: 'Reminder' },
-    { value: 'other', label: 'Other' }
+    { value: 'meeting', label: 'Meeting' },
+    { value: 'call', label: 'Call' }
   ];
 
   const getAppointmentTypeColor = (type: string) => {
@@ -52,6 +54,8 @@ export const EnhancedCalendar = () => {
       case 'installation': return 'bg-purple-100 text-purple-800';
       case 'follow-up': return 'bg-yellow-100 text-yellow-800';
       case 'reminder': return 'bg-orange-100 text-orange-800';
+      case 'meeting': return 'bg-indigo-100 text-indigo-800';
+      case 'call': return 'bg-pink-100 text-pink-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -123,7 +127,6 @@ export const EnhancedCalendar = () => {
   };
 
   const selectedDateAppointments = selectedDate ? getAppointmentsForDate(selectedDate) : [];
-  const todayNotifications = notifications?.filter(n => !n.read).slice(0, 3) || [];
 
   if (isLoading) {
     return <div>Loading calendar...</div>;
@@ -350,51 +353,8 @@ export const EnhancedCalendar = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Bell className="mr-2 h-5 w-5" />
-              Recent Notifications
-            </CardTitle>
-            <CardDescription>
-              Create calendar events from notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {todayNotifications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bell className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>No unread notifications</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {todayNotifications.map((notification) => (
-                  <div key={notification.id} className="p-3 border rounded-lg">
-                    <div className="flex items-start justify-between mb-2">
-                      <h5 className="font-medium text-sm">{notification.title}</h5>
-                      <Badge variant="secondary" className="text-xs">
-                        {notification.type}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {notification.message}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCreateFromNotification(notification.id)}
-                      className="w-full"
-                    >
-                      <CalendarDays className="mr-2 h-3 w-3" />
-                      Schedule
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Notifications Panel */}
+        <NotificationsPanelCard onScheduleNotification={handleCreateFromNotification} />
       </div>
     </div>
   );
