@@ -31,18 +31,13 @@ const Index = () => {
     { id: "library", label: "Library", icon: Package },
   ];
 
-  // Update URL when active tab changes
+  // Update URL when active tab changes, but only if it's different from current URL
   useEffect(() => {
-    setSearchParams({ tab: activeTab }, { replace: true });
-  }, [activeTab, setSearchParams]);
-
-  // Update active tab when URL changes (browser back/forward)
-  useEffect(() => {
-    const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
+    const currentTab = searchParams.get('tab') || "jobs";
+    if (activeTab !== currentTab) {
+      setSearchParams({ tab: activeTab }, { replace: true });
     }
-  }, [searchParams, activeTab]);
+  }, [activeTab, setSearchParams]); // Removed searchParams from dependencies to prevent loop
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
