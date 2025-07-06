@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,6 @@ interface BookingFormData {
   email: string;
   phone: string;
   notes: string;
-}
-
-interface PublicBookingPageProps {
-  schedulerSlug: string;
 }
 
 // This would normally come from the database based on the slug
@@ -41,7 +37,8 @@ const mockSchedulerData = {
   }
 };
 
-export const PublicBookingPage = ({ schedulerSlug }: PublicBookingPageProps) => {
+export const PublicBookingPage = () => {
+  const { schedulerSlug } = useParams<{ schedulerSlug: string }>();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>("");

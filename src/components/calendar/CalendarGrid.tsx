@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Calendar as CalendarIcon } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO, differenceInMinutes, differenceInHours } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CalendarEvent {
@@ -177,57 +177,73 @@ export const CalendarGrid = ({
         
         {/* Time Grid */}
         <div className="overflow-auto max-h-[calc(100vh-300px)]">
-          <div className="grid grid-cols-8">
+          <div className="relative">
             {hours.map(hour => (
-              <div key={hour} className="contents">
+              <div key={hour} className="grid grid-cols-8 relative">
                 {/* Time Label */}
-                <div className="p-2 text-xs text-gray-500 border-r border-b text-right pr-3 min-h-[40px] flex items-center justify-end">
+                <div className="p-2 text-xs text-gray-500 border-r border-b text-right pr-3 h-12 flex items-center justify-end">
                   {format(new Date().setHours(hour, 0), 'HH:mm')}
                 </div>
                 
                 {/* Day Columns */}
                 {weekDays.map(day => {
-                  const hourEvents = events.filter(event => {
+                  const dayEvents = events.filter(event => {
                     const eventDate = parseISO(event.start_time);
-                    return isSameDay(eventDate, day) && eventDate.getHours() === hour;
+                    const eventHour = eventDate.getHours();
+                    return isSameDay(eventDate, day) && eventHour === hour;
                   });
-
-                  const hasEvents = hourEvents.length > 0;
-                  const minHeight = hasEvents ? 'min-h-[80px]' : 'min-h-[40px]';
 
                   return (
                     <div
                       key={`${day.toISOString()}-${hour}`}
-                      className={`${minHeight} p-1 border-r border-b last:border-r-0 hover:bg-blue-50 cursor-pointer transition-colors`}
+                      className="h-12 p-1 border-r border-b last:border-r-0 hover:bg-blue-50 cursor-pointer transition-colors relative"
                       onClick={() => onTimeSlotClick(day, hour)}
                     >
-                      {hourEvents.map(event => (
-                        <div
-                          key={event.id}
-                          className={`
-                            ${getEventTypeColor(event.type)} text-white text-xs p-2 rounded mb-1 cursor-pointer 
-                            hover:opacity-80 transition-opacity shadow-sm
-                          `}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEventClick(event);
-                          }}
-                        >
-                          <div className="font-medium truncate">{event.title}</div>
-                          {event.client_name && (
-                            <div className="opacity-75 flex items-center text-xs mt-1">
-                              <User className="w-2.5 h-2.5 mr-1" />
-                              <span className="truncate">{event.client_name}</span>
+                      {dayEvents.map(event => {
+                        const startTime = parseISO(event.start_time);
+                        const endTime = parseISO(event.end_time);
+                        const durationMinutes = differenceInMinutes(endTime, startTime);
+                        const durationHours = durationMinutes / 60;
+                        
+                        // Calculate height based on duration (48px per hour)
+                        const height = Math.max(durationHours * 48, 24); // Minimum 24px height
+                        
+                        return (
+                          <div
+                            key={event.id}
+                            className={`
+                              ${getEventTypeColor(event.type)} text-white text-xs p-2 rounded mb-1 cursor-pointer 
+                              hover:opacity-80 transition-opacity shadow-sm absolute left-1 right-1
+                            `}
+                            style={{ 
+                              height: `${height}px`,
+                              top: `${(startTime.getMinutes() / 60) * 48}px`,
+                              zIndex: 10
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEventClick(event);
+                            }}
+                          >
+                            <div className="font-medium truncate">{event.title}</div>
+                            <div className="text-xs opacity-90">
+                              {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
                             </div>
-                          )}
-                          {event.location && (
-                            <div className="opacity-75 flex items-center text-xs mt-1">
-                              <MapPin className="w-2.5 h-2.5 mr-1" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            {event.client_name && (
+                              <div className="opacity-75 flex items-center text-xs mt-1">
+                                <User className="w-2.5 h-2.5 mr-1" />
+                                <span className="truncate">{event.client_name}</span>
+                              </div>
+                            )}
+                            {event.location && (
+                              <div className="opacity-75 flex items-center text-xs mt-1">
+                                <MapPin className="w-2.5 h-2.5 mr-1" />
+                                <span className="truncate">{event.location}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
