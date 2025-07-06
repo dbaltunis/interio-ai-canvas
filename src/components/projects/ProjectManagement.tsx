@@ -1,13 +1,17 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, DollarSign, Clock, CheckCircle } from "lucide-react";
+import { Plus, Calendar, DollarSign, Clock, CheckCircle, Eye, FileText } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 
-export const ProjectManagement = () => {
+interface ProjectManagementProps {
+  onViewProject?: (project: any) => void;
+  onViewDocuments?: () => void;
+}
+
+export const ProjectManagement = ({ onViewProject, onViewDocuments }: ProjectManagementProps) => {
   const { data: projects, isLoading } = useProjects();
 
   const getStatusColor = (status: string) => {
@@ -52,10 +56,16 @@ export const ProjectManagement = () => {
             Track and manage your window covering projects
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={onViewDocuments}>
+            <FileText className="mr-2 h-4 w-4" />
+            Documents
+          </Button>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       {/* Project Stats */}
@@ -161,7 +171,7 @@ export const ProjectManagement = () => {
                         <div className="text-sm text-muted-foreground">{project.description}</div>
                       )}
                     </TableCell>
-                    <TableCell>Client #{project.client_id.slice(0, 8)}</TableCell>
+                    <TableCell>Client #{project.client_id?.slice(0, 8) || 'Unassigned'}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(project.status)}>
                         {project.status}
@@ -180,8 +190,12 @@ export const ProjectManagement = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
-                          View
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => onViewProject?.(project)}
+                        >
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
                           Edit
