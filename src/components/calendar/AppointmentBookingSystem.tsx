@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Clock, MapPin, User, Phone, Mail, Check, Calendar as CalendarIcon } from "lucide-react";
 import { format, addDays, setHours, setMinutes, isSameDay } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TimeSlot {
   time: string;
@@ -42,6 +43,8 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
     phone: '',
     message: ''
   });
+
+  const isMobile = useIsMobile();
 
   const serviceTypes: ServiceType[] = [
     {
@@ -78,7 +81,6 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
     }
   ];
 
-  // Generate available time slots
   const generateTimeSlots = (date: Date): TimeSlot[] => {
     const slots: TimeSlot[] = [];
     const startHour = 9;
@@ -89,7 +91,7 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push({
           time: timeString,
-          available: Math.random() > 0.3, // Simulate availability
+          available: Math.random() > 0.3,
           duration: selectedService?.duration || 60
         });
       }
@@ -139,26 +141,26 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
 
   const renderServiceSelection = () => (
     <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">Select a Service</h2>
-        <p className="text-muted-foreground">Choose the service that best fits your needs</p>
+      <div className="text-center mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">Select a Service</h2>
+        <p className="text-muted-foreground text-sm sm:text-base">Choose the service that best fits your needs</p>
       </div>
       
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         {serviceTypes.map((service) => (
           <Card
             key={service.id}
             className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-blue-200"
             onClick={() => handleServiceSelect(service)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{service.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
-                  <div className="flex items-center gap-4 text-sm">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base sm:text-lg mb-1 truncate">{service.name}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">{service.description}</p>
+                  <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
                     <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                       {service.duration} min
                     </div>
                     <div className="font-semibold">
@@ -166,7 +168,7 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
                     </div>
                   </div>
                 </div>
-                <Badge className={`bg-${service.color}-100 text-${service.color}-800 border-${service.color}-200`}>
+                <Badge className={`bg-${service.color}-100 text-${service.color}-800 border-${service.color}-200 text-xs shrink-0 ml-2`}>
                   {service.name.split(' ')[0]}
                 </Badge>
               </div>
@@ -178,16 +180,16 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
   );
 
   const renderDateTimeSelection = () => (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Select Date & Time</h2>
-        <p className="text-muted-foreground">Choose when you'd like your {selectedService?.name.toLowerCase()}</p>
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">Select Date & Time</h2>
+        <p className="text-muted-foreground text-sm sm:text-base">Choose when you'd like your {selectedService?.name.toLowerCase()}</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'} gap-4 sm:gap-6`}>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Select Date</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Select Date</CardTitle>
           </CardHeader>
           <CardContent>
             <Calendar
@@ -201,10 +203,10 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Available Times</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Available Times</CardTitle>
             {selectedDate && (
-              <CardDescription>
+              <CardDescription className="text-sm">
                 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </CardDescription>
             )}
@@ -219,14 +221,14 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
                     size="sm"
                     disabled={!slot.available}
                     onClick={() => setSelectedTime(slot.time)}
-                    className={!slot.available ? "opacity-50" : ""}
+                    className={`text-xs ${!slot.available ? "opacity-50" : ""}`}
                   >
                     {slot.time}
                   </Button>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-8">
+              <p className="text-muted-foreground text-center py-6 sm:py-8 text-sm">
                 Please select a date first
               </p>
             )}
@@ -234,13 +236,14 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
         </Card>
       </div>
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setStep('service')}>
+      <div className="flex flex-col sm:flex-row justify-between gap-3">
+        <Button variant="outline" onClick={() => setStep('service')} className="w-full sm:w-auto">
           Back
         </Button>
         <Button 
           onClick={handleDateTimeConfirm}
           disabled={!selectedDate || !selectedTime}
+          className="w-full sm:w-auto"
         >
           Continue
         </Button>
@@ -249,16 +252,16 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
   );
 
   const renderDetailsForm = () => (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Your Information</h2>
-        <p className="text-muted-foreground">Please provide your contact details</p>
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">Your Information</h2>
+        <p className="text-muted-foreground text-sm sm:text-base">Please provide your contact details</p>
       </div>
 
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <h4 className="font-semibold mb-2">Booking Summary</h4>
-          <div className="space-y-2 text-sm">
+        <CardContent className="p-3 sm:p-4">
+          <h4 className="font-semibold mb-2 text-sm sm:text-base">Booking Summary</h4>
+          <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
             <div className="flex justify-between">
               <span>Service:</span>
               <span className="font-medium">{selectedService?.name}</span>
@@ -284,58 +287,63 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
         </CardContent>
       </Card>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         <div>
-          <Label htmlFor="name">Full Name *</Label>
+          <Label htmlFor="name" className="text-sm">Full Name *</Label>
           <Input
             id="name"
             value={clientInfo.name}
             onChange={(e) => setClientInfo(prev => ({ ...prev, name: e.target.value }))}
             placeholder="Enter your full name"
+            className="text-sm"
           />
         </div>
 
         <div>
-          <Label htmlFor="email">Email Address *</Label>
+          <Label htmlFor="email" className="text-sm">Email Address *</Label>
           <Input
             id="email"
             type="email"
             value={clientInfo.email}
             onChange={(e) => setClientInfo(prev => ({ ...prev, email: e.target.value }))}
             placeholder="your.email@example.com"
+            className="text-sm"
           />
         </div>
 
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone" className="text-sm">Phone Number</Label>
           <Input
             id="phone"
             type="tel"
             value={clientInfo.phone}
             onChange={(e) => setClientInfo(prev => ({ ...prev, phone: e.target.value }))}
             placeholder="(555) 123-4567"
+            className="text-sm"
           />
         </div>
 
         <div>
-          <Label htmlFor="message">Additional Message</Label>
+          <Label htmlFor="message" className="text-sm">Additional Message</Label>
           <Textarea
             id="message"
             value={clientInfo.message}
             onChange={(e) => setClientInfo(prev => ({ ...prev, message: e.target.value }))}
             placeholder="Tell us about your specific needs or questions..."
             rows={3}
+            className="text-sm resize-none"
           />
         </div>
       </div>
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setStep('datetime')}>
+      <div className="flex flex-col sm:flex-row justify-between gap-3">
+        <Button variant="outline" onClick={() => setStep('datetime')} className="w-full sm:w-auto">
           Back
         </Button>
         <Button 
           onClick={handleBooking}
           disabled={!clientInfo.name || !clientInfo.email}
+          className="w-full sm:w-auto"
         >
           Book Appointment
         </Button>
@@ -344,39 +352,39 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
   );
 
   const renderConfirmation = () => (
-    <div className="text-center space-y-6">
+    <div className="text-center space-y-4 sm:space-y-6">
       <div className="flex justify-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-          <Check className="w-8 h-8 text-green-600" />
+        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <Check className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
         </div>
       </div>
       
       <div>
-        <h2 className="text-2xl font-bold mb-2">Appointment Booked!</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">Appointment Booked!</h2>
+        <p className="text-muted-foreground text-sm sm:text-base">
           Your appointment has been successfully scheduled. You'll receive a confirmation email shortly.
         </p>
       </div>
 
       <Card>
-        <CardContent className="p-4">
-          <h4 className="font-semibold mb-3">Appointment Details</h4>
-          <div className="space-y-2 text-sm text-left">
+        <CardContent className="p-3 sm:p-4">
+          <h4 className="font-semibold mb-3 text-sm sm:text-base">Appointment Details</h4>
+          <div className="space-y-2 text-xs sm:text-sm text-left">
             <div className="flex items-center">
-              <CalendarIcon className="w-4 h-4 mr-2" />
+              <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               {selectedService?.name} on {selectedDate && format(selectedDate, 'MMMM d, yyyy')} at {selectedTime}
             </div>
             <div className="flex items-center">
-              <User className="w-4 h-4 mr-2" />
+              <User className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               {clientInfo.name}
             </div>
             <div className="flex items-center">
-              <Mail className="w-4 h-4 mr-2" />
+              <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               {clientInfo.email}
             </div>
             {clientInfo.phone && (
               <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-2" />
+                <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 {clientInfo.phone}
               </div>
             )}
@@ -390,21 +398,21 @@ export const AppointmentBookingSystem = ({ onBookAppointment }: AppointmentBooki
         setSelectedDate(undefined);
         setSelectedTime(undefined);
         setClientInfo({ name: '', email: '', phone: '', message: '' });
-      }}>
+      }} className="w-full sm:w-auto">
         Book Another Appointment
       </Button>
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
+    <div className="w-full max-w-4xl mx-auto p-3 sm:p-6">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex space-x-2">
+          <div className="flex space-x-1 sm:space-x-2">
             {['service', 'datetime', 'details', 'confirmation'].map((stepName, index) => (
               <div
                 key={stepName}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
                   step === stepName
                     ? 'bg-blue-500 text-white'
                     : index < ['service', 'datetime', 'details', 'confirmation'].indexOf(step)
