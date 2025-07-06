@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Bell, Plus, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCreateReminderNotification, useScheduleReminder } from "@/hooks/useReminderNotifications";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientFollowUpRemindersProps {
   clientId: string;
@@ -25,6 +27,7 @@ interface Reminder {
   title: string;
   description: string;
   dueDate: Date;
+  dueTime: string;
   priority: 'low' | 'medium' | 'high';
   status: 'pending' | 'completed' | 'overdue';
   createdAt: Date;
@@ -39,6 +42,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
       title: 'Follow up on quote discussion',
       description: 'Client showed interest in window treatments for living room',
       dueDate: addDays(new Date(), 2),
+      dueTime: '10:00',
       priority: 'high',
       status: 'pending',
       createdAt: new Date()
@@ -49,6 +53,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
       title: 'Schedule measurement appointment',
       description: 'Client ready to move forward with consultation',
       dueDate: addDays(new Date(), -1),
+      dueTime: '14:30',
       priority: 'high',
       status: 'overdue',
       createdAt: new Date()
@@ -61,6 +66,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
     title: '',
     description: '',
     dueDate: addDays(new Date(), 1),
+    dueTime: '09:00',
     priority: 'medium'
   });
 
@@ -75,12 +81,18 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
   });
 
   const handleCreateReminder = async () => {
+    // Combine date and time
+    const [hours, minutes] = newReminder.dueTime.split(':').map(Number);
+    const combinedDateTime = new Date(newReminder.dueDate);
+    combinedDateTime.setHours(hours, minutes, 0, 0);
+
     const reminder: Reminder = {
       id: Date.now().toString(),
       type: newReminder.type as any,
       title: newReminder.title,
       description: newReminder.description,
-      dueDate: newReminder.dueDate,
+      dueDate: combinedDateTime,
+      dueTime: newReminder.dueTime,
       priority: newReminder.priority as any,
       status: 'pending',
       createdAt: new Date()
@@ -100,7 +112,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
           clientEmail: user?.email,
           title: reminder.title,
           description: reminder.description,
-          dueDate: reminder.dueDate,
+          dueDate: combinedDateTime,
           type: reminder.type
         });
 
@@ -117,6 +129,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
       title: '',
       description: '',
       dueDate: addDays(new Date(), 1),
+      dueTime: '09:00',
       priority: 'medium'
     });
   };
@@ -155,6 +168,25 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
       default: return '📋';
     }
   };
+
+  // Generate time options (every 30 minutes)
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const displayTime = new Date(2000, 0, 1, hour, minute).toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          hour12: true 
+        });
+        times.push({ value: timeString, label: displayTime });
+      }
+    }
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
 
   return (
     <Card>
@@ -224,24 +256,41 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium">Due Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(newReminder.dueDate, "PPP")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={newReminder.dueDate}
-                      onSelect={(date) => date && setNewReminder({...newReminder, dueDate: date})}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Due Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {format(newReminder.dueDate, "PPP")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={newReminder.dueDate}
+                        onSelect={(date) => date && setNewReminder({...newReminder, dueDate: date})}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Due Time</label>
+                  <Select value={newReminder.dueTime} onValueChange={(value) => setNewReminder({...newReminder, dueTime: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {timeOptions.map((time) => (
+                        <SelectItem key={time.value} value={time.value}>
+                          {time.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
@@ -360,7 +409,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
                       <p className="text-sm text-muted-foreground mb-2">{reminder.description}</p>
                       
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Due: {format(reminder.dueDate, "MMM d, yyyy")}</span>
+                        <span>Due: {format(reminder.dueDate, "MMM d, yyyy")} at {reminder.dueTime}</span>
                         <span>Priority: {reminder.priority}</span>
                       </div>
                     </div>
