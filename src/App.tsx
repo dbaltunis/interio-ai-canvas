@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,8 +22,8 @@ import { LibraryPage } from "./components/library/LibraryPage";
 import { DocumentManagement } from "./components/files/DocumentManagement";
 import { AIAssistant } from "./components/ai/AIAssistant";
 import { SettingsView } from "./components/settings/SettingsView";
-import { NotFound } from "./pages/NotFound";
-import { Index } from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 
 const queryClient = new QueryClient();
@@ -80,19 +81,28 @@ const App = () => (
             
             <Route path="/jobs/new" element={
               <ProtectedRoute>
-                <NewJobPage />
+                <NewJobPage onBack={() => window.history.back()} />
               </ProtectedRoute>
             } />
             
             <Route path="/jobs/:id/edit" element={
               <ProtectedRoute>
-                <JobEditPage />
+                <JobEditPage jobId={window.location.pathname.split('/')[2]} onBack={() => window.history.back()} />
               </ProtectedRoute>
             } />
             
             <Route path="/jobs" element={
               <ProtectedRoute>
-                <EnhancedJobsManagement />
+                <EnhancedJobsManagement 
+                  onNewJob={() => window.location.href = '/jobs/new'}
+                  onJobSelect={(jobId) => window.location.href = `/jobs/${jobId}/edit`}
+                  searchClient=""
+                  searchJobNumber=""
+                  filterStatus="all"
+                  filterDeposit="all"
+                  filterOwner="all"
+                  filterMaker="all"
+                />
               </ProtectedRoute>
             } />
             
