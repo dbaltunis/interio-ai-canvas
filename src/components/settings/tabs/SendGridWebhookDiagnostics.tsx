@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,9 @@ import {
   Settings,  
   RefreshCw,
   Zap,
-  ExternalLink
+  ExternalLink,
+  ArrowRight,
+  Copy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,6 +133,145 @@ export const SendGridWebhookDiagnostics = () => {
     }
   };
 
+  const copyWebhookUrl = () => {
+    const webhookUrl = "https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/sendgrid-webhook";
+    navigator.clipboard.writeText(webhookUrl);
+    toast({
+      title: "Copied",
+      description: "Webhook URL copied to clipboard"
+    });
+  };
+
+  const renderActionableRecommendations = (recommendations: string[]) => {
+    return recommendations.map((rec, index) => {
+      // Parse the recommendation to provide actionable steps
+      if (rec.includes("No SendGrid API key found")) {
+        return (
+          <div key={index} className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-red-800 mb-2">SendGrid API Key Missing</h4>
+                <p className="text-sm text-red-700 mb-3">You need to configure your SendGrid API key first.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-red-600" />
+                    <span>Go to Settings → Integrations → SendGrid</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-red-600" />
+                    <span>Enter your SendGrid API key there</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (rec.includes("Webhook is not configured")) {
+        return (
+          <div key={index} className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Settings className="h-5 w-5 text-orange-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-orange-800 mb-2">Webhook Setup Required</h4>
+                <p className="text-sm text-orange-700 mb-3">Click the "Setup Webhook" button above to automatically configure email tracking.</p>
+                <Button 
+                  onClick={runWebhookSetup}
+                  disabled={isSetupRunning}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  {isSetupRunning ? "Setting up..." : "Setup Webhook Now"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (rec.includes("SendGrid webhook is disabled")) {
+        return (
+          <div key={index} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-yellow-800 mb-2">Manual SendGrid Setup Needed</h4>
+                <p className="text-sm text-yellow-700 mb-3">You need to manually enable the webhook in SendGrid dashboard.</p>
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-yellow-600" />
+                    <span>Go to SendGrid Dashboard → Settings → Mail Settings → Event Webhook</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-yellow-600" />
+                    <span>Enable the webhook and set events: Delivered, Opens, Clicks, Bounces</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-yellow-600" />
+                    <span>Use this URL:</span>
+                  </div>
+                  <div className="flex gap-2 items-center bg-white p-2 rounded border">
+                    <code className="text-xs font-mono flex-1">
+                      https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/sendgrid-webhook
+                    </code>
+                    <Button variant="outline" size="sm" onClick={copyWebhookUrl}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open("https://app.sendgrid.com/settings/mail_settings", "_blank")}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Open SendGrid Settings
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (rec.includes("No emails show any opens")) {
+        return (
+          <div key={index} className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-blue-800 mb-2">Email Tracking Not Working</h4>
+                <p className="text-sm text-blue-700 mb-3">Your emails aren't recording opens/clicks. This usually means the webhook isn't receiving events.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-blue-600" />
+                    <span>First, try clicking "Setup Webhook" above</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-blue-600" />
+                    <span>If that doesn't work, manually configure in SendGrid (see instructions below)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-blue-600" />
+                    <span>Send a test email and check if tracking works</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Default rendering for other recommendations
+      return (
+        <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="text-sm">{rec}</p>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -239,15 +381,11 @@ export const SendGridWebhookDiagnostics = () => {
                 </div>
               </div>
 
-              {/* Recommendations */}
-              <div className="space-y-2">
-                <h4 className="font-medium">Recommendations</h4>
-                <div className="space-y-2">
-                  {diagnostic.recommendations.map((rec, index) => (
-                    <div key={index} className="text-sm p-2 bg-blue-50 border border-blue-200 rounded">
-                      {rec}
-                    </div>
-                  ))}
+              {/* Actionable Recommendations */}
+              <div className="space-y-3">
+                <h4 className="font-medium">What You Need To Do</h4>
+                <div className="space-y-3">
+                  {renderActionableRecommendations(diagnostic.recommendations)}
                 </div>
               </div>
 
