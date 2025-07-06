@@ -8,25 +8,64 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy } from "lucide-react";
+import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench } from "lucide-react";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
 import { FilterDialog } from "./FilterDialog";
+import { VendorForm } from "./VendorForm";
+import { HardwareForm } from "./HardwareForm";
 
 export const LibraryPage = () => {
-  const [activeTab, setActiveTab] = useState("fabric");
+  const [activeTab, setActiveTab] = useState("fabrics");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [addDialogType, setAddDialogType] = useState<"brand" | "collection" | "fabric">("fabric");
+  const [addDialogType, setAddDialogType] = useState<"vendor" | "fabric" | "hardware" | "collection">("fabric");
 
-  // Mock data for demonstration
-  const brands = [
-    { id: 1, name: "Fibre Naturelle", logo: "/placeholder.svg" },
-    { id: 2, name: "KD Design", logo: "/placeholder.svg" },
-    { id: 3, name: "DEKOMA", logo: "/placeholder.svg" },
+  // Mock data for comprehensive inventory
+  const vendors = [
+    { 
+      id: 1, 
+      name: "Fibre Naturelle", 
+      type: "Fabric Supplier",
+      country: "UK",
+      contact: "sales@fibrenaturelle.com",
+      phone: "+44 20 7123 4567",
+      products: 156,
+      lastOrder: "2024-01-15"
+    },
+    { 
+      id: 2, 
+      name: "KD Design", 
+      type: "Fabric Manufacturer",
+      country: "Germany", 
+      contact: "info@kddesign.de",
+      phone: "+49 30 1234 5678",
+      products: 89,
+      lastOrder: "2024-01-20"
+    },
+    { 
+      id: 3, 
+      name: "Hunter Douglas", 
+      type: "Hardware & Systems",
+      country: "Netherlands",
+      contact: "orders@hunterdouglas.com", 
+      phone: "+31 20 567 8900",
+      products: 45,
+      lastOrder: "2024-01-10"
+    },
+    {
+      id: 4,
+      name: "Silent Gliss",
+      type: "Track Systems",
+      country: "Switzerland",
+      contact: "sales@silentgliss.com",
+      phone: "+41 44 123 4567",
+      products: 67,
+      lastOrder: "2024-01-18"
+    }
   ];
 
   const fabrics = [
@@ -34,107 +73,127 @@ export const LibraryPage = () => {
       id: 1,
       name: "Merlon Custard",
       code: "K5361/02",
+      vendor: "Fibre Naturelle",
+      collection: "Heritage Collection",
       price: 120.00,
-      unit: "cm",
+      unit: "yard",
       image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "Fibre Naturelle"
+      inStock: 45.5,
+      reorderPoint: 10,
+      location: "Warehouse A-12",
+      composition: "100% Linen",
+      width: "137cm",
+      patternRepeat: "64cm",
+      status: "In Stock"
     },
     {
       id: 2,
-      name: "Merlon Custard",
-      code: "K5361/02",
-      price: 130.00,
-      unit: "cm",
+      name: "Silk Taffeta Royal",
+      code: "ST-2401",
+      vendor: "KD Design", 
+      collection: "Luxury Series",
+      price: 180.00,
+      unit: "meter",
       image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "Fibre Naturelle"
+      inStock: 23.2,
+      reorderPoint: 15,
+      location: "Warehouse B-07",
+      composition: "100% Silk",
+      width: "140cm",
+      patternRepeat: "32cm",
+      status: "In Stock"
     },
     {
       id: 3,
-      name: "OSL/04 Cinnamon",
-      code: "OSL/04",
-      price: 91.00,
-      unit: "cm",
+      name: "Blackout Supreme",
+      code: "BO-1205",
+      vendor: "Fibre Naturelle",
+      collection: "Functional Fabrics",
+      price: 85.00,
+      unit: "yard",
       image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "KD Design"
-    },
-    {
-      id: 4,
-      name: "OSL/02 Sage",
-      code: "OSL/02",
-      price: 91.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "KD Design"
-    },
-    {
-      id: 5,
-      name: "OSL/01 Pepper",
-      code: "OSL/01",
-      price: 91.00,
-      unit: "cm",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop",
-      stock: "In Stock",
-      brand: "DEKOMA"
-    },
+      inStock: 8.5,
+      reorderPoint: 20,
+      location: "Warehouse A-15",
+      composition: "Polyester with Acrylic Backing",
+      width: "150cm",
+      patternRepeat: "0cm",
+      status: "Low Stock"
+    }
   ];
 
-  const handleAddNew = (type: "brand" | "collection" | "fabric") => {
+  const hardware = [
+    {
+      id: 1,
+      name: "Professional Track System",
+      code: "HD-TRACK-001",
+      vendor: "Hunter Douglas",
+      category: "Curtain Tracks",
+      price: 45.00,
+      unit: "meter",
+      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
+      inStock: 125,
+      reorderPoint: 25,
+      location: "Hardware Storage H-03",
+      material: "Aluminum",
+      maxWeight: "50kg per meter",
+      status: "In Stock"
+    },
+    {
+      id: 2,
+      name: "Silent Motorized System",
+      code: "SG-MOTOR-205",
+      vendor: "Silent Gliss",
+      category: "Motorized Systems", 
+      price: 320.00,
+      unit: "each",
+      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop",
+      inStock: 12,
+      reorderPoint: 5,
+      location: "Electronics Storage E-01",
+      material: "Steel & Electronics",
+      maxWeight: "75kg",
+      status: "In Stock"
+    }
+  ];
+
+  const handleAddNew = (type: "vendor" | "fabric" | "hardware" | "collection") => {
     setAddDialogType(type);
     setShowAddDialog(true);
   };
 
-  const renderFabricCard = (fabric: any) => (
-    <Card key={fabric.id} className="relative group">
-      <CardHeader className="p-0">
-        <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-          {fabric.image ? (
-            <img 
-              src={fabric.image} 
-              alt={fabric.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              No image available
-            </div>
-          )}
+  const getStockStatus = (current: number, reorderPoint: number) => {
+    if (current <= reorderPoint * 0.5) return { status: "Critical", color: "bg-red-500" };
+    if (current <= reorderPoint) return { status: "Low Stock", color: "bg-orange-500" };
+    return { status: "In Stock", color: "bg-green-500" };
+  };
+
+  const renderVendorCard = (vendor: any) => (
+    <Card key={vendor.id} className="relative group hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <CardTitle className="text-lg font-semibold mb-1">{vendor.name}</CardTitle>
+            <Badge variant="outline" className="mb-2">{vendor.type}</Badge>
+            <p className="text-sm text-gray-600 mb-1">{vendor.country}</p>
+            <p className="text-sm text-gray-500">{vendor.contact}</p>
+            <p className="text-sm text-gray-500">{vendor.phone}</p>
+          </div>
+          <Package className="h-8 w-8 text-gray-400" />
         </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <CardTitle className="text-lg font-semibold mb-2">{fabric.name}</CardTitle>
-        <p className="text-sm text-gray-600 mb-1">${fabric.price.toFixed(2)}/{fabric.unit}</p>
-        <p className="text-sm text-gray-500 mb-2">{fabric.code}</p>
-        <p className="text-sm text-gray-500 mb-4">Stock: {fabric.stock}</p>
         
-        <div className="flex justify-between items-center">
-          <div className="flex space-x-2">
-            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-              <Copy className="h-4 w-4" />
-            </Button>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <p className="text-sm text-gray-500">Products</p>
+            <p className="font-semibold">{vendor.products}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Last Order</p>
+            <p className="font-semibold">{vendor.lastOrder}</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
 
-  const renderBrandCard = (brand: any) => (
-    <Card key={brand.id} className="relative group">
-      <CardContent className="p-6">
-        <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-          <span className="text-xl font-semibold text-gray-600">{brand.name}</span>
-        </div>
-        <CardTitle className="text-lg font-semibold text-center">{brand.name}</CardTitle>
-        <div className="flex justify-center space-x-2 mt-4">
+        <div className="flex justify-end space-x-2">
           <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
             <Edit className="h-4 w-4" />
           </Button>
@@ -146,11 +205,138 @@ export const LibraryPage = () => {
     </Card>
   );
 
+  const renderFabricCard = (fabric: any) => {
+    const stockStatus = getStockStatus(fabric.inStock, fabric.reorderPoint);
+    
+    return (
+      <Card key={fabric.id} className="relative group hover:shadow-lg transition-shadow">
+        <CardHeader className="p-0">
+          <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+            <img 
+              src={fabric.image} 
+              alt={fabric.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-2 right-2">
+              <Badge className={`${stockStatus.color} text-white`}>
+                {stockStatus.status}
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <CardTitle className="text-lg font-semibold mb-2">{fabric.name}</CardTitle>
+          <p className="text-sm text-gray-600 mb-1">{fabric.code}</p>
+          <p className="text-sm text-gray-500 mb-1">{fabric.vendor}</p>
+          <p className="text-sm text-gray-500 mb-3">{fabric.collection}</p>
+          
+          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div>
+              <p className="text-gray-500">Price</p>
+              <p className="font-semibold">${fabric.price}/{fabric.unit}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">In Stock</p>
+              <p className="font-semibold">{fabric.inStock} {fabric.unit}s</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Width</p>
+              <p className="font-semibold">{fabric.width}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Location</p>
+              <p className="font-semibold">{fabric.location}</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2">
+              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            {fabric.inStock <= fabric.reorderPoint && (
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderHardwareCard = (hardware: any) => {
+    const stockStatus = getStockStatus(hardware.inStock, hardware.reorderPoint);
+    
+    return (
+      <Card key={hardware.id} className="relative group hover:shadow-lg transition-shadow">
+        <CardHeader className="p-0">
+          <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+            <img 
+              src={hardware.image} 
+              alt={hardware.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-2 right-2">
+              <Badge className={`${stockStatus.color} text-white`}>
+                {stockStatus.status}
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <CardTitle className="text-lg font-semibold mb-2">{hardware.name}</CardTitle>
+          <p className="text-sm text-gray-600 mb-1">{hardware.code}</p>
+          <p className="text-sm text-gray-500 mb-1">{hardware.vendor}</p>
+          <Badge variant="secondary" className="mb-3 text-xs">{hardware.category}</Badge>
+          
+          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div>
+              <p className="text-gray-500">Price</p>
+              <p className="font-semibold">${hardware.price}/{hardware.unit}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">In Stock</p>
+              <p className="font-semibold">{hardware.inStock} {hardware.unit}s</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Material</p>
+              <p className="font-semibold">{hardware.material}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Location</p>
+              <p className="font-semibold">{hardware.location}</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2">
+              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            {hardware.inStock <= hardware.reorderPoint && (
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Library</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Inventory Management</h1>
+          <p className="text-gray-600">Manage fabrics, hardware, and vendor relationships</p>
+        </div>
         <div className="flex items-center space-x-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -164,26 +350,33 @@ export const LibraryPage = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
-                  onClick={() => handleAddNew("brand")}
+                  onClick={() => handleAddNew("vendor")}
                 >
-                  Create Brand
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("collection")}
-                >
-                  Create Collection
+                  Add Vendor/Supplier
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start"
                   onClick={() => handleAddNew("fabric")}
                 >
-                  Create Fabric
+                  Add Fabric
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => handleAddNew("hardware")}
+                >
+                  Add Hardware
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => handleAddNew("collection")}
+                >
+                  Add Collection
                 </Button>
                 <Button variant="ghost" className="w-full justify-start">
-                  Upload Fabrics via CSV
+                  Import from CSV
                 </Button>
               </div>
             </PopoverContent>
@@ -206,15 +399,18 @@ export const LibraryPage = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex items-center justify-between">
-          <TabsList className="grid w-fit grid-cols-3">
-            <TabsTrigger value="brands">
-              Fabric brand ({brands.length})
+          <TabsList className="grid w-fit grid-cols-4">
+            <TabsTrigger value="vendors">
+              Vendors/Suppliers ({vendors.length})
+            </TabsTrigger>
+            <TabsTrigger value="fabrics">
+              Fabrics ({fabrics.length})
+            </TabsTrigger>
+            <TabsTrigger value="hardware">
+              Hardware ({hardware.length})
             </TabsTrigger>
             <TabsTrigger value="collections">
-              Fabric Collection (13)
-            </TabsTrigger>
-            <TabsTrigger value="fabric">
-              Fabric ({fabrics.length})
+              Collections (8)
             </TabsTrigger>
           </TabsList>
           
@@ -239,35 +435,28 @@ export const LibraryPage = () => {
           </div>
         </div>
 
-        {/* Select All Checkbox */}
-        <div className="flex items-center space-x-2 mt-4">
-          <input type="checkbox" id="selectAll" className="rounded" />
-          <label htmlFor="selectAll" className="text-sm text-gray-600">
-            Select all
-          </label>
-        </div>
-
         {/* Tab Contents */}
-        <TabsContent value="brands" className="space-y-4">
+        <TabsContent value="vendors" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {brands.map(renderBrandCard)}
+            {vendors.map(renderVendorCard)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fabrics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {fabrics.map(renderFabricCard)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="hardware" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {hardware.map(renderHardwareCard)}
           </div>
         </TabsContent>
 
         <TabsContent value="collections" className="space-y-4">
           <div className="text-center py-8 text-gray-500">
-            No collections available. Create your first collection to get started!
-          </div>
-        </TabsContent>
-
-        <TabsContent value="fabric" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {fabrics.map(renderFabricCard)}
-          </div>
-          <div className="text-center py-4">
-            <Button variant="ghost" className="text-gray-500">
-              Show more
-            </Button>
+            No collections available. Create your first collection to organize your inventory!
           </div>
         </TabsContent>
       </Tabs>
@@ -283,12 +472,15 @@ export const LibraryPage = () => {
         <SheetContent className="w-[600px] sm:w-[600px]">
           <SheetHeader>
             <SheetTitle>
-              Add {addDialogType === "brand" ? "Brand" : addDialogType === "collection" ? "Collection" : "Fabric"}
+              Add {addDialogType === "vendor" ? "Vendor/Supplier" : 
+                   addDialogType === "fabric" ? "Fabric" : 
+                   addDialogType === "hardware" ? "Hardware" : "Collection"}
             </SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             {addDialogType === "fabric" && <FabricForm onClose={() => setShowAddDialog(false)} />}
-            {addDialogType === "brand" && <BrandForm onClose={() => setShowAddDialog(false)} />}
+            {addDialogType === "vendor" && <VendorForm onClose={() => setShowAddDialog(false)} />}
+            {addDialogType === "hardware" && <HardwareForm onClose={() => setShowAddDialog(false)} />}
             {addDialogType === "collection" && <CollectionForm onClose={() => setShowAddDialog(false)} />}
           </div>
         </SheetContent>
