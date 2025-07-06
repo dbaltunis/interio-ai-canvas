@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +19,24 @@ export const useAppointmentSchedulers = () => {
       if (error) throw error;
       return data;
     },
+  });
+};
+
+export const usePublicScheduler = (slug: string) => {
+  return useQuery({
+    queryKey: ["public-scheduler", slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointment_schedulers")
+        .select("*")
+        .eq("slug", slug)
+        .eq("active", true)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!slug,
   });
 };
 
