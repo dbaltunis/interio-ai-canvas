@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Mail, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,12 +32,18 @@ interface EmailDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   email: Email | null;
-  onFollowUp?: (emailId: string, note: string) => void;
+  onResendEmail?: (email: Email) => void;
+  isResending?: boolean;
 }
 
-export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: EmailDetailDialogProps) => {
+export const EmailDetailDialog = ({ 
+  open, 
+  onOpenChange, 
+  email, 
+  onResendEmail, 
+  isResending = false 
+}: EmailDetailDialogProps) => {
   const [showFollowUp, setShowFollowUp] = useState(false);
-  const [isResending, setIsResending] = useState(false);
   const { toast } = useToast();
   const sendEmailMutation = useSendEmail();
 
@@ -84,29 +89,31 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onFollowUp }: Ema
   const handleResend = async () => {
     if (!email) return;
     
-    setIsResending(true);
-    try {
-      await sendEmailMutation.mutateAsync({
-        to: email.recipient_email,
-        subject: email.subject,
-        content: email.content
-      });
-      
-      toast({
-        title: "Email Resent Successfully",
-        description: `Email has been resent to ${email.recipient_email}`,
-      });
-      
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Failed to resend email:", error);
-      toast({
-        title: "Resend Failed",
-        description: "Failed to resend email. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResending(false);
+    if (onResendEmail) {
+      onResendEmail(email);
+    } else {
+      // Fallback to direct resend
+      try {
+        await sendEmailMutation.mutateAsync({
+          to: email.recipient_email,
+          subject: email.subject,
+          content: email.content
+        });
+        
+        toast({
+          title: "Email Resent Successfully",
+          description: `Email has been resent to ${email.recipient_email}`,
+        });
+        
+        onOpenChange(false);
+      } catch (error) {
+        console.error("Failed to resend email:", error);
+        toast({
+          title: "Resend Failed",
+          description: "Failed to resend email. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

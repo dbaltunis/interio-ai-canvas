@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Mail, RefreshCw, Loader2, Plus } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
-import { EmailRowActions } from "./EmailRowActions";
 import { EmailDetailDialog } from "./EmailDetailDialog";
 import { useState } from "react";
 
@@ -80,12 +79,15 @@ export const EmailHistoryTab = ({
                   <TableHead>Status</TableHead>
                   <TableHead>Sent</TableHead>
                   <TableHead>Opens</TableHead>
-                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {emails.map((email) => (
-                  <TableRow key={email.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow 
+                    key={email.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleEmailClick(email)}
+                  >
                     <TableCell>
                       <div className="font-medium truncate max-w-[200px]">{email.subject}</div>
                     </TableCell>
@@ -102,15 +104,6 @@ export const EmailHistoryTab = ({
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-medium">{email.open_count || 0}</div>
-                    </TableCell>
-                    <TableCell>
-                      <EmailRowActions 
-                        email={email}
-                        onView={() => handleEmailClick(email)}
-                        onFollowUp={() => handleEmailClick(email)}
-                        onResend={() => onResendEmail(email)}
-                        isResending={isResending}
-                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -139,6 +132,8 @@ export const EmailHistoryTab = ({
         open={emailDetailOpen}
         onOpenChange={setEmailDetailOpen}
         email={selectedEmail}
+        onResendEmail={onResendEmail}
+        isResending={isResending}
       />
     </div>
   );
