@@ -64,8 +64,8 @@ export const EventEditDialog = ({
     startTime: '09:00',
     endTime: '10:00',
     location: '',
-    clientId: '',
-    projectId: ''
+    clientId: 'none',
+    projectId: 'none'
   });
 
   const { data: clients } = useClients();
@@ -84,8 +84,8 @@ export const EventEditDialog = ({
         startTime: format(startDate, 'HH:mm'),
         endTime: format(endDate, 'HH:mm'),
         location: event.location || '',
-        clientId: event.client_id || '',
-        projectId: event.project_id || ''
+        clientId: event.client_id || 'none',
+        projectId: event.project_id || 'none'
       });
     }
   }, [event]);
@@ -109,8 +109,8 @@ export const EventEditDialog = ({
       start_time: startDateTime.toISOString(),
       end_time: endDateTime.toISOString(),
       location: eventData.location || null,
-      client_id: eventData.clientId || null,
-      project_id: eventData.projectId || null
+      client_id: eventData.clientId === 'none' ? null : eventData.clientId,
+      project_id: eventData.projectId === 'none' ? null : eventData.projectId
     };
 
     onUpdateEvent(updatedEvent);
@@ -180,7 +180,7 @@ export const EventEditDialog = ({
                   <SelectValue placeholder="Select client (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No client</SelectItem>
+                  <SelectItem value="none">No client</SelectItem>
                   {clients?.map(client => (
                     <SelectItem key={client.id} value={client.id}>
                       <div className="flex items-center gap-2">
@@ -200,7 +200,7 @@ export const EventEditDialog = ({
                   <SelectValue placeholder="Select project (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No project</SelectItem>
+                  <SelectItem value="none">No project</SelectItem>
                   {projects?.map(project => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
