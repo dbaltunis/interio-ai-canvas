@@ -103,7 +103,7 @@ const Index = () => {
                 <Settings className="h-4 w-4" />
                 <span className="font-medium">Settings</span>
               </Button>
-              <UserProfile onSettingsClick={handleSettingsClick} />
+              <UserProfile />
             </div>
           </div>
         </div>
