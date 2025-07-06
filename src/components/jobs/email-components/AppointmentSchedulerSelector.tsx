@@ -1,17 +1,22 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, Copy, Link, Clock, MapPin, Video, Plus } from "lucide-react";
+import { Calendar, Copy, Link, Clock, MapPin, Video, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 
 interface AppointmentSchedulerSelectorProps {
   onSchedulerSelect: (schedulerLink: string, schedulerName: string) => void;
   onEmbedCode: (embedCode: string, schedulerName: string) => void;
+}
+
+interface SelectedScheduler {
+  id: string;
+  name: string;
+  type: 'link' | 'embed';
 }
 
 export const AppointmentSchedulerSelector = ({ 
@@ -23,6 +28,7 @@ export const AppointmentSchedulerSelector = ({
   const [selectedScheduler, setSelectedScheduler] = useState<string>("");
   const [embedType, setEmbedType] = useState<"link" | "button" | "card">("button");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [addedSchedulers, setAddedSchedulers] = useState<SelectedScheduler[]>([]);
 
   const generateSchedulerSlug = (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -80,10 +86,21 @@ export const AppointmentSchedulerSelector = ({
     const bookingLink = generateBookingLink(scheduler);
     onSchedulerSelect(bookingLink, scheduler.name);
     
+    // Add to tracked schedulers
+    const newScheduler: SelectedScheduler = {
+      id: scheduler.id,
+      name: scheduler.name,
+      type: 'link'
+    };
+    setAddedSchedulers(prev => [...prev, newScheduler]);
+    
     toast({
       title: "Booking Link Added",
       description: `${scheduler.name} booking link has been added to your email`
     });
+    
+    // Reset selection
+    setSelectedScheduler("");
   };
 
   const handleInsertEmbed = () => {
@@ -93,9 +110,28 @@ export const AppointmentSchedulerSelector = ({
     const embedCode = generateEmbedCode(scheduler);
     onEmbedCode(embedCode, scheduler.name);
     
+    // Add to tracked schedulers
+    const newScheduler: SelectedScheduler = {
+      id: scheduler.id,
+      name: scheduler.name,
+      type: 'embed'
+    };
+    setAddedSchedulers(prev => [...prev, newScheduler]);
+    
     toast({
       title: "Scheduler Embedded",
       description: `${scheduler.name} has been embedded in your email`
+    });
+    
+    // Reset selection
+    setSelectedScheduler("");
+  };
+
+  const handleRemoveScheduler = (schedulerId: string) => {
+    setAddedSchedulers(prev => prev.filter(s => s.id !== schedulerId));
+    toast({
+      title: "Scheduler Removed",
+      description: "The scheduler has been removed from tracking. Note: You may need to manually remove it from your email content."
     });
   };
 
@@ -135,6 +171,34 @@ export const AppointmentSchedulerSelector = ({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Added Schedulers List */}
+        {addedSchedulers.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Added to Email</label>
+            <div className="space-y-2">
+              {addedSchedulers.map((scheduler) => (
+                <div key={`${scheduler.id}-${scheduler.type}`} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-green-600" />
+                    <span className="font-medium text-green-800">{scheduler.name}</span>
+                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                      {scheduler.type === 'link' ? 'Link' : 'Embedded'}
+                    </Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleRemoveScheduler(scheduler.id)}
+                    className="text-green-600 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <label className="text-sm font-medium text-gray-700 mb-2 block">Select Scheduler</label>
           <Select value={selectedScheduler} onValueChange={setSelectedScheduler}>
