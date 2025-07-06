@@ -1,26 +1,19 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Send, 
-  Mail, 
-  Users, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
   Settings,
   Plus,
-  Eye,
-  RefreshCw,
-  Loader2
+  Clock,
+  Users,
+  FileText,
+  Mail,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
@@ -29,18 +22,15 @@ import { useEmailTemplates, useCreateEmailTemplate } from "@/hooks/useEmailTempl
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
-import { predefinedEmailTemplates } from "@/data/emailTemplates";
 import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
 import { ClientSelector } from "./email-components/ClientSelector";
 import { QuoteSelector } from "./email-components/QuoteSelector";
 import { CampaignBuilder } from "./email-components/CampaignBuilder";
 import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
-import { EmailDetailDialog } from "./email-components/EmailDetailDialog";
 import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
 import { EmailComposer } from "./email-components/EmailComposer";
-import { EmailStatusBadge } from "./email-components/EmailStatusBadge";
-import { RichTextEditor } from "./email-components/RichTextEditor";
-import { EmailRowActions } from "./email-components/EmailRowActions";
+import { EmailHistoryTab } from "./email-components/EmailHistoryTab";
+import { EmailTemplatesTab } from "./email-components/EmailTemplatesTab";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -55,8 +45,6 @@ export const EmailsTab = () => {
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [campaignBuilderOpen, setCampaignBuilderOpen] = useState(false);
   const [templateVariableEditorOpen, setTemplateVariableEditorOpen] = useState(false);
-  const [emailDetailOpen, setEmailDetailOpen] = useState(false);
-  const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [selectedClients, setSelectedClients] = useState<any[]>([]);
   const [selectedQuotes, setSelectedQuotes] = useState<any[]>([]);
@@ -65,13 +53,6 @@ export const EmailsTab = () => {
     from_name: "",
     reply_to_email: "",
     signature: ""
-  });
-  const [customTemplateDialogOpen, setCustomTemplateDialogOpen] = useState(false);
-  const [newTemplate, setNewTemplate] = useState({
-    name: "",
-    subject: "",
-    content: "",
-    template_type: "custom" as const
   });
   const [activeTabValue, setActiveTabValue] = useState("history");
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
@@ -179,35 +160,34 @@ export const EmailsTab = () => {
     setEmailSettingsOpen(false);
   };
 
-  const handleCreateTemplateFromPredefined = (templateData: any) => {
-    createTemplateMutation.mutate({
-      name: templateData.name,
-      subject: templateData.subject,
-      content: templateData.content,
-      template_type: templateData.template_type,
-      variables: templateData.variables,
-      active: true
-    });
+  const handleResendEmail = async (email: any) => {
+    try {
+      await sendEmailMutation.mutateAsync({
+        to: email.recipient_email,
+        subject: email.subject,
+        content: email.content
+      });
+      toast({
+        title: "Email Resent",
+        description: `Email to ${email.recipient_email} has been resent.`
+      });
+    } catch (error) {
+      console.error("Failed to resend email:", error);
+      toast({
+        title: "Resend Failed",
+        description: "Failed to resend email. Please try again later.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEmailClick = (email: any) => {
-    setSelectedEmail(email);
-    setEmailDetailOpen(true);
-  };
-
-  const handleCreateCustomTemplate = () => {
-    createTemplateMutation.mutate({
-      ...newTemplate,
-      variables: [],
-      active: true
+  const handleApplyTemplate = (subject: string, content: string, templateId?: string) => {
+    setNewEmail({
+      ...newEmail,
+      subject,
+      content,
+      template_id: templateId || ""
     });
-    setNewTemplate({
-      name: "",
-      subject: "",
-      content: "",
-      template_type: "custom"
-    });
-    setCustomTemplateDialogOpen(false);
   };
 
   if (kpisLoading) {
@@ -302,117 +282,13 @@ export const EmailsTab = () => {
 
         {/* History Tab - Now First */}
         <TabsContent value="history">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h3 className="text-lg font-semibold">Email History</h3>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.reload()}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-            
-            {emailsLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-2">Loading emails...</span>
-              </div>
-            ) : emails && emails.length > 0 ? (
-              <Card>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Recipient</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Sent</TableHead>
-                        <TableHead>Opens</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {emails.map((email) => (
-                        <TableRow key={email.id} className="cursor-pointer hover:bg-muted/50">
-                          <TableCell>
-                            <div className="font-medium truncate max-w-[200px]">{email.subject}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-muted-foreground">{email.recipient_email}</div>
-                          </TableCell>
-                          <TableCell>
-                            <EmailStatusBadge status={email.status} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : 'Not sent'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm font-medium">{email.open_count || 0}</div>
-                          </TableCell>
-                          <TableCell>
-                            <EmailRowActions 
-                              email={email}
-                              onView={() => handleEmailClick(email)}
-                              onFollowUp={() => handleEmailClick(email)}
-                              onResend={async () => {
-                                try {
-                                  await sendEmailMutation.mutateAsync({
-                                    to: email.recipient_email,
-                                    subject: email.subject,
-                                    content: email.content
-                                  });
-                                  toast({
-                                    title: "Email Resent",
-                                    description: `Email to ${email.recipient_email} has been resent.`
-                                  });
-                                } catch (error) {
-                                  console.error("Failed to resend email:", error);
-                                  toast({
-                                    title: "Resend Failed",
-                                    description: "Failed to resend email. Please try again later.",
-                                    variant: "destructive"
-                                  });
-                                }
-                              }}
-                              isResending={sendEmailMutation.isPending}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center h-64 text-center">
-                  <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Emails Yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Start sending emails to see your email history here.
-                  </p>
-                  <Button onClick={() => setComposeDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Send Your First Email
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Email Detail Dialog */}
-            <EmailDetailDialog
-              open={emailDetailOpen}
-              onOpenChange={setEmailDetailOpen}
-              email={selectedEmail}
-            />
-          </div>
+          <EmailHistoryTab
+            emails={emails}
+            emailsLoading={emailsLoading}
+            onComposeClick={() => setComposeDialogOpen(true)}
+            onResendEmail={handleResendEmail}
+            isResending={sendEmailMutation.isPending}
+          />
         </TabsContent>
 
         {/* Compose Email Tab */}
@@ -464,177 +340,12 @@ export const EmailsTab = () => {
 
         {/* Templates Tab */}
         <TabsContent value="templates">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h3 className="text-lg font-semibold">Email Templates</h3>
-              <Button 
-                className="flex items-center gap-2 w-full sm:w-auto"
-                onClick={() => setCustomTemplateDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                New Template
-              </Button>
-            </div>
-            
-            {/* Predefined Templates Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Industry Templates</CardTitle>
-                <CardDescription>
-                  Professional templates designed for interior design businesses
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {predefinedEmailTemplates.map((template) => (
-                    <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-medium truncate">{template.name}</h4>
-                            <Badge variant="outline" className="text-xs mt-1">{template.category}</Badge>
-                          </div>
-                          <FileText className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{template.description}</p>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                            onClick={() => handleCreateTemplateFromPredefined(template)}
-                          >
-                            Save Template
-                          </Button>
-                          <Button 
-                            size="sm"
-                            className="w-full sm:w-auto"
-                            onClick={() => {
-                              setNewEmail({
-                                ...newEmail,
-                                subject: template.subject,
-                                content: template.content
-                              });
-                              toast({
-                                title: "Template Applied",
-                                description: `${template.name} template has been applied.`
-                              });
-                            }}
-                          >
-                            Use Now
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* User Templates Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates?.map((template) => (
-                <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-medium truncate">{template.name}</h4>
-                        <p className="text-sm text-gray-600 capitalize">{template.template_type.replace(/_/g, ' ')}</p>
-                      </div>
-                      <FileText className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      <Button 
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setNewEmail({
-                            ...newEmail,
-                            subject: template.subject,
-                            content: template.content,
-                            template_id: template.id
-                          });
-                          toast({
-                            title: "Template Applied",
-                            description: `${template.name} template has been applied.`
-                          });
-                        }}
-                      >
-                        Apply Template
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {(!templates || templates.length === 0) && (
-                <Card className="col-span-full">
-                  <CardContent className="p-6 text-center text-gray-500">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <h4 className="text-lg font-medium mb-2">No Custom Templates Yet</h4>
-                    <p className="text-sm">Save industry templates or create your own custom templates</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Custom Template Creation Dialog */}
-            <Dialog open={customTemplateDialogOpen} onOpenChange={setCustomTemplateDialogOpen}>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create Custom Template</DialogTitle>
-                  <DialogDescription>
-                    Create a reusable email template for your business
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="template_name">Template Name</Label>
-                    <Input
-                      id="template_name"
-                      placeholder="e.g., Quote Follow-up"
-                      value={newTemplate.name}
-                      onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="template_subject">Subject Line</Label>
-                    <Input
-                      id="template_subject"
-                      placeholder="Email subject..."
-                      value={newTemplate.subject}
-                      onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="template_content">Email Content</Label>
-                    <RichTextEditor
-                      value={newTemplate.content}
-                      onChange={(content) => setNewTemplate(prev => ({ ...prev, content }))}
-                      placeholder="Start typing your template content..."
-                      className="min-h-[250px]"
-                    />
-                  </div>
-                  <div className="flex flex-col sm:flex-row justify-end gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setCustomTemplateDialogOpen(false)}
-                      className="w-full sm:w-auto"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleCreateCustomTemplate}
-                      disabled={!newTemplate.name || !newTemplate.subject || !newTemplate.content || createTemplateMutation.isPending}
-                      className="w-full sm:w-auto"
-                    >
-                      {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <EmailTemplatesTab
+            templates={templates}
+            onCreateTemplate={(templateData) => createTemplateMutation.mutate(templateData)}
+            onApplyTemplate={handleApplyTemplate}
+            isCreating={createTemplateMutation.isPending}
+          />
         </TabsContent>
 
         {/* Campaigns Tab */}
@@ -667,9 +378,9 @@ export const EmailsTab = () => {
                           <p className="text-sm text-gray-600">{campaign.subject}</p>
                           <p className="text-xs text-gray-500">Recipients: {campaign.recipient_count}</p>
                         </div>
-                        <Badge variant={campaign.status === 'completed' ? 'default' : 'secondary'}>
+                        <div className={`px-2 py-1 rounded text-xs ${campaign.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                           {campaign.status}
-                        </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -788,23 +499,6 @@ export const EmailsTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Email Preview Dialog */}
-      <EmailPreviewDialog
-        open={previewDialogOpen}
-        onOpenChange={setPreviewDialogOpen}
-        template={{
-          id: 'custom',
-          name: 'Custom Email',
-          subject: newEmail.subject,
-          content: newEmail.content,
-          category: 'Custom',
-          variables: []
-        }}
-        clientData={selectedClients[0]}
-        quoteData={selectedQuotes[0]}
-        senderInfo={emailSettings}
-      />
-
       {/* All Dialogs */}
       <CampaignBuilder
         open={campaignBuilderOpen}
@@ -831,10 +525,20 @@ export const EmailsTab = () => {
         }}
       />
 
-      <EmailDetailDialog
-        open={emailDetailOpen}
-        onOpenChange={setEmailDetailOpen}
-        email={selectedEmail}
+      <EmailPreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        template={{
+          id: 'custom',
+          name: 'Custom Email',
+          subject: newEmail.subject,
+          content: newEmail.content,
+          category: 'Custom',
+          variables: []
+        }}
+        clientData={selectedClients[0]}
+        quoteData={selectedQuotes[0]}
+        senderInfo={emailSettings}
       />
     </div>
   );
