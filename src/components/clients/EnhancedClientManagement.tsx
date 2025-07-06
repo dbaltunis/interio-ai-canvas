@@ -1,19 +1,22 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Mail, Phone, MapPin, Users, Building2, User, FileText, DollarSign, Calendar, MessageSquare, Trash2, Eye, MousePointer } from "lucide-react";
+import { Mail, Phone, MapPin, Users, Building2, User, FileText, DollarSign, Calendar, MessageSquare, Trash2, Eye, MousePointer, Edit, MoreHorizontal, Download, Upload } from "lucide-react";
 import { useClients, useDeleteClient } from "@/hooks/useClients";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useAllClientEmailStats } from "@/hooks/useClientEmails";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientActivityTimeline } from "./ClientActivityTimeline";
 import { ClientFollowUpReminders } from "./ClientFollowUpReminders";
 import { DocumentManagement } from "@/components/files/DocumentManagement";
+import { ClientImportExport } from "./ClientImportExport";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +28,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ClientFilters } from "./ClientFilters";
 
 export const EnhancedClientManagement = () => {
@@ -32,8 +41,10 @@ export const EnhancedClientManagement = () => {
   const { data: quotes } = useQuotes();
   const { data: projects } = useProjects();
   const { data: emailStats } = useAllClientEmailStats();
+  const { data: businessSettings } = useBusinessSettings();
   const deleteClient = useDeleteClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   // Filter states
@@ -50,6 +61,19 @@ export const EnhancedClientManagement = () => {
 
   const getTypeIcon = (type: string) => {
     return type === "B2B" ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />;
+  };
+
+  const formatCurrency = (amount: number) => {
+    // Use business settings currency or default to USD
+    const currency = businessSettings?.measurement_units ? 
+      JSON.parse(businessSettings.measurement_units).currency || 'USD' : 'USD';
+    
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const getClientStats = (clientId: string) => {
@@ -149,6 +173,10 @@ export const EnhancedClientManagement = () => {
     return <ClientCreateForm onBack={() => setShowCreateForm(false)} />;
   }
 
+  if (showImportExport) {
+    return <ClientImportExport onBack={() => setShowImportExport(false)} />;
+  }
+
   if (isLoading) {
     return <div>Loading clients...</div>;
   }
@@ -219,10 +247,16 @@ export const EnhancedClientManagement = () => {
             Complete CRM overview of your client relationships
           </p>
         </div>
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Client
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowImportExport(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          <Button variant="outline" onClick={() => setShowImportExport(true)}>
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -305,7 +339,7 @@ export const EnhancedClientManagement = () => {
                         <div className="flex justify-between">
                           <span>Total Value:</span>
                           <span className="font-medium text-green-600">
-                            {stats.totalValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
+                            {formatCurrency(stats.totalValue)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -601,14 +635,8 @@ export const EnhancedClientManagement = () => {
                                 <span className="text-sm text-muted-foreground">jobs</span>
                               </div>
                               <div className="flex items-center space-x-1">
-                                <DollarSign className="h-3 w-3 text-green-600" />
                                 <span className="text-sm font-medium text-green-600">
-                                  {stats.totalValue.toLocaleString('en-US', { 
-                                    style: 'currency', 
-                                    currency: 'USD',
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0
-                                  })}
+                                  {formatCurrency(stats.totalValue)}
                                 </span>
                               </div>
                             </div>
@@ -651,36 +679,51 @@ export const EnhancedClientManagement = () => {
                               <Button variant="ghost" size="sm" title="Call Client">
                                 <Phone className="h-4 w-4" />
                               </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    title="Delete Client"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <MoreHorizontal className="h-4 w-4" />
                                   </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Client</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this client? This action cannot be undone and will also delete all associated projects and quotes.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteClient(client.id)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Client
+                                  </DropdownMenuItem>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem 
+                                        className="text-red-600 focus:text-red-600"
+                                        onSelect={(e) => e.preventDefault()}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Client
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete this client? This action cannot be undone and will also delete all associated projects and quotes.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteClient(client.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>
