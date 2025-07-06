@@ -1,17 +1,19 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, DollarSign, Clock, CheckCircle, Eye, FileText } from "lucide-react";
+import { Plus, Calendar, DollarSign, Clock, CheckCircle, Eye, FileText, Edit } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 
 interface ProjectManagementProps {
   onViewProject?: (project: any) => void;
+  onCreateProject?: () => void;
   onViewDocuments?: () => void;
 }
 
-export const ProjectManagement = ({ onViewProject, onViewDocuments }: ProjectManagementProps) => {
+export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocuments }: ProjectManagementProps) => {
   const { data: projects, isLoading } = useProjects();
 
   const getStatusColor = (status: string) => {
@@ -61,7 +63,7 @@ export const ProjectManagement = ({ onViewProject, onViewDocuments }: ProjectMan
             <FileText className="mr-2 h-4 w-4" />
             Documents
           </Button>
-          <Button>
+          <Button onClick={onCreateProject}>
             <Plus className="mr-2 h-4 w-4" />
             New Project
           </Button>
@@ -148,6 +150,10 @@ export const ProjectManagement = ({ onViewProject, onViewDocuments }: ProjectMan
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="mx-auto h-12 w-12 mb-4" />
               <p>No projects found. Create your first project to get started!</p>
+              <Button onClick={onCreateProject} className="mt-4">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Project
+              </Button>
             </div>
           ) : (
             <Table>
@@ -168,7 +174,10 @@ export const ProjectManagement = ({ onViewProject, onViewDocuments }: ProjectMan
                     <TableCell>
                       <div className="font-medium">{project.name}</div>
                       {project.description && (
-                        <div className="text-sm text-muted-foreground">{project.description}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-1">{project.description}</div>
+                      )}
+                      {project.job_number && (
+                        <div className="text-xs text-muted-foreground font-mono">{project.job_number}</div>
                       )}
                     </TableCell>
                     <TableCell>Client #{project.client_id?.slice(0, 8) || 'Unassigned'}</TableCell>
@@ -194,11 +203,9 @@ export const ProjectManagement = ({ onViewProject, onViewDocuments }: ProjectMan
                           variant="ghost" 
                           size="sm"
                           onClick={() => onViewProject?.(project)}
+                          title="View Details"
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          Edit
                         </Button>
                       </div>
                     </TableCell>

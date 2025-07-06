@@ -2,10 +2,12 @@
 import { useState } from "react";
 import { ProjectManagement } from "./ProjectManagement";
 import { ProjectDetailsView } from "./ProjectDetailsView";
+import { ProjectCreateForm } from "./ProjectCreateForm";
+import { ProjectEditForm } from "./ProjectEditForm";
 import { DocumentManagement } from "@/components/files/DocumentManagement";
 
 export const EnhancedProjectManagement = () => {
-  const [currentView, setCurrentView] = useState<'list' | 'details' | 'documents'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'details' | 'documents' | 'create' | 'edit'>('list');
   const [selectedProject, setSelectedProject] = useState<any>(null);
 
   const handleViewProject = (project: any) => {
@@ -13,9 +15,15 @@ export const EnhancedProjectManagement = () => {
     setCurrentView('details');
   };
 
-  const handleEditProject = () => {
-    // Implementation for editing project
-    console.log('Edit project:', selectedProject);
+  const handleCreateProject = () => {
+    setCurrentView('create');
+  };
+
+  const handleEditProject = (project?: any) => {
+    if (project) {
+      setSelectedProject(project);
+    }
+    setCurrentView('edit');
   };
 
   const handleBack = () => {
@@ -27,13 +35,35 @@ export const EnhancedProjectManagement = () => {
     setCurrentView('documents');
   };
 
+  const handleProjectSuccess = (project: any) => {
+    setSelectedProject(project);
+    setCurrentView('details');
+  };
+
   switch (currentView) {
+    case 'create':
+      return (
+        <ProjectCreateForm
+          onBack={handleBack}
+          onSuccess={handleProjectSuccess}
+        />
+      );
+
+    case 'edit':
+      return (
+        <ProjectEditForm
+          project={selectedProject}
+          onBack={() => setCurrentView('details')}
+          onSuccess={handleProjectSuccess}
+        />
+      );
+
     case 'details':
       return (
         <ProjectDetailsView
           project={selectedProject}
           onBack={handleBack}
-          onEdit={handleEditProject}
+          onEdit={() => handleEditProject(selectedProject)}
         />
       );
     
@@ -53,6 +83,7 @@ export const EnhancedProjectManagement = () => {
       return (
         <ProjectManagement
           onViewProject={handleViewProject}
+          onCreateProject={handleCreateProject}
           onViewDocuments={handleViewDocuments}
         />
       );
