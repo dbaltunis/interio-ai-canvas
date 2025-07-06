@@ -113,8 +113,8 @@ export const AppointmentSchedulerManager = () => {
     const schedulerData = {
       ...activeScheduler,
       slug,
-      availability: activeScheduler.availability,
-      locations: activeScheduler.locations
+      availability: activeScheduler.availability as any,
+      locations: activeScheduler.locations as any
     };
 
     try {
@@ -172,7 +172,7 @@ export const AppointmentSchedulerManager = () => {
   };
 
   const handleEditScheduler = (scheduler: any) => {
-    const locations = scheduler.locations as LocationSettings || {};
+    const locations = (scheduler.locations as LocationSettings) || {};
     
     setActiveScheduler({
       name: scheduler.name,
@@ -298,7 +298,7 @@ export const AppointmentSchedulerManager = () => {
       {schedulers && schedulers.length > 0 && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {schedulers.map((scheduler) => {
-            const locations = scheduler.locations as LocationSettings || {};
+            const locations = (scheduler.locations as LocationSettings) || {};
             return (
               <Card key={scheduler.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
