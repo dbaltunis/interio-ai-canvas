@@ -1,69 +1,79 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/components/auth/AuthProvider';
-import { LogOut, User, Settings } from 'lucide-react';
+import { User, Settings, LogOut, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
-interface UserProfileProps {
-  onSettingsClick?: () => void;
-}
-
-export const UserProfile = ({ onSettingsClick }: UserProfileProps) => {
+export const UserProfile = () => {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
-    toast({
-      title: "Signed out",
-      description: "You've been signed out successfully.",
-    });
+    navigate("/auth");
   };
+
+  const handleSettings = () => {
+    navigate("/settings");
+  };
+
+  const handleAuth = () => {
+    navigate("/auth");
+  };
+
+  // If user is not authenticated, show login button
+  if (!user) {
+    return (
+      <Button
+        variant="outline"
+        onClick={handleAuth}
+        className="flex items-center gap-2"
+      >
+        <LogIn className="h-4 w-4" />
+        Login
+      </Button>
+    );
+  }
+
+  // If user is authenticated, show profile dropdown
+  const userInitials = user.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : "U";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-          <div className="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white text-sm font-medium border-2 border-brand-secondary/20 hover:border-brand-accent transition-colors">
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </div>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-brand-secondary text-brand-primary">
+              {userInitials}
+            </AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {user?.email}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
+        <div className="flex items-center justify-start gap-2 p-2">
+          <div className="flex flex-col space-y-1 leading-none">
+            <p className="font-medium text-sm">{user.email}</p>
           </div>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+        <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
         </DropdownMenuItem>
-        {onSettingsClick && (
-          <DropdownMenuItem onClick={onSettingsClick}>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
-        )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign out</span>
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

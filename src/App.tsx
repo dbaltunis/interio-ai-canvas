@@ -1,5 +1,4 @@
 
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
+import Settings from "./pages/Settings";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 
 const queryClient = new QueryClient();
@@ -28,6 +28,13 @@ const App = () => (
             {/* Authentication route */}
             <Route path="/auth" element={<AuthPage />} />
             
+            {/* Settings page - requires authentication */}
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            
             {/* Main application - all functionality handled through tabs */}
             <Route path="/" element={
               <ProtectedRoute>
@@ -45,4 +52,3 @@ const App = () => (
 );
 
 export default App;
-
