@@ -1,164 +1,242 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Check, Clock, AlertCircle, Info, CheckCircle } from "lucide-react";
-import { useNotifications, useUnreadNotifications, useMarkAsRead } from "@/hooks/useNotifications";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Bell, BellOff, Calendar as CalendarIcon, Clock, X } from "lucide-react";
+import { useNotifications, useMarkAsRead } from "@/hooks/useNotifications";
+import { useScheduleNotificationReminder } from "@/hooks/useNotificationCalendarIntegration";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export const NotificationCenter = () => {
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
-  
-  const { data: allNotifications, isLoading: isLoadingAll } = useNotifications();
-  const { data: unreadNotifications, isLoading: isLoadingUnread } = useUnreadNotifications();
+  const [isOpen, setIsOpen] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<any>(null);
+  const [scheduleDate, setScheduleDate] = useState<Date>();
+  const [scheduleTime, setScheduleTime] = useState("09:00");
+
+  const { data: notifications, isLoading } = useNotifications();
   const markAsRead = useMarkAsRead();
+  const scheduleReminder = useScheduleNotificationReminder();
 
-  const notifications = showUnreadOnly ? unreadNotifications : allNotifications;
-  const isLoading = showUnreadOnly ? isLoadingUnread : isLoadingAll;
+  const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Info className="h-4 w-4 text-blue-500" />;
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      await markAsRead.mutateAsync(notificationId);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const handleScheduleReminder = async () => {
+    if (!selectedNotification || !scheduleDate) return;
+
+    const [hours, minutes] = scheduleTime.split(':').map(Number);
+    const scheduledDateTime = new Date(scheduleDate);
+    scheduledDateTime.setHours(hours, minutes);
+
+    try {
+      await scheduleReminder.mutateAsync({
+        notificationId: selectedNotification.id,
+        title: selectedNotification.title,
+        message: selectedNotification.message,
+        scheduleDate: scheduledDateTime,
+        duration: 30
+      });
+      
+      setScheduleDialogOpen(false);
+      setSelectedNotification(null);
+      setScheduleDate(undefined);
+      setScheduleTime("09:00");
+    } catch (error) {
+      console.error('Failed to schedule reminder:', error);
     }
   };
 
   const getNotificationTypeColor = (type: string) => {
     switch (type) {
-      case 'success':
-        return 'bg-green-100 text-green-800';
-      case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
+      case 'info': return 'bg-blue-100 text-blue-800';
+      case 'warning': return 'bg-yellow-100 text-yellow-800';
+      case 'error': return 'bg-red-100 text-red-800';
+      case 'success': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleMarkAsRead = (notificationId: string) => {
-    markAsRead.mutate(notificationId);
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return date.toLocaleDateString();
-  };
-
-  if (isLoading) {
-    return <div>Loading notifications...</div>;
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Notifications</h2>
-          <p className="text-muted-foreground">
-            Stay updated with your project activities
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button
-            variant={showUnreadOnly ? "default" : "outline"}
-            onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-          >
-            <Bell className="mr-2 h-4 w-4" />
-            {showUnreadOnly ? 'Show All' : 'Unread Only'}
-            {unreadNotifications && unreadNotifications.length > 0 && (
-              <Badge className="ml-2">{unreadNotifications.length}</Badge>
+    <>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                {unreadCount}
+              </Badge>
             )}
           </Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bell className="mr-2 h-5 w-5" />
-            {showUnreadOnly ? 'Unread Notifications' : 'All Notifications'}
-          </CardTitle>
-          <CardDescription>
-            {showUnreadOnly 
-              ? 'Notifications that require your attention' 
-              : 'Complete notification history'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!notifications || notifications.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Bell className="mx-auto h-12 w-12 mb-4" />
-              <p>
-                {showUnreadOnly 
-                  ? 'No unread notifications' 
-                  : 'No notifications yet'
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 border rounded-lg transition-colors ${
-                    !notification.read 
-                      ? 'border-primary bg-primary/5' 
-                      : 'border-border'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1">
-                      {getNotificationIcon(notification.type)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-0" align="end">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">Notifications</CardTitle>
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {unreadCount} unread
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="max-h-96 overflow-y-auto">
+              {isLoading ? (
+                <div className="text-center py-4 text-sm text-muted-foreground">Loading...</div>
+              ) : notifications && notifications.length > 0 ? (
+                <div className="space-y-3">
+                  {notifications.slice(0, 10).map((notification) => (
+                    <div 
+                      key={notification.id} 
+                      className={cn(
+                        "p-3 rounded-lg border",
+                        !notification.read && "bg-muted/50"
+                      )}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
                           <h4 className="font-medium text-sm">{notification.title}</h4>
-                          <Badge className={getNotificationTypeColor(notification.type)}>
+                          <Badge className={`${getNotificationTypeColor(notification.type)} text-xs border-0`}>
                             {notification.type}
                           </Badge>
-                          {!notification.read && (
-                            <Badge variant="secondary">New</Badge>
-                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{formatTimeAgo(notification.created_at)}</span>
-                        </div>
+                        {!notification.read && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleMarkAsRead(notification.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {notification.message}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(notification.created_at), 'MMM d, HH:mm')}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedNotification(notification);
+                            setScheduleDialogOpen(true);
+                          }}
+                          className="text-xs h-6"
+                        >
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          Schedule
+                        </Button>
                       </div>
                     </div>
-                    
-                    {!notification.read && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMarkAsRead(notification.id)}
-                        disabled={markAsRead.isPending}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <BellOff className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p className="text-sm">No notifications</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </PopoverContent>
+      </Popover>
+
+      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule Reminder</DialogTitle>
+            <DialogDescription>
+              Create a calendar appointment for this notification
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedNotification && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <h4 className="font-medium text-sm mb-1">{selectedNotification.title}</h4>
+                <p className="text-sm text-muted-foreground">{selectedNotification.message}</p>
+              </div>
+
+              <div>
+                <Label>Schedule Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {scheduleDate ? format(scheduleDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={scheduleDate}
+                      onSelect={setScheduleDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <Label htmlFor="schedule-time">Time</Label>
+                <Input
+                  id="schedule-time"
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleScheduleReminder}
+                  disabled={!scheduleDate || scheduleReminder.isPending}
+                  className="flex-1"
+                >
+                  {scheduleReminder.isPending ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    <>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      Schedule
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setScheduleDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

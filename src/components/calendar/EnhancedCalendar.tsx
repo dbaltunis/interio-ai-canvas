@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Plus, Clock, MapPin, User } from "lucide-react";
+import { CalendarDays, Plus, Clock, MapPin, User, Bell } from "lucide-react";
 import { useAppointments, useCreateAppointment } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export const EnhancedCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -25,12 +26,14 @@ export const EnhancedCalendar = () => {
     end_time: '',
     location: '',
     client_id: '',
-    project_id: ''
+    project_id: '',
+    notification_id: ''
   });
 
   const { data: appointments, isLoading } = useAppointments();
   const { data: clients } = useClients();
   const { data: projects } = useProjects();
+  const { data: notifications } = useNotifications();
   const createAppointment = useCreateAppointment();
 
   const appointmentTypes = [
@@ -38,6 +41,7 @@ export const EnhancedCalendar = () => {
     { value: 'measurement', label: 'Measurement' },
     { value: 'installation', label: 'Installation' },
     { value: 'follow-up', label: 'Follow-up' },
+    { value: 'reminder', label: 'Reminder' },
     { value: 'other', label: 'Other' }
   ];
 
@@ -47,6 +51,7 @@ export const EnhancedCalendar = () => {
       case 'measurement': return 'bg-green-100 text-green-800';
       case 'installation': return 'bg-purple-100 text-purple-800';
       case 'follow-up': return 'bg-yellow-100 text-yellow-800';
+      case 'reminder': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -91,14 +96,34 @@ export const EnhancedCalendar = () => {
         end_time: '',
         location: '',
         client_id: '',
-        project_id: ''
+        project_id: '',
+        notification_id: ''
       });
     } catch (error) {
       console.error('Failed to create appointment:', error);
     }
   };
 
+  const handleCreateFromNotification = (notificationId: string) => {
+    const notification = notifications?.find(n => n.id === notificationId);
+    if (notification) {
+      setNewAppointment({
+        title: notification.title,
+        description: notification.message,
+        appointment_type: 'reminder',
+        start_time: '09:00',
+        end_time: '10:00',
+        location: '',
+        client_id: '',
+        project_id: '',
+        notification_id: notificationId
+      });
+      setIsDialogOpen(true);
+    }
+  };
+
   const selectedDateAppointments = selectedDate ? getAppointmentsForDate(selectedDate) : [];
+  const todayNotifications = notifications?.filter(n => !n.read).slice(0, 3) || [];
 
   if (isLoading) {
     return <div>Loading calendar...</div>;
@@ -248,7 +273,7 @@ export const EnhancedCalendar = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Calendar */}
         <Card>
           <CardHeader>
@@ -318,6 +343,52 @@ export const EnhancedCalendar = () => {
                         <p className="mt-2">{appointment.description}</p>
                       )}
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Notifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bell className="mr-2 h-5 w-5" />
+              Recent Notifications
+            </CardTitle>
+            <CardDescription>
+              Create calendar events from notifications
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {todayNotifications.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bell className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <p>No unread notifications</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {todayNotifications.map((notification) => (
+                  <div key={notification.id} className="p-3 border rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <h5 className="font-medium text-sm">{notification.title}</h5>
+                      <Badge variant="secondary" className="text-xs">
+                        {notification.type}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {notification.message}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCreateFromNotification(notification.id)}
+                      className="w-full"
+                    >
+                      <CalendarDays className="mr-2 h-3 w-3" />
+                      Schedule
+                    </Button>
                   </div>
                 ))}
               </div>
