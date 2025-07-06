@@ -17,12 +17,12 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("emails");
+  const [activeTab, setActiveTab] = useState("jobs");
   const { signOut } = useAuth();
 
   const navItems = [
-    { id: "emails", label: "Email History", icon: FolderOpen },
-    { id: "jobs", label: "Jobs & Quotes", icon: LayoutDashboard },
+    { id: "dashboard", label: "Home", icon: LayoutDashboard },
+    { id: "jobs", label: "Jobs", icon: FolderOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "library", label: "Library", icon: Package },
   ];
@@ -33,16 +33,16 @@ const Index = () => {
 
   const renderActiveComponent = () => {
     switch (activeTab) {
-      case "emails":
-        return <JobsPage defaultTab="emails" />;
+      case "dashboard":
+        return <Dashboard />;
       case "jobs":
-        return <JobsPage defaultTab="jobs" />;
+        return <JobsPage />;
       case "library":
         return <LibraryPage />;
       case "calendar":
         return <CalendarView />;
       default:
-        return <JobsPage defaultTab="emails" />;
+        return <JobsPage />;
     }
   };
 

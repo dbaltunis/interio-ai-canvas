@@ -9,12 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 
-interface JobsPageProps {
-  defaultTab?: "jobs" | "clients" | "emails";
-}
-
-export const JobsPage = ({ defaultTab = "jobs" }: JobsPageProps) => {
-  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails">(defaultTab);
+export const JobsPage = () => {
+  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);

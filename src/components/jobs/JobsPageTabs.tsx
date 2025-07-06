@@ -19,37 +19,37 @@ export const JobsPageTabs = ({
   return (
     <div className="flex items-center space-x-0">
       <Button
-        variant={activeTab === "emails" ? "default" : "ghost"}
-        className={`rounded-r-none px-6 py-2 transition-all duration-200 ${
-          activeTab === "emails" 
-            ? "bg-brand-primary text-white border border-brand-primary hover:bg-brand-accent" 
-            : "bg-card text-brand-neutral border border-border hover:bg-brand-secondary/10"
-        }`}
-        onClick={() => setActiveTab("emails")}
-      >
-        📧 Emails ({emailsCount})
-      </Button>
-      <Button
         variant={activeTab === "jobs" ? "default" : "ghost"}
-        className={`rounded-none border-l-0 px-6 py-2 transition-all duration-200 ${
+        className={`rounded-r-none px-6 py-2 ${
           activeTab === "jobs" 
-            ? "bg-brand-primary text-white border border-brand-primary hover:bg-brand-accent" 
-            : "bg-card text-brand-neutral border border-border hover:bg-brand-secondary/10"
+            ? "bg-gray-100 text-gray-900 border border-gray-300" 
+            : "bg-white text-gray-600 border border-gray-300"
         }`}
         onClick={() => setActiveTab("jobs")}
       >
-        📋 Jobs ({jobsCount})
+        Jobs ({jobsCount})
       </Button>
       <Button
         variant={activeTab === "clients" ? "default" : "ghost"}
-        className={`rounded-l-none border-l-0 px-6 py-2 transition-all duration-200 ${
+        className={`rounded-none border-l-0 px-6 py-2 ${
           activeTab === "clients" 
-            ? "bg-brand-primary text-white border border-brand-primary hover:bg-brand-accent" 
-            : "bg-card text-brand-neutral border border-border hover:bg-brand-secondary/10"
+            ? "bg-gray-100 text-gray-900 border border-gray-300" 
+            : "bg-white text-gray-600 border border-gray-300"
         }`}
         onClick={() => setActiveTab("clients")}
       >
-        👥 Clients ({clientsCount})
+        Clients ({clientsCount})
+      </Button>
+      <Button
+        variant={activeTab === "emails" ? "default" : "ghost"}
+        className={`rounded-l-none border-l-0 px-6 py-2 ${
+          activeTab === "emails" 
+            ? "bg-gray-100 text-gray-900 border border-gray-300" 
+            : "bg-white text-gray-600 border border-gray-300"
+        }`}
+        onClick={() => setActiveTab("emails")}
+      >
+        Emails ({emailsCount})
       </Button>
     </div>
   );
