@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Plus, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Bell, Plus, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2, Mail, Smartphone } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useCreateReminderNotification, useScheduleReminder } from "@/hooks/useReminderNotifications";
 
 interface ClientFollowUpRemindersProps {
   clientId: string;
@@ -62,7 +64,17 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
     priority: 'medium'
   });
 
-  const handleCreateReminder = () => {
+  const createReminderNotification = useCreateReminderNotification();
+  const scheduleReminder = useScheduleReminder();
+  
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotification: true,
+    appNotification: true,
+    calendarEvent: false,
+    smsNotification: false
+  });
+
+  const handleCreateReminder = async () => {
     const reminder: Reminder = {
       id: Date.now().toString(),
       type: newReminder.type as any,
@@ -75,6 +87,30 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
     };
 
     setReminders([reminder, ...reminders]);
+
+    // Create notifications based on user settings
+    if (notificationSettings.emailNotification || notificationSettings.appNotification) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        await createReminderNotification.mutateAsync({
+          reminderId: reminder.id,
+          clientId,
+          clientName,
+          clientEmail: user?.email,
+          title: reminder.title,
+          description: reminder.description,
+          dueDate: reminder.dueDate,
+          type: reminder.type
+        });
+
+        // Schedule the reminder
+        await scheduleReminder.mutateAsync(reminder);
+      } catch (error) {
+        console.error('Failed to create notifications:', error);
+      }
+    }
+
     setShowCreateForm(false);
     setNewReminder({
       type: 'email_follow_up',
@@ -207,9 +243,90 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
                   </PopoverContent>
                 </Popover>
               </div>
+
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Notification Settings</Label>
+                <div className="space-y-3 p-3 bg-white rounded border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-blue-500" />
+                      <Label htmlFor="email-notification" className="text-sm">Email Notification</Label>
+                    </div>
+                    <Switch
+                      id="email-notification"
+                      checked={notificationSettings.emailNotification}
+                      onCheckedChange={(checked) => 
+                        setNotificationSettings({...notificationSettings, emailNotification: checked})
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Bell className="h-4 w-4 text-green-500" />
+                      <Label htmlFor="app-notification" className="text-sm">App Notification</Label>
+                    </div>
+                    <Switch
+                      id="app-notification"
+                      checked={notificationSettings.appNotification}
+                      onCheckedChange={(checked) => 
+                        setNotificationSettings({...notificationSettings, appNotification: checked})
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CalendarIcon className="h-4 w-4 text-purple-500" />
+                      <Label htmlFor="calendar-event" className="text-sm">Calendar Event</Label>
+                    </div>
+                    <Switch
+                      id="calendar-event"
+                      checked={notificationSettings.calendarEvent}
+                      onCheckedChange={(checked) => {
+                        setNotificationSettings({...notificationSettings, calendarEvent: checked});
+                        if (checked && newReminder.type !== 'meeting') {
+                          setNewReminder({...newReminder, type: 'meeting'});
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Smartphone className="h-4 w-4 text-orange-500" />
+                      <Label htmlFor="sms-notification" className="text-sm">SMS Notification</Label>
+                    </div>
+                    <Switch
+                      id="sms-notification"
+                      checked={notificationSettings.smsNotification}
+                      onCheckedChange={(checked) => 
+                        setNotificationSettings({...notificationSettings, smsNotification: checked})
+                      }
+                      disabled
+                    />
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {notificationSettings.emailNotification || notificationSettings.appNotification ? 
+                      "Notifications will be sent when the reminder is due" : 
+                      "Enable at least one notification method"
+                    }
+                  </p>
+                </div>
+              </div>
               
               <div className="flex gap-2">
-                <Button onClick={handleCreateReminder} size="sm">Create</Button>
+                <Button 
+                  onClick={handleCreateReminder} 
+                  disabled={
+                    createReminderNotification.isPending || 
+                    (!notificationSettings.emailNotification && !notificationSettings.appNotification)
+                  }
+                  size="sm"
+                >
+                  {createReminderNotification.isPending ? 'Creating...' : 'Create Reminder'}
+                </Button>
                 <Button onClick={() => setShowCreateForm(false)} variant="outline" size="sm">Cancel</Button>
               </div>
             </div>
