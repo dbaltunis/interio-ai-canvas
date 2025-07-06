@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Calendar as CalendarIcon } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -12,7 +12,7 @@ interface CalendarEvent {
   title: string;
   start_time: string;
   end_time: string;
-  type: 'appointment' | 'reminder' | 'client_meeting';
+  type: 'appointment' | 'reminder' | 'client_meeting' | 'consultation' | 'measurement' | 'installation' | 'follow-up' | 'meeting' | 'call';
   color: string;
   client_name?: string;
   location?: string;
@@ -24,6 +24,9 @@ interface CalendarGridProps {
   onDateSelect: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
   onTimeSlotClick: (date: Date, hour: number) => void;
+  onNewEventClick: () => void;
+  showTodaysEvents: boolean;
+  onToggleTodaysEvents: (show: boolean) => void;
 }
 
 export const CalendarGrid = ({ 
@@ -31,7 +34,10 @@ export const CalendarGrid = ({
   selectedDate, 
   onDateSelect, 
   onEventClick, 
-  onTimeSlotClick 
+  onTimeSlotClick,
+  onNewEventClick,
+  showTodaysEvents,
+  onToggleTodaysEvents
 }: CalendarGridProps) => {
   const [currentMonth, setCurrentMonth] = useState(selectedDate);
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
@@ -51,12 +57,22 @@ export const CalendarGrid = ({
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
+      case 'consultation': return 'bg-blue-500';
+      case 'measurement': return 'bg-green-500';
+      case 'installation': return 'bg-purple-500';
+      case 'follow-up': return 'bg-orange-500';
+      case 'meeting': return 'bg-indigo-500';
+      case 'call': return 'bg-pink-500';
+      case 'reminder': return 'bg-yellow-500';
       case 'appointment': return 'bg-blue-500';
-      case 'reminder': return 'bg-orange-500';
       case 'client_meeting': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
   };
+
+  const todaysEvents = events.filter(event => 
+    isSameDay(parseISO(event.start_time), new Date())
+  );
 
   const renderMonthView = () => (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm border">
@@ -82,7 +98,7 @@ export const CalendarGrid = ({
             <div
               key={day.toISOString()}
               className={`
-                min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] p-1 sm:p-2 border-r border-b last:border-r-0 cursor-pointer hover:bg-blue-50 transition-colors relative
+                min-h-[60px] sm:min-h-[80px] lg:min-h-[100px] p-1 sm:p-2 border-r border-b last:border-r-0 cursor-pointer hover:bg-blue-50 transition-colors relative
                 ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
                 ${isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''}
                 ${isDayToday ? 'bg-blue-50' : ''}
@@ -165,7 +181,7 @@ export const CalendarGrid = ({
             {hours.map(hour => (
               <div key={hour} className="contents">
                 {/* Time Label */}
-                <div className="p-2 text-xs text-gray-500 border-r border-b text-right pr-3">
+                <div className="p-2 text-xs text-gray-500 border-r border-b text-right pr-3 min-h-[40px] flex items-center justify-end">
                   {format(new Date().setHours(hour, 0), 'HH:mm')}
                 </div>
                 
@@ -176,18 +192,21 @@ export const CalendarGrid = ({
                     return isSameDay(eventDate, day) && eventDate.getHours() === hour;
                   });
 
+                  const hasEvents = hourEvents.length > 0;
+                  const minHeight = hasEvents ? 'min-h-[80px]' : 'min-h-[40px]';
+
                   return (
                     <div
                       key={`${day.toISOString()}-${hour}`}
-                      className="min-h-[50px] p-1 border-r border-b last:border-r-0 hover:bg-blue-50 cursor-pointer transition-colors"
+                      className={`${minHeight} p-1 border-r border-b last:border-r-0 hover:bg-blue-50 cursor-pointer transition-colors`}
                       onClick={() => onTimeSlotClick(day, hour)}
                     >
                       {hourEvents.map(event => (
                         <div
                           key={event.id}
                           className={`
-                            ${getEventTypeColor(event.type)} text-white text-xs p-1.5 rounded mb-1 cursor-pointer 
-                            hover:opacity-80 transition-opacity
+                            ${getEventTypeColor(event.type)} text-white text-xs p-2 rounded mb-1 cursor-pointer 
+                            hover:opacity-80 transition-opacity shadow-sm
                           `}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -196,9 +215,15 @@ export const CalendarGrid = ({
                         >
                           <div className="font-medium truncate">{event.title}</div>
                           {event.client_name && (
-                            <div className="opacity-75 flex items-center text-xs mt-0.5">
+                            <div className="opacity-75 flex items-center text-xs mt-1">
                               <User className="w-2.5 h-2.5 mr-1" />
                               <span className="truncate">{event.client_name}</span>
+                            </div>
+                          )}
+                          {event.location && (
+                            <div className="opacity-75 flex items-center text-xs mt-1">
+                              <MapPin className="w-2.5 h-2.5 mr-1" />
+                              <span className="truncate">{event.location}</span>
                             </div>
                           )}
                         </div>
@@ -215,9 +240,9 @@ export const CalendarGrid = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full">
       {/* Calendar Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Button
@@ -257,8 +282,19 @@ export const CalendarGrid = ({
               </Button>
             ))}
           </div>
+
+          {/* Today's Events Toggle */}
+          <Button
+            variant={showTodaysEvents ? "default" : "outline"}
+            size="sm"
+            onClick={() => onToggleTodaysEvents(!showTodaysEvents)}
+            className="gap-2"
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Today ({todaysEvents.length})
+          </Button>
           
-          <Button size="sm" className="gap-2">
+          <Button onClick={onNewEventClick} size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Event</span>
           </Button>
