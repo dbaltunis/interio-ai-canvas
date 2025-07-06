@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +14,7 @@ export interface Email {
   clicked_at?: string;
   open_count: number;
   click_count: number;
-  time_spent_seconds?: number;
+  time_spent_seconds: number;
   bounce_reason?: string;
   sendgrid_message_id?: string;
   template_id?: string;
@@ -36,7 +35,12 @@ export const useEmails = () => {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data as Email[];
+      
+      // Ensure time_spent_seconds has a default value of 0 if null
+      return (data as any[]).map(email => ({
+        ...email,
+        time_spent_seconds: email.time_spent_seconds || 0
+      })) as Email[];
     },
   });
 };
@@ -55,20 +59,29 @@ export const useEmailKPIs = () => {
       const totalOpened = emails?.filter(e => e.open_count > 0).length || 0;
       const totalClicked = emails?.filter(e => e.click_count > 0).length || 0;
       const totalDelivered = emails?.filter(e => e.status === 'delivered').length || 0;
+      const totalBounced = emails?.filter(e => e.status === 'bounced').length || 0;
       
       const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
       const clickRate = totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0;
       const deliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0;
+      
+      const totalOpenCount = emails?.reduce((sum, e) => sum + (e.open_count || 0), 0) || 0;
+      const totalClickCount = emails?.reduce((sum, e) => sum + (e.click_count || 0), 0) || 0;
       
       // Calculate average time spent (mock calculation for now)
       const avgTimeSpent = "2m 30s";
       
       return {
         totalSent,
+        delivered: totalDelivered,
+        bounced: totalBounced,
         openRate,
         clickRate,
         deliveryRate,
         avgTimeSpent,
+        totalOpenCount,
+        totalClickCount,
+        // Keep backward compatibility
         totalOpened,
         totalClicked,
         totalDelivered
