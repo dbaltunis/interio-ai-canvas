@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { UserProfile } from "@/components/layout/UserProfile";
 import { BrandHeader } from "@/components/layout/BrandHeader";
 import { Dashboard } from "@/components/dashboard/Dashboard";
@@ -17,7 +18,10 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("jobs");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    return searchParams.get('tab') || "jobs";
+  });
   const { signOut } = useAuth();
 
   const navItems = [
@@ -26,6 +30,23 @@ const Index = () => {
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "library", label: "Library", icon: Package },
   ];
+
+  // Update URL when active tab changes
+  useEffect(() => {
+    setSearchParams({ tab: activeTab }, { replace: true });
+  }, [activeTab, setSearchParams]);
+
+  // Update active tab when URL changes (browser back/forward)
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+  };
 
   const handleSettingsClick = () => {
     window.location.href = "/settings";
@@ -68,7 +89,7 @@ const Index = () => {
                           ? "bg-brand-primary text-white hover:bg-brand-accent" 
                           : "text-brand-neutral hover:bg-brand-secondary/10 hover:text-brand-primary"
                       }`}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => handleTabChange(item.id)}
                     >
                       <Icon className="h-4 w-4" />
                       <span className="font-medium">{item.label}</span>
