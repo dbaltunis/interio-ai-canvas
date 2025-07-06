@@ -247,30 +247,76 @@ export const EmailComposer = ({
           </Card>
         )}
         
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 border-t">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button variant="outline" className="flex items-center gap-2 border-gray-300">
+        {/* Action Buttons - Single Row with Company Colors */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Attach File Button */}
+            <div className="relative">
+              <input
+                type="file"
+                multiple
+                onChange={handleFileAttachment}
+                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                id="attach-files-btn"
+              />
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-2 relative z-10 pointer-events-none border-primary/20 hover:border-primary hover:bg-primary/5"
+              >
+                <Paperclip className="h-4 w-4" />
+                <span className="hidden sm:inline">Attach File</span>
+                <span className="sm:hidden">File</span>
+              </Button>
+            </div>
+
+            {/* Select Recipients Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2 border-primary/20 hover:border-primary hover:bg-primary/5"
+              onClick={() => {/* This would open client selector */}}
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Select Recipients</span>
+              <span className="sm:hidden">Recipients</span>
+            </Button>
+
+            {/* Schedule Send Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2 border-secondary/20 hover:border-secondary hover:bg-secondary/5"
+            >
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Schedule Send</span>
               <span className="sm:hidden">Schedule</span>
             </Button>
+
+            {/* Preview Email Button */}
             <Button 
               variant="outline" 
-              className="flex items-center gap-2 border-gray-300"
+              size="sm"
+              className="flex items-center gap-2 border-secondary/20 hover:border-secondary hover:bg-secondary/5"
               onClick={onPreviewEmail}
               disabled={!newEmail.content}
             >
               <Eye className="h-4 w-4" />
-              <span className="hidden sm:inline">Preview Email</span>
+              <span className="hidden sm:inline">Preview</span>
               <span className="sm:hidden">Preview</span>
             </Button>
           </div>
+
+          {/* Send Email Button - Prominent with Company Colors */}
           <Button 
             onClick={() => onSendEmail(attachments)} 
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 min-w-[120px] justify-center"
+            className="bg-primary hover:bg-accent text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 min-w-[140px] justify-center"
             disabled={sendEmailMutation.isPending || !emailSettings?.from_email}
+            size="sm"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4 mr-2" />
             {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
           </Button>
         </div>

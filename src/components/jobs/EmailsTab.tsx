@@ -73,7 +73,8 @@ export const EmailsTab = () => {
     content: "",
     template_type: "custom" as const
   });
-  const [activeTabValue, setActiveTabValue] = useState("compose");
+  const [activeTabValue, setActiveTabValue] = useState("history");
+  const [composeDialogOpen, setComposeDialogOpen] = useState(false);
 
   const { toast } = useToast();
   const { data: emails, isLoading: emailsLoading } = useEmails();
@@ -283,28 +284,154 @@ export const EmailsTab = () => {
 
       {/* Main Email Interface */}
       <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
-          <TabsTrigger value="compose" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Compose</span>
-            <span className="sm:hidden">Email</span>
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Campaigns</span>
-            <span className="sm:hidden">Camps</span>
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Templates</span>
-            <span className="sm:hidden">Temps</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">History</span>
-            <span className="sm:hidden">Hist</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">History</span>
+              <span className="sm:hidden">Hist</span>
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Campaigns</span>
+              <span className="sm:hidden">Camps</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Templates</span>
+              <span className="sm:hidden">Temps</span>
+            </TabsTrigger>
+            <TabsTrigger value="compose" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Compose</span>
+              <span className="sm:hidden">Email</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <Button 
+            onClick={() => setComposeDialogOpen(true)}
+            className="bg-primary hover:bg-accent text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl w-full sm:w-auto"
+            size="lg"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            New Email
+          </Button>
+        </div>
+
+        {/* History Tab - Now First */}
+        <TabsContent value="history">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h3 className="text-lg font-semibold">Email History</h3>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+            
+            {emailsLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Loading emails...</span>
+              </div>
+            ) : emails && emails.length > 0 ? (
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Recipient</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Sent</TableHead>
+                        <TableHead>Opens</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emails.map((email) => (
+                        <TableRow key={email.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell>
+                            <div className="font-medium truncate max-w-[200px]">{email.subject}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-muted-foreground">{email.recipient_email}</div>
+                          </TableCell>
+                          <TableCell>
+                            <EmailStatusBadge status={email.status} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : 'Not sent'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm font-medium">{email.open_count || 0}</div>
+                          </TableCell>
+                          <TableCell>
+                            <EmailRowActions 
+                              email={email}
+                              onView={() => handleEmailClick(email)}
+                              onFollowUp={() => handleFollowUp(email)}
+                              onResend={async () => {
+                                try {
+                                  await sendEmailMutation.mutateAsync({
+                                    to: email.recipient_email,
+                                    subject: email.subject,
+                                    content: email.content
+                                  });
+                                  toast({
+                                    title: "Email Resent",
+                                    description: `Email to ${email.recipient_email} has been resent.`
+                                  });
+                                } catch (error) {
+                                  console.error("Failed to resend email:", error);
+                                  toast({
+                                    title: "Resend Failed",
+                                    description: "Failed to resend email. Please try again later.",
+                                    variant: "destructive"
+                                  });
+                                }
+                              }}
+                              isResending={sendEmailMutation.isPending}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+                  <Mail className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Emails Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start sending emails to see your email history here.
+                  </p>
+                  <Button onClick={() => setComposeDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Send Your First Email
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Email Detail Dialog */}
+            <EmailDetailDialog
+              open={emailDetailOpen}
+              onOpenChange={setEmailDetailOpen}
+              email={selectedEmail}
+            />
+          </div>
+        </TabsContent>
 
         {/* Compose Email Tab */}
         <TabsContent value="compose">
@@ -334,66 +461,11 @@ export const EmailsTab = () => {
               emailSettings={emailSettings}
             />
 
-            {/* Email Settings Dialog */}
-            <Dialog open={emailSettingsOpen} onOpenChange={setEmailSettingsOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Email Settings</DialogTitle>
-                  <DialogDescription>
-                    Configure your sender information for outgoing emails
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="from_email">From Email Address</Label>
-                    <Input
-                      id="from_email"
-                      type="email"
-                      placeholder="your-email@company.com"
-                      value={newEmailSettings.from_email}
-                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_email: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="from_name">From Name</Label>
-                    <Input
-                      id="from_name"
-                      placeholder="Your Company Name"
-                      value={newEmailSettings.from_name}
-                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_name: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="reply_to_email">Reply-To Email (Optional)</Label>
-                    <Input
-                      id="reply_to_email"
-                      type="email"
-                      placeholder="replies@company.com"
-                      value={newEmailSettings.reply_to_email}
-                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, reply_to_email: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="signature">Email Signature (Optional)</Label>
-                    <Textarea
-                      id="signature"
-                      placeholder="Best regards,&#10;Your Name&#10;Your Company"
-                      value={newEmailSettings.signature}
-                      onChange={(e) => setNewEmailSettings(prev => ({ ...prev, signature: e.target.value }))}
-                    />
-                  </div>
-                  <Button onClick={handleSaveEmailSettings} className="w-full">
-                    Save Settings
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
             {/* Email Preview Dialog */}
             <EmailPreviewDialog
               open={previewDialogOpen}
               onOpenChange={setPreviewDialogOpen}
-              template={selectedTemplate || {
+              template={{
                 id: 'custom',
                 name: 'Custom Email',
                 subject: newEmail.subject,
@@ -636,103 +708,120 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* History Tab with Dynamic Opens and Status */}
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email History</CardTitle>
-              <CardDescription>Track all sent emails with real-time status updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {emailsLoading ? (
-                <div className="text-center py-8">Loading email history...</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Subject</TableHead>
-                      <TableHead>Recipient</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Opens</TableHead>
-                      <TableHead>Sent At</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {emails && emails.length > 0 ? (
-                      emails.map((email) => (
-                        <TableRow key={email.id} className="cursor-pointer hover:bg-gray-50">
-                          <TableCell 
-                            className="font-medium max-w-xs"
-                            onClick={() => handleEmailClick(email)}
-                          >
-                            <div className="truncate">{email.subject}</div>
-                          </TableCell>
-                          <TableCell onClick={() => handleEmailClick(email)}>
-                            <div className="truncate max-w-48">{email.recipient_email}</div>
-                          </TableCell>
-                          <TableCell onClick={() => handleEmailClick(email)}>
-                            <EmailStatusBadge 
-                              status={email.status} 
-                              openCount={email.open_count}
-                              clickCount={email.click_count}
-                            />
-                          </TableCell>
-                           <TableCell onClick={() => handleEmailClick(email)}>
-                             <div className="flex items-center gap-1">
-                               <Eye className={`h-3 w-3 ${email.open_count > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
-                               <span className={email.open_count > 0 ? 'font-medium' : 'text-gray-500'}>
-                                 {email.open_count}
-                               </span>
-                             </div>
-                           </TableCell>
-                          <TableCell onClick={() => handleEmailClick(email)}>
-                            {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : '-'}
-                          </TableCell>
-                           <TableCell>
-                             <EmailRowActions 
-                               email={email}
-                               onView={() => handleEmailClick(email)}
-                               onFollowUp={() => handleFollowUp(email)}
-                               onResend={async () => {
-                                 try {
-                                   await sendEmailMutation.mutateAsync({
-                                     to: email.recipient_email,
-                                     subject: email.subject,
-                                     content: email.content
-                                   });
-                                   toast({
-                                     title: "Email Resent",
-                                     description: `Email to ${email.recipient_email} has been resent.`
-                                   });
-                                 } catch (error) {
-                                   console.error("Failed to resend email:", error);
-                                   toast({
-                                     title: "Resend Failed",
-                                     description: "Failed to resend email. Please try again later.",
-                                     variant: "destructive"
-                                   });
-                                 }
-                               }}
-                               isResending={sendEmailMutation.isPending}
-                             />
-                           </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-gray-500">
-                          No emails sent yet
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+
+      {/* Compose Email Dialog */}
+      <Dialog open={composeDialogOpen} onOpenChange={setComposeDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Compose New Email</DialogTitle>
+            <DialogDescription>
+              Create and send a new email to your clients
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+            {/* Client and Quote Selectors */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <ClientSelector 
+                selectedClients={selectedClients}
+                onSelectionChange={setSelectedClients}
+              />
+              <QuoteSelector 
+                selectedQuotes={selectedQuotes}
+                onSelectionChange={setSelectedQuotes}
+                selectedClients={selectedClients}
+              />
+            </div>
+
+            {/* Email Composer */}
+            <EmailComposer
+              newEmail={newEmail}
+              setNewEmail={setNewEmail}
+              selectedClients={selectedClients}
+              selectedQuotes={selectedQuotes}
+              onSendEmail={(attachments) => {
+                handleSendEmail(attachments);
+                setComposeDialogOpen(false);
+              }}
+              onPreviewEmail={() => setPreviewDialogOpen(true)}
+              sendEmailMutation={sendEmailMutation}
+              emailSettings={emailSettings}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Settings Dialog */}
+      <Dialog open={emailSettingsOpen} onOpenChange={setEmailSettingsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Settings</DialogTitle>
+            <DialogDescription>
+              Configure your sender information for outgoing emails
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="from_email">From Email Address</Label>
+              <Input
+                id="from_email"
+                type="email"
+                placeholder="your-email@company.com"
+                value={newEmailSettings.from_email}
+                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="from_name">From Name</Label>
+              <Input
+                id="from_name"
+                placeholder="Your Company Name"
+                value={newEmailSettings.from_name}
+                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="reply_to_email">Reply-To Email (Optional)</Label>
+              <Input
+                id="reply_to_email"
+                type="email"
+                placeholder="replies@company.com"
+                value={newEmailSettings.reply_to_email}
+                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, reply_to_email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="signature">Email Signature (Optional)</Label>
+              <Textarea
+                id="signature"
+                placeholder="Best regards,&#10;Your Name&#10;Your Company"
+                value={newEmailSettings.signature}
+                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, signature: e.target.value }))}
+              />
+            </div>
+            <Button onClick={handleSaveEmailSettings} className="w-full">
+              Save Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Preview Dialog */}
+      <EmailPreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        template={{
+          id: 'custom',
+          name: 'Custom Email',
+          subject: newEmail.subject,
+          content: newEmail.content,
+          category: 'Custom',
+          variables: []
+        }}
+        clientData={selectedClients[0]}
+        quoteData={selectedQuotes[0]}
+        senderInfo={emailSettings}
+      />
 
       {/* All Dialogs */}
       <CampaignBuilder
