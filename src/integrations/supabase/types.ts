@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      appointment_schedulers: {
+        Row: {
+          active: boolean
+          availability: Json
+          buffer_time: number
+          created_at: string
+          description: string | null
+          duration: number
+          id: string
+          image_url: string | null
+          locations: Json
+          max_advance_booking: number
+          min_advance_notice: number
+          name: string
+          slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          availability?: Json
+          buffer_time?: number
+          created_at?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          image_url?: string | null
+          locations?: Json
+          max_advance_booking?: number
+          min_advance_notice?: number
+          name: string
+          slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          availability?: Json
+          buffer_time?: number
+          created_at?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          image_url?: string | null
+          locations?: Json
+          max_advance_booking?: number
+          min_advance_notice?: number
+          name?: string
+          slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_type: string
@@ -75,6 +129,59 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments_booked: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          location_type: string
+          notes: string | null
+          scheduler_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          location_type: string
+          notes?: string | null
+          scheduler_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          location_type?: string
+          notes?: string | null
+          scheduler_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_booked_scheduler_id_fkey"
+            columns: ["scheduler_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_schedulers"
             referencedColumns: ["id"]
           },
         ]

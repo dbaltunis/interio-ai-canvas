@@ -8,8 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus, Edit } from "lucide-react";
+import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus, Edit, Upload, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
+import { useUploadFile } from "@/hooks/useFileStorage";
+import { supabase } from "@/integrations/supabase/client";
+import { CalendarEmailIntegration } from "./CalendarEmailIntegration";
 
 interface TimeSlot {
   startTime: string;
@@ -23,39 +27,30 @@ interface DayAvailability {
   timeSlots: TimeSlot[];
 }
 
-interface SchedulerConfig {
-  id: string;
-  name: string;
-  description: string;
-  duration: number;
-  bufferTime: number;
-  maxAdvanceBooking: number;
-  minAdvanceNotice: number;
-  availability: DayAvailability[];
-  locations: {
-    inPerson: { enabled: boolean; address: string };
-    googleMeet: { enabled: boolean };
-    zoom: { enabled: boolean; meetingId?: string };
-    phone: { enabled: boolean };
-  };
-}
-
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export const AppointmentSchedulerManager = () => {
   const { toast } = useToast();
-  const [schedulers, setSchedulers] = useState<SchedulerConfig[]>([]);
+  const { data: schedulers, isLoading } = useAppointmentSchedulers();
+  const createScheduler = useCreateScheduler();
+  const updateScheduler = useUpdateScheduler();
+  const deleteScheduler = useDeleteScheduler();
+  const uploadFile = useUploadFile();
+
   const [copiedAvailability, setCopiedAvailability] = useState<DayAvailability | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   
-  const [activeScheduler, setActiveScheduler] = useState<SchedulerConfig>({
-    id: crypto.randomUUID(),
+  const [activeScheduler, setActiveScheduler] = useState({
     name: '',
     description: '',
     duration: 60,
-    bufferTime: 15,
-    maxAdvanceBooking: 30,
-    minAdvanceNotice: 24,
+    buffer_time: 15,
+    max_advance_booking: 30,
+    min_advance_notice: 24,
+    slug: '',
+    image_url: '',
     availability: DAYS_OF_WEEK.map(day => ({
       day,
       enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
@@ -69,7 +64,35 @@ export const AppointmentSchedulerManager = () => {
     }
   });
 
-  const handleSaveScheduler = () => {
+  const generateSlug = (name: string) => {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const uploadedFile = await uploadFile.mutateAsync({
+        file,
+        projectId: 'scheduler-images',
+        bucketName: 'project-images'
+      });
+
+      const { data } = await supabase.storage
+        .from('project-images')
+        .getPublicUrl(uploadedFile.file_path);
+
+      setActiveScheduler(prev => ({ ...prev, image_url: data.publicUrl }));
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveScheduler = async () => {
     if (!activeScheduler.name) {
       toast({
         title: "Error",
@@ -79,27 +102,56 @@ export const AppointmentSchedulerManager = () => {
       return;
     }
 
-    const existingIndex = schedulers.findIndex(s => s.id === activeScheduler.id);
-    if (existingIndex >= 0) {
-      setSchedulers(prev => prev.map((s, i) => i === existingIndex ? activeScheduler : s));
-      toast({
-        title: "Success",
-        description: "Appointment scheduler updated successfully"
-      });
-    } else {
-      setSchedulers(prev => [...prev, { ...activeScheduler }]);
-      toast({
-        title: "Success",
-        description: "Appointment scheduler created successfully"
-      });
+    const slug = generateSlug(activeScheduler.name);
+    const schedulerData = {
+      ...activeScheduler,
+      slug,
+      availability: activeScheduler.availability,
+      locations: activeScheduler.locations
+    };
+
+    try {
+      if (editingId) {
+        await updateScheduler.mutateAsync({ id: editingId, ...schedulerData });
+      } else {
+        await createScheduler.mutateAsync(schedulerData);
+      }
+      
+      setIsEditing(false);
+      setEditingId(null);
+      resetForm();
+    } catch (error) {
+      console.error('Save failed:', error);
     }
-    
-    setIsEditing(false);
+  };
+
+  const resetForm = () => {
+    setActiveScheduler({
+      name: '',
+      description: '',
+      duration: 60,
+      buffer_time: 15,
+      max_advance_booking: 30,
+      min_advance_notice: 24,
+      slug: '',
+      image_url: '',
+      availability: DAYS_OF_WEEK.map(day => ({
+        day,
+        enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
+        timeSlots: [{ id: crypto.randomUUID(), startTime: '09:00', endTime: '17:00' }]
+      })),
+      locations: {
+        inPerson: { enabled: true, address: '' },
+        googleMeet: { enabled: false },
+        zoom: { enabled: false, meetingId: '' },
+        phone: { enabled: false }
+      }
+    });
   };
 
   const generateBookingLink = (schedulerName: string, schedulerId: string) => {
     const baseUrl = window.location.origin;
-    const slug = schedulerName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = generateSlug(schedulerName);
     return `${baseUrl}/book/${slug}`;
   };
 
@@ -112,9 +164,36 @@ export const AppointmentSchedulerManager = () => {
     });
   };
 
-  const handleEditScheduler = (scheduler: SchedulerConfig) => {
-    setActiveScheduler(scheduler);
+  const handleEditScheduler = (scheduler: any) => {
+    setActiveScheduler({
+      name: scheduler.name,
+      description: scheduler.description || '',
+      duration: scheduler.duration,
+      buffer_time: scheduler.buffer_time,
+      max_advance_booking: scheduler.max_advance_booking,
+      min_advance_notice: scheduler.min_advance_notice,
+      slug: scheduler.slug,
+      image_url: scheduler.image_url || '',
+      availability: scheduler.availability || DAYS_OF_WEEK.map(day => ({
+        day,
+        enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
+        timeSlots: [{ id: crypto.randomUUID(), startTime: '09:00', endTime: '17:00' }]
+      })),
+      locations: scheduler.locations || {
+        inPerson: { enabled: true, address: '' },
+        googleMeet: { enabled: false },
+        zoom: { enabled: false, meetingId: '' },
+        phone: { enabled: false }
+      }
+    });
+    setEditingId(scheduler.id);
     setIsEditing(true);
+  };
+
+  const handleDeleteScheduler = (schedulerId: string) => {
+    if (confirm('Are you sure you want to delete this scheduler?')) {
+      deleteScheduler.mutate(schedulerId);
+    }
   };
 
   const addTimeSlot = (dayIndex: number) => {
@@ -177,28 +256,21 @@ export const AppointmentSchedulerManager = () => {
   };
 
   const createNewScheduler = () => {
-    setActiveScheduler({
-      id: crypto.randomUUID(),
-      name: '',
-      description: '',
-      duration: 60,
-      bufferTime: 15,
-      maxAdvanceBooking: 30,
-      minAdvanceNotice: 24,
-      availability: DAYS_OF_WEEK.map(day => ({
-        day,
-        enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
-        timeSlots: [{ id: crypto.randomUUID(), startTime: '09:00', endTime: '17:00' }]
-      })),
-      locations: {
-        inPerson: { enabled: true, address: '' },
-        googleMeet: { enabled: false },
-        zoom: { enabled: false, meetingId: '' },
-        phone: { enabled: false }
-      }
-    });
+    resetForm();
+    setEditingId(null);
     setIsEditing(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading schedulers...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -214,13 +286,24 @@ export const AppointmentSchedulerManager = () => {
       </div>
 
       {/* Existing Schedulers */}
-      {schedulers.length > 0 && (
+      {schedulers && schedulers.length > 0 && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {schedulers.map((scheduler) => (
             <Card key={scheduler.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{scheduler.name}</CardTitle>
-                <p className="text-sm text-gray-600">{scheduler.description}</p>
+                <div className="flex items-start gap-3">
+                  {scheduler.image_url && (
+                    <img 
+                      src={scheduler.image_url} 
+                      alt={scheduler.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{scheduler.name}</CardTitle>
+                    <p className="text-sm text-gray-600">{scheduler.description}</p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
@@ -229,25 +312,25 @@ export const AppointmentSchedulerManager = () => {
                     <span>{scheduler.duration} minutes</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {scheduler.locations.inPerson.enabled && (
+                    {scheduler.locations?.inPerson?.enabled && (
                       <Badge variant="secondary" className="text-xs">
                         <MapPin className="w-3 h-3 mr-1" />
                         In-Person
                       </Badge>
                     )}
-                    {scheduler.locations.googleMeet.enabled && (
+                    {scheduler.locations?.googleMeet?.enabled && (
                       <Badge variant="secondary" className="text-xs">
                         <Video className="w-3 h-3 mr-1" />
                         Google Meet
                       </Badge>
                     )}
-                    {scheduler.locations.zoom.enabled && (
+                    {scheduler.locations?.zoom?.enabled && (
                       <Badge variant="secondary" className="text-xs">
                         <Video className="w-3 h-3 mr-1" />
                         Zoom
                       </Badge>
                     )}
-                    {scheduler.locations.phone.enabled && (
+                    {scheduler.locations?.phone?.enabled && (
                       <Badge variant="secondary" className="text-xs">Phone</Badge>
                     )}
                   </div>
@@ -269,6 +352,13 @@ export const AppointmentSchedulerManager = () => {
                   >
                     <Edit className="w-3 h-3" />
                   </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleDeleteScheduler(scheduler.id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -277,22 +367,20 @@ export const AppointmentSchedulerManager = () => {
       )}
 
       {/* Scheduler Configuration */}
-      {(isEditing || schedulers.length === 0) && (
+      {(isEditing || !schedulers || schedulers.length === 0) && (
         <Card>
           <CardHeader>
             <CardTitle>
-              {isEditing && schedulers.some(s => s.id === activeScheduler.id) 
-                ? 'Edit Appointment Scheduler' 
-                : 'Configure Appointment Scheduler'
-              }
+              {editingId ? 'Edit Appointment Scheduler' : 'Configure Appointment Scheduler'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="basic" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="availability">Availability</TabsTrigger>
                 <TabsTrigger value="locations">Locations</TabsTrigger>
+                <TabsTrigger value="email">Email Integration</TabsTrigger>
                 <TabsTrigger value="integrations">Integrations</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
@@ -328,6 +416,7 @@ export const AppointmentSchedulerManager = () => {
                     </Select>
                   </div>
                 </div>
+
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea
@@ -337,6 +426,30 @@ export const AppointmentSchedulerManager = () => {
                     placeholder="Describe what this appointment is about..."
                     rows={3}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="image-upload">Business/Person Image</Label>
+                  <div className="flex items-center gap-4 mt-2">
+                    {activeScheduler.image_url && (
+                      <img 
+                        src={activeScheduler.image_url} 
+                        alt="Preview" 
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      {uploading && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -531,6 +644,10 @@ export const AppointmentSchedulerManager = () => {
                 </div>
               </TabsContent>
 
+              <TabsContent value="email">
+                <CalendarEmailIntegration />
+              </TabsContent>
+
               <TabsContent value="integrations" className="space-y-4">
                 <div className="space-y-4">
                   <h3 className="font-medium">Calendar Integrations</h3>
@@ -600,8 +717,8 @@ export const AppointmentSchedulerManager = () => {
                   <div>
                     <Label htmlFor="buffer-time">Buffer Time (minutes)</Label>
                     <Select
-                      value={activeScheduler.bufferTime.toString()}
-                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, bufferTime: parseInt(value) }))}
+                      value={activeScheduler.buffer_time.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, buffer_time: parseInt(value) }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -618,8 +735,8 @@ export const AppointmentSchedulerManager = () => {
                   <div>
                     <Label htmlFor="min-notice">Minimum Advance Notice (hours)</Label>
                     <Select
-                      value={activeScheduler.minAdvanceNotice.toString()}
-                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, minAdvanceNotice: parseInt(value) }))}
+                      value={activeScheduler.min_advance_notice.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, min_advance_notice: parseInt(value) }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -636,8 +753,8 @@ export const AppointmentSchedulerManager = () => {
                   <div>
                     <Label htmlFor="max-advance">Maximum Advance Booking (days)</Label>
                     <Select
-                      value={activeScheduler.maxAdvanceBooking.toString()}
-                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, maxAdvanceBooking: parseInt(value) }))}
+                      value={activeScheduler.max_advance_booking.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, max_advance_booking: parseInt(value) }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -653,6 +770,7 @@ export const AppointmentSchedulerManager = () => {
                   </div>
                 </div>
               </TabsContent>
+
             </Tabs>
 
             <div className="flex justify-between pt-6 border-t">
@@ -661,20 +779,39 @@ export const AppointmentSchedulerManager = () => {
                   variant="outline" 
                   onClick={() => {
                     setIsEditing(false);
-                    // Reset to a new scheduler if we were editing
-                    if (schedulers.length > 0) {
-                      createNewScheduler();
-                    }
+                    setEditingId(null);
+                    resetForm();
                   }}
                 >
                   Cancel
                 </Button>
               )}
               <div className="flex-1" />
-              <Button onClick={handleSaveScheduler} disabled={!activeScheduler.name}>
-                {isEditing && schedulers.some(s => s.id === activeScheduler.id) ? 'Update Scheduler' : 'Save Scheduler'}
+              <Button 
+                onClick={handleSaveScheduler} 
+                disabled={!activeScheduler.name || createScheduler.isPending || updateScheduler.isPending}
+              >
+                {editingId ? 'Update Scheduler' : 'Save Scheduler'}
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Email Integration for existing schedulers */}
+      {schedulers && schedulers.length > 0 && !isEditing && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Email Integration
+            </CardTitle>
+            <p className="text-sm text-gray-600">
+              Embed your booking calendars in emails for seamless scheduling
+            </p>
+          </CardHeader>
+          <CardContent>
+            <CalendarEmailIntegration />
           </CardContent>
         </Card>
       )}

@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Clock, MapPin, Video, User, Mail, Phone } from "lucide-react";
 import { format, addDays, isSameDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { usePublicScheduler } from "@/hooks/useAppointmentSchedulers";
+import { useCreateBooking } from "@/hooks/useAppointmentBookings";
 
 interface BookingFormData {
   name: string;
@@ -17,29 +20,12 @@ interface BookingFormData {
   notes: string;
 }
 
-// This would normally come from the database based on the slug
-const mockSchedulerData = {
-  name: "Consultation Call",
-  description: "30-minute consultation to discuss your project requirements",
-  duration: 30,
-  locations: {
-    inPerson: { enabled: true, address: "123 Main St, City" },
-    googleMeet: { enabled: true },
-    zoom: { enabled: false },
-    phone: { enabled: true }
-  },
-  availability: {
-    monday: [{ startTime: '09:00', endTime: '17:00' }],
-    tuesday: [{ startTime: '09:00', endTime: '17:00' }],
-    wednesday: [{ startTime: '09:00', endTime: '17:00' }],
-    thursday: [{ startTime: '09:00', endTime: '17:00' }],
-    friday: [{ startTime: '09:00', endTime: '17:00' }]
-  }
-};
-
 export const PublicBookingPage = () => {
   const { schedulerSlug } = useParams<{ schedulerSlug: string }>();
   const { toast } = useToast();
+  const { data: scheduler, isLoading, error } = usePublicScheduler(schedulerSlug || '');
+  const createBooking = useCreateBooking();
+
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
@@ -52,12 +38,31 @@ export const PublicBookingPage = () => {
   const [step, setStep] = useState<'datetime' | 'location' | 'details' | 'confirmation'>('datetime');
 
   const generateTimeSlots = (date: Date) => {
-    // This would normally be calculated based on the scheduler's availability
-    const slots = [];
-    for (let hour = 9; hour < 17; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
-    }
+    if (!scheduler?.availability) return [];
+    
+    const dayName = format(date, 'EEEE').toLowerCase();
+    const dayAvailability = (scheduler.availability as any[]).find(day => day.day === dayName);
+    
+    if (!dayAvailability?.enabled) return [];
+    
+    const slots: string[] = [];
+    dayAvailability.timeSlots?.forEach((timeSlot: any) => {
+      const startHour = parseInt(timeSlot.startTime.split(':')[0]);
+      const startMinute = parseInt(timeSlot.startTime.split(':')[1]);
+      const endHour = parseInt(timeSlot.endTime.split(':')[0]);
+      const endMinute = parseInt(timeSlot.endTime.split(':')[1]);
+      
+      let currentTime = startHour * 60 + startMinute;
+      const endTime = endHour * 60 + endMinute;
+      
+      while (currentTime < endTime) {
+        const hour = Math.floor(currentTime / 60);
+        const minute = currentTime % 60;
+        slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+        currentTime += scheduler.duration || 60;
+      }
+    });
+    
     return slots;
   };
 
@@ -84,7 +89,7 @@ export const PublicBookingPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.email || !selectedDate || !selectedTime || !scheduler) {
       toast({
         title: "Please fill in required fields",
         variant: "destructive"
@@ -92,22 +97,49 @@ export const PublicBookingPage = () => {
       return;
     }
 
-    // Here you would submit the booking to your backend
-    console.log('Booking submission:', {
-      schedulerSlug,
-      date: selectedDate,
-      time: selectedTime,
-      location: selectedLocation,
-      ...formData
-    });
-
-    toast({
-      title: "Booking Confirmed!",
-      description: "You'll receive a confirmation email shortly."
-    });
-    
-    setStep('confirmation');
+    try {
+      await createBooking.mutateAsync({
+        scheduler_id: scheduler.id,
+        customer_name: formData.name,
+        customer_email: formData.email,
+        customer_phone: formData.phone,
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        appointment_time: selectedTime,
+        location_type: selectedLocation,
+        notes: formData.notes
+      });
+      
+      setStep('confirmation');
+    } catch (error) {
+      console.error('Booking failed:', error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading scheduler...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !scheduler) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <CardTitle className="text-red-600">Scheduler Not Found</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-gray-600">The requested appointment scheduler could not be found.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (step === 'confirmation') {
     return (
@@ -118,7 +150,7 @@ export const PublicBookingPage = () => {
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <div className="p-4 bg-green-50 rounded-lg">
-              <h3 className="font-medium">{mockSchedulerData.name}</h3>
+              <h3 className="font-medium">{scheduler.name}</h3>
               <p className="text-sm text-gray-600">
                 {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
               </p>
@@ -136,11 +168,24 @@ export const PublicBookingPage = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold">{mockSchedulerData.name}</h1>
-          <p className="text-gray-600 mt-2">{mockSchedulerData.description}</p>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            {scheduler.image_url && (
+              <img 
+                src={scheduler.image_url} 
+                alt={scheduler.name}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+            )}
+            <div>
+              <h1 className="text-3xl font-bold">{scheduler.name}</h1>
+              {scheduler.description && (
+                <p className="text-gray-600 mt-2">{scheduler.description}</p>
+              )}
+            </div>
+          </div>
           <div className="flex items-center justify-center gap-2 mt-2">
             <Clock className="w-4 h-4" />
-            <span className="text-sm">{mockSchedulerData.duration} minutes</span>
+            <span className="text-sm">{scheduler.duration} minutes</span>
           </div>
         </div>
 
@@ -173,7 +218,7 @@ export const PublicBookingPage = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date() || date > addDays(new Date(), 60)}
+                    disabled={(date) => date < new Date() || date > addDays(new Date(), scheduler.max_advance_booking)}
                     className="rounded-md border"
                   />
                   
@@ -202,13 +247,13 @@ export const PublicBookingPage = () => {
               </Card>
             )}
 
-            {step === 'location' && (
+            {step === 'location' && scheduler.locations && (
               <Card>
                 <CardHeader>
                   <CardTitle>Choose Meeting Location</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockSchedulerData.locations.inPerson.enabled && (
+                  {(scheduler.locations as any).inPerson?.enabled && (
                     <div 
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                         selectedLocation === 'inPerson' ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
@@ -219,11 +264,11 @@ export const PublicBookingPage = () => {
                         <MapPin className="w-4 h-4" />
                         <span className="font-medium">In-Person Meeting</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{mockSchedulerData.locations.inPerson.address}</p>
+                      <p className="text-sm text-gray-600 mt-1">{(scheduler.locations as any).inPerson.address}</p>
                     </div>
                   )}
 
-                  {mockSchedulerData.locations.googleMeet.enabled && (
+                  {(scheduler.locations as any).googleMeet?.enabled && (
                     <div 
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                         selectedLocation === 'googleMeet' ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
@@ -238,7 +283,7 @@ export const PublicBookingPage = () => {
                     </div>
                   )}
 
-                  {mockSchedulerData.locations.phone.enabled && (
+                  {(scheduler.locations as any).phone?.enabled && (
                     <div 
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                         selectedLocation === 'phone' ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
@@ -316,8 +361,12 @@ export const PublicBookingPage = () => {
                     <Button variant="outline" onClick={() => setStep('location')} className="flex-1">
                       Back
                     </Button>
-                    <Button onClick={handleSubmit} className="flex-1">
-                      Confirm Booking
+                    <Button 
+                      onClick={handleSubmit} 
+                      className="flex-1" 
+                      disabled={createBooking.isPending}
+                    >
+                      {createBooking.isPending ? 'Booking...' : 'Confirm Booking'}
                     </Button>
                   </div>
                 </CardContent>
@@ -342,7 +391,7 @@ export const PublicBookingPage = () => {
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-gray-400" />
                   <span className="text-sm">
-                    {selectedTime || 'Select time'} ({mockSchedulerData.duration} minutes)
+                    {selectedTime || 'Select time'} ({scheduler.duration} minutes)
                   </span>
                 </div>
 
