@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,8 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAllClientEmailStats } from "@/hooks/useClientEmails";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientEmailHistory } from "./ClientEmailHistory";
+import { ClientActivityTimeline } from "./ClientActivityTimeline";
+import { ClientFollowUpReminders } from "./ClientFollowUpReminders";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,6 +180,8 @@ export const EnhancedClientManagement = () => {
 
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
+            <TabsTrigger value="reminders">Follow-ups</TabsTrigger>
             <TabsTrigger value="emails">Email History</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -246,6 +249,17 @@ export const EnhancedClientManagement = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <ClientActivityTimeline clientId={selectedClient.id} />
+          </TabsContent>
+
+          <TabsContent value="reminders">
+            <ClientFollowUpReminders 
+              clientId={selectedClient.id} 
+              clientName={selectedClient.client_type === 'B2B' ? selectedClient.company_name! : selectedClient.name}
+            />
           </TabsContent>
 
           <TabsContent value="emails">
