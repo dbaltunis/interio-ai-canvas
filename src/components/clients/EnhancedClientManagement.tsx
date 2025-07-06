@@ -1,13 +1,17 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Mail, Phone, MapPin, Users, Building2, User, FileText, DollarSign, Calendar, MessageSquare, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Mail, Phone, MapPin, Users, Building2, User, FileText, DollarSign, Calendar, MessageSquare, Trash2, Eye, MousePointer } from "lucide-react";
 import { useClients, useDeleteClient } from "@/hooks/useClients";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
+import { useAllClientEmailStats } from "@/hooks/useClientEmails";
 import { ClientCreateForm } from "./ClientCreateForm";
+import { ClientEmailHistory } from "./ClientEmailHistory";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,8 +28,10 @@ export const EnhancedClientManagement = () => {
   const { data: clients, isLoading } = useClients();
   const { data: quotes } = useQuotes();
   const { data: projects } = useProjects();
+  const { data: emailStats } = useAllClientEmailStats();
   const deleteClient = useDeleteClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   const getTypeColor = (type: string) => {
     return type === "B2B" 
@@ -45,16 +51,32 @@ export const EnhancedClientManagement = () => {
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )[0];
 
+    // Get email stats for this client
+    const clientEmailStats = emailStats?.[clientId] || {
+      totalEmails: 0,
+      sentEmails: 0,
+      openedEmails: 0,
+      clickedEmails: 0,
+      totalOpens: 0,
+      totalClicks: 0,
+      lastEmailDate: null
+    };
+
     return {
       jobsCount: clientQuotes.length,
       totalValue,
       newestProject,
-      projectsCount: clientProjects.length
+      projectsCount: clientProjects.length,
+      emailStats: clientEmailStats
     };
   };
 
   const handleDeleteClient = async (clientId: string) => {
     await deleteClient.mutateAsync(clientId);
+  };
+
+  const handleClientClick = (clientId: string) => {
+    setSelectedClientId(selectedClientId === clientId ? null : clientId);
   };
 
   if (showCreateForm) {
@@ -64,6 +86,8 @@ export const EnhancedClientManagement = () => {
   if (isLoading) {
     return <div>Loading clients...</div>;
   }
+
+  const selectedClient = clients?.find(c => c.id === selectedClientId);
 
   return (
     <div className="space-y-6">
@@ -117,182 +141,317 @@ export const EnhancedClientManagement = () => {
         </Card>
       </div>
 
-      {/* Enhanced Clients Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Client Management</CardTitle>
-          <CardDescription>Complete overview of your client relationships</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!clients || clients.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="mx-auto h-12 w-12 mb-4" />
-              <p>No clients found. Add your first client to get started!</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Client Management</h2>
+          <p className="text-muted-foreground">
+            Complete CRM overview of your client relationships
+          </p>
+        </div>
+        <Button onClick={() => setShowCreateForm(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Client
+        </Button>
+      </div>
+
+      {/* Main Content */}
+      {selectedClient ? (
+        <Tabs defaultValue="overview" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-bold">
+                {selectedClient.client_type === 'B2B' ? selectedClient.company_name : selectedClient.name}
+              </h3>
+              <div className="flex items-center gap-2">
+                <Badge className={`${getTypeColor(selectedClient.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
+                  {getTypeIcon(selectedClient.client_type || 'B2C')}
+                  <span>{selectedClient.client_type || 'B2C'}</span>
+                </Badge>
+                {selectedClient.email && (
+                  <span className="text-sm text-muted-foreground">{selectedClient.email}</span>
+                )}
+              </div>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client Info</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Jobs</TableHead>
-                  <TableHead>Total Value</TableHead>
-                  <TableHead>Latest Project</TableHead>
-                  <TableHead>Communication</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => {
-                  const stats = getClientStats(client.id);
-                  return (
-                    <TableRow key={client.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">
-                            {client.client_type === 'B2B' ? client.company_name : client.name}
-                          </div>
-                          {client.client_type === 'B2B' && client.contact_person && (
-                            <div className="text-sm text-muted-foreground">
-                              Contact: {client.contact_person}
+            <Button variant="outline" onClick={() => setSelectedClientId(null)}>
+              Back to All Clients
+            </Button>
+          </div>
+
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="emails">Email History</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Client overview content */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contact Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {selectedClient.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedClient.email}</span>
+                    </div>
+                  )}
+                  {selectedClient.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedClient.phone}</span>
+                    </div>
+                  )}
+                  {selectedClient.city && selectedClient.state && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedClient.city}, {selectedClient.state}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Business Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const stats = getClientStats(selectedClient.id);
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>Active Projects:</span>
+                          <span className="font-medium">{stats.projectsCount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Jobs:</span>
+                          <span className="font-medium">{stats.jobsCount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Value:</span>
+                          <span className="font-medium text-green-600">
+                            {stats.totalValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Email Communications:</span>
+                          <span className="font-medium">{stats.emailStats.totalEmails}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="emails">
+            <ClientEmailHistory 
+              clientId={selectedClient.id} 
+              clientEmail={selectedClient.email || undefined}
+            />
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects & Jobs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Projects integration coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <Card>
+              <CardHeader>
+                <CardTitle>Documents & Files</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Document management coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        /* Enhanced Clients Table */
+        <Card>
+          <CardHeader>
+            <CardTitle>All Clients</CardTitle>
+            <CardDescription>Click on a client to view detailed information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!clients || clients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="mx-auto h-12 w-12 mb-4" />
+                <p>No clients found. Add your first client to get started!</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client Info</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Business</TableHead>
+                    <TableHead>Email Activity</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => {
+                    const stats = getClientStats(client.id);
+                    return (
+                      <TableRow 
+                        key={client.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleClientClick(client.id)}
+                      >
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {client.client_type === 'B2B' ? client.company_name : client.name}
                             </div>
-                          )}
-                          <div className="flex items-center space-x-2">
-                            <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
-                              {getTypeIcon(client.client_type || 'B2C')}
-                              <span>{client.client_type || 'B2C'}</span>
-                            </Badge>
-                            {client.city && client.state && (
-                              <div className="text-xs text-muted-foreground flex items-center">
-                                <MapPin className="mr-1 h-3 w-3" />
-                                {client.city}, {client.state}
+                            {client.client_type === 'B2B' && client.contact_person && (
+                              <div className="text-sm text-muted-foreground">
+                                Contact: {client.contact_person}
+                              </div>
+                            )}
+                            <div className="flex items-center space-x-2">
+                              <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
+                                {getTypeIcon(client.client_type || 'B2C')}
+                                <span>{client.client_type || 'B2C'}</span>
+                              </Badge>
+                              {client.city && client.state && (
+                                <div className="text-xs text-muted-foreground flex items-center">
+                                  <MapPin className="mr-1 h-3 w-3" />
+                                  {client.city}, {client.state}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <div className="space-y-1">
+                            {client.email && (
+                              <div className="flex items-center text-sm">
+                                <Mail className="mr-1 h-3 w-3" />
+                                {client.email}
+                              </div>
+                            )}
+                            {client.phone && (
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Phone className="mr-1 h-3 w-3" />
+                                {client.phone}
                               </div>
                             )}
                           </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="space-y-1">
-                          {client.email && (
-                            <div className="flex items-center text-sm">
-                              <Mail className="mr-1 h-3 w-3" />
-                              {client.email}
-                            </div>
-                          )}
-                          {client.phone && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Phone className="mr-1 h-3 w-3" />
-                              {client.phone}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div className="text-lg font-semibold text-blue-600">
-                            {stats.jobsCount}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            jobs
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <span className="font-medium text-green-600">
-                            {stats.totalValue.toLocaleString('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0
-                            })}
-                          </span>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        {stats.newestProject ? (
+                        </TableCell>
+                        
+                        <TableCell>
                           <div className="space-y-1">
-                            <div className="text-sm font-medium">
-                              {stats.newestProject.name}
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-semibold text-blue-600">
+                                {stats.jobsCount}
+                              </span>
+                              <span className="text-sm text-muted-foreground">jobs</span>
                             </div>
-                            <div className="text-xs text-muted-foreground flex items-center">
-                              <Calendar className="mr-1 h-3 w-3" />
-                              {new Date(stats.newestProject.created_at).toLocaleDateString()}
+                            <div className="flex items-center space-x-1">
+                              <DollarSign className="h-3 w-3 text-green-600" />
+                              <span className="text-sm font-medium text-green-600">
+                                {stats.totalValue.toLocaleString('en-US', { 
+                                  style: 'currency', 
+                                  currency: 'USD',
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0
+                                })}
+                              </span>
                             </div>
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">No projects</span>
-                        )}
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="text-xs">
-                            <MessageSquare className="mr-1 h-3 w-3" />
-                            0 emails
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            <FileText className="mr-1 h-3 w-3" />
-                            {stats.projectsCount} docs
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm" title="Send Email">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" title="Call Client">
-                            <Phone className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                title="Delete Client"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Client</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this client? This action cannot be undone and will also delete all associated projects and quotes.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteClient(client.id)}
-                                  className="bg-red-600 hover:bg-red-700"
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                <MessageSquare className="mr-1 h-3 w-3" />
+                                {stats.emailStats.totalEmails}
+                              </Badge>
+                              {stats.emailStats.totalOpens > 0 && (
+                                <Badge variant="outline" className="text-xs text-purple-600">
+                                  <Eye className="mr-1 h-3 w-3" />
+                                  {stats.emailStats.totalOpens}
+                                </Badge>
+                              )}
+                              {stats.emailStats.totalClicks > 0 && (
+                                <Badge variant="outline" className="text-xs text-orange-600">
+                                  <MousePointer className="mr-1 h-3 w-3" />
+                                  {stats.emailStats.totalClicks}
+                                </Badge>
+                              )}
+                            </div>
+                            {stats.emailStats.lastEmailDate && (
+                              <div className="text-xs text-muted-foreground flex items-center">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                Last: {new Date(stats.emailStats.lastEmailDate).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button variant="ghost" size="sm" title="Send Email">
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" title="Call Client">
+                              <Phone className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  title="Delete Client"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <Button variant="ghost" size="sm" title="View Details">
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this client? This action cannot be undone and will also delete all associated projects and quotes.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteClient(client.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
