@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus } from "lucide-react";
+import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface TimeSlot {
@@ -47,6 +46,7 @@ export const AppointmentSchedulerManager = () => {
   const { toast } = useToast();
   const [schedulers, setSchedulers] = useState<SchedulerConfig[]>([]);
   const [copiedAvailability, setCopiedAvailability] = useState<DayAvailability | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   
   const [activeScheduler, setActiveScheduler] = useState<SchedulerConfig>({
     id: crypto.randomUUID(),
@@ -93,6 +93,8 @@ export const AppointmentSchedulerManager = () => {
         description: "Appointment scheduler created successfully"
       });
     }
+    
+    setIsEditing(false);
   };
 
   const generateBookingLink = (schedulerName: string, schedulerId: string) => {
@@ -108,6 +110,11 @@ export const AppointmentSchedulerManager = () => {
       title: "Link Copied",
       description: "Booking link copied to clipboard"
     });
+  };
+
+  const handleEditScheduler = (scheduler: SchedulerConfig) => {
+    setActiveScheduler(scheduler);
+    setIsEditing(true);
   };
 
   const addTimeSlot = (dayIndex: number) => {
@@ -190,6 +197,7 @@ export const AppointmentSchedulerManager = () => {
         phone: { enabled: false }
       }
     });
+    setIsEditing(true);
   };
 
   return (
@@ -257,9 +265,9 @@ export const AppointmentSchedulerManager = () => {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => setActiveScheduler(scheduler)}
+                    onClick={() => handleEditScheduler(scheduler)}
                   >
-                    <Settings className="w-3 h-3" />
+                    <Edit className="w-3 h-3" />
                   </Button>
                 </div>
               </CardContent>
@@ -269,385 +277,407 @@ export const AppointmentSchedulerManager = () => {
       )}
 
       {/* Scheduler Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Configure Appointment Scheduler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="basic" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="availability">Availability</TabsTrigger>
-              <TabsTrigger value="locations">Locations</TabsTrigger>
-              <TabsTrigger value="integrations">Integrations</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
+      {(isEditing || schedulers.length === 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {isEditing && schedulers.some(s => s.id === activeScheduler.id) 
+                ? 'Edit Appointment Scheduler' 
+                : 'Configure Appointment Scheduler'
+              }
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="basic" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="availability">Availability</TabsTrigger>
+                <TabsTrigger value="locations">Locations</TabsTrigger>
+                <TabsTrigger value="integrations">Integrations</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="basic" className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="scheduler-name">Scheduler Name *</Label>
+                    <Input
+                      id="scheduler-name"
+                      value={activeScheduler.name}
+                      onChange={(e) => setActiveScheduler(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g., Consultation Call"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="duration">Duration (minutes)</Label>
+                    <Select
+                      value={activeScheduler.duration.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, duration: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="45">45 minutes</SelectItem>
+                        <SelectItem value="60">1 hour</SelectItem>
+                        <SelectItem value="90">1.5 hours</SelectItem>
+                        <SelectItem value="120">2 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div>
-                  <Label htmlFor="scheduler-name">Scheduler Name *</Label>
-                  <Input
-                    id="scheduler-name"
-                    value={activeScheduler.name}
-                    onChange={(e) => setActiveScheduler(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Consultation Call"
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={activeScheduler.description}
+                    onChange={(e) => setActiveScheduler(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe what this appointment is about..."
+                    rows={3}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Select
-                    value={activeScheduler.duration.toString()}
-                    onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, duration: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="45">45 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={activeScheduler.description}
-                  onChange={(e) => setActiveScheduler(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe what this appointment is about..."
-                  rows={3}
-                />
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="availability" className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Weekly Availability</h3>
-                  {copiedAvailability && (
-                    <Badge variant="outline">
-                      {copiedAvailability.day} availability copied
-                    </Badge>
-                  )}
-                </div>
-                
-                {activeScheduler.availability.map((dayAvail, dayIndex) => (
-                  <div key={dayAvail.day} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <Switch
-                          checked={dayAvail.enabled}
-                          onCheckedChange={() => toggleDayEnabled(dayIndex)}
-                        />
-                        <span className="font-medium capitalize">{dayAvail.day}</span>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyDayAvailability(dayIndex)}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                        {copiedAvailability && (
+              <TabsContent value="availability" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Weekly Availability</h3>
+                    {copiedAvailability && (
+                      <Badge variant="outline">
+                        {copiedAvailability.day} availability copied
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {activeScheduler.availability.map((dayAvail, dayIndex) => (
+                    <div key={dayAvail.day} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={dayAvail.enabled}
+                            onCheckedChange={() => toggleDayEnabled(dayIndex)}
+                          />
+                          <span className="font-medium capitalize">{dayAvail.day}</span>
+                        </div>
+                        
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => pasteDayAvailability(dayIndex)}
+                            onClick={() => copyDayAvailability(dayIndex)}
                           >
-                            <Save className="w-3 h-3" />
+                            <Copy className="w-3 h-3" />
                           </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => addTimeSlot(dayIndex)}
-                          disabled={!dayAvail.enabled}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
+                          {copiedAvailability && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => pasteDayAvailability(dayIndex)}
+                            >
+                              <Save className="w-3 h-3" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => addTimeSlot(dayIndex)}
+                            disabled={!dayAvail.enabled}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
+                      
+                      {dayAvail.enabled && (
+                        <div className="space-y-2">
+                          {dayAvail.timeSlots.map((slot) => (
+                            <div key={slot.id} className="flex items-center gap-2">
+                              <Input
+                                type="time"
+                                value={slot.startTime}
+                                onChange={(e) => updateTimeSlot(dayIndex, slot.id, 'startTime', e.target.value)}
+                                className="w-32"
+                              />
+                              <span>to</span>
+                              <Input
+                                type="time"
+                                value={slot.endTime}
+                                onChange={(e) => updateTimeSlot(dayIndex, slot.id, 'endTime', e.target.value)}
+                                className="w-32"
+                              />
+                              {dayAvail.timeSlots.length > 1 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => removeTimeSlot(dayIndex, slot.id)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    
-                    {dayAvail.enabled && (
-                      <div className="space-y-2">
-                        {dayAvail.timeSlots.map((slot) => (
-                          <div key={slot.id} className="flex items-center gap-2">
-                            <Input
-                              type="time"
-                              value={slot.startTime}
-                              onChange={(e) => updateTimeSlot(dayIndex, slot.id, 'startTime', e.target.value)}
-                              className="w-32"
-                            />
-                            <span>to</span>
-                            <Input
-                              type="time"
-                              value={slot.endTime}
-                              onChange={(e) => updateTimeSlot(dayIndex, slot.id, 'endTime', e.target.value)}
-                              className="w-32"
-                            />
-                            {dayAvail.timeSlots.length > 1 && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => removeTimeSlot(dayIndex, slot.id)}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
+                  ))}
+                </div>
+              </TabsContent>
 
-            <TabsContent value="locations" className="space-y-4">
-              <div className="space-y-4">
-                <h3 className="font-medium">Meeting Locations</h3>
-                
+              <TabsContent value="locations" className="space-y-4">
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 border rounded-lg">
-                    <Switch
-                      checked={activeScheduler.locations.inPerson.enabled}
-                      onCheckedChange={(enabled) => 
-                        setActiveScheduler(prev => ({
-                          ...prev,
-                          locations: { ...prev.locations, inPerson: { ...prev.locations.inPerson, enabled } }
-                        }))
-                      }
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MapPin className="w-4 h-4" />
-                        <span className="font-medium">In-Person Meeting</span>
+                  <h3 className="font-medium">Meeting Locations</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 p-3 border rounded-lg">
+                      <Switch
+                        checked={activeScheduler.locations.inPerson.enabled}
+                        onCheckedChange={(enabled) => 
+                          setActiveScheduler(prev => ({
+                            ...prev,
+                            locations: { ...prev.locations, inPerson: { ...prev.locations.inPerson, enabled } }
+                          }))
+                        }
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin className="w-4 h-4" />
+                          <span className="font-medium">In-Person Meeting</span>
+                        </div>
+                        {activeScheduler.locations.inPerson.enabled && (
+                          <Input
+                            placeholder="Enter your address"
+                            value={activeScheduler.locations.inPerson.address}
+                            onChange={(e) =>
+                              setActiveScheduler(prev => ({
+                                ...prev,
+                                locations: { 
+                                  ...prev.locations, 
+                                  inPerson: { ...prev.locations.inPerson, address: e.target.value } 
+                                }
+                              }))
+                            }
+                          />
+                        )}
                       </div>
-                      {activeScheduler.locations.inPerson.enabled && (
-                        <Input
-                          placeholder="Enter your address"
-                          value={activeScheduler.locations.inPerson.address}
-                          onChange={(e) =>
-                            setActiveScheduler(prev => ({
-                              ...prev,
-                              locations: { 
-                                ...prev.locations, 
-                                inPerson: { ...prev.locations.inPerson, address: e.target.value } 
-                              }
-                            }))
-                          }
-                        />
-                      )}
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 p-3 border rounded-lg">
-                    <Switch
-                      checked={activeScheduler.locations.googleMeet.enabled}
-                      onCheckedChange={(enabled) => 
-                        setActiveScheduler(prev => ({
-                          ...prev,
-                          locations: { ...prev.locations, googleMeet: { enabled } }
-                        }))
-                      }
-                    />
-                    <div className="flex items-center gap-2">
-                      <Video className="w-4 h-4" />
-                      <span className="font-medium">Google Meet</span>
-                      <Badge variant="secondary" className="text-xs">Auto-generated</Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3 border rounded-lg">
-                    <Switch
-                      checked={activeScheduler.locations.zoom.enabled}
-                      onCheckedChange={(enabled) => 
-                        setActiveScheduler(prev => ({
-                          ...prev,
-                          locations: { ...prev.locations, zoom: { ...prev.locations.zoom, enabled } }
-                        }))
-                      }
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-3 p-3 border rounded-lg">
+                      <Switch
+                        checked={activeScheduler.locations.googleMeet.enabled}
+                        onCheckedChange={(enabled) => 
+                          setActiveScheduler(prev => ({
+                            ...prev,
+                            locations: { ...prev.locations, googleMeet: { enabled } }
+                          }))
+                        }
+                      />
+                      <div className="flex items-center gap-2">
                         <Video className="w-4 h-4" />
-                        <span className="font-medium">Zoom Meeting</span>
+                        <span className="font-medium">Google Meet</span>
+                        <Badge variant="secondary" className="text-xs">Auto-generated</Badge>
                       </div>
-                      {activeScheduler.locations.zoom.enabled && (
-                        <Input
-                          placeholder="Zoom Meeting ID (optional)"
-                          value={activeScheduler.locations.zoom.meetingId || ''}
-                          onChange={(e) =>
-                            setActiveScheduler(prev => ({
-                              ...prev,
-                              locations: { 
-                                ...prev.locations, 
-                                zoom: { ...prev.locations.zoom, meetingId: e.target.value } 
-                              }
-                            }))
-                          }
-                        />
-                      )}
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 p-3 border rounded-lg">
-                    <Switch
-                      checked={activeScheduler.locations.phone.enabled}
-                      onCheckedChange={(enabled) => 
-                        setActiveScheduler(prev => ({
-                          ...prev,
-                          locations: { ...prev.locations, phone: { enabled } }
-                        }))
-                      }
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Phone Call</span>
+                    <div className="flex items-start gap-3 p-3 border rounded-lg">
+                      <Switch
+                        checked={activeScheduler.locations.zoom.enabled}
+                        onCheckedChange={(enabled) => 
+                          setActiveScheduler(prev => ({
+                            ...prev,
+                            locations: { ...prev.locations, zoom: { ...prev.locations.zoom, enabled } }
+                          }))
+                        }
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Video className="w-4 h-4" />
+                          <span className="font-medium">Zoom Meeting</span>
+                        </div>
+                        {activeScheduler.locations.zoom.enabled && (
+                          <Input
+                            placeholder="Zoom Meeting ID (optional)"
+                            value={activeScheduler.locations.zoom.meetingId || ''}
+                            onChange={(e) =>
+                              setActiveScheduler(prev => ({
+                                ...prev,
+                                locations: { 
+                                  ...prev.locations, 
+                                  zoom: { ...prev.locations.zoom, meetingId: e.target.value } 
+                                }
+                              }))
+                            }
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 border rounded-lg">
+                      <Switch
+                        checked={activeScheduler.locations.phone.enabled}
+                        onCheckedChange={(enabled) => 
+                          setActiveScheduler(prev => ({
+                            ...prev,
+                            locations: { ...prev.locations, phone: { enabled } }
+                          }))
+                        }
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Phone Call</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="integrations" className="space-y-4">
-              <div className="space-y-4">
-                <h3 className="font-medium">Calendar Integrations</h3>
-                
+              <TabsContent value="integrations" className="space-y-4">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Calendar Integrations</h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CalendarPlus className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium">Google Calendar</span>
+                        <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Sync appointments with your Google Calendar automatically.
+                      </p>
+                      <Button disabled variant="outline" className="w-full">
+                        Connect Google Calendar
+                      </Button>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CalendarPlus className="w-5 h-5 text-gray-600" />
+                        <span className="font-medium">Apple Calendar</span>
+                        <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Sync appointments with your Apple Calendar via CalDAV.
+                      </p>
+                      <Button disabled variant="outline" className="w-full">
+                        Connect Apple Calendar
+                      </Button>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CalendarPlus className="w-5 h-5 text-purple-600" />
+                        <span className="font-medium">Outlook Calendar</span>
+                        <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Sync appointments with your Outlook Calendar.
+                      </p>
+                      <Button disabled variant="outline" className="w-full">
+                        Connect Outlook Calendar
+                      </Button>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Link className="w-5 h-5 text-green-600" />
+                        <span className="font-medium">Webhook Integration</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Send appointment data to external systems via webhook.
+                      </p>
+                      <Input placeholder="Webhook URL" className="mb-2" />
+                      <Button variant="outline" className="w-full">
+                        Configure Webhook
+                      </Button>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="settings" className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  <Card className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <CalendarPlus className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium">Google Calendar</span>
-                      <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Sync appointments with your Google Calendar automatically.
-                    </p>
-                    <Button disabled variant="outline" className="w-full">
-                      Connect Google Calendar
-                    </Button>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <CalendarPlus className="w-5 h-5 text-gray-600" />
-                      <span className="font-medium">Apple Calendar</span>
-                      <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Sync appointments with your Apple Calendar via CalDAV.
-                    </p>
-                    <Button disabled variant="outline" className="w-full">
-                      Connect Apple Calendar
-                    </Button>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <CalendarPlus className="w-5 h-5 text-purple-600" />
-                      <span className="font-medium">Outlook Calendar</span>
-                      <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Sync appointments with your Outlook Calendar.
-                    </p>
-                    <Button disabled variant="outline" className="w-full">
-                      Connect Outlook Calendar
-                    </Button>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Link className="w-5 h-5 text-green-600" />
-                      <span className="font-medium">Webhook Integration</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Send appointment data to external systems via webhook.
-                    </p>
-                    <Input placeholder="Webhook URL" className="mb-2" />
-                    <Button variant="outline" className="w-full">
-                      Configure Webhook
-                    </Button>
-                  </Card>
+                  <div>
+                    <Label htmlFor="buffer-time">Buffer Time (minutes)</Label>
+                    <Select
+                      value={activeScheduler.bufferTime.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, bufferTime: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">No buffer</SelectItem>
+                        <SelectItem value="5">5 minutes</SelectItem>
+                        <SelectItem value="10">10 minutes</SelectItem>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="min-notice">Minimum Advance Notice (hours)</Label>
+                    <Select
+                      value={activeScheduler.minAdvanceNotice.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, minAdvanceNotice: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 hour</SelectItem>
+                        <SelectItem value="2">2 hours</SelectItem>
+                        <SelectItem value="4">4 hours</SelectItem>
+                        <SelectItem value="24">24 hours</SelectItem>
+                        <SelectItem value="48">48 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="max-advance">Maximum Advance Booking (days)</Label>
+                    <Select
+                      value={activeScheduler.maxAdvanceBooking.toString()}
+                      onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, maxAdvanceBooking: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">1 week</SelectItem>
+                        <SelectItem value="14">2 weeks</SelectItem>
+                        <SelectItem value="30">1 month</SelectItem>
+                        <SelectItem value="60">2 months</SelectItem>
+                        <SelectItem value="90">3 months</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
+            </Tabs>
 
-            <TabsContent value="settings" className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="buffer-time">Buffer Time (minutes)</Label>
-                  <Select
-                    value={activeScheduler.bufferTime.toString()}
-                    onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, bufferTime: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">No buffer</SelectItem>
-                      <SelectItem value="5">5 minutes</SelectItem>
-                      <SelectItem value="10">10 minutes</SelectItem>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="min-notice">Minimum Advance Notice (hours)</Label>
-                  <Select
-                    value={activeScheduler.minAdvanceNotice.toString()}
-                    onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, minAdvanceNotice: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 hour</SelectItem>
-                      <SelectItem value="2">2 hours</SelectItem>
-                      <SelectItem value="4">4 hours</SelectItem>
-                      <SelectItem value="24">24 hours</SelectItem>
-                      <SelectItem value="48">48 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="max-advance">Maximum Advance Booking (days)</Label>
-                  <Select
-                    value={activeScheduler.maxAdvanceBooking.toString()}
-                    onValueChange={(value) => setActiveScheduler(prev => ({ ...prev, maxAdvanceBooking: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">1 week</SelectItem>
-                      <SelectItem value="14">2 weeks</SelectItem>
-                      <SelectItem value="30">1 month</SelectItem>
-                      <SelectItem value="60">2 months</SelectItem>
-                      <SelectItem value="90">3 months</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex justify-end pt-6 border-t">
-            <Button onClick={handleSaveScheduler} disabled={!activeScheduler.name}>
-              Save Scheduler
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex justify-between pt-6 border-t">
+              {isEditing && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditing(false);
+                    // Reset to a new scheduler if we were editing
+                    if (schedulers.length > 0) {
+                      createNewScheduler();
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+              <div className="flex-1" />
+              <Button onClick={handleSaveScheduler} disabled={!activeScheduler.name}>
+                {isEditing && schedulers.some(s => s.id === activeScheduler.id) ? 'Update Scheduler' : 'Save Scheduler'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
