@@ -195,24 +195,6 @@ export const EmailsTab = () => {
     setEmailDetailOpen(true);
   };
 
-  const handleFollowUp = async (email: any) => {
-    // Set up a new email with the same recipient
-    setNewEmail({
-      recipient_email: email.recipient_email,
-      subject: `Re: ${email.subject}`,
-      content: `<p>Following up on our previous conversation...</p><br><br><p>---</p><p>Original email sent on ${new Date(email.sent_at).toLocaleDateString()}:</p><blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0; color: #666;">${email.content}</blockquote>`,
-      template_id: ""
-    });
-    
-    // Switch to compose tab
-    setActiveTabValue("compose");
-    
-    toast({
-      title: "Follow-up Email Started",
-      description: "Compose your follow-up email below.",
-    });
-  };
-
   const handleCreateCustomTemplate = () => {
     createTemplateMutation.mutate({
       ...newTemplate,
@@ -378,7 +360,7 @@ export const EmailsTab = () => {
                             <EmailRowActions 
                               email={email}
                               onView={() => handleEmailClick(email)}
-                              onFollowUp={() => handleFollowUp(email)}
+                              onFollowUp={() => handleEmailClick(email)}
                               onResend={async () => {
                                 try {
                                   await sendEmailMutation.mutateAsync({
@@ -853,7 +835,6 @@ export const EmailsTab = () => {
         open={emailDetailOpen}
         onOpenChange={setEmailDetailOpen}
         email={selectedEmail}
-        onFollowUp={handleFollowUp}
       />
     </div>
   );
