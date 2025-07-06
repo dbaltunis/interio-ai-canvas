@@ -21,6 +21,7 @@ interface EventCreationDialogProps {
   initialHour?: number;
 }
 
+// Valid appointment types that match database constraints
 const eventTypes = [
   { value: 'consultation', label: 'Consultation', color: 'bg-blue-500' },
   { value: 'measurement', label: 'Measurement', color: 'bg-green-500' },
@@ -54,26 +55,29 @@ export const EventCreationDialog = ({
   const { data: projects } = useProjects();
 
   const handleSubmit = () => {
+    if (!eventData.title || !eventData.eventType) {
+      console.error('Title and event type are required');
+      return;
+    }
+
     const [startHour, startMin] = eventData.startTime.split(':').map(Number);
     const [endHour, endMin] = eventData.endTime.split(':').map(Number);
     
     const startDateTime = setMinutes(setHours(eventData.date, startHour), startMin);
     const endDateTime = setMinutes(setHours(eventData.date, endHour), endMin);
 
-    const selectedClient = clients?.find(c => c.id === eventData.clientId);
-    const selectedProject = projects?.find(p => p.id === eventData.projectId);
-
     const event = {
       title: eventData.title,
       description: eventData.description,
-      appointment_type: eventData.eventType,
+      appointment_type: eventData.eventType, // Use valid appointment type
       start_time: startDateTime.toISOString(),
       end_time: endDateTime.toISOString(),
-      location: eventData.location,
+      location: eventData.location || null,
       client_id: eventData.clientId || null,
       project_id: eventData.projectId || null
     };
 
+    console.log('Creating event with data:', event);
     onCreateEvent(event);
     onOpenChange(false);
     
