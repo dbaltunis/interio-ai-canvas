@@ -1,5 +1,5 @@
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -20,24 +20,6 @@ export const useAppointmentSchedulers = () => {
       if (error) throw error;
       return data;
     },
-  });
-};
-
-export const usePublicScheduler = (slug: string) => {
-  return useQuery({
-    queryKey: ["public-scheduler", slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("appointment_schedulers")
-        .select("*")
-        .eq("slug", slug)
-        .eq("active", true)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!slug,
   });
 };
 
@@ -63,7 +45,7 @@ export const useCreateScheduler = () => {
       queryClient.invalidateQueries({ queryKey: ["appointment-schedulers"] });
       toast({
         title: "Success",
-        description: "Appointment scheduler created successfully",
+        description: "Scheduler created successfully",
       });
     },
     onError: (error) => {
@@ -81,10 +63,10 @@ export const useUpdateScheduler = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & AppointmentSchedulerUpdate) => {
+    mutationFn: async ({ id, ...scheduler }: { id: string } & Partial<AppointmentSchedulerUpdate>) => {
       const { data, error } = await supabase
         .from("appointment_schedulers")
-        .update(updates)
+        .update(scheduler)
         .eq("id", id)
         .select()
         .single();
@@ -96,7 +78,7 @@ export const useUpdateScheduler = () => {
       queryClient.invalidateQueries({ queryKey: ["appointment-schedulers"] });
       toast({
         title: "Success",
-        description: "Appointment scheduler updated successfully",
+        description: "Scheduler updated successfully",
       });
     },
     onError: (error) => {
@@ -121,14 +103,48 @@ export const useDeleteScheduler = () => {
         .eq("id", id);
 
       if (error) throw error;
-      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointment-schedulers"] });
       toast({
         title: "Success",
-        description: "Appointment scheduler deleted successfully",
+        description: "Scheduler deleted successfully",
       });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUploadSchedulerImage = () => {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/scheduler-images/${Date.now()}.${fileExt}`;
+
+      // Upload file to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = await supabase.storage
+        .from('project-images')
+        .getPublicUrl(uploadData.path);
+
+      return data.publicUrl;
     },
     onError: (error) => {
       toast({

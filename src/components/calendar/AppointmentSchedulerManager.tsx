@@ -10,9 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, Video, Plus, Settings, Link, Copy, Trash2, Save, CalendarPlus, Edit, Upload, Image, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
-import { useUploadFile } from "@/hooks/useFileStorage";
-import { supabase } from "@/integrations/supabase/client";
+import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler, useUploadSchedulerImage } from "@/hooks/useAppointmentSchedulers";
 import { CalendarEmailIntegration } from "./CalendarEmailIntegration";
 
 interface TimeSlot {
@@ -42,7 +40,7 @@ export const AppointmentSchedulerManager = () => {
   const createScheduler = useCreateScheduler();
   const updateScheduler = useUpdateScheduler();
   const deleteScheduler = useDeleteScheduler();
-  const uploadFile = useUploadFile();
+  const uploadImage = useUploadSchedulerImage();
 
   const [copiedAvailability, setCopiedAvailability] = useState<DayAvailability | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -81,17 +79,12 @@ export const AppointmentSchedulerManager = () => {
 
     setUploading(true);
     try {
-      const uploadedFile = await uploadFile.mutateAsync({
-        file,
-        projectId: 'scheduler-images',
-        bucketName: 'project-images'
+      const imageUrl = await uploadImage.mutateAsync(file);
+      setActiveScheduler(prev => ({ ...prev, image_url: imageUrl }));
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
       });
-
-      const { data } = await supabase.storage
-        .from('project-images')
-        .getPublicUrl(uploadedFile.file_path);
-
-      setActiveScheduler(prev => ({ ...prev, image_url: data.publicUrl }));
     } catch (error) {
       console.error('Upload failed:', error);
     } finally {
