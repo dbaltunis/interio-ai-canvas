@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientActivityTimeline } from "./ClientActivityTimeline";
 import { ClientFollowUpReminders } from "./ClientFollowUpReminders";
+import { DocumentManagement } from "@/components/files/DocumentManagement";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +91,8 @@ export const EnhancedClientManagement = () => {
   }
 
   const selectedClient = clients?.find(c => c.id === selectedClientId);
+  const clientProjects = projects?.filter(p => p.client_id === selectedClientId) || [];
+  const clientQuotes = quotes?.filter(q => q.client_id === selectedClientId) || [];
 
   return (
     <div className="space-y-6">
@@ -270,29 +274,169 @@ export const EnhancedClientManagement = () => {
           </TabsContent>
 
           <TabsContent value="projects">
-            <Card>
-              <CardHeader>
-                <CardTitle>Projects & Jobs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Projects integration coming soon...</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Client Projects & Jobs</h3>
+                  <p className="text-sm text-muted-foreground">
+                    All projects and quotes associated with this client
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline">
+                    {clientProjects.length} Projects
+                  </Badge>
+                  <Badge variant="outline">
+                    {clientQuotes.length} Quotes
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Projects Section */}
+              {clientProjects.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Projects
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Project Name</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Priority</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Value</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clientProjects.map((project) => (
+                          <TableRow key={project.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{project.name}</div>
+                                {project.description && (
+                                  <div className="text-sm text-muted-foreground">{project.description}</div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{project.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{project.priority}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+                            </TableCell>
+                            <TableCell>
+                              {project.total_amount ? 
+                                new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(project.total_amount) 
+                                : 'TBD'
+                              }
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quotes Section */}
+              {clientQuotes.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Quotes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Quote Number</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Valid Until</TableHead>
+                          <TableHead>Created</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clientQuotes.map((quote) => (
+                          <TableRow key={quote.id}>
+                            <TableCell className="font-medium">{quote.quote_number}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{quote.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(quote.total_amount)}
+                            </TableCell>
+                            <TableCell>
+                              {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'No expiry'}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(quote.created_at).toLocaleDateString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {clientProjects.length === 0 && clientQuotes.length === 0 && (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No projects or quotes found for this client</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="documents">
-            <Card>
-              <CardHeader>
-                <CardTitle>Documents & Files</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Document management coming soon...</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold">Client Documents</h3>
+                <p className="text-sm text-muted-foreground">
+                  Documents and files related to this client's projects
+                </p>
+              </div>
+              
+              {clientProjects.length > 0 ? (
+                <div className="space-y-4">
+                  {clientProjects.map((project) => (
+                    <Card key={project.id}>
+                      <CardHeader>
+                        <CardTitle className="text-base">{project.name}</CardTitle>
+                        <CardDescription>Project documents and files</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <DocumentManagement projectId={project.id} />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No projects found - create a project to upload documents</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       ) : (
-        /* Enhanced Clients Table */
+        /* ... keep existing code (clients table) */
         <Card>
           <CardHeader>
             <CardTitle>All Clients</CardTitle>
