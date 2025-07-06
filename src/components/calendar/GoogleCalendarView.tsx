@@ -17,12 +17,25 @@ import { useEmails } from "@/hooks/useEmails";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  type: 'appointment' | 'reminder' | 'client_meeting';
+  color: string;
+  client_name?: string;
+  location?: string;
+  description?: string;
+  project_name?: string;
+}
+
 export const GoogleCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const { data: appointments, isLoading } = useAppointments();
   const { data: clients } = useClients();
@@ -33,7 +46,7 @@ export const GoogleCalendarView = () => {
   const { toast } = useToast();
 
   // Transform appointments for calendar display
-  const calendarEvents = appointments?.map(appointment => {
+  const calendarEvents: CalendarEvent[] = appointments?.map(appointment => {
     const client = clients?.find(c => c.id === appointment.client_id);
     const project = projects?.find(p => p.id === appointment.project_id);
     
@@ -52,7 +65,7 @@ export const GoogleCalendarView = () => {
   }) || [];
 
   // Add email reminders and notifications as events
-  const emailEvents = emails?.filter(email => email.status === 'scheduled').map(email => ({
+  const emailEvents: CalendarEvent[] = emails?.filter(email => email.status === 'scheduled').map(email => ({
     id: `email-${email.id}`,
     title: `Email: ${email.subject}`,
     start_time: email.sent_at || new Date().toISOString(),
@@ -62,7 +75,7 @@ export const GoogleCalendarView = () => {
     client_name: email.recipient_name || email.recipient_email
   })) || [];
 
-  const notificationEvents = notifications?.filter(n => !n.read).slice(0, 5).map(notification => ({
+  const notificationEvents: CalendarEvent[] = notifications?.filter(n => !n.read).slice(0, 5).map(notification => ({
     id: `notification-${notification.id}`,
     title: `Reminder: ${notification.title}`,
     start_time: notification.created_at,
@@ -75,7 +88,7 @@ export const GoogleCalendarView = () => {
 
   const filteredEvents = allEvents.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
+                         (event.client_name && event.client_name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = filterType === "all" || event.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -119,7 +132,7 @@ export const GoogleCalendarView = () => {
     }
   };
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
   };
 
