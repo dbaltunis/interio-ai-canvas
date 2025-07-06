@@ -13,6 +13,7 @@ import { CalendarIcon, Clock, MapPin, User, Trash2 } from "lucide-react";
 import { format, setHours, setMinutes, parseISO } from "date-fns";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
+import { useToast } from "@/hooks/use-toast";
 
 interface CalendarEvent {
   id: string;
@@ -70,16 +71,18 @@ export const EventEditDialog = ({
 
   const { data: clients } = useClients();
   const { data: projects } = useProjects();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (event) {
+    if (event && open) {
+      console.log('Setting event data:', event);
       const startDate = parseISO(event.start_time);
       const endDate = parseISO(event.end_time);
       
       setEventData({
-        title: event.title,
+        title: event.title || '',
         description: event.description || '',
-        eventType: event.appointment_type || event.type,
+        eventType: event.appointment_type || event.type || '',
         date: startDate,
         startTime: format(startDate, 'HH:mm'),
         endTime: format(endDate, 'HH:mm'),
@@ -88,37 +91,75 @@ export const EventEditDialog = ({
         projectId: event.project_id || 'none'
       });
     }
-  }, [event]);
+  }, [event, open]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    console.log('Submitting event data:', eventData);
+    console.log('Original event:', event);
+    
     if (!eventData.title || !eventData.eventType) {
-      console.error('Title and event type are required');
+      toast({
+        title: "Error",
+        description: "Title and event type are required",
+        variant: "destructive",
+      });
       return;
     }
 
-    const [startHour, startMin] = eventData.startTime.split(':').map(Number);
-    const [endHour, endMin] = eventData.endTime.split(':').map(Number);
-    
-    const startDateTime = setMinutes(setHours(eventData.date, startHour), startMin);
-    const endDateTime = setMinutes(setHours(eventData.date, endHour), endMin);
+    if (!event?.id) {
+      toast({
+        title: "Error",
+        description: "Event ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const updatedEvent = {
-      title: eventData.title,
-      description: eventData.description,
-      appointment_type: eventData.eventType,
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString(),
-      location: eventData.location || null,
-      client_id: eventData.clientId === 'none' ? null : eventData.clientId,
-      project_id: eventData.projectId === 'none' ? null : eventData.projectId
-    };
+    try {
+      const [startHour, startMin] = eventData.startTime.split(':').map(Number);
+      const [endHour, endMin] = eventData.endTime.split(':').map(Number);
+      
+      const startDateTime = setMinutes(setHours(eventData.date, startHour), startMin);
+      const endDateTime = setMinutes(setHours(eventData.date, endHour), endMin);
 
-    onUpdateEvent(updatedEvent);
+      const updatedEvent = {
+        id: event.id,
+        title: eventData.title,
+        description: eventData.description || null,
+        appointment_type: eventData.eventType,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        location: eventData.location || null,
+        client_id: eventData.clientId === 'none' ? null : eventData.clientId,
+        project_id: eventData.projectId === 'none' ? null : eventData.projectId
+      };
+
+      console.log('Sending update:', updatedEvent);
+      await onUpdateEvent(updatedEvent);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update event. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = () => {
-    if (event) {
-      onDeleteEvent(event.id);
+  const handleDelete = async () => {
+    if (event?.id) {
+      try {
+        await onDeleteEvent(event.id);
+        onOpenChange(false);
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete event. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
