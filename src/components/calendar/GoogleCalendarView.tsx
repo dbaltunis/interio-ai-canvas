@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarGrid } from "./CalendarGrid";
-import { AppointmentScheduler } from "./AppointmentScheduler";
-import { NotificationsPanelCard } from "./NotificationsPanelCard";
+import { AppointmentBookingSystem } from "./AppointmentBookingSystem";
+import { NotificationsPopup } from "./NotificationsPopup";
 import { Search, Filter, Plus, Calendar as CalendarIcon, Users, Mail, Briefcase } from "lucide-react";
 import { useAppointments, useCreateAppointment } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
@@ -34,7 +33,7 @@ export const GoogleCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const { data: appointments, isLoading } = useAppointments();
@@ -71,8 +70,7 @@ export const GoogleCalendarView = () => {
     start_time: email.sent_at || new Date().toISOString(),
     end_time: email.sent_at || new Date().toISOString(),
     type: 'reminder' as const,
-    color: 'bg-yellow-500',
-    client_name: email.recipient_name || email.recipient_email
+    color: 'bg-yellow-500'
   })) || [];
 
   const notificationEvents: CalendarEvent[] = notifications?.filter(n => !n.read).slice(0, 5).map(notification => ({
@@ -106,7 +104,7 @@ export const GoogleCalendarView = () => {
     }
   }
 
-  const handleScheduleAppointment = async (appointmentData: any) => {
+  const handleBookAppointment = async (appointmentData: any) => {
     try {
       await createAppointment.mutateAsync({
         title: appointmentData.title,
@@ -118,9 +116,9 @@ export const GoogleCalendarView = () => {
         client_id: null // Will be created separately if needed
       });
       
-      setIsSchedulerOpen(false);
+      setIsBookingOpen(false);
       toast({
-        title: "Appointment Scheduled",
+        title: "Appointment Booked",
         description: "The appointment has been successfully scheduled.",
       });
     } catch (error) {
@@ -138,7 +136,7 @@ export const GoogleCalendarView = () => {
 
   const handleTimeSlotClick = (date: Date, hour: number) => {
     setSelectedDate(new Date(date.setHours(hour, 0, 0, 0)));
-    setIsSchedulerOpen(true);
+    setIsBookingOpen(true);
   };
 
   if (isLoading) {
@@ -173,21 +171,25 @@ export const GoogleCalendarView = () => {
             </Badge>
           </div>
 
-          <Dialog open={isSchedulerOpen} onOpenChange={setIsSchedulerOpen}>
+          <NotificationsPopup onScheduleNotification={(notificationId) => {
+            setIsBookingOpen(true);
+          }} />
+
+          <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                New Appointment
+                Book Appointment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Schedule New Appointment</DialogTitle>
+                <DialogTitle>Book Your Appointment</DialogTitle>
                 <DialogDescription>
-                  Create a new appointment or allow clients to book online
+                  Schedule a convenient time for your window covering consultation or service
                 </DialogDescription>
               </DialogHeader>
-              <AppointmentScheduler onSchedule={handleScheduleAppointment} />
+              <AppointmentBookingSystem onBookAppointment={handleBookAppointment} />
             </DialogContent>
           </Dialog>
         </div>
@@ -236,17 +238,8 @@ export const GoogleCalendarView = () => {
           />
         </div>
 
-        {/* Side Panel */}
+        {/* Side Panel - Today's Events */}
         <div className="space-y-6">
-          {/* Notifications Panel */}
-          <NotificationsPanelCard 
-            onScheduleNotification={(notificationId) => {
-              // Handle scheduling notification as appointment
-              setIsSchedulerOpen(true);
-            }} 
-          />
-
-          {/* Today's Events */}
           <Card>
             <CardContent className="p-4">
               <h3 className="font-semibold mb-4">Today's Events</h3>

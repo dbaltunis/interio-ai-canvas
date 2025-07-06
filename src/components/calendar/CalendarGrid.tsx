@@ -72,7 +72,7 @@ export const CalendarGrid = ({
         return (
           <div
             key={day.toISOString()}
-            className={`min-h-[120px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 ${
+            className={`min-h-[80px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 ${
               !isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''
             } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
             onClick={() => onDateSelect(day)}
@@ -82,25 +82,23 @@ export const CalendarGrid = ({
             }`}>
               {format(day, 'd')}
             </div>
-            <div className="space-y-1">
-              {dayEvents.slice(0, 3).map(event => (
+            <div className="space-y-0.5">
+              {dayEvents.slice(0, 2).map(event => (
                 <div
                   key={event.id}
-                  className={`${getEventTypeColor(event.type)} text-white text-xs p-1 rounded cursor-pointer hover:opacity-80`}
+                  className={`${getEventTypeColor(event.type)} text-white text-xs px-1 py-0.5 rounded cursor-pointer hover:opacity-80 truncate`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onEventClick(event);
                   }}
+                  title={event.title}
                 >
-                  <div className="truncate">{event.title}</div>
-                  <div className="text-xs opacity-75">
-                    {format(new Date(event.start_time), 'HH:mm')}
-                  </div>
+                  {event.title}
                 </div>
               ))}
-              {dayEvents.length > 3 && (
-                <div className="text-xs text-gray-500">
-                  +{dayEvents.length - 3} more
+              {dayEvents.length > 2 && (
+                <div className="text-xs text-gray-500 px-1">
+                  +{dayEvents.length - 2}
                 </div>
               )}
             </div>
@@ -119,7 +117,7 @@ export const CalendarGrid = ({
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
     return (
-      <div className="overflow-auto">
+      <div className="overflow-auto max-h-[600px]">
         <div className="grid grid-cols-8 gap-1 min-w-[800px]">
           <div className="p-2"></div>
           {weekDays.map(day => (
@@ -132,7 +130,7 @@ export const CalendarGrid = ({
           ))}
           {hours.map(hour => (
             <>
-              <div key={`hour-${hour}`} className="p-2 text-sm text-gray-500 border-r">
+              <div key={`hour-${hour}`} className="p-1 text-xs text-gray-500 border-r">
                 {format(new Date().setHours(hour, 0), 'HH:mm')}
               </div>
               {weekDays.map(day => {
@@ -144,29 +142,23 @@ export const CalendarGrid = ({
                 return (
                   <div
                     key={`${day.toISOString()}-${hour}`}
-                    className="min-h-[60px] p-1 border border-gray-100 hover:bg-gray-50 cursor-pointer"
+                    className="min-h-[40px] p-0.5 border border-gray-100 hover:bg-gray-50 cursor-pointer"
                     onClick={() => onTimeSlotClick(day, hour)}
                   >
                     {hourEvents.map(event => (
                       <div
                         key={event.id}
-                        className={`${getEventTypeColor(event.type)} text-white text-xs p-2 rounded mb-1 cursor-pointer hover:opacity-80`}
+                        className={`${getEventTypeColor(event.type)} text-white text-xs p-1 rounded mb-0.5 cursor-pointer hover:opacity-80`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onEventClick(event);
                         }}
                       >
-                        <div className="font-medium truncate">{event.title}</div>
+                        <div className="font-medium truncate text-xs">{event.title}</div>
                         {event.client_name && (
-                          <div className="opacity-75 flex items-center">
-                            <User className="w-3 h-3 mr-1" />
-                            {event.client_name}
-                          </div>
-                        )}
-                        {event.location && (
-                          <div className="opacity-75 flex items-center">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {event.location}
+                          <div className="opacity-75 flex items-center text-xs">
+                            <User className="w-2 h-2 mr-1" />
+                            <span className="truncate">{event.client_name}</span>
                           </div>
                         )}
                       </div>
@@ -220,10 +212,6 @@ export const CalendarGrid = ({
               </Button>
             ))}
           </div>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            New Event
-          </Button>
         </div>
       </div>
       
