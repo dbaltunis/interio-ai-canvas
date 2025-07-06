@@ -42,7 +42,7 @@ const Index = () => {
     if (tabFromUrl && tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, activeTab]);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
