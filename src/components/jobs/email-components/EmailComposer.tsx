@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { RichTextEditor } from "./RichTextEditor";
+import { AppointmentSchedulerSelector } from "./AppointmentSchedulerSelector";
 
 interface EmailComposerProps {
   newEmail: any;
@@ -58,6 +60,27 @@ export const EmailComposer = ({
     }
   };
 
+  const handleSchedulerLinkInsert = (schedulerLink: string, schedulerName: string) => {
+    const linkText = `Book your ${schedulerName} appointment: ${schedulerLink}`;
+    const currentContent = newEmail.content || "";
+    const newContent = currentContent + (currentContent ? '\n\n' : '') + linkText;
+    
+    setNewEmail({
+      ...newEmail,
+      content: newContent
+    });
+  };
+
+  const handleSchedulerEmbedInsert = (embedCode: string, schedulerName: string) => {
+    const currentContent = newEmail.content || "";
+    const newContent = currentContent + (currentContent ? '\n\n' : '') + embedCode;
+    
+    setNewEmail({
+      ...newEmail,
+      content: newContent
+    });
+  };
+
   const handleFileAttachment = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const validFiles = files.filter(file => {
@@ -90,237 +113,240 @@ export const EmailComposer = ({
   };
 
   return (
-    <Card className="shadow-lg border-gray-200">
-      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-        <CardTitle className="flex items-center gap-2 text-gray-800">
-          <FileText className="h-5 w-5" />
-          Compose Email
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-        {/* Recipients Summary */}
-        {selectedClients.length > 0 && (
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Recipients ({selectedClients.length})</span>
+    <div className="space-y-6">
+      <Card className="shadow-lg border-gray-200">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-gray-800">
+            <FileText className="h-5 w-5" />
+            Compose Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          {/* Recipients Summary */}
+          {selectedClients.length > 0 && (
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Recipients ({selectedClients.length})</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedClients.map((client, index) => (
+                  <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
+                    {client.name || client.email}
+                  </Badge>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {selectedClients.map((client, index) => (
-                <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
-                  {client.name || client.email}
-                </Badge>
-              ))}
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Additional Recipients</label>
+              <Input 
+                placeholder="additional@example.com (optional)" 
+                value={newEmail.recipient_email}
+                onChange={(e) => setNewEmail({ ...newEmail, recipient_email: e.target.value })}
+                className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Email Template</label>
+              <Select 
+                value={newEmail.template_id}
+                onValueChange={handleTemplateSelect}
+              >
+                <SelectTrigger className="border-gray-300 focus:border-blue-500">
+                  <SelectValue placeholder="Choose a template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates?.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Additional Recipients</label>
+            <label className="text-sm font-medium text-gray-700">Subject Line</label>
             <Input 
-              placeholder="additional@example.com (optional)" 
-              value={newEmail.recipient_email}
-              onChange={(e) => setNewEmail({ ...newEmail, recipient_email: e.target.value })}
+              placeholder="Enter your email subject..." 
+              value={newEmail.subject}
+              onChange={(e) => setNewEmail({ ...newEmail, subject: e.target.value })}
               className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Email Template</label>
-            <Select 
-              value={newEmail.template_id}
-              onValueChange={handleTemplateSelect}
-            >
-              <SelectTrigger className="border-gray-300 focus:border-blue-500">
-                <SelectValue placeholder="Choose a template..." />
-              </SelectTrigger>
-              <SelectContent>
-                {templates?.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Subject Line</label>
-          <Input 
-            placeholder="Enter your email subject..." 
-            value={newEmail.subject}
-            onChange={(e) => setNewEmail({ ...newEmail, subject: e.target.value })}
-            className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          />
-        </div>
-        
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-gray-700">Email Content</label>
-          <RichTextEditor
-            value={newEmail.content}
-            onChange={(content) => setNewEmail({ ...newEmail, content })}
-            placeholder="Start typing your email message..."
-            className="min-h-[300px] lg:min-h-[350px]"
-          />
-          <p className="text-xs text-gray-500">Use the toolbar above to format your email with bold, italic, lists, links, and more</p>
-        </div>
-
-        {/* File Attachments */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">File Attachments</label>
-            <div className="relative">
-              <input
-                type="file"
-                multiple
-                onChange={handleFileAttachment}
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                id="file-upload"
-              />
-              <Button 
-                type="button"
-                variant="outline" 
-                size="sm"
-                className="flex items-center gap-2 relative z-10 pointer-events-none"
-              >
-                <Paperclip className="h-4 w-4" />
-                <span className="hidden sm:inline">Attach Files</span>
-                <span className="sm:hidden">Attach</span>
-              </Button>
-            </div>
+          
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-700">Email Content</label>
+            <RichTextEditor
+              value={newEmail.content}
+              onChange={(content) => setNewEmail({ ...newEmail, content })}
+              placeholder="Start typing your email message..."
+              className="min-h-[300px] lg:min-h-[350px]"
+            />
+            <p className="text-xs text-gray-500">Use the toolbar above to format your email with bold, italic, lists, links, and more</p>
           </div>
 
-          {attachments.length > 0 && (
-            <div className="space-y-2">
-              {attachments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeAttachment(index)}
-                    className="flex-shrink-0 text-gray-400 hover:text-red-500"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <p className="text-xs text-gray-500">
-                Max file size: 10MB per file. Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Quote Details Summary */}
-        {selectedQuotes.length > 0 && (
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-4">
-              <h4 className="font-medium mb-3 text-green-800 flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Attached Quote Details
-              </h4>
-              <div className="space-y-2">
-                {selectedQuotes.map(quote => (
-                  <div key={quote.id} className="text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-green-800">Quote #{quote.quote_number}</span>
-                      <Badge variant="outline" className="text-green-700 border-green-300">
-                        ${quote.total_amount.toLocaleString()}
-                      </Badge>
-                    </div>
-                    <p className="text-green-600">Client: {quote.clients?.name}</p>
-                    <p className="text-green-600">Status: {quote.status}</p>
-                  </div>
-                ))}
+          {/* File Attachments */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">File Attachments</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileAttachment}
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  id="file-upload"
+                />
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2 relative z-10 pointer-events-none"
+                >
+                  <Paperclip className="h-4 w-4" />
+                  <span className="hidden sm:inline">Attach Files</span>
+                  <span className="sm:hidden">Attach</span>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {/* Action Buttons - Single Row with Company Colors */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Attach File Button */}
-            <div className="relative">
-              <input
-                type="file"
-                multiple
-                onChange={handleFileAttachment}
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                id="attach-files-btn"
-              />
+            </div>
+
+            {attachments.length > 0 && (
+              <div className="space-y-2">
+                {attachments.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeAttachment(index)}
+                      className="flex-shrink-0 text-gray-400 hover:text-red-500"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500">
+                  Max file size: 10MB per file. Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Quote Details Summary */}
+          {selectedQuotes.length > 0 && (
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+              <CardContent className="p-4">
+                <h4 className="font-medium mb-3 text-green-800 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Attached Quote Details
+                </h4>
+                <div className="space-y-2">
+                  {selectedQuotes.map(quote => (
+                    <div key={quote.id} className="text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-green-800">Quote #{quote.quote_number}</span>
+                        <Badge variant="outline" className="text-green-700 border-green-300">
+                          ${quote.total_amount.toLocaleString()}
+                        </Badge>
+                      </div>
+                      <p className="text-green-600">Client: {quote.clients?.name}</p>
+                      <p className="text-green-600">Status: {quote.status}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileAttachment}
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  id="attach-files-btn"
+                />
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2 relative z-10 pointer-events-none border-primary/20 hover:border-primary hover:bg-primary/5"
+                >
+                  <Paperclip className="h-4 w-4" />
+                  <span className="hidden sm:inline">Attach File</span>
+                  <span className="sm:hidden">File</span>
+                </Button>
+              </div>
+
               <Button 
-                type="button"
                 variant="outline" 
                 size="sm"
-                className="flex items-center gap-2 relative z-10 pointer-events-none border-primary/20 hover:border-primary hover:bg-primary/5"
+                className="flex items-center gap-2 border-primary/20 hover:border-primary hover:bg-primary/5"
+                onClick={() => {/* This would open client selector */}}
               >
-                <Paperclip className="h-4 w-4" />
-                <span className="hidden sm:inline">Attach File</span>
-                <span className="sm:hidden">File</span>
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Select Recipients</span>
+                <span className="sm:hidden">Recipients</span>
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-2 border-secondary/20 hover:border-secondary hover:bg-secondary/5"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Schedule Send</span>
+                <span className="sm:hidden">Schedule</span>
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-2 border-secondary/20 hover:border-secondary hover:bg-secondary/5"
+                onClick={onPreviewEmail}
+                disabled={!newEmail.content}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline">Preview</span>
+                <span className="sm:hidden">Preview</span>
               </Button>
             </div>
 
-            {/* Select Recipients Button */}
             <Button 
-              variant="outline" 
+              onClick={() => onSendEmail(attachments)} 
+              className="bg-primary hover:bg-accent text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 min-w-[140px] justify-center"
+              disabled={sendEmailMutation.isPending || !emailSettings?.from_email}
               size="sm"
-              className="flex items-center gap-2 border-primary/20 hover:border-primary hover:bg-primary/5"
-              onClick={() => {/* This would open client selector */}}
             >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Select Recipients</span>
-              <span className="sm:hidden">Recipients</span>
-            </Button>
-
-            {/* Schedule Send Button */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-2 border-secondary/20 hover:border-secondary hover:bg-secondary/5"
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Schedule Send</span>
-              <span className="sm:hidden">Schedule</span>
-            </Button>
-
-            {/* Preview Email Button */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-2 border-secondary/20 hover:border-secondary hover:bg-secondary/5"
-              onClick={onPreviewEmail}
-              disabled={!newEmail.content}
-            >
-              <Eye className="h-4 w-4" />
-              <span className="hidden sm:inline">Preview</span>
-              <span className="sm:hidden">Preview</span>
+              <Send className="h-4 w-4 mr-2" />
+              {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
             </Button>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Send Email Button - Prominent with Company Colors */}
-          <Button 
-            onClick={() => onSendEmail(attachments)} 
-            className="bg-primary hover:bg-accent text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 min-w-[140px] justify-center"
-            disabled={sendEmailMutation.isPending || !emailSettings?.from_email}
-            size="sm"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Appointment Scheduler Integration */}
+      <AppointmentSchedulerSelector
+        onSchedulerSelect={handleSchedulerLinkInsert}
+        onEmbedCode={handleSchedulerEmbedInsert}
+      />
+    </div>
   );
 };

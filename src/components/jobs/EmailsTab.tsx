@@ -280,7 +280,7 @@ export const EmailsTab = () => {
           </Button>
         </div>
 
-        {/* History Tab - Now First */}
+        {/* History Tab */}
         <TabsContent value="history">
           <EmailHistoryTab
             emails={emails}
@@ -307,7 +307,7 @@ export const EmailsTab = () => {
               />
             </div>
 
-            {/* Email Composer */}
+            {/* Email Composer with Appointment Scheduler Integration */}
             <EmailComposer
               newEmail={newEmail}
               setNewEmail={setNewEmail}
@@ -405,11 +405,11 @@ export const EmailsTab = () => {
 
       {/* Compose Email Dialog */}
       <Dialog open={composeDialogOpen} onOpenChange={setComposeDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Compose New Email</DialogTitle>
             <DialogDescription>
-              Create and send a new email to your clients
+              Create and send a new email to your clients with appointment booking links
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 max-h-[70vh] overflow-y-auto">
@@ -426,7 +426,7 @@ export const EmailsTab = () => {
               />
             </div>
 
-            {/* Email Composer */}
+            {/* Email Composer with Appointment Scheduler Integration */}
             <EmailComposer
               newEmail={newEmail}
               setNewEmail={setNewEmail}
@@ -444,7 +444,7 @@ export const EmailsTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Email Settings Dialog */}
+      {/* All Dialogs */}
       <Dialog open={emailSettingsOpen} onOpenChange={setEmailSettingsOpen}>
         <DialogContent>
           <DialogHeader>
@@ -499,7 +499,6 @@ export const EmailsTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* All Dialogs */}
       <CampaignBuilder
         open={campaignBuilderOpen}
         onOpenChange={setCampaignBuilderOpen}
