@@ -233,6 +233,21 @@ export const EmailsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Prominent New Email Button */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-brand-primary to-brand-accent p-4 rounded-lg shadow-lg">
+        <div className="text-white">
+          <h2 className="text-xl font-bold">Email Marketing Hub</h2>
+          <p className="text-brand-primary-foreground/80">Manage your email campaigns and communications</p>
+        </div>
+        <Button 
+          size="lg"
+          onClick={() => setActiveTabValue("compose")}
+          className="bg-white text-brand-primary hover:bg-gray-50 font-semibold px-8 py-3 shadow-lg transform transition-all hover:scale-105"
+        >
+          <Mail className="h-5 w-5 mr-2" />
+          + New Email
+        </Button>
+      </div>
       {/* Basic KPIs Dashboard */}
       <EmailKPIsDashboard kpis={emailKPIs} />
 
@@ -283,28 +298,157 @@ export const EmailsTab = () => {
 
       {/* Main Email Interface */}
       <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
-          <TabsTrigger value="compose" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Compose</span>
-            <span className="sm:hidden">Email</span>
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Campaigns</span>
-            <span className="sm:hidden">Camps</span>
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Templates</span>
-            <span className="sm:hidden">Temps</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
+        <TabsList className="grid grid-cols-4 w-full bg-gray-50 p-1 rounded-lg">
+          <TabsTrigger 
+            value="history" 
+            className="flex items-center gap-2 data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+          >
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">History</span>
             <span className="sm:hidden">Hist</span>
           </TabsTrigger>
+          <TabsTrigger 
+            value="compose" 
+            className="flex items-center gap-2 data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+          >
+            <Mail className="h-4 w-4" />
+            <span className="hidden sm:inline">Compose</span>
+            <span className="sm:hidden">Write</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="campaigns" 
+            className="flex items-center gap-2 data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Campaigns</span>
+            <span className="sm:hidden">Camps</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="templates" 
+            className="flex items-center gap-2 data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+          >
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Templates</span>
+            <span className="sm:hidden">Temps</span>
+          </TabsTrigger>
         </TabsList>
+
+        {/* Email History Tab - Now First */}
+        <TabsContent value="history">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-brand-primary">Email History & Analytics</h3>
+                <p className="text-brand-neutral">Track and manage all your sent emails</p>
+              </div>
+              <Button 
+                onClick={() => setActiveTabValue("compose")}
+                className="bg-brand-primary hover:bg-brand-accent text-white shadow-lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Quick Compose
+              </Button>
+            </div>
+            
+            {emailsLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+                <span className="ml-2 text-brand-neutral">Loading emails...</span>
+              </div>
+            ) : (
+              <Card className="shadow-lg border-brand-secondary/20">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-brand-secondary/5">
+                        <TableHead className="font-semibold text-brand-primary">Recipient</TableHead>
+                        <TableHead className="font-semibold text-brand-primary">Subject</TableHead>
+                        <TableHead className="font-semibold text-brand-primary">Status</TableHead>
+                        <TableHead className="font-semibold text-brand-primary">Engagement</TableHead>
+                        <TableHead className="font-semibold text-brand-primary">Sent</TableHead>
+                        <TableHead className="font-semibold text-brand-primary">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emails?.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            <div className="flex flex-col items-center gap-3">
+                              <Mail className="h-12 w-12 text-gray-300" />
+                              <div>
+                                <p className="text-gray-500 font-medium">No emails sent yet</p>
+                                <p className="text-gray-400 text-sm">Start by composing your first email</p>
+                              </div>
+                              <Button 
+                                onClick={() => setActiveTabValue("compose")}
+                                className="bg-brand-primary hover:bg-brand-accent"
+                              >
+                                <Mail className="h-4 w-4 mr-2" />
+                                Send Your First Email
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        emails?.map((email) => (
+                          <TableRow 
+                            key={email.id} 
+                            className="hover:bg-brand-secondary/5 cursor-pointer transition-colors"
+                            onClick={() => handleEmailClick(email)}
+                          >
+                            <TableCell className="font-medium">
+                              <div>
+                                <p className="text-brand-primary">{email.recipient_name || email.recipient_email}</p>
+                                {email.recipient_name && (
+                                  <p className="text-xs text-brand-neutral">{email.recipient_email}</p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                              <p className="truncate text-brand-neutral">{email.subject}</p>
+                            </TableCell>
+                            <TableCell>
+                              <EmailStatusBadge status={email.status} />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2 text-sm">
+                                {email.open_count > 0 && (
+                                  <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                                    {email.open_count} opens
+                                  </Badge>
+                                )}
+                                {email.click_count > 0 && (
+                                  <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                                    {email.click_count} clicks
+                                  </Badge>
+                                )}
+                                {email.open_count === 0 && email.click_count === 0 && (
+                                  <span className="text-gray-400">No activity</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-brand-neutral">
+                              {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : "Draft"}
+                            </TableCell>
+                            <TableCell>
+                              <EmailRowActions 
+                                email={email} 
+                                onView={() => handleEmailClick(email)}
+                                onFollowUp={() => handleFollowUp(email)}
+                                onResend={() => {/* TODO: implement resend */}}
+                                isResending={false}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
 
         {/* Compose Email Tab */}
         <TabsContent value="compose">
