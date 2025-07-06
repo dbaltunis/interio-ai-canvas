@@ -6,6 +6,7 @@ import { Mail, RefreshCw, Loader2, Plus } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import { EmailDetailDialog } from "./EmailDetailDialog";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Email {
   id: string;
@@ -41,10 +42,23 @@ export const EmailHistoryTab = ({
 }: EmailHistoryTabProps) => {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [emailDetailOpen, setEmailDetailOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleEmailClick = (email: Email) => {
     setSelectedEmail(email);
     setEmailDetailOpen(true);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate both emails and email KPIs queries to refresh the data
+      await queryClient.invalidateQueries({ queryKey: ['emails'] });
+      await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -54,11 +68,12 @@ export const EmailHistoryTab = ({
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
+            disabled={isRefreshing}
             className="flex items-center gap-2"
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
       </div>
