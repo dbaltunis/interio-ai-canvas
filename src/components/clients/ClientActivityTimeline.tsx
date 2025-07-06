@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,7 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       date: email.created_at,
       status: email.status,
       icon: Mail,
-      priority: email.open_count > 0 ? 'medium' : 'low'
+      priority: (email.open_count > 0 ? 'medium' : 'low') as 'medium' | 'low'
     })),
     
     // Quote activities
@@ -51,7 +50,7 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       date: quote.created_at,
       status: quote.status,
       icon: FileText,
-      priority: quote.status === 'pending' ? 'high' : 'medium'
+      priority: (quote.status === 'pending' ? 'high' : 'medium') as 'high' | 'medium'
     })),
     
     // Project activities
@@ -63,7 +62,7 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       date: project.created_at,
       status: project.status,
       icon: Calendar,
-      priority: project.status === 'in_progress' ? 'high' : 'medium'
+      priority: (project.status === 'in_progress' ? 'high' : 'medium') as 'high' | 'medium'
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
