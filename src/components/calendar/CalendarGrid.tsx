@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Calendar as CalendarIcon } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO, differenceInMinutes, differenceInHours } from "date-fns";
+import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Calendar as CalendarIcon, Edit } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO, differenceInMinutes, differenceInHours, addHours } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CalendarEvent {
@@ -23,6 +23,7 @@ interface CalendarGridProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
+  onEditEvent: (event: CalendarEvent) => void;
   onTimeSlotClick: (date: Date, hour: number) => void;
   onNewEventClick: () => void;
   showTodaysEvents: boolean;
@@ -34,6 +35,7 @@ export const CalendarGrid = ({
   selectedDate, 
   onDateSelect, 
   onEventClick, 
+  onEditEvent,
   onTimeSlotClick,
   onNewEventClick,
   showTodaysEvents,
@@ -98,7 +100,7 @@ export const CalendarGrid = ({
             <div
               key={day.toISOString()}
               className={`
-                min-h-[60px] sm:min-h-[80px] lg:min-h-[100px] p-1 sm:p-2 border-r border-b last:border-r-0 cursor-pointer hover:bg-blue-50 transition-colors relative
+                min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] p-2 border-r border-b last:border-r-0 cursor-pointer hover:bg-blue-50 transition-colors relative
                 ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
                 ${isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''}
                 ${isDayToday ? 'bg-blue-50' : ''}
@@ -107,20 +109,20 @@ export const CalendarGrid = ({
             >
               {/* Day Number */}
               <div className={`
-                text-sm font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full
+                text-sm font-medium mb-2 w-7 h-7 flex items-center justify-center rounded-full
                 ${isDayToday ? 'bg-blue-500 text-white' : ''}
               `}>
                 {format(day, 'd')}
               </div>
               
               {/* Events */}
-              <div className="space-y-0.5">
-                {dayEvents.slice(0, isMobile ? 2 : 3).map(event => (
+              <div className="space-y-1">
+                {dayEvents.slice(0, isMobile ? 2 : 4).map(event => (
                   <div
                     key={event.id}
                     className={`
-                      ${getEventTypeColor(event.type)} text-white text-xs px-1.5 py-0.5 rounded cursor-pointer 
-                      hover:opacity-80 truncate leading-tight
+                      group ${getEventTypeColor(event.type)} text-white text-xs px-2 py-1 rounded cursor-pointer 
+                      hover:opacity-90 truncate leading-tight relative transition-all duration-200 hover:shadow-md
                     `}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -128,17 +130,32 @@ export const CalendarGrid = ({
                     }}
                     title={`${event.title}${event.client_name ? ` - ${event.client_name}` : ''}`}
                   >
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-2.5 h-2.5 flex-shrink-0" />
-                      <span className="truncate">
-                        {format(parseISO(event.start_time), 'HH:mm')} {event.title}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1 flex-1 min-w-0">
+                        <Clock className="w-2.5 h-2.5 flex-shrink-0" />
+                        <span className="truncate">
+                          {format(parseISO(event.start_time), 'HH:mm')} {event.title}
+                        </span>
+                      </div>
+                      {!event.id.startsWith('email-') && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="opacity-0 group-hover:opacity-100 p-0 h-4 w-4 hover:bg-white/20 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditEvent(event);
+                          }}
+                        >
+                          <Edit className="w-2.5 h-2.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
-                {dayEvents.length > (isMobile ? 2 : 3) && (
-                  <div className="text-xs text-gray-500 px-1">
-                    +{dayEvents.length - (isMobile ? 2 : 3)} more
+                {dayEvents.length > (isMobile ? 2 : 4) && (
+                  <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
+                    +{dayEvents.length - (isMobile ? 2 : 4)} more
                   </div>
                 )}
               </div>
@@ -161,7 +178,7 @@ export const CalendarGrid = ({
       <div className="bg-white rounded-lg overflow-hidden shadow-sm border">
         {/* Week Header */}
         <div className="grid grid-cols-8 border-b bg-gray-50">
-          <div className="p-3 border-r"></div>
+          <div className="p-3 border-r text-xs font-medium text-gray-600">Time</div>
           {weekDays.map(day => (
             <div key={day.toISOString()} className="p-3 text-center border-r last:border-r-0">
               <div className="text-xs text-gray-600 font-medium">{format(day, 'EEE')}</div>
@@ -179,9 +196,9 @@ export const CalendarGrid = ({
         <div className="overflow-auto max-h-[calc(100vh-300px)]">
           <div className="relative">
             {hours.map(hour => (
-              <div key={hour} className="grid grid-cols-8 relative">
+              <div key={hour} className="grid grid-cols-8 relative border-b border-gray-100">
                 {/* Time Label */}
-                <div className="p-2 text-xs text-gray-500 border-r border-b text-right pr-3 h-12 flex items-center justify-end">
+                <div className="p-3 text-xs text-gray-500 border-r text-right pr-3 h-16 flex items-center justify-end bg-gray-50">
                   {format(new Date().setHours(hour, 0), 'HH:mm')}
                 </div>
                 
@@ -196,48 +213,70 @@ export const CalendarGrid = ({
                   return (
                     <div
                       key={`${day.toISOString()}-${hour}`}
-                      className="h-12 p-1 border-r border-b last:border-r-0 hover:bg-blue-50 cursor-pointer transition-colors relative"
+                      className="h-16 p-1 border-r last:border-r-0 hover:bg-blue-50 cursor-pointer transition-colors relative group"
                       onClick={() => onTimeSlotClick(day, hour)}
                     >
+                      {/* Quick add button on hover */}
+                      <div className="opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center transition-opacity">
+                        <Plus className="w-4 h-4 text-gray-400" />
+                      </div>
+
                       {dayEvents.map(event => {
                         const startTime = parseISO(event.start_time);
                         const endTime = parseISO(event.end_time);
                         const durationMinutes = differenceInMinutes(endTime, startTime);
-                        const durationHours = durationMinutes / 60;
                         
-                        // Calculate height based on duration (48px per hour)
-                        const height = Math.max(durationHours * 48, 24); // Minimum 24px height
+                        // Default to 2 hours if duration is less than 30 minutes or not specified
+                        const displayDuration = durationMinutes < 30 ? 120 : durationMinutes;
+                        const durationHours = displayDuration / 60;
+                        
+                        // Calculate height based on duration (64px per hour for better visibility)
+                        const height = Math.max(durationHours * 64, 48); // Minimum 48px height
                         
                         return (
                           <div
                             key={event.id}
                             className={`
-                              ${getEventTypeColor(event.type)} text-white text-xs p-2 rounded mb-1 cursor-pointer 
-                              hover:opacity-80 transition-opacity shadow-sm absolute left-1 right-1
+                              group/event ${getEventTypeColor(event.type)} text-white text-xs p-2 rounded-lg mb-1 cursor-pointer 
+                              hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg absolute left-1 right-1 z-10
                             `}
                             style={{ 
                               height: `${height}px`,
-                              top: `${(startTime.getMinutes() / 60) * 48}px`,
-                              zIndex: 10
+                              top: `${(startTime.getMinutes() / 60) * 64}px`,
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
                               onEventClick(event);
                             }}
                           >
-                            <div className="font-medium truncate">{event.title}</div>
-                            <div className="text-xs opacity-90">
+                            <div className="flex justify-between items-start mb-1">
+                              <div className="font-medium truncate flex-1">{event.title}</div>
+                              {!event.id.startsWith('email-') && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="opacity-0 group-hover/event:opacity-100 p-0 h-4 w-4 hover:bg-white/20 transition-opacity ml-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditEvent(event);
+                                  }}
+                                >
+                                  <Edit className="w-2.5 h-2.5" />
+                                </Button>
+                              )}
+                            </div>
+                            <div className="text-xs opacity-90 mb-1">
                               {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
                             </div>
                             {event.client_name && (
-                              <div className="opacity-75 flex items-center text-xs mt-1">
-                                <User className="w-2.5 h-2.5 mr-1" />
+                              <div className="opacity-75 flex items-center text-xs truncate">
+                                <User className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
                                 <span className="truncate">{event.client_name}</span>
                               </div>
                             )}
-                            {event.location && (
-                              <div className="opacity-75 flex items-center text-xs mt-1">
-                                <MapPin className="w-2.5 h-2.5 mr-1" />
+                            {event.location && height > 80 && (
+                              <div className="opacity-75 flex items-center text-xs mt-1 truncate">
+                                <MapPin className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
                                 <span className="truncate">{event.location}</span>
                               </div>
                             )}
@@ -265,7 +304,7 @@ export const CalendarGrid = ({
               variant="outline"
               size="sm"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-              className="h-9 w-9 p-0"
+              className="h-9 w-9 p-0 hover:bg-blue-50"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -273,7 +312,7 @@ export const CalendarGrid = ({
               variant="outline"
               size="sm"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-              className="h-9 w-9 p-0"
+              className="h-9 w-9 p-0 hover:bg-blue-50"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -310,7 +349,7 @@ export const CalendarGrid = ({
             Today ({todaysEvents.length})
           </Button>
           
-          <Button onClick={onNewEventClick} size="sm" className="gap-2">
+          <Button onClick={onNewEventClick} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Event</span>
           </Button>

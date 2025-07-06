@@ -8,10 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarGrid } from "./CalendarGrid";
 import { EventCreationDialog } from "./EventCreationDialog";
+import { EventEditDialog } from "./EventEditDialog";
 import { AppointmentSchedulerManager } from "./AppointmentSchedulerManager";
 import { NotificationsPopup } from "./NotificationsPopup";
 import { Search, Filter, Calendar as CalendarIcon, Users, Briefcase, Bell, X, Settings } from "lucide-react";
-import { useAppointments, useCreateAppointment } from "@/hooks/useAppointments";
+import { useAppointments, useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { useEmails } from "@/hooks/useEmails";
@@ -31,6 +32,9 @@ interface CalendarEvent {
   location?: string;
   description?: string;
   project_name?: string;
+  appointment_type?: string;
+  client_id?: string;
+  project_id?: string;
 }
 
 export const GoogleCalendarView = () => {
@@ -38,8 +42,10 @@ export const GoogleCalendarView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [isEventCreationOpen, setIsEventCreationOpen] = useState(false);
+  const [isEventEditOpen, setIsEventEditOpen] = useState(false);
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showTodaysEvents, setShowTodaysEvents] = useState(false);
   const [eventCreationDate, setEventCreationDate] = useState<Date | undefined>();
   const [eventCreationHour, setEventCreationHour] = useState<number | undefined>();
@@ -51,6 +57,8 @@ export const GoogleCalendarView = () => {
   const { data: emails } = useEmails();
   const { data: notifications } = useNotifications();
   const createAppointment = useCreateAppointment();
+  const updateAppointment = useUpdateAppointment();
+  const deleteAppointment = useDeleteAppointment();
   const { toast } = useToast();
 
   const calendarEvents: CalendarEvent[] = appointments?.map(appointment => {
@@ -67,7 +75,10 @@ export const GoogleCalendarView = () => {
       client_name: client?.name,
       location: appointment.location,
       description: appointment.description,
-      project_name: project?.name
+      project_name: project?.name,
+      appointment_type: appointment.appointment_type,
+      client_id: appointment.client_id,
+      project_id: appointment.project_id
     };
   }) || [];
 
@@ -118,8 +129,59 @@ export const GoogleCalendarView = () => {
     }
   };
 
+  const handleUpdateEvent = async (eventData: any) => {
+    try {
+      await updateAppointment.mutateAsync({ id: editingEvent!.id, ...eventData });
+      toast({
+        title: "Event Updated",
+        description: "The event has been successfully updated.",
+      });
+      setIsEventEditOpen(false);
+      setEditingEvent(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update event. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await deleteAppointment.mutateAsync(eventId);
+      toast({
+        title: "Event Deleted",
+        description: "The event has been successfully deleted.",
+      });
+      setSelectedEvent(null);
+      setIsEventEditOpen(false);
+      setEditingEvent(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete event. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
+  };
+
+  const handleEditEvent = (event: CalendarEvent) => {
+    if (event.id.startsWith('email-')) {
+      toast({
+        title: "Cannot Edit Email",
+        description: "Email events cannot be edited from the calendar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEditingEvent(event);
+    setSelectedEvent(null);
+    setIsEventEditOpen(true);
   };
 
   const handleTimeSlotClick = (date: Date, hour: number) => {
@@ -246,6 +308,7 @@ export const GoogleCalendarView = () => {
                 selectedDate={selectedDate}
                 onDateSelect={setSelectedDate}
                 onEventClick={handleEventClick}
+                onEditEvent={handleEditEvent}
                 onTimeSlotClick={handleTimeSlotClick}
                 onNewEventClick={handleNewEventClick}
                 showTodaysEvents={showTodaysEvents}
@@ -352,6 +415,15 @@ export const GoogleCalendarView = () => {
         initialHour={eventCreationHour}
       />
 
+      {/* Event Edit Dialog */}
+      <EventEditDialog
+        open={isEventEditOpen}
+        onOpenChange={setIsEventEditOpen}
+        onUpdateEvent={handleUpdateEvent}
+        onDeleteEvent={handleDeleteEvent}
+        event={editingEvent}
+      />
+
       {/* Appointment Scheduler Manager Dialog */}
       <Dialog open={isSchedulerOpen} onOpenChange={setIsSchedulerOpen}>
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto p-0">
@@ -392,6 +464,22 @@ export const GoogleCalendarView = () => {
                   <p className="text-sm text-gray-600">{selectedEvent.description}</p>
                 </div>
               )}
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={() => handleEditEvent(selectedEvent)}
+                  className="flex-1"
+                  disabled={selectedEvent.id.startsWith('email-')}
+                >
+                  Edit Event
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedEvent(null)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
