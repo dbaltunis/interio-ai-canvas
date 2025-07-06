@@ -1,20 +1,8 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Settings,
-  Plus,
-  Clock,
-  Users,
-  FileText,
-  Mail,
-  AlertCircle
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useEmailCampaigns, useCreateEmailCampaign, useUpdateEmailCampaign } from "@/hooks/useEmailCampaigns";
@@ -22,15 +10,20 @@ import { useEmailTemplates, useCreateEmailTemplate } from "@/hooks/useEmailTempl
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
+import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
+import { EmailTabsNavigation } from "./email-components/EmailTabsNavigation";
+import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
+import { EmailHistoryTab } from "./email-components/EmailHistoryTab";
+import { EmailComposeTab } from "./email-components/EmailComposeTab";
+import { EmailTemplatesTab } from "./email-components/EmailTemplatesTab";
+import { EmailCampaignsTab } from "./email-components/EmailCampaignsTab";
+import { EmailSettingsDialog } from "./email-components/EmailSettingsDialog";
+import { CampaignBuilder } from "./email-components/CampaignBuilder";
+import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
 import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
 import { ClientSelector } from "./email-components/ClientSelector";
 import { QuoteSelector } from "./email-components/QuoteSelector";
-import { CampaignBuilder } from "./email-components/CampaignBuilder";
-import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
-import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
 import { EmailComposer } from "./email-components/EmailComposer";
-import { EmailHistoryTab } from "./email-components/EmailHistoryTab";
-import { EmailTemplatesTab } from "./email-components/EmailTemplatesTab";
 
 export const EmailsTab = () => {
   const [newEmail, setNewEmail] = useState({
@@ -41,7 +34,6 @@ export const EmailsTab = () => {
   });
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [emailSettingsOpen, setEmailSettingsOpen] = useState(false);
-  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [campaignBuilderOpen, setCampaignBuilderOpen] = useState(false);
   const [templateVariableEditorOpen, setTemplateVariableEditorOpen] = useState(false);
@@ -144,6 +136,11 @@ export const EmailsTab = () => {
     setCampaignBuilderOpen(true);
   };
 
+  const handleEditCampaign = (campaign: any) => {
+    setEditingCampaign(campaign);
+    setCampaignBuilderOpen(true);
+  };
+
   const handleSaveCampaign = (campaignData: any) => {
     if (editingCampaign) {
       updateCampaignMutation.mutate({ id: editingCampaign.id, ...campaignData });
@@ -199,76 +196,17 @@ export const EmailsTab = () => {
       {/* Basic KPIs Dashboard */}
       <EmailKPIsDashboard kpis={emailKPIs} />
 
-      {/* SendGrid Integration Status */}
-      {!hasSendGridIntegration && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="font-medium text-orange-800">SendGrid Integration Required</p>
-                  <p className="text-sm text-orange-700">Set up SendGrid integration for email delivery tracking and analytics to work properly.</p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => window.open('/settings', '_blank')} 
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Setup Integration
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Email Settings Banner */}
-      {!emailSettings?.from_email && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="font-medium text-yellow-800">Email Settings Required</p>
-                  <p className="text-sm text-yellow-700">Configure your sender email address to start sending emails.</p>
-                </div>
-              </div>
-              <Button onClick={() => setEmailSettingsOpen(true)} className="bg-yellow-600 hover:bg-yellow-700">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Integration and Settings Banners */}
+      <EmailIntegrationBanners
+        hasSendGridIntegration={hasSendGridIntegration}
+        hasEmailSettings={!!emailSettings?.from_email}
+        onEmailSettingsClick={() => setEmailSettingsOpen(true)}
+      />
 
       {/* Main Email Interface */}
       <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">History</span>
-              <span className="sm:hidden">Hist</span>
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Campaigns</span>
-              <span className="sm:hidden">Camps</span>
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Templates</span>
-              <span className="sm:hidden">Temps</span>
-            </TabsTrigger>
-            <TabsTrigger value="compose" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span className="hidden sm:inline">Compose</span>
-              <span className="sm:hidden">Email</span>
-            </TabsTrigger>
-          </TabsList>
+          <EmailTabsNavigation activeTab={activeTabValue} onTabChange={setActiveTabValue} />
           
           <Button 
             onClick={() => setComposeDialogOpen(true)}
@@ -293,49 +231,19 @@ export const EmailsTab = () => {
 
         {/* Compose Email Tab */}
         <TabsContent value="compose">
-          <div className="space-y-4">
-            {/* Client and Quote Selectors */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <ClientSelector 
-                selectedClients={selectedClients}
-                onSelectionChange={setSelectedClients}
-              />
-              <QuoteSelector 
-                selectedQuotes={selectedQuotes}
-                onSelectionChange={setSelectedQuotes}
-                selectedClients={selectedClients}
-              />
-            </div>
-
-            {/* Email Composer with Appointment Scheduler Integration */}
-            <EmailComposer
-              newEmail={newEmail}
-              setNewEmail={setNewEmail}
-              selectedClients={selectedClients}
-              selectedQuotes={selectedQuotes}
-              onSendEmail={handleSendEmail}
-              onPreviewEmail={() => setPreviewDialogOpen(true)}
-              sendEmailMutation={sendEmailMutation}
-              emailSettings={emailSettings}
-            />
-
-            {/* Email Preview Dialog */}
-            <EmailPreviewDialog
-              open={previewDialogOpen}
-              onOpenChange={setPreviewDialogOpen}
-              template={{
-                id: 'custom',
-                name: 'Custom Email',
-                subject: newEmail.subject,
-                content: newEmail.content,
-                category: 'Custom',
-                variables: []
-              }}
-              clientData={selectedClients[0]}
-              quoteData={selectedQuotes[0]}
-              senderInfo={emailSettings}
-            />
-          </div>
+          <EmailComposeTab
+            selectedClients={selectedClients}
+            setSelectedClients={setSelectedClients}
+            selectedQuotes={selectedQuotes}
+            setSelectedQuotes={setSelectedQuotes}
+            newEmail={newEmail}
+            setNewEmail={setNewEmail}
+            onSendEmail={handleSendEmail}
+            previewDialogOpen={previewDialogOpen}
+            setPreviewDialogOpen={setPreviewDialogOpen}
+            sendEmailMutation={sendEmailMutation}
+            emailSettings={emailSettings}
+          />
         </TabsContent>
 
         {/* Templates Tab */}
@@ -350,57 +258,13 @@ export const EmailsTab = () => {
 
         {/* Campaigns Tab */}
         <TabsContent value="campaigns">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Email Campaigns</h3>
-              <Button 
-                onClick={handleCreateCampaign} 
-                className="flex items-center gap-2"
-                disabled={createCampaignMutation.isPending}
-              >
-                <Plus className="h-4 w-4" />
-                New Campaign
-              </Button>
-            </div>
-            
-            {campaigns && campaigns.length > 0 ? (
-              <div className="grid gap-4">
-                {campaigns.map((campaign) => (
-                  <Card key={campaign.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => {
-                          setEditingCampaign(campaign);
-                          setCampaignBuilderOpen(true);
-                        }}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{campaign.name}</h4>
-                          <p className="text-sm text-gray-600">{campaign.subject}</p>
-                          <p className="text-xs text-gray-500">Recipients: {campaign.recipient_count}</p>
-                        </div>
-                        <div className={`px-2 py-1 rounded text-xs ${campaign.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {campaign.status}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <h4 className="text-lg font-medium mb-2">No Campaigns Yet</h4>
-                    <p className="text-sm mb-4">Create professional email campaigns with advanced tracking</p>
-                    <Button onClick={handleCreateCampaign}>Create Your First Campaign</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <EmailCampaignsTab
+            campaigns={campaigns}
+            onCreateCampaign={handleCreateCampaign}
+            onEditCampaign={handleEditCampaign}
+            isCreating={createCampaignMutation.isPending}
+          />
         </TabsContent>
-
       </Tabs>
 
       {/* Compose Email Dialog */}
@@ -444,61 +308,18 @@ export const EmailsTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* All Dialogs */}
-      <Dialog open={emailSettingsOpen} onOpenChange={setEmailSettingsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Settings</DialogTitle>
-            <DialogDescription>
-              Configure your sender information for outgoing emails
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="from_email">From Email Address</Label>
-              <Input
-                id="from_email"
-                type="email"
-                placeholder="your-email@company.com"
-                value={newEmailSettings.from_email}
-                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_email: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="from_name">From Name</Label>
-              <Input
-                id="from_name"
-                placeholder="Your Company Name"
-                value={newEmailSettings.from_name}
-                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, from_name: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="reply_to_email">Reply-To Email (Optional)</Label>
-              <Input
-                id="reply_to_email"
-                type="email"
-                placeholder="replies@company.com"
-                value={newEmailSettings.reply_to_email}
-                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, reply_to_email: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="signature">Email Signature (Optional)</Label>
-              <Textarea
-                id="signature"
-                placeholder="Best regards,&#10;Your Name&#10;Your Company"
-                value={newEmailSettings.signature}
-                onChange={(e) => setNewEmailSettings(prev => ({ ...prev, signature: e.target.value }))}
-              />
-            </div>
-            <Button onClick={handleSaveEmailSettings} className="w-full">
-              Save Settings
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Email Settings Dialog */}
+      <EmailSettingsDialog
+        open={emailSettingsOpen}
+        onOpenChange={setEmailSettingsOpen}
+        emailSettings={newEmailSettings}
+        onSave={(settings) => {
+          setNewEmailSettings(settings);
+          handleSaveEmailSettings();
+        }}
+      />
 
+      {/* Other Dialogs */}
       <CampaignBuilder
         open={campaignBuilderOpen}
         onOpenChange={setCampaignBuilderOpen}
