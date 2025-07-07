@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -310,16 +311,20 @@ export const ProductTemplatesTab = () => {
                 <Label>Heading Options</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="pencil-pleat" defaultChecked />
+                    <Checkbox 
+                      id="pencil-pleat" 
+                      checked={formData.selectedComponents.headings}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedComponents: {
+                            ...prev.selectedComponents,
+                            headings: checked === true
+                          }
+                        }))
+                      }
+                    />
                     <label htmlFor="pencil-pleat" className="text-sm">Pencil Pleat (2.0x) - $15/m</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="pinch-pleat" />
-                    <label htmlFor="pinch-pleat" className="text-sm">Pinch Pleat (2.2x) - $25/m</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="wave" />
-                    <label htmlFor="wave" className="text-sm">Wave (2.5x) - $35/m</label>
                   </div>
                 </div>
               </div>
@@ -328,12 +333,20 @@ export const ProductTemplatesTab = () => {
                 <Label>Hardware Options</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="basic-track" />
+                    <Checkbox 
+                      id="basic-track" 
+                      checked={formData.selectedComponents.hardware}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedComponents: {
+                            ...prev.selectedComponents,
+                            hardware: checked === true
+                          }
+                        }))
+                      }
+                    />
                     <label htmlFor="basic-track" className="text-sm">Basic Track - $45/m</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="premium-rod" />
-                    <label htmlFor="premium-rod" className="text-sm">Premium Rod - $85/m</label>
                   </div>
                 </div>
               </div>
@@ -344,12 +357,20 @@ export const ProductTemplatesTab = () => {
                 <Label>Lining Options</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="standard-lining" />
+                    <Checkbox 
+                      id="standard-lining" 
+                      checked={formData.selectedComponents.lining}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedComponents: {
+                            ...prev.selectedComponents,
+                            lining: checked === true
+                          }
+                        }))
+                      }
+                    />
                     <label htmlFor="standard-lining" className="text-sm">Standard Lining - $8.50/m</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="blackout-lining" />
-                    <label htmlFor="blackout-lining" className="text-sm">Blackout Lining - $12/m</label>
                   </div>
                 </div>
               </div>
@@ -358,12 +379,20 @@ export const ProductTemplatesTab = () => {
                 <Label>Additional Services</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="installation" />
+                    <Checkbox 
+                      id="installation" 
+                      checked={formData.selectedComponents.services}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedComponents: {
+                            ...prev.selectedComponents,
+                            services: checked === true
+                          }
+                        }))
+                      }
+                    />
                     <label htmlFor="installation" className="text-sm">Installation - $25/window</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="measuring" />
-                    <label htmlFor="measuring" className="text-sm">Measuring Service - $50/visit</label>
                   </div>
                 </div>
               </div>
