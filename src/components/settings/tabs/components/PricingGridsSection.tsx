@@ -4,23 +4,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Download, Upload, FileSpreadsheet, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { usePricingGrids, useCreatePricingGrid, useDeletePricingGrid } from "@/hooks/usePricingGrids";
 
 export const PricingGridsSection = () => {
   const [gridName, setGridName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showPreview, setShowPreview] = useState<any>(null);
+
+  const { data: pricingGrids = [], isLoading } = usePricingGrids();
+  const createPricingGrid = useCreatePricingGrid();
+  const deletePricingGrid = useDeletePricingGrid();
 
   const generateCSVTemplate = () => {
-    const csvContent = `Width (mm),200-400,401-600,601-800,801-1000,1001-1200,1201-1400,1401-1600,1601-1800,1801-2000,2001-2200,2201-2400
-"Height 300-600",25,30,35,40,45,50,55,60,65,70,75
-"Height 601-900",30,35,40,45,50,55,60,65,70,75,80
-"Height 901-1200",35,40,45,50,55,60,65,70,75,80,85
-"Height 1201-1500",40,45,50,55,60,65,70,75,80,85,90
-"Height 1501-1800",45,50,55,60,65,70,75,80,85,90,95
-"Height 1801-2100",50,55,60,65,70,75,80,85,90,95,100
-"Height 2101-2400",55,60,65,70,75,80,85,90,95,100,105
-"Height 2401-2700",60,65,70,75,80,85,90,95,100,105,110`;
+    // Simple Drop/Width format
+    const csvContent = `Drop/Width,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500
+100,23,46,69,92,115,138,161,184,207,230,253,276,299,322,345
+200,46,92,138,184,230,276,322,368,414,460,506,552,598,644,690
+300,69,138,207,276,345,414,483,552,621,690,759,828,897,966,1035
+400,92,184,276,368,460,552,644,736,828,920,1012,1104,1196,1288,1380
+500,115,230,345,460,575,690,805,920,1035,1150,1265,1380,1495,1610,1725
+600,138,276,414,552,690,828,966,1104,1242,1380,1518,1656,1794,1932,2070
+700,161,322,483,644,805,966,1127,1288,1449,1610,1771,1932,2093,2254,2415
+800,184,368,552,736,920,1104,1288,1472,1656,1840,2024,2208,2392,2576,2760
+900,207,414,621,828,1035,1242,1449,1656,1863,2070,2277,2484,2691,2898,3105
+1000,230,460,690,920,1150,1380,1610,1840,2070,2300,2530,2760,2990,3220,3450`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -33,6 +43,44 @@ export const PricingGridsSection = () => {
     document.body.removeChild(link);
     
     toast.success("CSV template downloaded successfully");
+  };
+
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV must have at least a header row and one data row');
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    const widthColumns = headers.slice(1); // Remove first column (Drop/Width label)
+    
+    const gridData = {
+      widthColumns,
+      dropRows: [] as any[]
+    };
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      if (values.length !== headers.length) {
+        throw new Error(`Row ${i + 1} has ${values.length} columns, expected ${headers.length}`);
+      }
+
+      const drop = values[0];
+      const prices = values.slice(1).map(price => {
+        const num = parseFloat(price);
+        if (isNaN(num)) {
+          throw new Error(`Invalid price "${price}" at row ${i + 1}`);
+        }
+        return num;
+      });
+
+      gridData.dropRows.push({
+        drop,
+        prices
+      });
+    }
+
+    return gridData;
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,8 +110,14 @@ export const PricingGridsSection = () => {
       const fileContent = await selectedFile.text();
       console.log('CSV content:', fileContent);
       
-      // Here you would process the CSV and save to database
-      // For now, just show success message
+      const gridData = parseCSV(fileContent);
+      console.log('Parsed grid data:', gridData);
+      
+      await createPricingGrid.mutateAsync({
+        name: gridName,
+        grid_data: gridData
+      });
+      
       toast.success(`Pricing grid "${gridName}" uploaded successfully`);
       setGridName("");
       setSelectedFile(null);
@@ -74,8 +128,26 @@ export const PricingGridsSection = () => {
       
     } catch (error) {
       console.error('Error processing CSV:', error);
-      toast.error("Failed to process CSV file");
+      toast.error(`Failed to process CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete the pricing grid "${name}"?`)) {
+      return;
+    }
+    
+    try {
+      await deletePricingGrid.mutateAsync(id);
+      toast.success("Pricing grid deleted successfully");
+    } catch (error) {
+      console.error('Error deleting pricing grid:', error);
+      toast.error("Failed to delete pricing grid");
+    }
+  };
+
+  const handlePreview = (grid: any) => {
+    setShowPreview(grid);
   };
 
   return (
@@ -83,7 +155,7 @@ export const PricingGridsSection = () => {
       <div className="flex items-center justify-between">
         <div>
           <h4 className="font-medium">CSV Pricing Grids</h4>
-          <p className="text-sm text-brand-neutral">Upload CSV files with width/height pricing tables for blinds and curtains</p>
+          <p className="text-sm text-brand-neutral">Upload CSV files with drop/width pricing tables for blinds and curtains</p>
         </div>
         <Button 
           size="sm" 
@@ -104,7 +176,7 @@ export const PricingGridsSection = () => {
               Upload Pricing Grid
             </CardTitle>
             <CardDescription>
-              Upload CSV files with width/height pricing tables from your vendors
+              Upload CSV files with drop/width pricing tables from your vendors
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -134,10 +206,10 @@ export const PricingGridsSection = () => {
             <Button 
               onClick={handleUpload}
               className="w-full bg-brand-primary hover:bg-brand-accent"
-              disabled={!gridName.trim() || !selectedFile}
+              disabled={!gridName.trim() || !selectedFile || createPricingGrid.isPending}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Upload & Process Grid
+              {createPricingGrid.isPending ? 'Uploading...' : 'Upload & Process Grid'}
             </Button>
           </CardContent>
         </Card>
@@ -155,11 +227,19 @@ export const PricingGridsSection = () => {
           <CardContent className="space-y-3">
             <div className="text-sm space-y-2">
               <p><strong>Required Format:</strong></p>
+              <div className="bg-gray-50 p-3 rounded text-xs font-mono">
+                <div>Drop/Width,100,200,300,400,500</div>
+                <div>100,23,46,69,92,115</div>
+                <div>200,46,92,138,184,230</div>
+                <div>300,69,138,207,276,345</div>
+              </div>
+              
               <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>First row: Width ranges (e.g., 200-400, 401-600)</li>
-                <li>First column: Height ranges (e.g., Height 300-600)</li>
-                <li>Intersection cells: Prices for that width/height combination</li>
+                <li>First row: "Drop/Width" then width values</li>
+                <li>First column: Drop measurements</li>
+                <li>Intersection cells: Prices for that drop/width</li>
                 <li>Use consistent units (mm or cm)</li>
+                <li>All values must be numbers (no currency symbols)</li>
               </ul>
               
               <p className="mt-3"><strong>Vendor Compatibility:</strong></p>
@@ -167,6 +247,7 @@ export const PricingGridsSection = () => {
                 <li>✅ Direct upload from most blind suppliers</li>
                 <li>✅ Excel exports saved as CSV</li>
                 <li>✅ Standard pricing table formats</li>
+                <li>✅ Works with your existing vendor data</li>
               </ul>
 
               <Button 
@@ -176,23 +257,109 @@ export const PricingGridsSection = () => {
                 className="w-full mt-3"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Get Example Template
+                Download Example Template
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Uploaded Grids List */}
       <Card>
-        <CardContent className="p-4">
-          <div className="text-center py-4">
-            <p className="text-brand-neutral">No pricing grids uploaded yet</p>
-            <p className="text-xs text-brand-neutral mt-1">
-              Upload your first CSV pricing grid to get started
-            </p>
-          </div>
+        <CardHeader>
+          <CardTitle>Uploaded Pricing Grids</CardTitle>
+          <CardDescription>
+            Manage your uploaded CSV pricing grids
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-4">Loading pricing grids...</div>
+          ) : pricingGrids.length === 0 ? (
+            <div className="text-center py-8">
+              <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-brand-neutral">No pricing grids uploaded yet</p>
+              <p className="text-xs text-brand-neutral mt-1">
+                Upload your first CSV pricing grid to get started
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pricingGrids.map((grid) => (
+                <div key={grid.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileSpreadsheet className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <h5 className="font-medium">{grid.name}</h5>
+                      <p className="text-xs text-gray-500">
+                        {grid.grid_data?.dropRows?.length || 0} drop ranges × {grid.grid_data?.widthColumns?.length || 0} width ranges
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Created {new Date(grid.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={grid.active ? "default" : "secondary"}>
+                      {grid.active ? "Active" : "Inactive"}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreview(grid)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(grid.id, grid.name)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">{showPreview.name}</h3>
+              <Button variant="outline" onClick={() => setShowPreview(null)}>
+                Close
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-300 px-2 py-1 text-xs">Drop/Width</th>
+                    {showPreview.grid_data?.widthColumns?.map((width: string, index: number) => (
+                      <th key={index} className="border border-gray-300 px-2 py-1 text-xs">{width}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {showPreview.grid_data?.dropRows?.map((row: any, index: number) => (
+                    <tr key={index}>
+                      <td className="border border-gray-300 px-2 py-1 text-xs font-medium">{row.drop}</td>
+                      {row.prices?.map((price: number, priceIndex: number) => (
+                        <td key={priceIndex} className="border border-gray-300 px-2 py-1 text-xs text-right">{price}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
