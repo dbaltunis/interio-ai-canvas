@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,21 +7,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench } from "lucide-react";
+import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench, ShoppingCart } from "lucide-react";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
 import { FilterDialog } from "./FilterDialog";
 import { VendorForm } from "./VendorForm";
 import { HardwareForm } from "./HardwareForm";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { toast } from "sonner";
 
 export const LibraryPage = () => {
+  const { units, getFabricUnitLabel, formatFabric } = useMeasurementUnits();
   const [activeTab, setActiveTab] = useState("fabrics");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addDialogType, setAddDialogType] = useState<"vendor" | "fabric" | "hardware" | "collection">("fabric");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+  };
 
   // Mock data for comprehensive inventory
   const vendors = [
@@ -157,6 +172,27 @@ export const LibraryPage = () => {
     }
   ];
 
+  const handleProductSelect = (productId: string, productType: string) => {
+    if (selectedProducts.includes(productId)) {
+      setSelectedProducts(prev => prev.filter(id => id !== productId));
+      toast.success(`${productType} removed from selection`);
+    } else {
+      setSelectedProducts(prev => [...prev, productId]);
+      toast.success(`${productType} added to selection`);
+    }
+  };
+
+  const handleAddToProject = () => {
+    if (selectedProducts.length === 0) {
+      toast.error("Please select at least one product");
+      return;
+    }
+    
+    // This would integrate with project management
+    toast.success(`${selectedProducts.length} products ready to add to project`);
+    console.log("Selected products for project:", selectedProducts);
+  };
+
   const handleAddNew = (type: "vendor" | "fabric" | "hardware" | "collection") => {
     setAddDialogType(type);
     setShowAddDialog(true);
@@ -207,9 +243,16 @@ export const LibraryPage = () => {
 
   const renderFabricCard = (fabric: any) => {
     const stockStatus = getStockStatus(fabric.inStock, fabric.reorderPoint);
+    const isSelected = selectedProducts.includes(fabric.id.toString());
     
     return (
-      <Card key={fabric.id} className="relative group hover:shadow-lg transition-shadow">
+      <Card 
+        key={fabric.id} 
+        className={`relative group hover:shadow-lg transition-shadow cursor-pointer ${
+          isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+        }`}
+        onClick={() => handleProductSelect(fabric.id.toString(), 'Fabric')}
+      >
         <CardHeader className="p-0">
           <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
             <img 
@@ -217,10 +260,15 @@ export const LibraryPage = () => {
               alt={fabric.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 flex gap-2">
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
+              {isSelected && (
+                <Badge variant="default" className="bg-blue-500">
+                  Selected
+                </Badge>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -233,11 +281,11 @@ export const LibraryPage = () => {
           <div className="grid grid-cols-2 gap-2 text-xs mb-3">
             <div>
               <p className="text-gray-500">Price</p>
-              <p className="font-semibold">${fabric.price}/{fabric.unit}</p>
+              <p className="font-semibold">{formatCurrency(fabric.price)}/{getFabricUnitLabel()}</p>
             </div>
             <div>
               <p className="text-gray-500">In Stock</p>
-              <p className="font-semibold">{fabric.inStock} {fabric.unit}s</p>
+              <p className="font-semibold">{formatFabric(fabric.inStock)}</p>
             </div>
             <div>
               <p className="text-gray-500">Width</p>
@@ -251,10 +299,26 @@ export const LibraryPage = () => {
           
           <div className="flex justify-between items-center">
             <div className="flex space-x-2">
-              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-blue-500 hover:text-blue-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Handle edit
+                }}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:text-gray-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Handle copy
+                }}
+              >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -269,9 +333,16 @@ export const LibraryPage = () => {
 
   const renderHardwareCard = (hardware: any) => {
     const stockStatus = getStockStatus(hardware.inStock, hardware.reorderPoint);
+    const isSelected = selectedProducts.includes(hardware.id.toString());
     
     return (
-      <Card key={hardware.id} className="relative group hover:shadow-lg transition-shadow">
+      <Card 
+        key={hardware.id} 
+        className={`relative group hover:shadow-lg transition-shadow cursor-pointer ${
+          isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+        }`}
+        onClick={() => handleProductSelect(hardware.id.toString(), 'Hardware')}
+      >
         <CardHeader className="p-0">
           <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
             <img 
@@ -279,10 +350,15 @@ export const LibraryPage = () => {
               alt={hardware.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 flex gap-2">
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
+              {isSelected && (
+                <Badge variant="default" className="bg-blue-500">
+                  Selected
+                </Badge>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -295,7 +371,7 @@ export const LibraryPage = () => {
           <div className="grid grid-cols-2 gap-2 text-xs mb-3">
             <div>
               <p className="text-gray-500">Price</p>
-              <p className="font-semibold">${hardware.price}/{hardware.unit}</p>
+              <p className="font-semibold">{formatCurrency(hardware.price)}/{hardware.unit}</p>
             </div>
             <div>
               <p className="text-gray-500">In Stock</p>
@@ -313,10 +389,26 @@ export const LibraryPage = () => {
           
           <div className="flex justify-between items-center">
             <div className="flex space-x-2">
-              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-blue-500 hover:text-blue-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Handle edit
+                }}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:text-gray-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Handle copy
+                }}
+              >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -338,6 +430,16 @@ export const LibraryPage = () => {
           <p className="text-gray-600">Manage fabrics, hardware, and vendor relationships</p>
         </div>
         <div className="flex items-center space-x-2">
+          {selectedProducts.length > 0 && (
+            <Button
+              onClick={handleAddToProject}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Add to Project ({selectedProducts.length})
+            </Button>
+          )}
+          
           <Popover>
             <PopoverTrigger asChild>
               <Button className="bg-slate-600 hover:bg-slate-700 text-white">
@@ -395,6 +497,27 @@ export const LibraryPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Selection Summary */}
+      {selectedProducts.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Selected Products: {selectedProducts.length}</p>
+                <p className="text-sm text-gray-600">Ready to add to project or calculate fabric usage</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedProducts([])}
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
+                Clear Selection
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

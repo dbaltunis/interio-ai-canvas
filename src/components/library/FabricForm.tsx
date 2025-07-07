@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,19 +5,22 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface FabricFormProps {
   onClose: () => void;
 }
 
 export const FabricForm = ({ onClose }: FabricFormProps) => {
+  const { units, getFabricUnitLabel } = useMeasurementUnits();
+  
   const [fabricData, setFabricData] = useState({
     name: "",
     code: "",
     vendor: "",
     collection: "",
     price: "",
-    unit: "yard",
+    unit: units.fabric,
     inStock: "",
     reorderPoint: "",
     location: "",
@@ -36,6 +38,18 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
     durability: "",
     lightFastness: ""
   });
+
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return currencySymbols[units.currency] || units.currency;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +121,9 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
         <div>
           <Label htmlFor="price">Price per Unit</Label>
           <div className="relative mt-1">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+              {formatCurrency(0).replace('0.00', '')}
+            </span>
             <Input
               id="price"
               type="number"
@@ -126,15 +142,16 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="yard">Yard</SelectItem>
-              <SelectItem value="meter">Meter</SelectItem>
+              <SelectItem value={units.fabric}>{getFabricUnitLabel()}</SelectItem>
+              <SelectItem value="m">Meter</SelectItem>
+              <SelectItem value="yards">Yards</SelectItem>
               <SelectItem value="roll">Roll</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="inStock">Current Stock</Label>
+          <Label htmlFor="inStock">Current Stock ({getFabricUnitLabel()})</Label>
           <Input
             id="inStock"
             type="number"
