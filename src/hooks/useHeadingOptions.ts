@@ -41,7 +41,10 @@ export const useCreateHeadingOption = () => {
     mutationFn: async (headingOption: Omit<HeadingOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('heading_options')
-        .insert([headingOption])
+        .insert([{
+          ...headingOption,
+          user_id: '' // Will be overridden by the database trigger
+        }])
         .select()
         .single();
       
