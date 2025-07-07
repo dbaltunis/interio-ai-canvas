@@ -43,8 +43,8 @@ export const useCreateHeadingOption = () => {
         .from('heading_options')
         .insert([{
           ...headingOption,
-          user_id: '' // Will be overridden by the database trigger
-        }])
+          user_id: 'placeholder' // Will be overridden by the database trigger
+        } as any])
         .select()
         .single();
       
