@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,10 +17,10 @@ export const useHardwareOptions = () => {
   return useQuery({
     queryKey: ['hardware-options'],
     queryFn: async () => {
+      console.log('Fetching hardware options...');
       const { data, error } = await supabase
         .from('hardware_options')
         .select('*')
-        .eq('active', true)
         .order('name');
       
       if (error) {
@@ -29,6 +28,7 @@ export const useHardwareOptions = () => {
         throw error;
       }
       
+      console.log('Hardware options fetched:', data);
       return data as HardwareOption[];
     },
   });
@@ -39,18 +39,11 @@ export const useCreateHardwareOption = () => {
   
   return useMutation({
     mutationFn: async (option: Omit<HardwareOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      // Get current user
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) {
-        throw new Error('User not authenticated');
-      }
-
+      console.log('Creating hardware option:', option);
+      
       const { data, error } = await supabase
         .from('hardware_options')
-        .insert([{
-          ...option,
-          user_id: session.user.id
-        }])
+        .insert([option])
         .select()
         .single();
       
@@ -58,10 +51,16 @@ export const useCreateHardwareOption = () => {
         console.error('Error creating hardware option:', error);
         throw error;
       }
+      
+      console.log('Hardware option created:', data);
       return data;
     },
     onSuccess: () => {
+      console.log('Hardware option created successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['hardware-options'] });
+    },
+    onError: (error) => {
+      console.error('Hardware option creation failed:', error);
     },
   });
 };
