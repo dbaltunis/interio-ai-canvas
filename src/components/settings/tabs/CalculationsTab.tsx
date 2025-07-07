@@ -200,7 +200,7 @@ export const CalculationsTab = () => {
                 <p><strong>Use Case:</strong> Set your standard profit margin that will be applied across all calculations.</p>
               </div>
             </AlertDescription>
-          </div>
+          </Alert>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
