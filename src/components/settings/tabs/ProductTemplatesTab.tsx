@@ -265,22 +265,33 @@ export const ProductTemplatesTab = () => {
           </div>
 
           {/* Pricing Grid Selection */}
-          <div>
-            <Label>Select Existing Pricing Grid (Optional)</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a pricing grid or leave blank for manual pricing" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Grid - Use Making Costs Below</SelectItem>
-                <SelectItem value="roman-blinds-standard">Roman Blinds - Standard Grid</SelectItem>
-                <SelectItem value="venetian-blinds-wood">Venetian Blinds - Wood Grid</SelectItem>
-                <SelectItem value="roller-blinds-basic">Roller Blinds - Basic Grid</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500 mt-1">
-              If you select a grid, making costs below will be ignored (grid includes all costs)
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Select Existing Pricing Grid (Optional)</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a pricing grid or leave blank" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Grid - Use Making Costs Below</SelectItem>
+                  <SelectItem value="roman-blinds-standard">Roman Blinds - Standard Grid</SelectItem>
+                  <SelectItem value="venetian-blinds-wood">Venetian Blinds - Wood Grid</SelectItem>
+                  <SelectItem value="roller-blinds-basic">Roller Blinds - Basic Grid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Grid Represents</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="What does the grid include?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="making-only">Making Costs Only (+ fabric + components)</SelectItem>
+                  <SelectItem value="complete-price">Complete Final Price (no additions)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
