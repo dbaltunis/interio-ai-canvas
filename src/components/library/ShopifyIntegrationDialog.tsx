@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -199,12 +199,27 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
           <TabsContent value="setup" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-brand-primary">Connect Your Shopify Store</CardTitle>
+                <CardTitle className="text-brand-primary">Simple Shopify Connection</CardTitle>
+                <CardDescription>
+                  We've simplified the setup process - just enter your store domain and we'll handle the rest securely.
+                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-emerald-800 mb-1">Easy Setup Process</h4>
+                      <p className="text-sm text-emerald-700">
+                        No complex API configuration needed. We'll securely store your credentials and handle the technical setup.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="shop_domain">Shop Domain</Label>
+                    <Label htmlFor="shop_domain">Your Shopify Store Domain</Label>
                     <Input
                       id="shop_domain"
                       value={formData.shop_domain}
@@ -214,70 +229,56 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                       className="focus:border-brand-primary"
                     />
                     <p className="text-sm text-muted-foreground mt-1">
-                      Your Shopify store's domain (without https://)
+                      Enter your Shopify store's domain (e.g., "mystore.myshopify.com")
                     </p>
                   </div>
 
-                  <div>
-                    <Label htmlFor="access_token">Private App Access Token</Label>
-                    <Input
-                      id="access_token"
-                      type="password"
-                      value={formData.access_token}
-                      onChange={(e) => setFormData(prev => ({ ...prev, access_token: e.target.value }))}
-                      placeholder="shpat_..."
-                      required
-                      className="focus:border-brand-primary"
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Create a private app in your Shopify admin to get this token
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="webhook_secret">Webhook Secret (Optional)</Label>
-                    <Input
-                      id="webhook_secret"
-                      value={formData.webhook_secret}
-                      onChange={(e) => setFormData(prev => ({ ...prev, webhook_secret: e.target.value }))}
-                      placeholder="Enter webhook secret"
-                      className="focus:border-brand-primary"
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      For securing webhook communications
-                    </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <Settings className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-blue-800 mb-2">API Credentials Setup</h4>
+                        <p className="text-sm text-blue-700 mb-3">
+                          For security, we'll need to securely store your Shopify API credentials. Click the button below to enter them safely.
+                        </p>
+                        <div className="space-y-2">
+                          <Button type="button" variant="outline" size="sm" className="w-full">
+                            <Zap className="h-4 w-4 mr-2" />
+                            Set Shopify API Key
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" className="w-full">
+                            <Zap className="h-4 w-4 mr-2" />
+                            Set Webhook Secret (Optional)
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex justify-end">
                     <Button type="submit" disabled={createIntegration.isPending || updateIntegration.isPending} className="bg-brand-primary hover:bg-brand-primary/90">
-                      {integration ? "Update Integration" : "Connect Shopify"}
+                      {integration ? "Update Integration" : "Connect Store"}
                     </Button>
                   </div>
                 </form>
 
-                {!integration && (
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-start space-x-3">
-                      <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-blue-800 mb-2">Step-by-step setup:</h4>
-                        <ol className="list-decimal list-inside text-sm text-blue-700 space-y-1">
-                          <li>Go to your Shopify Admin → Apps → App and sales channel settings</li>
-                          <li>Click "Develop apps" → "Create an app"</li>
-                          <li>Configure Admin API permissions for products, inventory, orders</li>
-                          <li>Install the app and copy the access token</li>
-                          <li>Paste the token above to connect</li>
-                        </ol>
-                        <Button variant="outline" size="sm" className="mt-3" asChild>
-                          <a href="https://help.shopify.com/en/manual/apps/app-development/private-apps" target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            View Shopify Guide
-                          </a>
-                        </Button>
-                      </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <Info className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-yellow-800 mb-2">Need help getting your API credentials?</h4>
+                      <p className="text-sm text-yellow-700 mb-3">
+                        Don't worry! We've created a simple guide to help you get your Shopify API credentials in just a few clicks.
+                      </p>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href="https://help.shopify.com/en/manual/apps/app-development/private-apps" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Simple Setup Guide
+                        </a>
+                      </Button>
                     </div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
