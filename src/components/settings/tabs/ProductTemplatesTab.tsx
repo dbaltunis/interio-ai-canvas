@@ -8,8 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const ProductTemplatesTab = () => {
+  const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
+  const lengthUnit = getLengthUnitLabel();
+  const fabricUnit = getFabricUnitLabel();
+  
   const [templates, setTemplates] = useState([
     {
       id: 1,
@@ -328,7 +333,7 @@ export const ProductTemplatesTab = () => {
                   placeholder="45.00" 
                 />
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-500">Per linear meter up to</span>
+                  <span className="text-xs text-gray-500">Per {fabricUnit} up to</span>
                   <Input 
                     type="number" 
                     step="0.1" 
@@ -337,7 +342,7 @@ export const ProductTemplatesTab = () => {
                     placeholder="2.4" 
                     className="w-16 h-6 text-xs"
                   />
-                  <span className="text-xs text-gray-500">meters height</span>
+                  <span className="text-xs text-gray-500">{lengthUnit} height</span>
                 </div>
               </div>
               <div>
@@ -401,8 +406,8 @@ export const ProductTemplatesTab = () => {
                 <Label className="text-sm font-medium">Height Range 1</Label>
                 <div className="grid grid-cols-5 gap-2 items-end">
                   <div>
-                    <Label htmlFor="range1Start" className="text-xs">From (m)</Label>
-                    <Input 
+                    <Label htmlFor="range1Start" className="text-xs">From ({lengthUnit})</Label>
+                    <Input
                       id="range1Start" 
                       type="number" 
                       step="0.1" 
@@ -412,8 +417,8 @@ export const ProductTemplatesTab = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="range1End" className="text-xs">To (m)</Label>
-                    <Input 
+                    <Label htmlFor="range1End" className="text-xs">To ({lengthUnit})</Label>
+                    <Input
                       id="range1End" 
                       type="number" 
                       step="0.1" 
@@ -423,8 +428,8 @@ export const ProductTemplatesTab = () => {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label htmlFor="height1" className="text-xs">Surcharge per meter</Label>
-                    <Input 
+                    <Label htmlFor="height1" className="text-xs">Surcharge per {fabricUnit}</Label>
+                    <Input
                       id="height1" 
                       type="number" 
                       step="0.01" 
@@ -433,7 +438,7 @@ export const ProductTemplatesTab = () => {
                       placeholder="5.00" 
                     />
                   </div>
-                  <div className="text-xs text-gray-500 self-center">+$ per meter</div>
+                  <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
                 </div>
               </div>
               
@@ -442,8 +447,8 @@ export const ProductTemplatesTab = () => {
                 <Label className="text-sm font-medium">Height Range 2</Label>
                 <div className="grid grid-cols-5 gap-2 items-end">
                   <div>
-                    <Label htmlFor="range2Start" className="text-xs">From (m)</Label>
-                    <Input 
+                    <Label htmlFor="range2Start" className="text-xs">From ({lengthUnit})</Label>
+                    <Input
                       id="range2Start" 
                       type="number" 
                       step="0.1" 
@@ -453,8 +458,8 @@ export const ProductTemplatesTab = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="range2End" className="text-xs">To (m)</Label>
-                    <Input 
+                    <Label htmlFor="range2End" className="text-xs">To ({lengthUnit})</Label>
+                    <Input
                       id="range2End" 
                       type="number" 
                       step="0.1" 
@@ -464,8 +469,8 @@ export const ProductTemplatesTab = () => {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label htmlFor="height2" className="text-xs">Surcharge per meter</Label>
-                    <Input 
+                    <Label htmlFor="height2" className="text-xs">Surcharge per {fabricUnit}</Label>
+                    <Input
                       id="height2" 
                       type="number" 
                       step="0.01" 
@@ -474,7 +479,7 @@ export const ProductTemplatesTab = () => {
                       placeholder="10.00" 
                     />
                   </div>
-                  <div className="text-xs text-gray-500 self-center">+$ per meter</div>
+                  <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
                 </div>
               </div>
               
@@ -483,8 +488,8 @@ export const ProductTemplatesTab = () => {
                 <Label className="text-sm font-medium">Height Range 3</Label>
                 <div className="grid grid-cols-4 gap-2 items-end">
                   <div>
-                    <Label htmlFor="range3Start" className="text-xs">Above (m)</Label>
-                    <Input 
+                    <Label htmlFor="range3Start" className="text-xs">Above ({lengthUnit})</Label>
+                    <Input
                       id="range3Start" 
                       type="number" 
                       step="0.1" 
@@ -494,8 +499,8 @@ export const ProductTemplatesTab = () => {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label htmlFor="height3" className="text-xs">Surcharge per meter</Label>
-                    <Input 
+                    <Label htmlFor="height3" className="text-xs">Surcharge per {fabricUnit}</Label>
+                    <Input
                       id="height3" 
                       type="number" 
                       step="0.01" 
@@ -504,7 +509,7 @@ export const ProductTemplatesTab = () => {
                       placeholder="20.00" 
                     />
                   </div>
-                  <div className="text-xs text-gray-500 self-center">+$ per meter</div>
+                  <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
                 </div>
               </div>
             </div>
@@ -531,7 +536,7 @@ export const ProductTemplatesTab = () => {
                         }))
                       }
                     />
-                    <label htmlFor="pencil-pleat" className="text-sm">Pencil Pleat (2.0x) - $15/m</label>
+                    <label htmlFor="pencil-pleat" className="text-sm">Pencil Pleat (2.0x) - $15/{fabricUnit}</label>
                   </div>
                 </div>
               </div>
@@ -553,7 +558,7 @@ export const ProductTemplatesTab = () => {
                         }))
                       }
                     />
-                    <label htmlFor="basic-track" className="text-sm">Basic Track - $45/m</label>
+                    <label htmlFor="basic-track" className="text-sm">Basic Track - $45/{fabricUnit}</label>
                   </div>
                 </div>
               </div>
@@ -577,7 +582,7 @@ export const ProductTemplatesTab = () => {
                         }))
                       }
                     />
-                    <label htmlFor="standard-lining" className="text-sm">Standard Lining - $8.50/m</label>
+                    <label htmlFor="standard-lining" className="text-sm">Standard Lining - $8.50/{fabricUnit}</label>
                   </div>
                 </div>
               </div>
