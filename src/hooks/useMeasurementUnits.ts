@@ -4,8 +4,15 @@ import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, co
 export const useMeasurementUnits = () => {
   const { data: businessSettings } = useBusinessSettings();
   
-  const units: MeasurementUnits = businessSettings?.measurement_units ? 
-    JSON.parse(businessSettings.measurement_units) : defaultMeasurementUnits;
+  const units: MeasurementUnits = (() => {
+    try {
+      return businessSettings?.measurement_units ? 
+        JSON.parse(businessSettings.measurement_units) : defaultMeasurementUnits;
+    } catch (error) {
+      console.warn('Failed to parse measurement units, using defaults:', error);
+      return defaultMeasurementUnits;
+    }
+  })();
 
   const convertToUserUnit = (value: number, sourceUnit: string): number => {
     return convertLength(value, sourceUnit, units.length);

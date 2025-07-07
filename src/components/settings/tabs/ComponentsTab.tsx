@@ -38,7 +38,7 @@ export const ComponentsTab = () => {
   const handleAddHeading = () => {
     if (!newHeading.name.trim()) return;
     
-    const id = Math.max(...headings.map(h => h.id)) + 1;
+    const id = headings.length > 0 ? Math.max(...headings.map(h => h.id)) + 1 : 1;
     setHeadings(prev => [...prev, {
       id,
       name: newHeading.name,
