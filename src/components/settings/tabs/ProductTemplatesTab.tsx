@@ -12,6 +12,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { useHardwareOptions, useLiningOptions } from "@/hooks/useComponentOptions";
 import { useServiceOptions } from "@/hooks/useServiceOptions";
+import { usePricingGrids } from "@/hooks/usePricingGrids";
 
 export const ProductTemplatesTab = () => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
@@ -23,6 +24,7 @@ export const ProductTemplatesTab = () => {
   const { data: hardwareOptions = [] } = useHardwareOptions();
   const { data: liningOptions = [] } = useLiningOptions();
   const { data: serviceOptions = [] } = useServiceOptions();
+  const { data: pricingGrids = [] } = usePricingGrids();
   
   const [templates, setTemplates] = useState([
     {
@@ -36,8 +38,9 @@ export const ProductTemplatesTab = () => {
     {
       id: 2,
       name: "Roman Blinds",
-      calculationMethod: "width-height",
-      pricingUnit: "per-sqm",
+      calculationMethod: "csv-pricing-grid",
+      pricingUnit: "csv-grid",
+      selectedPricingGrid: "roman-blinds-standard",
       active: true,
       components: ["fabric", "hardware", "chain"]
     }
@@ -49,6 +52,7 @@ export const ProductTemplatesTab = () => {
     name: "",
     calculationMethod: "",
     pricingUnit: "",
+    selectedPricingGrid: "",
     baseMakingCost: "",
     baseHeightLimit: "2.4",
     useHeightSurcharges: false,
@@ -70,6 +74,9 @@ export const ProductTemplatesTab = () => {
     }
   });
 
+  const requiresMakingCost = formData.calculationMethod !== "csv-pricing-grid";
+  const requiresPricingGrid = formData.calculationMethod === "csv-pricing-grid";
+
   const handleCreateTemplate = () => {
     // Validate required fields
     if (!formData.name.trim()) {
@@ -84,8 +91,15 @@ export const ProductTemplatesTab = () => {
       alert("Please select a pricing unit");
       return;
     }
-    if (!formData.baseMakingCost) {
+    
+    // Validate based on calculation method
+    if (requiresMakingCost && !formData.baseMakingCost) {
       alert("Please enter a base making cost");
+      return;
+    }
+    
+    if (requiresPricingGrid && !formData.selectedPricingGrid) {
+      alert("Please select a pricing grid");
       return;
     }
 
@@ -93,7 +107,8 @@ export const ProductTemplatesTab = () => {
       name: formData.name.trim(),
       calculationMethod: formData.calculationMethod,
       pricingUnit: formData.pricingUnit,
-      baseMakingCost: parseFloat(formData.baseMakingCost),
+      selectedPricingGrid: formData.selectedPricingGrid || undefined,
+      baseMakingCost: requiresMakingCost ? parseFloat(formData.baseMakingCost) : undefined,
       complexityMultiplier: formData.complexityMultiplier,
       showComplexityOption: formData.showComplexityOption,
       active: true,
@@ -127,6 +142,7 @@ export const ProductTemplatesTab = () => {
       name: "",
       calculationMethod: "",
       pricingUnit: "",
+      selectedPricingGrid: "",
       baseMakingCost: "",
       baseHeightLimit: "2.4",
       useHeightSurcharges: false,
@@ -161,6 +177,7 @@ export const ProductTemplatesTab = () => {
         name: "",
         calculationMethod: "",
         pricingUnit: "",
+        selectedPricingGrid: "",
         baseMakingCost: "",
         baseHeightLimit: "2.4",
         useHeightSurcharges: false,
@@ -191,6 +208,7 @@ export const ProductTemplatesTab = () => {
       name: template.name,
       calculationMethod: template.calculationMethod,
       pricingUnit: template.pricingUnit,
+      selectedPricingGrid: template.selectedPricingGrid || "",
       baseMakingCost: template.baseMakingCost?.toString() || "",
       baseHeightLimit: template.baseHeightLimit?.toString() || "2.4",
       useHeightSurcharges: template.useHeightSurcharges || false,
@@ -245,6 +263,11 @@ export const ProductTemplatesTab = () => {
                   <CardTitle className="text-brand-primary">{template.name}</CardTitle>
                   <CardDescription>
                     Calculation: {template.calculationMethod} • Pricing: {template.pricingUnit}
+                    {template.selectedPricingGrid && (
+                      <span className="block text-xs text-blue-600 mt-1">
+                        Using grid: {pricingGrids.find(g => g.id === template.selectedPricingGrid)?.name || template.selectedPricingGrid}
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -296,14 +319,14 @@ export const ProductTemplatesTab = () => {
             </div>
             <div>
               <Label htmlFor="calculationMethod">Calculation Method *</Label>
-              <Select value={formData.calculationMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, calculationMethod: value }))}>
+              <Select value={formData.calculationMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, calculationMethod: value, pricingUnit: value === 'csv-pricing-grid' ? 'csv-grid' : '', selectedPricingGrid: '' }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="width-drop">Width × Drop (Curtains)</SelectItem>
                   <SelectItem value="width-height">Width × Height (Blinds)</SelectItem>
-                  <SelectItem value="csv-pricing-grid">CSV Pricing Grid (Blinds/Complex)</SelectItem>
+                  <SelectItem value="csv-pricing-grid">CSV Pricing Grid (Pre-defined pricing)</SelectItem>
                   <SelectItem value="panels">Number of Panels</SelectItem>
                   <SelectItem value="fixed">Fixed Price</SelectItem>
                 </SelectContent>
@@ -319,215 +342,272 @@ export const ProductTemplatesTab = () => {
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="per-linear-meter">Per Linear Meter</SelectItem>
-                  <SelectItem value="per-sqm">Per Square Meter</SelectItem>
-                  <SelectItem value="per-panel">Per Panel</SelectItem>
-                  <SelectItem value="per-drop">Per Drop</SelectItem>
-                  <SelectItem value="csv-grid">From CSV Pricing Grid</SelectItem>
-                  <SelectItem value="fixed">Fixed Price</SelectItem>
+                  {requiresPricingGrid ? (
+                    <SelectItem value="csv-grid">From CSV Pricing Grid</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="per-linear-meter">Per Linear Meter</SelectItem>
+                      <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+                      <SelectItem value="per-panel">Per Panel</SelectItem>
+                      <SelectItem value="per-drop">Per Drop</SelectItem>
+                      <SelectItem value="fixed">Fixed Price</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Making Cost Structure */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-brand-primary">Making Cost Structure</h4>
-            
-            <div className="grid grid-cols-2 gap-4">
+            {/* Pricing Grid Selection - only show when CSV pricing grid is selected */}
+            {requiresPricingGrid && (
               <div>
-                <Label htmlFor="baseMakingCost">Base Making Cost *</Label>
-                <Input 
-                  id="baseMakingCost" 
-                  type="number" 
-                  step="0.01" 
-                  value={formData.baseMakingCost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, baseMakingCost: e.target.value }))}
-                  placeholder="45.00" 
-                />
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-500">Per {fabricUnit} up to</span>
-                  <Input 
-                    type="number" 
-                    step="0.1" 
-                    value={formData.baseHeightLimit}
-                    onChange={(e) => setFormData(prev => ({ ...prev, baseHeightLimit: e.target.value }))}
-                    placeholder="2.4" 
-                    className="w-16 h-6 text-xs"
-                  />
-                  <span className="text-xs text-gray-500">{lengthUnit} height</span>
-                </div>
+                <Label htmlFor="selectedPricingGrid">Select Pricing Grid *</Label>
+                <Select value={formData.selectedPricingGrid} onValueChange={(value) => setFormData(prev => ({ ...prev, selectedPricingGrid: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a pricing grid" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pricingGrids.length === 0 ? (
+                      <SelectItem value="" disabled>No pricing grids available - upload some first</SelectItem>
+                    ) : (
+                      pricingGrids.map((grid) => (
+                        <SelectItem key={grid.id} value={grid.id}>
+                          {grid.name} ({grid.grid_data?.dropRows?.length || 0} × {grid.grid_data?.widthColumns?.length || 0})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {pricingGrids.length === 0 && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    ⚠️ No pricing grids found. Upload CSV pricing grids in the Components tab first.
+                  </p>
+                )}
               </div>
-              <div>
-                <Label htmlFor="showComplexityOption">Complexity Options</Label>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="showComplexityOption" defaultChecked />
-                    <label htmlFor="showComplexityOption" className="text-sm">
-                      Show complexity multiplier option in calculator
-                    </label>
-                  </div>
-                  
-                  <div className="p-3 bg-gray-50 rounded-lg space-y-2">
-                    <h5 className="text-sm font-medium">Available Complexity Levels:</h5>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span>• Standard (Basic installation)</span>
-                        <span>1.0x</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>• Medium (Bay windows, pattern matching)</span>
-                        <span>1.2x</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>• Complex (Difficult access, intricate details)</span>
-                        <span>1.5x</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>• Custom (User-defined multiplier)</span>
-                        <span>Variable</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-xs text-muted-foreground">
-                    ℹ️ Users will see this option in the calculator to adjust pricing based on job complexity
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Height Surcharges Toggle */}
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="space-y-1">
-                <h5 className="font-medium text-blue-900">Height-Based Surcharges</h5>
-                <p className="text-sm text-blue-700">Add extra charges for windows above the base height limit</p>
-              </div>
-              <Switch 
-                checked={formData.useHeightSurcharges}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))}
-              />
-            </div>
-
-            {/* Height-based surcharges - only show when enabled */}
-            {formData.useHeightSurcharges && (
-            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-              <h5 className="font-medium mb-3">Height-Based Surcharges</h5>
-              
-              {/* Range 1 */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Height Range 1</Label>
-                <div className="grid grid-cols-5 gap-2 items-end">
-                  <div>
-                    <Label htmlFor="range1Start" className="text-xs">From ({lengthUnit})</Label>
-                    <Input
-                      id="range1Start" 
-                      type="number" 
-                      step="0.1" 
-                      value={formData.heightRange1Start}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange1Start: e.target.value }))}
-                      placeholder="2.4" 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="range1End" className="text-xs">To ({lengthUnit})</Label>
-                    <Input
-                      id="range1End" 
-                      type="number" 
-                      step="0.1" 
-                      value={formData.heightRange1End}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange1End: e.target.value }))}
-                      placeholder="3.0" 
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="height1" className="text-xs">Surcharge per {fabricUnit}</Label>
-                    <Input
-                      id="height1" 
-                      type="number" 
-                      step="0.01" 
-                      value={formData.heightSurcharge1}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge1: e.target.value }))}
-                      placeholder="5.00" 
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
-                </div>
-              </div>
-              
-              {/* Range 2 */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Height Range 2</Label>
-                <div className="grid grid-cols-5 gap-2 items-end">
-                  <div>
-                    <Label htmlFor="range2Start" className="text-xs">From ({lengthUnit})</Label>
-                    <Input
-                      id="range2Start" 
-                      type="number" 
-                      step="0.1" 
-                      value={formData.heightRange2Start}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange2Start: e.target.value }))}
-                      placeholder="3.0" 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="range2End" className="text-xs">To ({lengthUnit})</Label>
-                    <Input
-                      id="range2End" 
-                      type="number" 
-                      step="0.1" 
-                      value={formData.heightRange2End}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange2End: e.target.value }))}
-                      placeholder="4.0" 
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="height2" className="text-xs">Surcharge per {fabricUnit}</Label>
-                    <Input
-                      id="height2" 
-                      type="number" 
-                      step="0.01" 
-                      value={formData.heightSurcharge2}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge2: e.target.value }))}
-                      placeholder="10.00" 
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
-                </div>
-              </div>
-              
-              {/* Range 3 */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Height Range 3</Label>
-                <div className="grid grid-cols-4 gap-2 items-end">
-                  <div>
-                    <Label htmlFor="range3Start" className="text-xs">Above ({lengthUnit})</Label>
-                    <Input
-                      id="range3Start" 
-                      type="number" 
-                      step="0.1" 
-                      value={formData.heightRange3Start}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange3Start: e.target.value }))}
-                      placeholder="4.0" 
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="height3" className="text-xs">Surcharge per {fabricUnit}</Label>
-                    <Input
-                      id="height3" 
-                      type="number" 
-                      step="0.01" 
-                      value={formData.heightSurcharge3}
-                      onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge3: e.target.value }))}
-                      placeholder="20.00" 
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
-                </div>
-              </div>
-            </div>
             )}
           </div>
+
+          {/* Explanation Box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">💡 How Pricing Works:</h4>
+            <div className="space-y-2 text-sm text-blue-800">
+              {requiresPricingGrid ? (
+                <>
+                  <p><strong>CSV Pricing Grid Method:</strong></p>
+                  <p>• Pricing comes directly from your uploaded CSV grid</p>
+                  <p>• No additional making costs needed - everything is in the grid</p>
+                  <p>• Perfect for complex blind pricing from suppliers</p>
+                </>
+              ) : (
+                <>
+                  <p><strong>Component-Based Method:</strong></p>
+                  <p>• Base making cost + fabric cost + selected components</p>
+                  <p>• More flexible for custom combinations</p>
+                  <p>• Perfect for curtains and custom work</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Making Cost Structure - only show when NOT using pricing grid */}
+          {requiresMakingCost && (
+            <div className="space-y-4">
+              <h4 className="font-medium text-brand-primary">Making Cost Structure</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="baseMakingCost">Base Making Cost *</Label>
+                  <Input 
+                    id="baseMakingCost" 
+                    type="number" 
+                    step="0.01" 
+                    value={formData.baseMakingCost}
+                    onChange={(e) => setFormData(prev => ({ ...prev, baseMakingCost: e.target.value }))}
+                    placeholder="45.00" 
+                  />
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-500">Per {fabricUnit} up to</span>
+                    <Input 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.baseHeightLimit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, baseHeightLimit: e.target.value }))}
+                      placeholder="2.4" 
+                      className="w-16 h-6 text-xs"
+                    />
+                    <span className="text-xs text-gray-500">{lengthUnit} height</span>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="showComplexityOption">Complexity Options</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" id="showComplexityOption" defaultChecked />
+                      <label htmlFor="showComplexityOption" className="text-sm">
+                        Show complexity multiplier option in calculator
+                      </label>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                      <h5 className="text-sm font-medium">Available Complexity Levels:</h5>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span>• Standard (Basic installation)</span>
+                          <span>1.0x</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Medium (Bay windows, pattern matching)</span>
+                          <span>1.2x</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Complex (Difficult access, intricate details)</span>
+                          <span>1.5x</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Custom (User-defined multiplier)</span>
+                          <span>Variable</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      ℹ️ Users will see this option in the calculator to adjust pricing based on job complexity
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Height Surcharges Toggle */}
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="space-y-1">
+                  <h5 className="font-medium text-blue-900">Height-Based Surcharges</h5>
+                  <p className="text-sm text-blue-700">Add extra charges for windows above the base height limit</p>
+                </div>
+                <Switch 
+                  checked={formData.useHeightSurcharges}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))}
+                />
+              </div>
+
+              {/* Height-based surcharges - only show when enabled */}
+              {formData.useHeightSurcharges && (
+              <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                <h5 className="font-medium mb-3">Height-Based Surcharges</h5>
+                
+                {/* Range 1 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Height Range 1</Label>
+                  <div className="grid grid-cols-5 gap-2 items-end">
+                    <div>
+                      <Label htmlFor="range1Start" className="text-xs">From ({lengthUnit})</Label>
+                      <Input
+                        id="range1Start" 
+                        type="number" 
+                        step="0.1" 
+                        value={formData.heightRange1Start}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightRange1Start: e.target.value }))}
+                        placeholder="2.4" 
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="range1End" className="text-xs">To ({lengthUnit})</Label>
+                      <Input
+                        id="range1End" 
+                        type="number" 
+                        step="0.1" 
+                        value={formData.heightRange1End}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightRange1End: e.target.value }))}
+                        placeholder="3.0" 
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="height1" className="text-xs">Surcharge per {fabricUnit}</Label>
+                      <Input
+                        id="height1" 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.heightSurcharge1}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge1: e.target.value }))}
+                        placeholder="5.00" 
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
+                  </div>
+                </div>
+                
+                {/* Range 2 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Height Range 2</Label>
+                  <div className="grid grid-cols-5 gap-2 items-end">
+                    <div>
+                      <Label htmlFor="range2Start" className="text-xs">From ({lengthUnit})</Label>
+                      <Input
+                        id="range2Start" 
+                        type="number" 
+                        step="0.1" 
+                        value={formData.heightRange2Start}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightRange2Start: e.target.value }))}
+                        placeholder="3.0" 
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="range2End" className="text-xs">To ({lengthUnit})</Label>
+                      <Input
+                        id="range2End" 
+                        type="number" 
+                        step="0.1" 
+                        value={formData.heightRange2End}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightRange2End: e.target.value }))}
+                        placeholder="4.0" 
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="height2" className="text-xs">Surcharge per {fabricUnit}</Label>
+                      <Input
+                        id="height2" 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.heightSurcharge2}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge2: e.target.value }))}
+                        placeholder="10.00" 
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
+                  </div>
+                </div>
+                
+                {/* Range 3 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Height Range 3</Label>
+                  <div className="grid grid-cols-4 gap-2 items-end">
+                    <div>
+                      <Label htmlFor="range3Start" className="text-xs">Above ({lengthUnit})</Label>
+                      <Input
+                        id="range3Start" 
+                        type="number" 
+                        step="0.1" 
+                        value={formData.heightRange3Start}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightRange3Start: e.target.value }))}
+                        placeholder="4.0" 
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="height3" className="text-xs">Surcharge per {fabricUnit}</Label>
+                      <Input
+                        id="height3" 
+                        type="number" 
+                        step="0.01" 
+                        value={formData.heightSurcharge3}
+                        onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge3: e.target.value }))}
+                        placeholder="20.00" 
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
+                  </div>
+                </div>
+              </div>
+              )}
+            </div>
+          )}
           
           <div className="space-y-4">
             <h4 className="font-medium text-brand-primary">Required Components</h4>
@@ -666,45 +746,6 @@ export const ProductTemplatesTab = () => {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Pricing Grid Selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Select Existing Pricing Grid (Optional)</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a pricing grid or leave blank" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Grid - Use Making Costs Below</SelectItem>
-                  <SelectItem value="roman-blinds-standard">Roman Blinds - Standard Grid</SelectItem>
-                  <SelectItem value="venetian-blinds-wood">Venetian Blinds - Wood Grid</SelectItem>
-                  <SelectItem value="roller-blinds-basic">Roller Blinds - Basic Grid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Grid Represents</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="What does the grid include?" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="making-only">Making Costs Only (+ fabric + components)</SelectItem>
-                  <SelectItem value="complete-price">Complete Final Price (no additions)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">💡 How This Works:</h4>
-            <div className="space-y-2 text-sm text-blue-800">
-              <p><strong>Option 1:</strong> Use a Pricing Grid (complete pricing from Components section)</p>
-              <p><strong>Option 2:</strong> Use Making Costs + Components (calculated pricing)</p>
-              <p><strong>Final Price:</strong> Grid price OR (Making cost + Fabric cost + Component costs) + Your markup</p>
             </div>
           </div>
 
