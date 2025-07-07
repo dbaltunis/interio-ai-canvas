@@ -2,13 +2,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Search, Filter, Upload, Download } from "lucide-react";
+import { Plus, Search, Filter, Upload, Download, FolderTree, ShoppingBag } from "lucide-react";
 
 interface LibraryHeaderProps {
   onAddNew: (type: "vendor" | "fabric" | "hardware" | "collection") => void;
   onShowFilter: () => void;
   onImport: () => void;
   onExport: () => void;
+  onShowCategories: () => void;
+  onShowShopify: () => void;
   searchTerm: string;
   onSearchChange: (value: string) => void;
 }
@@ -18,6 +20,8 @@ export const LibraryHeader = ({
   onShowFilter, 
   onImport, 
   onExport,
+  onShowCategories,
+  onShowShopify,
   searchTerm,
   onSearchChange 
 }: LibraryHeaderProps) => {
@@ -29,6 +33,24 @@ export const LibraryHeader = ({
           <p className="text-gray-600">Manage fabrics, hardware, and vendor relationships</p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+            onClick={onShowCategories}
+          >
+            <FolderTree className="h-4 w-4 mr-2" />
+            Categories
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+            onClick={onShowShopify}
+          >
+            <ShoppingBag className="h-4 w-4 mr-2" />
+            Shopify
+          </Button>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button className="bg-slate-600 hover:bg-slate-700 text-white">

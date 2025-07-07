@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -20,6 +19,8 @@ import { useInventory } from "@/hooks/useInventoryManagement";
 import { useHardwareInventory } from "@/hooks/useHardwareInventory";
 import { useCollections } from "@/hooks/useCollections";
 import { toast } from "sonner";
+import { CategoryManagementDialog } from "./CategoryManagementDialog";
+import { ShopifyIntegrationDialog } from "./ShopifyIntegrationDialog";
 
 export const LibraryPage = () => {
   const { units } = useMeasurementUnits();
@@ -36,6 +37,8 @@ export const LibraryPage = () => {
     product: any;
     type: "fabric" | "hardware" | "vendor";
   }>({ open: false, product: null, type: "fabric" });
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showShopifyDialog, setShowShopifyDialog] = useState(false);
 
   // Fetch real data from database
   const { data: vendors = [], isLoading: vendorsLoading } = useVendors();
@@ -185,6 +188,8 @@ export const LibraryPage = () => {
       <LibraryHeader 
         onAddNew={handleAddNew}
         onShowFilter={() => setShowFilterDialog(true)}
+        onShowCategories={() => setShowCategoryDialog(true)}
+        onShowShopify={() => setShowShopifyDialog(true)}
         onImport={handleImport}
         onExport={handleExport}
         searchTerm={searchTerm}
@@ -321,6 +326,18 @@ export const LibraryPage = () => {
         onOpenChange={(open) => setProductDetailsDialog(prev => ({ ...prev, open }))}
         product={productDetailsDialog.product}
         productType={productDetailsDialog.type}
+      />
+
+      {/* Category Management Dialog */}
+      <CategoryManagementDialog
+        open={showCategoryDialog}
+        onOpenChange={setShowCategoryDialog}
+      />
+
+      {/* Shopify Integration Dialog */}
+      <ShopifyIntegrationDialog
+        open={showShopifyDialog}
+        onOpenChange={setShowShopifyDialog}
       />
     </div>
   );
