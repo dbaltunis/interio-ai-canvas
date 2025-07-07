@@ -733,6 +733,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hardware_options: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          name: string
+          price: number
+          unit: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       heading_options: {
         Row: {
           active: boolean | null
@@ -744,7 +777,7 @@ export type Database = {
           price: number
           type: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -756,7 +789,7 @@ export type Database = {
           price?: number
           type?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -768,7 +801,7 @@ export type Database = {
           price?: number
           type?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -887,6 +920,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lining_options: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          name: string
+          price: number
+          unit: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       making_cost_option_mappings: {
         Row: {
@@ -1023,6 +1089,36 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      pricing_grids: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          grid_data: Json
+          id: string
+          name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          grid_data?: Json
+          id?: string
+          name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          grid_data?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1806,6 +1902,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trimming_options: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          name: string
+          price: number
+          unit: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       vendor_products: {
         Row: {

@@ -10,6 +10,7 @@ import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions, useCreateHeadingOption, useUpdateHeadingOption, useDeleteHeadingOption } from "@/hooks/useHeadingOptions";
+import { useHardwareOptions, useCreateHardwareOption, useUpdateHardwareOption, useDeleteHardwareOption, useLiningOptions, useCreateLiningOption, useUpdateLiningOption, useDeleteLiningOption } from "@/hooks/useComponentOptions";
 import { toast } from "sonner";
 
 export const ComponentsTab = () => {
@@ -19,18 +20,16 @@ export const ComponentsTab = () => {
   const createHeading = useCreateHeadingOption();
   const updateHeading = useUpdateHeadingOption();
   const deleteHeading = useDeleteHeadingOption();
-
-  const [hardware, setHardware] = useState([
-    { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: "per-meter", active: true },
-    { id: 2, name: "Curtain Rod - Premium", price: 85.00, unit: "per-meter", active: true },
-    { id: 3, name: "Roman Blind Chain", price: 12.00, unit: "per-set", active: true }
-  ]);
-
-  const [linings, setLinings] = useState([
-    { id: 1, name: "Standard Lining", price: 8.50, unit: "per-meter", active: true },
-    { id: 2, name: "Blackout Lining", price: 12.00, unit: "per-meter", active: true },
-    { id: 3, name: "Thermal Lining", price: 15.00, unit: "per-meter", active: true }
-  ]);
+  
+  const { data: hardware = [], isLoading: hardwareLoading } = useHardwareOptions();
+  const createHardware = useCreateHardwareOption();
+  const updateHardware = useUpdateHardwareOption();
+  const deleteHardware = useDeleteHardwareOption();
+  
+  const { data: linings = [], isLoading: liningsLoading } = useLiningOptions();
+  const createLining = useCreateLiningOption();
+  const updateLining = useUpdateLiningOption();
+  const deleteLining = useDeleteLiningOption();
 
   const [isAddingHeading, setIsAddingHeading] = useState(false);
   const [editingHeading, setEditingHeading] = useState(null);
