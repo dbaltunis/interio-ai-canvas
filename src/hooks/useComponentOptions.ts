@@ -218,3 +218,114 @@ export const useDeleteLiningOption = () => {
     },
   });
 };
+
+// Parts Options
+export interface PartsOption {
+  id: string;
+  user_id?: string;
+  name: string;
+  category?: string;
+  price: number;
+  unit: string;
+  description?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const usePartsOptions = () => {
+  return useQuery({
+    queryKey: ['parts-options'],
+    queryFn: async () => {
+      console.log('Fetching parts options...');
+      const { data, error } = await supabase
+        .from('parts_options')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching parts options:', error);
+        throw error;
+      }
+      
+      console.log('Parts options fetched:', data);
+      return data as PartsOption[];
+    },
+  });
+};
+
+export const useCreatePartsOption = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (option: Omit<PartsOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating parts option:', option);
+      
+      const { data, error } = await supabase
+        .from('parts_options')
+        .insert([option])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating parts option:', error);
+        throw error;
+      }
+      
+      console.log('Parts option created:', data);
+      return data;
+    },
+    onSuccess: () => {
+      console.log('Parts option created successfully, invalidating queries...');
+      queryClient.invalidateQueries({ queryKey: ['parts-options'] });
+    },
+    onError: (error) => {
+      console.error('Parts option creation failed:', error);
+    },
+  });
+};
+
+export const useUpdatePartsOption = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PartsOption> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('parts_options')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating parts option:', error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parts-options'] });
+    },
+  });
+};
+
+export const useDeletePartsOption = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('parts_options')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting parts option:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parts-options'] });
+    },
+  });
+};

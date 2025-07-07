@@ -5,7 +5,7 @@ import { HardwareSection } from "./components/HardwareSection";
 import { LiningsSection } from "./components/LiningsSection";
 import { ServicesSection } from "./components/ServicesSection";
 import { PricingGridsSection } from "./components/PricingGridsSection";
-import { TrimmingsSection } from "./components/TrimmingsSection";
+import { PartsSection } from "./components/PartsSection";
 
 export const ComponentsTab = () => {
   return (
@@ -24,7 +24,7 @@ export const ComponentsTab = () => {
           <TabsTrigger value="linings">Linings</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="pricing-grids">Pricing Grids</TabsTrigger>
-          <TabsTrigger value="trimmings">Trimmings</TabsTrigger>
+          <TabsTrigger value="parts">Parts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="headings">
@@ -47,8 +47,8 @@ export const ComponentsTab = () => {
           <PricingGridsSection />
         </TabsContent>
 
-        <TabsContent value="trimmings">
-          <TrimmingsSection />
+        <TabsContent value="parts">
+          <PartsSection />
         </TabsContent>
       </Tabs>
     </div>
