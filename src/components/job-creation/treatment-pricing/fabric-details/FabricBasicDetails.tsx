@@ -48,7 +48,7 @@ export const FabricBasicDetails = ({ formData, onInputChange }: FabricBasicDetai
           />
           <div className="text-xs text-muted-foreground">
             {parseFloat(formData.fabric_width) || 137}cm = {Math.round((parseFloat(formData.fabric_width) || 137) / 2.54)}" 
-            {(parseFloat(formData.fabric_width) || 137) <= 200 ? " (Narrow fabric)" : " (Wide fabric)"}
+            {(parseFloat(formData.fabric_width) || 137) <= 200 ? " (Narrow fabric - Vertical recommended)" : " (Wide fabric - Horizontal possible)"}
           </div>
         </div>
       </div>

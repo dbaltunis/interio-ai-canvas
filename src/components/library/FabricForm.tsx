@@ -117,18 +117,23 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
               <SelectValue placeholder="Select pattern" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="solid">Solid</SelectItem>
-              <SelectItem value="striped">Striped</SelectItem>
-              <SelectItem value="floral">Floral</SelectItem>
-              <SelectItem value="geometric">Geometric</SelectItem>
-              <SelectItem value="paisley">Paisley</SelectItem>
-              <SelectItem value="damask">Damask</SelectItem>
-              <SelectItem value="toile">Toile</SelectItem>
-              <SelectItem value="abstract">Abstract</SelectItem>
-              <SelectItem value="textured">Textured</SelectItem>
-              <SelectItem value="plaid">Plaid/Check</SelectItem>
+              <SelectItem value="solid">Solid/Plain (No pattern matching)</SelectItem>
+              <SelectItem value="striped">Striped (Pattern matching required)</SelectItem>
+              <SelectItem value="floral">Floral (Pattern matching required)</SelectItem>
+              <SelectItem value="geometric">Geometric (Pattern matching required)</SelectItem>
+              <SelectItem value="paisley">Paisley (Pattern matching required)</SelectItem>
+              <SelectItem value="damask">Damask (Pattern matching required)</SelectItem>
+              <SelectItem value="toile">Toile (Pattern matching required)</SelectItem>
+              <SelectItem value="abstract">Abstract (Pattern matching required)</SelectItem>
+              <SelectItem value="textured">Textured (No pattern matching)</SelectItem>
+              <SelectItem value="plaid">Plaid/Check (Pattern matching required)</SelectItem>
             </SelectContent>
           </Select>
+          <div className="text-xs text-muted-foreground mt-1">
+            {fabricData.pattern === 'solid' || fabricData.pattern === 'textured' 
+              ? "✓ No pattern matching required - can rotate for fabric savings" 
+              : "⚠ Pattern matching required - vertical roll direction recommended"}
+          </div>
         </div>
       </div>
 
@@ -247,14 +252,19 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="width">Fabric Width</Label>
+          <Label htmlFor="width">Fabric Width (cm)</Label>
           <Input
             id="width"
+            type="number"
             value={fabricData.width}
             onChange={(e) => setFabricData(prev => ({ ...prev, width: e.target.value }))}
             className="mt-1"
-            placeholder="e.g., 137cm"
+            placeholder="137"
           />
+          <div className="text-xs text-muted-foreground mt-1">
+            {parseFloat(fabricData.width) <= 200 ? "Narrow fabric (≤200cm)" : "Wide fabric (>200cm)"}
+            {parseFloat(fabricData.width) <= 200 ? " - Recommended roll direction: Vertical" : " - Recommended roll direction: Horizontal"}
+          </div>
         </div>
       </div>
 

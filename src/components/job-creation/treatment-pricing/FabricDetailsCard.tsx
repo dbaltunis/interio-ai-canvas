@@ -8,6 +8,7 @@ import { FabricOrientationSelector } from "./fabric-details/FabricOrientationSel
 import { FabricUsageDisplay } from "./fabric-details/FabricUsageDisplay";
 import { FabricCostComparison } from "./fabric-details/FabricCostComparison";
 import { FabricGuidelines } from "./fabric-details/FabricGuidelines";
+import { FabricAutoCalculationHelper } from "./fabric-details/FabricAutoCalculationHelper";
 
 interface FabricDetailsCardProps {
   formData: TreatmentFormData;
@@ -31,6 +32,8 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
       </CardHeader>
       <CardContent className="space-y-4">
         <FabricBasicDetails formData={formData} onInputChange={onInputChange} />
+        
+        <FabricAutoCalculationHelper formData={formData} onInputChange={onInputChange} />
         
         <FabricOrientationSelector formData={formData} onInputChange={onInputChange} />
 

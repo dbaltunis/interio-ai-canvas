@@ -8,6 +8,36 @@ import { calculateIntegratedFabricUsage, type FabricCalculationParams } from "@/
 export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
   const { units } = useMeasurementUnits();
 
+  // Auto-detect fabric properties for smarter calculations
+  const detectFabricProperties = () => {
+    const fabricWidth = parseFloat(formData.fabric_width) || 137;
+    const fabricType = formData.fabric_type?.toLowerCase() || '';
+    
+    // Detect if fabric is plain (no pattern matching required)
+    const isPlainFabric = fabricType.includes('plain') || 
+                         fabricType.includes('solid') || 
+                         fabricType.includes('textured') ||
+                         fabricType.includes('linen') ||
+                         fabricType.includes('cotton');
+    
+    // Auto-detect pattern matching requirement
+    const requiresPatternMatching = !isPlainFabric || 
+                                   fabricType.includes('stripe') ||
+                                   fabricType.includes('floral') ||
+                                   fabricType.includes('geometric') ||
+                                   fabricType.includes('pattern');
+    
+    // Classify fabric width
+    const isNarrowFabric = fabricWidth <= 200;
+    
+    return { 
+      isPlainFabric, 
+      requiresPatternMatching, 
+      isNarrowFabric, 
+      fabricWidth 
+    };
+  };
+
   // Extract fullness ratio from selected options
   const getActiveFullnessRatio = () => {
     let fullnessRatio = parseFloat(formData.heading_fullness) || 2.5;
@@ -35,11 +65,34 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
 
   const fabricUsageCalculation = useMemo(() => {
     const activeFullness = getActiveFullnessRatio();
-    const formDataWithFullness = {
+    const fabricProps = detectFabricProperties();
+    
+    // Auto-suggest roll direction if not explicitly set
+    let rollDirection = formData.roll_direction;
+    if (!rollDirection || rollDirection === 'auto') {
+      // For narrow fabrics, check if we can benefit from horizontal rotation
+      const railWidth = parseFloat(formData.rail_width) || 0;
+      const drop = parseFloat(formData.drop) || 0;
+      
+      if (fabricProps.isPlainFabric && fabricProps.isNarrowFabric && 
+          drop < fabricProps.fabricWidth && railWidth > fabricProps.fabricWidth) {
+        rollDirection = 'horizontal'; // Rotate for fabric savings
+      } else if (fabricProps.isNarrowFabric) {
+        rollDirection = 'vertical'; // Standard for narrow fabrics
+      } else {
+        rollDirection = 'horizontal'; // Standard for wide fabrics
+      }
+    }
+    
+    const formDataWithEnhancements = {
       ...formData,
-      heading_fullness: activeFullness
+      heading_fullness: activeFullness,
+      roll_direction: rollDirection,
+      // Add fabric properties for calculation context
+      fabric_properties: fabricProps
     };
-    return calculateFabricUsage(formDataWithFullness, treatmentTypesData);
+    
+    return calculateFabricUsage(formDataWithEnhancements, treatmentTypesData);
   }, [formData, treatmentTypesData, hierarchicalOptions]);
 
   const findHierarchicalOptionById = (optionId: string): any => {
