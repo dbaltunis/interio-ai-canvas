@@ -129,13 +129,138 @@ export const ProductTemplatesTab = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="basePrice">
-                Making Cost (per unit)
-                <span className="text-xs text-gray-500 block font-normal">
-                  What you charge to make/sew this product per unit (e.g., $45/linear meter for curtains)
-                </span>
-              </Label>
-              <Input id="basePrice" type="number" step="0.01" placeholder="45.00" />
+              <Label>Fabric Calculation Method</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="How to calculate fabric" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard-fullness">Standard Fullness (2x, 2.5x etc.)</SelectItem>
+                  <SelectItem value="pattern-match">Pattern Matching Required</SelectItem>
+                  <SelectItem value="wide-fabric">Wide Fabric (no joins)</SelectItem>
+                  <SelectItem value="narrow-fabric">Narrow Fabric (joins required)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Making Cost Structure */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-brand-primary">Making Cost Structure</h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="baseMakingCost">Base Making Cost</Label>
+                <Input id="baseMakingCost" type="number" step="0.01" placeholder="45.00" />
+                <span className="text-xs text-gray-500">Per linear meter (standard height up to 2.4m)</span>
+              </div>
+              <div>
+                <Label htmlFor="complexityMultiplier">Complexity Multiplier</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select complexity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard (1.0x)</SelectItem>
+                    <SelectItem value="medium">Medium Complexity (1.2x)</SelectItem>
+                    <SelectItem value="complex">Complex (1.5x)</SelectItem>
+                    <SelectItem value="custom">Custom Rate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Height-based surcharges */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h5 className="font-medium mb-3">Height-Based Surcharges</h5>
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div>
+                    <Label htmlFor="height1">2.4m - 3.0m</Label>
+                    <Input id="height1" type="number" step="0.01" placeholder="5.00" />
+                    <span className="text-xs text-gray-500">+$ per meter</span>
+                  </div>
+                  <div>
+                    <Label htmlFor="height2">3.0m - 4.0m</Label>
+                    <Input id="height2" type="number" step="0.01" placeholder="10.00" />
+                    <span className="text-xs text-gray-500">+$ per meter</span>
+                  </div>
+                  <div>
+                    <Label htmlFor="height3">4.0m+</Label>
+                    <Input id="height3" type="number" step="0.01" placeholder="20.00" />
+                    <span className="text-xs text-gray-500">+$ per meter</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Required Components */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-brand-primary">Required Components</h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Heading Options</Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="pencil-pleat" defaultChecked />
+                    <label htmlFor="pencil-pleat" className="text-sm">Pencil Pleat (2.0x) - $15/m</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="pinch-pleat" />
+                    <label htmlFor="pinch-pleat" className="text-sm">Pinch Pleat (2.2x) - $25/m</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="wave" />
+                    <label htmlFor="wave" className="text-sm">Wave (2.5x) - $35/m</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label>Hardware Options</Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="basic-track" />
+                    <label htmlFor="basic-track" className="text-sm">Basic Track - $45/m</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="premium-rod" />
+                    <label htmlFor="premium-rod" className="text-sm">Premium Rod - $85/m</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Lining Options</Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="standard-lining" />
+                    <label htmlFor="standard-lining" className="text-sm">Standard Lining - $8.50/m</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="blackout-lining" />
+                    <label htmlFor="blackout-lining" className="text-sm">Blackout Lining - $12/m</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label>Additional Services</Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="installation" />
+                    <label htmlFor="installation" className="text-sm">Installation - $25/window</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="measuring" />
+                    <label htmlFor="measuring" className="text-sm">Measuring Service - $50/visit</label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
