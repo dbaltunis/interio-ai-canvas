@@ -103,6 +103,7 @@ export const ProductTemplatesTab = () => {
                 <SelectContent>
                   <SelectItem value="width-drop">Width × Drop (Curtains)</SelectItem>
                   <SelectItem value="width-height">Width × Height (Blinds)</SelectItem>
+                  <SelectItem value="csv-pricing-grid">CSV Pricing Grid (Blinds/Complex)</SelectItem>
                   <SelectItem value="panels">Number of Panels</SelectItem>
                   <SelectItem value="fixed">Fixed Price</SelectItem>
                 </SelectContent>
@@ -122,13 +123,46 @@ export const ProductTemplatesTab = () => {
                   <SelectItem value="per-sqm">Per Square Meter</SelectItem>
                   <SelectItem value="per-panel">Per Panel</SelectItem>
                   <SelectItem value="per-drop">Per Drop</SelectItem>
+                  <SelectItem value="csv-grid">From CSV Pricing Grid</SelectItem>
                   <SelectItem value="fixed">Fixed Price</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="basePrice">Base Making Cost</Label>
-              <Input id="basePrice" type="number" step="0.01" placeholder="0.00" />
+              <Label htmlFor="basePrice">
+                Base Labor Cost (per unit)
+                <span className="text-xs text-gray-500 block font-normal">
+                  Your making/sewing cost only (fabric cost added separately)
+                </span>
+              </Label>
+              <Input id="basePrice" type="number" step="0.01" placeholder="45.00" />
+            </div>
+          </div>
+
+          {/* CSV Grid Selection - shown when CSV pricing is selected */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">💡 How This Works:</h4>
+            <div className="space-y-2 text-sm text-blue-800">
+              <p><strong>Base Labor Cost:</strong> Your making/sewing charge per unit (e.g., $45/linear meter for curtains)</p>
+              <p><strong>CSV Pricing Grid:</strong> For complex products like blinds where price varies by size combinations</p>
+              <p><strong>Final Price:</strong> Base cost + Fabric cost + Component costs + Your markup</p>
+            </div>
+          </div>
+
+          {/* CSV Grid Upload Section */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            <div className="text-center space-y-2">
+              <h4 className="font-medium">Upload CSV Pricing Grid (Optional)</h4>
+              <p className="text-sm text-gray-600">
+                For products with complex size-based pricing like Roman blinds
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <Input type="file" accept=".csv" className="max-w-xs" />
+                <Button variant="outline" size="sm">Upload CSV</Button>
+              </div>
+              <p className="text-xs text-gray-500">
+                Format: Width ranges (columns) × Height ranges (rows) = Prices
+              </p>
             </div>
           </div>
 
