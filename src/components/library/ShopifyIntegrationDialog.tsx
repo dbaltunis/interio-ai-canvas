@@ -244,27 +244,20 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                     </p>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <Settings className="h-5 w-5 text-blue-600 mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-blue-800 mb-2">API Credentials Setup</h4>
-                        <p className="text-sm text-blue-700 mb-3">
-                          For security, we'll need to securely store your Shopify API credentials. Click the button below to enter them safely.
-                        </p>
-                        <div className="space-y-2">
-                          <Button type="button" variant="outline" size="sm" className="w-full">
-                            <Zap className="h-4 w-4 mr-2" />
-                            Set Shopify API Key
-                          </Button>
-                          <Button type="button" variant="outline" size="sm" className="w-full">
-                            <Zap className="h-4 w-4 mr-2" />
-                            Set Webhook Secret (Optional)
-                          </Button>
-                        </div>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-emerald-800 mb-2">Simple Connection Method</h4>
+                      <p className="text-sm text-emerald-700 mb-3">
+                        We'll use Shopify's public Storefront API - no complex setup needed! Just enter your store domain and we'll automatically connect.
+                      </p>
+                      <div className="text-xs text-emerald-600 bg-emerald-100 rounded p-2">
+                        <strong>What you'll get:</strong> Product catalog sync, inventory levels, pricing info, and basic store information.
                       </div>
                     </div>
                   </div>
+                </div>
 
                   <div className="flex justify-end">
                     <Button type="submit" disabled={createIntegration.isPending || updateIntegration.isPending} className="bg-brand-primary hover:bg-brand-primary/90">
@@ -273,18 +266,18 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                   </div>
                 </form>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
-                    <Info className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-yellow-800 mb-2">Need help getting your API credentials?</h4>
-                      <p className="text-sm text-yellow-700 mb-3">
-                        Don't worry! We've created a simple guide to help you get your Shopify API credentials in just a few clicks.
+                      <h4 className="font-semibold text-blue-800 mb-2">Connection Verification</h4>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Once connected, we'll automatically test your store connection and show you proof that it's working.
                       </p>
                       <Button variant="outline" size="sm" asChild>
-                        <a href="https://help.shopify.com/en/manual/apps/app-development/private-apps" target="_blank" rel="noopener noreferrer">
+                        <a href="https://www.shopify.com/admin" target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          View Simple Setup Guide
+                          Open Shopify Admin
                         </a>
                       </Button>
                     </div>
@@ -406,8 +399,9 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Full Sync (Coming Soon)
                     </Button>
-                    <Button variant="outline" className="w-full" disabled>
-                      Test Connection (Coming Soon)
+                    <Button variant="outline" className="w-full" onClick={() => window.open(`https://${(integration as any)?.shop_domain}`, '_blank')}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Connected Store
                     </Button>
                   </CardContent>
                 </Card>
