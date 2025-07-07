@@ -9,11 +9,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
+import { useHardwareOptions, useLiningOptions } from "@/hooks/useComponentOptions";
 
 export const ProductTemplatesTab = () => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
   const lengthUnit = getLengthUnitLabel();
   const fabricUnit = getFabricUnitLabel();
+  
+  // Load actual component options
+  const { data: headingOptions = [] } = useHeadingOptions();
+  const { data: hardwareOptions = [] } = useHardwareOptions();
+  const { data: liningOptions = [] } = useLiningOptions();
   
   const [templates, setTemplates] = useState([
     {
@@ -54,9 +61,9 @@ export const ProductTemplatesTab = () => {
     heightRange2End: "4.0",
     heightRange3Start: "4.0",
     selectedComponents: {
-      headings: false,
-      hardware: false,
-      lining: false,
+      headings: {},
+      hardware: {},
+      lining: {},
       services: false
     }
   });
@@ -88,7 +95,11 @@ export const ProductTemplatesTab = () => {
       complexityMultiplier: formData.complexityMultiplier,
       showComplexityOption: formData.showComplexityOption,
       active: true,
-      components: Object.keys(formData.selectedComponents).filter(key => formData.selectedComponents[key])
+      components: Object.keys(formData.selectedComponents).filter(key => 
+        typeof formData.selectedComponents[key] === 'object' 
+          ? Object.keys(formData.selectedComponents[key]).length > 0
+          : formData.selectedComponents[key]
+      )
     };
 
     if (editingId) {
@@ -128,9 +139,9 @@ export const ProductTemplatesTab = () => {
       heightRange2End: "4.0",
       heightRange3Start: "4.0",
       selectedComponents: {
-        headings: false,
-        hardware: false,
-        lining: false,
+        headings: {},
+        hardware: {},
+        lining: {},
         services: false
       }
     });
@@ -162,9 +173,9 @@ export const ProductTemplatesTab = () => {
         heightRange2End: "4.0",
         heightRange3Start: "4.0",
         selectedComponents: {
-          headings: false,
-          hardware: false,
-          lining: false,
+          headings: {},
+          hardware: {},
+          lining: {},
           services: false
         }
       });
@@ -192,9 +203,9 @@ export const ProductTemplatesTab = () => {
       heightRange2End: "4.0",
       heightRange3Start: "4.0",
       selectedComponents: {
-        headings: template.components?.includes('headings') || false,
-        hardware: template.components?.includes('hardware') || false,
-        lining: template.components?.includes('lining') || false,
+        headings: template.selectedComponents?.headings || {},
+        hardware: template.selectedComponents?.hardware || {},
+        lining: template.selectedComponents?.lining || {},
         services: template.components?.includes('services') || false
       }
     });
@@ -515,6 +526,7 @@ export const ProductTemplatesTab = () => {
             </div>
             )}
           </div>
+          
           <div className="space-y-4">
             <h4 className="font-medium text-brand-primary">Required Components</h4>
             
@@ -522,44 +534,66 @@ export const ProductTemplatesTab = () => {
               <div>
                 <Label>Heading Options</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="pencil-pleat" 
-                      checked={formData.selectedComponents.headings}
-                      onCheckedChange={(checked) => 
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedComponents: {
-                            ...prev.selectedComponents,
-                            headings: checked === true
+                  {headingOptions.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No heading options created yet. Create some in the Components tab.</p>
+                  ) : (
+                    headingOptions.map((heading) => (
+                      <div key={heading.id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`heading-${heading.id}`}
+                          checked={formData.selectedComponents.headings[heading.id] || false}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedComponents: {
+                                ...prev.selectedComponents,
+                                headings: {
+                                  ...prev.selectedComponents.headings,
+                                  [heading.id]: checked === true
+                                }
+                              }
+                            }))
                           }
-                        }))
-                      }
-                    />
-                    <label htmlFor="pencil-pleat" className="text-sm">Pencil Pleat (2.0x) - $15/{fabricUnit}</label>
-                  </div>
+                        />
+                        <label htmlFor={`heading-${heading.id}`} className="text-sm">
+                          {heading.name} ({heading.fullness}x) - ${heading.price}/{fabricUnit}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
               
               <div>
                 <Label>Hardware Options</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="basic-track" 
-                      checked={formData.selectedComponents.hardware}
-                      onCheckedChange={(checked) => 
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedComponents: {
-                            ...prev.selectedComponents,
-                            hardware: checked === true
+                  {hardwareOptions.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No hardware options created yet. Create some in the Components tab.</p>
+                  ) : (
+                    hardwareOptions.map((hardware) => (
+                      <div key={hardware.id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`hardware-${hardware.id}`}
+                          checked={formData.selectedComponents.hardware[hardware.id] || false}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedComponents: {
+                                ...prev.selectedComponents,
+                                hardware: {
+                                  ...prev.selectedComponents.hardware,
+                                  [hardware.id]: checked === true
+                                }
+                              }
+                            }))
                           }
-                        }))
-                      }
-                    />
-                    <label htmlFor="basic-track" className="text-sm">Basic Track - $45/{fabricUnit}</label>
-                  </div>
+                        />
+                        <label htmlFor={`hardware-${hardware.id}`} className="text-sm">
+                          {hardware.name} - ${hardware.price}/{hardware.unit}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -568,22 +602,33 @@ export const ProductTemplatesTab = () => {
               <div>
                 <Label>Lining Options</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="standard-lining" 
-                      checked={formData.selectedComponents.lining}
-                      onCheckedChange={(checked) => 
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedComponents: {
-                            ...prev.selectedComponents,
-                            lining: checked === true
+                  {liningOptions.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No lining options created yet. Create some in the Components tab.</p>
+                  ) : (
+                    liningOptions.map((lining) => (
+                      <div key={lining.id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`lining-${lining.id}`}
+                          checked={formData.selectedComponents.lining[lining.id] || false}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedComponents: {
+                                ...prev.selectedComponents,
+                                lining: {
+                                  ...prev.selectedComponents.lining,
+                                  [lining.id]: checked === true
+                                }
+                              }
+                            }))
                           }
-                        }))
-                      }
-                    />
-                    <label htmlFor="standard-lining" className="text-sm">Standard Lining - $8.50/{fabricUnit}</label>
-                  </div>
+                        />
+                        <label htmlFor={`lining-${lining.id}`} className="text-sm">
+                          {lining.name} - ${lining.price}/{lining.unit}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
               
