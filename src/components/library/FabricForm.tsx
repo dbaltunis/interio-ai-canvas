@@ -18,9 +18,11 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
     name: "",
     code: "",
     vendor: "",
+    category: "",
     collection: "",
+    pattern: "",
     price: "",
-    unit: units.fabric,
+    unit: units.fabric as string,
     inStock: "",
     reorderPoint: "",
     location: "",
@@ -91,6 +93,47 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
+          <Label>Category</Label>
+          <Select value={fabricData.category} onValueChange={(value) => setFabricData(prev => ({ ...prev, category: value }))}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="upholstery">Upholstery Fabrics</SelectItem>
+              <SelectItem value="drapery">Drapery Fabrics</SelectItem>
+              <SelectItem value="sheers">Sheer Fabrics</SelectItem>
+              <SelectItem value="blackout">Blackout Fabrics</SelectItem>
+              <SelectItem value="outdoor">Outdoor Fabrics</SelectItem>
+              <SelectItem value="commercial">Commercial Fabrics</SelectItem>
+              <SelectItem value="luxury">Luxury Fabrics</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Pattern Type</Label>
+          <Select value={fabricData.pattern} onValueChange={(value) => setFabricData(prev => ({ ...prev, pattern: value }))}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select pattern" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="solid">Solid</SelectItem>
+              <SelectItem value="striped">Striped</SelectItem>
+              <SelectItem value="floral">Floral</SelectItem>
+              <SelectItem value="geometric">Geometric</SelectItem>
+              <SelectItem value="paisley">Paisley</SelectItem>
+              <SelectItem value="damask">Damask</SelectItem>
+              <SelectItem value="toile">Toile</SelectItem>
+              <SelectItem value="abstract">Abstract</SelectItem>
+              <SelectItem value="textured">Textured</SelectItem>
+              <SelectItem value="plaid">Plaid/Check</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
           <Label>Vendor/Supplier</Label>
           <Select value={fabricData.vendor} onValueChange={(value) => setFabricData(prev => ({ ...prev, vendor: value }))}>
             <SelectTrigger className="mt-1">
@@ -102,6 +145,9 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
               <SelectItem value="james-hare">James Hare</SelectItem>
               <SelectItem value="sahco">Sahco</SelectItem>
               <SelectItem value="designers-guild">Designers Guild</SelectItem>
+              <SelectItem value="clarke-clarke">Clarke & Clarke</SelectItem>
+              <SelectItem value="sanderson">Sanderson</SelectItem>
+              <SelectItem value="ralph-lauren">Ralph Lauren Home</SelectItem>
             </SelectContent>
           </Select>
         </div>

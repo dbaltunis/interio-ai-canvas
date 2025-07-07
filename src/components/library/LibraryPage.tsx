@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench, ShoppingCart } from "lucide-react";
+import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench, ShoppingCart, FolderTree } from "lucide-react";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
 import { FilterDialog } from "./FilterDialog";
 import { VendorForm } from "./VendorForm";
 import { HardwareForm } from "./HardwareForm";
+import { CategoryManager } from "./CategoryManager";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { toast } from "sonner";
 
@@ -39,7 +40,7 @@ export const LibraryPage = () => {
     return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
   };
 
-  // Mock data for comprehensive inventory
+  // Mock data with improved categorization and patterns
   const vendors = [
     { 
       id: 1, 
@@ -89,16 +90,18 @@ export const LibraryPage = () => {
       name: "Merlon Custard",
       code: "K5361/02",
       vendor: "Fibre Naturelle",
+      category: "Upholstery Fabrics",
       collection: "Heritage Collection",
+      pattern: "Solid",
       price: 120.00,
-      unit: "yard",
+      unit: units.fabric,
       image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
       inStock: 45.5,
       reorderPoint: 10,
       location: "Warehouse A-12",
       composition: "100% Linen",
       width: "137cm",
-      patternRepeat: "64cm",
+      patternRepeat: "0cm",
       status: "In Stock"
     },
     {
@@ -106,9 +109,11 @@ export const LibraryPage = () => {
       name: "Silk Taffeta Royal",
       code: "ST-2401",
       vendor: "KD Design", 
+      category: "Drapery Fabrics",
       collection: "Luxury Series",
+      pattern: "Striped",
       price: 180.00,
-      unit: "meter",
+      unit: units.fabric,
       image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop",
       inStock: 23.2,
       reorderPoint: 15,
@@ -123,9 +128,11 @@ export const LibraryPage = () => {
       name: "Blackout Supreme",
       code: "BO-1205",
       vendor: "Fibre Naturelle",
+      category: "Blackout Fabrics",
       collection: "Functional Fabrics",
+      pattern: "Textured",
       price: 85.00,
-      unit: "yard",
+      unit: units.fabric,
       image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop",
       inStock: 8.5,
       reorderPoint: 20,
@@ -188,7 +195,6 @@ export const LibraryPage = () => {
       return;
     }
     
-    // This would integrate with project management
     toast.success(`${selectedProducts.length} products ready to add to project`);
     console.log("Selected products for project:", selectedProducts);
   };
@@ -270,12 +276,18 @@ export const LibraryPage = () => {
                 </Badge>
               )}
             </div>
+            <div className="absolute top-2 left-2">
+              <Badge variant="secondary" className="text-xs">
+                {fabric.pattern}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-4">
           <CardTitle className="text-lg font-semibold mb-2">{fabric.name}</CardTitle>
           <p className="text-sm text-gray-600 mb-1">{fabric.code}</p>
           <p className="text-sm text-gray-500 mb-1">{fabric.vendor}</p>
+          <p className="text-sm text-gray-500 mb-1">{fabric.category}</p>
           <p className="text-sm text-gray-500 mb-3">{fabric.collection}</p>
           
           <div className="grid grid-cols-2 gap-2 text-xs mb-3">
@@ -305,7 +317,6 @@ export const LibraryPage = () => {
                 className="text-blue-500 hover:text-blue-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Handle edit
                 }}
               >
                 <Edit className="h-4 w-4" />
@@ -316,7 +327,6 @@ export const LibraryPage = () => {
                 className="text-gray-500 hover:text-gray-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Handle copy
                 }}
               >
                 <Copy className="h-4 w-4" />
@@ -395,7 +405,6 @@ export const LibraryPage = () => {
                 className="text-blue-500 hover:text-blue-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Handle edit
                 }}
               >
                 <Edit className="h-4 w-4" />
@@ -406,7 +415,6 @@ export const LibraryPage = () => {
                 className="text-gray-500 hover:text-gray-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Handle copy
                 }}
               >
                 <Copy className="h-4 w-4" />
@@ -522,9 +530,13 @@ export const LibraryPage = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex items-center justify-between">
-          <TabsList className="grid w-fit grid-cols-4">
+          <TabsList className="grid w-fit grid-cols-5">
+            <TabsTrigger value="categories">
+              <FolderTree className="h-4 w-4 mr-2" />
+              Categories
+            </TabsTrigger>
             <TabsTrigger value="vendors">
-              Vendors/Suppliers ({vendors.length})
+              Vendors ({vendors.length})
             </TabsTrigger>
             <TabsTrigger value="fabrics">
               Fabrics ({fabrics.length})
@@ -537,28 +549,34 @@ export const LibraryPage = () => {
             </TabsTrigger>
           </TabsList>
           
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4 mr-2" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === "card" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("card")}
-              className="bg-slate-600 hover:bg-slate-700 text-white"
-            >
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Card
-            </Button>
-          </div>
+          {activeTab !== 'categories' && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4 mr-2" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "card" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className="bg-slate-600 hover:bg-slate-700 text-white"
+              >
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Card
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Tab Contents */}
+        <TabsContent value="categories" className="space-y-4">
+          <CategoryManager />
+        </TabsContent>
+
         <TabsContent value="vendors" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {vendors.map(renderVendorCard)}
