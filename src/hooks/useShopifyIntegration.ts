@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 export interface ShopifyIntegration {
   id: string;
@@ -12,8 +13,8 @@ export interface ShopifyIntegration {
   sync_prices: boolean;
   sync_images: boolean;
   last_full_sync?: string;
-  sync_status: "idle" | "syncing" | "error" | "pending";
-  sync_log: any[];
+  sync_status: string;
+  sync_log: Json;
   created_at: string;
   updated_at: string;
 }
@@ -49,21 +50,36 @@ export const useCreateShopifyIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Test the connection first by trying to access the store
+      // Clean and validate the shop domain
+      let cleanDomain = integration.shop_domain.trim();
+      
+      // Remove protocol and www if present
+      cleanDomain = cleanDomain.replace(/^https?:\/\//, '').replace(/^www\./, '');
+      
+      // If it doesn't end with myshopify.com, it might be a custom domain
+      // For Shopify OAuth, we need the .myshopify.com domain
+      if (!cleanDomain.includes('.myshopify.com')) {
+        // Convert custom domain to myshopify format if possible
+        // This is a basic conversion - user might need to provide the correct myshopify domain
+        const storeName = cleanDomain.split('.')[0];
+        cleanDomain = `${storeName}.myshopify.com`;
+      }
+
+      // Test the connection
       try {
-        const response = await fetch(`https://${integration.shop_domain}/.well-known/shopify/monorail`);
+        const response = await fetch(`https://${cleanDomain}/.well-known/shopify/monorail`);
         if (!response.ok) {
-          throw new Error(`Store "${integration.shop_domain}" is not accessible. Please check the domain.`);
+          throw new Error(`Store "${cleanDomain}" is not accessible. Please check the domain. For Shopify apps, use the format: your-store-name.myshopify.com`);
         }
       } catch (error) {
-        throw new Error(`Cannot connect to "${integration.shop_domain}". Please verify the store domain is correct.`);
+        throw new Error(`Cannot connect to "${cleanDomain}". Please verify the store domain is correct. Use format: your-store-name.myshopify.com`);
       }
 
       const { data, error } = await supabase
         .from('shopify_integrations')
         .insert({
           user_id: user.id,
-          shop_domain: integration.shop_domain,
+          shop_domain: cleanDomain,
           auto_sync_enabled: integration.auto_sync_enabled,
           sync_inventory: integration.sync_inventory,
           sync_prices: integration.sync_prices,
