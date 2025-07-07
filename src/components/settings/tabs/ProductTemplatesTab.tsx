@@ -41,6 +41,11 @@ export const ProductTemplatesTab = () => {
     heightSurcharge1: "",
     heightSurcharge2: "", 
     heightSurcharge3: "",
+    heightRange1Start: "2.4",
+    heightRange1End: "3.0",
+    heightRange2Start: "3.0", 
+    heightRange2End: "4.0",
+    heightRange3Start: "4.0",
     selectedComponents: {
       headings: false,
       hardware: false,
@@ -108,6 +113,11 @@ export const ProductTemplatesTab = () => {
       heightSurcharge1: "",
       heightSurcharge2: "", 
       heightSurcharge3: "",
+      heightRange1Start: "2.4",
+      heightRange1End: "3.0",
+      heightRange2Start: "3.0", 
+      heightRange2End: "4.0",
+      heightRange3Start: "4.0",
       selectedComponents: {
         headings: false,
         hardware: false,
@@ -135,6 +145,11 @@ export const ProductTemplatesTab = () => {
         heightSurcharge1: "",
         heightSurcharge2: "", 
         heightSurcharge3: "",
+        heightRange1Start: "2.4",
+        heightRange1End: "3.0",
+        heightRange2Start: "3.0", 
+        heightRange2End: "4.0",
+        heightRange3Start: "4.0",
         selectedComponents: {
           headings: false,
           hardware: false,
@@ -158,6 +173,11 @@ export const ProductTemplatesTab = () => {
       heightSurcharge1: "",
       heightSurcharge2: "", 
       heightSurcharge3: "",
+      heightRange1Start: "2.4",
+      heightRange1End: "3.0",
+      heightRange2Start: "3.0", 
+      heightRange2End: "4.0",
+      heightRange3Start: "4.0",
       selectedComponents: {
         headings: template.components?.includes('headings') || false,
         hardware: template.components?.includes('hardware') || false,
@@ -341,25 +361,118 @@ export const ProductTemplatesTab = () => {
             </div>
 
             {/* Height-based surcharges */}
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
               <h5 className="font-medium mb-3">Height-Based Surcharges</h5>
+              
+              {/* Range 1 */}
               <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2 text-sm">
+                <Label className="text-sm font-medium">Height Range 1</Label>
+                <div className="grid grid-cols-5 gap-2 items-end">
                   <div>
-                    <Label htmlFor="height1">2.4m - 3.0m</Label>
-                    <Input id="height1" type="number" step="0.01" placeholder="5.00" />
-                    <span className="text-xs text-gray-500">+$ per meter</span>
+                    <Label htmlFor="range1Start" className="text-xs">From (m)</Label>
+                    <Input 
+                      id="range1Start" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.heightRange1Start}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange1Start: e.target.value }))}
+                      placeholder="2.4" 
+                    />
                   </div>
                   <div>
-                    <Label htmlFor="height2">3.0m - 4.0m</Label>
-                    <Input id="height2" type="number" step="0.01" placeholder="10.00" />
-                    <span className="text-xs text-gray-500">+$ per meter</span>
+                    <Label htmlFor="range1End" className="text-xs">To (m)</Label>
+                    <Input 
+                      id="range1End" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.heightRange1End}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange1End: e.target.value }))}
+                      placeholder="3.0" 
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="height1" className="text-xs">Surcharge per meter</Label>
+                    <Input 
+                      id="height1" 
+                      type="number" 
+                      step="0.01" 
+                      value={formData.heightSurcharge1}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge1: e.target.value }))}
+                      placeholder="5.00" 
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 self-center">+$ per meter</div>
+                </div>
+              </div>
+              
+              {/* Range 2 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Height Range 2</Label>
+                <div className="grid grid-cols-5 gap-2 items-end">
+                  <div>
+                    <Label htmlFor="range2Start" className="text-xs">From (m)</Label>
+                    <Input 
+                      id="range2Start" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.heightRange2Start}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange2Start: e.target.value }))}
+                      placeholder="3.0" 
+                    />
                   </div>
                   <div>
-                    <Label htmlFor="height3">4.0m+</Label>
-                    <Input id="height3" type="number" step="0.01" placeholder="20.00" />
-                    <span className="text-xs text-gray-500">+$ per meter</span>
+                    <Label htmlFor="range2End" className="text-xs">To (m)</Label>
+                    <Input 
+                      id="range2End" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.heightRange2End}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange2End: e.target.value }))}
+                      placeholder="4.0" 
+                    />
                   </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="height2" className="text-xs">Surcharge per meter</Label>
+                    <Input 
+                      id="height2" 
+                      type="number" 
+                      step="0.01" 
+                      value={formData.heightSurcharge2}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge2: e.target.value }))}
+                      placeholder="10.00" 
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 self-center">+$ per meter</div>
+                </div>
+              </div>
+              
+              {/* Range 3 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Height Range 3</Label>
+                <div className="grid grid-cols-4 gap-2 items-end">
+                  <div>
+                    <Label htmlFor="range3Start" className="text-xs">Above (m)</Label>
+                    <Input 
+                      id="range3Start" 
+                      type="number" 
+                      step="0.1" 
+                      value={formData.heightRange3Start}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightRange3Start: e.target.value }))}
+                      placeholder="4.0" 
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="height3" className="text-xs">Surcharge per meter</Label>
+                    <Input 
+                      id="height3" 
+                      type="number" 
+                      step="0.01" 
+                      value={formData.heightSurcharge3}
+                      onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge3: e.target.value }))}
+                      placeholder="20.00" 
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 self-center">+$ per meter</div>
                 </div>
               </div>
             </div>
