@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions, useCreateHeadingOption, useUpdateHeadingOption, useDeleteHeadingOption } from "@/hooks/useHeadingOptions";
 import { useHardwareOptions, useCreateHardwareOption, useUpdateHardwareOption, useDeleteHardwareOption, useLiningOptions, useCreateLiningOption, useUpdateLiningOption, useDeleteLiningOption } from "@/hooks/useComponentOptions";
+import { useServiceOptions, useCreateServiceOption, useUpdateServiceOption, useDeleteServiceOption } from "@/hooks/useServiceOptions";
 import { toast } from "sonner";
 
 export const ComponentsTab = () => {
@@ -31,6 +32,11 @@ export const ComponentsTab = () => {
   const updateLining = useUpdateLiningOption();
   const deleteLining = useDeleteLiningOption();
 
+  const { data: services = [], isLoading: servicesLoading } = useServiceOptions();
+  const createService = useCreateServiceOption();
+  const updateService = useUpdateServiceOption();
+  const deleteService = useDeleteServiceOption();
+
   const [isAddingHeading, setIsAddingHeading] = useState(false);
   const [editingHeading, setEditingHeading] = useState(null);
   const [newHeading, setNewHeading] = useState({ 
@@ -44,6 +50,15 @@ export const ComponentsTab = () => {
       ringDiameters: [],
       customOptions: []
     }
+  });
+
+  const [isAddingService, setIsAddingService] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [newService, setNewService] = useState({
+    name: "",
+    price: 0,
+    unit: "per-window",
+    description: ""
   });
 
   // Separate state for temporary input values
@@ -247,6 +262,96 @@ export const ComponentsTab = () => {
     }));
   };
 
+  const handleAddService = async () => {
+    if (!newService.name.trim()) return;
+    
+    try {
+      await createService.mutateAsync({
+        name: newService.name,
+        price: newService.price,
+        unit: newService.unit,
+        description: newService.description,
+        active: true
+      });
+      
+      setNewService({
+        name: "",
+        price: 0,
+        unit: "per-window",
+        description: ""
+      });
+      setIsAddingService(false);
+      toast.success("Service option added successfully");
+    } catch (error) {
+      console.error('Error adding service:', error);
+      toast.error("Failed to add service option");
+    }
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service.id);
+    setNewService({
+      name: service.name,
+      price: service.price,
+      unit: service.unit,
+      description: service.description || ""
+    });
+    setIsAddingService(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!editingService) return;
+    
+    try {
+      await updateService.mutateAsync({
+        id: editingService,
+        name: newService.name,
+        price: newService.price,
+        unit: newService.unit,
+        description: newService.description
+      });
+      
+      setEditingService(null);
+      setNewService({
+        name: "",
+        price: 0,
+        unit: "per-window",
+        description: ""
+      });
+      setIsAddingService(false);
+      toast.success("Service option updated successfully");
+    } catch (error) {
+      console.error('Error updating service:', error);
+      toast.error("Failed to update service option");
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    try {
+      await deleteService.mutateAsync(id);
+      toast.success("Service option deleted successfully");
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast.error("Failed to delete service option");
+    }
+  };
+
+  const handleToggleService = async (id: string) => {
+    try {
+      const service = services.find(s => s.id === id);
+      if (service) {
+        await updateService.mutateAsync({
+          id,
+          active: !service.active
+        });
+        toast.success(`Service ${service.active ? 'disabled' : 'enabled'} successfully`);
+      }
+    } catch (error) {
+      console.error('Error toggling service:', error);
+      toast.error("Failed to toggle service option");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -257,10 +362,11 @@ export const ComponentsTab = () => {
       </div>
 
       <Tabs defaultValue="headings" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="headings">Headings</TabsTrigger>
           <TabsTrigger value="hardware">Hardware</TabsTrigger>
           <TabsTrigger value="linings">Linings</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="pricing-grids">Pricing Grids</TabsTrigger>
           <TabsTrigger value="trimmings">Trimmings</TabsTrigger>
         </TabsList>
@@ -555,6 +661,148 @@ export const ComponentsTab = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="services">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Service Options</h4>
+              <Button 
+                size="sm" 
+                className="bg-brand-primary hover:bg-brand-accent"
+                onClick={() => setIsAddingService(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Service
+              </Button>
+            </div>
+
+            <div className="grid gap-3">
+              {services.map((service) => (
+                <Card key={service.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Switch 
+                          checked={service.active} 
+                          onCheckedChange={() => handleToggleService(service.id)}
+                        />
+                        <div>
+                          <h5 className="font-medium text-brand-primary">{service.name}</h5>
+                          <p className="text-sm text-brand-neutral">
+                            Price: ${service.price} per {service.unit}
+                          </p>
+                          {service.description && (
+                            <p className="text-xs text-muted-foreground">{service.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditService(service)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteService(service.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Add/Edit Service Form */}
+            {isAddingService && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editingService ? "Edit Service" : "Add New Service"}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="serviceName">Service Name</Label>
+                      <Input
+                        id="serviceName"
+                        value={newService.name}
+                        onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="e.g., Installation"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="servicePrice">Price</Label>
+                      <Input
+                        id="servicePrice"
+                        type="number"
+                        step="0.01"
+                        value={newService.price}
+                        onChange={(e) => setNewService(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="serviceUnit">Unit</Label>
+                      <Select 
+                        value={newService.unit} 
+                        onValueChange={(value) => setNewService(prev => ({ ...prev, unit: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="per-window">Per Window</SelectItem>
+                          <SelectItem value="per-room">Per Room</SelectItem>
+                          <SelectItem value="per-job">Per Job</SelectItem>
+                          <SelectItem value="per-hour">Per Hour</SelectItem>
+                          <SelectItem value="flat-rate">Flat Rate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="serviceDescription">Description (Optional)</Label>
+                      <Input
+                        id="serviceDescription"
+                        value={newService.description}
+                        onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Brief description of the service"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={editingService ? handleUpdateService : handleAddService}
+                      className="bg-brand-primary hover:bg-brand-accent"
+                    >
+                      {editingService ? "Update" : "Add"} Service
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsAddingService(false);
+                        setEditingService(null);
+                        setNewService({
+                          name: "",
+                          price: 0,
+                          unit: "per-window",
+                          description: ""
+                        });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 

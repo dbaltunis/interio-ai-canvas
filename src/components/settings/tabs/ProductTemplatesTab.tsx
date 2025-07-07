@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { useHardwareOptions, useLiningOptions } from "@/hooks/useComponentOptions";
+import { useServiceOptions } from "@/hooks/useServiceOptions";
 
 export const ProductTemplatesTab = () => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
@@ -21,6 +22,7 @@ export const ProductTemplatesTab = () => {
   const { data: headingOptions = [] } = useHeadingOptions();
   const { data: hardwareOptions = [] } = useHardwareOptions();
   const { data: liningOptions = [] } = useLiningOptions();
+  const { data: serviceOptions = [] } = useServiceOptions();
   
   const [templates, setTemplates] = useState([
     {
@@ -64,7 +66,7 @@ export const ProductTemplatesTab = () => {
       headings: {},
       hardware: {},
       lining: {},
-      services: false
+      services: {}
     }
   });
 
@@ -142,7 +144,7 @@ export const ProductTemplatesTab = () => {
         headings: {},
         hardware: {},
         lining: {},
-        services: false
+        services: {}
       }
     });
 
@@ -176,7 +178,7 @@ export const ProductTemplatesTab = () => {
           headings: {},
           hardware: {},
           lining: {},
-          services: false
+          services: {}
         }
       });
     }
@@ -206,7 +208,7 @@ export const ProductTemplatesTab = () => {
         headings: template.selectedComponents?.headings || {},
         hardware: template.selectedComponents?.hardware || {},
         lining: template.selectedComponents?.lining || {},
-        services: template.components?.includes('services') || false
+        services: template.selectedComponents?.services || {}
       }
     });
   };
@@ -635,22 +637,33 @@ export const ProductTemplatesTab = () => {
               <div>
                 <Label>Additional Services</Label>
                 <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="installation" 
-                      checked={formData.selectedComponents.services}
-                      onCheckedChange={(checked) => 
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedComponents: {
-                            ...prev.selectedComponents,
-                            services: checked === true
+                  {serviceOptions.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No service options created yet. Create some in the Components tab.</p>
+                  ) : (
+                    serviceOptions.map((service) => (
+                      <div key={service.id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`service-${service.id}`}
+                          checked={formData.selectedComponents.services[service.id] || false}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedComponents: {
+                                ...prev.selectedComponents,
+                                services: {
+                                  ...prev.selectedComponents.services,
+                                  [service.id]: checked === true
+                                }
+                              }
+                            }))
                           }
-                        }))
-                      }
-                    />
-                    <label htmlFor="installation" className="text-sm">Installation - $25/window</label>
-                  </div>
+                        />
+                        <label htmlFor={`service-${service.id}`} className="text-sm">
+                          {service.name} - ${service.price}/{service.unit}
+                        </label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
