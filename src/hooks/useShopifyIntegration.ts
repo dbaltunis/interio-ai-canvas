@@ -14,7 +14,7 @@ export interface ShopifyIntegration {
   sync_prices: boolean;
   sync_images: boolean;
   last_full_sync?: string;
-  sync_status: "idle" | "syncing" | "error";
+  sync_status: "idle" | "syncing" | "error" | "pending";
   sync_log: any[];
   created_at: string;
   updated_at: string;

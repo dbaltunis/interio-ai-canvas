@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShoppingBag, Settings, RefreshCw, AlertCircle, CheckCircle, Clock, ExternalLink, Zap, ArrowRight, Info } from "lucide-react";
 import { useShopifyIntegration, useCreateShopifyIntegration, useUpdateShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ShopifyIntegrationDialogProps {
   open: boolean;
@@ -49,6 +51,46 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
       } catch (error) {
         console.error("Failed to create integration:", error);
       }
+    }
+  };
+
+  const handleOAuthInstall = async () => {
+    if (!formData.shop_domain) {
+      toast.error("Please enter your shop domain first");
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please log in first");
+
+      // Create integration record first
+      if (!integration) {
+        await createIntegration.mutateAsync({
+          ...formData,
+          sync_status: "pending",
+          sync_log: [{ action: "OAuth installation started", timestamp: new Date().toISOString() }],
+        });
+      }
+
+      // Generate OAuth URL
+      const clientId = "your-shopify-client-id"; // This will come from Supabase secrets
+      const scopes = "read_products,read_inventory,write_inventory";
+      const redirectUri = `${window.location.origin}/api/shopify/oauth/callback`;
+      const state = user.id; // Use user ID as state for security
+
+      const oauthUrl = `https://${formData.shop_domain}/admin/oauth/authorize?` +
+        `client_id=${clientId}&` +
+        `scope=${scopes}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${state}`;
+
+      // Redirect to Shopify OAuth
+      window.location.href = oauthUrl;
+      
+    } catch (error) {
+      console.error("OAuth error:", error);
+      toast.error("Failed to start installation process");
     }
   };
 
@@ -205,25 +247,26 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
           <TabsContent value="setup" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-brand-primary">Simple Shopify Connection</CardTitle>
+                <CardTitle className="text-brand-primary">Complete Shopify App Installation</CardTitle>
                 <CardDescription>
-                  We've simplified the setup process - just enter your store domain and we'll handle the rest securely.
+                  Follow these steps to create a proper Shopify app and get official notifications in your admin.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-emerald-800 mb-1">Store Connected Successfully!</h4>
-                      <p className="text-sm text-emerald-700 mb-3">
-                        {integration ? "Your store is connected. " : ""}Now complete the setup by securely adding your API credentials below.
+                      <h4 className="font-semibold text-blue-800 mb-2">Step 1: Create Your Shopify App</h4>
+                      <p className="text-sm text-blue-700 mb-3">
+                        You'll need to create a Shopify app to get proper installation notifications and permissions.
                       </p>
-                      {integration && (
-                        <div className="text-sm text-emerald-600 mb-2">
-                          <strong>Connected Store:</strong> {(integration as any)?.shop_domain}
-                        </div>
-                      )}
+                      <Button variant="outline" size="sm" asChild>
+                        <a href="https://partners.shopify.com/organizations" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Create Shopify Partner Account
+                        </a>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -244,42 +287,39 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                     </p>
                   </div>
 
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-emerald-800 mb-2">Simple Connection Method</h4>
-                      <p className="text-sm text-emerald-700 mb-3">
-                        We'll use Shopify's public Storefront API - no complex setup needed! Just enter your store domain and we'll automatically connect.
-                      </p>
-                      <div className="text-xs text-emerald-600 bg-emerald-100 rounded p-2">
-                        <strong>What you'll get:</strong> Product catalog sync, inventory levels, pricing info, and basic store information.
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-green-800 mb-2">Step 2: Install App in Your Store</h4>
+                        <p className="text-sm text-green-700 mb-3">
+                          Click below to install the app in your Shopify store. You'll see proper installation screens and notifications.
+                        </p>
+                        <Button 
+                          type="button" 
+                          onClick={handleOAuthInstall}
+                          className="bg-brand-primary hover:bg-brand-primary/90"
+                          disabled={!formData.shop_domain || createIntegration.isPending}
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          Install App in Shopify Store
+                        </Button>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={createIntegration.isPending || updateIntegration.isPending} className="bg-brand-primary hover:bg-brand-primary/90">
-                      {integration ? "Update Integration" : "Connect Store"}
-                    </Button>
-                  </div>
                 </form>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
-                    <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <Info className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-blue-800 mb-2">Connection Verification</h4>
-                      <p className="text-sm text-blue-700 mb-3">
-                        Once connected, we'll automatically test your store connection and show you proof that it's working.
-                      </p>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href="https://www.shopify.com/admin" target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Open Shopify Admin
-                        </a>
-                      </Button>
+                      <h4 className="font-semibold text-yellow-800 mb-2">What happens next?</h4>
+                      <ul className="text-sm text-yellow-700 space-y-1">
+                        <li>• You'll be redirected to your Shopify admin</li>
+                        <li>• Shopify will show app permission screens</li>
+                        <li>• You'll see installation confirmation</li>
+                        <li>• The app will appear in your Shopify admin</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
