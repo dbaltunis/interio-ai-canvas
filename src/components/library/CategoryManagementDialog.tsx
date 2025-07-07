@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,6 +184,9 @@ export const CategoryManagementDialog = ({ open, onOpenChange }: CategoryManagem
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Category Management</DialogTitle>
+          <DialogDescription>
+            Create and manage product categories for your inventory system.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="categories" className="w-full">

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,6 +89,9 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
             <ShoppingBag className="h-5 w-5" />
             <span>Shopify Integration</span>
           </DialogTitle>
+          <DialogDescription>
+            Connect and manage your Shopify store integration to sync products, inventory, and pricing.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="setup" className="w-full">
