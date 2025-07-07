@@ -310,14 +310,14 @@ export const CategoryManagementDialog = ({ open, onOpenChange }: CategoryManagem
               <div>
                 <Label htmlFor="parent_id">Parent Category (Optional)</Label>
                 <Select
-                  value={formData.parent_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, parent_id: value }))}
+                  value={formData.parent_id || "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, parent_id: value === "none" ? "" : value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select parent category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Parent</SelectItem>
+                    <SelectItem value="none">No Parent</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
