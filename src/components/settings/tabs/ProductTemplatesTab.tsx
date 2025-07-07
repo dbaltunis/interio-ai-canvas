@@ -30,6 +30,7 @@ export const ProductTemplatesTab = () => {
   ]);
 
   const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     calculationMethod: "",
@@ -67,9 +68,7 @@ export const ProductTemplatesTab = () => {
       return;
     }
 
-    // Create new template
-    const newTemplate = {
-      id: templates.length + 1,
+    const templateData = {
       name: formData.name.trim(),
       calculationMethod: formData.calculationMethod,
       pricingUnit: formData.pricingUnit,
@@ -80,8 +79,23 @@ export const ProductTemplatesTab = () => {
       components: Object.keys(formData.selectedComponents).filter(key => formData.selectedComponents[key])
     };
 
-    // Add to templates list
-    setTemplates(prev => [...prev, newTemplate]);
+    if (editingId) {
+      // Update existing template
+      setTemplates(prev => prev.map(template => 
+        template.id === editingId 
+          ? { ...template, ...templateData }
+          : template
+      ));
+      alert("Template updated successfully!");
+    } else {
+      // Create new template
+      const newTemplate = {
+        id: templates.length + 1,
+        ...templateData
+      };
+      setTemplates(prev => [...prev, newTemplate]);
+      alert("Template created successfully!");
+    }
 
     // Reset form
     setFormData({
@@ -103,11 +117,60 @@ export const ProductTemplatesTab = () => {
     });
 
     setIsCreating(false);
-    alert("Template created successfully!");
+    setEditingId(null);
   };
 
   const handleToggleCreating = () => {
     setIsCreating(!isCreating);
+    setEditingId(null);
+    // Reset form when canceling
+    if (isCreating) {
+      setFormData({
+        name: "",
+        calculationMethod: "",
+        pricingUnit: "",
+        baseMakingCost: "",
+        complexityMultiplier: "standard",
+        showComplexityOption: true,
+        heightSurcharge1: "",
+        heightSurcharge2: "", 
+        heightSurcharge3: "",
+        selectedComponents: {
+          headings: false,
+          hardware: false,
+          lining: false,
+          services: false
+        }
+      });
+    }
+  };
+
+  const handleEditTemplate = (template) => {
+    setEditingId(template.id);
+    setIsCreating(true);
+    setFormData({
+      name: template.name,
+      calculationMethod: template.calculationMethod,
+      pricingUnit: template.pricingUnit,
+      baseMakingCost: template.baseMakingCost?.toString() || "",
+      complexityMultiplier: template.complexityMultiplier || "standard",
+      showComplexityOption: template.showComplexityOption !== false,
+      heightSurcharge1: "",
+      heightSurcharge2: "", 
+      heightSurcharge3: "",
+      selectedComponents: {
+        headings: template.components?.includes('headings') || false,
+        hardware: template.components?.includes('hardware') || false,
+        lining: template.components?.includes('lining') || false,
+        services: template.components?.includes('services') || false
+      }
+    });
+  };
+
+  const handleDeleteTemplate = (templateId) => {
+    if (confirm("Are you sure you want to delete this template?")) {
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+    }
   };
 
   return (
@@ -140,10 +203,10 @@ export const ProductTemplatesTab = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={template.active} />
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleEditTemplate(template)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteTemplate(template.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -171,8 +234,8 @@ export const ProductTemplatesTab = () => {
       {isCreating && (
         <Card>
         <CardHeader>
-          <CardTitle>Create New Product Template</CardTitle>
-          <CardDescription>Define a new window covering product type</CardDescription>
+          <CardTitle>{editingId ? "Edit Product Template" : "Create New Product Template"}</CardTitle>
+          <CardDescription>{editingId ? "Update the window covering product template" : "Define a new window covering product type"}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -442,7 +505,7 @@ export const ProductTemplatesTab = () => {
             onClick={handleCreateTemplate}
             className="bg-brand-primary hover:bg-brand-accent"
           >
-            Create Template
+            {editingId ? "Update Template" : "Create Template"}
           </Button>
         </CardContent>
       </Card>
