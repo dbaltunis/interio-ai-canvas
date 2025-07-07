@@ -7,37 +7,79 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, Ruler, Scissors, Settings } from "lucide-react";
+import { useCalculationFormulas, CalculationFormula } from "@/hooks/useCalculationFormulas";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export const CalculationEngineTab = () => {
-  const formulaCategories = [
-    {
-      name: "Fabric Calculations",
-      icon: Scissors,
-      formulas: [
-        { name: "Curtain Fabric", formula: "(Width × Fullness) + Seam Allowance", active: true },
-        { name: "Roman Blind Fabric", formula: "Width + (10cm × Folds) + Hem", active: true },
-        { name: "Cushion Fabric", formula: "(Width + 5cm) × (Height + 5cm) × 2", active: true }
-      ]
-    },
-    {
-      name: "Hardware Calculations", 
-      icon: Settings,
-      formulas: [
-        { name: "Track Length", formula: "Window Width + Extensions", active: true },
-        { name: "Bracket Quantity", formula: "Track Length ÷ Support Spacing + 2", active: true },
-        { name: "Chain Length", formula: "Drop Height + 30cm", active: true }
-      ]
-    },
-    {
-      name: "Measurement Rules",
-      icon: Ruler,
-      formulas: [
-        { name: "Curtain Drop", formula: "Pole Height - Sill Height + Puddle", active: true },
-        { name: "Blind Width", formula: "Recess Width - 1cm", active: true },
-        { name: "Outside Mount", formula: "Window Width + 15cm each side", active: true }
-      ]
+  const { data: formulas, isLoading, createFormula, updateFormula } = useCalculationFormulas();
+  const { toast } = useToast();
+  const [newFormula, setNewFormula] = useState({
+    name: '',
+    category: '',
+    formula_expression: '',
+    description: '',
+    active: true,
+    variables: []
+  });
+
+  const handleSaveFormula = async () => {
+    if (!newFormula.name || !newFormula.category || !newFormula.formula_expression) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
+
+    try {
+      await createFormula.mutateAsync(newFormula);
+      setNewFormula({
+        name: '',
+        category: '',
+        formula_expression: '',
+        description: '',
+        active: true,
+        variables: []
+      });
+      toast({
+        title: "Success",
+        description: "Formula created successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create formula",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleToggleFormula = async (formulaId: string, active: boolean) => {
+    try {
+      await updateFormula.mutateAsync({ id: formulaId, active });
+      toast({
+        title: "Success",
+        description: `Formula ${active ? 'activated' : 'deactivated'}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update formula",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Group formulas by category
+  const formulasByCategory = formulas?.reduce((acc, formula) => {
+    if (!acc[formula.category]) {
+      acc[formula.category] = [];
+    }
+    acc[formula.category].push(formula);
+    return acc;
+  }, {} as Record<string, CalculationFormula[]>) || {};
 
   return (
     <div className="space-y-6">
@@ -122,37 +164,59 @@ export const CalculationEngineTab = () => {
       </Card>
 
       {/* Formula Categories */}
-      {formulaCategories.map((category) => {
-        const IconComponent = category.icon;
-        return (
-          <Card key={category.name}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <IconComponent className="h-5 w-5 text-brand-primary" />
-                {category.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {category.formulas.map((formula, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <Switch checked={formula.active} />
-                      <div>
-                        <h4 className="font-medium text-brand-primary">{formula.name}</h4>
-                        <p className="text-sm text-brand-neutral font-mono">{formula.formula}</p>
+      {isLoading ? (
+        <div className="text-center py-4">Loading formulas...</div>
+      ) : Object.keys(formulasByCategory).length > 0 ? (
+        Object.entries(formulasByCategory).map(([categoryName, categoryFormulas]) => {
+          const getIconForCategory = (category: string) => {
+            if (category.toLowerCase().includes('fabric')) return Scissors;
+            if (category.toLowerCase().includes('hardware')) return Settings;
+            return Ruler;
+          };
+          const IconComponent = getIconForCategory(categoryName);
+          
+          return (
+            <Card key={categoryName}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconComponent className="h-5 w-5 text-brand-primary" />
+                  {categoryName}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {categoryFormulas.map((formula) => (
+                    <div key={formula.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <Switch 
+                          checked={formula.active} 
+                          onCheckedChange={(checked) => handleToggleFormula(formula.id, checked)}
+                        />
+                        <div>
+                          <h4 className="font-medium text-brand-primary">{formula.name}</h4>
+                          <p className="text-sm text-brand-neutral font-mono">{formula.formula_expression}</p>
+                          {formula.description && (
+                            <p className="text-xs text-brand-neutral mt-1">{formula.description}</p>
+                          )}
+                        </div>
                       </div>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })
+      ) : (
+        <Card>
+          <CardContent className="text-center py-8 text-brand-neutral">
+            No formulas configured yet. Create your first formula below.
+          </CardContent>
+        </Card>
+      )}
 
       {/* Custom Formula Builder */}
       <Card>
@@ -164,11 +228,21 @@ export const CalculationEngineTab = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="formulaName">Formula Name</Label>
-              <Input id="formulaName" placeholder="e.g., Pleated Blind Fabric" />
+              <Input 
+                id="formulaName" 
+                placeholder="e.g., Pleated Blind Fabric"
+                value={newFormula.name}
+                onChange={(e) => setNewFormula(prev => ({ ...prev, name: e.target.value }))}
+              />
             </div>
             <div>
               <Label htmlFor="formulaCategory">Category</Label>
-              <select id="formulaCategory" className="w-full p-2 border rounded-md">
+              <select 
+                id="formulaCategory" 
+                className="w-full p-2 border rounded-md"
+                value={newFormula.category}
+                onChange={(e) => setNewFormula(prev => ({ ...prev, category: e.target.value }))}
+              >
                 <option value="">Select category...</option>
                 <option value="fabric">Fabric Calculations</option>
                 <option value="hardware">Hardware Calculations</option>
@@ -179,7 +253,12 @@ export const CalculationEngineTab = () => {
 
           <div>
             <Label htmlFor="formulaExpression">Formula Expression</Label>
-            <Input id="formulaExpression" placeholder="e.g., (width + 10) × (height + 20)" />
+            <Input 
+              id="formulaExpression" 
+              placeholder="e.g., (width + 10) × (height + 20)"
+              value={newFormula.formula_expression}
+              onChange={(e) => setNewFormula(prev => ({ ...prev, formula_expression: e.target.value }))}
+            />
             <span className="text-xs text-brand-neutral">
               Use variables: width, height, fullness, allowance
             </span>
@@ -187,11 +266,20 @@ export const CalculationEngineTab = () => {
 
           <div>
             <Label htmlFor="formulaDescription">Description</Label>
-            <Textarea id="formulaDescription" placeholder="Explain when and how this formula should be used..." />
+            <Textarea 
+              id="formulaDescription" 
+              placeholder="Explain when and how this formula should be used..."
+              value={newFormula.description}
+              onChange={(e) => setNewFormula(prev => ({ ...prev, description: e.target.value }))}
+            />
           </div>
 
-          <Button className="bg-brand-primary hover:bg-brand-accent">
-            Create Formula
+          <Button 
+            className="bg-brand-primary hover:bg-brand-accent"
+            onClick={handleSaveFormula}
+            disabled={createFormula.isPending}
+          >
+            {createFormula.isPending ? 'Creating...' : 'Create Formula'}
           </Button>
         </CardContent>
       </Card>
