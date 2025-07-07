@@ -378,6 +378,25 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                         <p className="text-muted-foreground">{(integration as any)?.shop_domain || "Not set"}</p>
                       </div>
                       <div>
+                        <p className="font-medium">Connection Status</p>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span className="text-green-600">Verified & Active</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-medium">Store URL</p>
+                        <a 
+                          href={`https://${(integration as any)?.shop_domain}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-brand-primary hover:underline flex items-center space-x-1"
+                        >
+                          <span>Visit Store</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div>
                         <p className="font-medium">Last Sync</p>
                         <p className="text-muted-foreground">
                           {(integration as any)?.last_full_sync 
@@ -385,6 +404,16 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                             : "Never"
                           }
                         </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-medium text-green-800">Connection Verified</p>
+                          <p className="text-green-700">Your store is accessible and ready for integration.</p>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

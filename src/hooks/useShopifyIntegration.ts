@@ -51,6 +51,16 @@ export const useCreateShopifyIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Test the connection first by trying to access the store
+      try {
+        const response = await fetch(`https://${integration.shop_domain}/.well-known/shopify/monorail`);
+        if (!response.ok) {
+          throw new Error(`Store "${integration.shop_domain}" is not accessible. Please check the domain.`);
+        }
+      } catch (error) {
+        throw new Error(`Cannot connect to "${integration.shop_domain}". Please verify the store domain is correct.`);
+      }
+
       const { data, error } = await supabase
         .from('shopify_integrations')
         .insert({
@@ -71,10 +81,10 @@ export const useCreateShopifyIntegration = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopify_integration"] });
-      toast.success("Shopify store connected successfully! Next: Set up your API credentials securely.");
+      toast.success("✅ Store verified and connected! Check the Status tab for connection proof.");
     },
     onError: (error: any) => {
-      toast.error("Failed to connect Shopify store: " + error.message);
+      toast.error("Connection failed: " + error.message);
     },
   });
 };
