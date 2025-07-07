@@ -6,14 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 
 interface FilterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onApplyFilters: (filters: any) => void;
 }
 
-export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
+export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialogProps) => {
   const [filters, setFilters] = useState({
     vendor: "",
     category: "",
@@ -22,13 +24,32 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
     stockStatus: "",
     location: "",
     composition: "",
-    collection: ""
+    collection: "",
+    pattern: "",
+    tags: [] as string[],
+    width: "",
+    color: ""
   });
 
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
+  // Available tags for filtering
+  const availableTags = [
+    "Premium", "Budget", "Sustainable", "Fire Resistant", 
+    "Blackout", "Sheer", "Cotton", "Silk", "Linen", 
+    "Polyester", "Wool", "Velvet", "Textured", "Plain"
+  ];
+
   const handleApplyFilters = () => {
-    console.log("Applied filters:", filters);
+    const nonEmptyFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+      if (value && (Array.isArray(value) ? value.length > 0 : true)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+    
+    onApplyFilters(nonEmptyFilters);
+    console.log("Applied filters:", nonEmptyFilters);
     onOpenChange(false);
   };
 
@@ -41,19 +62,36 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
       stockStatus: "",
       location: "",
       composition: "",
-      collection: ""
+      collection: "",
+      pattern: "",
+      tags: [],
+      width: "",
+      color: ""
     });
     setActiveFilters([]);
+    onApplyFilters({});
   };
 
   const removeFilter = (filterKey: string) => {
-    setFilters(prev => ({ ...prev, [filterKey]: "" }));
+    setFilters(prev => ({ 
+      ...prev, 
+      [filterKey]: Array.isArray(prev[filterKey as keyof typeof prev]) ? [] : "" 
+    }));
     setActiveFilters(prev => prev.filter(f => f !== filterKey));
+  };
+
+  const toggleTag = (tag: string) => {
+    setFilters(prev => ({
+      ...prev,
+      tags: prev.tags.includes(tag) 
+        ? prev.tags.filter(t => t !== tag)
+        : [...prev.tags, tag]
+    }));
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Filter Inventory</DialogTitle>
         </DialogHeader>
@@ -66,7 +104,9 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
               <div className="flex flex-wrap gap-2">
                 {activeFilters.map((filter) => (
                   <Badge key={filter} variant="secondary" className="flex items-center gap-1">
-                    {filter}: {filters[filter as keyof typeof filters]}
+                    {filter}: {Array.isArray(filters[filter as keyof typeof filters]) 
+                      ? (filters[filter as keyof typeof filters] as string[]).join(", ")
+                      : filters[filter as keyof typeof filters]}
                     <X 
                       className="h-3 w-3 cursor-pointer" 
                       onClick={() => removeFilter(filter)}
@@ -77,7 +117,8 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Basic Filters */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Vendor/Supplier</Label>
               <Select value={filters.vendor} onValueChange={(value) => setFilters(prev => ({ ...prev, vendor: value }))}>
@@ -102,15 +143,32 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Categories</SelectItem>
-                  <SelectItem value="fabrics">Fabrics</SelectItem>
-                  <SelectItem value="hardware">Hardware</SelectItem>
-                  <SelectItem value="tracks">Tracks</SelectItem>
-                  <SelectItem value="motors">Motors</SelectItem>
+                  <SelectItem value="upholstery-fabrics">Upholstery Fabrics</SelectItem>
+                  <SelectItem value="drapery-fabrics">Drapery Fabrics</SelectItem>
+                  <SelectItem value="blackout-fabrics">Blackout Fabrics</SelectItem>
+                  <SelectItem value="curtain-tracks">Curtain Tracks</SelectItem>
+                  <SelectItem value="motorized-systems">Motorized Systems</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Collection</Label>
+              <Select value={filters.collection} onValueChange={(value) => setFilters(prev => ({ ...prev, collection: value }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="All collections" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Collections</SelectItem>
+                  <SelectItem value="heritage-collection">Heritage Collection</SelectItem>
+                  <SelectItem value="luxury-series">Luxury Series</SelectItem>
+                  <SelectItem value="functional-fabrics">Functional Fabrics</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
+          {/* Price Range */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="priceMin">Min Price</Label>
@@ -139,7 +197,8 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Additional Filters */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Stock Status</Label>
               <Select value={filters.stockStatus} onValueChange={(value) => setFilters(prev => ({ ...prev, stockStatus: value }))}>
@@ -157,6 +216,23 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
             </div>
 
             <div>
+              <Label>Pattern</Label>
+              <Select value={filters.pattern} onValueChange={(value) => setFilters(prev => ({ ...prev, pattern: value }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="All patterns" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Patterns</SelectItem>
+                  <SelectItem value="solid">Solid</SelectItem>
+                  <SelectItem value="striped">Striped</SelectItem>
+                  <SelectItem value="floral">Floral</SelectItem>
+                  <SelectItem value="geometric">Geometric</SelectItem>
+                  <SelectItem value="textured">Textured</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="location">Storage Location</Label>
               <Input
                 id="location"
@@ -168,6 +244,7 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
             </div>
           </div>
 
+          {/* Fabric Specific Filters */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="composition">Fabric Composition</Label>
@@ -181,14 +258,33 @@ export const FilterDialog = ({ open, onOpenChange }: FilterDialogProps) => {
             </div>
 
             <div>
-              <Label htmlFor="collection">Collection</Label>
+              <Label htmlFor="width">Fabric Width</Label>
               <Input
-                id="collection"
-                value={filters.collection}
-                onChange={(e) => setFilters(prev => ({ ...prev, collection: e.target.value }))}
+                id="width"
+                value={filters.width}
+                onChange={(e) => setFilters(prev => ({ ...prev, width: e.target.value }))}
                 className="mt-1"
-                placeholder="Collection name"
+                placeholder="e.g., 140cm"
               />
+            </div>
+          </div>
+
+          {/* Tags Filter */}
+          <div>
+            <Label className="text-base font-medium">Filter by Tags</Label>
+            <div className="mt-2 grid grid-cols-4 gap-2">
+              {availableTags.map((tag) => (
+                <div key={tag} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={tag}
+                    checked={filters.tags.includes(tag)}
+                    onCheckedChange={() => toggleTag(tag)}
+                  />
+                  <Label htmlFor={tag} className="text-sm font-normal cursor-pointer">
+                    {tag}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
 

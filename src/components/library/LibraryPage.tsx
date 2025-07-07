@@ -26,6 +26,7 @@ export const LibraryPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addDialogType, setAddDialogType] = useState<"vendor" | "fabric" | "hardware" | "collection">("fabric");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<any>({});
   const [productDetailsDialog, setProductDetailsDialog] = useState<{
     open: boolean;
     product: any;
@@ -180,6 +181,61 @@ export const LibraryPage = () => {
     onProductDetails: handleProductDetails 
   });
 
+  // Filter and search logic
+  const filterProducts = (products: any[], type: string) => {
+    return products.filter(product => {
+      // Search filter
+      if (searchTerm) {
+        const searchFields = [product.name, product.code, product.vendor, product.category, product.collection].filter(Boolean);
+        if (!searchFields.some(field => 
+          field.toLowerCase().includes(searchTerm.toLowerCase())
+        )) {
+          return false;
+        }
+      }
+
+      // Applied filters
+      if (Object.keys(appliedFilters).length > 0) {
+        // Vendor filter
+        if (appliedFilters.vendor && product.vendor !== appliedFilters.vendor) return false;
+        
+        // Category filter
+        if (appliedFilters.category && product.category !== appliedFilters.category) return false;
+        
+        // Price range filter
+        if (appliedFilters.priceMin && product.price < parseFloat(appliedFilters.priceMin)) return false;
+        if (appliedFilters.priceMax && product.price > parseFloat(appliedFilters.priceMax)) return false;
+        
+        // Stock status filter
+        if (appliedFilters.stockStatus) {
+          const stockStatus = getStockStatus(product.inStock, product.reorderPoint || 10);
+          if (appliedFilters.stockStatus !== stockStatus.status.toLowerCase().replace(' ', '-')) return false;
+        }
+        
+        // Pattern filter (for fabrics)
+        if (appliedFilters.pattern && product.pattern !== appliedFilters.pattern) return false;
+        
+        // Tags filter
+        if (appliedFilters.tags && appliedFilters.tags.length > 0) {
+          // This would check against product tags if they existed
+          // For now, we'll skip this filter
+        }
+      }
+
+      return true;
+    });
+  };
+
+  const getStockStatus = (current: number, reorderPoint: number) => {
+    if (current <= reorderPoint * 0.5) return { status: "Critical", color: "bg-red-500" };
+    if (current <= reorderPoint) return { status: "Low Stock", color: "bg-orange-500" };
+    return { status: "In Stock", color: "bg-green-500" };
+  };
+
+  const filteredVendors = filterProducts(vendors, 'vendor');
+  const filteredFabrics = filterProducts(fabrics, 'fabric');
+  const filteredHardware = filterProducts(hardware, 'hardware');
+
   function handleProductSelect(productId: string, checked: boolean) {
     if (checked) {
       setSelectedProducts(prev => [...prev, productId]);
@@ -219,11 +275,30 @@ export const LibraryPage = () => {
     setShowAddDialog(true);
   }
 
+  function handleImport() {
+    toast.success("Opening import dialog...");
+    console.log("Import functionality");
+  }
+
+  function handleExport() {
+    toast.success("Preparing export...");
+    console.log("Export functionality");
+  }
+
+  function handleApplyFilters(filters: any) {
+    setAppliedFilters(filters);
+    toast.success("Filters applied successfully");
+  }
+
   return (
     <div className="space-y-6">
       <LibraryHeader 
         onAddNew={handleAddNew}
         onShowFilter={() => setShowFilterDialog(true)}
+        onImport={handleImport}
+        onExport={handleExport}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
 
       <div className="grid grid-cols-12 gap-6">
@@ -243,21 +318,39 @@ export const LibraryPage = () => {
             </TabsContent>
 
             <TabsContent value="vendors" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {vendors.map(productCards.renderVendorCard)}
-              </div>
+              {filteredVendors.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No vendors found matching your criteria.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredVendors.map(productCards.renderVendorCard)}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="fabrics" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {fabrics.map(productCards.renderFabricCard)}
-              </div>
+              {filteredFabrics.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No fabrics found matching your criteria.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredFabrics.map(productCards.renderFabricCard)}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="hardware" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {hardware.map(productCards.renderHardwareCard)}
-              </div>
+              {filteredHardware.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No hardware found matching your criteria.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredHardware.map(productCards.renderHardwareCard)}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="collections" className="space-y-4">
@@ -286,6 +379,7 @@ export const LibraryPage = () => {
       <FilterDialog 
         open={showFilterDialog} 
         onOpenChange={setShowFilterDialog}
+        onApplyFilters={handleApplyFilters}
       />
 
       {/* Add Dialog */}
