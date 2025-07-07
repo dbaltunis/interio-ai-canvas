@@ -33,7 +33,18 @@ export const ComponentsTab = () => {
 
   const [isAddingHeading, setIsAddingHeading] = useState(false);
   const [editingHeading, setEditingHeading] = useState(null);
-  const [newHeading, setNewHeading] = useState({ name: "", fullness: 2.0, price: 0 });
+  const [newHeading, setNewHeading] = useState({ 
+    name: "", 
+    fullness: 2.0, 
+    price: 0, 
+    type: "standard",
+    extras: {
+      eyeletRings: false,
+      ringColors: [],
+      ringDiameters: [],
+      customOptions: []
+    }
+  });
 
   const handleAddHeading = () => {
     if (!newHeading.name.trim()) return;
@@ -44,27 +55,62 @@ export const ComponentsTab = () => {
       name: newHeading.name,
       fullness: newHeading.fullness,
       price: newHeading.price,
+      type: newHeading.type,
+      extras: newHeading.extras,
       active: true
     }]);
     
-    setNewHeading({ name: "", fullness: 2.0, price: 0 });
+    setNewHeading({ 
+      name: "", 
+      fullness: 2.0, 
+      price: 0, 
+      type: "standard",
+      extras: {
+        eyeletRings: false,
+        ringColors: [],
+        ringDiameters: [],
+        customOptions: []
+      }
+    });
     setIsAddingHeading(false);
   };
 
   const handleEditHeading = (heading) => {
     setEditingHeading(heading.id);
-    setNewHeading({ name: heading.name, fullness: heading.fullness, price: heading.price });
+    setNewHeading({ 
+      name: heading.name, 
+      fullness: heading.fullness, 
+      price: heading.price,
+      type: heading.type || "standard",
+      extras: heading.extras || {
+        eyeletRings: false,
+        ringColors: [],
+        ringDiameters: [],
+        customOptions: []
+      }
+    });
     setIsAddingHeading(true);
   };
 
   const handleUpdateHeading = () => {
     setHeadings(prev => prev.map(h => 
       h.id === editingHeading 
-        ? { ...h, name: newHeading.name, fullness: newHeading.fullness, price: newHeading.price }
+        ? { ...h, name: newHeading.name, fullness: newHeading.fullness, price: newHeading.price, type: newHeading.type, extras: newHeading.extras }
         : h
     ));
     setEditingHeading(null);
-    setNewHeading({ name: "", fullness: 2.0, price: 0 });
+    setNewHeading({ 
+      name: "", 
+      fullness: 2.0, 
+      price: 0, 
+      type: "standard",
+      extras: {
+        eyeletRings: false,
+        ringColors: [],
+        ringDiameters: [],
+        customOptions: []
+      }
+    });
     setIsAddingHeading(false);
   };
 
@@ -158,38 +204,132 @@ export const ComponentsTab = () => {
                 <CardHeader>
                   <CardTitle>{editingHeading ? "Edit Heading" : "Add New Heading"}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="headingName">Heading Name</Label>
-                      <Input
-                        id="headingName"
-                        value={newHeading.name}
-                        onChange={(e) => setNewHeading(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="e.g., Grommet"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="fullness">Fullness Multiplier</Label>
-                      <Input
-                        id="fullness"
-                        type="number"
-                        step="0.1"
-                        value={newHeading.fullness}
-                        onChange={(e) => setNewHeading(prev => ({ ...prev, fullness: parseFloat(e.target.value) || 0 }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="price">Price per {fabricUnit}</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        value={newHeading.price}
-                        onChange={(e) => setNewHeading(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                      />
-                    </div>
-                  </div>
+                 <CardContent className="space-y-4">
+                   <div className="grid grid-cols-4 gap-4">
+                     <div>
+                       <Label htmlFor="headingName">Heading Name</Label>
+                       <Input
+                         id="headingName"
+                         value={newHeading.name}
+                         onChange={(e) => setNewHeading(prev => ({ ...prev, name: e.target.value }))}
+                         placeholder="e.g., Grommet"
+                       />
+                     </div>
+                     <div>
+                       <Label htmlFor="headingType">Heading Type</Label>
+                       <Select 
+                         value={newHeading.type} 
+                         onValueChange={(value) => setNewHeading(prev => ({ ...prev, type: value }))}
+                       >
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select type" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="standard">Standard</SelectItem>
+                           <SelectItem value="wave">Wave</SelectItem>
+                           <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div>
+                       <Label htmlFor="fullness">Fullness Multiplier</Label>
+                       <Input
+                         id="fullness"
+                         type="number"
+                         step="0.1"
+                         value={newHeading.fullness}
+                         onChange={(e) => setNewHeading(prev => ({ ...prev, fullness: parseFloat(e.target.value) || 0 }))}
+                       />
+                     </div>
+                     <div>
+                       <Label htmlFor="price">Price per {fabricUnit}</Label>
+                       <Input
+                         id="price"
+                         type="number"
+                         step="0.01"
+                         value={newHeading.price}
+                         onChange={(e) => setNewHeading(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                       />
+                     </div>
+                   </div>
+
+                   {/* Conditional Extra Fields for Wave/Grommet/Eyelet */}
+                   {(newHeading.type === "wave" || newHeading.type === "grommet") && (
+                     <Card className="bg-muted/50">
+                       <CardHeader>
+                         <CardTitle className="text-sm">Additional Options for {newHeading.type === "wave" ? "Wave" : "Grommet/Eyelet"} Heading</CardTitle>
+                       </CardHeader>
+                       <CardContent className="space-y-4">
+                         {newHeading.type === "grommet" && (
+                           <>
+                             <div className="flex items-center space-x-2">
+                               <Switch 
+                                 checked={newHeading.extras.eyeletRings}
+                                 onCheckedChange={(checked) => setNewHeading(prev => ({ 
+                                   ...prev, 
+                                   extras: { ...prev.extras, eyeletRings: checked }
+                                 }))}
+                               />
+                               <Label>Include Eyelet Rings</Label>
+                             </div>
+                             
+                             {newHeading.extras.eyeletRings && (
+                               <div className="grid grid-cols-2 gap-4 ml-6">
+                                 <div>
+                                   <Label htmlFor="ringColors">Ring Colors (comma separated)</Label>
+                                   <Input
+                                     id="ringColors"
+                                     placeholder="e.g., Silver, Bronze, Black"
+                                     value={newHeading.extras.ringColors.join(", ")}
+                                     onChange={(e) => setNewHeading(prev => ({ 
+                                       ...prev, 
+                                       extras: { 
+                                         ...prev.extras, 
+                                         ringColors: e.target.value.split(",").map(c => c.trim()).filter(c => c)
+                                       }
+                                     }))}
+                                   />
+                                 </div>
+                                 <div>
+                                   <Label htmlFor="ringDiameters">Ring Diameters (comma separated)</Label>
+                                   <Input
+                                     id="ringDiameters"
+                                     placeholder="e.g., 25mm, 35mm, 40mm"
+                                     value={newHeading.extras.ringDiameters.join(", ")}
+                                     onChange={(e) => setNewHeading(prev => ({ 
+                                       ...prev, 
+                                       extras: { 
+                                         ...prev.extras, 
+                                         ringDiameters: e.target.value.split(",").map(d => d.trim()).filter(d => d)
+                                       }
+                                     }))}
+                                   />
+                                 </div>
+                               </div>
+                             )}
+                           </>
+                         )}
+                         
+                         {newHeading.type === "wave" && (
+                           <div>
+                             <Label htmlFor="waveOptions">Wave System Options (comma separated)</Label>
+                             <Input
+                               id="waveOptions"
+                               placeholder="e.g., Standard Wave, Silent Gliss, Ripplefold"
+                               value={newHeading.extras.customOptions.join(", ")}
+                               onChange={(e) => setNewHeading(prev => ({ 
+                                 ...prev, 
+                                 extras: { 
+                                   ...prev.extras, 
+                                   customOptions: e.target.value.split(",").map(o => o.trim()).filter(o => o)
+                                 }
+                               }))}
+                             />
+                           </div>
+                         )}
+                       </CardContent>
+                     </Card>
+                   )}
                   <div className="flex gap-2">
                     <Button 
                       onClick={editingHeading ? handleUpdateHeading : handleAddHeading}
@@ -202,7 +342,18 @@ export const ComponentsTab = () => {
                       onClick={() => {
                         setIsAddingHeading(false);
                         setEditingHeading(null);
-                        setNewHeading({ name: "", fullness: 2.0, price: 0 });
+                        setNewHeading({ 
+                          name: "", 
+                          fullness: 2.0, 
+                          price: 0, 
+                          type: "standard",
+                          extras: {
+                            eyeletRings: false,
+                            ringColors: [],
+                            ringDiameters: [],
+                            customOptions: []
+                          }
+                        });
                       }}
                     >
                       Cancel
