@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +10,26 @@ import { Calculator, Plus, Edit, Settings, Trash2, Info } from "lucide-react";
 import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 export const CalculationsTab = () => {
   const { getLengthUnitLabel } = useMeasurementUnits();
   const lengthUnit = getLengthUnitLabel();
+  const { toast } = useToast();
+  
+  // Form state for calculation settings
+  const [settings, setSettings] = useState({
+    headerHem: "15.0",
+    bottomHem: "10.0", 
+    sideHem: "5.0",
+    seamAllowance: "1.5",
+    fabricWastage: "5.0",
+    patternRepeat: "0.0",
+    rounding: "round_up_5",
+    defaultMarkup: "40.0",
+    taxRate: "10.0"
+  });
+
   const [calculationRules] = useState([
     {
       id: 1,
@@ -27,7 +42,7 @@ export const CalculationsTab = () => {
     {
       id: 2,
       name: "Pooling Addition",
-      type: "measurement",
+      type: "measurement", 
       formula: "base_drop + pooling_cm",
       active: true,
       description: "Add pooling length to curtain drop"
@@ -41,6 +56,23 @@ export const CalculationsTab = () => {
       description: "Apply markup to making costs"
     }
   ]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveSettings = () => {
+    // Here you would typically save to your backend/database
+    console.log('Saving calculation settings:', settings);
+    
+    toast({
+      title: "Settings Saved",
+      description: "Your calculation settings have been saved successfully.",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -86,22 +118,46 @@ export const CalculationsTab = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="headerHem">Header Hem (per top edge)</Label>
-                <Input id="headerHem" type="number" step="0.5" defaultValue="15.0" />
+                <Input 
+                  id="headerHem" 
+                  type="number" 
+                  step="0.5" 
+                  value={settings.headerHem}
+                  onChange={(e) => handleInputChange('headerHem', e.target.value)}
+                />
                 <p className="text-xs text-gray-500 mt-1">Added once to the top of each panel</p>
               </div>
               <div>
                 <Label htmlFor="bottomHem">Bottom Hem (per bottom edge)</Label>
-                <Input id="bottomHem" type="number" step="0.5" defaultValue="10.0" />
+                <Input 
+                  id="bottomHem" 
+                  type="number" 
+                  step="0.5" 
+                  value={settings.bottomHem}
+                  onChange={(e) => handleInputChange('bottomHem', e.target.value)}
+                />
                 <p className="text-xs text-gray-500 mt-1">Added once to the bottom of each panel</p>
               </div>
               <div>
                 <Label htmlFor="sideHem">Side Hem (per side edge)</Label>
-                <Input id="sideHem" type="number" step="0.5" defaultValue="5.0" />
+                <Input 
+                  id="sideHem" 
+                  type="number" 
+                  step="0.5" 
+                  value={settings.sideHem}
+                  onChange={(e) => handleInputChange('sideHem', e.target.value)}
+                />
                 <p className="text-xs text-gray-500 mt-1">Added to EACH side (left + right = 2x this value)</p>
               </div>
               <div>
                 <Label htmlFor="seamAllowance">Seam Allowance (per join edge)</Label>
-                <Input id="seamAllowance" type="number" step="0.1" defaultValue="1.5" />
+                <Input 
+                  id="seamAllowance" 
+                  type="number" 
+                  step="0.1" 
+                  value={settings.seamAllowance}
+                  onChange={(e) => handleInputChange('seamAllowance', e.target.value)}
+                />
                 <p className="text-xs text-gray-500 mt-1">Added to EACH edge when joining widths (2x per seam)</p>
               </div>
             </div>
@@ -134,12 +190,24 @@ export const CalculationsTab = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="fabricWastage">Fabric Wastage (%)</Label>
-                <Input id="fabricWastage" type="number" step="0.1" defaultValue="5.0" />
+                <Input 
+                  id="fabricWastage" 
+                  type="number" 
+                  step="0.1" 
+                  value={settings.fabricWastage}
+                  onChange={(e) => handleInputChange('fabricWastage', e.target.value)}
+                />
                 <p className="text-xs text-gray-500 mt-1">Typical range: 3-10% depending on fabric type</p>
               </div>
               <div>
                 <Label htmlFor="patternRepeat">Default Pattern Repeat ({lengthUnit})</Label>
-                <Input id="patternRepeat" type="number" step="0.5" defaultValue="0.0" />
+                <Input 
+                  id="patternRepeat" 
+                  type="number" 
+                  step="0.5" 
+                  value={settings.patternRepeat}
+                  onChange={(e) => handleInputChange('patternRepeat', e.target.value)}
+                />
                 <p className="text-xs text-gray-500 mt-1">Set to 0 for plain fabrics, actual repeat for patterned</p>
               </div>
             </div>
@@ -162,7 +230,7 @@ export const CalculationsTab = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="rounding">Fabric Measurement Rounding</Label>
-                <Select defaultValue="round_up_5">
+                <Select value={settings.rounding} onValueChange={(value) => handleInputChange('rounding', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -205,12 +273,24 @@ export const CalculationsTab = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="defaultMarkup">Default Making Cost Markup (%)</Label>
-              <Input id="defaultMarkup" type="number" step="0.1" defaultValue="40.0" />
+              <Input 
+                id="defaultMarkup" 
+                type="number" 
+                step="0.1" 
+                value={settings.defaultMarkup}
+                onChange={(e) => handleInputChange('defaultMarkup', e.target.value)}
+              />
               <p className="text-xs text-gray-500 mt-1">Applied to: making costs, labor, components</p>
             </div>
             <div>
               <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
-              <Input id="taxRate" type="number" step="0.1" defaultValue="10.0" />
+              <Input 
+                id="taxRate" 
+                type="number" 
+                step="0.1" 
+                value={settings.taxRate}
+                onChange={(e) => handleInputChange('taxRate', e.target.value)}
+              />
               <p className="text-xs text-gray-500 mt-1">Applied to final quote totals</p>
             </div>
           </div>
@@ -225,7 +305,12 @@ export const CalculationsTab = () => {
             </div>
           </div>
 
-          <Button className="bg-brand-primary hover:bg-brand-accent">Save Settings</Button>
+          <Button 
+            onClick={handleSaveSettings}
+            className="bg-brand-primary hover:bg-brand-accent"
+          >
+            Save Settings
+          </Button>
         </CardContent>
       </Card>
 
