@@ -8,8 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const ComponentsTab = () => {
+  const { getFabricUnitLabel } = useMeasurementUnits();
+  const fabricUnit = getFabricUnitLabel();
   const [headings] = useState([
     { id: 1, name: "Pencil Pleat", fullness: 2.0, price: 15.00, active: true },
     { id: 2, name: "Pinch Pleat", fullness: 2.2, price: 25.00, active: true },
@@ -17,15 +20,15 @@ export const ComponentsTab = () => {
   ]);
 
   const [hardware] = useState([
-    { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: "per-meter", active: true },
-    { id: 2, name: "Curtain Rod - Premium", price: 85.00, unit: "per-meter", active: true },
+    { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: `per-${fabricUnit}`, active: true },
+    { id: 2, name: "Curtain Rod - Premium", price: 85.00, unit: `per-${fabricUnit}`, active: true },
     { id: 3, name: "Roman Blind Chain", price: 12.00, unit: "per-set", active: true }
   ]);
 
   const [linings] = useState([
-    { id: 1, name: "Standard Lining", price: 8.50, unit: "per-meter", active: true },
-    { id: 2, name: "Blackout Lining", price: 12.00, unit: "per-meter", active: true },
-    { id: 3, name: "Thermal Lining", price: 15.00, unit: "per-meter", active: true }
+    { id: 1, name: "Standard Lining", price: 8.50, unit: `per-${fabricUnit}`, active: true },
+    { id: 2, name: "Blackout Lining", price: 12.00, unit: `per-${fabricUnit}`, active: true },
+    { id: 3, name: "Thermal Lining", price: 15.00, unit: `per-${fabricUnit}`, active: true }
   ]);
 
   return (
@@ -66,7 +69,7 @@ export const ComponentsTab = () => {
                         <div>
                           <h5 className="font-medium text-brand-primary">{heading.name}</h5>
                           <p className="text-sm text-brand-neutral">
-                            Fullness: {heading.fullness}x • Price: ${heading.price}/meter • Auto-calculated fabric usage
+                            Fullness: {heading.fullness}x • Price: ${heading.price}/{fabricUnit} • Auto-calculated fabric usage
                           </p>
                           <div className="text-xs text-muted-foreground">
                             Used for automatic fabric calculations in treatment pricing

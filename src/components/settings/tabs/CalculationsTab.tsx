@@ -8,8 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Calculator, Plus, Edit, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const CalculationsTab = () => {
+  const { getLengthUnitLabel } = useMeasurementUnits();
+  const lengthUnit = getLengthUnitLabel();
   const [calculationRules] = useState([
     {
       id: 1,
@@ -62,11 +65,11 @@ export const CalculationsTab = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="seamAllowance">Seam Allowance (cm)</Label>
+              <Label htmlFor="seamAllowance">Seam Allowance ({lengthUnit})</Label>
               <Input id="seamAllowance" type="number" step="0.1" defaultValue="5.0" />
             </div>
             <div>
-              <Label htmlFor="hemAllowance">Hem Allowance (cm)</Label>
+              <Label htmlFor="hemAllowance">Hem Allowance ({lengthUnit})</Label>
               <Input id="hemAllowance" type="number" step="0.1" defaultValue="15.0" />
             </div>
             <div>
@@ -83,9 +86,9 @@ export const CalculationsTab = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nearest_cm">Nearest cm</SelectItem>
-                  <SelectItem value="nearest_5cm">Nearest 5cm</SelectItem>
-                  <SelectItem value="nearest_10cm">Nearest 10cm</SelectItem>
+                  <SelectItem value="nearest_unit">Nearest {lengthUnit}</SelectItem>
+                  <SelectItem value="nearest_5_units">Nearest 5 {lengthUnit}</SelectItem>
+                  <SelectItem value="nearest_10_units">Nearest 10 {lengthUnit}</SelectItem>
                   <SelectItem value="round_up">Always round up</SelectItem>
                 </SelectContent>
               </Select>

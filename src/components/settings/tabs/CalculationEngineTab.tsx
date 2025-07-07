@@ -10,10 +10,13 @@ import { Calculator, Ruler, Scissors, Settings } from "lucide-react";
 import { useCalculationFormulas, CalculationFormula } from "@/hooks/useCalculationFormulas";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const CalculationEngineTab = () => {
   const { data: formulas, isLoading, createFormula, updateFormula } = useCalculationFormulas();
   const { toast } = useToast();
+  const { getLengthUnitLabel } = useMeasurementUnits();
+  const lengthUnit = getLengthUnitLabel();
   const [newFormula, setNewFormula] = useState({
     name: '',
     category: '',
@@ -107,11 +110,11 @@ export const CalculationEngineTab = () => {
               <span className="text-xs text-brand-neutral">Times window width</span>
             </div>
             <div>
-              <Label htmlFor="seamAllowance">Seam Allowance (cm)</Label>
+              <Label htmlFor="seamAllowance">Seam Allowance ({lengthUnit})</Label>
               <Input id="seamAllowance" type="number" step="0.1" defaultValue="5.0" />
             </div>
             <div>
-              <Label htmlFor="hemAllowance">Hem Allowance (cm)</Label>
+              <Label htmlFor="hemAllowance">Hem Allowance ({lengthUnit})</Label>
               <Input id="hemAllowance" type="number" step="0.1" defaultValue="15.0" />
             </div>
           </div>
@@ -125,9 +128,9 @@ export const CalculationEngineTab = () => {
             <div>
               <Label htmlFor="rounding">Measurement Rounding</Label>
               <select id="rounding" className="w-full p-2 border rounded-md">
-                <option value="nearest_cm">Nearest cm</option>
-                <option value="nearest_5cm">Nearest 5cm</option>
-                <option value="nearest_10cm">Nearest 10cm</option>
+                <option value="nearest_unit">Nearest {lengthUnit}</option>
+                <option value="nearest_5_units">Nearest 5 {lengthUnit}</option>
+                <option value="nearest_10_units">Nearest 10 {lengthUnit}</option>
                 <option value="round_up">Always round up</option>
               </select>
             </div>
