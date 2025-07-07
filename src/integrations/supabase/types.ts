@@ -733,6 +733,45 @@ export type Database = {
         }
         Relationships: []
       }
+      heading_options: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          extras: Json | null
+          fullness: number
+          id: string
+          name: string
+          price: number
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          extras?: Json | null
+          fullness?: number
+          id?: string
+          name: string
+          price?: number
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          extras?: Json | null
+          fullness?: number
+          id?: string
+          name?: string
+          price?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           active: boolean | null

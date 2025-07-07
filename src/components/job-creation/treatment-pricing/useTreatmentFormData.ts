@@ -13,6 +13,7 @@ export interface TreatmentFormData {
   fabric_width: string;
   roll_direction: string;
   heading_fullness: string;
+  selected_heading?: string;
   header_hem: string;
   bottom_hem: string;
   side_hem: string;

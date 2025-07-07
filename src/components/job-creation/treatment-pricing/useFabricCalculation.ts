@@ -1,12 +1,14 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateFabricUsage } from "./fabric-calculation/fabricUsageCalculator";
 import { calculateOptionCost, calculateHierarchicalOptionCost } from "./fabric-calculation/optionCostCalculator";
 import { calculateIntegratedFabricUsage, type FabricCalculationParams } from "@/hooks/services/makingCostIntegrationService";
 
 export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
   const { units } = useMeasurementUnits();
+  const { data: headingOptions = [] } = useHeadingOptions();
 
   // Auto-detect fabric properties for smarter calculations
   const detectFabricProperties = () => {
@@ -41,6 +43,14 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
   // Extract fullness ratio from selected options
   const getActiveFullnessRatio = () => {
     let fullnessRatio = parseFloat(formData.heading_fullness) || 2.5;
+    
+    // First check if a specific heading option is selected
+    if (formData.selected_heading && formData.selected_heading !== "no-heading") {
+      const selectedHeading = headingOptions.find(h => h.id === formData.selected_heading);
+      if (selectedHeading) {
+        fullnessRatio = selectedHeading.fullness;
+      }
+    }
     
     // Check hierarchical options for fullness that affects fabric calculation
     hierarchicalOptions.forEach(category => {

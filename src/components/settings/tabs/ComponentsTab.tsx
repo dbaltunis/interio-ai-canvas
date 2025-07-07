@@ -9,15 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useHeadingOptions, useCreateHeadingOption, useUpdateHeadingOption, useDeleteHeadingOption } from "@/hooks/useHeadingOptions";
+import { toast } from "sonner";
 
 export const ComponentsTab = () => {
   const { getFabricUnitLabel } = useMeasurementUnits();
   const fabricUnit = getFabricUnitLabel();
-  const [headings, setHeadings] = useState([
-    { id: 1, name: "Pencil Pleat", fullness: 2.0, price: 15.00, active: true },
-    { id: 2, name: "Pinch Pleat", fullness: 2.2, price: 25.00, active: true },
-    { id: 3, name: "Wave", fullness: 2.5, price: 35.00, active: true }
-  ]);
+  const { data: headings = [], isLoading: headingsLoading } = useHeadingOptions();
+  const createHeading = useCreateHeadingOption();
+  const updateHeading = useUpdateHeadingOption();
+  const deleteHeading = useDeleteHeadingOption();
 
   const [hardware, setHardware] = useState([
     { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: "per-meter", active: true },
@@ -46,33 +47,38 @@ export const ComponentsTab = () => {
     }
   });
 
-  const handleAddHeading = () => {
+  const handleAddHeading = async () => {
     if (!newHeading.name.trim()) return;
     
-    const id = headings.length > 0 ? Math.max(...headings.map(h => h.id)) + 1 : 1;
-    setHeadings(prev => [...prev, {
-      id,
-      name: newHeading.name,
-      fullness: newHeading.fullness,
-      price: newHeading.price,
-      type: newHeading.type,
-      extras: newHeading.extras,
-      active: true
-    }]);
-    
-    setNewHeading({ 
-      name: "", 
-      fullness: 2.0, 
-      price: 0, 
-      type: "standard",
-      extras: {
-        eyeletRings: false,
-        ringColors: [],
-        ringDiameters: [],
-        customOptions: []
-      }
-    });
-    setIsAddingHeading(false);
+    try {
+      await createHeading.mutateAsync({
+        name: newHeading.name,
+        fullness: newHeading.fullness,
+        price: newHeading.price,
+        type: newHeading.type,
+        extras: newHeading.extras,
+        active: true,
+        user_id: '' // This will be set by the database
+      });
+      
+      setNewHeading({ 
+        name: "", 
+        fullness: 2.0, 
+        price: 0, 
+        type: "standard",
+        extras: {
+          eyeletRings: false,
+          ringColors: [],
+          ringDiameters: [],
+          customOptions: []
+        }
+      });
+      setIsAddingHeading(false);
+      toast.success("Heading option added successfully");
+    } catch (error) {
+      console.error('Error adding heading:', error);
+      toast.error("Failed to add heading option");
+    }
   };
 
   const handleEditHeading = (heading) => {
@@ -92,36 +98,64 @@ export const ComponentsTab = () => {
     setIsAddingHeading(true);
   };
 
-  const handleUpdateHeading = () => {
-    setHeadings(prev => prev.map(h => 
-      h.id === editingHeading 
-        ? { ...h, name: newHeading.name, fullness: newHeading.fullness, price: newHeading.price, type: newHeading.type, extras: newHeading.extras }
-        : h
-    ));
-    setEditingHeading(null);
-    setNewHeading({ 
-      name: "", 
-      fullness: 2.0, 
-      price: 0, 
-      type: "standard",
-      extras: {
-        eyeletRings: false,
-        ringColors: [],
-        ringDiameters: [],
-        customOptions: []
+  const handleUpdateHeading = async () => {
+    if (!editingHeading) return;
+    
+    try {
+      await updateHeading.mutateAsync({
+        id: editingHeading,
+        name: newHeading.name,
+        fullness: newHeading.fullness,
+        price: newHeading.price,
+        type: newHeading.type,
+        extras: newHeading.extras
+      });
+      
+      setEditingHeading(null);
+      setNewHeading({ 
+        name: "", 
+        fullness: 2.0, 
+        price: 0, 
+        type: "standard",
+        extras: {
+          eyeletRings: false,
+          ringColors: [],
+          ringDiameters: [],
+          customOptions: []
+        }
+      });
+      setIsAddingHeading(false);
+      toast.success("Heading option updated successfully");
+    } catch (error) {
+      console.error('Error updating heading:', error);
+      toast.error("Failed to update heading option");
+    }
+  };
+
+  const handleDeleteHeading = async (id: string) => {
+    try {
+      await deleteHeading.mutateAsync(id);
+      toast.success("Heading option deleted successfully");
+    } catch (error) {
+      console.error('Error deleting heading:', error);
+      toast.error("Failed to delete heading option");
+    }
+  };
+
+  const handleToggleHeading = async (id: string) => {
+    try {
+      const heading = headings.find(h => h.id === id);
+      if (heading) {
+        await updateHeading.mutateAsync({
+          id,
+          active: !heading.active
+        });
+        toast.success(`Heading ${heading.active ? 'disabled' : 'enabled'} successfully`);
       }
-    });
-    setIsAddingHeading(false);
-  };
-
-  const handleDeleteHeading = (id) => {
-    setHeadings(prev => prev.filter(h => h.id !== id));
-  };
-
-  const handleToggleHeading = (id) => {
-    setHeadings(prev => prev.map(h => 
-      h.id === id ? { ...h, active: !h.active } : h
-    ));
+    } catch (error) {
+      console.error('Error toggling heading:', error);
+      toast.error("Failed to toggle heading option");
+    }
   };
 
   return (
