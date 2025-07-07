@@ -33,9 +33,12 @@ export const useCalculationFormulas = () => {
 
   const createFormula = useMutation({
     mutationFn: async (formula: Omit<CalculationFormula, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('calculation_formulas')
-        .insert([formula])
+        .insert([{ ...formula, user_id: user.id }])
         .select()
         .single();
       

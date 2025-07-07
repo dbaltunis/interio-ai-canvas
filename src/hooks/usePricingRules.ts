@@ -35,9 +35,12 @@ export const usePricingRules = () => {
 
   const createPricingRule = useMutation({
     mutationFn: async (rule: Omit<PricingRule, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('pricing_rules')
-        .insert([rule])
+        .insert([{ ...rule, user_id: user.id }])
         .select()
         .single();
       
