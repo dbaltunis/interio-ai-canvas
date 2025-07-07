@@ -264,30 +264,31 @@ export const ProductTemplatesTab = () => {
             </div>
           </div>
 
-          {/* CSV Grid Selection - shown when CSV pricing is selected */}
+          {/* Pricing Grid Selection */}
+          <div>
+            <Label>Select Existing Pricing Grid (Optional)</Label>
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a pricing grid or leave blank for manual pricing" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Grid - Use Making Costs Below</SelectItem>
+                <SelectItem value="roman-blinds-standard">Roman Blinds - Standard Grid</SelectItem>
+                <SelectItem value="venetian-blinds-wood">Venetian Blinds - Wood Grid</SelectItem>
+                <SelectItem value="roller-blinds-basic">Roller Blinds - Basic Grid</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              If you select a grid, making costs below will be ignored (grid includes all costs)
+            </p>
+          </div>
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 mb-2">💡 How This Works:</h4>
             <div className="space-y-2 text-sm text-blue-800">
-              <p><strong>Making Cost:</strong> Your making/sewing charge per unit (e.g., $45/linear meter for curtains)</p>
-              <p><strong>CSV Pricing Grid:</strong> For complex products like blinds where price varies by size combinations</p>
-              <p><strong>Final Price:</strong> Making cost + Fabric cost + Component costs + Your markup</p>
-            </div>
-          </div>
-
-          {/* CSV Grid Upload Section */}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-            <div className="text-center space-y-2">
-              <h4 className="font-medium">Upload CSV Pricing Grid (Optional)</h4>
-              <p className="text-sm text-gray-600">
-                For products with complex size-based pricing like Roman blinds
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <Input type="file" accept=".csv" className="max-w-xs" />
-                <Button variant="outline" size="sm">Upload CSV</Button>
-              </div>
-              <p className="text-xs text-gray-500">
-                Format: Width ranges (columns) × Height ranges (rows) = Prices
-              </p>
+              <p><strong>Option 1:</strong> Use a Pricing Grid (complete pricing from Components section)</p>
+              <p><strong>Option 2:</strong> Use Making Costs + Components (calculated pricing)</p>
+              <p><strong>Final Price:</strong> Grid price OR (Making cost + Fabric cost + Component costs) + Your markup</p>
             </div>
           </div>
 
