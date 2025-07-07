@@ -58,9 +58,9 @@ export const ProductCards = ({
               />
               <div className="flex-1">
                 <CardTitle className="text-lg font-semibold mb-1">{vendor.name}</CardTitle>
-                <Badge variant="outline" className="mb-2">{vendor.type}</Badge>
+                <Badge variant="outline" className="mb-2">{vendor.company_type || 'Supplier'}</Badge>
                 <p className="text-sm text-gray-600 mb-1">{vendor.country}</p>
-                <p className="text-sm text-gray-500">{vendor.contact}</p>
+                <p className="text-sm text-gray-500">{vendor.email}</p>
                 <p className="text-sm text-gray-500">{vendor.phone}</p>
               </div>
             </div>
@@ -69,12 +69,12 @@ export const ProductCards = ({
           
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-500">Products</p>
-              <p className="font-semibold">{vendor.products}</p>
+              <p className="text-sm text-gray-500">Lead Time</p>
+              <p className="font-semibold">{vendor.lead_time_days || 7} days</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Last Order</p>
-              <p className="font-semibold">{vendor.lastOrder}</p>
+              <p className="text-sm text-gray-500">Payment Terms</p>
+              <p className="font-semibold">{vendor.payment_terms || 'NET30'}</p>
             </div>
           </div>
 
@@ -95,6 +95,9 @@ export const ProductCards = ({
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
+            <Badge variant={vendor.active ? "default" : "secondary"}>
+              {vendor.active ? "Active" : "Inactive"}
+            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -102,27 +105,36 @@ export const ProductCards = ({
   };
 
   const renderFabricCard = (fabric: any) => {
-    const stockStatus = getStockStatus(fabric.inStock, fabric.reorderPoint);
+    const stockStatus = getStockStatus(fabric.quantity || 0, fabric.reorder_point || 10);
     const isSelected = selectedProducts.includes(fabric.id.toString());
+    const mainImage = fabric.images && fabric.images.length > 0 ? fabric.images[0] : null;
     
     return (
       <Card key={fabric.id} className="relative group hover:shadow-lg transition-shadow">
         <CardHeader className="p-0">
           <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-            <img 
-              src={fabric.image} 
-              alt={fabric.name}
-              className="w-full h-full object-cover"
-            />
+            {mainImage ? (
+              <img 
+                src={mainImage} 
+                alt={fabric.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <Package className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
             <div className="absolute top-2 right-2 flex gap-2">
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
             </div>
             <div className="absolute top-2 left-2 flex gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {fabric.pattern}
-              </Badge>
+              {fabric.tags && fabric.tags.map((tag: string) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
               {isSelected && (
                 <Badge variant="default" className="bg-blue-500">
                   Selected
@@ -140,27 +152,27 @@ export const ProductCards = ({
         </CardHeader>
         <CardContent className="p-4">
           <CardTitle className="text-lg font-semibold mb-2">{fabric.name}</CardTitle>
-          <p className="text-sm text-gray-600 mb-1">{fabric.code}</p>
-          <p className="text-sm text-gray-500 mb-1">{fabric.vendor}</p>
+          <p className="text-sm text-gray-600 mb-1">{fabric.product_code || fabric.sku}</p>
+          <p className="text-sm text-gray-500 mb-1">{fabric.vendor?.name}</p>
           <p className="text-sm text-gray-500 mb-1">{fabric.category}</p>
-          <p className="text-sm text-gray-500 mb-3">{fabric.collection}</p>
+          <p className="text-sm text-gray-500 mb-3">{fabric.collection?.name}</p>
           
           <div className="grid grid-cols-2 gap-2 text-xs mb-3">
             <div>
               <p className="text-gray-500">Price</p>
-              <p className="font-semibold">{formatCurrency(fabric.price)}/{getFabricUnitLabel()}</p>
+              <p className="font-semibold">{formatCurrency(fabric.cost_per_unit || 0)}/{fabric.unit}</p>
             </div>
             <div>
               <p className="text-gray-500">In Stock</p>
-              <p className="font-semibold">{formatFabric(fabric.inStock)}</p>
+              <p className="font-semibold">{fabric.quantity || 0} {fabric.unit}</p>
             </div>
             <div>
               <p className="text-gray-500">Width</p>
-              <p className="font-semibold">{fabric.width}</p>
+              <p className="font-semibold">{fabric.fabric_width || fabric.width || 'N/A'}</p>
             </div>
             <div>
               <p className="text-gray-500">Location</p>
-              <p className="font-semibold">{fabric.location}</p>
+              <p className="font-semibold">{fabric.location || 'N/A'}</p>
             </div>
           </div>
           
@@ -181,7 +193,7 @@ export const ProductCards = ({
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            {fabric.inStock <= fabric.reorderPoint && (
+            {(fabric.quantity || 0) <= (fabric.reorder_point || 10) && (
               <AlertTriangle className="h-4 w-4 text-orange-500" />
             )}
           </div>
@@ -191,24 +203,36 @@ export const ProductCards = ({
   };
 
   const renderHardwareCard = (hardware: any) => {
-    const stockStatus = getStockStatus(hardware.inStock, hardware.reorderPoint);
+    const stockStatus = getStockStatus(hardware.quantity || 0, hardware.reorder_point || 5);
     const isSelected = selectedProducts.includes(hardware.id.toString());
+    const mainImage = hardware.images && hardware.images.length > 0 ? hardware.images[0] : null;
     
     return (
       <Card key={hardware.id} className="relative group hover:shadow-lg transition-shadow">
         <CardHeader className="p-0">
           <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-            <img 
-              src={hardware.image} 
-              alt={hardware.name}
-              className="w-full h-full object-cover"
-            />
+            {mainImage ? (
+              <img 
+                src={mainImage} 
+                alt={hardware.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <Package className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
             <div className="absolute top-2 right-2 flex gap-2">
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
             </div>
-            <div className="absolute top-2 left-2">
+            <div className="absolute top-2 left-2 flex gap-2">
+              {hardware.tags && hardware.tags.map((tag: string) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
               {isSelected && (
                 <Badge variant="default" className="bg-blue-500">
                   Selected
@@ -226,26 +250,26 @@ export const ProductCards = ({
         </CardHeader>
         <CardContent className="p-4">
           <CardTitle className="text-lg font-semibold mb-2">{hardware.name}</CardTitle>
-          <p className="text-sm text-gray-600 mb-1">{hardware.code}</p>
-          <p className="text-sm text-gray-500 mb-1">{hardware.vendor}</p>
+          <p className="text-sm text-gray-600 mb-1">{hardware.product_code}</p>
+          <p className="text-sm text-gray-500 mb-1">{hardware.vendor?.name}</p>
           <Badge variant="secondary" className="mb-3 text-xs">{hardware.category}</Badge>
           
           <div className="grid grid-cols-2 gap-2 text-xs mb-3">
             <div>
               <p className="text-gray-500">Price</p>
-              <p className="font-semibold">{formatCurrency(hardware.price)}/{hardware.unit}</p>
+              <p className="font-semibold">{formatCurrency(hardware.cost_per_unit || 0)}/{hardware.unit}</p>
             </div>
             <div>
               <p className="text-gray-500">In Stock</p>
-              <p className="font-semibold">{hardware.inStock} {hardware.unit}s</p>
+              <p className="font-semibold">{hardware.quantity || 0} {hardware.unit}s</p>
             </div>
             <div>
               <p className="text-gray-500">Material</p>
-              <p className="font-semibold">{hardware.material}</p>
+              <p className="font-semibold">{hardware.material || 'N/A'}</p>
             </div>
             <div>
               <p className="text-gray-500">Location</p>
-              <p className="font-semibold">{hardware.location}</p>
+              <p className="font-semibold">{hardware.location || 'N/A'}</p>
             </div>
           </div>
           
@@ -266,7 +290,7 @@ export const ProductCards = ({
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            {hardware.inStock <= hardware.reorderPoint && (
+            {(hardware.quantity || 0) <= (hardware.reorder_point || 5) && (
               <AlertTriangle className="h-4 w-4 text-orange-500" />
             )}
           </div>

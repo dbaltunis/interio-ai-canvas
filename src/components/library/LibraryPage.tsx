@@ -15,6 +15,10 @@ import { LibraryHeader } from "./LibraryHeader";
 import { LibraryTabs } from "./LibraryTabs";
 import { ProductCards } from "./ProductCards";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useVendors } from "@/hooks/useVendors";
+import { useInventory } from "@/hooks/useInventoryManagement";
+import { useHardwareInventory } from "@/hooks/useHardwareInventory";
+import { useCollections } from "@/hooks/useCollections";
 import { toast } from "sonner";
 
 export const LibraryPage = () => {
@@ -33,144 +37,11 @@ export const LibraryPage = () => {
     type: "fabric" | "hardware" | "vendor";
   }>({ open: false, product: null, type: "fabric" });
 
-  // Mock data with improved categorization and patterns
-  const vendors = [
-    { 
-      id: 1, 
-      name: "Fibre Naturelle", 
-      type: "Fabric Supplier",
-      country: "UK",
-      contact: "sales@fibrenaturelle.com",
-      phone: "+44 20 7123 4567",
-      products: 156,
-      lastOrder: "2024-01-15"
-    },
-    { 
-      id: 2, 
-      name: "KD Design", 
-      type: "Fabric Manufacturer",
-      country: "Germany", 
-      contact: "info@kddesign.de",
-      phone: "+49 30 1234 5678",
-      products: 89,
-      lastOrder: "2024-01-20"
-    },
-    { 
-      id: 3, 
-      name: "Hunter Douglas", 
-      type: "Hardware & Systems",
-      country: "Netherlands",
-      contact: "orders@hunterdouglas.com", 
-      phone: "+31 20 567 8900",
-      products: 45,
-      lastOrder: "2024-01-10"
-    },
-    {
-      id: 4,
-      name: "Silent Gliss",
-      type: "Track Systems",
-      country: "Switzerland",
-      contact: "sales@silentgliss.com",
-      phone: "+41 44 123 4567",
-      products: 67,
-      lastOrder: "2024-01-18"
-    }
-  ];
-
-  const fabrics = [
-    {
-      id: 1,
-      name: "Merlon Custard",
-      code: "K5361/02",
-      vendor: "Fibre Naturelle",
-      category: "Upholstery Fabrics",
-      collection: "Heritage Collection",
-      pattern: "Solid",
-      price: 120.00,
-      unit: units.fabric,
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
-      inStock: 45.5,
-      reorderPoint: 10,
-      location: "Warehouse A-12",
-      composition: "100% Linen",
-      width: "137cm",
-      patternRepeat: "0cm",
-      status: "In Stock"
-    },
-    {
-      id: 2,
-      name: "Silk Taffeta Royal",
-      code: "ST-2401",
-      vendor: "KD Design", 
-      category: "Drapery Fabrics",
-      collection: "Luxury Series",
-      pattern: "Striped",
-      price: 180.00,
-      unit: units.fabric,
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop",
-      inStock: 23.2,
-      reorderPoint: 15,
-      location: "Warehouse B-07",
-      composition: "100% Silk",
-      width: "140cm",
-      patternRepeat: "32cm",
-      status: "In Stock"
-    },
-    {
-      id: 3,
-      name: "Blackout Supreme",
-      code: "BO-1205",
-      vendor: "Fibre Naturelle",
-      category: "Blackout Fabrics",
-      collection: "Functional Fabrics",
-      pattern: "Textured",
-      price: 85.00,
-      unit: units.fabric,
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop",
-      inStock: 8.5,
-      reorderPoint: 20,
-      location: "Warehouse A-15",
-      composition: "Polyester with Acrylic Backing",
-      width: "150cm",
-      patternRepeat: "0cm",
-      status: "Low Stock"
-    }
-  ];
-
-  const hardware = [
-    {
-      id: 1,
-      name: "Professional Track System",
-      code: "HD-TRACK-001",
-      vendor: "Hunter Douglas",
-      category: "Curtain Tracks",
-      price: 45.00,
-      unit: "meter",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
-      inStock: 125,
-      reorderPoint: 25,
-      location: "Hardware Storage H-03",
-      material: "Aluminum",
-      maxWeight: "50kg per meter",
-      status: "In Stock"
-    },
-    {
-      id: 2,
-      name: "Silent Motorized System",
-      code: "SG-MOTOR-205",
-      vendor: "Silent Gliss",
-      category: "Motorized Systems", 
-      price: 320.00,
-      unit: "each",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop",
-      inStock: 12,
-      reorderPoint: 5,
-      location: "Electronics Storage E-01",
-      material: "Steel & Electronics",
-      maxWeight: "75kg",
-      status: "In Stock"
-    }
-  ];
+  // Fetch real data from database
+  const { data: vendors = [], isLoading: vendorsLoading } = useVendors();
+  const { data: fabrics = [], isLoading: fabricsLoading } = useInventory();
+  const { data: hardware = [], isLoading: hardwareLoading } = useHardwareInventory();
+  const { data: collections = [], isLoading: collectionsLoading } = useCollections();
 
   const productCards = ProductCards({ 
     vendors, 
@@ -186,7 +57,15 @@ export const LibraryPage = () => {
     return products.filter(product => {
       // Search filter
       if (searchTerm) {
-        const searchFields = [product.name, product.code, product.vendor, product.category, product.collection].filter(Boolean);
+        const searchFields = [
+          product.name, 
+          product.product_code, 
+          product.vendor?.name, 
+          product.category, 
+          product.collection?.name,
+          ...(product.tags || [])
+        ].filter(Boolean);
+        
         if (!searchFields.some(field => 
           field.toLowerCase().includes(searchTerm.toLowerCase())
         )) {
@@ -197,28 +76,26 @@ export const LibraryPage = () => {
       // Applied filters
       if (Object.keys(appliedFilters).length > 0) {
         // Vendor filter
-        if (appliedFilters.vendor && product.vendor !== appliedFilters.vendor) return false;
+        if (appliedFilters.vendor && product.vendor?.name !== appliedFilters.vendor) return false;
         
         // Category filter
         if (appliedFilters.category && product.category !== appliedFilters.category) return false;
         
         // Price range filter
-        if (appliedFilters.priceMin && product.price < parseFloat(appliedFilters.priceMin)) return false;
-        if (appliedFilters.priceMax && product.price > parseFloat(appliedFilters.priceMax)) return false;
+        const price = product.cost_per_unit || product.retail_price || 0;
+        if (appliedFilters.priceMin && price < parseFloat(appliedFilters.priceMin)) return false;
+        if (appliedFilters.priceMax && price > parseFloat(appliedFilters.priceMax)) return false;
         
         // Stock status filter
         if (appliedFilters.stockStatus) {
-          const stockStatus = getStockStatus(product.inStock, product.reorderPoint || 10);
+          const stockStatus = getStockStatus(product.quantity || 0, product.reorder_point || 10);
           if (appliedFilters.stockStatus !== stockStatus.status.toLowerCase().replace(' ', '-')) return false;
         }
         
-        // Pattern filter (for fabrics)
-        if (appliedFilters.pattern && product.pattern !== appliedFilters.pattern) return false;
-        
         // Tags filter
         if (appliedFilters.tags && appliedFilters.tags.length > 0) {
-          // This would check against product tags if they existed
-          // For now, we'll skip this filter
+          const productTags = product.tags || [];
+          if (!appliedFilters.tags.some((tag: string) => productTags.includes(tag))) return false;
         }
       }
 
@@ -235,6 +112,7 @@ export const LibraryPage = () => {
   const filteredVendors = filterProducts(vendors, 'vendor');
   const filteredFabrics = filterProducts(fabrics, 'fabric');
   const filteredHardware = filterProducts(hardware, 'hardware');
+  const filteredCollections = filterProducts(collections, 'collection');
 
   function handleProductSelect(productId: string, checked: boolean) {
     if (checked) {
@@ -288,6 +166,18 @@ export const LibraryPage = () => {
   function handleApplyFilters(filters: any) {
     setAppliedFilters(filters);
     toast.success("Filters applied successfully");
+  }
+
+  // Loading state
+  if (vendorsLoading || fabricsLoading || hardwareLoading || collectionsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading inventory data...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -354,9 +244,33 @@ export const LibraryPage = () => {
             </TabsContent>
 
             <TabsContent value="collections" className="space-y-4">
-              <div className="text-center py-8 text-gray-500">
-                No collections available. Create your first collection to organize your inventory!
-              </div>
+              {filteredCollections.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No collections available. Create your first collection to organize your inventory!
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredCollections.map(collection => (
+                    <div key={collection.id} className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-lg font-semibold mb-2">{collection.name}</h3>
+                      <p className="text-gray-600 mb-2">{collection.description}</p>
+                      <div className="flex gap-2 mb-3">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {collection.season}
+                        </span>
+                        <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                          {collection.year}
+                        </span>
+                      </div>
+                      {collection.vendor && (
+                        <p className="text-sm text-gray-500">
+                          Vendor: {collection.vendor.name}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
