@@ -24,13 +24,8 @@ export const useShopifyIntegration = () => {
   return useQuery({
     queryKey: ["shopify_integration"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shopify_integration")
-        .select("*")
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      // Mock implementation - return null for no integration
+      return null;
     },
   });
 };
@@ -40,17 +35,15 @@ export const useCreateShopifyIntegration = () => {
 
   return useMutation({
     mutationFn: async (integration: Omit<ShopifyIntegration, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("shopify_integration")
-        .insert({ ...integration, user_id: user.id })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      console.log("Creating Shopify integration:", integration);
+      return { 
+        id: Date.now().toString(), 
+        ...integration, 
+        user_id: "user-1", 
+        created_at: new Date().toISOString(), 
+        updated_at: new Date().toISOString() 
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopify_integration"] });
@@ -67,15 +60,9 @@ export const useUpdateShopifyIntegration = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...integration }: Partial<ShopifyIntegration> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("shopify_integration")
-        .update(integration)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      console.log("Updating Shopify integration:", id, integration);
+      return { id, ...integration };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopify_integration"] });

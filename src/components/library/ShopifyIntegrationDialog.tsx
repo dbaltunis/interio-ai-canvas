@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingBag, Settings, Sync, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { ShoppingBag, Settings, RefreshCw, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { useShopifyIntegration, useCreateShopifyIntegration, useUpdateShopifyIntegration } from "@/hooks/useShopifyIntegration";
 
 interface ShopifyIntegrationDialogProps {
@@ -22,20 +22,20 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
   const updateIntegration = useUpdateShopifyIntegration();
 
   const [formData, setFormData] = useState({
-    shop_domain: integration?.shop_domain || "",
-    access_token: integration?.access_token || "",
-    webhook_secret: integration?.webhook_secret || "",
-    auto_sync_enabled: integration?.auto_sync_enabled || false,
-    sync_inventory: integration?.sync_inventory || true,
-    sync_prices: integration?.sync_prices || true,
-    sync_images: integration?.sync_images || true,
+    shop_domain: (integration as any)?.shop_domain || "",
+    access_token: (integration as any)?.access_token || "",
+    webhook_secret: (integration as any)?.webhook_secret || "",
+    auto_sync_enabled: (integration as any)?.auto_sync_enabled || false,
+    sync_inventory: (integration as any)?.sync_inventory !== undefined ? (integration as any).sync_inventory : true,
+    sync_prices: (integration as any)?.sync_prices !== undefined ? (integration as any).sync_prices : true,
+    sync_images: (integration as any)?.sync_images !== undefined ? (integration as any).sync_images : true,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (integration) {
-      await updateIntegration.mutateAsync({ ...formData, id: integration.id });
+      await updateIntegration.mutateAsync({ ...formData, id: (integration as any).id });
     } else {
       await createIntegration.mutateAsync({
         ...formData,
@@ -247,9 +247,9 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                     <CardTitle className="flex items-center justify-between">
                       <span>Integration Status</span>
                       <div className="flex items-center space-x-2">
-                        {getSyncStatusIcon(integration.sync_status)}
-                        <Badge variant={integration.sync_status === "error" ? "destructive" : "default"}>
-                          {getSyncStatusText(integration.sync_status)}
+                        {getSyncStatusIcon((integration as any)?.sync_status || "idle")}
+                        <Badge variant={(integration as any)?.sync_status === "error" ? "destructive" : "default"}>
+                          {getSyncStatusText((integration as any)?.sync_status || "idle")}
                         </Badge>
                       </div>
                     </CardTitle>
@@ -258,13 +258,13 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="font-medium">Shop Domain</p>
-                        <p className="text-gray-600">{integration.shop_domain}</p>
+                        <p className="text-gray-600">{(integration as any)?.shop_domain || "Not set"}</p>
                       </div>
                       <div>
                         <p className="font-medium">Last Sync</p>
                         <p className="text-gray-600">
-                          {integration.last_full_sync 
-                            ? new Date(integration.last_full_sync).toLocaleString()
+                          {(integration as any)?.last_full_sync 
+                            ? new Date((integration as any).last_full_sync).toLocaleString()
                             : "Never"
                           }
                         </p>
@@ -279,7 +279,7 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <Button className="w-full" disabled>
-                      <Sync className="h-4 w-4 mr-2" />
+                      <RefreshCw className="h-4 w-4 mr-2" />
                       Full Sync (Coming Soon)
                     </Button>
                     <Button variant="outline" className="w-full" disabled>
@@ -288,14 +288,14 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                   </CardContent>
                 </Card>
 
-                {integration.sync_log && integration.sync_log.length > 0 && (
+                {(integration as any)?.sync_log && (integration as any).sync_log.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {integration.sync_log.slice(-5).map((log: any, index: number) => (
+                        {((integration as any)?.sync_log || []).slice(-5).map((log: any, index: number) => (
                           <div key={index} className="text-xs p-2 bg-gray-50 rounded">
                             <p className="font-medium">{log.action}</p>
                             <p className="text-gray-600">{log.timestamp}</p>

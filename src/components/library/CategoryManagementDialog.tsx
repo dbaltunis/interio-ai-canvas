@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,10 @@ export const CategoryManagementDialog = ({ open, onOpenChange }: CategoryManagem
       await updateCategory.mutateAsync({ ...formData, id: editingCategory.id });
       setEditingCategory(null);
     } else {
-      await createCategory.mutateAsync(formData);
+      await createCategory.mutateAsync({
+        ...formData,
+        custom_fields: {},
+      });
       setShowCreateForm(false);
     }
     
