@@ -262,9 +262,18 @@ export const useCreatePartsOption = () => {
     mutationFn: async (option: Omit<PartsOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       console.log('Creating parts option:', option);
       
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('parts_options')
-        .insert(option)
+        .insert([{
+          ...option,
+          user_id: session.user.id
+        }])
         .select()
         .single();
       
