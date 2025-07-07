@@ -1,14 +1,7 @@
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench, ShoppingCart, FolderTree, Eye } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
@@ -18,11 +11,14 @@ import { HardwareForm } from "./HardwareForm";
 import { CategoryManager } from "./CategoryManager";
 import { ProductDetailsDialog } from "./ProductDetailsDialog";
 import { SelectedProductsPanel } from "./SelectedProductsPanel";
+import { LibraryHeader } from "./LibraryHeader";
+import { LibraryTabs } from "./LibraryTabs";
+import { ProductCards } from "./ProductCards";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { toast } from "sonner";
 
 export const LibraryPage = () => {
-  const { units, getFabricUnitLabel, formatFabric } = useMeasurementUnits();
+  const { units } = useMeasurementUnits();
   const [activeTab, setActiveTab] = useState("fabrics");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,18 +31,6 @@ export const LibraryPage = () => {
     product: any;
     type: "fabric" | "hardware" | "vendor";
   }>({ open: false, product: null, type: "fabric" });
-
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
-  };
 
   // Mock data with improved categorization and patterns
   const vendors = [
@@ -187,7 +171,16 @@ export const LibraryPage = () => {
     }
   ];
 
-  const handleProductSelect = (productId: string, checked: boolean) => {
+  const productCards = ProductCards({ 
+    vendors, 
+    fabrics, 
+    hardware, 
+    selectedProducts, 
+    onProductSelect: handleProductSelect, 
+    onProductDetails: handleProductDetails 
+  });
+
+  function handleProductSelect(productId: string, checked: boolean) {
     if (checked) {
       setSelectedProducts(prev => [...prev, productId]);
       toast.success("Product added to selection");
@@ -195,13 +188,13 @@ export const LibraryPage = () => {
       setSelectedProducts(prev => prev.filter(id => id !== productId));
       toast.success("Product removed from selection");
     }
-  };
+  }
 
-  const handleProductDetails = (product: any, type: "fabric" | "hardware" | "vendor") => {
+  function handleProductDetails(product: any, type: "fabric" | "hardware" | "vendor") {
     setProductDetailsDialog({ open: true, product, type });
-  };
+  }
 
-  const handleAddToProject = () => {
+  function handleAddToProject() {
     if (selectedProducts.length === 0) {
       toast.error("Please select at least one product");
       return;
@@ -209,9 +202,9 @@ export const LibraryPage = () => {
     
     toast.success(`${selectedProducts.length} products ready to add to project`);
     console.log("Selected products for project:", selectedProducts);
-  };
+  }
 
-  const handleCalculateUsage = () => {
+  function handleCalculateUsage() {
     if (selectedProducts.length === 0) {
       toast.error("Please select at least one fabric");
       return;
@@ -219,365 +212,30 @@ export const LibraryPage = () => {
     
     toast.success("Opening fabric usage calculator...");
     console.log("Calculate usage for:", selectedProducts);
-  };
+  }
 
-  const handleAddNew = (type: "vendor" | "fabric" | "hardware" | "collection") => {
+  function handleAddNew(type: "vendor" | "fabric" | "hardware" | "collection") {
     setAddDialogType(type);
     setShowAddDialog(true);
-  };
-
-  const getStockStatus = (current: number, reorderPoint: number) => {
-    if (current <= reorderPoint * 0.5) return { status: "Critical", color: "bg-red-500" };
-    if (current <= reorderPoint) return { status: "Low Stock", color: "bg-orange-500" };
-    return { status: "In Stock", color: "bg-green-500" };
-  };
-
-  const renderVendorCard = (vendor: any) => {
-    const isSelected = selectedProducts.includes(vendor.id.toString());
-    
-    return (
-      <Card key={vendor.id} className="relative group hover:shadow-lg transition-shadow">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={(checked) => handleProductSelect(vendor.id.toString(), checked as boolean)}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <CardTitle className="text-lg font-semibold mb-1">{vendor.name}</CardTitle>
-                <Badge variant="outline" className="mb-2">{vendor.type}</Badge>
-                <p className="text-sm text-gray-600 mb-1">{vendor.country}</p>
-                <p className="text-sm text-gray-500">{vendor.contact}</p>
-                <p className="text-sm text-gray-500">{vendor.phone}</p>
-              </div>
-            </div>
-            <Package className="h-8 w-8 text-gray-400" />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="text-sm text-gray-500">Products</p>
-              <p className="font-semibold">{vendor.products}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Last Order</p>
-              <p className="font-semibold">{vendor.lastOrder}</p>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-blue-500 hover:text-blue-700"
-                onClick={() => handleProductDetails(vendor, 'vendor')}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderFabricCard = (fabric: any) => {
-    const stockStatus = getStockStatus(fabric.inStock, fabric.reorderPoint);
-    const isSelected = selectedProducts.includes(fabric.id.toString());
-    
-    return (
-      <Card key={fabric.id} className="relative group hover:shadow-lg transition-shadow">
-        <CardHeader className="p-0">
-          <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-            <img 
-              src={fabric.image} 
-              alt={fabric.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute top-2 right-2 flex gap-2">
-              <Badge className={`${stockStatus.color} text-white`}>
-                {stockStatus.status}
-              </Badge>
-            </div>
-            <div className="absolute top-2 left-2 flex gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {fabric.pattern}
-              </Badge>
-              {isSelected && (
-                <Badge variant="default" className="bg-blue-500">
-                  Selected
-                </Badge>
-              )}
-            </div>
-            <div className="absolute bottom-2 left-2">
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={(checked) => handleProductSelect(fabric.id.toString(), checked as boolean)}
-                className="bg-white"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <CardTitle className="text-lg font-semibold mb-2">{fabric.name}</CardTitle>
-          <p className="text-sm text-gray-600 mb-1">{fabric.code}</p>
-          <p className="text-sm text-gray-500 mb-1">{fabric.vendor}</p>
-          <p className="text-sm text-gray-500 mb-1">{fabric.category}</p>
-          <p className="text-sm text-gray-500 mb-3">{fabric.collection}</p>
-          
-          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-            <div>
-              <p className="text-gray-500">Price</p>
-              <p className="font-semibold">{formatCurrency(fabric.price)}/{getFabricUnitLabel()}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">In Stock</p>
-              <p className="font-semibold">{formatFabric(fabric.inStock)}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Width</p>
-              <p className="font-semibold">{fabric.width}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Location</p>
-              <p className="font-semibold">{fabric.location}</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-blue-500 hover:text-blue-700"
-                onClick={() => handleProductDetails(fabric, 'fabric')}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            {fabric.inStock <= fabric.reorderPoint && (
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderHardwareCard = (hardware: any) => {
-    const stockStatus = getStockStatus(hardware.inStock, hardware.reorderPoint);
-    const isSelected = selectedProducts.includes(hardware.id.toString());
-    
-    return (
-      <Card key={hardware.id} className="relative group hover:shadow-lg transition-shadow">
-        <CardHeader className="p-0">
-          <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-            <img 
-              src={hardware.image} 
-              alt={hardware.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute top-2 right-2 flex gap-2">
-              <Badge className={`${stockStatus.color} text-white`}>
-                {stockStatus.status}
-              </Badge>
-            </div>
-            <div className="absolute top-2 left-2">
-              {isSelected && (
-                <Badge variant="default" className="bg-blue-500">
-                  Selected
-                </Badge>
-              )}
-            </div>
-            <div className="absolute bottom-2 left-2">
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={(checked) => handleProductSelect(hardware.id.toString(), checked as boolean)}
-                className="bg-white"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <CardTitle className="text-lg font-semibold mb-2">{hardware.name}</CardTitle>
-          <p className="text-sm text-gray-600 mb-1">{hardware.code}</p>
-          <p className="text-sm text-gray-500 mb-1">{hardware.vendor}</p>
-          <Badge variant="secondary" className="mb-3 text-xs">{hardware.category}</Badge>
-          
-          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-            <div>
-              <p className="text-gray-500">Price</p>
-              <p className="font-semibold">{formatCurrency(hardware.price)}/{hardware.unit}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">In Stock</p>
-              <p className="font-semibold">{hardware.inStock} {hardware.unit}s</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Material</p>
-              <p className="font-semibold">{hardware.material}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Location</p>
-              <p className="font-semibold">{hardware.location}</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-blue-500 hover:text-blue-700"
-                onClick={() => handleProductDetails(hardware, 'hardware')}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            {hardware.inStock <= hardware.reorderPoint && (
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Inventory Management</h1>
-          <p className="text-gray-600">Manage fabrics, hardware, and vendor relationships</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button className="bg-slate-600 hover:bg-slate-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56">
-              <div className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("vendor")}
-                >
-                  Add Vendor/Supplier
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("fabric")}
-                >
-                  Add Fabric
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("hardware")}
-                >
-                  Add Hardware
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start"
-                  onClick={() => handleAddNew("collection")}
-                >
-                  Add Collection
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  Import from CSV
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          
-          <Button variant="outline" className="bg-slate-600 hover:bg-slate-700 text-white border-slate-600">
-            <Search className="h-4 w-4" />
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="bg-slate-600 hover:bg-slate-700 text-white border-slate-600"
-            onClick={() => setShowFilterDialog(true)}
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <LibraryHeader 
+        onAddNew={handleAddNew}
+        onShowFilter={() => setShowFilterDialog(true)}
+      />
 
       <div className="grid grid-cols-12 gap-6">
         {/* Main Content */}
         <div className={selectedProducts.length > 0 ? "col-span-9" : "col-span-12"}>
-          {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex items-center justify-between">
-              <TabsList className="grid w-fit grid-cols-5">
-                <TabsTrigger value="categories">
-                  <FolderTree className="h-4 w-4 mr-2" />
-                  Categories
-                </TabsTrigger>
-                <TabsTrigger value="vendors">
-                  Vendors (4)
-                </TabsTrigger>
-                <TabsTrigger value="fabrics">
-                  Fabrics (3)
-                </TabsTrigger>
-                <TabsTrigger value="hardware">
-                  Hardware (2)
-                </TabsTrigger>
-                <TabsTrigger value="collections">
-                  Collections (8)
-                </TabsTrigger>
-              </TabsList>
-              
-              {activeTab !== 'categories' && (
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant={viewMode === "list" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                  >
-                    <List className="h-4 w-4 mr-2" />
-                    List
-                  </Button>
-                  <Button
-                    variant={viewMode === "card" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("card")}
-                    className="bg-slate-600 hover:bg-slate-700 text-white"
-                  >
-                    <LayoutGrid className="h-4 w-4 mr-2" />
-                    Card
-                  </Button>
-                </div>
-              )}
-            </div>
+            <LibraryTabs 
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
 
             {/* Tab Contents */}
             <TabsContent value="categories" className="space-y-4">
@@ -586,19 +244,19 @@ export const LibraryPage = () => {
 
             <TabsContent value="vendors" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {vendors.map(renderVendorCard)}
+                {vendors.map(productCards.renderVendorCard)}
               </div>
             </TabsContent>
 
             <TabsContent value="fabrics" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {fabrics.map(renderFabricCard)}
+                {fabrics.map(productCards.renderFabricCard)}
               </div>
             </TabsContent>
 
             <TabsContent value="hardware" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {hardware.map(renderHardwareCard)}
+                {hardware.map(productCards.renderHardwareCard)}
               </div>
             </TabsContent>
 
