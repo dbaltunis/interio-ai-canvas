@@ -28,6 +28,87 @@ export const ProductTemplatesTab = () => {
     }
   ]);
 
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    calculationMethod: "",
+    pricingUnit: "",
+    baseMakingCost: "",
+    complexityMultiplier: "standard",
+    showComplexityOption: true,
+    heightSurcharge1: "",
+    heightSurcharge2: "", 
+    heightSurcharge3: "",
+    selectedComponents: {
+      headings: false,
+      hardware: false,
+      lining: false,
+      services: false
+    }
+  });
+
+  const handleCreateTemplate = () => {
+    // Validate required fields
+    if (!formData.name.trim()) {
+      alert("Please enter a product name");
+      return;
+    }
+    if (!formData.calculationMethod) {
+      alert("Please select a calculation method");
+      return;
+    }
+    if (!formData.pricingUnit) {
+      alert("Please select a pricing unit");
+      return;
+    }
+    if (!formData.baseMakingCost) {
+      alert("Please enter a base making cost");
+      return;
+    }
+
+    // Create new template
+    const newTemplate = {
+      id: templates.length + 1,
+      name: formData.name.trim(),
+      calculationMethod: formData.calculationMethod,
+      pricingUnit: formData.pricingUnit,
+      baseMakingCost: parseFloat(formData.baseMakingCost),
+      complexityMultiplier: formData.complexityMultiplier,
+      showComplexityOption: formData.showComplexityOption,
+      active: true,
+      components: Object.keys(formData.selectedComponents).filter(key => formData.selectedComponents[key])
+    };
+
+    // Add to templates list
+    setTemplates(prev => [...prev, newTemplate]);
+
+    // Reset form
+    setFormData({
+      name: "",
+      calculationMethod: "",
+      pricingUnit: "",
+      baseMakingCost: "",
+      complexityMultiplier: "standard",
+      showComplexityOption: true,
+      heightSurcharge1: "",
+      heightSurcharge2: "", 
+      heightSurcharge3: "",
+      selectedComponents: {
+        headings: false,
+        hardware: false,
+        lining: false,
+        services: false
+      }
+    });
+
+    setIsCreating(false);
+    alert("Template created successfully!");
+  };
+
+  const handleToggleCreating = () => {
+    setIsCreating(!isCreating);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -35,9 +116,12 @@ export const ProductTemplatesTab = () => {
           <h3 className="text-lg font-semibold text-brand-primary">Product Templates</h3>
           <p className="text-sm text-brand-neutral">Define how different window covering products are calculated</p>
         </div>
-        <Button className="bg-brand-primary hover:bg-brand-accent">
+        <Button 
+          onClick={handleToggleCreating}
+          className="bg-brand-primary hover:bg-brand-accent"
+        >
           <Plus className="h-4 w-4 mr-2" />
-          Add Template
+          {isCreating ? "Cancel" : "Add Template"}
         </Button>
       </div>
 
@@ -82,8 +166,9 @@ export const ProductTemplatesTab = () => {
         ))}
       </div>
 
-      {/* New Template Form */}
-      <Card>
+      {/* New Template Form - Only show when creating */}
+      {isCreating && (
+        <Card>
         <CardHeader>
           <CardTitle>Create New Product Template</CardTitle>
           <CardDescription>Define a new window covering product type</CardDescription>
@@ -91,12 +176,17 @@ export const ProductTemplatesTab = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="templateName">Product Name</Label>
-              <Input id="templateName" placeholder="e.g., Curtains, Roman Blinds" />
+              <Label htmlFor="templateName">Product Name *</Label>
+              <Input 
+                id="templateName" 
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Curtains, Roman Blinds" 
+              />
             </div>
             <div>
-              <Label htmlFor="calculationMethod">Calculation Method</Label>
-              <Select>
+              <Label htmlFor="calculationMethod">Calculation Method *</Label>
+              <Select value={formData.calculationMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, calculationMethod: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>
@@ -113,8 +203,8 @@ export const ProductTemplatesTab = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="pricingUnit">Pricing Unit</Label>
-              <Select>
+              <Label htmlFor="pricingUnit">Pricing Unit *</Label>
+              <Select value={formData.pricingUnit} onValueChange={(value) => setFormData(prev => ({ ...prev, pricingUnit: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
@@ -136,8 +226,15 @@ export const ProductTemplatesTab = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="baseMakingCost">Base Making Cost</Label>
-                <Input id="baseMakingCost" type="number" step="0.01" placeholder="45.00" />
+                <Label htmlFor="baseMakingCost">Base Making Cost *</Label>
+                <Input 
+                  id="baseMakingCost" 
+                  type="number" 
+                  step="0.01" 
+                  value={formData.baseMakingCost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, baseMakingCost: e.target.value }))}
+                  placeholder="45.00" 
+                />
                 <span className="text-xs text-gray-500">Per linear meter (standard height up to 2.4m)</span>
               </div>
               <div>
@@ -312,11 +409,15 @@ export const ProductTemplatesTab = () => {
             </div>
           </div>
 
-          <Button className="bg-brand-primary hover:bg-brand-accent">
+          <Button 
+            onClick={handleCreateTemplate}
+            className="bg-brand-primary hover:bg-brand-accent"
+          >
             Create Template
           </Button>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };
