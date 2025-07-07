@@ -13,23 +13,70 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 export const ComponentsTab = () => {
   const { getFabricUnitLabel } = useMeasurementUnits();
   const fabricUnit = getFabricUnitLabel();
-  const [headings] = useState([
+  const [headings, setHeadings] = useState([
     { id: 1, name: "Pencil Pleat", fullness: 2.0, price: 15.00, active: true },
     { id: 2, name: "Pinch Pleat", fullness: 2.2, price: 25.00, active: true },
     { id: 3, name: "Wave", fullness: 2.5, price: 35.00, active: true }
   ]);
 
-  const [hardware] = useState([
+  const [hardware, setHardware] = useState([
     { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: `per-${fabricUnit}`, active: true },
     { id: 2, name: "Curtain Rod - Premium", price: 85.00, unit: `per-${fabricUnit}`, active: true },
     { id: 3, name: "Roman Blind Chain", price: 12.00, unit: "per-set", active: true }
   ]);
 
-  const [linings] = useState([
+  const [linings, setLinings] = useState([
     { id: 1, name: "Standard Lining", price: 8.50, unit: `per-${fabricUnit}`, active: true },
     { id: 2, name: "Blackout Lining", price: 12.00, unit: `per-${fabricUnit}`, active: true },
     { id: 3, name: "Thermal Lining", price: 15.00, unit: `per-${fabricUnit}`, active: true }
   ]);
+
+  const [isAddingHeading, setIsAddingHeading] = useState(false);
+  const [editingHeading, setEditingHeading] = useState(null);
+  const [newHeading, setNewHeading] = useState({ name: "", fullness: 2.0, price: 0 });
+
+  const handleAddHeading = () => {
+    if (!newHeading.name.trim()) return;
+    
+    const id = Math.max(...headings.map(h => h.id)) + 1;
+    setHeadings(prev => [...prev, {
+      id,
+      name: newHeading.name,
+      fullness: newHeading.fullness,
+      price: newHeading.price,
+      active: true
+    }]);
+    
+    setNewHeading({ name: "", fullness: 2.0, price: 0 });
+    setIsAddingHeading(false);
+  };
+
+  const handleEditHeading = (heading) => {
+    setEditingHeading(heading.id);
+    setNewHeading({ name: heading.name, fullness: heading.fullness, price: heading.price });
+    setIsAddingHeading(true);
+  };
+
+  const handleUpdateHeading = () => {
+    setHeadings(prev => prev.map(h => 
+      h.id === editingHeading 
+        ? { ...h, name: newHeading.name, fullness: newHeading.fullness, price: newHeading.price }
+        : h
+    ));
+    setEditingHeading(null);
+    setNewHeading({ name: "", fullness: 2.0, price: 0 });
+    setIsAddingHeading(false);
+  };
+
+  const handleDeleteHeading = (id) => {
+    setHeadings(prev => prev.filter(h => h.id !== id));
+  };
+
+  const handleToggleHeading = (id) => {
+    setHeadings(prev => prev.map(h => 
+      h.id === id ? { ...h, active: !h.active } : h
+    ));
+  };
 
   return (
     <div className="space-y-6">
@@ -53,7 +100,11 @@ export const ComponentsTab = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Heading Options</h4>
-              <Button size="sm" className="bg-brand-primary hover:bg-brand-accent">
+              <Button 
+                size="sm" 
+                className="bg-brand-primary hover:bg-brand-accent"
+                onClick={() => setIsAddingHeading(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Heading
               </Button>
@@ -65,7 +116,10 @@ export const ComponentsTab = () => {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <Switch checked={heading.active} />
+                        <Switch 
+                          checked={heading.active} 
+                          onCheckedChange={() => handleToggleHeading(heading.id)}
+                        />
                         <div>
                           <h5 className="font-medium text-brand-primary">{heading.name}</h5>
                           <p className="text-sm text-brand-neutral">
@@ -77,10 +131,18 @@ export const ComponentsTab = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditHeading(heading)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteHeading(heading.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -89,6 +151,66 @@ export const ComponentsTab = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Add/Edit Heading Form */}
+            {isAddingHeading && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editingHeading ? "Edit Heading" : "Add New Heading"}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="headingName">Heading Name</Label>
+                      <Input
+                        id="headingName"
+                        value={newHeading.name}
+                        onChange={(e) => setNewHeading(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="e.g., Grommet"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fullness">Fullness Multiplier</Label>
+                      <Input
+                        id="fullness"
+                        type="number"
+                        step="0.1"
+                        value={newHeading.fullness}
+                        onChange={(e) => setNewHeading(prev => ({ ...prev, fullness: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="price">Price per {fabricUnit}</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={newHeading.price}
+                        onChange={(e) => setNewHeading(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={editingHeading ? handleUpdateHeading : handleAddHeading}
+                      className="bg-brand-primary hover:bg-brand-accent"
+                    >
+                      {editingHeading ? "Update" : "Add"} Heading
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsAddingHeading(false);
+                        setEditingHeading(null);
+                        setNewHeading({ name: "", fullness: 2.0, price: 0 });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
