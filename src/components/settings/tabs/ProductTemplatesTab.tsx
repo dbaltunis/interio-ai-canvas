@@ -147,12 +147,40 @@ export const ProductTemplatesTab = () => {
                     <SelectValue placeholder="Select complexity" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard (1.0x)</SelectItem>
-                    <SelectItem value="medium">Medium Complexity (1.2x)</SelectItem>
-                    <SelectItem value="complex">Complex (1.5x)</SelectItem>
-                    <SelectItem value="custom">Custom Rate</SelectItem>
+                    <SelectItem value="standard">
+                      <div className="space-y-1">
+                        <div className="font-medium">Standard (1.0x)</div>
+                        <div className="text-xs text-muted-foreground">Basic curtains, simple installation</div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      <div className="space-y-1">
+                        <div className="font-medium">Medium Complexity (1.2x)</div>
+                        <div className="text-xs text-muted-foreground">Bay windows, unusual shapes, pattern matching</div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="complex">
+                      <div className="space-y-1">
+                        <div className="font-medium">Complex (1.5x)</div>
+                        <div className="text-xs text-muted-foreground">Difficult access, intricate details, multiple layers</div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="custom">
+                      <div className="space-y-1">
+                        <div className="font-medium">Custom Rate</div>
+                        <div className="text-xs text-muted-foreground">Set your own multiplier</div>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h5 className="text-sm font-medium text-blue-900 mb-1">💡 How Complexity Works:</h5>
+                  <div className="text-xs text-blue-800 space-y-1">
+                    <p><strong>Standard (1.0x):</strong> Base making cost × 1.0 = $45.00</p>
+                    <p><strong>Medium (1.2x):</strong> Base making cost × 1.2 = $54.00</p>
+                    <p><strong>Complex (1.5x):</strong> Base making cost × 1.5 = $67.50</p>
+                  </div>
+                </div>
               </div>
             </div>
 
