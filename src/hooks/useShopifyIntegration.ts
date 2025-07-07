@@ -24,8 +24,21 @@ export const useShopifyIntegration = () => {
   return useQuery({
     queryKey: ["shopify_integration"],
     queryFn: async () => {
-      // Mock implementation - return null for no integration
-      return null;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('shopify_integrations')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching Shopify integration:', error);
+        return null;
+      }
+
+      return data;
     },
   });
 };
@@ -35,22 +48,33 @@ export const useCreateShopifyIntegration = () => {
 
   return useMutation({
     mutationFn: async (integration: Omit<ShopifyIntegration, "id" | "user_id" | "created_at" | "updated_at">) => {
-      // Mock implementation
-      console.log("Creating Shopify integration:", integration);
-      return { 
-        id: Date.now().toString(), 
-        ...integration, 
-        user_id: "user-1", 
-        created_at: new Date().toISOString(), 
-        updated_at: new Date().toISOString() 
-      };
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data, error } = await supabase
+        .from('shopify_integrations')
+        .insert({
+          user_id: user.id,
+          shop_domain: integration.shop_domain,
+          auto_sync_enabled: integration.auto_sync_enabled,
+          sync_inventory: integration.sync_inventory,
+          sync_prices: integration.sync_prices,
+          sync_images: integration.sync_images,
+          sync_status: integration.sync_status,
+          sync_log: integration.sync_log,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopify_integration"] });
-      toast.success("Shopify integration configured successfully");
+      toast.success("Shopify store connected successfully! Next: Set up your API credentials securely.");
     },
     onError: (error: any) => {
-      toast.error("Failed to configure Shopify integration: " + error.message);
+      toast.error("Failed to connect Shopify store: " + error.message);
     },
   });
 };
@@ -60,9 +84,15 @@ export const useUpdateShopifyIntegration = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...integration }: Partial<ShopifyIntegration> & { id: string }) => {
-      // Mock implementation
-      console.log("Updating Shopify integration:", id, integration);
-      return { id, ...integration };
+      const { data, error } = await supabase
+        .from('shopify_integrations')
+        .update(integration)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopify_integration"] });

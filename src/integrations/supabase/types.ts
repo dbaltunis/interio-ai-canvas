@@ -1437,6 +1437,51 @@ export type Database = {
           },
         ]
       }
+      shopify_integrations: {
+        Row: {
+          auto_sync_enabled: boolean
+          created_at: string
+          id: string
+          last_full_sync: string | null
+          shop_domain: string
+          sync_images: boolean
+          sync_inventory: boolean
+          sync_log: Json
+          sync_prices: boolean
+          sync_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_sync_enabled?: boolean
+          created_at?: string
+          id?: string
+          last_full_sync?: string | null
+          shop_domain: string
+          sync_images?: boolean
+          sync_inventory?: boolean
+          sync_log?: Json
+          sync_prices?: boolean
+          sync_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_sync_enabled?: boolean
+          created_at?: string
+          id?: string
+          last_full_sync?: string | null
+          shop_domain?: string
+          sync_images?: boolean
+          sync_inventory?: boolean
+          sync_log?: Json
+          sync_prices?: boolean
+          sync_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       surfaces: {
         Row: {
           created_at: string

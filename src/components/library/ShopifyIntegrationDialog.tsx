@@ -38,11 +38,17 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
     if (integration) {
       await updateIntegration.mutateAsync({ ...formData, id: (integration as any).id });
     } else {
-      await createIntegration.mutateAsync({
-        ...formData,
-        sync_status: "idle",
-        sync_log: [],
-      });
+      try {
+        await createIntegration.mutateAsync({
+          ...formData,
+          sync_status: "idle",
+          sync_log: [],
+        });
+        // Switch to setup tab after successful creation to show next steps
+        setActiveTab("setup");
+      } catch (error) {
+        console.error("Failed to create integration:", error);
+      }
     }
   };
 
@@ -209,10 +215,15 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
                   <div className="flex items-start space-x-3">
                     <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-emerald-800 mb-1">Easy Setup Process</h4>
-                      <p className="text-sm text-emerald-700">
-                        No complex API configuration needed. We'll securely store your credentials and handle the technical setup.
+                      <h4 className="font-semibold text-emerald-800 mb-1">Store Connected Successfully!</h4>
+                      <p className="text-sm text-emerald-700 mb-3">
+                        {integration ? "Your store is connected. " : ""}Now complete the setup by securely adding your API credentials below.
                       </p>
+                      {integration && (
+                        <div className="text-sm text-emerald-600 mb-2">
+                          <strong>Connected Store:</strong> {(integration as any)?.shop_domain}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
