@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, ExternalLink, CheckCircle, Zap } from "lucide-react";
 import { useCreateShopifyIntegration, ShopifyIntegration } from "@/hooks/useShopifyIntegration";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +66,15 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   };
 
   return (
-    <Card>
+    <div className="space-y-4">
+      <Alert className="border-orange-200 bg-orange-50">
+        <Info className="h-4 w-4 text-orange-600" />
+        <AlertDescription>
+          <strong>🚧 Development Mode</strong> This integration is currently in development for multi-tenant use. The final version will support seamless installation for all your clients' Shopify stores.
+        </AlertDescription>
+      </Alert>
+      
+      <Card>
       <CardHeader>
         <CardTitle className="text-brand-primary">Complete Shopify App Installation</CardTitle>
         <CardDescription>
@@ -145,5 +154,6 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };

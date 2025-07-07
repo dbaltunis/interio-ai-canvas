@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Zap, Settings, ArrowRight } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Zap, Settings, ArrowRight, Info } from "lucide-react";
 import { ShopifyIntegration } from "@/hooks/useShopifyIntegration";
 
 interface ShopifyOverviewTabProps {
@@ -78,20 +79,12 @@ export const ShopifyOverviewTab = ({ integration, onGetStarted }: ShopifyOvervie
       </div>
 
       {!integration && (
-        <Card className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Ready to connect your store?</h3>
-                <p className="text-brand-light/90">Get started in just a few minutes</p>
-              </div>
-              <Button variant="secondary" onClick={onGetStarted}>
-                Get Started
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <Alert className="border-orange-200 bg-orange-50">
+          <Info className="h-4 w-4 text-orange-600" />
+          <AlertDescription>
+            <strong>🚧 Coming Soon!</strong> The Shopify integration is currently in development. We're building a proper multi-tenant app that will allow each of your clients to connect their own Shopify stores seamlessly. This feature will be available soon with full App Store integration.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
