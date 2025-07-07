@@ -20,15 +20,15 @@ export const ComponentsTab = () => {
   ]);
 
   const [hardware, setHardware] = useState([
-    { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: `per-${fabricUnit}`, active: true },
-    { id: 2, name: "Curtain Rod - Premium", price: 85.00, unit: `per-${fabricUnit}`, active: true },
+    { id: 1, name: "Curtain Track - Basic", price: 45.00, unit: "per-meter", active: true },
+    { id: 2, name: "Curtain Rod - Premium", price: 85.00, unit: "per-meter", active: true },
     { id: 3, name: "Roman Blind Chain", price: 12.00, unit: "per-set", active: true }
   ]);
 
   const [linings, setLinings] = useState([
-    { id: 1, name: "Standard Lining", price: 8.50, unit: `per-${fabricUnit}`, active: true },
-    { id: 2, name: "Blackout Lining", price: 12.00, unit: `per-${fabricUnit}`, active: true },
-    { id: 3, name: "Thermal Lining", price: 15.00, unit: `per-${fabricUnit}`, active: true }
+    { id: 1, name: "Standard Lining", price: 8.50, unit: "per-meter", active: true },
+    { id: 2, name: "Blackout Lining", price: 12.00, unit: "per-meter", active: true },
+    { id: 3, name: "Thermal Lining", price: 15.00, unit: "per-meter", active: true }
   ]);
 
   const [isAddingHeading, setIsAddingHeading] = useState(false);
@@ -234,7 +234,7 @@ export const ComponentsTab = () => {
                         <div>
                           <h5 className="font-medium text-brand-primary">{item.name}</h5>
                           <p className="text-sm text-brand-neutral">
-                            ${item.price} {item.unit}
+                            ${item.price} per {fabricUnit}
                           </p>
                         </div>
                       </div>
@@ -274,7 +274,7 @@ export const ComponentsTab = () => {
                         <div>
                           <h5 className="font-medium text-brand-primary">{lining.name}</h5>
                           <p className="text-sm text-brand-neutral">
-                            ${lining.price} {lining.unit}
+                            ${lining.price} per {fabricUnit}
                           </p>
                         </div>
                       </div>
