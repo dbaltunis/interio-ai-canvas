@@ -9,6 +9,7 @@ import { FabricUsageDisplay } from "./fabric-details/FabricUsageDisplay";
 import { FabricCostComparison } from "./fabric-details/FabricCostComparison";
 import { FabricGuidelines } from "./fabric-details/FabricGuidelines";
 import { FabricAutoCalculationHelper } from "./fabric-details/FabricAutoCalculationHelper";
+import { FabricCalculationStatus } from "./fabric-details/FabricCalculationStatus";
 
 interface FabricDetailsCardProps {
   formData: TreatmentFormData;
@@ -34,6 +35,13 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
         <FabricBasicDetails formData={formData} onInputChange={onInputChange} />
         
         <FabricAutoCalculationHelper formData={formData} onInputChange={onInputChange} />
+        
+        <FabricCalculationStatus 
+          fabricWidth={parseFloat(formData.fabric_width) || 137}
+          fabricType={formData.fabric_type || ''}
+          rollDirection={formData.roll_direction || 'vertical'}
+          isAutoSelected={!formData.roll_direction || formData.roll_direction === 'auto'}
+        />
         
         <FabricOrientationSelector formData={formData} onInputChange={onInputChange} />
 

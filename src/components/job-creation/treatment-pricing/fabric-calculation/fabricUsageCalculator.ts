@@ -13,6 +13,23 @@ export const calculateFabricUsage = (
   const quantity = formData.quantity || 1;
   const pooling = parseFloat(formData.pooling) || 0;
 
+  // Enhanced fabric analysis
+  const fabricType = formData.fabric_type?.toLowerCase() || '';
+  const isPlainFabric = fabricType.includes('plain') || 
+                       fabricType.includes('solid') || 
+                       fabricType.includes('textured') ||
+                       fabricType.includes('linen') ||
+                       fabricType.includes('cotton');
+  
+  const requiresPatternMatching = !isPlainFabric && (
+    fabricType.includes('stripe') ||
+    fabricType.includes('floral') ||
+    fabricType.includes('geometric') ||
+    fabricType.includes('pattern') ||
+    fabricType.includes('damask') ||
+    fabricType.includes('paisley')
+  );
+
   // Hem allowances
   const headerHem = parseFloat(formData.header_hem) || 15;
   const bottomHem = parseFloat(formData.bottom_hem) || 10;
@@ -24,9 +41,9 @@ export const calculateFabricUsage = (
       yards: 0, 
       meters: 0, 
       details: {},
-      fabricOrientation: 'horizontal',
+      fabricOrientation: 'vertical',
       costComparison: null,
-      warnings: [],
+      warnings: ['Missing measurements'],
       seamsRequired: 0,
       seamLaborHours: 0,
       widthsRequired: 0
@@ -57,9 +74,35 @@ export const calculateFabricUsage = (
   const horizontalCalc = calculateOrientation('horizontal', params, fabricCostPerYard, laborRate);
   const verticalCalc = calculateOrientation('vertical', params, fabricCostPerYard, laborRate);
 
-  // Use the selected orientation from form data
-  const currentOrientation = formData.roll_direction || 'vertical';
+  // Smart roll direction selection
+  let rollDirection = formData.roll_direction || 'auto';
+  if (rollDirection === 'auto') {
+    // Auto-suggest based on fabric properties
+    const isNarrowFabric = fabricWidth <= 200;
+    const canBenefitFromRotation = isPlainFabric && isNarrowFabric && 
+                                  drop < fabricWidth && railWidth > fabricWidth;
+    
+    if (canBenefitFromRotation) {
+      rollDirection = 'horizontal'; // Rotate for savings
+    } else if (requiresPatternMatching || isNarrowFabric) {
+      rollDirection = 'vertical'; // Standard for narrow/patterned
+    } else {
+      rollDirection = 'horizontal'; // Standard for wide fabrics
+    }
+  }
+  
+  // Use the determined or selected orientation
+  const currentOrientation = rollDirection === 'vertical' ? 'vertical' : 'horizontal';
   const selectedCalc = currentOrientation === 'vertical' ? verticalCalc : horizontalCalc;
+
+  // Add fabric analysis warnings
+  const fabricWarnings = [];
+  if (requiresPatternMatching && currentOrientation === 'horizontal') {
+    fabricWarnings.push('⚠ Pattern matching may be difficult with horizontal orientation');
+  }
+  if (isPlainFabric && fabricWidth <= 200 && drop < fabricWidth && currentOrientation === 'vertical') {
+    fabricWarnings.push('💡 Consider horizontal orientation for fabric savings');
+  }
 
   // Create cost comparison if both orientations are feasible
   let costComparison = null;
@@ -79,7 +122,7 @@ export const calculateFabricUsage = (
     details: selectedCalc.details,
     fabricOrientation: currentOrientation,
     costComparison,
-    warnings: selectedCalc.warnings,
+    warnings: [...(selectedCalc.warnings || []), ...fabricWarnings],
     seamsRequired: selectedCalc.seamsRequired,
     seamLaborHours: selectedCalc.seamLaborHours,
     widthsRequired: selectedCalc.widthsRequired

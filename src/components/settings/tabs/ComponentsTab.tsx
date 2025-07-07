@@ -66,8 +66,11 @@ export const ComponentsTab = () => {
                         <div>
                           <h5 className="font-medium text-brand-primary">{heading.name}</h5>
                           <p className="text-sm text-brand-neutral">
-                            Fullness: {heading.fullness}x • Price: ${heading.price}/meter
+                            Fullness: {heading.fullness}x • Price: ${heading.price}/meter • Auto-calculated fabric usage
                           </p>
+                          <div className="text-xs text-muted-foreground">
+                            Used for automatic fabric calculations in treatment pricing
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
