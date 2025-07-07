@@ -26,8 +26,6 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
 
   const [formData, setFormData] = useState({
     shop_domain: (integration as any)?.shop_domain || "",
-    access_token: (integration as any)?.access_token || "",
-    webhook_secret: (integration as any)?.webhook_secret || "",
     auto_sync_enabled: (integration as any)?.auto_sync_enabled || false,
     sync_inventory: (integration as any)?.sync_inventory !== undefined ? (integration as any).sync_inventory : true,
     sync_prices: (integration as any)?.sync_prices !== undefined ? (integration as any).sync_prices : true,
@@ -64,10 +62,17 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Please log in first");
 
+      // Clean the shop domain (remove whitespace)
+      const cleanShopDomain = formData.shop_domain.trim();
+
       // Create integration record first
       if (!integration) {
         await createIntegration.mutateAsync({
-          ...formData,
+          shop_domain: cleanShopDomain,
+          auto_sync_enabled: formData.auto_sync_enabled,
+          sync_inventory: formData.sync_inventory,
+          sync_prices: formData.sync_prices,
+          sync_images: formData.sync_images,
           sync_status: "pending",
           sync_log: [{ action: "OAuth installation started", timestamp: new Date().toISOString() }],
         });
@@ -79,7 +84,7 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
       const redirectUri = `https://a26f4d10-3397-4eb3-b434-f6455cad76b9.supabase.co/functions/v1/shopify-oauth`;
       const state = user.id; // Use user ID as state for security
 
-      const oauthUrl = `https://${formData.shop_domain}/admin/oauth/authorize?` +
+      const oauthUrl = `https://${cleanShopDomain}/admin/oauth/authorize?` +
         `client_id=${clientId}&` +
         `scope=${scopes}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +

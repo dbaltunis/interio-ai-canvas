@@ -7,8 +7,6 @@ export interface ShopifyIntegration {
   id: string;
   user_id: string;
   shop_domain: string;
-  access_token: string;
-  webhook_secret?: string;
   auto_sync_enabled: boolean;
   sync_inventory: boolean;
   sync_prices: boolean;
