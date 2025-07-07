@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -312,14 +313,17 @@ export const ComponentsTab = () => {
                                    <Input
                                      id="ringColors"
                                      placeholder="e.g., Silver, Bronze, Black"
-                                     value={newHeading.extras.ringColors.join(", ")}
-                                     onChange={(e) => setNewHeading(prev => ({ 
-                                       ...prev, 
-                                       extras: { 
-                                         ...prev.extras, 
-                                         ringColors: e.target.value.split(",").map(c => c.trim()).filter(c => c)
-                                       }
-                                     }))}
+                                     value={newHeading.extras.ringColors?.join(", ") || ""}
+                                     onChange={(e) => {
+                                       const colors = e.target.value.split(",").map(c => c.trim()).filter(c => c);
+                                       setNewHeading(prev => ({ 
+                                         ...prev, 
+                                         extras: { 
+                                           ...prev.extras, 
+                                           ringColors: colors
+                                         }
+                                       }));
+                                     }}
                                    />
                                  </div>
                                  <div>
@@ -327,14 +331,17 @@ export const ComponentsTab = () => {
                                    <Input
                                      id="ringDiameters"
                                      placeholder="e.g., 25mm, 35mm, 40mm"
-                                     value={newHeading.extras.ringDiameters.join(", ")}
-                                     onChange={(e) => setNewHeading(prev => ({ 
-                                       ...prev, 
-                                       extras: { 
-                                         ...prev.extras, 
-                                         ringDiameters: e.target.value.split(",").map(d => d.trim()).filter(d => d)
-                                       }
-                                     }))}
+                                     value={newHeading.extras.ringDiameters?.join(", ") || ""}
+                                     onChange={(e) => {
+                                       const diameters = e.target.value.split(",").map(d => d.trim()).filter(d => d);
+                                       setNewHeading(prev => ({ 
+                                         ...prev, 
+                                         extras: { 
+                                           ...prev.extras, 
+                                           ringDiameters: diameters
+                                         }
+                                       }));
+                                     }}
                                    />
                                  </div>
                                </div>
@@ -348,14 +355,17 @@ export const ComponentsTab = () => {
                              <Input
                                id="waveOptions"
                                placeholder="e.g., Standard Wave, Silent Gliss, Ripplefold"
-                               value={newHeading.extras.customOptions.join(", ")}
-                               onChange={(e) => setNewHeading(prev => ({ 
-                                 ...prev, 
-                                 extras: { 
-                                   ...prev.extras, 
-                                   customOptions: e.target.value.split(",").map(o => o.trim()).filter(o => o)
-                                 }
-                               }))}
+                               value={newHeading.extras.customOptions?.join(", ") || ""}
+                               onChange={(e) => {
+                                 const options = e.target.value.split(",").map(o => o.trim()).filter(o => o);
+                                 setNewHeading(prev => ({ 
+                                   ...prev, 
+                                   extras: { 
+                                     ...prev.extras, 
+                                     customOptions: options
+                                   }
+                                 }));
+                               }}
                              />
                            </div>
                          )}
