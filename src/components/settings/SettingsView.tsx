@@ -10,11 +10,13 @@ import { ProductTemplatesTab } from "./tabs/ProductTemplatesTab";
 import { ComponentsTab } from "./tabs/ComponentsTab";
 import { CalculationsTab } from "./tabs/CalculationsTab";
 import { TutorialOverlay } from "./TutorialOverlay";
+import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
   const [activeTab, setActiveTab] = useState("business");
 
   return (
@@ -26,13 +28,22 @@ export const SettingsView = () => {
             Configure your business rules and products
           </p>
         </div>
-        <Button 
-          onClick={() => setShowTutorial(true)}
-          className="bg-brand-primary hover:bg-brand-accent"
-        >
-          <Play className="h-4 w-4 mr-2" />
-          Setup Guide
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => setShowInteractiveDemo(true)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Interactive Demo
+          </Button>
+          <Button 
+            onClick={() => setShowTutorial(true)}
+            variant="outline"
+            className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
+          >
+            Setup Guide
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -92,6 +103,11 @@ export const SettingsView = () => {
         isOpen={showTutorial}
         onClose={() => setShowTutorial(false)}
         onTabChange={setActiveTab}
+      />
+
+      <InteractiveOnboarding
+        isOpen={showInteractiveDemo}
+        onClose={() => setShowInteractiveDemo(false)}
       />
     </div>
   );
