@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useHardwareOptions, useUpdateHardwareOption, useDeleteHardwareOption } from "@/hooks/useComponentOptions";
+import type { HardwareOption } from "@/hooks/useComponentOptions";
 import { HardwareManagementDialog } from "./HardwareManagementDialog";
 import { toast } from "sonner";
 
@@ -13,6 +14,7 @@ export const HardwareSection = () => {
   const updateHardware = useUpdateHardwareOption();
   const deleteHardware = useDeleteHardwareOption();
   const [isHardwareDialogOpen, setIsHardwareDialogOpen] = useState(false);
+  const [editingHardware, setEditingHardware] = useState<HardwareOption | null>(null);
 
   console.log('Hardware data:', hardware);
 
@@ -46,6 +48,21 @@ export const HardwareSection = () => {
     }
   };
 
+  const handleEditHardware = (hardware: HardwareOption) => {
+    setEditingHardware(hardware);
+    setIsHardwareDialogOpen(true);
+  };
+
+  const handleAddHardware = () => {
+    setEditingHardware(null);
+    setIsHardwareDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsHardwareDialogOpen(false);
+    setEditingHardware(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -53,7 +70,7 @@ export const HardwareSection = () => {
         <Button 
           size="sm" 
           className="bg-brand-primary hover:bg-brand-accent"
-          onClick={() => setIsHardwareDialogOpen(true)}
+          onClick={handleAddHardware}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Hardware
@@ -68,7 +85,7 @@ export const HardwareSection = () => {
             <p className="text-brand-neutral">No hardware components found</p>
             <Button 
               className="mt-4 bg-brand-primary hover:bg-brand-accent"
-              onClick={() => setIsHardwareDialogOpen(true)}
+              onClick={handleAddHardware}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Hardware Component
@@ -94,7 +111,11 @@ export const HardwareSection = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditHardware(item)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button 
@@ -114,7 +135,8 @@ export const HardwareSection = () => {
 
       <HardwareManagementDialog 
         open={isHardwareDialogOpen}
-        onOpenChange={setIsHardwareDialogOpen}
+        onOpenChange={handleCloseDialog}
+        editingHardware={editingHardware}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,10 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+import { useCreateHardwareOption, useUpdateHardwareOption } from "@/hooks/useComponentOptions";
+import type { HardwareOption } from "@/hooks/useComponentOptions";
 
 interface HardwareManagementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingHardware?: HardwareOption | null;
 }
 
 interface HardwareItem {
@@ -40,17 +42,20 @@ interface SubComponent {
   options?: string[];
 }
 
-export const HardwareManagementDialog = ({ open, onOpenChange }: HardwareManagementDialogProps) => {
+export const HardwareManagementDialog = ({ open, onOpenChange, editingHardware }: HardwareManagementDialogProps) => {
   const [activeTab, setActiveTab] = useState("basic");
   const [hardwareData, setHardwareData] = useState<HardwareItem>({
-    name: "",
+    name: editingHardware?.name || "",
     category: "",
-    basePrice: 0,
-    unit: "per-meter",
+    basePrice: editingHardware?.price || 0,
+    unit: editingHardware?.unit || "per-meter",
     pricingMethod: "fixed",
     subComponents: [],
     specifications: {}
   });
+
+  const createHardware = useCreateHardwareOption();
+  const updateHardware = useUpdateHardwareOption();
 
   const [csvData, setCsvData] = useState("");
   const [subComponentForm, setSubComponentForm] = useState({
@@ -168,22 +173,56 @@ export const HardwareManagementDialog = ({ open, onOpenChange }: HardwareManagem
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!hardwareData.name.trim()) {
       toast.error("Please enter a hardware name");
       return;
     }
 
-    console.log("Saving hardware data:", hardwareData);
-    toast.success("Hardware component saved successfully");
-    onOpenChange(false);
+    try {
+      const hardwarePayload = {
+        name: hardwareData.name,
+        price: hardwareData.basePrice,
+        unit: hardwareData.unit,
+        active: true
+      };
+
+      if (editingHardware?.id) {
+        await updateHardware.mutateAsync({
+          id: editingHardware.id,
+          ...hardwarePayload
+        });
+        toast.success("Hardware component updated successfully");
+      } else {
+        await createHardware.mutateAsync(hardwarePayload);
+        toast.success("Hardware component created successfully");
+      }
+      
+      onOpenChange(false);
+      
+      // Reset form
+      setHardwareData({
+        name: "",
+        category: "",
+        basePrice: 0,
+        unit: "per-meter",
+        pricingMethod: "fixed",
+        subComponents: [],
+        specifications: {}
+      });
+    } catch (error) {
+      console.error('Error saving hardware:', error);
+      toast.error("Failed to save hardware component");
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Hardware Component Management</DialogTitle>
+          <DialogTitle>
+            {editingHardware ? 'Edit' : 'Add'} Hardware Component
+          </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -512,8 +551,15 @@ export const HardwareManagementDialog = ({ open, onOpenChange }: HardwareManagem
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-slate-600 hover:bg-slate-700">
-            Save Hardware Component
+          <Button 
+            onClick={handleSave} 
+            className="bg-slate-600 hover:bg-slate-700"
+            disabled={createHardware.isPending || updateHardware.isPending}
+          >
+            {createHardware.isPending || updateHardware.isPending 
+              ? 'Saving...' 
+              : editingHardware ? 'Update Hardware Component' : 'Save Hardware Component'
+            }
           </Button>
         </div>
       </DialogContent>
