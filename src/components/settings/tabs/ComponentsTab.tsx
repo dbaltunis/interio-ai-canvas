@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,6 +156,72 @@ export const ComponentsTab = () => {
     }
   };
 
+  const handleRingColorsChange = (value: string) => {
+    setNewHeading(prev => ({ 
+      ...prev, 
+      extras: { 
+        ...prev.extras, 
+        ringColorsInput: value // Store the raw input
+      }
+    }));
+  };
+
+  const handleRingColorsBlur = (value: string) => {
+    const colors = value.split(",").map(c => c.trim()).filter(c => c);
+    setNewHeading(prev => ({ 
+      ...prev, 
+      extras: { 
+        ...prev.extras, 
+        ringColors: colors,
+        ringColorsInput: colors.join(", ") // Clean up the display
+      }
+    }));
+  };
+
+  const handleRingDiametersChange = (value: string) => {
+    setNewHeading(prev => ({ 
+      ...prev, 
+      extras: { 
+        ...prev.extras, 
+        ringDiametersInput: value // Store the raw input
+      }
+    }));
+  };
+
+  const handleRingDiametersBlur = (value: string) => {
+    const diameters = value.split(",").map(d => d.trim()).filter(d => d);
+    setNewHeading(prev => ({ 
+      ...prev, 
+      extras: { 
+        ...prev.extras, 
+        ringDiameters: diameters,
+        ringDiametersInput: diameters.join(", ") // Clean up the display
+      }
+    }));
+  };
+
+  const handleWaveOptionsChange = (value: string) => {
+    setNewHeading(prev => ({ 
+      ...prev, 
+      extras: { 
+        ...prev.extras, 
+        waveOptionsInput: value // Store the raw input
+      }
+    }));
+  };
+
+  const handleWaveOptionsBlur = (value: string) => {
+    const options = value.split(",").map(o => o.trim()).filter(o => o);
+    setNewHeading(prev => ({ 
+      ...prev, 
+      extras: { 
+        ...prev.extras, 
+        customOptions: options,
+        waveOptionsInput: options.join(", ") // Clean up the display
+      }
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -313,17 +378,9 @@ export const ComponentsTab = () => {
                                    <Input
                                      id="ringColors"
                                      placeholder="e.g., Silver, Bronze, Black"
-                                     value={newHeading.extras.ringColors?.join(", ") || ""}
-                                     onChange={(e) => {
-                                       const colors = e.target.value.split(",").map(c => c.trim()).filter(c => c);
-                                       setNewHeading(prev => ({ 
-                                         ...prev, 
-                                         extras: { 
-                                           ...prev.extras, 
-                                           ringColors: colors
-                                         }
-                                       }));
-                                     }}
+                                     value={newHeading.extras.ringColorsInput || newHeading.extras.ringColors?.join(", ") || ""}
+                                     onChange={(e) => handleRingColorsChange(e.target.value)}
+                                     onBlur={(e) => handleRingColorsBlur(e.target.value)}
                                    />
                                  </div>
                                  <div>
@@ -331,17 +388,9 @@ export const ComponentsTab = () => {
                                    <Input
                                      id="ringDiameters"
                                      placeholder="e.g., 25mm, 35mm, 40mm"
-                                     value={newHeading.extras.ringDiameters?.join(", ") || ""}
-                                     onChange={(e) => {
-                                       const diameters = e.target.value.split(",").map(d => d.trim()).filter(d => d);
-                                       setNewHeading(prev => ({ 
-                                         ...prev, 
-                                         extras: { 
-                                           ...prev.extras, 
-                                           ringDiameters: diameters
-                                         }
-                                       }));
-                                     }}
+                                     value={newHeading.extras.ringDiametersInput || newHeading.extras.ringDiameters?.join(", ") || ""}
+                                     onChange={(e) => handleRingDiametersChange(e.target.value)}
+                                     onBlur={(e) => handleRingDiametersBlur(e.target.value)}
                                    />
                                  </div>
                                </div>
@@ -355,17 +404,9 @@ export const ComponentsTab = () => {
                              <Input
                                id="waveOptions"
                                placeholder="e.g., Standard Wave, Silent Gliss, Ripplefold"
-                               value={newHeading.extras.customOptions?.join(", ") || ""}
-                               onChange={(e) => {
-                                 const options = e.target.value.split(",").map(o => o.trim()).filter(o => o);
-                                 setNewHeading(prev => ({ 
-                                   ...prev, 
-                                   extras: { 
-                                     ...prev.extras, 
-                                     customOptions: options
-                                   }
-                                 }));
-                               }}
+                               value={newHeading.extras.waveOptionsInput || newHeading.extras.customOptions?.join(", ") || ""}
+                               onChange={(e) => handleWaveOptionsChange(e.target.value)}
+                               onBlur={(e) => handleWaveOptionsBlur(e.target.value)}
                              />
                            </div>
                          )}
