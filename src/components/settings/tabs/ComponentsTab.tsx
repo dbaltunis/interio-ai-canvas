@@ -13,6 +13,7 @@ import { useHeadingOptions, useCreateHeadingOption, useUpdateHeadingOption, useD
 import { useHardwareOptions, useCreateHardwareOption, useUpdateHardwareOption, useDeleteHardwareOption, useLiningOptions, useCreateLiningOption, useUpdateLiningOption, useDeleteLiningOption } from "@/hooks/useComponentOptions";
 import { useServiceOptions, useCreateServiceOption, useUpdateServiceOption, useDeleteServiceOption } from "@/hooks/useServiceOptions";
 import { toast } from "sonner";
+import { HardwareManagementDialog } from "./components/HardwareManagementDialog";
 
 export const ComponentsTab = () => {
   const { getFabricUnitLabel } = useMeasurementUnits();
@@ -60,6 +61,8 @@ export const ComponentsTab = () => {
     unit: "per-window",
     description: ""
   });
+
+  const [isHardwareDialogOpen, setIsHardwareDialogOpen] = useState(false);
 
   // Separate state for temporary input values
   const [tempInputs, setTempInputs] = useState({
@@ -602,7 +605,11 @@ export const ComponentsTab = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Hardware Components</h4>
-              <Button size="sm" className="bg-brand-primary hover:bg-brand-accent">
+              <Button 
+                size="sm" 
+                className="bg-brand-primary hover:bg-brand-accent"
+                onClick={() => setIsHardwareDialogOpen(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Hardware
               </Button>
@@ -618,7 +625,7 @@ export const ComponentsTab = () => {
                         <div>
                           <h5 className="font-medium text-brand-primary">{item.name}</h5>
                           <p className="text-sm text-brand-neutral">
-                            ${item.price} per {fabricUnit}
+                            ${item.price} per {item.unit}
                           </p>
                         </div>
                       </div>
@@ -880,6 +887,11 @@ export const ComponentsTab = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <HardwareManagementDialog 
+        open={isHardwareDialogOpen}
+        onOpenChange={setIsHardwareDialogOpen}
+      />
     </div>
   );
 };
