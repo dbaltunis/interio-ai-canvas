@@ -128,20 +128,6 @@ export const ProductTemplatesTab = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Fabric Calculation Method</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="How to calculate fabric" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard-fullness">Standard Fullness (2x, 2.5x etc.)</SelectItem>
-                  <SelectItem value="pattern-match">Pattern Matching Required</SelectItem>
-                  <SelectItem value="wide-fabric">Wide Fabric (no joins)</SelectItem>
-                  <SelectItem value="narrow-fabric">Narrow Fabric (joins required)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* Making Cost Structure */}
