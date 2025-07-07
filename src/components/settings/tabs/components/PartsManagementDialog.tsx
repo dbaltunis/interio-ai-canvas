@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,14 +17,33 @@ interface PartsManagementDialogProps {
 }
 
 export const PartsManagementDialog = ({ open, onOpenChange, editingParts }: PartsManagementDialogProps) => {
-  const [name, setName] = useState(editingParts?.name || "");
-  const [category, setCategory] = useState(editingParts?.category || "");
-  const [price, setPrice] = useState(editingParts?.price || 0);
-  const [unit, setUnit] = useState(editingParts?.unit || "per-piece");
-  const [description, setDescription] = useState(editingParts?.description || "");
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [price, setPrice] = useState(0);
+  const [unit, setUnit] = useState("per-piece");
+  const [description, setDescription] = useState("");
 
   const createParts = useCreatePartsOption();
   const updateParts = useUpdatePartsOption();
+
+  // Reset form when dialog opens or editingParts changes
+  useEffect(() => {
+    if (open) {
+      if (editingParts) {
+        setName(editingParts.name || "");
+        setCategory(editingParts.category || "");
+        setPrice(editingParts.price || 0);
+        setUnit(editingParts.unit || "per-piece");
+        setDescription(editingParts.description || "");
+      } else {
+        setName("");
+        setCategory("");
+        setPrice(0);
+        setUnit("per-piece");
+        setDescription("");
+      }
+    }
+  }, [open, editingParts]);
 
   const partCategories = [
     "Weights & Chains",
@@ -81,13 +100,6 @@ export const PartsManagementDialog = ({ open, onOpenChange, editingParts }: Part
       }
       
       onOpenChange(false);
-      
-      // Reset form
-      setName("");
-      setCategory("");
-      setPrice(0);
-      setUnit("per-piece");
-      setDescription("");
     } catch (error) {
       console.error('Error saving part:', error);
       toast.error("Failed to save part");
