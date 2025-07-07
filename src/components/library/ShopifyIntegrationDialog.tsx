@@ -73,10 +73,10 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
         });
       }
 
-      // Generate OAuth URL
-      const clientId = "your-shopify-client-id"; // This will come from Supabase secrets
+      // Generate OAuth URL using your actual credentials
+      const clientId = "0dfe36a9f7e074caf6c4b971371edf7e"; // Your actual client ID
       const scopes = "read_products,read_inventory,write_inventory";
-      const redirectUri = `${window.location.origin}/api/shopify/oauth/callback`;
+      const redirectUri = `https://a26f4d10-3397-4eb3-b434-f6455cad76b9.supabase.co/functions/v1/shopify-oauth`;
       const state = user.id; // Use user ID as state for security
 
       const oauthUrl = `https://${formData.shop_domain}/admin/oauth/authorize?` +
