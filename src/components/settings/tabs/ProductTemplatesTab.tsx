@@ -36,6 +36,8 @@ export const ProductTemplatesTab = () => {
     calculationMethod: "",
     pricingUnit: "",
     baseMakingCost: "",
+    baseHeightLimit: "2.4",
+    useHeightSurcharges: false,
     complexityMultiplier: "standard",
     showComplexityOption: true,
     heightSurcharge1: "",
@@ -108,6 +110,8 @@ export const ProductTemplatesTab = () => {
       calculationMethod: "",
       pricingUnit: "",
       baseMakingCost: "",
+      baseHeightLimit: "2.4",
+      useHeightSurcharges: false,
       complexityMultiplier: "standard",
       showComplexityOption: true,
       heightSurcharge1: "",
@@ -140,6 +144,8 @@ export const ProductTemplatesTab = () => {
         calculationMethod: "",
         pricingUnit: "",
         baseMakingCost: "",
+        baseHeightLimit: "2.4",
+        useHeightSurcharges: false,
         complexityMultiplier: "standard",
         showComplexityOption: true,
         heightSurcharge1: "",
@@ -168,6 +174,8 @@ export const ProductTemplatesTab = () => {
       calculationMethod: template.calculationMethod,
       pricingUnit: template.pricingUnit,
       baseMakingCost: template.baseMakingCost?.toString() || "",
+      baseHeightLimit: template.baseHeightLimit?.toString() || "2.4",
+      useHeightSurcharges: template.useHeightSurcharges || false,
       complexityMultiplier: template.complexityMultiplier || "standard",
       showComplexityOption: template.showComplexityOption !== false,
       heightSurcharge1: "",
@@ -319,7 +327,18 @@ export const ProductTemplatesTab = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, baseMakingCost: e.target.value }))}
                   placeholder="45.00" 
                 />
-                <span className="text-xs text-gray-500">Per linear meter (standard height up to 2.4m)</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-500">Per linear meter up to</span>
+                  <Input 
+                    type="number" 
+                    step="0.1" 
+                    value={formData.baseHeightLimit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, baseHeightLimit: e.target.value }))}
+                    placeholder="2.4" 
+                    className="w-16 h-6 text-xs"
+                  />
+                  <span className="text-xs text-gray-500">meters height</span>
+                </div>
               </div>
               <div>
                 <Label htmlFor="showComplexityOption">Complexity Options</Label>
@@ -360,7 +379,20 @@ export const ProductTemplatesTab = () => {
               </div>
             </div>
 
-            {/* Height-based surcharges */}
+            {/* Height Surcharges Toggle */}
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="space-y-1">
+                <h5 className="font-medium text-blue-900">Height-Based Surcharges</h5>
+                <p className="text-sm text-blue-700">Add extra charges for windows above the base height limit</p>
+              </div>
+              <Switch 
+                checked={formData.useHeightSurcharges}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))}
+              />
+            </div>
+
+            {/* Height-based surcharges - only show when enabled */}
+            {formData.useHeightSurcharges && (
             <div className="bg-gray-50 p-4 rounded-lg space-y-4">
               <h5 className="font-medium mb-3">Height-Based Surcharges</h5>
               
@@ -476,9 +508,8 @@ export const ProductTemplatesTab = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
-
-          {/* Required Components */}
           <div className="space-y-4">
             <h4 className="font-medium text-brand-primary">Required Components</h4>
             
