@@ -25,8 +25,8 @@ interface LiningItem {
   id?: string;
   name: string;
   category: string;
-  basePrice: number;
-  unit: string;
+  fabricPrice: number;
+  fabricUnit: string;
   pricingMethod: 'fixed' | 'per-width' | 'csv-grid';
   csvPricingData?: Array<{ width: number; price: number }>;
   fabricChargeMethod: 'per-meter' | 'per-yard' | 'per-square-meter';
@@ -41,8 +41,8 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
   const [liningData, setLiningData] = useState<LiningItem>({
     name: editingLining?.name || "",
     category: "",
-    basePrice: editingLining?.price || 0,
-    unit: editingLining?.unit || "per-meter",
+    fabricPrice: editingLining?.price || 0,
+    fabricUnit: editingLining?.unit || "per-meter",
     pricingMethod: "fixed",
     fabricChargeMethod: "per-meter",
     makeupCostMethod: "fixed",
@@ -118,8 +118,8 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
     try {
       const liningPayload = {
         name: liningData.name,
-        price: liningData.basePrice,
-        unit: liningData.unit,
+        price: liningData.fabricPrice,
+        unit: liningData.fabricUnit,
         active: true
       };
 
@@ -140,8 +140,8 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
       setLiningData({
         name: "",
         category: "",
-        basePrice: 0,
-        unit: "per-meter",
+        fabricPrice: 0,
+        fabricUnit: "per-meter",
         pricingMethod: "fixed",
         fabricChargeMethod: "per-meter",
         makeupCostMethod: "fixed",
@@ -167,8 +167,8 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-            <TabsTrigger value="costs">Costs & Charges</TabsTrigger>
+            <TabsTrigger value="pricing">Fabric Pricing</TabsTrigger>
+            <TabsTrigger value="costs">Make-up & Labor</TabsTrigger>
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
           </TabsList>
 
@@ -201,122 +201,120 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="basePrice">Base Price</Label>
-                <Input
-                  id="basePrice"
-                  type="number"
-                  step="0.01"
-                  value={liningData.basePrice}
-                  onChange={(e) => setLiningData(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
-                />
-              </div>
-              <div>
-                <Label>Unit</Label>
-                <Select 
-                  value={liningData.unit} 
-                  onValueChange={(value) => setLiningData(prev => ({ ...prev, unit: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="per-meter">Per Meter</SelectItem>
-                    <SelectItem value="per-yard">Per Yard</SelectItem>
-                    <SelectItem value="per-square-meter">Per Square Meter</SelectItem>
-                    <SelectItem value="per-foot">Per Foot</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="pricing" className="space-y-4">
             <div>
-              <Label>Pricing Method</Label>
+              <Label>Fabric Charging Method</Label>
               <Select 
-                value={liningData.pricingMethod} 
-                onValueChange={(value: 'fixed' | 'per-width' | 'csv-grid') => setLiningData(prev => ({ ...prev, pricingMethod: value }))}
+                value={liningData.fabricChargeMethod} 
+                onValueChange={(value: 'per-meter' | 'per-yard' | 'per-square-meter') => setLiningData(prev => ({ ...prev, fabricChargeMethod: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">Fixed Price</SelectItem>
-                  <SelectItem value="per-width">Price Per Width</SelectItem>
-                  <SelectItem value="csv-grid">CSV Pricing Grid</SelectItem>
+                  <SelectItem value="per-meter">Per Linear Meter</SelectItem>
+                  <SelectItem value="per-yard">Per Linear Yard</SelectItem>
+                  <SelectItem value="per-square-meter">Per Square Meter</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                How you charge customers for the lining fabric
+              </p>
             </div>
-
-            {liningData.pricingMethod === 'csv-grid' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>CSV Pricing Grid</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="csvUpload">Upload CSV File</Label>
-                    <Input
-                      id="csvUpload"
-                      type="file"
-                      accept=".csv"
-                      onChange={handleCsvUpload}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Format: Width (inches), Price. First row should be headers.
-                    </p>
-                  </div>
-
-                  {liningData.csvPricingData && liningData.csvPricingData.length > 0 && (
-                    <div>
-                      <Label>Pricing Data Preview</Label>
-                      <div className="max-h-40 overflow-y-auto border rounded p-2">
-                        {liningData.csvPricingData.slice(0, 10).map((item, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>{item.width}"</span>
-                            <span>${item.price}</span>
-                          </div>
-                        ))}
-                        {liningData.csvPricingData.length > 10 && (
-                          <p className="text-xs text-muted-foreground">
-                            ... and {liningData.csvPricingData.length - 10} more entries
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
 
-          <TabsContent value="costs" className="space-y-4">
+          <TabsContent value="pricing" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Fabric Charging Method</CardTitle>
+                <CardTitle>Fabric Pricing</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>How to charge for fabric</Label>
+                  <Label>Pricing Method</Label>
                   <Select 
-                    value={liningData.fabricChargeMethod} 
-                    onValueChange={(value: 'per-meter' | 'per-yard' | 'per-square-meter') => setLiningData(prev => ({ ...prev, fabricChargeMethod: value }))}
+                    value={liningData.pricingMethod} 
+                    onValueChange={(value: 'fixed' | 'per-width' | 'csv-grid') => setLiningData(prev => ({ ...prev, pricingMethod: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="per-meter">Per Linear Meter</SelectItem>
-                      <SelectItem value="per-yard">Per Linear Yard</SelectItem>
-                      <SelectItem value="per-square-meter">Per Square Meter</SelectItem>
+                      <SelectItem value="fixed">Fixed Price</SelectItem>
+                      <SelectItem value="per-width">Price Per Width</SelectItem>
+                      <SelectItem value="csv-grid">CSV Pricing Grid</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="fabricPrice">Fabric Price</Label>
+                    <Input
+                      id="fabricPrice"
+                      type="number"
+                      step="0.01"
+                      value={liningData.fabricPrice}
+                      onChange={(e) => setLiningData(prev => ({ ...prev, fabricPrice: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Unit</Label>
+                    <Select 
+                      value={liningData.fabricUnit} 
+                      onValueChange={(value) => setLiningData(prev => ({ ...prev, fabricUnit: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="per-meter">Per Meter</SelectItem>
+                        <SelectItem value="per-yard">Per Yard</SelectItem>
+                        <SelectItem value="per-square-meter">Per Square Meter</SelectItem>
+                        <SelectItem value="per-foot">Per Foot</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {liningData.pricingMethod === 'csv-grid' && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="csvUpload">Upload CSV File</Label>
+                      <Input
+                        id="csvUpload"
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCsvUpload}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format: Width (inches), Price. First row should be headers.
+                      </p>
+                    </div>
+
+                    {liningData.csvPricingData && liningData.csvPricingData.length > 0 && (
+                      <div>
+                        <Label>Pricing Data Preview</Label>
+                        <div className="max-h-40 overflow-y-auto border rounded p-2">
+                          {liningData.csvPricingData.slice(0, 10).map((item, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span>{item.width}"</span>
+                              <span>${item.price}</span>
+                            </div>
+                          ))}
+                          {liningData.csvPricingData.length > 10 && (
+                            <p className="text-xs text-muted-foreground">
+                              ... and {liningData.csvPricingData.length - 10} more entries
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="costs" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Make-up Costs</CardTitle>
@@ -361,6 +359,15 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
                     onChange={(e) => setLiningData(prev => ({ ...prev, hemCost: parseFloat(e.target.value) || 0 }))}
                     placeholder="Cost for hemming"
                   />
+                </div>
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Labor Pricing Structure</h4>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p><strong>Fabric Price:</strong> What you pay for the lining material</p>
+                    <p><strong>Make-up Cost:</strong> Labor cost to prepare and attach the lining</p>
+                    <p><strong>Hem Cost:</strong> Additional cost for hemming the lining</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
