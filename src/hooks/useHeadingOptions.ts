@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -39,13 +40,25 @@ export const useCreateHeadingOption = () => {
   
   return useMutation({
     mutationFn: async (headingOption: Omit<HeadingOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('heading_options')
-        .insert([headingOption])
+        .insert([{
+          ...headingOption,
+          user_id: session.user.id
+        }])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating heading option:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -66,7 +79,10 @@ export const useUpdateHeadingOption = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating heading option:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -85,7 +101,10 @@ export const useDeleteHeadingOption = () => {
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting heading option:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['heading-options'] });

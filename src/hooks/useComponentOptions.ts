@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -38,13 +39,25 @@ export const useCreateHardwareOption = () => {
   
   return useMutation({
     mutationFn: async (option: Omit<HardwareOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('hardware_options')
-        .insert([option])
+        .insert([{
+          ...option,
+          user_id: session.user.id
+        }])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating hardware option:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -65,7 +78,10 @@ export const useUpdateHardwareOption = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating hardware option:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -84,7 +100,10 @@ export const useDeleteHardwareOption = () => {
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting hardware option:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hardware-options'] });
@@ -129,13 +148,25 @@ export const useCreateLiningOption = () => {
   
   return useMutation({
     mutationFn: async (option: Omit<LiningOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('lining_options')
-        .insert([option])
+        .insert([{
+          ...option,
+          user_id: session.user.id
+        }])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating lining option:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -156,7 +187,10 @@ export const useUpdateLiningOption = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating lining option:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -175,7 +209,10 @@ export const useDeleteLiningOption = () => {
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting lining option:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lining-options'] });
