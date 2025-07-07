@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface FabricFormProps {
@@ -15,26 +15,30 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
   const [fabricData, setFabricData] = useState({
     name: "",
     code: "",
+    vendor: "",
+    collection: "",
+    price: "",
+    unit: "yard",
+    inStock: "",
+    reorderPoint: "",
+    location: "",
+    composition: "",
     width: "",
-    patternRepeatV: "",
-    patternRepeatH: "",
-    weight: "",
-    tags: "",
-    description: "",
+    patternRepeat: "",
+    careInstructions: "",
+    flameRetardant: false,
+    colorways: "",
+    leadTime: "",
+    minimumOrder: "",
     image: null as File | null,
-    isRollerBlind: "no",
-    confidentialPrice: "",
-    retailPrice: "",
-    rollDirection: "vertical",
-    allowDirectionChange: "no",
-    trackStocks: "no",
-    brand: "",
-    collection: ""
+    description: "",
+    weight: "",
+    durability: "",
+    lightFastness: ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
     console.log("Fabric data:", fabricData);
     onClose();
   };
@@ -48,9 +52,9 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-      <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="fabricName">Fabric name</Label>
+          <Label htmlFor="fabricName">Fabric Name *</Label>
           <Input
             id="fabricName"
             value={fabricData.name}
@@ -61,7 +65,7 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="fabricCode">Fabric code</Label>
+          <Label htmlFor="fabricCode">Fabric Code</Label>
           <Input
             id="fabricCode"
             value={fabricData.code}
@@ -69,218 +73,210 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
             className="mt-1"
           />
         </div>
+      </div>
 
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="fabricWidth">Fabric width (cm)</Label>
-          <Input
-            id="fabricWidth"
-            type="number"
-            value={fabricData.width}
-            onChange={(e) => setFabricData(prev => ({ ...prev, width: e.target.value }))}
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="patternRepeatV">Pattern repeat (V) (cm)</Label>
-          <Input
-            id="patternRepeatV"
-            type="number"
-            value={fabricData.patternRepeatV}
-            onChange={(e) => setFabricData(prev => ({ ...prev, patternRepeatV: e.target.value }))}
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="patternRepeatH">Pattern repeat (H) (cm)</Label>
-          <Input
-            id="patternRepeatH"
-            type="number"
-            value={fabricData.patternRepeatH}
-            onChange={(e) => setFabricData(prev => ({ ...prev, patternRepeatH: e.target.value }))}
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="fabricWeight">Fabric weight</Label>
-          <Input
-            id="fabricWeight"
-            value={fabricData.weight}
-            onChange={(e) => setFabricData(prev => ({ ...prev, weight: e.target.value }))}
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="tags">Tags</Label>
-          <Input
-            id="tags"
-            value={fabricData.tags}
-            onChange={(e) => setFabricData(prev => ({ ...prev, tags: e.target.value }))}
-            className="mt-1"
-            placeholder="Enter tags separated by commas"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="description">Fabric description (0/500)</Label>
-          <textarea
-            id="description"
-            value={fabricData.description}
-            onChange={(e) => setFabricData(prev => ({ ...prev, description: e.target.value }))}
-            className="mt-1 w-full p-2 border rounded-md resize-none h-24"
-            maxLength={500}
-          />
-        </div>
-
-        <div>
-          <Label>Fabric image</Label>
-          <Card className="mt-2">
-            <CardContent className="p-6">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="imageUpload"
-                />
-                <label htmlFor="imageUpload" className="cursor-pointer">
-                  <div className="text-gray-500">
-                    <span className="bg-gray-200 px-3 py-1 rounded text-sm">no file selected</span>
-                    <span className="ml-2">upload an image</span>
-                  </div>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div>
-          <Label>Is this a roller blind fabric?</Label>
-          <RadioGroup
-            value={fabricData.isRollerBlind}
-            onValueChange={(value) => setFabricData(prev => ({ ...prev, isRollerBlind: value }))}
-            className="flex space-x-6 mt-2"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="no" id="rollerNo" />
-              <Label htmlFor="rollerNo">No</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="yes" id="rollerYes" />
-              <Label htmlFor="rollerYes">Yes</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <div>
-          <Label htmlFor="confidentialPrice">Confidential price excl. VAT (Optional)</Label>
-          <div className="relative mt-1">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-            <Input
-              id="confidentialPrice"
-              type="number"
-              step="0.01"
-              value={fabricData.confidentialPrice}
-              onChange={(e) => setFabricData(prev => ({ ...prev, confidentialPrice: e.target.value }))}
-              className="pl-8"
-            />
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="retailPrice">Recommended retail price including tax</Label>
-          <div className="relative mt-1">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-            <Input
-              id="retailPrice"
-              type="number"
-              step="0.01"
-              value={fabricData.retailPrice}
-              onChange={(e) => setFabricData(prev => ({ ...prev, retailPrice: e.target.value }))}
-              className="pl-8"
-            />
-          </div>
-        </div>
-
-        <div>
-          <Label>Roll direction</Label>
-          <Select value={fabricData.rollDirection} onValueChange={(value) => setFabricData(prev => ({ ...prev, rollDirection: value }))}>
+          <Label>Vendor/Supplier</Label>
+          <Select value={fabricData.vendor} onValueChange={(value) => setFabricData(prev => ({ ...prev, vendor: value }))}>
             <SelectTrigger className="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="vertical">Vertical</SelectItem>
-              <SelectItem value="horizontal">Horizontal</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>Allow fabric roll direction changes?</Label>
-          <RadioGroup
-            value={fabricData.allowDirectionChange}
-            onValueChange={(value) => setFabricData(prev => ({ ...prev, allowDirectionChange: value }))}
-            className="flex space-x-6 mt-2"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="no" id="directionNo" />
-              <Label htmlFor="directionNo">No</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="yes" id="directionYes" />
-              <Label htmlFor="directionYes">Yes</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <div>
-          <Label>Track Fabric Stocks?</Label>
-          <RadioGroup
-            value={fabricData.trackStocks}
-            onValueChange={(value) => setFabricData(prev => ({ ...prev, trackStocks: value }))}
-            className="flex space-x-6 mt-2"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="no" id="trackNo" />
-              <Label htmlFor="trackNo">No</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="yes" id="trackYes" />
-              <Label htmlFor="trackYes">Yes</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <div>
-          <Label>Select a brand (Optional)</Label>
-          <Select value={fabricData.brand} onValueChange={(value) => setFabricData(prev => ({ ...prev, brand: value }))}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select a brand" />
+              <SelectValue placeholder="Select vendor" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="fibre-naturelle">Fibre Naturelle</SelectItem>
               <SelectItem value="kd-design">KD Design</SelectItem>
-              <SelectItem value="dekoma">DEKOMA</SelectItem>
+              <SelectItem value="james-hare">James Hare</SelectItem>
+              <SelectItem value="sahco">Sahco</SelectItem>
+              <SelectItem value="designers-guild">Designers Guild</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label>Select Collection (Optional)</Label>
-          <Select value={fabricData.collection} onValueChange={(value) => setFabricData(prev => ({ ...prev, collection: value }))}>
+          <Label htmlFor="collection">Collection</Label>
+          <Input
+            id="collection"
+            value={fabricData.collection}
+            onChange={(e) => setFabricData(prev => ({ ...prev, collection: e.target.value }))}
+            className="mt-1"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="price">Price per Unit</Label>
+          <div className="relative mt-1">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              value={fabricData.price}
+              onChange={(e) => setFabricData(prev => ({ ...prev, price: e.target.value }))}
+              className="pl-8"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Unit</Label>
+          <Select value={fabricData.unit} onValueChange={(value) => setFabricData(prev => ({ ...prev, unit: value }))}>
             <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select a collection" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="collection1">Collection 1</SelectItem>
-              <SelectItem value="collection2">Collection 2</SelectItem>
+              <SelectItem value="yard">Yard</SelectItem>
+              <SelectItem value="meter">Meter</SelectItem>
+              <SelectItem value="roll">Roll</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        <div>
+          <Label htmlFor="inStock">Current Stock</Label>
+          <Input
+            id="inStock"
+            type="number"
+            step="0.1"
+            value={fabricData.inStock}
+            onChange={(e) => setFabricData(prev => ({ ...prev, inStock: e.target.value }))}
+            className="mt-1"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="reorderPoint">Reorder Point</Label>
+          <Input
+            id="reorderPoint"
+            type="number"
+            step="0.1"
+            value={fabricData.reorderPoint}
+            onChange={(e) => setFabricData(prev => ({ ...prev, reorderPoint: e.target.value }))}
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="location">Storage Location</Label>
+          <Input
+            id="location"
+            value={fabricData.location}
+            onChange={(e) => setFabricData(prev => ({ ...prev, location: e.target.value }))}
+            className="mt-1"
+            placeholder="e.g., Warehouse A-12"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="composition">Composition</Label>
+          <Input
+            id="composition"
+            value={fabricData.composition}
+            onChange={(e) => setFabricData(prev => ({ ...prev, composition: e.target.value }))}
+            className="mt-1"
+            placeholder="e.g., 100% Linen"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="width">Fabric Width</Label>
+          <Input
+            id="width"
+            value={fabricData.width}
+            onChange={(e) => setFabricData(prev => ({ ...prev, width: e.target.value }))}
+            className="mt-1"
+            placeholder="e.g., 137cm"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="patternRepeat">Pattern Repeat</Label>
+          <Input
+            id="patternRepeat"
+            value={fabricData.patternRepeat}
+            onChange={(e) => setFabricData(prev => ({ ...prev, patternRepeat: e.target.value }))}
+            className="mt-1"
+            placeholder="e.g., 64cm"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="weight">Weight (GSM)</Label>
+          <Input
+            id="weight"
+            value={fabricData.weight}
+            onChange={(e) => setFabricData(prev => ({ ...prev, weight: e.target.value }))}
+            className="mt-1"
+            placeholder="e.g., 350 GSM"
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="colorways">Available Colorways</Label>
+        <Input
+          id="colorways"
+          value={fabricData.colorways}
+          onChange={(e) => setFabricData(prev => ({ ...prev, colorways: e.target.value }))}
+          className="mt-1"
+          placeholder="e.g., Red, Blue, Green, Natural"
+        />
+      </div>
+
+      <div>
+        <Label>Fabric Image</Label>
+        <Card className="mt-2">
+          <CardContent className="p-6">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="fabricImageUpload"
+              />
+              <label htmlFor="fabricImageUpload" className="cursor-pointer">
+                <div className="text-gray-500">
+                  <span className="bg-gray-200 px-3 py-1 rounded text-sm">
+                    {fabricData.image ? fabricData.image.name : "no file selected"}
+                  </span>
+                  <span className="ml-2">upload fabric image</span>
+                </div>
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div>
+        <Label htmlFor="careInstructions">Care Instructions</Label>
+        <Textarea
+          id="careInstructions"
+          value={fabricData.careInstructions}
+          onChange={(e) => setFabricData(prev => ({ ...prev, careInstructions: e.target.value }))}
+          className="mt-1"
+          rows={3}
+          placeholder="Care and maintenance instructions..."
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description & Notes</Label>
+        <Textarea
+          id="description"
+          value={fabricData.description}
+          onChange={(e) => setFabricData(prev => ({ ...prev, description: e.target.value }))}
+          className="mt-1"
+          rows={3}
+          placeholder="Additional details about this fabric..."
+        />
       </div>
 
       <div className="flex justify-end space-x-3 pt-6 border-t">
@@ -288,7 +284,7 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
           Cancel
         </Button>
         <Button type="submit" className="bg-slate-600 hover:bg-slate-700">
-          Save
+          Save Fabric
         </Button>
       </div>
     </form>
