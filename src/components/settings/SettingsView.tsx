@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Calculator } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Calculator, Play } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
@@ -9,8 +9,14 @@ import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { ProductTemplatesTab } from "./tabs/ProductTemplatesTab";
 import { ComponentsTab } from "./tabs/ComponentsTab";
 import { CalculationsTab } from "./tabs/CalculationsTab";
+import { TutorialOverlay } from "./TutorialOverlay";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export const SettingsView = () => {
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [activeTab, setActiveTab] = useState("business");
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -20,9 +26,16 @@ export const SettingsView = () => {
             Configure your business rules and products
           </p>
         </div>
+        <Button 
+          onClick={() => setShowTutorial(true)}
+          className="bg-brand-primary hover:bg-brand-accent"
+        >
+          <Play className="h-4 w-4 mr-2" />
+          Setup Guide
+        </Button>
       </div>
 
-      <Tabs defaultValue="business" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -74,6 +87,12 @@ export const SettingsView = () => {
           <IntegrationsTab />
         </TabsContent>
       </Tabs>
+
+      <TutorialOverlay 
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onTabChange={setActiveTab}
+      />
     </div>
   );
 };
