@@ -38,7 +38,7 @@ export const useCreateHeadingOption = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (headingOption: Omit<HeadingOption, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (headingOption: Omit<HeadingOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('heading_options')
         .insert([headingOption])

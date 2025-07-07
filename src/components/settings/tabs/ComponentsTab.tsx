@@ -57,8 +57,7 @@ export const ComponentsTab = () => {
         price: newHeading.price,
         type: newHeading.type,
         extras: newHeading.extras,
-        active: true,
-        user_id: '' // This will be set by the database
+        active: true
       });
       
       setNewHeading({ 
