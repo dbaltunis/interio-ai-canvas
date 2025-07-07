@@ -2,6 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface TreatmentOptionsCardProps {
@@ -10,6 +14,8 @@ interface TreatmentOptionsCardProps {
   treatmentType: string;
   selectedOptions: string[];
   onOptionToggle: (optionId: string) => void;
+  complexityMultiplier?: string;
+  onComplexityChange?: (value: string) => void;
 }
 
 export const TreatmentOptionsCard = ({ 
@@ -17,7 +23,9 @@ export const TreatmentOptionsCard = ({
   treatmentTypesLoading, 
   treatmentType, 
   selectedOptions, 
-  onOptionToggle 
+  onOptionToggle,
+  complexityMultiplier = "standard",
+  onComplexityChange
 }: TreatmentOptionsCardProps) => {
   const { units } = useMeasurementUnits();
 
@@ -84,6 +92,56 @@ export const TreatmentOptionsCard = ({
             </div>
           );
         })}
+
+        {/* Complexity Multiplier Section */}
+        <div className="border-t pt-4 mt-6">
+          <div className="space-y-3">
+            <Label htmlFor="complexityMultiplier">Job Complexity</Label>
+            <Select value={complexityMultiplier} onValueChange={onComplexityChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select complexity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">
+                  <div className="space-y-1">
+                    <div className="font-medium">Standard (1.0x)</div>
+                    <div className="text-xs text-muted-foreground">Basic installation, standard access</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="medium">
+                  <div className="space-y-1">
+                    <div className="font-medium">Medium Complexity (1.2x)</div>
+                    <div className="text-xs text-muted-foreground">Bay windows, pattern matching, unusual shapes</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="complex">
+                  <div className="space-y-1">
+                    <div className="font-medium">Complex (1.5x)</div>
+                    <div className="text-xs text-muted-foreground">Difficult access, intricate details, multiple layers</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="custom">
+                  <div className="space-y-1">
+                    <div className="font-medium">Custom Rate</div>
+                    <div className="text-xs text-muted-foreground">Set your own multiplier</div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <div className="text-xs space-y-1">
+                  <p><strong>How complexity affects pricing:</strong></p>
+                  <p>• Standard: Base cost × 1.0 (no change)</p>
+                  <p>• Medium: Base cost × 1.2 (+20%)</p>
+                  <p>• Complex: Base cost × 1.5 (+50%)</p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

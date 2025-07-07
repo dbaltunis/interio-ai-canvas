@@ -141,44 +141,39 @@ export const ProductTemplatesTab = () => {
                 <span className="text-xs text-gray-500">Per linear meter (standard height up to 2.4m)</span>
               </div>
               <div>
-                <Label htmlFor="complexityMultiplier">Complexity Multiplier</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select complexity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">
-                      <div className="space-y-1">
-                        <div className="font-medium">Standard (1.0x)</div>
-                        <div className="text-xs text-muted-foreground">Basic curtains, simple installation</div>
+                <Label htmlFor="showComplexityOption">Complexity Options</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" id="showComplexityOption" defaultChecked />
+                    <label htmlFor="showComplexityOption" className="text-sm">
+                      Show complexity multiplier option in calculator
+                    </label>
+                  </div>
+                  
+                  <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                    <h5 className="text-sm font-medium">Available Complexity Levels:</h5>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span>• Standard (Basic installation)</span>
+                        <span>1.0x</span>
                       </div>
-                    </SelectItem>
-                    <SelectItem value="medium">
-                      <div className="space-y-1">
-                        <div className="font-medium">Medium Complexity (1.2x)</div>
-                        <div className="text-xs text-muted-foreground">Bay windows, unusual shapes, pattern matching</div>
+                      <div className="flex justify-between">
+                        <span>• Medium (Bay windows, pattern matching)</span>
+                        <span>1.2x</span>
                       </div>
-                    </SelectItem>
-                    <SelectItem value="complex">
-                      <div className="space-y-1">
-                        <div className="font-medium">Complex (1.5x)</div>
-                        <div className="text-xs text-muted-foreground">Difficult access, intricate details, multiple layers</div>
+                      <div className="flex justify-between">
+                        <span>• Complex (Difficult access, intricate details)</span>
+                        <span>1.5x</span>
                       </div>
-                    </SelectItem>
-                    <SelectItem value="custom">
-                      <div className="space-y-1">
-                        <div className="font-medium">Custom Rate</div>
-                        <div className="text-xs text-muted-foreground">Set your own multiplier</div>
+                      <div className="flex justify-between">
+                        <span>• Custom (User-defined multiplier)</span>
+                        <span>Variable</span>
                       </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h5 className="text-sm font-medium text-blue-900 mb-1">💡 How Complexity Works:</h5>
-                  <div className="text-xs text-blue-800 space-y-1">
-                    <p><strong>Standard (1.0x):</strong> Base making cost × 1.0 = $45.00</p>
-                    <p><strong>Medium (1.2x):</strong> Base making cost × 1.2 = $54.00</p>
-                    <p><strong>Complex (1.5x):</strong> Base making cost × 1.5 = $67.50</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    ℹ️ Users will see this option in the calculator to adjust pricing based on job complexity
                   </div>
                 </div>
               </div>
