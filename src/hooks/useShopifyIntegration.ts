@@ -85,7 +85,7 @@ export const useCreateShopifyIntegration = () => {
           sync_prices: integration.sync_prices,
           sync_images: integration.sync_images,
           sync_status: integration.sync_status,
-          sync_log: integration.sync_log,
+          sync_log: integration.sync_log as Json,
         })
         .select()
         .single();

@@ -18,13 +18,13 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
   const { data: integration, isLoading } = useShopifyIntegration();
   const [activeTab, setActiveTab] = useState("overview");
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     shop_domain: integration?.shop_domain || "",
     auto_sync_enabled: integration?.auto_sync_enabled || false,
     sync_inventory: integration?.sync_inventory !== undefined ? integration.sync_inventory : true,
     sync_prices: integration?.sync_prices !== undefined ? integration.sync_prices : true,
     sync_images: integration?.sync_images !== undefined ? integration.sync_images : true,
-  });
+  }));
 
   const handleGetStarted = () => {
     setActiveTab("setup");

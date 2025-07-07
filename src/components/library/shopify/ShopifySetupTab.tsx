@@ -39,7 +39,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           sync_prices: true,
           sync_images: true,
           sync_status: "pending",
-          sync_log: [{ action: "OAuth installation started", timestamp: new Date().toISOString() }],
+          sync_log: [{ action: "OAuth installation started", timestamp: new Date().toISOString() }] as any,
         });
       }
 
