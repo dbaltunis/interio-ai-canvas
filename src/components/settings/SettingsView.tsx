@@ -1,11 +1,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Calculator } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
+import { ProductTemplatesTab } from "./tabs/ProductTemplatesTab";
+import { ComponentsTab } from "./tabs/ComponentsTab";
+import { CalculationsTab } from "./tabs/CalculationsTab";
 
 export const SettingsView = () => {
   return (
@@ -20,7 +23,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Business
@@ -31,7 +34,15 @@ export const SettingsView = () => {
           </TabsTrigger>
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Products
+            Product Templates
+          </TabsTrigger>
+          <TabsTrigger value="components" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            Components
+          </TabsTrigger>
+          <TabsTrigger value="calculations" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Calculations
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -48,7 +59,15 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="products">
-          <ProductCatalogTab />
+          <ProductTemplatesTab />
+        </TabsContent>
+
+        <TabsContent value="components">
+          <ComponentsTab />
+        </TabsContent>
+
+        <TabsContent value="calculations">
+          <CalculationsTab />
         </TabsContent>
 
         <TabsContent value="integrations">
