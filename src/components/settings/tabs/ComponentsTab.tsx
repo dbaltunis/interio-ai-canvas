@@ -263,14 +263,19 @@ export const ComponentsTab = () => {
   };
 
   const handleAddService = async () => {
-    if (!newService.name.trim()) return;
+    if (!newService.name.trim()) {
+      toast.error("Please enter a service name");
+      return;
+    }
     
     try {
+      console.log('Attempting to create service with data:', newService);
+      
       await createService.mutateAsync({
-        name: newService.name,
-        price: newService.price,
+        name: newService.name.trim(),
+        price: Number(newService.price) || 0,
         unit: newService.unit,
-        description: newService.description,
+        description: newService.description.trim() || null,
         active: true
       });
       
@@ -289,6 +294,7 @@ export const ComponentsTab = () => {
   };
 
   const handleEditService = (service) => {
+    console.log('Editing service:', service);
     setEditingService(service.id);
     setNewService({
       name: service.name,
@@ -303,12 +309,14 @@ export const ComponentsTab = () => {
     if (!editingService) return;
     
     try {
+      console.log('Attempting to update service:', editingService, newService);
+      
       await updateService.mutateAsync({
         id: editingService,
-        name: newService.name,
-        price: newService.price,
+        name: newService.name.trim(),
+        price: Number(newService.price) || 0,
         unit: newService.unit,
-        description: newService.description
+        description: newService.description.trim() || null
       });
       
       setEditingService(null);
@@ -327,7 +335,12 @@ export const ComponentsTab = () => {
   };
 
   const handleDeleteService = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this service option?")) {
+      return;
+    }
+    
     try {
+      console.log('Attempting to delete service:', id);
       await deleteService.mutateAsync(id);
       toast.success("Service option deleted successfully");
     } catch (error) {
@@ -340,6 +353,7 @@ export const ComponentsTab = () => {
     try {
       const service = services.find(s => s.id === id);
       if (service) {
+        console.log('Toggling service active state:', id, !service.active);
         await updateService.mutateAsync({
           id,
           active: !service.active
@@ -781,8 +795,9 @@ export const ComponentsTab = () => {
                     <Button 
                       onClick={editingService ? handleUpdateService : handleAddService}
                       className="bg-brand-primary hover:bg-brand-accent"
+                      disabled={createService.isPending || updateService.isPending}
                     >
-                      {editingService ? "Update" : "Add"} Service
+                      {createService.isPending || updateService.isPending ? "Saving..." : (editingService ? "Update" : "Add")} Service
                     </Button>
                     <Button 
                       variant="outline" 
