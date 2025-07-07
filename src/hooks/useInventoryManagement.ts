@@ -13,15 +13,31 @@ export const useInventory = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory")
-        .select(`
-          *,
-          vendor:vendors(name, email, phone),
-          collection:collections(name, season, year)
-        `)
+        .select("*")
         .order("name");
 
       if (error) throw error;
-      return data;
+      
+      // Enhance the data with mock vendor and collection info until tables are synced
+      return data.map(item => ({
+        ...item,
+        vendor: item.supplier ? { 
+          name: item.supplier, 
+          email: `${item.supplier.toLowerCase().replace(/\s+/g, '')}@example.com`,
+          phone: "555-0000"
+        } : null,
+        collection: { 
+          name: "Default Collection", 
+          season: "All Season", 
+          year: 2024 
+        },
+        product_code: item.sku,
+        fabric_width: item.width,
+        tags: [],
+        images: [],
+        specifications: {},
+        status: item.quantity > 0 ? 'in_stock' : 'out_of_stock'
+      }));
     },
   });
 };
