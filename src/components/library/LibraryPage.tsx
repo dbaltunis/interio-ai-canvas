@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench, ShoppingCart, FolderTree } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Search, Filter, List, LayoutGrid, Edit, Trash2, Copy, Package, AlertTriangle, Wrench, ShoppingCart, FolderTree, Eye } from "lucide-react";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
@@ -15,6 +16,8 @@ import { FilterDialog } from "./FilterDialog";
 import { VendorForm } from "./VendorForm";
 import { HardwareForm } from "./HardwareForm";
 import { CategoryManager } from "./CategoryManager";
+import { ProductDetailsDialog } from "./ProductDetailsDialog";
+import { SelectedProductsPanel } from "./SelectedProductsPanel";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { toast } from "sonner";
 
@@ -27,6 +30,11 @@ export const LibraryPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addDialogType, setAddDialogType] = useState<"vendor" | "fabric" | "hardware" | "collection">("fabric");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [productDetailsDialog, setProductDetailsDialog] = useState<{
+    open: boolean;
+    product: any;
+    type: "fabric" | "hardware" | "vendor";
+  }>({ open: false, product: null, type: "fabric" });
 
   const formatCurrency = (amount: number) => {
     const currencySymbols: Record<string, string> = {
@@ -179,14 +187,18 @@ export const LibraryPage = () => {
     }
   ];
 
-  const handleProductSelect = (productId: string, productType: string) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(prev => prev.filter(id => id !== productId));
-      toast.success(`${productType} removed from selection`);
-    } else {
+  const handleProductSelect = (productId: string, checked: boolean) => {
+    if (checked) {
       setSelectedProducts(prev => [...prev, productId]);
-      toast.success(`${productType} added to selection`);
+      toast.success("Product added to selection");
+    } else {
+      setSelectedProducts(prev => prev.filter(id => id !== productId));
+      toast.success("Product removed from selection");
     }
+  };
+
+  const handleProductDetails = (product: any, type: "fabric" | "hardware" | "vendor") => {
+    setProductDetailsDialog({ open: true, product, type });
   };
 
   const handleAddToProject = () => {
@@ -197,6 +209,16 @@ export const LibraryPage = () => {
     
     toast.success(`${selectedProducts.length} products ready to add to project`);
     console.log("Selected products for project:", selectedProducts);
+  };
+
+  const handleCalculateUsage = () => {
+    if (selectedProducts.length === 0) {
+      toast.error("Please select at least one fabric");
+      return;
+    }
+    
+    toast.success("Opening fabric usage calculator...");
+    console.log("Calculate usage for:", selectedProducts);
   };
 
   const handleAddNew = (type: "vendor" | "fabric" | "hardware" | "collection") => {
@@ -210,55 +232,70 @@ export const LibraryPage = () => {
     return { status: "In Stock", color: "bg-green-500" };
   };
 
-  const renderVendorCard = (vendor: any) => (
-    <Card key={vendor.id} className="relative group hover:shadow-lg transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <CardTitle className="text-lg font-semibold mb-1">{vendor.name}</CardTitle>
-            <Badge variant="outline" className="mb-2">{vendor.type}</Badge>
-            <p className="text-sm text-gray-600 mb-1">{vendor.country}</p>
-            <p className="text-sm text-gray-500">{vendor.contact}</p>
-            <p className="text-sm text-gray-500">{vendor.phone}</p>
+  const renderVendorCard = (vendor: any) => {
+    const isSelected = selectedProducts.includes(vendor.id.toString());
+    
+    return (
+      <Card key={vendor.id} className="relative group hover:shadow-lg transition-shadow">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={(checked) => handleProductSelect(vendor.id.toString(), checked as boolean)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <CardTitle className="text-lg font-semibold mb-1">{vendor.name}</CardTitle>
+                <Badge variant="outline" className="mb-2">{vendor.type}</Badge>
+                <p className="text-sm text-gray-600 mb-1">{vendor.country}</p>
+                <p className="text-sm text-gray-500">{vendor.contact}</p>
+                <p className="text-sm text-gray-500">{vendor.phone}</p>
+              </div>
+            </div>
+            <Package className="h-8 w-8 text-gray-400" />
           </div>
-          <Package className="h-8 w-8 text-gray-400" />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-gray-500">Products</p>
-            <p className="font-semibold">{vendor.products}</p>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <p className="text-sm text-gray-500">Products</p>
+              <p className="font-semibold">{vendor.products}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Last Order</p>
+              <p className="font-semibold">{vendor.lastOrder}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Last Order</p>
-            <p className="font-semibold">{vendor.lastOrder}</p>
-          </div>
-        </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-blue-500 hover:text-blue-700"
+                onClick={() => handleProductDetails(vendor, 'vendor')}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderFabricCard = (fabric: any) => {
     const stockStatus = getStockStatus(fabric.inStock, fabric.reorderPoint);
     const isSelected = selectedProducts.includes(fabric.id.toString());
     
     return (
-      <Card 
-        key={fabric.id} 
-        className={`relative group hover:shadow-lg transition-shadow cursor-pointer ${
-          isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-        }`}
-        onClick={() => handleProductSelect(fabric.id.toString(), 'Fabric')}
-      >
+      <Card key={fabric.id} className="relative group hover:shadow-lg transition-shadow">
         <CardHeader className="p-0">
           <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
             <img 
@@ -270,16 +307,23 @@ export const LibraryPage = () => {
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
+            </div>
+            <div className="absolute top-2 left-2 flex gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {fabric.pattern}
+              </Badge>
               {isSelected && (
                 <Badge variant="default" className="bg-blue-500">
                   Selected
                 </Badge>
               )}
             </div>
-            <div className="absolute top-2 left-2">
-              <Badge variant="secondary" className="text-xs">
-                {fabric.pattern}
-              </Badge>
+            <div className="absolute bottom-2 left-2">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={(checked) => handleProductSelect(fabric.id.toString(), checked as boolean)}
+                className="bg-white"
+              />
             </div>
           </div>
         </CardHeader>
@@ -315,20 +359,14 @@ export const LibraryPage = () => {
                 variant="ghost" 
                 size="sm" 
                 className="text-blue-500 hover:text-blue-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
+                onClick={() => handleProductDetails(fabric, 'fabric')}
               >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 hover:text-gray-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              >
+              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -346,13 +384,7 @@ export const LibraryPage = () => {
     const isSelected = selectedProducts.includes(hardware.id.toString());
     
     return (
-      <Card 
-        key={hardware.id} 
-        className={`relative group hover:shadow-lg transition-shadow cursor-pointer ${
-          isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-        }`}
-        onClick={() => handleProductSelect(hardware.id.toString(), 'Hardware')}
-      >
+      <Card key={hardware.id} className="relative group hover:shadow-lg transition-shadow">
         <CardHeader className="p-0">
           <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
             <img 
@@ -364,11 +396,20 @@ export const LibraryPage = () => {
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
+            </div>
+            <div className="absolute top-2 left-2">
               {isSelected && (
                 <Badge variant="default" className="bg-blue-500">
                   Selected
                 </Badge>
               )}
+            </div>
+            <div className="absolute bottom-2 left-2">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={(checked) => handleProductSelect(hardware.id.toString(), checked as boolean)}
+                className="bg-white"
+              />
             </div>
           </div>
         </CardHeader>
@@ -403,20 +444,14 @@ export const LibraryPage = () => {
                 variant="ghost" 
                 size="sm" 
                 className="text-blue-500 hover:text-blue-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
+                onClick={() => handleProductDetails(hardware, 'hardware')}
               >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-blue-500 hover:text-blue-700">
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 hover:text-gray-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              >
+              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -438,16 +473,6 @@ export const LibraryPage = () => {
           <p className="text-gray-600">Manage fabrics, hardware, and vendor relationships</p>
         </div>
         <div className="flex items-center space-x-2">
-          {selectedProducts.length > 0 && (
-            <Button
-              onClick={handleAddToProject}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Project ({selectedProducts.length})
-            </Button>
-          )}
-          
           <Popover>
             <PopoverTrigger asChild>
               <Button className="bg-slate-600 hover:bg-slate-700 text-white">
@@ -506,101 +531,98 @@ export const LibraryPage = () => {
         </div>
       </div>
 
-      {/* Selection Summary */}
-      {selectedProducts.length > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
+      <div className="grid grid-cols-12 gap-6">
+        {/* Main Content */}
+        <div className={selectedProducts.length > 0 ? "col-span-9" : "col-span-12"}>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Selected Products: {selectedProducts.length}</p>
-                <p className="text-sm text-gray-600">Ready to add to project or calculate fabric usage</p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedProducts([])}
-                className="text-red-600 border-red-200 hover:bg-red-50"
-              >
-                Clear Selection
-              </Button>
+              <TabsList className="grid w-fit grid-cols-5">
+                <TabsTrigger value="categories">
+                  <FolderTree className="h-4 w-4 mr-2" />
+                  Categories
+                </TabsTrigger>
+                <TabsTrigger value="vendors">
+                  Vendors (4)
+                </TabsTrigger>
+                <TabsTrigger value="fabrics">
+                  Fabrics (3)
+                </TabsTrigger>
+                <TabsTrigger value="hardware">
+                  Hardware (2)
+                </TabsTrigger>
+                <TabsTrigger value="collections">
+                  Collections (8)
+                </TabsTrigger>
+              </TabsList>
+              
+              {activeTab !== 'categories' && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant={viewMode === "list" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    List
+                  </Button>
+                  <Button
+                    variant={viewMode === "card" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("card")}
+                    className="bg-slate-600 hover:bg-slate-700 text-white"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Card
+                  </Button>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex items-center justify-between">
-          <TabsList className="grid w-fit grid-cols-5">
-            <TabsTrigger value="categories">
-              <FolderTree className="h-4 w-4 mr-2" />
-              Categories
-            </TabsTrigger>
-            <TabsTrigger value="vendors">
-              Vendors ({vendors.length})
-            </TabsTrigger>
-            <TabsTrigger value="fabrics">
-              Fabrics ({fabrics.length})
-            </TabsTrigger>
-            <TabsTrigger value="hardware">
-              Hardware ({hardware.length})
-            </TabsTrigger>
-            <TabsTrigger value="collections">
-              Collections (8)
-            </TabsTrigger>
-          </TabsList>
-          
-          {activeTab !== 'categories' && (
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="h-4 w-4 mr-2" />
-                List
-              </Button>
-              <Button
-                variant={viewMode === "card" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("card")}
-                className="bg-slate-600 hover:bg-slate-700 text-white"
-              >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Card
-              </Button>
-            </div>
-          )}
+            {/* Tab Contents */}
+            <TabsContent value="categories" className="space-y-4">
+              <CategoryManager />
+            </TabsContent>
+
+            <TabsContent value="vendors" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {vendors.map(renderVendorCard)}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="fabrics" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {fabrics.map(renderFabricCard)}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="hardware" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {hardware.map(renderHardwareCard)}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="collections" className="space-y-4">
+              <div className="text-center py-8 text-gray-500">
+                No collections available. Create your first collection to organize your inventory!
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* Tab Contents */}
-        <TabsContent value="categories" className="space-y-4">
-          <CategoryManager />
-        </TabsContent>
-
-        <TabsContent value="vendors" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {vendors.map(renderVendorCard)}
+        {/* Selected Products Panel */}
+        {selectedProducts.length > 0 && (
+          <div className="col-span-3">
+            <SelectedProductsPanel
+              selectedProducts={selectedProducts}
+              onClearSelection={() => setSelectedProducts([])}
+              onRemoveProduct={(productId) => setSelectedProducts(prev => prev.filter(id => id !== productId))}
+              onAddToProject={handleAddToProject}
+              onCalculateUsage={handleCalculateUsage}
+            />
           </div>
-        </TabsContent>
-
-        <TabsContent value="fabrics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {fabrics.map(renderFabricCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="hardware" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {hardware.map(renderHardwareCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="collections" className="space-y-4">
-          <div className="text-center py-8 text-gray-500">
-            No collections available. Create your first collection to organize your inventory!
-          </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       {/* Filter Dialog */}
       <FilterDialog 
@@ -626,6 +648,14 @@ export const LibraryPage = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Product Details Dialog */}
+      <ProductDetailsDialog
+        open={productDetailsDialog.open}
+        onOpenChange={(open) => setProductDetailsDialog(prev => ({ ...prev, open }))}
+        product={productDetailsDialog.product}
+        productType={productDetailsDialog.type}
+      />
     </div>
   );
 };
