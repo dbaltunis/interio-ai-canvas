@@ -130,9 +130,9 @@ export const ProductTemplatesTab = () => {
             </div>
             <div>
               <Label htmlFor="basePrice">
-                Base Labor Cost (per unit)
+                Making Cost (per unit)
                 <span className="text-xs text-gray-500 block font-normal">
-                  Your making/sewing cost only (fabric cost added separately)
+                  What you charge to make/sew this product per unit (e.g., $45/linear meter for curtains)
                 </span>
               </Label>
               <Input id="basePrice" type="number" step="0.01" placeholder="45.00" />
@@ -143,9 +143,9 @@ export const ProductTemplatesTab = () => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 mb-2">💡 How This Works:</h4>
             <div className="space-y-2 text-sm text-blue-800">
-              <p><strong>Base Labor Cost:</strong> Your making/sewing charge per unit (e.g., $45/linear meter for curtains)</p>
+              <p><strong>Making Cost:</strong> Your making/sewing charge per unit (e.g., $45/linear meter for curtains)</p>
               <p><strong>CSV Pricing Grid:</strong> For complex products like blinds where price varies by size combinations</p>
-              <p><strong>Final Price:</strong> Base cost + Fabric cost + Component costs + Your markup</p>
+              <p><strong>Final Price:</strong> Making cost + Fabric cost + Component costs + Your markup</p>
             </div>
           </div>
 
