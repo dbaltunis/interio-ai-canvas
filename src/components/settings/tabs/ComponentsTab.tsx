@@ -46,6 +46,13 @@ export const ComponentsTab = () => {
     }
   });
 
+  // Separate state for temporary input values
+  const [tempInputs, setTempInputs] = useState({
+    ringColorsInput: "",
+    ringDiametersInput: "",
+    waveOptionsInput: ""
+  });
+
   const handleAddHeading = async () => {
     if (!newHeading.name.trim()) return;
     
@@ -71,6 +78,11 @@ export const ComponentsTab = () => {
           customOptions: []
         }
       });
+      setTempInputs({
+        ringColorsInput: "",
+        ringDiametersInput: "",
+        waveOptionsInput: ""
+      });
       setIsAddingHeading(false);
       toast.success("Heading option added successfully");
     } catch (error) {
@@ -93,6 +105,14 @@ export const ComponentsTab = () => {
         customOptions: []
       }
     });
+    
+    // Set temporary input values for editing
+    setTempInputs({
+      ringColorsInput: heading.extras?.ringColors?.join(", ") || "",
+      ringDiametersInput: heading.extras?.ringDiameters?.join(", ") || "",
+      waveOptionsInput: heading.extras?.customOptions?.join(", ") || ""
+    });
+    
     setIsAddingHeading(true);
   };
 
@@ -121,6 +141,11 @@ export const ComponentsTab = () => {
           ringDiameters: [],
           customOptions: []
         }
+      });
+      setTempInputs({
+        ringColorsInput: "",
+        ringDiametersInput: "",
+        waveOptionsInput: ""
       });
       setIsAddingHeading(false);
       toast.success("Heading option updated successfully");
@@ -157,12 +182,9 @@ export const ComponentsTab = () => {
   };
 
   const handleRingColorsChange = (value: string) => {
-    setNewHeading(prev => ({ 
+    setTempInputs(prev => ({ 
       ...prev, 
-      extras: { 
-        ...prev.extras, 
-        ringColorsInput: value // Store the raw input
-      }
+      ringColorsInput: value
     }));
   };
 
@@ -172,19 +194,19 @@ export const ComponentsTab = () => {
       ...prev, 
       extras: { 
         ...prev.extras, 
-        ringColors: colors,
-        ringColorsInput: colors.join(", ") // Clean up the display
+        ringColors: colors
       }
+    }));
+    setTempInputs(prev => ({ 
+      ...prev, 
+      ringColorsInput: colors.join(", ")
     }));
   };
 
   const handleRingDiametersChange = (value: string) => {
-    setNewHeading(prev => ({ 
+    setTempInputs(prev => ({ 
       ...prev, 
-      extras: { 
-        ...prev.extras, 
-        ringDiametersInput: value // Store the raw input
-      }
+      ringDiametersInput: value
     }));
   };
 
@@ -194,19 +216,19 @@ export const ComponentsTab = () => {
       ...prev, 
       extras: { 
         ...prev.extras, 
-        ringDiameters: diameters,
-        ringDiametersInput: diameters.join(", ") // Clean up the display
+        ringDiameters: diameters
       }
+    }));
+    setTempInputs(prev => ({ 
+      ...prev, 
+      ringDiametersInput: diameters.join(", ")
     }));
   };
 
   const handleWaveOptionsChange = (value: string) => {
-    setNewHeading(prev => ({ 
+    setTempInputs(prev => ({ 
       ...prev, 
-      extras: { 
-        ...prev.extras, 
-        waveOptionsInput: value // Store the raw input
-      }
+      waveOptionsInput: value
     }));
   };
 
@@ -216,9 +238,12 @@ export const ComponentsTab = () => {
       ...prev, 
       extras: { 
         ...prev.extras, 
-        customOptions: options,
-        waveOptionsInput: options.join(", ") // Clean up the display
+        customOptions: options
       }
+    }));
+    setTempInputs(prev => ({ 
+      ...prev, 
+      waveOptionsInput: options.join(", ")
     }));
   };
 
@@ -378,7 +403,7 @@ export const ComponentsTab = () => {
                                    <Input
                                      id="ringColors"
                                      placeholder="e.g., Silver, Bronze, Black"
-                                     value={newHeading.extras.ringColorsInput || newHeading.extras.ringColors?.join(", ") || ""}
+                                     value={tempInputs.ringColorsInput}
                                      onChange={(e) => handleRingColorsChange(e.target.value)}
                                      onBlur={(e) => handleRingColorsBlur(e.target.value)}
                                    />
@@ -388,7 +413,7 @@ export const ComponentsTab = () => {
                                    <Input
                                      id="ringDiameters"
                                      placeholder="e.g., 25mm, 35mm, 40mm"
-                                     value={newHeading.extras.ringDiametersInput || newHeading.extras.ringDiameters?.join(", ") || ""}
+                                     value={tempInputs.ringDiametersInput}
                                      onChange={(e) => handleRingDiametersChange(e.target.value)}
                                      onBlur={(e) => handleRingDiametersBlur(e.target.value)}
                                    />
@@ -404,7 +429,7 @@ export const ComponentsTab = () => {
                              <Input
                                id="waveOptions"
                                placeholder="e.g., Standard Wave, Silent Gliss, Ripplefold"
-                               value={newHeading.extras.waveOptionsInput || newHeading.extras.customOptions?.join(", ") || ""}
+                               value={tempInputs.waveOptionsInput}
                                onChange={(e) => handleWaveOptionsChange(e.target.value)}
                                onBlur={(e) => handleWaveOptionsBlur(e.target.value)}
                              />
@@ -436,6 +461,11 @@ export const ComponentsTab = () => {
                             ringDiameters: [],
                             customOptions: []
                           }
+                        });
+                        setTempInputs({
+                          ringColorsInput: "",
+                          ringDiametersInput: "",
+                          waveOptionsInput: ""
                         });
                       }}
                     >
