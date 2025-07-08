@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { UserProfile } from "@/components/layout/UserProfile";
 import { BrandHeader } from "@/components/layout/BrandHeader";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { JobsPage } from "@/components/jobs/JobsPage";
 import { CalendarView } from "@/components/calendar/CalendarView";
@@ -13,8 +14,7 @@ import {
   LayoutDashboard, 
   FolderOpen, 
   Calendar,
-  Package,
-  Settings
+  Package
 } from "lucide-react";
 
 const Index = () => {
@@ -43,10 +43,6 @@ const Index = () => {
     setActiveTab(tabId);
   };
 
-  const handleSettingsClick = () => {
-    window.location.href = "/settings";
-  };
-
   const renderActiveComponent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -68,11 +64,13 @@ const Index = () => {
       <header className="bg-white border-b border-brand-secondary/20 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-8">
-              <BrandHeader size="sm" />
-              
+            {/* Left side - Logo and App Name only */}
+            <BrandHeader size="sm" />
+            
+            {/* Right side - Navigation Menu, Notifications, and User Profile */}
+            <div className="flex items-center space-x-1">
               {/* Navigation Menu */}
-              <nav className="flex space-x-1">
+              <nav className="flex space-x-1 mr-4">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -92,17 +90,11 @@ const Index = () => {
                   );
                 })}
               </nav>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={handleSettingsClick}
-                className="flex items-center space-x-2 text-brand-neutral hover:bg-brand-secondary/10 hover:text-brand-primary"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="font-medium">Settings</span>
-              </Button>
+              
+              {/* Notification Bell */}
+              <NotificationCenter />
+              
+              {/* User Profile */}
               <UserProfile />
             </div>
           </div>
