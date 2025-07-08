@@ -76,6 +76,16 @@ export const RoomCard = ({
   };
 
   const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
+    console.log("RoomCard handleSurfaceCreation called with surfaceType:", surfaceType);
+    console.log("Room data:", room);
+    console.log("Project ID:", projectId);
+    console.log("Room surfaces:", roomSurfaces);
+    
+    if (!surfaceType) {
+      console.error("No surfaceType provided!");
+      return;
+    }
+    
     await handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
   };
 

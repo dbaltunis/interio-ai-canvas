@@ -11,12 +11,23 @@ export const SurfaceCreationButtons = ({
   onCreateSurface,
   isCreating
 }: SurfaceCreationButtonsProps) => {
+  
+  const handleWindowClick = () => {
+    console.log("Window button clicked, calling onCreateSurface with 'window'");
+    onCreateSurface('window');
+  };
+
+  const handleWallClick = () => {
+    console.log("Wall button clicked, calling onCreateSurface with 'wall'");
+    onCreateSurface('wall');
+  };
+
   return (
     <div className="flex space-x-3">
       <Button
         size="sm"
         variant="outline"
-        onClick={() => onCreateSurface('window')}
+        onClick={handleWindowClick}
         disabled={isCreating}
         className="flex items-center space-x-2 bg-brand-light hover:bg-brand-secondary/10 border-brand-secondary text-brand-primary transition-all duration-200 shadow-sm hover:shadow-md"
       >
@@ -26,7 +37,7 @@ export const SurfaceCreationButtons = ({
       <Button
         size="sm"
         variant="outline"
-        onClick={() => onCreateSurface('wall')}
+        onClick={handleWallClick}
         disabled={isCreating}
         className="flex items-center space-x-2 bg-brand-light hover:bg-brand-accent/10 border-brand-accent text-brand-accent transition-all duration-200 shadow-sm hover:shadow-md"
       >

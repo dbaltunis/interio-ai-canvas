@@ -12,12 +12,24 @@ export const useSurfaceCreation = () => {
     surfaceType: 'window' | 'wall',
     roomSurfaces: any[]
   ) => {
-    console.log("Creating surface with room:", room);
-    console.log("Project ID from props:", projectId);
-    console.log("Room project_id:", room.project_id);
+    console.log("=== SURFACE CREATION DEBUG ===");
+    console.log("Room:", room);
+    console.log("Project ID:", projectId);
     console.log("Surface type:", surfaceType);
+    console.log("Room surfaces:", roomSurfaces);
     
-    if (!room.id) {
+    if (!surfaceType) {
+      console.error("CRITICAL ERROR: No surfaceType provided to handleCreateSurface!");
+      toast({
+        title: "Error",
+        description: "Surface type is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!room || !room.id) {
+      console.error("CRITICAL ERROR: No room or room ID provided!");
       toast({
         title: "Error",
         description: "Missing room information",
@@ -30,6 +42,7 @@ export const useSurfaceCreation = () => {
     const actualProjectId = room.project_id || projectId;
     
     if (!actualProjectId) {
+      console.error("CRITICAL ERROR: No project ID available!");
       toast({
         title: "Error",
         description: "Missing project information",
@@ -39,7 +52,7 @@ export const useSurfaceCreation = () => {
     }
 
     try {
-      const surfaceCount = roomSurfaces.filter(s => s.surface_type === surfaceType).length;
+      const surfaceCount = roomSurfaces?.filter(s => s.surface_type === surfaceType).length || 0;
       const surfaceName = surfaceType === 'window' 
         ? `Window ${surfaceCount + 1}`
         : `Wall ${surfaceCount + 1}`;
