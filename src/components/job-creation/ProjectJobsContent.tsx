@@ -7,9 +7,10 @@ interface ProjectJobsContentProps {
   rooms: any[];
   project: any;
   onCreateRoom: () => void;
+  isCreatingRoom: boolean;
 }
 
-export const ProjectJobsContent = ({ rooms, project, onCreateRoom }: ProjectJobsContentProps) => {
+export const ProjectJobsContent = ({ rooms, project, onCreateRoom, isCreatingRoom }: ProjectJobsContentProps) => {
   const {
     allSurfaces,
     allTreatments,
@@ -26,7 +27,7 @@ export const ProjectJobsContent = ({ rooms, project, onCreateRoom }: ProjectJobs
     <div className="min-h-[400px]">
       {rooms.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-12">
-          <EmptyRoomsState onCreateRoom={onCreateRoom} />
+          <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
         </div>
       ) : (
         <RoomsGrid
@@ -45,6 +46,7 @@ export const ProjectJobsContent = ({ rooms, project, onCreateRoom }: ProjectJobs
           setEditingRoomName={() => {}}
           onRenameRoom={handleRenameRoom}
           onCreateRoom={onCreateRoom}
+          isCreatingRoom={isCreatingRoom}
         />
       )}
     </div>

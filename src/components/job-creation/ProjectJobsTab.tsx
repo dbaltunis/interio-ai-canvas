@@ -4,8 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useRooms } from "@/hooks/useRooms";
-import { RoomsGrid } from "./RoomsGrid";
-import { EmptyRoomsState } from "./EmptyRoomsState";
+import { ProjectJobsContent } from "./ProjectJobsContent";
 import { useProjectJobsActions } from "./hooks/useProjectJobsActions";
 import { useToast } from "@/hooks/use-toast";
 
@@ -108,18 +107,12 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
           <h3 className="text-lg font-semibold">Rooms</h3>
         </div>
         
-        {rooms && rooms.length > 0 ? (
-          <RoomsGrid 
-            rooms={rooms} 
-            onCreateRoom={handleCreateRoom}
-            isCreatingRoom={isCreatingRoom}
-          />
-        ) : (
-          <EmptyRoomsState 
-            onCreateRoom={handleCreateRoom}
-            isCreatingRoom={isCreatingRoom}
-          />
-        )}
+        <ProjectJobsContent 
+          rooms={rooms || []} 
+          project={project}
+          onCreateRoom={handleCreateRoom}
+          isCreatingRoom={isCreatingRoom}
+        />
       </div>
     </div>
   );
