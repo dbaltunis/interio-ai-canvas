@@ -23,6 +23,8 @@ interface ProjectHeaderProps {
   onBack: () => void;
   onStatusChange?: (status: string) => void;
   onProjectUpdate?: (updates: any) => void;
+  onTabChange?: (tab: string) => void;
+  hasExistingQuote?: boolean;
 }
 
 export const ProjectHeader = ({ 
@@ -34,7 +36,9 @@ export const ProjectHeader = ({
   quoteId,
   onBack,
   onStatusChange,
-  onProjectUpdate 
+  onProjectUpdate,
+  onTabChange,
+  hasExistingQuote = false
 }: ProjectHeaderProps) => {
   const { data: jobStatuses } = useJobStatuses();
   const { data: teamMembers } = useTeamMembers();
@@ -100,6 +104,9 @@ export const ProjectHeader = ({
           title: "Project Started",
           description: "Job is now in progress. Track your work orders in the Workshop tab.",
         });
+        if (onTabChange) {
+          onTabChange('workshop');
+        }
         break;
       case 'completed':
         toast({
@@ -180,24 +187,39 @@ export const ProjectHeader = ({
     
     switch (action) {
       case 'view_quote':
-        navigate(`/jobs?tab=quote&project=${projectId}`);
+        // Redirect to quote tab in the current project
+        if (onTabChange) {
+          onTabChange('quote');
+        }
         toast({
           title: "Navigating to Quote",
-          description: "Opening quote view with current project data",
+          description: hasExistingQuote ? "Opening existing quote for editing" : "Creating new quote with current project data",
         });
         break;
       case 'email_quote':
-        navigate(`/jobs?tab=emails&action=compose&project=${projectId}`);
-        toast({
-          title: "Email Quote",
-          description: "Opening email composer with quote details",
-        });
+        // First go to quote tab, then show email composer
+        if (onTabChange) {
+          onTabChange('quote');
+          setTimeout(() => {
+            // This would trigger email composer in the quote tab
+            toast({
+              title: "Email Quote",
+              description: "Quote tab opened. Use the email button to send to client.",
+            });
+          }, 500);
+        }
         break;
       case 'print_quote':
-        window.print();
+        // First go to quote tab, then trigger print
+        if (onTabChange) {
+          onTabChange('quote');
+          setTimeout(() => {
+            window.print();
+          }, 500);
+        }
         toast({
           title: "Print Quote",
-          description: "Quote ready for printing",
+          description: "Opening quote for printing",
         });
         break;
       default:
@@ -333,7 +355,6 @@ export const ProjectHeader = ({
             </SelectContent>
           </Select>
 
-          {/* Calendar Event Creator */}
           <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="relative">
@@ -440,7 +461,6 @@ export const ProjectHeader = ({
             </DialogContent>
           </Dialog>
 
-          {/* Team Collaboration */}
           <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" title="Invite Team Members">
@@ -485,15 +505,20 @@ export const ProjectHeader = ({
         </div>
       </div>
 
-      {/* Status Action Dialog */}
+      {/* Enhanced Status Action Dialog */}
       <Dialog open={showStatusActionDialog} onOpenChange={setShowStatusActionDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Quote Status Actions</DialogTitle>
+            <DialogTitle>
+              {hasExistingQuote ? "Quote Status - Next Actions" : "Quote Status - Create Quote"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              You've changed the status to "Quote". What would you like to do next?
+              {hasExistingQuote 
+                ? "You have an existing quote. What would you like to do next?"
+                : "You've changed the status to 'Quote'. Let's help you create and send your quote."
+              }
             </p>
             <div className="space-y-2">
               <Button 
@@ -502,25 +527,39 @@ export const ProjectHeader = ({
                 variant="outline"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                View & Edit Quote
+                {hasExistingQuote ? "View & Edit Existing Quote" : "Create & View Quote"}
               </Button>
-              <Button 
-                onClick={() => handleQuoteAction('email_quote')} 
-                className="w-full justify-start"
-                variant="outline"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Email Quote to Client
-              </Button>
-              <Button 
-                onClick={() => handleQuoteAction('print_quote')} 
-                className="w-full justify-start"
-                variant="outline"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Print Quote
-              </Button>
+              {hasExistingQuote && (
+                <Button 
+                  onClick={() => handleQuoteAction('email_quote')} 
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email Quote to Client
+                </Button>
+              )}
+              {hasExistingQuote && (
+                <Button 
+                  onClick={() => handleQuoteAction('print_quote')} 
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Quote
+                </Button>
+              )}
             </div>
+            {!hasExistingQuote && (
+              <div className="bg-blue-50 p-3 rounded-lg text-sm">
+                <p className="font-medium text-blue-800">💡 Next Steps:</p>
+                <ol className="list-decimal list-inside mt-1 space-y-1 text-blue-700">
+                  <li>Review and complete your quote details</li>
+                  <li>Add line items from your project data</li>
+                  <li>Email or print the quote for your client</li>
+                </ol>
+              </div>
+            )}
             <div className="flex justify-end">
               <Button variant="ghost" onClick={() => setShowStatusActionDialog(false)}>
                 Cancel

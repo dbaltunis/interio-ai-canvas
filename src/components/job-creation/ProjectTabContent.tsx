@@ -1,4 +1,3 @@
-
 import { ProjectClientTab } from "./ProjectClientTab";
 import { ProjectJobsTab } from "./ProjectJobsTab";
 import { ProjectQuoteTab } from "./ProjectQuoteTab";
@@ -13,9 +12,17 @@ interface ProjectTabContentProps {
   quote?: any;
   onBack: () => void;
   onProjectUpdate?: (updatedProject: any) => void;
+  onTabChange?: (tab: string) => void;
 }
 
-export const ProjectTabContent = ({ activeTab, project, quote, onBack, onProjectUpdate }: ProjectTabContentProps) => {
+export const ProjectTabContent = ({ 
+  activeTab, 
+  project, 
+  quote, 
+  onBack, 
+  onProjectUpdate,
+  onTabChange 
+}: ProjectTabContentProps) => {
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
