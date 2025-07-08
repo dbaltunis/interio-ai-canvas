@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useRooms } from "@/hooks/useRooms";
-import { ProjectJobsContent } from "./ProjectJobsContent";
+import { ProjectTypeHandler } from "./ProjectTypeHandler";
 import { useProjectJobsActions } from "./hooks/useProjectJobsActions";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Edit2 } from "lucide-react";
@@ -47,12 +47,17 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     if (projectName.trim() !== project?.name && projectName.trim() !== '') {
       setIsUpdatingName(true);
       try {
-        await handleUpdateProjectName(projectName.trim());
+        const updatedProject = await handleUpdateProjectName(projectName.trim());
         setIsEditingName(false);
         toast({
           title: "Success",
           description: "Project name updated successfully",
         });
+        
+        // Ensure the parent component gets the updated project
+        if (onProjectUpdate && updatedProject) {
+          onProjectUpdate(updatedProject);
+        }
       } catch (error) {
         console.error('Failed to update project name:', error);
         // Revert to original name on error
@@ -162,19 +167,14 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
         </CardContent>
       </Card>
 
-      {/* Rooms Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Rooms</h3>
-        </div>
-        
-        <ProjectJobsContent 
-          rooms={rooms || []} 
-          project={project}
-          onCreateRoom={handleCreateRoom}
-          isCreatingRoom={isCreatingRoom}
-        />
-      </div>
+      {/* Project Type Handler - handles different project workflows */}
+      <ProjectTypeHandler
+        project={project}
+        rooms={rooms || []}
+        onCreateRoom={handleCreateRoom}
+        isCreatingRoom={isCreatingRoom}
+        onProjectUpdate={onProjectUpdate}
+      />
     </div>
   );
 };
