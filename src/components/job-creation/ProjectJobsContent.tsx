@@ -34,6 +34,7 @@ export const ProjectJobsContent = ({
     handleCopyRoom,
     handlePasteRoom,
     handleCreateTreatment,
+    handleChangeRoomType,
     updateRoom,
     deleteRoom
   } = useJobHandlers(project);
@@ -62,6 +63,7 @@ export const ProjectJobsContent = ({
           onRenameRoom={handleRenameRoom}
           onCreateRoom={onCreateRoom}
           isCreatingRoom={isCreatingRoom}
+          onChangeRoomType={handleChangeRoomType}
         />
       )}
     </div>
