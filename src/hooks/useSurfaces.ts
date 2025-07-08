@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,9 +35,8 @@ export const useSurfaces = (projectId?: string) => {
       console.log("Fetched surfaces for project:", projectId, "data:", data);
       return data;
     },
-    staleTime: 0, // Always refetch to ensure fresh data
-    gcTime: 0, // Don't cache
-    refetchOnWindowFocus: true,
+    enabled: !!projectId, // Only run query if projectId exists
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
 };
@@ -73,21 +73,21 @@ export const useCreateSurface = () => {
       console.log("=== SURFACE CREATION SUCCESS ===");
       console.log("Created surface data:", data);
       
-      // Invalidate all surfaces queries immediately
-      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      // Immediately update the cache with the new surface
+      queryClient.setQueryData(["surfaces", data.project_id], (oldData: any) => {
+        console.log("Updating cache with new surface:", data);
+        const newData = oldData ? [...oldData, data] : [data];
+        console.log("New cache data:", newData);
+        return newData;
+      });
       
-      // Also invalidate specific project surfaces query
-      if (data.project_id) {
-        queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
-      }
+      // Also invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
       
       // Invalidate rooms query to ensure consistency
       if (data.project_id) {
         queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
       }
-      
-      // Force refetch by clearing all surface-related cache
-      queryClient.removeQueries({ queryKey: ["surfaces"] });
       
       toast({
         title: "Success",
@@ -123,11 +123,15 @@ export const useUpdateSurface = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Force complete cache refresh
-      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      if (data.project_id) {
-        queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
-      }
+      // Update cache immediately
+      queryClient.setQueryData(["surfaces", data.project_id], (oldData: any) => {
+        if (!oldData) return [data];
+        return oldData.map((surface: any) => 
+          surface.id === data.id ? data : surface
+        );
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
     },
     onError: (error) => {
       toast({
@@ -153,10 +157,18 @@ export const useDeleteSurface = () => {
       if (error) throw error;
       return id;
     },
-    onSuccess: (deletedId, variables) => {
-      // Force complete cache refresh
+    onSuccess: (deletedId) => {
+      // Update cache immediately by removing the deleted surface
+      queryClient.setQueriesData(
+        { queryKey: ["surfaces"] },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.filter((surface: any) => surface.id !== deletedId);
+        }
+      );
+      
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      queryClient.removeQueries({ queryKey: ["surfaces"] });
+      
       toast({
         title: "Success",
         description: "Surface deleted successfully",

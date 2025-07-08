@@ -16,7 +16,17 @@ export const SurfacesList = ({
   onDeleteSurface,
   onUpdateSurface
 }: SurfacesListProps) => {
-  if (surfaces.length === 0) {
+  console.log("=== SURFACES LIST DEBUG ===");
+  console.log("Surfaces prop:", surfaces);
+  console.log("Treatments prop:", treatments);
+  console.log("Surfaces length:", surfaces?.length);
+  console.log("Surfaces array:", JSON.stringify(surfaces, null, 2));
+  
+  // Ensure surfaces is always an array
+  const safeSurfaces = Array.isArray(surfaces) ? surfaces : [];
+  
+  if (safeSurfaces.length === 0) {
+    console.log("No surfaces to display, showing empty state");
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500">
         <div className="text-center">
@@ -27,14 +37,11 @@ export const SurfacesList = ({
     );
   }
 
-  console.log("=== SURFACES LIST DEBUG ===");
-  console.log("Surfaces prop:", surfaces);
-  console.log("Treatments prop:", treatments);
-  console.log("Surfaces length:", surfaces?.length);
+  console.log("Rendering", safeSurfaces.length, "surfaces");
   
   return (
     <div className="space-y-3">
-      {surfaces.map((surface) => {
+      {safeSurfaces.map((surface) => {
         console.log("Rendering surface:", surface);
         const surfaceTreatments = treatments.filter(t => t.window_id === surface.id);
         console.log("Surface treatments for", surface.id, ":", surfaceTreatments);

@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
@@ -45,9 +46,7 @@ export const RoomCard = ({
   onChangeRoomType
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
-  const { data: allSurfaces } = useSurfaces(projectId);
-  // Use the onCreateSurface prop directly instead of useSurfaceCreation
-  const isCreating = false; // We'll get this from the parent component if needed
+  const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   
   const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
@@ -63,6 +62,13 @@ export const RoomCard = ({
     surfaceType: "",
     windowCovering: null as any
   });
+
+  console.log("=== ROOM CARD DEBUG ===");
+  console.log("Room:", room.name, "ID:", room.id);
+  console.log("Project ID:", projectId);
+  console.log("All surfaces:", allSurfaces);
+  console.log("Room surfaces:", roomSurfaces);
+  console.log("Surfaces loading:", surfacesLoading);
 
   const startEditing = () => {
     setEditingRoomId(room.id);
@@ -130,6 +136,30 @@ export const RoomCard = ({
     setCalculatorDialogOpen(false);
   };
 
+  if (surfacesLoading) {
+    return (
+      <Card className="bg-gray-100 min-h-[500px] flex flex-col">
+        <RoomHeader
+          room={room}
+          roomTotal={roomTotal}
+          editingRoomId={editingRoomId}
+          editingRoomName={editingRoomName}
+          setEditingRoomName={setEditingRoomName}
+          onStartEditing={startEditing}
+          onKeyPress={handleKeyPress}
+          onRenameRoom={onRenameRoom}
+          onCopyRoom={onCopyRoom}
+          onDeleteRoom={onDeleteRoom}
+          onChangeRoomType={onChangeRoomType}
+        />
+        
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-gray-500">Loading surfaces...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card className="bg-gray-100 min-h-[500px] flex flex-col">
@@ -151,7 +181,7 @@ export const RoomCard = ({
           <div className="space-y-4 flex-1">
             <SurfaceCreationButtons
               onCreateSurface={handleSurfaceCreation}
-              isCreating={isCreating}
+              isCreating={false}
             />
 
             <SurfacesList
