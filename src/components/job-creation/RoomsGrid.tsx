@@ -1,6 +1,8 @@
 
 import { RoomCard } from "./RoomCard";
 import { EmptyRoomsState } from "./EmptyRoomsState";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 interface RoomsGridProps {
   rooms: any[];
@@ -40,31 +42,49 @@ export const RoomsGrid = ({
   isCreatingRoom
 }: RoomsGridProps) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {!rooms || rooms.length === 0 ? (
-        <div className="lg:col-span-2">
-          <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {!rooms || rooms.length === 0 ? (
+          <div className="lg:col-span-2">
+            <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
+          </div>
+        ) : (
+          rooms.map((room) => (
+            <RoomCard 
+              key={room.id} 
+              room={room} 
+              projectId={projectId}
+              onUpdateRoom={onUpdateRoom}
+              onDeleteRoom={onDeleteRoom}
+              onCreateTreatment={onCreateTreatment}
+              onCreateSurface={onCreateSurface}
+              onUpdateSurface={onUpdateSurface}
+              onDeleteSurface={onDeleteSurface}
+              onCopyRoom={onCopyRoom}
+              editingRoomId={editingRoomId}
+              setEditingRoomId={setEditingRoomId}
+              editingRoomName={editingRoomName}
+              setEditingRoomName={setEditingRoomName}
+              onRenameRoom={onRenameRoom}
+            />
+          ))
+        )}
+      </div>
+      
+      {/* Add Room Button - show when there are existing rooms */}
+      {rooms && rooms.length > 0 && (
+        <div className="flex justify-center">
+          <Button
+            onClick={onCreateRoom}
+            disabled={isCreatingRoom}
+            variant="outline"
+            size="lg"
+            className="flex items-center space-x-2 px-8 py-4 border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5"
+          >
+            <Plus className="h-5 w-5" />
+            <span>{isCreatingRoom ? 'Adding Room...' : 'Add Another Room'}</span>
+          </Button>
         </div>
-      ) : (
-        rooms.map((room) => (
-          <RoomCard 
-            key={room.id} 
-            room={room} 
-            projectId={projectId}
-            onUpdateRoom={onUpdateRoom}
-            onDeleteRoom={onDeleteRoom}
-            onCreateTreatment={onCreateTreatment}
-            onCreateSurface={onCreateSurface}
-            onUpdateSurface={onUpdateSurface}
-            onDeleteSurface={onDeleteSurface}
-            onCopyRoom={onCopyRoom}
-            editingRoomId={editingRoomId}
-            setEditingRoomId={setEditingRoomId}
-            editingRoomName={editingRoomName}
-            setEditingRoomName={setEditingRoomName}
-            onRenameRoom={onRenameRoom}
-          />
-        ))
       )}
     </div>
   );
