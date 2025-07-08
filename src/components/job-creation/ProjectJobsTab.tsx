@@ -16,7 +16,7 @@ interface ProjectJobsTabProps {
 }
 
 export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps) => {
-  const { data: rooms } = useRooms(project.id);
+  const { data: rooms } = useRooms(project?.project_id || project?.id);
   const { toast } = useToast();
   const [projectName, setProjectName] = useState(project?.name || "");
   const [isEditingName, setIsEditingName] = useState(false);
