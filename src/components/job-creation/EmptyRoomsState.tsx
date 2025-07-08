@@ -3,9 +3,10 @@ import { Home } from "lucide-react";
 
 interface EmptyRoomsStateProps {
   onCreateRoom: () => void;
+  isCreatingRoom: boolean;
 }
 
-export const EmptyRoomsState = ({ onCreateRoom }: EmptyRoomsStateProps) => {
+export const EmptyRoomsState = ({ onCreateRoom, isCreatingRoom }: EmptyRoomsStateProps) => {
   return (
     <div className="text-center py-12">
       <Home className="mx-auto h-16 w-16 text-gray-300 mb-6" />
@@ -14,7 +15,7 @@ export const EmptyRoomsState = ({ onCreateRoom }: EmptyRoomsStateProps) => {
         Add your first room to start designing window treatments for this project
       </p>
       <p className="text-sm text-gray-400">
-        Click the "Add Room" button above to get started
+        {isCreatingRoom ? "Creating room..." : "Click the \"Add Room\" button above to get started"}
       </p>
     </div>
   );

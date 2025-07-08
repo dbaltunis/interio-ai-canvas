@@ -18,6 +18,7 @@ interface RoomsGridProps {
   setEditingRoomName: (name: string) => void;
   onRenameRoom: (roomId: string, newName: string) => void;
   onCreateRoom: () => void;
+  isCreatingRoom: boolean;
 }
 
 export const RoomsGrid = ({ 
@@ -35,13 +36,14 @@ export const RoomsGrid = ({
   editingRoomName,
   setEditingRoomName,
   onRenameRoom,
-  onCreateRoom
+  onCreateRoom,
+  isCreatingRoom
 }: RoomsGridProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {!rooms || rooms.length === 0 ? (
         <div className="lg:col-span-2">
-          <EmptyRoomsState onCreateRoom={onCreateRoom} />
+          <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
         </div>
       ) : (
         rooms.map((room) => (
