@@ -27,10 +27,17 @@ export const SurfacesList = ({
     );
   }
 
+  console.log("=== SURFACES LIST DEBUG ===");
+  console.log("Surfaces prop:", surfaces);
+  console.log("Treatments prop:", treatments);
+  console.log("Surfaces length:", surfaces?.length);
+  
   return (
     <div className="space-y-3">
       {surfaces.map((surface) => {
+        console.log("Rendering surface:", surface);
         const surfaceTreatments = treatments.filter(t => t.window_id === surface.id);
+        console.log("Surface treatments for", surface.id, ":", surfaceTreatments);
         return (
           <SurfaceCard
             key={surface.id}

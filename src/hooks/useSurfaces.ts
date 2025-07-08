@@ -6,6 +6,9 @@ export const useSurfaces = (projectId?: string) => {
   return useQuery({
     queryKey: ["surfaces", projectId],
     queryFn: async () => {
+      console.log("=== FETCHING SURFACES ===");
+      console.log("Project ID:", projectId);
+      
       if (!projectId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
@@ -17,6 +20,7 @@ export const useSurfaces = (projectId?: string) => {
           .order("created_at");
         
         if (error) throw error;
+        console.log("Fetched surfaces (no project):", data);
         return data;
       }
       
@@ -27,8 +31,13 @@ export const useSurfaces = (projectId?: string) => {
         .order("created_at");
       
       if (error) throw error;
+      console.log("Fetched surfaces for project:", projectId, "data:", data);
       return data;
     },
+    staleTime: 0, // Always refetch to ensure fresh data
+    gcTime: 0, // Don't cache
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
@@ -61,15 +70,24 @@ export const useCreateSurface = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidate all surfaces queries
+      console.log("=== SURFACE CREATION SUCCESS ===");
+      console.log("Created surface data:", data);
+      
+      // Invalidate all surfaces queries immediately
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      
+      // Also invalidate specific project surfaces query
       if (data.project_id) {
         queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
       }
       
-      // Also invalidate treatments and rooms queries to ensure UI consistency
-      queryClient.invalidateQueries({ queryKey: ["treatments"] });
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      // Invalidate rooms query to ensure consistency
+      if (data.project_id) {
+        queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
+      }
+      
+      // Force refetch by clearing all surface-related cache
+      queryClient.removeQueries({ queryKey: ["surfaces"] });
       
       toast({
         title: "Success",
@@ -105,7 +123,11 @@ export const useUpdateSurface = () => {
       return data;
     },
     onSuccess: (data) => {
+      // Force complete cache refresh
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      if (data.project_id) {
+        queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
+      }
     },
     onError: (error) => {
       toast({
@@ -131,8 +153,10 @@ export const useDeleteSurface = () => {
       if (error) throw error;
       return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId, variables) => {
+      // Force complete cache refresh
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      queryClient.removeQueries({ queryKey: ["surfaces"] });
       toast({
         title: "Success",
         description: "Surface deleted successfully",
