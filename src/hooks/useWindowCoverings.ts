@@ -22,6 +22,9 @@ export const useWindowCoverings = () => {
   const { toast } = useToast();
 
   const fetchWindowCoverings = async () => {
+    console.log("=== FETCHING WINDOW COVERINGS ===");
+    setIsLoading(true);
+    
     try {
       const { data, error } = await supabase
         .from('window_coverings')
@@ -39,7 +42,12 @@ export const useWindowCoverings = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log("Window coverings query result:", { data, error });
+
+      if (error) {
+        console.error("Error fetching window coverings:", error);
+        throw error;
+      }
 
       // Get options count for each window covering
       const windowCoveringsWithCounts = await Promise.all(
@@ -65,6 +73,9 @@ export const useWindowCoverings = () => {
         })
       );
 
+      console.log("Final window coverings with counts:", windowCoveringsWithCounts);
+      console.log("Active window coverings:", windowCoveringsWithCounts.filter(wc => wc.active));
+      
       setWindowCoverings(windowCoveringsWithCounts);
     } catch (error) {
       console.error('Error fetching window coverings:', error);
@@ -210,8 +221,15 @@ export const useWindowCoverings = () => {
   };
 
   useEffect(() => {
+    console.log("useWindowCoverings - Initial fetch");
     fetchWindowCoverings();
   }, []);
+
+  console.log("useWindowCoverings hook state:", { 
+    windowCoveringsCount: windowCoverings?.length || 0, 
+    isLoading,
+    activeCount: windowCoverings?.filter(wc => wc.active)?.length || 0
+  });
 
   return {
     windowCoverings,

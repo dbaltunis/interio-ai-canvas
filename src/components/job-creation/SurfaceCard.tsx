@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,31 +44,42 @@ export const SurfaceCard = ({
   };
 
   const handleTreatmentTypeSelect = (treatmentType: string) => {
-    console.log("handleTreatmentTypeSelect called with:", treatmentType);
+    console.log("=== SURFACE CARD SELECTION ===");
+    console.log("Selected treatment type:", treatmentType);
+    console.log("Available window coverings:", windowCoverings);
+    
     const windowCovering = windowCoverings?.find(wc => wc.name === treatmentType);
-    console.log("Found windowCovering:", windowCovering);
+    console.log("Found matching window covering:", windowCovering);
     
     if (windowCovering) {
-      // Call immediately without delay
+      console.log("Calling onAddTreatment with window covering data");
       onAddTreatment(surface.id, treatmentType, windowCovering);
     } else {
       console.error("No window covering found for:", treatmentType);
+      console.log("Creating basic treatment without window covering");
+      onAddTreatment(surface.id, treatmentType);
     }
   };
 
-  // Filter window coverings based on surface type
+  // Get available window coverings - show ALL active window coverings
   const getAvailableWindowCoverings = () => {
-    if (windowCoveringsLoading || !windowCoverings) return [];
+    console.log("=== FILTERING WINDOW COVERINGS ===");
+    console.log("Window coverings loading:", windowCoveringsLoading);
+    console.log("Window coverings data:", windowCoverings);
     
-    return windowCoverings.filter(wc => {
-      if (surface.surface_type === 'wall') {
-        // For walls, show only wall coverings
-        return wc.active;
-      } else {
-        // For windows, show only window coverings
-        return wc.active;
-      }
+    if (windowCoveringsLoading || !windowCoverings) {
+      console.log("Still loading or no data");
+      return [];
+    }
+    
+    // Show all active window coverings regardless of surface type
+    const filtered = windowCoverings.filter(wc => {
+      console.log(`Checking window covering: ${wc.name}, active: ${wc.active}`);
+      return wc.active === true;
     });
+    
+    console.log("Filtered window coverings:", filtered);
+    return filtered;
   };
 
   const availableWindowCoverings = getAvailableWindowCoverings();
@@ -77,6 +87,11 @@ export const SurfaceCard = ({
   const formatCurrency = (amount: number) => {
     return `$${amount.toFixed(2)}`;
   };
+
+  console.log("=== SURFACE CARD RENDER ===");
+  console.log("Surface:", surface);
+  console.log("Available window coverings count:", availableWindowCoverings.length);
+  console.log("Window coverings loading:", windowCoveringsLoading);
 
   return (
     <Card className="mb-4 border-l-4 border-l-blue-500">
@@ -248,18 +263,14 @@ export const SurfaceCard = ({
           
           <Select onValueChange={handleTreatmentTypeSelect}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder={
-                surface.surface_type === 'wall' 
-                  ? "Add wall covering" 
-                  : "Add window covering"
-              } />
+              <SelectValue placeholder="Add window covering" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border border-gray-300 shadow-lg z-50">
               {windowCoveringsLoading ? (
-                <SelectItem value="loading" disabled>Loading...</SelectItem>
+                <SelectItem value="loading" disabled>Loading window coverings...</SelectItem>
               ) : availableWindowCoverings.length > 0 ? (
                 availableWindowCoverings.map((wc) => (
-                  <SelectItem key={wc.id} value={wc.name}>
+                  <SelectItem key={wc.id} value={wc.name} className="hover:bg-gray-100">
                     <div className="flex items-center justify-between w-full">
                       <span>{wc.name}</span>
                       {wc.making_cost_id && (
@@ -272,7 +283,7 @@ export const SurfaceCard = ({
                 ))
               ) : (
                 <SelectItem value="none" disabled>
-                  No {surface.surface_type === 'wall' ? 'wall' : 'window'} coverings available
+                  No window coverings available. Create them in Settings → Products → Window Coverings
                 </SelectItem>
               )}
             </SelectContent>
