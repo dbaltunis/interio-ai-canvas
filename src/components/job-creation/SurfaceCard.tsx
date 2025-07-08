@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Plus } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 
 interface SurfaceCardProps {
@@ -25,20 +24,13 @@ export const SurfaceCard = ({
 }: SurfaceCardProps) => {
   const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
   const [isEditing, setIsEditing] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [editData, setEditData] = useState({
     name: surface.name,
     width: surface.width || surface.surface_width || 0,
     height: surface.height || surface.surface_height || 0,
     surface_type: surface.surface_type || 'window'
   });
-
-  // Debug window coverings
-  console.log("=== SURFACE CARD WINDOW COVERINGS DEBUG ===");
-  console.log("Window coverings loading:", windowCoveringsLoading);
-  console.log("Window coverings array:", windowCoverings);
-  console.log("Window coverings count:", windowCoverings?.length);
-  console.log("Active window coverings:", windowCoverings?.filter(wc => wc.active));
-  console.log("Active count:", windowCoverings?.filter(wc => wc.active)?.length);
 
   const surfaceTotal = treatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
@@ -51,46 +43,18 @@ export const SurfaceCard = ({
     return type === 'wall' ? '🧱' : '🪟';
   };
 
-  const handleTreatmentTypeSelect = (treatmentType: string) => {
-    console.log("=== SURFACE CARD TREATMENT SELECTION ===");
-    console.log("Selected treatment type:", treatmentType);
-    console.log("Available window coverings:", windowCoverings);
-    
-    const windowCovering = windowCoverings?.find(wc => wc.name === treatmentType && wc.active);
-    console.log("Found matching window covering:", windowCovering);
-    
-    if (windowCovering) {
-      console.log("✅ Using window covering data from settings:", windowCovering.name);
-      // Pass the complete window covering data
-      onAddTreatment(surface.id, treatmentType, windowCovering);
-    } else {
-      console.log("⚠️ No active window covering found, creating basic treatment");
-      onAddTreatment(surface.id, treatmentType);
-    }
+  const handleTemplateSelect = (windowCovering: any) => {
+    console.log("Selected template:", windowCovering);
+    onAddTreatment(surface.id, windowCovering.name, windowCovering);
+    setShowTemplates(false);
   };
 
-  // Get available window coverings from Product Templates (Settings)
   const getAvailableWindowCoverings = () => {
-    console.log("=== GETTING WINDOW COVERINGS FROM SETTINGS ===");
-    console.log("Window coverings loading:", windowCoveringsLoading);
-    console.log("Total window coverings:", windowCoverings?.length || 0);
-    
     if (windowCoveringsLoading || !windowCoverings) {
-      console.log("Still loading window coverings...");
       return [];
     }
     
-    // Filter for active window coverings only
-    const activeWindowCoverings = windowCoverings?.filter(wc => {
-      const isActive = wc.active === true;
-      console.log(`Window covering: ${wc.name}, active: ${wc.active}, included: ${isActive}`);
-      return isActive;
-    }) || [];
-    
-    console.log("✅ Active window coverings found:", activeWindowCoverings.length);
-    console.log("Active window covering names:", activeWindowCoverings.map(wc => wc.name));
-    
-    return activeWindowCoverings;
+    return windowCoverings?.filter(wc => wc.active === true) || [];
   };
 
   const availableWindowCoverings = getAvailableWindowCoverings();
@@ -99,100 +63,101 @@ export const SurfaceCard = ({
     return `$${amount.toFixed(2)}`;
   };
 
-  console.log("=== SURFACE CARD RENDER DEBUG ===");
-  console.log("Surface:", surface?.name);
-  console.log("Window coverings loading:", windowCoveringsLoading);
-  console.log("Window coverings raw data:", windowCoverings);
-  console.log("Available window coverings for dropdown:", availableWindowCoverings.length);
-  console.log("Window covering names:", availableWindowCoverings.map(wc => wc.name));
-  console.log("=== END SURFACE CARD DEBUG ===");
-
   return (
-    <Card className="mb-4 border-l-4 border-l-blue-500">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-lg">{getSurfaceIcon(surface.surface_type || 'window')}</span>
-            {isEditing ? (
-              <div className="flex items-center space-x-2">
-                <Input
-                  value={editData.name}
-                  onChange={(e) => setEditData({...editData, name: e.target.value})}
-                  className="w-32"
-                />
-                <Select 
-                  value={editData.surface_type} 
-                  onValueChange={(value) => setEditData({...editData, surface_type: value})}
+    <>
+      <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader className="pb-4 bg-white/80 backdrop-blur-sm rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md">
+                {getSurfaceIcon(surface.surface_type || 'window')}
+              </div>
+              {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={editData.name}
+                    onChange={(e) => setEditData({...editData, name: e.target.value})}
+                    className="w-32 border-blue-300 focus:border-blue-500"
+                  />
+                  <Select 
+                    value={editData.surface_type} 
+                    onValueChange={(value) => setEditData({...editData, surface_type: value})}
+                  >
+                    <SelectTrigger className="w-28 border-blue-300">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="window">Window</SelectItem>
+                      <SelectItem value="wall">Wall</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <CardTitle className="text-xl text-blue-900 font-bold">{surface.name}</CardTitle>
+                  <Badge variant="outline" className="text-sm bg-blue-100 text-blue-800 border-blue-300">
+                    {surface.surface_type === 'wall' ? 'Wall' : 'Window'}
+                  </Badge>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="text-right">
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(surfaceTotal)}</div>
+                <div className="text-sm text-gray-500">{treatments.length} treatment{treatments.length !== 1 ? 's' : ''}</div>
+              </div>
+              <div className="flex space-x-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                  className="hover:bg-blue-100"
                 >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="window">Window</SelectItem>
-                    <SelectItem value="wall">Wall</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onDeleteSurface(surface.id)}
+                  className="hover:bg-red-100 text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
-            ) : (
+            </div>
+          </div>
+          
+          {isEditing && (
+            <div className="grid grid-cols-2 gap-3 mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div>
-                <CardTitle className="text-lg">{surface.name}</CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  {surface.surface_type === 'wall' ? 'Wall' : 'Window'}
-                </Badge>
+                <label className="text-sm font-medium text-blue-900">Width</label>
+                <Input
+                  type="number"
+                  value={editData.width}
+                  onChange={(e) => setEditData({...editData, width: parseFloat(e.target.value) || 0})}
+                  className="h-9 border-blue-300 focus:border-blue-500"
+                />
               </div>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-green-600">{formatCurrency(surfaceTotal)}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onDeleteSurface(surface.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+              <div>
+                <label className="text-sm font-medium text-blue-900">Height</label>
+                <Input
+                  type="number"
+                  value={editData.height}
+                  onChange={(e) => setEditData({...editData, height: parseFloat(e.target.value) || 0})}
+                  className="h-9 border-blue-300 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+        </CardHeader>
         
-        {isEditing && (
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div>
-              <label className="text-xs text-gray-500">Width</label>
-              <Input
-                type="number"
-                value={editData.width}
-                onChange={(e) => setEditData({...editData, width: parseFloat(e.target.value) || 0})}
-                className="h-8"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">Height</label>
-              <Input
-                type="number"
-                value={editData.height}
-                onChange={(e) => setEditData({...editData, height: parseFloat(e.target.value) || 0})}
-                className="h-8"
-              />
-            </div>
-          </div>
-        )}
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-3">
+        <CardContent className="p-6 space-y-4">
+          {/* Existing Treatments */}
           {treatments.map((treatment) => (
-            <div key={treatment.id} className="border rounded-lg p-3 bg-white">
-              <div className="flex items-start space-x-3">
-                {/* Treatment Image */}
+            <div key={treatment.id} className="border-2 border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start space-x-4">
                 {treatment.window_covering?.image_url && (
-                  <div className="w-16 h-16 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border-2 border-gray-200">
                     <img 
                       src={treatment.window_covering.image_url} 
                       alt={treatment.product_name}
@@ -201,13 +166,12 @@ export const SurfaceCard = ({
                   </div>
                 )}
                 
-                {/* Treatment Details */}
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-semibold text-gray-900 text-lg">
                       {treatment.product_name || treatment.treatment_type}
                     </h4>
-                    <span className="font-bold text-green-600">
+                    <span className="font-bold text-green-600 text-lg">
                       {formatCurrency(treatment.total_price || 0)}
                     </span>
                   </div>
@@ -275,58 +239,109 @@ export const SurfaceCard = ({
             </div>
           ))}
           
-          {/* ADD WINDOW COVERING DROPDOWN - SHOWS PRODUCTS FROM SETTINGS */}
-          <Select onValueChange={handleTreatmentTypeSelect}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Add window covering from Product Templates" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-300 shadow-lg z-50 max-h-96 overflow-y-auto">
+          {/* Add Treatment Button */}
+          <Button
+            onClick={() => setShowTemplates(true)}
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add Treatment</span>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Product Templates Modal */}
+      {showTemplates && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+              <h2 className="text-2xl font-bold">Select Treatment Type</h2>
+              <p className="text-blue-100 mt-1">Choose from your configured product templates</p>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
               {windowCoveringsLoading ? (
-                <SelectItem value="loading" disabled>Loading window coverings...</SelectItem>
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
               ) : availableWindowCoverings.length > 0 ? (
-                <>
-                  <div className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-50">
-                    Product Templates from Settings ({availableWindowCoverings.length} available)
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {availableWindowCoverings.map((wc) => (
-                    <SelectItem key={wc.id} value={wc.name} className="hover:bg-gray-100 py-2">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{wc.name}</span>
-                          {wc.description && (
-                            <span className="text-xs text-gray-500 truncate max-w-xs">
-                              {wc.description}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 ml-2">
-                          {wc.making_cost_id && (
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                              Smart Calculator
-                            </span>
-                          )}
-                          <span className="text-xs text-gray-600">
-                            {wc.margin_percentage}% margin
-                          </span>
-                        </div>
+                    <div
+                      key={wc.id}
+                      onClick={() => handleTemplateSelect(wc)}
+                      className="border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all duration-200 bg-white hover:bg-blue-50 group"
+                    >
+                      <div className="aspect-square w-full bg-gray-100 rounded-lg mb-3 overflow-hidden border border-gray-200">
+                        {wc.image_url ? (
+                          <img 
+                            src={wc.image_url} 
+                            alt={wc.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-6xl">
+                            🪟
+                          </div>
+                        )}
                       </div>
-                    </SelectItem>
-                  ))}
-                </>
-              ) : (
-                <SelectItem value="none" disabled>
-                  <div className="text-center py-2">
-                    <div className="font-medium text-gray-700">No window coverings found</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Create window coverings in Settings → Product Templates → Window Coverings
+                      
+                      <h3 className="font-semibold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                        {wc.name}
+                      </h3>
+                      
+                      {wc.description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {wc.description}
+                        </p>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Badge variant="outline" className="text-xs">
+                          {wc.fabrication_pricing_method?.replace('-', ' ') || 'Standard'}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {wc.margin_percentage}% margin
+                        </Badge>
+                        {wc.making_cost_id && (
+                          <Badge className="text-xs bg-green-100 text-green-800">
+                            Smart Calculator
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {wc.unit_price && (
+                        <div className="text-right">
+                          <span className="font-semibold text-gray-900">
+                            ${wc.unit_price}
+                          </span>
+                          <span className="text-xs text-gray-500 ml-1">base price</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </SelectItem>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">📋</div>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No Product Templates Found</h3>
+                  <p className="text-gray-500">Create window covering templates in Settings → Product Templates</p>
+                </div>
               )}
-            </SelectContent>
-          </Select>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <Button 
+                onClick={() => setShowTemplates(false)}
+                variant="outline"
+                className="w-full border-gray-300 hover:bg-gray-100"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 };
