@@ -56,10 +56,13 @@ export const RoomCard = ({
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
   
-  const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
-  const [selectedSurfaceId, setSelectedSurfaceId] = useState("");
-  const [selectedSurfaceType, setSelectedSurfaceType] = useState("");
-  const [selectedWindowCovering, setSelectedWindowCovering] = useState<any>(null);
+  // Store current form values directly
+  const [currentFormData, setCurrentFormData] = useState({
+    treatmentType: "",
+    surfaceId: "",
+    surfaceType: "",
+    windowCovering: null as any
+  });
 
   const startEditing = () => {
     setEditingRoomId(room.id);
@@ -97,41 +100,38 @@ export const RoomCard = ({
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
+    console.log("=== ROOM CARD - handleAddTreatment ===");
     console.log("handleAddTreatment called with:", { surfaceId, treatmentType, windowCovering });
     const surface = roomSurfaces.find(s => s.id === surfaceId);
     console.log("Found surface:", surface);
     
-    // Set all state synchronously
-    setSelectedSurfaceId(surfaceId);
-    setSelectedTreatmentType(treatmentType);
-    setSelectedSurfaceType(surface?.surface_type || 'window');
-    setSelectedWindowCovering(windowCovering);
-    
-    console.log("About to open form with:", {
-      surfaceId,
+    const formData = {
       treatmentType,
+      surfaceId,
       surfaceType: surface?.surface_type || 'window',
       windowCovering
-    });
+    };
     
-    // Use setTimeout to ensure state updates are processed
-    setTimeout(() => {
-      // Check if window covering has making cost - use calculator if it does
-      if (windowCovering?.making_cost_id) {
-        setCalculatorDialogOpen(true);
-      } else {
-        setPricingFormOpen(true);
-      }
-    }, 10);
+    console.log("Setting current form data:", formData);
+    setCurrentFormData(formData);
+    
+    // Check if window covering has making cost - use calculator if it does
+    if (windowCovering?.making_cost_id) {
+      console.log("Opening calculator dialog");
+      setCalculatorDialogOpen(true);
+    } else {
+      console.log("Opening pricing form");
+      setPricingFormOpen(true);
+    }
   };
 
   const handlePricingFormSave = (treatmentData: any) => {
-    onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
+    onCreateTreatment(room.id, currentFormData.surfaceId, currentFormData.treatmentType, treatmentData);
     setPricingFormOpen(false);
   };
 
   const handleCalculatorSave = (treatmentData: any) => {
-    onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
+    onCreateTreatment(room.id, currentFormData.surfaceId, currentFormData.treatmentType, treatmentData);
     setCalculatorDialogOpen(false);
   };
 
@@ -174,9 +174,9 @@ export const RoomCard = ({
         isOpen={pricingFormOpen}
         onClose={() => setPricingFormOpen(false)}
         onSave={handlePricingFormSave}
-        treatmentType={selectedTreatmentType}
-        surfaceType={selectedSurfaceType}
-        windowCovering={selectedWindowCovering}
+        treatmentType={currentFormData.treatmentType}
+        surfaceType={currentFormData.surfaceType}
+        windowCovering={currentFormData.windowCovering}
         projectId={projectId}
       />
 
@@ -184,7 +184,7 @@ export const RoomCard = ({
         isOpen={calculatorDialogOpen}
         onClose={() => setCalculatorDialogOpen(false)}
         onSave={handleCalculatorSave}
-        treatmentType={selectedTreatmentType}
+        treatmentType={currentFormData.treatmentType}
       />
     </>
   );

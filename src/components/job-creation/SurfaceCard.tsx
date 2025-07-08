@@ -32,6 +32,14 @@ export const SurfaceCard = ({
     surface_type: surface.surface_type || 'window'
   });
 
+  // Debug window coverings
+  console.log("=== SURFACE CARD WINDOW COVERINGS DEBUG ===");
+  console.log("Window coverings loading:", windowCoveringsLoading);
+  console.log("Window coverings array:", windowCoverings);
+  console.log("Window coverings count:", windowCoverings?.length);
+  console.log("Active window coverings:", windowCoverings?.filter(wc => wc.active));
+  console.log("Active count:", windowCoverings?.filter(wc => wc.active)?.length);
+
   const surfaceTotal = treatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
   const handleSave = () => {
@@ -73,11 +81,11 @@ export const SurfaceCard = ({
     }
     
     // Filter for active window coverings only
-    const activeWindowCoverings = windowCoverings.filter(wc => {
+    const activeWindowCoverings = windowCoverings?.filter(wc => {
       const isActive = wc.active === true;
       console.log(`Window covering: ${wc.name}, active: ${wc.active}, included: ${isActive}`);
       return isActive;
-    });
+    }) || [];
     
     console.log("✅ Active window coverings found:", activeWindowCoverings.length);
     console.log("Active window covering names:", activeWindowCoverings.map(wc => wc.name));
@@ -94,8 +102,10 @@ export const SurfaceCard = ({
   console.log("=== SURFACE CARD RENDER DEBUG ===");
   console.log("Surface:", surface?.name);
   console.log("Window coverings loading:", windowCoveringsLoading);
+  console.log("Window coverings raw data:", windowCoverings);
   console.log("Available window coverings for dropdown:", availableWindowCoverings.length);
   console.log("Window covering names:", availableWindowCoverings.map(wc => wc.name));
+  console.log("=== END SURFACE CARD DEBUG ===");
 
   return (
     <Card className="mb-4 border-l-4 border-l-blue-500">

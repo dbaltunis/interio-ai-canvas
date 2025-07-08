@@ -243,6 +243,19 @@ export const useWindowCoverings = () => {
     fetchWindowCoverings();
   }, []);
 
+  // Also run when auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          fetchWindowCoverings();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   console.log("useWindowCoverings hook state:", { 
     windowCoveringsCount: windowCoverings?.length || 0, 
     isLoading,

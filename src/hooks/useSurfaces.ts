@@ -61,10 +61,16 @@ export const useCreateSurface = () => {
       return data;
     },
     onSuccess: (data) => {
+      // Invalidate all surfaces queries
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       if (data.project_id) {
         queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
       }
+      
+      // Also invalidate treatments and rooms queries to ensure UI consistency
+      queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      
       toast({
         title: "Success",
         description: "Window created successfully",
