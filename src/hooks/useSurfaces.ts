@@ -53,10 +53,8 @@ export const useCreateSurface = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      toast({
-        title: "Success",
-        description: "Surface created successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
+      // Don't show toast here as it's already shown in useSurfaceCreation
     },
     onError: (error) => {
       console.error("Create surface error:", error);

@@ -75,8 +75,8 @@ export const RoomCard = ({
     }
   };
 
-  const handleSurfaceCreation = (surfaceType: 'window' | 'wall') => {
-    handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
+  const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
+    await handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
