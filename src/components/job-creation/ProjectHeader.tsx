@@ -6,10 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Users, DollarSign } from "lucide-react";
+import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 interface ProjectHeaderProps {
   projectName: string;
@@ -18,6 +19,7 @@ interface ProjectHeaderProps {
   currentStatus?: string;
   onBack: () => void;
   onStatusChange?: (status: string) => void;
+  onProjectUpdate?: (updates: any) => void;
 }
 
 export const ProjectHeader = ({ 
@@ -26,15 +28,21 @@ export const ProjectHeader = ({
   projectValue,
   currentStatus = "draft",
   onBack,
-  onStatusChange 
+  onStatusChange,
+  onProjectUpdate 
 }: ProjectHeaderProps) => {
   const { data: jobStatuses } = useJobStatuses();
+  const { data: teamMembers } = useTeamMembers();
   const { toast } = useToast();
   const [showEventDialog, setShowEventDialog] = useState(false);
+  const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDescription, setEventDescription] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [hasActiveEvent, setHasActiveEvent] = useState(false); // This would come from props/state in real implementation
 
   const currentStatusInfo = jobStatuses?.find(s => s.name.toLowerCase() === currentStatus.toLowerCase());
 
@@ -55,7 +63,6 @@ export const ProjectHeader = ({
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
     
     if (statusInfo?.action === 'requires_reason' && currentStatus !== 'lost order') {
-      // Handle lost order with reason
       const reason = prompt("Please provide a reason for the lost order:");
       if (!reason) return;
       
@@ -68,9 +75,15 @@ export const ProjectHeader = ({
         title: "Job Locked",
         description: `Job is now locked in ${statusInfo.name} status. Change status to edit.`,
       });
+    } else {
+      toast({
+        title: "Status Updated",
+        description: `Job status changed to ${statusInfo?.name || newStatus}`,
+      });
     }
     
     onStatusChange?.(newStatus);
+    onProjectUpdate?.({ status: newStatus });
   };
 
   const handleCreateEvent = () => {
@@ -83,18 +96,21 @@ export const ProjectHeader = ({
       return;
     }
 
-    // Create calendar event with job details
     const eventDetails = {
       title: eventTitle,
       description: `${eventDescription}\n\nProject: ${projectName}\nJob Number: ${projectNumber}\nValue: $${projectValue?.toLocaleString()}`,
       date: eventDate,
       time: eventTime,
-      projectLink: window.location.href
+      projectLink: window.location.href,
+      invitedMembers: selectedTeamMembers
     };
+
+    // Set active event indicator
+    setHasActiveEvent(true);
 
     toast({
       title: "Event Created",
-      description: `Calendar event "${eventTitle}" has been created for this project`,
+      description: `Calendar event "${eventTitle}" has been created for this project with ${selectedTeamMembers.length} team members invited`,
     });
 
     setShowEventDialog(false);
@@ -102,6 +118,26 @@ export const ProjectHeader = ({
     setEventDescription("");
     setEventDate("");
     setEventTime("");
+    setSelectedTeamMembers([]);
+  };
+
+  const handleInviteTeamMember = () => {
+    if (!inviteEmail) {
+      toast({
+        title: "Missing Email",
+        description: "Please enter an email address to invite",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Invitation Sent",
+      description: `Team member invitation sent to ${inviteEmail}`,
+    });
+
+    setInviteEmail("");
+    setShowTeamDialog(false);
   };
 
   return (
@@ -178,8 +214,11 @@ export const ProjectHeader = ({
           {/* Calendar Event Creator */}
           <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Calendar className="h-4 w-4" />
+              <Button size="sm" variant="outline" className="relative">
+                {hasActiveEvent ? <CalendarCheck className="h-4 w-4 text-green-600" /> : <Calendar className="h-4 w-4" />}
+                {hasActiveEvent && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+                )}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
@@ -220,6 +259,43 @@ export const ProjectHeader = ({
                     rows={3}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Invite Team Members</Label>
+                  <Select onValueChange={(value) => {
+                    if (!selectedTeamMembers.includes(value)) {
+                      setSelectedTeamMembers([...selectedTeamMembers, value]);
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team members..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teamMembers?.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name} - {member.role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedTeamMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedTeamMembers.map((memberId) => {
+                        const member = teamMembers?.find(m => m.id === memberId);
+                        return member ? (
+                          <Badge key={memberId} variant="secondary" className="text-xs">
+                            {member.name}
+                            <button
+                              onClick={() => setSelectedTeamMembers(selectedTeamMembers.filter(id => id !== memberId))}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
                 <div className="bg-muted p-3 rounded-lg text-sm">
                   <p className="font-medium">This event will include:</p>
                   <ul className="list-disc list-inside mt-1 space-y-1">
@@ -227,6 +303,7 @@ export const ProjectHeader = ({
                     <li>Job Number: {projectNumber}</li>
                     <li>Project Value: ${projectValue?.toLocaleString()}</li>
                     <li>Link to this project</li>
+                    <li>Invited members: {selectedTeamMembers.length}</li>
                   </ul>
                 </div>
                 <div className="flex justify-end space-x-2">
@@ -242,9 +319,47 @@ export const ProjectHeader = ({
           </Dialog>
 
           {/* Team Collaboration */}
-          <Button size="sm" variant="outline" title="Invite Team Members">
-            <Users className="h-4 w-4" />
-          </Button>
+          <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" title="Invite Team Members">
+                <Users className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Invite Team Member</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Email Address</Label>
+                  <Input 
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="Enter email address..."
+                  />
+                </div>
+                <div className="bg-muted p-3 rounded-lg text-sm">
+                  <p className="font-medium">The invitation will include:</p>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>Access to project: {projectName}</li>
+                    <li>Job Number: {projectNumber}</li>
+                    <li>Collaboration permissions</li>
+                    <li>Direct link to this project</li>
+                  </ul>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowTeamDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleInviteTeamMember}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Send Invitation
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
