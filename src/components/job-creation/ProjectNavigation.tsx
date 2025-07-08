@@ -1,21 +1,37 @@
 
 import { Button } from "@/components/ui/button";
 import { User, Briefcase, FileText, Wrench } from "lucide-react";
+import { useEffect } from "react";
 
 interface ProjectNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   project?: any;
   client?: any;
+  shouldRedirectToQuote?: boolean;
 }
 
-export const ProjectNavigation = ({ activeTab, onTabChange, project, client }: ProjectNavigationProps) => {
+export const ProjectNavigation = ({ 
+  activeTab, 
+  onTabChange, 
+  project, 
+  client,
+  shouldRedirectToQuote = false 
+}: ProjectNavigationProps) => {
   const navItems = [
     { id: "client", label: "Client", icon: User },
     { id: "jobs", label: "Jobs", icon: Briefcase },
     { id: "quote", label: "Quote", icon: FileText },
     { id: "workshop", label: "Workshop", icon: Wrench },
   ];
+
+  // Handle automatic redirect to quote tab when status changes to "Quote"
+  useEffect(() => {
+    if (shouldRedirectToQuote && activeTab !== "quote") {
+      console.log('Redirecting to quote tab due to status change');
+      onTabChange("quote");
+    }
+  }, [shouldRedirectToQuote, activeTab, onTabChange]);
 
   const getClientIndicator = () => {
     if (client) {

@@ -13,6 +13,7 @@ interface ProjectTabContentProps {
   onBack: () => void;
   onProjectUpdate?: (updatedProject: any) => void;
   onTabChange?: (tab: string) => void;
+  shouldRedirectToQuote?: boolean;
 }
 
 export const ProjectTabContent = ({ 
@@ -21,7 +22,8 @@ export const ProjectTabContent = ({
   quote, 
   onBack, 
   onProjectUpdate,
-  onTabChange 
+  onTabChange,
+  shouldRedirectToQuote = false
 }: ProjectTabContentProps) => {
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
@@ -99,7 +101,12 @@ export const ProjectTabContent = ({
       case "jobs":
         return <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />;
       case "quote":
-        return <ProjectQuoteTab project={project} />;
+        return (
+          <ProjectQuoteTab 
+            project={project} 
+            shouldHighlightNewQuote={shouldRedirectToQuote}
+          />
+        );
       case "workshop":
         return <ProjectWorkshopTab project={project} />;
       default:

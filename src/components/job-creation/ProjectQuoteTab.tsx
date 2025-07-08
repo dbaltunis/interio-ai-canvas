@@ -5,20 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Download, Edit, Save } from "lucide-react";
-import { useState } from "react";
+import { FileText, Download, Edit, Save, Mail, Printer, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectQuoteTabProps {
   project: any;
+  shouldHighlightNewQuote?: boolean;
 }
 
-export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
+export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: ProjectQuoteTabProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showNewQuoteAlert, setShowNewQuoteAlert] = useState(shouldHighlightNewQuote);
   const [quoteData, setQuoteData] = useState({
     terms: "Payment due within 30 days of completion.",
     notes: "All measurements are approximate and subject to field verification.",
@@ -30,6 +33,7 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
   const { data: treatments } = useTreatments(project.id);
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
+  const { toast } = useToast();
 
   const client = clients?.find(c => c.id === project.client_id);
   const projectTreatments = treatments?.filter(t => t.project_id === project.id) || [];
@@ -39,6 +43,18 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
 
+  // Show alert when redirected here due to status change
+  useEffect(() => {
+    if (shouldHighlightNewQuote) {
+      toast({
+        title: "Quote Ready! 📋",
+        description: "Your project data has been loaded into the quote. Review and send to client.",
+      });
+      // Auto-dismiss the alert after showing
+      setTimeout(() => setShowNewQuoteAlert(false), 5000);
+    }
+  }, [shouldHighlightNewQuote, toast]);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -46,11 +62,57 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
     }).format(amount);
   };
 
+  const handleEmailQuote = () => {
+    toast({
+      title: "Email Quote",
+      description: "Quote email composer would open here",
+    });
+  };
+
+  const handlePrintQuote = () => {
+    window.print();
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white">
+      {/* New Quote Alert */}
+      {showNewQuoteAlert && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start space-x-3">
+            <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-medium text-blue-900">Quote Generated from Project Data</h4>
+              <p className="text-sm text-blue-700 mt-1">
+                All your project details, rooms, surfaces, and treatments have been compiled into this quote. 
+                Review the details below and use the action buttons to email or print.
+              </p>
+              <div className="flex space-x-2 mt-3">
+                <Button size="sm" onClick={handleEmailQuote}>
+                  <Mail className="h-4 w-4 mr-1" />
+                  Email to Client
+                </Button>
+                <Button size="sm" variant="outline" onClick={handlePrintQuote}>
+                  <Printer className="h-4 w-4 mr-1" />
+                  Print/PDF
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowNewQuoteAlert(false)}>
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6 no-print">
-        <h3 className="text-xl font-semibold">Professional Quote</h3>
+        <div>
+          <h3 className="text-xl font-semibold">Professional Quote</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Generated from project: {project.name}
+            {project.job_number && ` • Job #${project.job_number}`}
+          </p>
+        </div>
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
@@ -59,11 +121,15 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
             {isEditing ? <Save className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
             {isEditing ? 'Save' : 'Edit'}
           </Button>
+          <Button variant="outline" onClick={handleEmailQuote}>
+            <Mail className="h-4 w-4 mr-2" />
+            Email
+          </Button>
           <Button variant="outline">
-            <FileText className="h-4 w-4 mr-2" />
+            <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button onClick={() => window.print()}>
+          <Button onClick={handlePrintQuote}>
             <Download className="h-4 w-4 mr-2" />
             Print/Save PDF
           </Button>
@@ -120,7 +186,7 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
           <div>
             <h3 className="font-semibold mb-4">BILL TO:</h3>
             <div className="space-y-1">
-              <p className="font-medium">{client?.name}</p>
+              <p className="font-medium">{client?.name || 'Client not assigned'}</p>
               {client?.client_type === 'B2B' && client?.company_name && (
                 <p>{client.company_name}</p>
               )}
@@ -142,6 +208,7 @@ export const ProjectQuoteTab = ({ project }: ProjectQuoteTabProps) => {
             {project.description && <p><span className="font-medium">Description:</span> {project.description}</p>}
             <p><span className="font-medium">Total Rooms:</span> {rooms?.length || 0}</p>
             <p><span className="font-medium">Total Surfaces:</span> {surfaces?.length || 0}</p>
+            <p><span className="font-medium">Total Treatments:</span> {projectTreatments.length}</p>
           </div>
         </div>
 
