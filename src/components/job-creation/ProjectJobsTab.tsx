@@ -7,6 +7,8 @@ import { useRooms } from "@/hooks/useRooms";
 import { ProjectJobsContent } from "./ProjectJobsContent";
 import { useProjectJobsActions } from "./hooks/useProjectJobsActions";
 import { useToast } from "@/hooks/use-toast";
+import { Check, X, Edit2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ProjectJobsTabProps {
   project: any;
@@ -17,6 +19,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const { data: rooms } = useRooms(project.id);
   const { toast } = useToast();
   const [projectName, setProjectName] = useState(project?.name || "");
+  const [isEditingName, setIsEditingName] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
 
   const {
@@ -40,12 +43,16 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     setProjectName(e.target.value);
   };
 
-  const handleNameBlur = async () => {
+  const handleSaveName = async () => {
     if (projectName.trim() !== project?.name && projectName.trim() !== '') {
       setIsUpdatingName(true);
       try {
         await handleUpdateProjectName(projectName.trim());
-        console.log('Project name updated successfully');
+        setIsEditingName(false);
+        toast({
+          title: "Success",
+          description: "Project name updated successfully",
+        });
       } catch (error) {
         console.error('Failed to update project name:', error);
         // Revert to original name on error
@@ -58,12 +65,22 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
       } finally {
         setIsUpdatingName(false);
       }
+    } else {
+      setIsEditingName(false);
+      setProjectName(project?.name || "");
     }
   };
 
-  const handleNameKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleCancelEdit = () => {
+    setProjectName(project?.name || "");
+    setIsEditingName(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.currentTarget.blur();
+      handleSaveName();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
     }
   };
 
@@ -77,18 +94,62 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="project-name">Project Name</Label>
-            <Input
-              id="project-name"
-              value={projectName}
-              onChange={handleNameChange}
-              onBlur={handleNameBlur}
-              onKeyPress={handleNameKeyPress}
-              placeholder="Enter project name..."
-              disabled={isUpdatingName}
-              className={isUpdatingName ? "opacity-50" : ""}
-            />
+            <div className="flex items-center space-x-2">
+              {isEditingName ? (
+                <>
+                  <Input
+                    id="project-name"
+                    value={projectName}
+                    onChange={handleNameChange}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Enter project name..."
+                    disabled={isUpdatingName}
+                    className={`flex-1 ${isUpdatingName ? "opacity-50" : ""}`}
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveName}
+                    disabled={isUpdatingName || !projectName.trim()}
+                    className="px-3"
+                  >
+                    {isUpdatingName ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isUpdatingName}
+                    className="px-3"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex-1 px-3 py-2 bg-gray-50 rounded-md border">
+                    {project?.name || "Untitled Project"}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditingName(true)}
+                    className="px-3"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
             {isUpdatingName && (
-              <p className="text-sm text-muted-foreground">Updating project name...</p>
+              <p className="text-sm text-blue-600 flex items-center space-x-2">
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span>Updating project name...</span>
+              </p>
             )}
           </div>
           

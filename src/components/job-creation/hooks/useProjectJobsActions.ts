@@ -56,12 +56,7 @@ export const useProjectJobsActions = ({
 
   const handleUpdateProjectName = async (name: string) => {
     if (!project?.id || !name.trim()) {
-      toast({
-        title: "Error",
-        description: "Project name cannot be empty",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("Project name cannot be empty");
     }
 
     try {
@@ -74,22 +69,15 @@ export const useProjectJobsActions = ({
       
       console.log("Project name updated successfully:", updatedProject);
       
-      // Notify parent component of the update
+      // Notify parent component of the update immediately
       if (onProjectUpdate) {
         onProjectUpdate(updatedProject);
       }
       
-      toast({
-        title: "Success",
-        description: "Project name updated successfully",
-      });
+      return updatedProject;
     } catch (error) {
       console.error("Failed to update project name:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update project name. Please try again.",
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
