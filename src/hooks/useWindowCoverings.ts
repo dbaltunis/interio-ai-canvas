@@ -26,6 +26,14 @@ export const useWindowCoverings = () => {
     setIsLoading(true);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No authenticated user");
+        throw new Error("Not authenticated");
+      }
+
+      console.log("Fetching window coverings for user:", user.id);
+
       const { data, error } = await supabase
         .from('window_coverings')
         .select(`
@@ -38,20 +46,28 @@ export const useWindowCoverings = () => {
           active,
           unit_price,
           pricing_grid_data,
-          making_cost_id
+          making_cost_id,
+          user_id
         `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      console.log("Window coverings query result:", { data, error });
+      console.log("Window coverings query result:", { data, error, count: data?.length });
 
       if (error) {
         console.error("Error fetching window coverings:", error);
         throw error;
       }
 
+      if (!data || data.length === 0) {
+        console.log("No window coverings found for user");
+        setWindowCoverings([]);
+        return;
+      }
+
       // Get options count for each window covering
       const windowCoveringsWithCounts = await Promise.all(
-        (data || []).map(async (wc) => {
+        data.map(async (wc) => {
           const { count } = await supabase
             .from('window_covering_options')
             .select('*', { count: 'exact', head: true })
@@ -75,6 +91,7 @@ export const useWindowCoverings = () => {
 
       console.log("Final window coverings with counts:", windowCoveringsWithCounts);
       console.log("Active window coverings:", windowCoveringsWithCounts.filter(wc => wc.active));
+      console.log("Total count:", windowCoveringsWithCounts.length);
       
       setWindowCoverings(windowCoveringsWithCounts);
     } catch (error) {
@@ -84,6 +101,7 @@ export const useWindowCoverings = () => {
         description: "Failed to fetch window coverings",
         variant: "destructive"
       });
+      setWindowCoverings([]);
     } finally {
       setIsLoading(false);
     }
