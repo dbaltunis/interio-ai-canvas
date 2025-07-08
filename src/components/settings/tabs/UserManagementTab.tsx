@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarInitials } from "@/components/ui/avatar";
-import { Users, UserPlus, Shield, Mail, Phone, Settings } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Users, UserPlus, Shield, Mail, Settings, Edit, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 export const UserManagementTab = () => {
@@ -16,14 +18,63 @@ export const UserManagementTab = () => {
     { id: 3, name: "Mike Wilson", email: "mike@company.com", role: "Staff", status: "Inactive", phone: "+1 234 567 8902" },
   ]);
 
-  const [statuses] = useState([
-    { id: 1, name: "Draft", color: "gray", category: "Quote" },
-    { id: 2, name: "Pending", color: "yellow", category: "Quote" },
-    { id: 3, name: "Approved", color: "green", category: "Quote" },
-    { id: 4, name: "Planning", color: "blue", category: "Project" },
-    { id: 5, name: "In Progress", color: "orange", category: "Project" },
-    { id: 6, name: "Completed", color: "green", category: "Project" },
+  const [statuses, setStatuses] = useState([
+    { id: 1, name: "Draft", color: "gray", category: "Quote", action: "editable", description: "Initial quote creation" },
+    { id: 2, name: "Quote", color: "blue", category: "Quote", action: "editable", description: "Quote ready to send" },
+    { id: 3, name: "Sent", color: "yellow", category: "Quote", action: "view_only", description: "Quote sent to client" },
+    { id: 4, name: "Order", color: "green", category: "Project", action: "locked", description: "Quote accepted, job locked" },
+    { id: 5, name: "In Progress", color: "orange", category: "Project", action: "progress_only", description: "Work in progress" },
+    { id: 6, name: "Completed", color: "green", category: "Project", action: "completed", description: "Job completed" },
+    { id: 7, name: "Lost Order", color: "red", category: "Quote", action: "requires_reason", description: "Quote lost, reason required" },
   ]);
+
+  const [editingStatus, setEditingStatus] = useState<any>(null);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+
+  const handleEditStatus = (status: any) => {
+    setEditingStatus({ ...status });
+    setIsStatusDialogOpen(true);
+  };
+
+  const handleSaveStatus = () => {
+    if (editingStatus) {
+      setStatuses(prev => prev.map(s => s.id === editingStatus.id ? editingStatus : s));
+      setIsStatusDialogOpen(false);
+      setEditingStatus(null);
+    }
+  };
+
+  const handleAddStatus = () => {
+    const newStatus = {
+      id: Date.now(),
+      name: "New Status",
+      color: "blue",
+      category: "Quote",
+      action: "editable",
+      description: ""
+    };
+    setEditingStatus(newStatus);
+    setIsStatusDialogOpen(true);
+  };
+
+  const colorOptions = [
+    { value: "gray", label: "Gray", class: "bg-gray-500" },
+    { value: "blue", label: "Blue", class: "bg-blue-500" },
+    { value: "green", label: "Green", class: "bg-green-500" },
+    { value: "yellow", label: "Yellow", class: "bg-yellow-500" },
+    { value: "orange", label: "Orange", class: "bg-orange-500" },
+    { value: "red", label: "Red", class: "bg-red-500" },
+    { value: "purple", label: "Purple", class: "bg-purple-500" },
+  ];
+
+  const actionOptions = [
+    { value: "editable", label: "Editable", description: "Job can be fully edited" },
+    { value: "view_only", label: "View Only", description: "Job can only be viewed" },
+    { value: "locked", label: "Locked", description: "Job is locked, requires status change to edit" },
+    { value: "progress_only", label: "Progress Only", description: "Only progress updates allowed" },
+    { value: "completed", label: "Completed", description: "Job is completed" },
+    { value: "requires_reason", label: "Requires Reason", description: "Status change requires reason input" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -91,36 +142,140 @@ export const UserManagementTab = () => {
               Status Management
             </CardTitle>
             <CardDescription>
-              Configure project and quote statuses
+              Configure project and quote statuses with actions
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-medium">System Statuses</h4>
-              <Button size="sm" variant="outline">
+              <Button size="sm" onClick={handleAddStatus}>
+                <Plus className="h-4 w-4 mr-2" />
                 Add Status
               </Button>
             </div>
             
             <div className="space-y-3">
               {statuses.map((status) => (
-                <div key={status.id} className="flex items-center justify-between p-2 border rounded">
+                <div key={status.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full bg-${status.color}-500`} />
+                    <div className={`w-4 h-4 rounded-full bg-${status.color}-500`} />
                     <div>
                       <div className="font-medium text-sm">{status.name}</div>
                       <div className="text-xs text-muted-foreground">{status.category}</div>
+                      <div className="text-xs text-muted-foreground">Action: {status.action.replace('_', ' ')}</div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center space-x-1">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditStatus(status)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Status Edit Dialog */}
+      <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingStatus?.id && statuses.find(s => s.id === editingStatus.id) ? 'Edit Status' : 'Add New Status'}
+            </DialogTitle>
+            <DialogDescription>
+              Configure the status name, color, and behavior in the application
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingStatus && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Status Name</Label>
+                <Input 
+                  value={editingStatus.name}
+                  onChange={(e) => setEditingStatus({...editingStatus, name: e.target.value})}
+                  placeholder="Enter status name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <Select value={editingStatus.color} onValueChange={(value) => setEditingStatus({...editingStatus, color: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colorOptions.map((color) => (
+                      <SelectItem key={color.value} value={color.value}>
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full ${color.class}`} />
+                          <span>{color.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={editingStatus.category} onValueChange={(value) => setEditingStatus({...editingStatus, category: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Quote">Quote</SelectItem>
+                    <SelectItem value="Project">Project</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Action Behavior</Label>
+                <Select value={editingStatus.action} onValueChange={(value) => setEditingStatus({...editingStatus, action: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {actionOptions.map((action) => (
+                      <SelectItem key={action.value} value={action.value}>
+                        <div>
+                          <div className="font-medium">{action.label}</div>
+                          <div className="text-xs text-muted-foreground">{action.description}</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea 
+                  value={editingStatus.description}
+                  onChange={(e) => setEditingStatus({...editingStatus, description: e.target.value})}
+                  placeholder="Describe when this status is used"
+                  rows={2}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setIsStatusDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveStatus}>
+                  Save Status
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Permissions Management */}
       <Card>
