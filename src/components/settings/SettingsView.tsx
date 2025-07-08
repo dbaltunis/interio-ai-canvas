@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Calculator, Play } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
@@ -9,6 +9,9 @@ import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { ProductTemplatesTab } from "./tabs/ProductTemplatesTab";
 import { ComponentsTab } from "./tabs/ComponentsTab";
 import { CalculationsTab } from "./tabs/CalculationsTab";
+import { UserManagementTab } from "./tabs/UserManagementTab";
+import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
+import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { Button } from "@/components/ui/button";
@@ -47,30 +50,42 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="business" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Business
+        <TabsList className="grid w-full grid-cols-9 text-xs">
+          <TabsTrigger value="business" className="flex items-center gap-1">
+            <Settings className="h-3 w-3" />
+            <span className="hidden sm:inline">Business</span>
           </TabsTrigger>
-          <TabsTrigger value="units" className="flex items-center gap-2">
-            <Ruler className="h-4 w-4" />
-            Units
+          <TabsTrigger value="units" className="flex items-center gap-1">
+            <Ruler className="h-3 w-3" />
+            <span className="hidden sm:inline">Units</span>
           </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Product Templates
+          <TabsTrigger value="products" className="flex items-center gap-1">
+            <Package className="h-3 w-3" />
+            <span className="hidden sm:inline">Products</span>
           </TabsTrigger>
-          <TabsTrigger value="components" className="flex items-center gap-2">
-            <Layers className="h-4 w-4" />
-            Components
+          <TabsTrigger value="components" className="flex items-center gap-1">
+            <Layers className="h-3 w-3" />
+            <span className="hidden sm:inline">Components</span>
           </TabsTrigger>
-          <TabsTrigger value="calculations" className="flex items-center gap-2">
-            <Calculator className="h-4 w-4" />
-            Calculations
+          <TabsTrigger value="calculations" className="flex items-center gap-1">
+            <Calculator className="h-3 w-3" />
+            <span className="hidden sm:inline">Calculations</span>
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Integrations
+          <TabsTrigger value="users" className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            <span className="hidden sm:inline">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-1">
+            <FileText className="h-3 w-3" />
+            <span className="hidden sm:inline">Documents</span>
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-1">
+            <Globe className="h-3 w-3" />
+            <span className="hidden sm:inline">System</span>
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-1">
+            <Zap className="h-3 w-3" />
+            <span className="hidden sm:inline">Integrations</span>
           </TabsTrigger>
         </TabsList>
 
@@ -92,6 +107,18 @@ export const SettingsView = () => {
 
         <TabsContent value="calculations">
           <CalculationsTab />
+        </TabsContent>
+
+        <TabsContent value="users">
+          <UserManagementTab />
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <DocumentTemplatesTab />
+        </TabsContent>
+
+        <TabsContent value="system">
+          <SystemSettingsTab />
         </TabsContent>
 
         <TabsContent value="integrations">
