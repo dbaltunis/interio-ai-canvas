@@ -4,7 +4,6 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
-
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceCreationButtons } from "./SurfaceCreationButtons";
 import { SurfacesList } from "./SurfacesList";
@@ -46,7 +45,7 @@ export const RoomCard = ({
   onChangeRoomType
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
-  const { data: allSurfaces, isLoading: surfacesLoading, refetch: refetchSurfaces } = useSurfaces(projectId);
+  const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   
   console.log("=== ROOM CARD RENDER ===");
   console.log("Room:", room.name, "ID:", room.id);
@@ -61,10 +60,9 @@ export const RoomCard = ({
   console.log("Room surfaces:", roomSurfaces);
   console.log("Room surfaces length:", roomSurfaces.length);
   
+  const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
-  
-  // Store current form values directly
   const [currentFormData, setCurrentFormData] = useState({
     treatmentType: "",
     surfaceId: "",
@@ -98,13 +96,15 @@ export const RoomCard = ({
       return;
     }
     
-    // Create the surface
-    await onCreateSurface(room.id, surfaceType);
+    setIsCreatingSurface(true);
     
-    // Refetch surfaces to ensure UI updates
-    setTimeout(() => {
-      refetchSurfaces();
-    }, 100);
+    try {
+      await onCreateSurface(room.id, surfaceType);
+    } catch (error) {
+      console.error("Error creating surface:", error);
+    } finally {
+      setIsCreatingSurface(false);
+    }
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
@@ -123,7 +123,6 @@ export const RoomCard = ({
     console.log("Setting current form data:", formData);
     setCurrentFormData(formData);
     
-    // Check if window covering has making cost - use calculator if it does
     if (windowCovering?.making_cost_id) {
       console.log("Opening calculator dialog");
       setCalculatorDialogOpen(true);
@@ -188,7 +187,7 @@ export const RoomCard = ({
           <div className="space-y-4 flex-1">
             <SurfaceCreationButtons
               onCreateSurface={handleSurfaceCreation}
-              isCreating={false}
+              isCreating={isCreatingSurface}
             />
 
             <SurfacesList

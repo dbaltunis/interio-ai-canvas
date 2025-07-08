@@ -29,7 +29,7 @@ export const SurfaceCreationButtons = ({
         variant="outline"
         onClick={handleWindowClick}
         disabled={isCreating}
-        className="flex items-center space-x-2 bg-brand-light hover:bg-brand-secondary/10 border-brand-secondary text-brand-primary transition-all duration-200 shadow-sm hover:shadow-md"
+        className="flex items-center space-x-2"
       >
         <Home className="h-4 w-4" />
         <span>{isCreating ? 'Adding Window...' : 'Add Window'}</span>
@@ -39,7 +39,7 @@ export const SurfaceCreationButtons = ({
         variant="outline"
         onClick={handleWallClick}
         disabled={isCreating}
-        className="flex items-center space-x-2 bg-brand-light hover:bg-brand-accent/10 border-brand-accent text-brand-accent transition-all duration-200 shadow-sm hover:shadow-md"
+        className="flex items-center space-x-2"
       >
         <Square className="h-4 w-4" />
         <span>{isCreating ? 'Adding Wall...' : 'Add Wall'}</span>

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +30,8 @@ export const useSurfaces = (projectId?: string) => {
       return data || [];
     },
     enabled: !!projectId,
-    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 };
 
@@ -63,13 +65,13 @@ export const useCreateSurface = () => {
       console.log("=== SURFACE CREATION SUCCESS ===");
       console.log("Created surface data:", data);
       
-      // Invalidate and refetch surfaces for this project
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
       
-      // Also invalidate rooms query to ensure consistency
-      if (data.project_id) {
-        queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
-      }
+      // Force refetch
+      queryClient.refetchQueries({ queryKey: ["surfaces", data.project_id] });
       
       toast({
         title: "Success",
