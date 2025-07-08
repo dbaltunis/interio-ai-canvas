@@ -10,11 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 interface ProjectTabContentProps {
   activeTab: string;
   project: any;
+  quote?: any;
   onBack: () => void;
   onProjectUpdate?: (updatedProject: any) => void;
 }
 
-export const ProjectTabContent = ({ activeTab, project, onBack, onProjectUpdate }: ProjectTabContentProps) => {
+export const ProjectTabContent = ({ activeTab, project, quote, onBack, onProjectUpdate }: ProjectTabContentProps) => {
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
   const { toast } = useToast();

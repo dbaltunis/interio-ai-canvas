@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -6,17 +5,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus, FileText, Mail, Printer } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useUpdateQuote } from "@/hooks/useQuotes";
+import { useNavigate } from "react-router-dom";
 
 interface ProjectHeaderProps {
   projectName: string;
   projectNumber?: string;
   projectValue?: number;
   currentStatus?: string;
+  projectId?: string;
+  quoteId?: string;
   onBack: () => void;
   onStatusChange?: (status: string) => void;
   onProjectUpdate?: (updates: any) => void;
@@ -27,6 +30,8 @@ export const ProjectHeader = ({
   projectNumber,
   projectValue,
   currentStatus = "draft",
+  projectId,
+  quoteId,
   onBack,
   onStatusChange,
   onProjectUpdate 
@@ -34,6 +39,9 @@ export const ProjectHeader = ({
   const { data: jobStatuses } = useJobStatuses();
   const { data: teamMembers } = useTeamMembers();
   const { toast } = useToast();
+  const updateQuote = useUpdateQuote();
+  const navigate = useNavigate();
+  
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
@@ -44,6 +52,8 @@ export const ProjectHeader = ({
   const [inviteEmail, setInviteEmail] = useState("");
   const [hasActiveEvent, setHasActiveEvent] = useState(false);
   const [displayStatus, setDisplayStatus] = useState(currentStatus);
+  const [showStatusActionDialog, setShowStatusActionDialog] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   // Update display status when currentStatus prop changes
   useEffect(() => {
@@ -65,6 +75,43 @@ export const ProjectHeader = ({
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
+  const handleStatusActions = (newStatus: string) => {
+    const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
+    
+    switch (newStatus.toLowerCase()) {
+      case 'quote':
+        setPendingStatus(newStatus);
+        setShowStatusActionDialog(true);
+        break;
+      case 'sent':
+        toast({
+          title: "Quote Status Changed",
+          description: "Quote marked as sent. Consider following up with the client in 3-5 days.",
+        });
+        break;
+      case 'order':
+        toast({
+          title: "Congratulations! 🎉",
+          description: "Quote accepted! Job is now locked and ready for production.",
+        });
+        break;
+      case 'in progress':
+        toast({
+          title: "Project Started",
+          description: "Job is now in progress. Track your work orders in the Workshop tab.",
+        });
+        break;
+      case 'completed':
+        toast({
+          title: "Project Completed! ✅",
+          description: "Great job! Consider requesting a review from the client.",
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     console.log('Status change requested:', { from: displayStatus, to: newStatus });
     
@@ -78,35 +125,83 @@ export const ProjectHeader = ({
       }
       
       console.log('Status change with reason:', reason);
-      toast({
-        title: "Status Updated",
-        description: `Job status changed to ${statusInfo.name}. Reason: ${reason}`,
-      });
-    } else if (statusInfo?.action === 'locked') {
-      toast({
-        title: "Job Locked",
-        description: `Job is now locked in ${statusInfo.name} status. Change status to edit.`,
-      });
-    } else {
+    }
+    
+    try {
+      // Update the quote status in the database
+      if (quoteId) {
+        await updateQuote.mutateAsync({
+          id: quoteId,
+          status: newStatus
+        });
+        console.log('Quote status updated successfully in database');
+      }
+      
+      // Update the display status immediately for UI feedback
+      setDisplayStatus(newStatus);
+      console.log('Display status updated to:', newStatus);
+      
+      // Call the parent handlers to persist the change
+      if (onStatusChange) {
+        console.log('Calling onStatusChange with:', newStatus);
+        onStatusChange(newStatus);
+      }
+      
+      if (onProjectUpdate) {
+        console.log('Calling onProjectUpdate with status:', newStatus);
+        onProjectUpdate({ status: newStatus });
+      }
+
+      // Handle status-specific actions
+      handleStatusActions(newStatus);
+      
       toast({
         title: "Status Updated",
         description: `Job status changed to ${statusInfo?.name || newStatus}`,
       });
+      
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleQuoteAction = (action: string) => {
+    setShowStatusActionDialog(false);
+    
+    if (pendingStatus) {
+      setDisplayStatus(pendingStatus);
+      setPendingStatus(null);
     }
     
-    // Update the display status immediately for UI feedback
-    setDisplayStatus(newStatus);
-    console.log('Display status updated to:', newStatus);
-    
-    // Call the parent handlers to persist the change
-    if (onStatusChange) {
-      console.log('Calling onStatusChange with:', newStatus);
-      onStatusChange(newStatus);
-    }
-    
-    if (onProjectUpdate) {
-      console.log('Calling onProjectUpdate with status:', newStatus);
-      onProjectUpdate({ status: newStatus });
+    switch (action) {
+      case 'view_quote':
+        navigate(`/jobs?tab=quote&project=${projectId}`);
+        toast({
+          title: "Navigating to Quote",
+          description: "Opening quote view with current project data",
+        });
+        break;
+      case 'email_quote':
+        navigate(`/jobs?tab=emails&action=compose&project=${projectId}`);
+        toast({
+          title: "Email Quote",
+          description: "Opening email composer with quote details",
+        });
+        break;
+      case 'print_quote':
+        window.print();
+        toast({
+          title: "Print Quote",
+          description: "Quote ready for printing",
+        });
+        break;
+      default:
+        break;
     }
   };
 
@@ -389,6 +484,51 @@ export const ProjectHeader = ({
           </Dialog>
         </div>
       </div>
+
+      {/* Status Action Dialog */}
+      <Dialog open={showStatusActionDialog} onOpenChange={setShowStatusActionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Quote Status Actions</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              You've changed the status to "Quote". What would you like to do next?
+            </p>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => handleQuoteAction('view_quote')} 
+                className="w-full justify-start"
+                variant="outline"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                View & Edit Quote
+              </Button>
+              <Button 
+                onClick={() => handleQuoteAction('email_quote')} 
+                className="w-full justify-start"
+                variant="outline"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email Quote to Client
+              </Button>
+              <Button 
+                onClick={() => handleQuoteAction('print_quote')} 
+                className="w-full justify-start"
+                variant="outline"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Quote
+              </Button>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="ghost" onClick={() => setShowStatusActionDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
