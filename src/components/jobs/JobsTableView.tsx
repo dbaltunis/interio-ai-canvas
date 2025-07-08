@@ -1,10 +1,10 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mail, Calendar, DollarSign, FileText, Building2, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { JobActionsMenu } from "./JobActionsMenu";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 
 interface JobsTableViewProps {
   quotes: any[];
@@ -25,20 +25,37 @@ export const JobsTableView = ({
   onJobCopy,
   businessSettings
 }: JobsTableViewProps) => {
+  const { data: jobStatuses } = useJobStatuses();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "rejected":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "draft":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      default:
-        return "bg-blue-100 text-blue-800 border-blue-200";
+  const getStatusInfo = (status: string) => {
+    const statusConfig = jobStatuses?.find(s => s.name.toLowerCase() === status.toLowerCase());
+    if (statusConfig) {
+      return {
+        color: getStatusColorClass(statusConfig.color),
+        name: statusConfig.name,
+        action: statusConfig.action
+      };
     }
+    
+    // Fallback to default colors if status not found
+    return {
+      color: "bg-gray-100 text-gray-800 border-gray-200",
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      action: "editable"
+    };
+  };
+
+  const getStatusColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      'gray': 'bg-gray-100 text-gray-800 border-gray-200',
+      'blue': 'bg-blue-100 text-blue-800 border-blue-200',
+      'green': 'bg-green-100 text-green-800 border-green-200',
+      'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'orange': 'bg-orange-100 text-orange-800 border-orange-200',
+      'red': 'bg-red-100 text-red-800 border-red-200',
+      'purple': 'bg-purple-100 text-purple-800 border-purple-200',
+    };
+    return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const formatCurrency = (amount: number) => {
@@ -65,7 +82,6 @@ export const JobsTableView = ({
     return `${symbol}${amount.toLocaleString()}`;
   };
 
-
   return (
     <div className="rounded-md border">
       <Table>
@@ -84,9 +100,14 @@ export const JobsTableView = ({
           {quotes.map((quote) => {
             const client = clients?.find(c => c.id === quote.client_id);
             const project = projects?.find(p => p.id === quote.project_id);
+            const statusInfo = getStatusInfo(quote.status);
             
             return (
-              <TableRow key={quote.id} className="hover:bg-muted/50">
+              <TableRow 
+                key={quote.id} 
+                className="hover:bg-muted/50 cursor-pointer"
+                onClick={() => onJobSelect(quote.id)}
+              >
                 <TableCell>
                   <div className="space-y-1">
                     <div className="font-medium">{quote.quote_number}</div>
@@ -108,7 +129,10 @@ export const JobsTableView = ({
                   {client ? (
                     <div 
                       className="cursor-pointer hover:bg-blue-50 p-2 rounded transition-colors"
-                      onClick={() => onClientEdit?.(client.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClientEdit?.(client.id);
+                      }}
                     >
                       <div className="space-y-1">
                         <div className="font-medium flex items-center space-x-1">
@@ -161,9 +185,15 @@ export const JobsTableView = ({
                 </TableCell>
                 
                 <TableCell>
-                  <Badge className={`${getStatusColor(quote.status)} text-xs`}>
-                    {quote.status.toUpperCase()}
+                  <Badge className={`${statusInfo.color} text-xs`}>
+                    {statusInfo.name.toUpperCase()}
                   </Badge>
+                  {statusInfo.action === 'locked' && (
+                    <div className="text-xs text-muted-foreground mt-1">🔒 Locked</div>
+                  )}
+                  {statusInfo.action === 'requires_reason' && (
+                    <div className="text-xs text-muted-foreground mt-1">⚠️ Reason Required</div>
+                  )}
                 </TableCell>
                 
                 <TableCell>
@@ -185,7 +215,7 @@ export const JobsTableView = ({
                 </TableCell>
                 
                 <TableCell className="text-right">
-                  <div className="flex justify-end space-x-1">
+                  <div className="flex justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
                     {client?.email && (
                       <Button 
                         variant="ghost" 
