@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useTreatments } from "@/hooks/useTreatments";
-import { useSurfaces } from "@/hooks/useSurfaces";
+import { useSurfaces, useCreateSurface } from "@/hooks/useSurfaces";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 
@@ -47,6 +47,7 @@ export const RoomCard = ({
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces, isLoading: surfacesLoading, refetch: refetchSurfaces } = useSurfaces(projectId);
+  const createSurface = useCreateSurface();
   
   console.log("=== ROOM CARD RENDER ===");
   console.log("Room:", room.name, "ID:", room.id);
@@ -63,6 +64,7 @@ export const RoomCard = ({
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
+  const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
   // Store current form values directly
   const [currentFormData, setCurrentFormData] = useState({
@@ -98,13 +100,37 @@ export const RoomCard = ({
       return;
     }
     
-    // Create the surface
-    await onCreateSurface(room.id, surfaceType);
+    setIsCreatingSurface(true);
     
-    // Refetch surfaces to ensure UI updates
-    setTimeout(() => {
-      refetchSurfaces();
-    }, 100);
+    try {
+      const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
+      const surfaceNumber = roomSurfaces.length + 1;
+      const surfaceName = surfaceType === 'wall' ? `Wall ${surfaceNumber}` : `Window ${surfaceNumber}`;
+      
+      const surfaceData = {
+        room_id: room.id,
+        project_id: projectId,
+        name: surfaceName,
+        surface_type: surfaceType,
+        width: surfaceType === 'wall' ? 120 : 60,
+        height: surfaceType === 'wall' ? 96 : 48,
+        surface_width: surfaceType === 'wall' ? 120 : 60,
+        surface_height: surfaceType === 'wall' ? 96 : 48
+      };
+
+      console.log("Creating surface with data:", surfaceData);
+      await createSurface.mutateAsync(surfaceData);
+      
+      // Refetch surfaces to ensure UI updates
+      setTimeout(() => {
+        refetchSurfaces();
+      }, 100);
+      
+    } catch (error) {
+      console.error("Failed to create surface:", error);
+    } finally {
+      setIsCreatingSurface(false);
+    }
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
@@ -161,7 +187,7 @@ export const RoomCard = ({
         />
         
         <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-gray-500">Loading surfaces...</div>
+          <div className="text-brand-neutral">Loading surfaces...</div>
         </CardContent>
       </Card>
     );
@@ -169,7 +195,7 @@ export const RoomCard = ({
 
   return (
     <>
-      <Card className="bg-gray-100 min-h-[500px] flex flex-col">
+      <Card className="bg-brand-light min-h-[500px] flex flex-col border border-brand-secondary/20 shadow-md">
         <RoomHeader
           room={room}
           roomTotal={roomTotal}
@@ -188,7 +214,7 @@ export const RoomCard = ({
           <div className="space-y-4 flex-1">
             <SurfaceCreationButtons
               onCreateSurface={handleSurfaceCreation}
-              isCreating={false}
+              isCreating={isCreatingSurface}
             />
 
             <SurfacesList

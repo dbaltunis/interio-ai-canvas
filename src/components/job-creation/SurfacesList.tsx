@@ -30,10 +30,11 @@ export const SurfacesList = ({
   if (safeSurfaces.length === 0) {
     console.log("No surfaces to display, showing empty state");
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-brand-neutral">
         <div className="text-center">
-          <p className="mb-2">No surfaces added yet</p>
-          <p className="text-sm">Add windows or walls to get started</p>
+          <div className="text-6xl mb-4">🪟</div>
+          <p className="mb-2 text-brand-primary font-medium">No surfaces added yet</p>
+          <p className="text-sm text-brand-neutral">Add windows or walls to get started</p>
         </div>
       </div>
     );

@@ -29,7 +29,8 @@ export const useSurfaces = (projectId?: string) => {
       return data || [];
     },
     enabled: !!projectId,
-    staleTime: 0, // Always consider data stale
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -63,13 +64,14 @@ export const useCreateSurface = () => {
       console.log("=== SURFACE CREATION SUCCESS ===");
       console.log("Created surface data:", data);
       
-      // Invalidate and refetch surfaces for this project
+      // Invalidate multiple related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
       
-      // Also invalidate rooms query to ensure consistency
-      if (data.project_id) {
-        queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
-      }
+      // Force refetch with fresh data
+      queryClient.refetchQueries({ queryKey: ["surfaces", data.project_id] });
       
       toast({
         title: "Success",
