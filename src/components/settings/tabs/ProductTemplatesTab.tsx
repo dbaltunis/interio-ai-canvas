@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,9 +35,9 @@ export const ProductTemplatesTab = () => {
       active: true,
       components: ["headings", "fabric", "lining", "hardware"],
       calculationRules: {
-        heightTiers: [1, 2, 3], // Which height tiers apply
-        constructionOptions: [1, 2, 3, 4, 5], // Which construction options are available
-        seamingOptions: [1, 2, 3, 4] // Which seaming options apply
+        heightTiers: [1, 2, 3],
+        constructionOptions: [1, 2, 3, 4, 5],
+        seamingOptions: [1, 2, 3, 4]
       }
     },
     {
@@ -50,9 +49,9 @@ export const ProductTemplatesTab = () => {
       active: true,
       components: ["fabric", "hardware", "chain"],
       calculationRules: {
-        heightTiers: [1], // Only standard height for blinds
-        constructionOptions: [1], // Only unlined
-        seamingOptions: [1] // No seams typically
+        heightTiers: [1],
+        constructionOptions: [1],
+        seamingOptions: [1]
       }
     }
   ]);
@@ -155,7 +154,11 @@ export const ProductTemplatesTab = () => {
           ? Object.keys(formData.selectedComponents[key]).length > 0
           : formData.selectedComponents[key]
       ),
-      calculationRules: formData.calculationRules
+      calculationRules: {
+        heightTiers: [...formData.calculationRules.heightTiers],
+        constructionOptions: [...formData.calculationRules.constructionOptions],
+        seamingOptions: [...formData.calculationRules.seamingOptions]
+      }
     };
 
     if (editingId) {
@@ -177,6 +180,12 @@ export const ProductTemplatesTab = () => {
     }
 
     // Reset form
+    resetForm();
+    setIsCreating(false);
+    setEditingId(null);
+  };
+
+  const resetForm = () => {
     setFormData({
       name: "",
       calculationMethod: "",
@@ -207,9 +216,6 @@ export const ProductTemplatesTab = () => {
         seamingOptions: []
       }
     });
-
-    setIsCreating(false);
-    setEditingId(null);
   };
 
   const handleToggleCreating = () => {
@@ -217,36 +223,7 @@ export const ProductTemplatesTab = () => {
     setEditingId(null);
     // Reset form when canceling
     if (isCreating) {
-      setFormData({
-        name: "",
-        calculationMethod: "",
-        pricingUnit: "",
-        selectedPricingGrid: "",
-        baseMakingCost: "",
-        baseHeightLimit: "2.4",
-        useHeightSurcharges: false,
-        complexityMultiplier: "standard",
-        showComplexityOption: true,
-        heightSurcharge1: "",
-        heightSurcharge2: "", 
-        heightSurcharge3: "",
-        heightRange1Start: "2.4",
-        heightRange1End: "3.0",
-        heightRange2Start: "3.0", 
-        heightRange2End: "4.0",
-        heightRange3Start: "4.0",
-        selectedComponents: {
-          headings: {},
-          hardware: {},
-          lining: {},
-          services: {}
-        },
-        calculationRules: {
-          heightTiers: [],
-          constructionOptions: [],
-          seamingOptions: []
-        }
-      });
+      resetForm();
     }
   };
 
@@ -277,10 +254,10 @@ export const ProductTemplatesTab = () => {
         lining: template.selectedComponents?.lining || {},
         services: template.selectedComponents?.services || {}
       },
-      calculationRules: template.calculationRules || {
-        heightTiers: [],
-        constructionOptions: [],
-        seamingOptions: []
+      calculationRules: {
+        heightTiers: template.calculationRules?.heightTiers || [],
+        constructionOptions: template.calculationRules?.constructionOptions || [],
+        seamingOptions: template.calculationRules?.seamingOptions || []
       }
     });
   };
@@ -599,7 +576,6 @@ export const ProductTemplatesTab = () => {
               </CardContent>
             </Card>
 
-            {/* Explanation Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">💡 How Pricing Works:</h4>
               <div className="space-y-2 text-sm text-blue-800">
