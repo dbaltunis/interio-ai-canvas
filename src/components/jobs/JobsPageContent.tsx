@@ -1,6 +1,6 @@
 
 import { JobsFilters } from "./JobsFilters";
-import { EnhancedJobsManagement } from "./EnhancedJobsManagement";
+import { JobsListView } from "./JobsListView";
 import { EnhancedClientManagement } from "../clients/EnhancedClientManagement";
 import { EmailsTab } from "./EmailsTab";
 
@@ -46,7 +46,7 @@ export const JobsPageContent = ({
   onClientEdit
 }: JobsPageContentProps) => {
   return (
-    <>
+    <div className="space-y-6">
       {/* Filters - only show for jobs tab */}
       {showFilters && activeTab === "jobs" && (
         <JobsFilters
@@ -68,7 +68,7 @@ export const JobsPageContent = ({
       
       {/* Content based on active tab */}
       {activeTab === "jobs" ? (
-        <EnhancedJobsManagement 
+        <JobsListView 
           onNewJob={onNewJob}
           onJobSelect={onJobSelect}
           onClientEdit={onClientEdit}
@@ -84,6 +84,6 @@ export const JobsPageContent = ({
       ) : (
         <EmailsTab />
       )}
-    </>
+    </div>
   );
 };
