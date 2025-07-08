@@ -8,9 +8,22 @@ interface ProjectJobsContentProps {
   project: any;
   onCreateRoom: () => void;
   isCreatingRoom: boolean;
+  editingRoomId: string | null;
+  setEditingRoomId: (id: string | null) => void;
+  editingRoomName: string;
+  setEditingRoomName: (name: string) => void;
 }
 
-export const ProjectJobsContent = ({ rooms, project, onCreateRoom, isCreatingRoom }: ProjectJobsContentProps) => {
+export const ProjectJobsContent = ({ 
+  rooms, 
+  project, 
+  onCreateRoom, 
+  isCreatingRoom,
+  editingRoomId,
+  setEditingRoomId,
+  editingRoomName,
+  setEditingRoomName
+}: ProjectJobsContentProps) => {
   const {
     allSurfaces,
     allTreatments,
@@ -20,7 +33,9 @@ export const ProjectJobsContent = ({ rooms, project, onCreateRoom, isCreatingRoo
     handleRenameRoom,
     handleCopyRoom,
     handlePasteRoom,
-    handleCreateTreatment
+    handleCreateTreatment,
+    updateRoom,
+    deleteRoom
   } = useJobHandlers(project);
 
   return (
@@ -33,17 +48,17 @@ export const ProjectJobsContent = ({ rooms, project, onCreateRoom, isCreatingRoo
         <RoomsGrid
           rooms={rooms}
           projectId={project?.id}
-          onUpdateRoom={() => {}}
-          onDeleteRoom={() => {}}
+          onUpdateRoom={updateRoom}
+          onDeleteRoom={deleteRoom}
           onCreateTreatment={handleCreateTreatment}
           onCreateSurface={handleCreateSurface}
           onUpdateSurface={handleUpdateSurface}
           onDeleteSurface={handleDeleteSurface}
           onCopyRoom={handleCopyRoom}
-          editingRoomId={null}
-          setEditingRoomId={() => {}}
-          editingRoomName=""
-          setEditingRoomName={() => {}}
+          editingRoomId={editingRoomId}
+          setEditingRoomId={setEditingRoomId}
+          editingRoomName={editingRoomName}
+          setEditingRoomName={setEditingRoomName}
           onRenameRoom={handleRenameRoom}
           onCreateRoom={onCreateRoom}
           isCreatingRoom={isCreatingRoom}

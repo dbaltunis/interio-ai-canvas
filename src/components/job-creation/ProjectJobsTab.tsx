@@ -21,6 +21,10 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const [projectName, setProjectName] = useState(project?.name || "");
   const [isEditingName, setIsEditingName] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
+  
+  // Room editing state
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [editingRoomName, setEditingRoomName] = useState("");
 
   const {
     isCreatingRoom,
@@ -173,6 +177,10 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
           project={project}
           onCreateRoom={handleCreateRoom}
           isCreatingRoom={isCreatingRoom}
+          editingRoomId={editingRoomId}
+          setEditingRoomId={setEditingRoomId}
+          editingRoomName={editingRoomName}
+          setEditingRoomName={setEditingRoomName}
         />
       </div>
     </div>

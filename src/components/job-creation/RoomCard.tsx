@@ -68,6 +68,7 @@ export const RoomCard = ({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onRenameRoom(room.id, editingRoomName);
+      setEditingRoomId(null);
     } else if (e.key === 'Escape') {
       setEditingRoomId(null);
       setEditingRoomName("");
@@ -102,7 +103,6 @@ export const RoomCard = ({
     onCreateTreatment(room.id, selectedSurfaceId, selectedTreatmentType, treatmentData);
     setCalculatorDialogOpen(false);
   };
-
 
   return (
     <>
@@ -154,7 +154,6 @@ export const RoomCard = ({
         onSave={handleCalculatorSave}
         treatmentType={selectedTreatmentType}
       />
-
     </>
   );
 };

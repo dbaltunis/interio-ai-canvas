@@ -92,15 +92,53 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
-  const handleCopyRoom = (room: any) => {
-    const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
-    const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
-    
-    return {
-      room,
-      surfaces: roomSurfaces,
-      treatments: roomTreatments
-    };
+  const handleCopyRoom = async (room: any) => {
+    try {
+      const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
+      const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
+      
+      // Create a copy of the room
+      const roomNumber = (rooms?.length || 0) + 1;
+      const newRoom = await createRoom.mutateAsync({
+        project_id: actualProjectId,
+        name: `${room.name} (Copy)`,
+        room_type: room.room_type
+      });
+
+      // Copy all surfaces
+      for (const surface of roomSurfaces) {
+        const newSurface = await createSurface.mutateAsync({
+          room_id: newRoom.id,
+          project_id: actualProjectId,
+          name: surface.name,
+          surface_type: surface.surface_type,
+          width: surface.width,
+          height: surface.height,
+          surface_width: surface.surface_width,
+          surface_height: surface.surface_height
+        });
+
+        // Copy treatments for this surface
+        const surfaceTreatments = roomTreatments.filter(t => t.window_id === surface.id);
+        for (const treatment of surfaceTreatments) {
+          await createTreatment.mutateAsync({
+            window_id: newSurface.id,
+            room_id: newRoom.id,
+            project_id: actualProjectId,
+            treatment_type: treatment.treatment_type,
+            product_name: treatment.product_name,
+            material_cost: treatment.material_cost,
+            labor_cost: treatment.labor_cost,
+            total_price: treatment.total_price,
+            status: treatment.status
+          });
+        }
+      }
+      
+      console.log("Room copied successfully:", newRoom);
+    } catch (error) {
+      console.error("Failed to copy room:", error);
+    }
   };
 
   const handlePasteRoom = async (copiedRoom: any) => {
