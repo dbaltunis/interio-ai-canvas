@@ -2,7 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Mail, Calendar, DollarSign, FileText, Building2, User } from "lucide-react";
+import { Mail, Calendar, DollarSign, FileText, Building2, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { JobActionsMenu } from "./JobActionsMenu";
 
@@ -186,22 +186,6 @@ export const JobsTableView = ({
                 
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onJobSelect(quote.id)}
-                      title="View Job"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onJobSelect(quote.id)}
-                      title="Edit Job"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
                     {client?.email && (
                       <Button 
                         variant="ghost" 
