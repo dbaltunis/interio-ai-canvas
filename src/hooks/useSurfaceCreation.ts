@@ -12,14 +12,14 @@ export const useSurfaceCreation = () => {
     surfaceType: 'window' | 'wall',
     roomSurfaces: any[]
   ) => {
-    console.log("=== SURFACE CREATION DEBUG ===");
+    console.log("=== SURFACE CREATION HANDLER ===");
     console.log("Room:", room);
     console.log("Project ID:", projectId);
     console.log("Surface type:", surfaceType);
     console.log("Room surfaces:", roomSurfaces);
     
     if (!surfaceType) {
-      console.error("CRITICAL ERROR: No surfaceType provided to handleCreateSurface!");
+      console.error("CRITICAL ERROR: No surfaceType provided!");
       toast({
         title: "Error",
         description: "Surface type is required",
@@ -52,6 +52,8 @@ export const useSurfaceCreation = () => {
     }
 
     try {
+      console.log("=== CREATING SURFACE ===");
+      
       const surfaceCount = roomSurfaces?.filter(s => s.surface_type === surfaceType).length || 0;
       const surfaceName = surfaceType === 'window' 
         ? `Window ${surfaceCount + 1}`
@@ -71,19 +73,24 @@ export const useSurfaceCreation = () => {
       console.log("Final surface data being sent:", surfaceData);
 
       const result = await createSurface.mutateAsync(surfaceData);
-      console.log("Surface created successfully:", result);
+      console.log("=== SURFACE CREATED SUCCESSFULLY ===");
+      console.log("Result:", result);
 
       toast({
         title: "Success",
         description: `${surfaceType === 'window' ? 'Window' : 'Wall'} added successfully`,
       });
+      
+      return result;
     } catch (error) {
+      console.error("=== SURFACE CREATION FAILED ===");
       console.error("Error creating surface:", error);
       toast({
         title: "Error",
         description: `Failed to add ${surfaceType}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
+      throw error;
     }
   };
 

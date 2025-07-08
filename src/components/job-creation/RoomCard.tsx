@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
@@ -76,6 +75,7 @@ export const RoomCard = ({
   };
 
   const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
+    console.log("=== ROOM CARD SURFACE CREATION ===");
     console.log("RoomCard handleSurfaceCreation called with surfaceType:", surfaceType);
     console.log("Room data:", room);
     console.log("Project ID:", projectId);
@@ -86,7 +86,12 @@ export const RoomCard = ({
       return;
     }
     
-    await handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
+    try {
+      await handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
+      console.log("Surface creation completed successfully");
+    } catch (error) {
+      console.error("Surface creation failed in RoomCard:", error);
+    }
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {

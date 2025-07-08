@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +38,9 @@ export const useCreateSurface = () => {
 
   return useMutation({
     mutationFn: async (surface: any) => {
+      console.log("=== MUTATION START ===");
+      console.log("Surface data being sent:", surface);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
@@ -48,15 +50,32 @@ export const useCreateSurface = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      console.log("Database response:", { data, error });
+      
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
+      
+      console.log("Surface created successfully:", data);
       return data;
     },
     onSuccess: (data) => {
+      console.log("=== MUTATION SUCCESS ===");
+      console.log("Created surface:", data);
+      
+      // Invalidate all surfaces queries
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
-      // Don't show toast here as it's already shown in useSurfaceCreation
+      
+      // Invalidate specific project surfaces
+      if (data.project_id) {
+        queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
+      }
+      
+      console.log("Queries invalidated, surface should appear in UI");
     },
     onError: (error) => {
+      console.error("=== MUTATION ERROR ===");
       console.error("Create surface error:", error);
       toast({
         title: "Error",
