@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Settings, DragHandleDots2Icon } from "lucide-react";
+import { Settings, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 interface KPIItem {
@@ -62,26 +62,48 @@ export const KPICustomizer = ({ availableKPIs, onKPIChange }: KPICustomizerProps
             Select and reorder the KPIs you want to display on your dashboard.
           </p>
           
-          <div className="space-y-3">
-            {kpis.map((kpi, index) => (
-              <div key={kpi.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="cursor-move">
-                  <DragHandleDots2Icon className="h-4 w-4 text-muted-foreground" />
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="kpi-list">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="space-y-3"
+                >
+                  {kpis.map((kpi, index) => (
+                    <Draggable key={kpi.id} draggableId={kpi.id} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="flex items-center space-x-3 p-3 border rounded-lg"
+                        >
+                          <div
+                            {...provided.dragHandleProps}
+                            className="cursor-move"
+                          >
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <Checkbox
+                            id={kpi.id}
+                            checked={kpi.enabled}
+                            onCheckedChange={() => handleKPIToggle(kpi.id)}
+                          />
+                          <div className="flex-1">
+                            <Label htmlFor={kpi.id} className="font-medium cursor-pointer">
+                              {kpi.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">{kpi.description}</p>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
-                <Checkbox
-                  id={kpi.id}
-                  checked={kpi.enabled}
-                  onCheckedChange={() => handleKPIToggle(kpi.id)}
-                />
-                <div className="flex-1">
-                  <Label htmlFor={kpi.id} className="font-medium cursor-pointer">
-                    {kpi.label}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">{kpi.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </Droppable>
+          </DragDropContext>
 
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setIsOpen(false)}>
