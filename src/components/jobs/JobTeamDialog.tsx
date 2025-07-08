@@ -49,18 +49,24 @@ export const JobTeamDialog = ({ open, onOpenChange, quote, project }: JobTeamDia
     if (!email || !role) {
       toast({
         title: "Missing Information",
-        description: "Please fill in both email and role",
+        description: "Please select both team member and role",
         variant: "destructive"
       });
       return;
     }
 
+    const selectedMemberName = email.includes("john") ? "John Smith" :
+                              email.includes("sarah") ? "Sarah Johnson" :
+                              email.includes("mike") ? "Mike Wilson" :
+                              email.includes("emma") ? "Emma Davis" :
+                              email.includes("david") ? "David Brown" : "Team Member";
+
     const newMember: TeamMember = {
       id: Date.now().toString(),
-      name: email.split('@')[0],
+      name: selectedMemberName,
       email,
       role,
-      status: "pending"
+      status: "accepted"
     };
 
     setTeamMembers(prev => [...prev, newMember]);
@@ -68,8 +74,8 @@ export const JobTeamDialog = ({ open, onOpenChange, quote, project }: JobTeamDia
     setRole("");
 
     toast({
-      title: "Invitation Sent",
-      description: `Invitation sent to ${email}`,
+      title: "Team Member Added",
+      description: `${selectedMemberName} has been added to the job`,
     });
   };
 
@@ -107,19 +113,25 @@ export const JobTeamDialog = ({ open, onOpenChange, quote, project }: JobTeamDia
         <div className="space-y-6">
           {/* Invite new member */}
           <div className="border rounded-lg p-4 space-y-3">
-            <h3 className="font-medium">Invite Team Member</h3>
+            <h3 className="font-medium">Add Team Member</h3>
             <div className="flex space-x-2">
-              <Input
-                placeholder="Enter email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1"
-              />
+              <Select value={email} onValueChange={setEmail}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select team member" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="john@company.com">John Smith - Project Manager</SelectItem>
+                  <SelectItem value="sarah@company.com">Sarah Johnson - Designer</SelectItem>
+                  <SelectItem value="mike@company.com">Mike Wilson - Installer</SelectItem>
+                  <SelectItem value="emma@company.com">Emma Davis - Coordinator</SelectItem>
+                  <SelectItem value="david@company.com">David Brown - Quality Control</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   <SelectItem value="Project Manager">Project Manager</SelectItem>
                   <SelectItem value="Designer">Designer</SelectItem>
                   <SelectItem value="Installer">Installer</SelectItem>
@@ -129,7 +141,7 @@ export const JobTeamDialog = ({ open, onOpenChange, quote, project }: JobTeamDia
               </Select>
               <Button onClick={handleInviteMember}>
                 <Plus className="h-4 w-4 mr-2" />
-                Invite
+                Add
               </Button>
             </div>
           </div>
