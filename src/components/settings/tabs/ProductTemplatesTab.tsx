@@ -230,6 +230,32 @@ export const ProductTemplatesTab = () => {
   const handleEditTemplate = (template) => {
     setEditingId(template.id);
     setIsCreating(true);
+    
+    // Convert components array back to selectedComponents object structure
+    const selectedComponents = {
+      headings: {},
+      hardware: {},
+      lining: {},
+      services: {}
+    };
+    
+    // If template has component selections, reconstruct the selectedComponents object
+    if (template.selectedComponents) {
+      Object.keys(template.selectedComponents).forEach(category => {
+        if (template.selectedComponents[category]) {
+          selectedComponents[category] = template.selectedComponents[category];
+        }
+      });
+    } else if (template.components && Array.isArray(template.components)) {
+      // Legacy support - if only components array exists, mark all as selected (but empty)
+      // This is a fallback for older templates that might not have the full structure
+      template.components.forEach(component => {
+        if (selectedComponents[component]) {
+          selectedComponents[component] = {};
+        }
+      });
+    }
+    
     setFormData({
       name: template.name,
       calculationMethod: template.calculationMethod,
@@ -240,20 +266,15 @@ export const ProductTemplatesTab = () => {
       useHeightSurcharges: template.useHeightSurcharges || false,
       complexityMultiplier: template.complexityMultiplier || "standard",
       showComplexityOption: template.showComplexityOption !== false,
-      heightSurcharge1: "",
-      heightSurcharge2: "", 
-      heightSurcharge3: "",
-      heightRange1Start: "2.4",
-      heightRange1End: "3.0",
-      heightRange2Start: "3.0", 
-      heightRange2End: "4.0",
-      heightRange3Start: "4.0",
-      selectedComponents: {
-        headings: template.selectedComponents?.headings || {},
-        hardware: template.selectedComponents?.hardware || {},
-        lining: template.selectedComponents?.lining || {},
-        services: template.selectedComponents?.services || {}
-      },
+      heightSurcharge1: template.heightSurcharge1?.toString() || "",
+      heightSurcharge2: template.heightSurcharge2?.toString() || "", 
+      heightSurcharge3: template.heightSurcharge3?.toString() || "",
+      heightRange1Start: template.heightRange1Start?.toString() || "2.4",
+      heightRange1End: template.heightRange1End?.toString() || "3.0",
+      heightRange2Start: template.heightRange2Start?.toString() || "3.0", 
+      heightRange2End: template.heightRange2End?.toString() || "4.0",
+      heightRange3Start: template.heightRange3Start?.toString() || "4.0",
+      selectedComponents: selectedComponents,
       calculationRules: {
         heightTiers: template.calculationRules?.heightTiers || [],
         constructionOptions: template.calculationRules?.constructionOptions || [],
@@ -337,7 +358,7 @@ export const ProductTemplatesTab = () => {
                 <div>
                   <h4 className="font-medium text-sm mb-2">Required Components:</h4>
                   <div className="flex gap-2 flex-wrap">
-                    {template.components.map((component) => (
+                    {template.components && template.components.map((component) => (
                       <Badge key={component} variant="outline">
                         {component}
                       </Badge>
@@ -414,6 +435,7 @@ export const ProductTemplatesTab = () => {
             <CardDescription>{editingId ? "Update the window covering product template" : "Define a new window covering product type"}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Basic Info Section */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="templateName">Product Name *</Label>
@@ -493,7 +515,7 @@ export const ProductTemplatesTab = () => {
               )}
             </div>
 
-            {/* New Section: Calculation Rules Selection */}
+            {/* Calculation Rules Selection */}
             <Card className="border-blue-200 bg-blue-50">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -584,22 +606,25 @@ export const ProductTemplatesTab = () => {
               </CardContent>
             </Card>
 
+            {/* Pricing Structure Explanation */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">💡 How Pricing Works:</h4>
+              <h4 className="font-medium text-blue-900 mb-2">💡 Pricing Structure Explanation:</h4>
               <div className="space-y-2 text-sm text-blue-800">
                 {requiresPricingGrid ? (
                   <>
                     <p><strong>CSV Pricing Grid Method:</strong></p>
-                    <p>• Pricing comes directly from your uploaded CSV grid</p>
-                    <p>• No additional making costs needed - everything is in the grid</p>
-                    <p>• Perfect for complex blind pricing from suppliers</p>
+                    <p>• Final price comes directly from your uploaded CSV grid</p>
+                    <p>• No additional component costs are added to avoid double pricing</p>
+                    <p>• Components selected below are for display purposes only</p>
+                    <p>• Perfect for supplier-provided complete pricing</p>
                   </>
                 ) : (
                   <>
-                    <p><strong>Component-Based Method:</strong></p>
-                    <p>• Base making cost + fabric cost + selected components</p>
-                    <p>• More flexible for custom combinations</p>
-                    <p>• Perfect for curtains and custom work</p>
+                    <p><strong>Component-Based Pricing Method:</strong></p>
+                    <p>• Base making cost + fabric cost + selected component costs</p>
+                    <p>• Each component adds its individual cost to the total</p>
+                    <p>• Flexible for mixing and matching components</p>
+                    <p>• Perfect for bespoke custom work pricing</p>
                   </>
                 )}
               </div>
@@ -806,8 +831,15 @@ export const ProductTemplatesTab = () => {
               </div>
             )}
 
+            {/* Component Selection */}
             <div className="space-y-4">
-              <h4 className="font-medium text-brand-primary">Required Components</h4>
+              <h4 className="font-medium text-brand-primary">Component Selection</h4>
+              <p className="text-sm text-gray-600">
+                {requiresPricingGrid 
+                  ? "Select components for display purposes only (pricing comes from CSV grid)"
+                  : "Select components that will be available for this product (costs will be added to final price)"
+                }
+              </p>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
