@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -42,9 +42,15 @@ export const ProjectHeader = ({
   const [eventTime, setEventTime] = useState("");
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [hasActiveEvent, setHasActiveEvent] = useState(false); // This would come from props/state in real implementation
+  const [hasActiveEvent, setHasActiveEvent] = useState(false);
+  const [displayStatus, setDisplayStatus] = useState(currentStatus);
 
-  const currentStatusInfo = jobStatuses?.find(s => s.name.toLowerCase() === currentStatus.toLowerCase());
+  // Update display status when currentStatus prop changes
+  useEffect(() => {
+    setDisplayStatus(currentStatus);
+  }, [currentStatus]);
+
+  const currentStatusInfo = jobStatuses?.find(s => s.name.toLowerCase() === displayStatus.toLowerCase());
 
   const getStatusColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
@@ -59,13 +65,19 @@ export const ProjectHeader = ({
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string) => {
+    console.log('Status change requested:', { from: displayStatus, to: newStatus });
+    
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
     
-    if (statusInfo?.action === 'requires_reason' && currentStatus !== 'lost order') {
+    if (statusInfo?.action === 'requires_reason' && displayStatus !== 'lost order') {
       const reason = prompt("Please provide a reason for the lost order:");
-      if (!reason) return;
+      if (!reason) {
+        console.log('Status change cancelled - no reason provided');
+        return;
+      }
       
+      console.log('Status change with reason:', reason);
       toast({
         title: "Status Updated",
         description: `Job status changed to ${statusInfo.name}. Reason: ${reason}`,
@@ -82,8 +94,20 @@ export const ProjectHeader = ({
       });
     }
     
-    onStatusChange?.(newStatus);
-    onProjectUpdate?.({ status: newStatus });
+    // Update the display status immediately for UI feedback
+    setDisplayStatus(newStatus);
+    console.log('Display status updated to:', newStatus);
+    
+    // Call the parent handlers to persist the change
+    if (onStatusChange) {
+      console.log('Calling onStatusChange with:', newStatus);
+      onStatusChange(newStatus);
+    }
+    
+    if (onProjectUpdate) {
+      console.log('Calling onProjectUpdate with status:', newStatus);
+      onProjectUpdate({ status: newStatus });
+    }
   };
 
   const handleCreateEvent = () => {
@@ -105,7 +129,7 @@ export const ProjectHeader = ({
       invitedMembers: selectedTeamMembers
     };
 
-    // Set active event indicator
+    console.log('Creating event:', eventDetails);
     setHasActiveEvent(true);
 
     toast({
@@ -131,6 +155,7 @@ export const ProjectHeader = ({
       return;
     }
 
+    console.log('Inviting team member:', inviteEmail);
     toast({
       title: "Invitation Sent",
       description: `Team member invitation sent to ${inviteEmail}`,
@@ -139,6 +164,8 @@ export const ProjectHeader = ({
     setInviteEmail("");
     setShowTeamDialog(false);
   };
+
+  console.log('ProjectHeader render - displayStatus:', displayStatus, 'currentStatusInfo:', currentStatusInfo);
 
   return (
     <div className="bg-white border-b px-6 py-4">
@@ -183,7 +210,7 @@ export const ProjectHeader = ({
                 {currentStatusInfo.action === 'requires_reason' && ' ⚠️'}
               </Badge>
             )}
-            <Select value={currentStatus} onValueChange={handleStatusChange}>
+            <Select value={displayStatus} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
