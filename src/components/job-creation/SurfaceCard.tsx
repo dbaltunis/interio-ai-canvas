@@ -45,16 +45,15 @@ export const SurfaceCard = ({
   };
 
   const handleTreatmentTypeSelect = (treatmentType: string) => {
-    const windowCovering = windowCoverings.find(wc => wc.name === treatmentType);
+    console.log("handleTreatmentTypeSelect called with:", treatmentType);
+    const windowCovering = windowCoverings?.find(wc => wc.name === treatmentType);
+    console.log("Found windowCovering:", windowCovering);
     
     if (windowCovering) {
-      // Scroll to top to ensure dialog is visible
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Small delay to allow scroll to complete, then open treatment form
-      setTimeout(() => {
-        onAddTreatment(surface.id, treatmentType, windowCovering);
-      }, 300);
+      // Call immediately without delay
+      onAddTreatment(surface.id, treatmentType, windowCovering);
+    } else {
+      console.error("No window covering found for:", treatmentType);
     }
   };
 

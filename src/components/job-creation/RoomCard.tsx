@@ -80,18 +80,32 @@ export const RoomCard = ({
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
+    console.log("handleAddTreatment called with:", { surfaceId, treatmentType, windowCovering });
     const surface = roomSurfaces.find(s => s.id === surfaceId);
+    console.log("Found surface:", surface);
+    
+    // Set all state synchronously
     setSelectedSurfaceId(surfaceId);
     setSelectedTreatmentType(treatmentType);
     setSelectedSurfaceType(surface?.surface_type || 'window');
     setSelectedWindowCovering(windowCovering);
     
-    // Check if window covering has making cost - use calculator if it does
-    if (windowCovering?.making_cost_id) {
-      setCalculatorDialogOpen(true);
-    } else {
-      setPricingFormOpen(true);
-    }
+    console.log("About to open form with:", {
+      surfaceId,
+      treatmentType,
+      surfaceType: surface?.surface_type || 'window',
+      windowCovering
+    });
+    
+    // Use setTimeout to ensure state updates are processed
+    setTimeout(() => {
+      // Check if window covering has making cost - use calculator if it does
+      if (windowCovering?.making_cost_id) {
+        setCalculatorDialogOpen(true);
+      } else {
+        setPricingFormOpen(true);
+      }
+    }, 10);
   };
 
   const handlePricingFormSave = (treatmentData: any) => {
