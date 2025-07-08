@@ -269,15 +269,23 @@ export const ProductTemplatesTab = () => {
   };
 
   const handleCalculationRuleToggle = (category, ruleId, checked) => {
-    setFormData(prev => ({
-      ...prev,
-      calculationRules: {
-        ...prev.calculationRules,
-        [category]: checked 
-          ? [...prev.calculationRules[category], ruleId]
-          : prev.calculationRules[category].filter(id => id !== ruleId)
-      }
-    }));
+    console.log(`Toggling ${category} rule ${ruleId} to ${checked}`);
+    setFormData(prev => {
+      const currentRules = prev.calculationRules[category] || [];
+      const newRules = checked 
+        ? [...currentRules, ruleId]
+        : currentRules.filter(id => id !== ruleId);
+      
+      console.log(`Updated ${category} rules:`, newRules);
+      
+      return {
+        ...prev,
+        calculationRules: {
+          ...prev.calculationRules,
+          [category]: newRules
+        }
+      };
+    });
   };
 
   return (
