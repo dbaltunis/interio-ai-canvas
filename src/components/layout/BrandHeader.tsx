@@ -9,9 +9,9 @@ interface BrandHeaderProps {
 
 export const BrandHeader = ({ className = "", size = "md", showTagline = false }: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-8",
-    md: "h-12", 
-    lg: "h-16"
+    sm: "h-16", // doubled from h-8
+    md: "h-24", // doubled from h-12
+    lg: "h-32"  // doubled from h-16
   };
 
   const textSizeClasses = {
