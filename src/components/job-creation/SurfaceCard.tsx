@@ -55,13 +55,13 @@ export const SurfaceCard = ({
     console.log("=== SURFACE CARD TREATMENT SELECTION ===");
     console.log("Selected treatment type:", treatmentType);
     console.log("Available window coverings:", windowCoverings);
-    console.log("Active window coverings:", windowCoverings?.filter(wc => wc.active));
     
     const windowCovering = windowCoverings?.find(wc => wc.name === treatmentType && wc.active);
     console.log("Found matching window covering:", windowCovering);
     
     if (windowCovering) {
       console.log("✅ Using window covering data from settings:", windowCovering.name);
+      // Pass the complete window covering data
       onAddTreatment(surface.id, treatmentType, windowCovering);
     } else {
       console.log("⚠️ No active window covering found, creating basic treatment");

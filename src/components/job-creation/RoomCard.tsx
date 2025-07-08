@@ -7,7 +7,6 @@ import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceCreationButtons } from "./SurfaceCreationButtons";
 import { SurfacesList } from "./SurfacesList";
-import { useSurfaceCreation } from "@/hooks/useSurfaceCreation";
 import { useState } from "react";
 
 interface RoomCardProps {
@@ -47,7 +46,8 @@ export const RoomCard = ({
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
-  const { handleCreateSurface, isCreating } = useSurfaceCreation();
+  // Use the onCreateSurface prop directly instead of useSurfaceCreation
+  const isCreating = false; // We'll get this from the parent component if needed
   
   const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
@@ -84,19 +84,14 @@ export const RoomCard = ({
     console.log("RoomCard handleSurfaceCreation called with surfaceType:", surfaceType);
     console.log("Room data:", room);
     console.log("Project ID:", projectId);
-    console.log("Room surfaces:", roomSurfaces);
     
     if (!surfaceType) {
       console.error("No surfaceType provided!");
       return;
     }
     
-    try {
-      await handleCreateSurface(room, projectId, surfaceType, roomSurfaces);
-      console.log("Surface creation completed successfully");
-    } catch (error) {
-      console.error("Surface creation failed in RoomCard:", error);
-    }
+    // Use the onCreateSurface prop which connects to JobHandlers
+    onCreateSurface(room.id, surfaceType);
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
