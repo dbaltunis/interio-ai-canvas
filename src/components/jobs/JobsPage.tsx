@@ -40,6 +40,7 @@ export const JobsPage = () => {
   };
 
   const handleJobSelect = (jobId: string) => {
+    console.log("Selecting job:", jobId); // Debug log
     setSelectedJobId(jobId);
     setIsNewJob(false);
   };
@@ -56,9 +57,11 @@ export const JobsPage = () => {
   };
 
   const handleNewJob = () => {
+    console.log("Creating new job..."); // Debug log
     try {
       setIsNewJob(true);
       setSelectedJobId("new"); // Use "new" to indicate creating a new job
+      console.log("New job state set"); // Debug log
     } catch (error) {
       console.error("Error starting new job:", error);
       toast({
@@ -91,6 +94,8 @@ export const JobsPage = () => {
   const jobsCount = quotes?.length || 0;
   const clientsCount = clients?.length || 0;
   const emailsCount = 45; // This will be dynamic once we have email data
+
+  console.log("Current state:", { selectedJobId, isNewJob, showNewClient, selectedClientId }); // Debug log
 
   // If creating a new client, show the new client page
   if (showNewClient) {
