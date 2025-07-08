@@ -21,7 +21,9 @@ export const useProjectJobsActions = ({
   const { toast } = useToast();
 
   const handleCreateRoom = async () => {
-    if (!project?.id) {
+    // Determine the actual project ID
+    const projectId = project?.project_id || project?.id;
+    if (!projectId) {
       toast({
         title: "Error",
         description: "No project selected",
@@ -33,10 +35,10 @@ export const useProjectJobsActions = ({
     setIsCreatingRoom(true);
     try {
       const roomNumber = (rooms?.length || 0) + 1;
-      console.log("Creating room with project_id:", project.id);
+      console.log("Creating room with project_id:", projectId);
       
       await createRoom.mutateAsync({
-        project_id: project.id,
+        project_id: projectId,
         name: `Room ${roomNumber}`,
         room_type: "living_room"
       });
@@ -55,15 +57,21 @@ export const useProjectJobsActions = ({
   };
 
   const handleUpdateProjectName = async (name: string) => {
-    if (!project?.id || !name.trim()) {
+    if (!name.trim()) {
       throw new Error("Project name cannot be empty");
     }
 
+    // Determine the actual project ID
+    const projectId = project?.project_id || project?.id;
+    if (!projectId) {
+      throw new Error("No project ID found");
+    }
+
     try {
-      console.log("Updating project name:", { id: project.id, name: name.trim() });
+      console.log("Updating project name:", { id: projectId, name: name.trim() });
       
       const updatedProject = await updateProject.mutateAsync({
-        id: project.id,
+        id: projectId,
         name: name.trim()
       });
       

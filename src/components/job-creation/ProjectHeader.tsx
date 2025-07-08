@@ -19,7 +19,7 @@ interface ProjectHeaderProps {
   projectNumber?: string;
   projectValue?: number;
   currentStatus?: string;
-  projectId?: string;
+  projectId?: string | any;
   quoteId?: string;
   onBack: () => void;
   onStatusChange?: (status: string) => void;
@@ -90,11 +90,16 @@ export const ProjectHeader = ({
       // Update both project and quote status if available
       const updatePromises = [];
       
-      if (projectId) {
-        console.log('Updating project status:', { projectId, status: newStatus });
+      // For projects that come from quotes, use the actual project_id from the project object
+      const actualProjectId = (typeof projectId === 'object' && projectId && 'project_id' in projectId) 
+        ? projectId.project_id 
+        : projectId;
+      
+      if (actualProjectId) {
+        console.log('Updating project status:', { projectId: actualProjectId, status: newStatus });
         updatePromises.push(
           updateProject.mutateAsync({
-            id: projectId,
+            id: actualProjectId,
             status: newStatus
           })
         );
