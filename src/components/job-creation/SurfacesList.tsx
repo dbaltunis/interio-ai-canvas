@@ -16,14 +16,16 @@ export const SurfacesList = ({
   onDeleteSurface,
   onUpdateSurface
 }: SurfacesListProps) => {
-  console.log("=== SURFACES LIST DEBUG ===");
-  console.log("Surfaces prop:", surfaces);
-  console.log("Treatments prop:", treatments);
+  console.log("=== SURFACES LIST RENDER ===");
+  console.log("Surfaces received:", surfaces);
   console.log("Surfaces length:", surfaces?.length);
-  console.log("Surfaces array:", JSON.stringify(surfaces, null, 2));
+  console.log("Treatments received:", treatments);
   
   // Ensure surfaces is always an array
   const safeSurfaces = Array.isArray(surfaces) ? surfaces : [];
+  
+  console.log("Safe surfaces:", safeSurfaces);
+  console.log("Safe surfaces length:", safeSurfaces.length);
   
   if (safeSurfaces.length === 0) {
     console.log("No surfaces to display, showing empty state");

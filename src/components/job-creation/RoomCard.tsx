@@ -46,11 +46,20 @@ export const RoomCard = ({
   onChangeRoomType
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
-  const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
+  const { data: allSurfaces, isLoading: surfacesLoading, refetch: refetchSurfaces } = useSurfaces(projectId);
+  
+  console.log("=== ROOM CARD RENDER ===");
+  console.log("Room:", room.name, "ID:", room.id);
+  console.log("Project ID:", projectId);
+  console.log("All surfaces data:", allSurfaces);
+  console.log("Surfaces loading:", surfacesLoading);
   
   const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
   const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
   const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
+  
+  console.log("Room surfaces:", roomSurfaces);
+  console.log("Room surfaces length:", roomSurfaces.length);
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
@@ -62,13 +71,6 @@ export const RoomCard = ({
     surfaceType: "",
     windowCovering: null as any
   });
-
-  console.log("=== ROOM CARD DEBUG ===");
-  console.log("Room:", room.name, "ID:", room.id);
-  console.log("Project ID:", projectId);
-  console.log("All surfaces:", allSurfaces);
-  console.log("Room surfaces:", roomSurfaces);
-  console.log("Surfaces loading:", surfacesLoading);
 
   const startEditing = () => {
     setEditingRoomId(room.id);
@@ -96,8 +98,13 @@ export const RoomCard = ({
       return;
     }
     
-    // Use the onCreateSurface prop which connects to JobHandlers
-    onCreateSurface(room.id, surfaceType);
+    // Create the surface
+    await onCreateSurface(room.id, surfaceType);
+    
+    // Refetch surfaces to ensure UI updates
+    setTimeout(() => {
+      refetchSurfaces();
+    }, 100);
   };
 
   const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {

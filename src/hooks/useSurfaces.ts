@@ -11,18 +11,8 @@ export const useSurfaces = (projectId?: string) => {
       console.log("Project ID:", projectId);
       
       if (!projectId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return [];
-
-        const { data, error } = await supabase
-          .from("surfaces")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at");
-        
-        if (error) throw error;
-        console.log("Fetched surfaces (no project):", data);
-        return data;
+        console.log("No project ID provided, returning empty array");
+        return [];
       }
       
       const { data, error } = await supabase
@@ -31,13 +21,17 @@ export const useSurfaces = (projectId?: string) => {
         .eq("project_id", projectId)
         .order("created_at");
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching surfaces:", error);
+        throw error;
+      }
+      
       console.log("Fetched surfaces for project:", projectId, "data:", data);
-      return data;
+      return data || [];
     },
-    enabled: !!projectId, // Only run query if projectId exists
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
+    enabled: !!projectId,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache
   });
 };
 
@@ -47,7 +41,7 @@ export const useCreateSurface = () => {
 
   return useMutation({
     mutationFn: async (surface: any) => {
-      console.log("=== MUTATION START ===");
+      console.log("=== CREATING SURFACE ===");
       console.log("Surface data being sent:", surface);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -59,8 +53,6 @@ export const useCreateSurface = () => {
         .select()
         .single();
 
-      console.log("Database response:", { data, error });
-      
       if (error) {
         console.error("Database error:", error);
         throw error;
@@ -73,18 +65,10 @@ export const useCreateSurface = () => {
       console.log("=== SURFACE CREATION SUCCESS ===");
       console.log("Created surface data:", data);
       
-      // Immediately update the cache with the new surface
-      queryClient.setQueryData(["surfaces", data.project_id], (oldData: any) => {
-        console.log("Updating cache with new surface:", data);
-        const newData = oldData ? [...oldData, data] : [data];
-        console.log("New cache data:", newData);
-        return newData;
-      });
-      
-      // Also invalidate to ensure fresh data
+      // Invalidate and refetch surfaces for this project
       queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
       
-      // Invalidate rooms query to ensure consistency
+      // Also invalidate rooms query to ensure consistency
       if (data.project_id) {
         queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
       }
@@ -95,7 +79,7 @@ export const useCreateSurface = () => {
       });
     },
     onError: (error) => {
-      console.error("=== MUTATION ERROR ===");
+      console.error("=== SURFACE CREATION ERROR ===");
       console.error("Create surface error:", error);
       toast({
         title: "Error",
@@ -123,15 +107,12 @@ export const useUpdateSurface = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Update cache immediately
-      queryClient.setQueryData(["surfaces", data.project_id], (oldData: any) => {
-        if (!oldData) return [data];
-        return oldData.map((surface: any) => 
-          surface.id === data.id ? data : surface
-        );
-      });
-      
       queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
+      
+      toast({
+        title: "Success",
+        description: "Surface updated successfully",
+      });
     },
     onError: (error) => {
       toast({
@@ -158,15 +139,6 @@ export const useDeleteSurface = () => {
       return id;
     },
     onSuccess: (deletedId) => {
-      // Update cache immediately by removing the deleted surface
-      queryClient.setQueriesData(
-        { queryKey: ["surfaces"] },
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return oldData.filter((surface: any) => surface.id !== deletedId);
-        }
-      );
-      
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       
       toast({
