@@ -23,7 +23,7 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = false }
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       <img 
-        src="/lovable-uploads/1ac27f03-ddd5-4b5d-8d03-c48007a3ba62.png" 
+        src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
         alt="InterioApp Logo" 
         className={`${sizeClasses[size]} w-auto object-contain`}
       />
