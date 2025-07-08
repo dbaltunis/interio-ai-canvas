@@ -1,3 +1,4 @@
+
 import { ProjectClientTab } from "./ProjectClientTab";
 import { ProjectJobsTab } from "./ProjectJobsTab";
 import { ProjectQuoteTab } from "./ProjectQuoteTab";
@@ -85,6 +86,7 @@ export const ProjectTabContent = ({
   };
 
   const handleProjectUpdate = (updatedProject: any) => {
+    console.log("ProjectTabContent - project updated:", updatedProject);
     onProjectUpdate?.(updatedProject);
   };
 

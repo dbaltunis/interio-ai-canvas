@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useUpdateQuote } from "@/hooks/useQuotes";
+import { useUpdateProject } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 
 interface ProjectHeaderProps {
@@ -44,6 +46,7 @@ export const ProjectHeader = ({
   const { data: teamMembers } = useTeamMembers();
   const { toast } = useToast();
   const updateQuote = useUpdateQuote();
+  const updateProject = useUpdateProject();
   const navigate = useNavigate();
   
   const [showEventDialog, setShowEventDialog] = useState(false);
@@ -120,7 +123,7 @@ export const ProjectHeader = ({
   };
 
   const handleStatusChange = async (newStatus: string) => {
-    console.log('Status change requested:', { from: displayStatus, to: newStatus });
+    console.log('Status change requested:', { from: displayStatus, to: newStatus, projectId, quoteId });
     
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
     
@@ -135,8 +138,19 @@ export const ProjectHeader = ({
     }
     
     try {
-      // Update the quote status in the database
+      // Update the project status in the projects table
+      if (projectId) {
+        console.log('Updating project status:', { projectId, status: newStatus });
+        await updateProject.mutateAsync({
+          id: projectId,
+          status: newStatus
+        });
+        console.log('Project status updated successfully in database');
+      }
+
+      // Update the quote status in the database if quote exists
       if (quoteId) {
+        console.log('Updating quote status:', { quoteId, status: newStatus });
         await updateQuote.mutateAsync({
           id: quoteId,
           status: newStatus
@@ -159,7 +173,7 @@ export const ProjectHeader = ({
         onProjectUpdate({ status: newStatus });
       }
 
-      // Handle status-specific actions
+      // Handle status-specific actions and redirects
       handleStatusActions(newStatus);
       
       toast({
