@@ -44,42 +44,45 @@ export const SurfaceCard = ({
   };
 
   const handleTreatmentTypeSelect = (treatmentType: string) => {
-    console.log("=== SURFACE CARD SELECTION ===");
+    console.log("=== SURFACE CARD TREATMENT SELECTION ===");
     console.log("Selected treatment type:", treatmentType);
     console.log("Available window coverings:", windowCoverings);
+    console.log("Active window coverings:", windowCoverings?.filter(wc => wc.active));
     
-    const windowCovering = windowCoverings?.find(wc => wc.name === treatmentType);
+    const windowCovering = windowCoverings?.find(wc => wc.name === treatmentType && wc.active);
     console.log("Found matching window covering:", windowCovering);
     
     if (windowCovering) {
-      console.log("Calling onAddTreatment with window covering data");
+      console.log("✅ Using window covering data from settings:", windowCovering.name);
       onAddTreatment(surface.id, treatmentType, windowCovering);
     } else {
-      console.error("No window covering found for:", treatmentType);
-      console.log("Creating basic treatment without window covering");
+      console.log("⚠️ No active window covering found, creating basic treatment");
       onAddTreatment(surface.id, treatmentType);
     }
   };
 
-  // Get available window coverings - show ALL active window coverings
+  // Get available window coverings from Product Templates (Settings)
   const getAvailableWindowCoverings = () => {
-    console.log("=== FILTERING WINDOW COVERINGS ===");
+    console.log("=== GETTING WINDOW COVERINGS FROM SETTINGS ===");
     console.log("Window coverings loading:", windowCoveringsLoading);
-    console.log("Window coverings data:", windowCoverings);
+    console.log("Total window coverings:", windowCoverings?.length || 0);
     
     if (windowCoveringsLoading || !windowCoverings) {
-      console.log("Still loading or no data");
+      console.log("Still loading window coverings...");
       return [];
     }
     
-    // Show all active window coverings regardless of surface type
-    const filtered = windowCoverings.filter(wc => {
-      console.log(`Checking window covering: ${wc.name}, active: ${wc.active}`);
-      return wc.active === true;
+    // Filter for active window coverings only
+    const activeWindowCoverings = windowCoverings.filter(wc => {
+      const isActive = wc.active === true;
+      console.log(`Window covering: ${wc.name}, active: ${wc.active}, included: ${isActive}`);
+      return isActive;
     });
     
-    console.log("Filtered window coverings:", filtered);
-    return filtered;
+    console.log("✅ Active window coverings found:", activeWindowCoverings.length);
+    console.log("Active window covering names:", activeWindowCoverings.map(wc => wc.name));
+    
+    return activeWindowCoverings;
   };
 
   const availableWindowCoverings = getAvailableWindowCoverings();
@@ -88,10 +91,11 @@ export const SurfaceCard = ({
     return `$${amount.toFixed(2)}`;
   };
 
-  console.log("=== SURFACE CARD RENDER ===");
-  console.log("Surface:", surface);
-  console.log("Available window coverings count:", availableWindowCoverings.length);
+  console.log("=== SURFACE CARD RENDER DEBUG ===");
+  console.log("Surface:", surface?.name);
   console.log("Window coverings loading:", windowCoveringsLoading);
+  console.log("Available window coverings for dropdown:", availableWindowCoverings.length);
+  console.log("Window covering names:", availableWindowCoverings.map(wc => wc.name));
 
   return (
     <Card className="mb-4 border-l-4 border-l-blue-500">
@@ -261,29 +265,52 @@ export const SurfaceCard = ({
             </div>
           ))}
           
+          {/* ADD WINDOW COVERING DROPDOWN - SHOWS PRODUCTS FROM SETTINGS */}
           <Select onValueChange={handleTreatmentTypeSelect}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Add window covering" />
+              <SelectValue placeholder="Add window covering from Product Templates" />
             </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-300 shadow-lg z-50">
+            <SelectContent className="bg-white border border-gray-300 shadow-lg z-50 max-h-96 overflow-y-auto">
               {windowCoveringsLoading ? (
                 <SelectItem value="loading" disabled>Loading window coverings...</SelectItem>
               ) : availableWindowCoverings.length > 0 ? (
-                availableWindowCoverings.map((wc) => (
-                  <SelectItem key={wc.id} value={wc.name} className="hover:bg-gray-100">
-                    <div className="flex items-center justify-between w-full">
-                      <span>{wc.name}</span>
-                      {wc.making_cost_id && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
-                          Smart Calculator
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))
+                <>
+                  <div className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-50">
+                    Product Templates from Settings ({availableWindowCoverings.length} available)
+                  </div>
+                  {availableWindowCoverings.map((wc) => (
+                    <SelectItem key={wc.id} value={wc.name} className="hover:bg-gray-100 py-2">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{wc.name}</span>
+                          {wc.description && (
+                            <span className="text-xs text-gray-500 truncate max-w-xs">
+                              {wc.description}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                          {wc.making_cost_id && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              Smart Calculator
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-600">
+                            {wc.margin_percentage}% margin
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </>
               ) : (
                 <SelectItem value="none" disabled>
-                  No window coverings available. Create them in Settings → Products → Window Coverings
+                  <div className="text-center py-2">
+                    <div className="font-medium text-gray-700">No window coverings found</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Create window coverings in Settings → Product Templates → Window Coverings
+                    </div>
+                  </div>
                 </SelectItem>
               )}
             </SelectContent>
