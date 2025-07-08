@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +61,6 @@ export const ProjectHeader = ({
   const [displayStatus, setDisplayStatus] = useState(currentStatus);
   const [showStatusActionDialog, setShowStatusActionDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Update display status when currentStatus prop changes
   useEffect(() => {
@@ -123,8 +123,6 @@ export const ProjectHeader = ({
   };
 
   const handleStatusChange = async (newStatus: string) => {
-    if (isUpdatingStatus) return;
-    
     console.log('Status change requested:', { from: displayStatus, to: newStatus, projectId, quoteId });
     
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
@@ -135,54 +133,52 @@ export const ProjectHeader = ({
         console.log('Status change cancelled - no reason provided');
         return;
       }
+      
       console.log('Status change with reason:', reason);
     }
     
-    setIsUpdatingStatus(true);
-    
     try {
-      // Update the project status in the projects table first
+      // Update the project status in the projects table
       if (projectId) {
         console.log('Updating project status:', { projectId, status: newStatus });
-        const updatedProject = await updateProject.mutateAsync({
+        await updateProject.mutateAsync({
           id: projectId,
           status: newStatus
         });
-        console.log('Project status updated successfully:', updatedProject);
-        
-        // Call the parent handlers to update the UI immediately
-        if (onProjectUpdate) {
-          console.log('Calling onProjectUpdate with updated project');
-          onProjectUpdate(updatedProject);
-        }
+        console.log('Project status updated successfully in database');
       }
 
-      // Update the quote status if quote exists
+      // Update the quote status in the database if quote exists
       if (quoteId) {
         console.log('Updating quote status:', { quoteId, status: newStatus });
-        const updatedQuote = await updateQuote.mutateAsync({
+        await updateQuote.mutateAsync({
           id: quoteId,
           status: newStatus
         });
-        console.log('Quote status updated successfully:', updatedQuote);
+        console.log('Quote status updated successfully in database');
       }
       
-      // Update the display status for immediate UI feedback
+      // Update the display status immediately for UI feedback
       setDisplayStatus(newStatus);
       console.log('Display status updated to:', newStatus);
       
-      // Call the status change handler
+      // Call the parent handlers to persist the change
       if (onStatusChange) {
         console.log('Calling onStatusChange with:', newStatus);
         onStatusChange(newStatus);
       }
+      
+      if (onProjectUpdate) {
+        console.log('Calling onProjectUpdate with status:', newStatus);
+        onProjectUpdate({ status: newStatus });
+      }
 
-      // Handle status-specific actions
+      // Handle status-specific actions and redirects
       handleStatusActions(newStatus);
       
       toast({
-        title: "Status Updated Successfully",
-        description: `Project status changed to ${statusInfo?.name || newStatus}`,
+        title: "Status Updated",
+        description: `Job status changed to ${statusInfo?.name || newStatus}`,
       });
       
     } catch (error) {
@@ -192,8 +188,6 @@ export const ProjectHeader = ({
         description: "Failed to update status. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsUpdatingStatus(false);
     }
   };
 
@@ -347,7 +341,7 @@ export const ProjectHeader = ({
                 {currentStatusInfo.action === 'requires_reason' && ' ⚠️'}
               </Badge>
             )}
-            <Select value={displayStatus} onValueChange={handleStatusChange} disabled={isUpdatingStatus}>
+            <Select value={displayStatus} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -362,12 +356,6 @@ export const ProjectHeader = ({
                 ))}
               </SelectContent>
             </Select>
-            {isUpdatingStatus && (
-              <div className="flex items-center space-x-2 text-blue-600">
-                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs">Saving...</span>
-              </div>
-            )}
           </div>
 
           {/* Payment Type Selector */}
