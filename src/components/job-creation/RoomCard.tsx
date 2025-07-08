@@ -25,6 +25,7 @@ interface RoomCardProps {
   editingRoomName: string;
   setEditingRoomName: (name: string) => void;
   onRenameRoom: (roomId: string, newName: string) => void;
+  onChangeRoomType: (roomId: string, roomType: string) => void;
 }
 
 export const RoomCard = ({ 
@@ -41,7 +42,8 @@ export const RoomCard = ({
   setEditingRoomId,
   editingRoomName,
   setEditingRoomName,
-  onRenameRoom
+  onRenameRoom,
+  onChangeRoomType
 }: RoomCardProps) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
@@ -147,6 +149,7 @@ export const RoomCard = ({
           onRenameRoom={onRenameRoom}
           onCopyRoom={onCopyRoom}
           onDeleteRoom={onDeleteRoom}
+          onChangeRoomType={onChangeRoomType}
         />
         
         <CardContent className="flex-1 flex flex-col">

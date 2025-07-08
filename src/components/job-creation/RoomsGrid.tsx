@@ -21,6 +21,7 @@ interface RoomsGridProps {
   onRenameRoom: (roomId: string, newName: string) => void;
   onCreateRoom: () => void;
   isCreatingRoom: boolean;
+  onChangeRoomType: (roomId: string, roomType: string) => void;
 }
 
 export const RoomsGrid = ({ 
@@ -39,7 +40,8 @@ export const RoomsGrid = ({
   setEditingRoomName,
   onRenameRoom,
   onCreateRoom,
-  isCreatingRoom
+  isCreatingRoom,
+  onChangeRoomType
 }: RoomsGridProps) => {
   return (
     <div className="space-y-6">
@@ -66,6 +68,7 @@ export const RoomsGrid = ({
               editingRoomName={editingRoomName}
               setEditingRoomName={setEditingRoomName}
               onRenameRoom={onRenameRoom}
+              onChangeRoomType={onChangeRoomType}
             />
           ))
         )}

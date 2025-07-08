@@ -39,10 +39,17 @@ export const useJobHandlers = (project: any) => {
     if (newName.trim()) {
       try {
         await updateRoom.mutateAsync({ id: roomId, name: newName.trim() });
-        console.log("Room renamed successfully");
       } catch (error) {
         console.error("Failed to rename room:", error);
       }
+    }
+  };
+
+  const handleChangeRoomType = async (roomId: string, roomType: string) => {
+    try {
+      await updateRoom.mutateAsync({ id: roomId, room_type: roomType });
+    } catch (error) {
+      console.error("Failed to change room type:", error);
     }
   };
 
@@ -250,6 +257,7 @@ export const useJobHandlers = (project: any) => {
     handleDeleteSurface,
     handleCopyRoom,
     handlePasteRoom,
-    handleCreateTreatment
+    handleCreateTreatment,
+    handleChangeRoomType
   };
 };

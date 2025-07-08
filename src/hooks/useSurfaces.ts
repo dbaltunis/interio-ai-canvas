@@ -61,18 +61,14 @@ export const useCreateSurface = () => {
       return data;
     },
     onSuccess: (data) => {
-      console.log("=== MUTATION SUCCESS ===");
-      console.log("Created surface:", data);
-      
-      // Invalidate all surfaces queries
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      
-      // Invalidate specific project surfaces
       if (data.project_id) {
         queryClient.invalidateQueries({ queryKey: ["surfaces", data.project_id] });
       }
-      
-      console.log("Queries invalidated, surface should appear in UI");
+      toast({
+        title: "Success",
+        description: "Window created successfully",
+      });
     },
     onError: (error) => {
       console.error("=== MUTATION ERROR ===");
