@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -82,103 +81,60 @@ export const ProjectHeader = ({
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const handleStatusActions = (newStatus: string) => {
-    const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
-    
-    switch (newStatus.toLowerCase()) {
-      case 'quote':
-        setPendingStatus(newStatus);
-        setShowStatusActionDialog(true);
-        break;
-      case 'sent':
-        toast({
-          title: "Quote Status Changed",
-          description: "Quote marked as sent. Consider following up with the client in 3-5 days.",
-        });
-        break;
-      case 'order':
-        toast({
-          title: "Congratulations! 🎉",
-          description: "Quote accepted! Job is now locked and ready for production.",
-        });
-        break;
-      case 'in progress':
-        toast({
-          title: "Project Started",
-          description: "Job is now in progress. Track your work orders in the Workshop tab.",
-        });
-        if (onTabChange) {
-          onTabChange('workshop');
-        }
-        break;
-      case 'completed':
-        toast({
-          title: "Project Completed! ✅",
-          description: "Great job! Consider requesting a review from the client.",
-        });
-        break;
-      default:
-        break;
-    }
-  };
-
   const handleStatusChange = async (newStatus: string) => {
     console.log('Status change requested:', { from: displayStatus, to: newStatus, projectId, quoteId });
     
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
     
-    if (statusInfo?.action === 'requires_reason' && displayStatus !== 'lost order') {
-      const reason = prompt("Please provide a reason for the lost order:");
-      if (!reason) {
-        console.log('Status change cancelled - no reason provided');
-        return;
-      }
-      
-      console.log('Status change with reason:', reason);
-    }
-    
     try {
-      // Update the project status in the projects table
+      // Update both project and quote status if available
+      const updatePromises = [];
+      
       if (projectId) {
         console.log('Updating project status:', { projectId, status: newStatus });
-        await updateProject.mutateAsync({
-          id: projectId,
-          status: newStatus
-        });
-        console.log('Project status updated successfully in database');
+        updatePromises.push(
+          updateProject.mutateAsync({
+            id: projectId,
+            status: newStatus
+          })
+        );
       }
 
-      // Update the quote status in the database if quote exists
       if (quoteId) {
         console.log('Updating quote status:', { quoteId, status: newStatus });
-        await updateQuote.mutateAsync({
-          id: quoteId,
-          status: newStatus
-        });
-        console.log('Quote status updated successfully in database');
+        updatePromises.push(
+          updateQuote.mutateAsync({
+            id: quoteId,
+            status: newStatus
+          })
+        );
       }
+
+      // Wait for all updates to complete
+      await Promise.all(updatePromises);
       
-      // Update the display status immediately for UI feedback
+      // Update display status
       setDisplayStatus(newStatus);
-      console.log('Display status updated to:', newStatus);
+      console.log('Status updated successfully to:', newStatus);
       
-      // Call the parent handlers to persist the change
+      // Notify parent components
       if (onStatusChange) {
-        console.log('Calling onStatusChange with:', newStatus);
         onStatusChange(newStatus);
       }
       
       if (onProjectUpdate) {
-        console.log('Calling onProjectUpdate with status:', newStatus);
         onProjectUpdate({ status: newStatus });
       }
 
-      // Handle status-specific actions and redirects
-      handleStatusActions(newStatus);
+      // Handle status-specific actions
+      if (newStatus.toLowerCase() === 'quote') {
+        setPendingStatus(newStatus);
+        setShowStatusActionDialog(true);
+      }
       
       toast({
         title: "Status Updated",
-        description: `Job status changed to ${statusInfo?.name || newStatus}`,
+        description: `Status changed to ${statusInfo?.name || newStatus}`,
       });
       
     } catch (error) {
@@ -188,6 +144,8 @@ export const ProjectHeader = ({
         description: "Failed to update status. Please try again.",
         variant: "destructive"
       });
+      // Revert display status on error
+      setDisplayStatus(currentStatus);
     }
   };
 

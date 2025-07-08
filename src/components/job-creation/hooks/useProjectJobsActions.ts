@@ -69,7 +69,7 @@ export const useProjectJobsActions = ({
       
       console.log("Project name updated successfully:", updatedProject);
       
-      // Notify parent component of the update immediately
+      // Notify parent component of the update
       if (onProjectUpdate) {
         onProjectUpdate(updatedProject);
       }
