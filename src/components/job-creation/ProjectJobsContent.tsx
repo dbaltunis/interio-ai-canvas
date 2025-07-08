@@ -2,6 +2,7 @@
 import { RoomsGrid } from "./RoomsGrid";
 import { EmptyRoomsState } from "./EmptyRoomsState";
 import { useJobHandlers } from "./JobHandlers";
+import { WorkflowEnhancements } from "../workflow/WorkflowEnhancements";
 
 interface ProjectJobsContentProps {
   rooms: any[];
@@ -41,6 +42,22 @@ export const ProjectJobsContent = ({
 
   return (
     <div className="min-h-[400px]">
+      <WorkflowEnhancements
+        projectId={project?.id}
+        rooms={rooms}
+        surfaces={allSurfaces || []}
+        treatments={allTreatments || []}
+        onCreateRoom={onCreateRoom}
+        onCreateSurface={(roomId) => handleCreateSurface(roomId, 'window')}
+        onCreateTreatment={(surfaceId) => {
+          const surface = allSurfaces?.find(s => s.id === surfaceId);
+          if (surface) {
+            // Navigate to surface for treatment selection
+            console.log("Navigate to treatment selection for surface:", surfaceId);
+          }
+        }}
+      />
+      
       {rooms.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-12">
           <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
