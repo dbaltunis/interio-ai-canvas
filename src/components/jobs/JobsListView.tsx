@@ -19,6 +19,7 @@ interface JobsListViewProps {
   onNewJob: () => void;
   onJobSelect: (jobId: string) => void;
   onClientEdit?: (clientId: string) => void;
+  onJobCopy?: (jobId: string) => void;
   searchClient: string;
   searchJobNumber: string;
   filterStatus: string;
@@ -31,6 +32,7 @@ export const JobsListView = ({
   onNewJob,
   onJobSelect,
   onClientEdit,
+  onJobCopy,
   searchClient,
   searchJobNumber,
   filterStatus,
@@ -181,6 +183,7 @@ export const JobsListView = ({
                   project={projects?.find(p => p.id === quote.project_id)}
                   onJobSelect={onJobSelect}
                   onClientEdit={onClientEdit}
+                  onJobCopy={onJobCopy}
                   businessSettings={businessSettings}
                 />
               ))}
@@ -192,6 +195,7 @@ export const JobsListView = ({
               projects={projects}
               onJobSelect={onJobSelect}
               onClientEdit={onClientEdit}
+              onJobCopy={onJobCopy}
               businessSettings={businessSettings}
             />
           )}

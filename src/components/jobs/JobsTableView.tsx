@@ -2,21 +2,9 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2, Mail, ExternalLink, Calendar, DollarSign, FileText, Building2, User } from "lucide-react";
+import { Eye, Edit, Mail, Calendar, DollarSign, FileText, Building2, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useDeleteQuote } from "@/hooks/useQuotes";
-import { useToast } from "@/hooks/use-toast";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobsTableViewProps {
   quotes: any[];
@@ -24,6 +12,7 @@ interface JobsTableViewProps {
   projects?: any[];
   onJobSelect: (jobId: string) => void;
   onClientEdit?: (clientId: string) => void;
+  onJobCopy?: (jobId: string) => void;
   businessSettings?: any;
 }
 
@@ -33,10 +22,9 @@ export const JobsTableView = ({
   projects,
   onJobSelect,
   onClientEdit,
+  onJobCopy,
   businessSettings
 }: JobsTableViewProps) => {
-  const deleteQuote = useDeleteQuote();
-  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -77,21 +65,6 @@ export const JobsTableView = ({
     return `${symbol}${amount.toLocaleString()}`;
   };
 
-  const handleDeleteJob = async (jobId: string) => {
-    try {
-      await deleteQuote.mutateAsync(jobId);
-      toast({
-        title: "Success",
-        description: "Job deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete job",
-        variant: "destructive"
-      });
-    }
-  };
 
   return (
     <div className="rounded-md border">
@@ -241,35 +214,12 @@ export const JobsTableView = ({
                         <Mail className="h-4 w-4" />
                       </Button>
                     )}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          title="Delete Job"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Job</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete job {quote.quote_number}? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteJob(quote.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <JobActionsMenu 
+                      quote={quote}
+                      client={client}
+                      project={project}
+                      onJobCopy={onJobCopy}
+                    />
                   </div>
                 </TableCell>
               </TableRow>

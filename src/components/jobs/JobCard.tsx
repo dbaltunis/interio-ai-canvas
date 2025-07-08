@@ -2,8 +2,9 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2, Mail, Phone, MapPin, Building2, User, Calendar, DollarSign, FileText, Clock } from "lucide-react";
+import { Eye, Edit, Phone, Mail, MapPin, Building2, User, Calendar, DollarSign, FileText, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobCardProps {
   quote: any;
@@ -11,6 +12,7 @@ interface JobCardProps {
   project?: any;
   onJobSelect: (jobId: string) => void;
   onClientEdit?: (clientId: string) => void;
+  onJobCopy?: (jobId: string) => void;
   businessSettings?: any;
 }
 
@@ -20,6 +22,7 @@ export const JobCard = ({
   project, 
   onJobSelect, 
   onClientEdit,
+  onJobCopy,
   businessSettings 
 }: JobCardProps) => {
   const getStatusColor = (status: string) => {
@@ -85,6 +88,12 @@ export const JobCard = ({
             <Button variant="ghost" size="sm" onClick={() => onJobSelect(quote.id)}>
               <Edit className="h-3 w-3" />
             </Button>
+            <JobActionsMenu 
+              quote={quote}
+              client={client}
+              project={project}
+              onJobCopy={onJobCopy}
+            />
           </div>
         </div>
       </CardHeader>

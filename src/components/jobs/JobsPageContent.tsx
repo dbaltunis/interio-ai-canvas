@@ -23,6 +23,7 @@ interface JobsPageContentProps {
   onNewJob: () => void;
   onJobSelect: (jobId: string) => void;
   onClientEdit: (clientId: string) => void;
+  onJobCopy?: (jobId: string) => void;
 }
 
 export const JobsPageContent = ({
@@ -43,7 +44,8 @@ export const JobsPageContent = ({
   onClearAll,
   onNewJob,
   onJobSelect,
-  onClientEdit
+  onClientEdit,
+  onJobCopy
 }: JobsPageContentProps) => {
   return (
     <div className="space-y-6">
@@ -72,6 +74,7 @@ export const JobsPageContent = ({
           onNewJob={onNewJob}
           onJobSelect={onJobSelect}
           onClientEdit={onClientEdit}
+          onJobCopy={onJobCopy}
           searchClient={searchClient}
           searchJobNumber={searchJobNumber}
           filterStatus={filterStatus}
