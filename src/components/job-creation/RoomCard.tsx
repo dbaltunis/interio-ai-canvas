@@ -1,14 +1,8 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useTreatments } from "@/hooks/useTreatments";
-import { useSurfaces, useCreateSurface } from "@/hooks/useSurfaces";
-import { TreatmentPricingForm } from "./TreatmentPricingForm";
-import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
-
-import { RoomHeader } from "./RoomHeader";
-import { SurfaceCreationButtons } from "./SurfaceCreationButtons";
-import { SurfacesList } from "./SurfacesList";
-import { useState } from "react";
+import { useRoomCardLogic } from "./RoomCardLogic";
+import { RoomCardContent } from "./RoomCardContent";
+import { RoomTreatmentDialogs } from "./RoomTreatmentDialogs";
 
 interface RoomCardProps {
   room: any;
@@ -45,119 +39,20 @@ export const RoomCard = ({
   onRenameRoom,
   onChangeRoomType
 }: RoomCardProps) => {
-  const { data: allTreatments } = useTreatments(projectId);
-  const { data: allSurfaces, isLoading: surfacesLoading, refetch: refetchSurfaces } = useSurfaces(projectId);
-  const createSurface = useCreateSurface();
-  
-  console.log("=== ROOM CARD RENDER ===");
-  console.log("Room:", room.name, "ID:", room.id);
-  console.log("Project ID:", projectId);
-  console.log("All surfaces data:", allSurfaces);
-  console.log("Surfaces loading:", surfacesLoading);
-  
-  const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
-  const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
-  const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-  
-  console.log("Room surfaces:", roomSurfaces);
-  console.log("Room surfaces length:", roomSurfaces.length);
-  
-  const [pricingFormOpen, setPricingFormOpen] = useState(false);
-  const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
-  const [isCreatingSurface, setIsCreatingSurface] = useState(false);
-  
-  // Store current form values directly
-  const [currentFormData, setCurrentFormData] = useState({
-    treatmentType: "",
-    surfaceId: "",
-    surfaceType: "",
-    windowCovering: null as any
-  });
-
-  const startEditing = () => {
-    setEditingRoomId(room.id);
-    setEditingRoomName(room.name);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onRenameRoom(room.id, editingRoomName);
-      setEditingRoomId(null);
-    } else if (e.key === 'Escape') {
-      setEditingRoomId(null);
-      setEditingRoomName("");
-    }
-  };
-
-  const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
-    console.log("=== ROOM CARD SURFACE CREATION ===");
-    console.log("RoomCard handleSurfaceCreation called with surfaceType:", surfaceType);
-    console.log("Room data:", room);
-    console.log("Project ID:", projectId);
-    
-    if (!surfaceType) {
-      console.error("No surfaceType provided!");
-      return;
-    }
-    
-    setIsCreatingSurface(true);
-    
-    try {
-      const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
-      const surfaceNumber = roomSurfaces.length + 1;
-      const surfaceName = surfaceType === 'wall' ? `Wall ${surfaceNumber}` : `Window ${surfaceNumber}`;
-      
-      const surfaceData = {
-        room_id: room.id,
-        project_id: projectId,
-        name: surfaceName,
-        surface_type: surfaceType,
-        width: surfaceType === 'wall' ? 120 : 60,
-        height: surfaceType === 'wall' ? 96 : 48,
-        surface_width: surfaceType === 'wall' ? 120 : 60,
-        surface_height: surfaceType === 'wall' ? 96 : 48
-      };
-
-      console.log("Creating surface with data:", surfaceData);
-      await createSurface.mutateAsync(surfaceData);
-      
-      // Refetch surfaces to ensure UI updates
-      setTimeout(() => {
-        refetchSurfaces();
-      }, 100);
-      
-    } catch (error) {
-      console.error("Failed to create surface:", error);
-    } finally {
-      setIsCreatingSurface(false);
-    }
-  };
-
-  const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
-    console.log("=== ROOM CARD - handleAddTreatment ===");
-    console.log("handleAddTreatment called with:", { surfaceId, treatmentType, windowCovering });
-    const surface = roomSurfaces.find(s => s.id === surfaceId);
-    console.log("Found surface:", surface);
-    
-    const formData = {
-      treatmentType,
-      surfaceId,
-      surfaceType: surface?.surface_type || 'window',
-      windowCovering
-    };
-    
-    console.log("Setting current form data:", formData);
-    setCurrentFormData(formData);
-    
-    // Check if window covering has making cost - use calculator if it does
-    if (windowCovering?.making_cost_id) {
-      console.log("Opening calculator dialog");
-      setCalculatorDialogOpen(true);
-    } else {
-      console.log("Opening pricing form");
-      setPricingFormOpen(true);
-    }
-  };
+  const {
+    surfacesLoading,
+    roomSurfaces,
+    roomTreatments,
+    roomTotal,
+    pricingFormOpen,
+    setPricingFormOpen,
+    calculatorDialogOpen,
+    setCalculatorDialogOpen,
+    isCreatingSurface,
+    currentFormData,
+    handleSurfaceCreation,
+    handleAddTreatment
+  } = useRoomCardLogic(room, projectId);
 
   const handlePricingFormSave = (treatmentData: any) => {
     onCreateTreatment(room.id, currentFormData.surfaceId, currentFormData.treatmentType, treatmentData);
@@ -172,20 +67,6 @@ export const RoomCard = ({
   if (surfacesLoading) {
     return (
       <Card className="bg-gray-100 min-h-[500px] flex flex-col">
-        <RoomHeader
-          room={room}
-          roomTotal={roomTotal}
-          editingRoomId={editingRoomId}
-          editingRoomName={editingRoomName}
-          setEditingRoomName={setEditingRoomName}
-          onStartEditing={startEditing}
-          onKeyPress={handleKeyPress}
-          onRenameRoom={onRenameRoom}
-          onCopyRoom={onCopyRoom}
-          onDeleteRoom={onDeleteRoom}
-          onChangeRoomType={onChangeRoomType}
-        />
-        
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-brand-neutral">Loading surfaces...</div>
         </CardContent>
@@ -195,54 +76,35 @@ export const RoomCard = ({
 
   return (
     <>
-      <Card className="bg-brand-light min-h-[500px] flex flex-col border border-brand-secondary/20 shadow-md">
-        <RoomHeader
-          room={room}
-          roomTotal={roomTotal}
-          editingRoomId={editingRoomId}
-          editingRoomName={editingRoomName}
-          setEditingRoomName={setEditingRoomName}
-          onStartEditing={startEditing}
-          onKeyPress={handleKeyPress}
-          onRenameRoom={onRenameRoom}
-          onCopyRoom={onCopyRoom}
-          onDeleteRoom={onDeleteRoom}
-          onChangeRoomType={onChangeRoomType}
-        />
-        
-        <CardContent className="flex-1 flex flex-col">
-          <div className="space-y-4 flex-1">
-            <SurfaceCreationButtons
-              onCreateSurface={handleSurfaceCreation}
-              isCreating={isCreatingSurface}
-            />
-
-            <SurfacesList
-              surfaces={roomSurfaces}
-              treatments={roomTreatments}
-              onAddTreatment={handleAddTreatment}
-              onDeleteSurface={onDeleteSurface}
-              onUpdateSurface={onUpdateSurface}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <TreatmentPricingForm
-        isOpen={pricingFormOpen}
-        onClose={() => setPricingFormOpen(false)}
-        onSave={handlePricingFormSave}
-        treatmentType={currentFormData.treatmentType}
-        surfaceType={currentFormData.surfaceType}
-        windowCovering={currentFormData.windowCovering}
-        projectId={projectId}
+      <RoomCardContent
+        room={room}
+        roomTotal={roomTotal}
+        roomSurfaces={roomSurfaces}
+        roomTreatments={roomTreatments}
+        editingRoomId={editingRoomId}
+        setEditingRoomId={setEditingRoomId}
+        editingRoomName={editingRoomName}
+        setEditingRoomName={setEditingRoomName}
+        onRenameRoom={onRenameRoom}
+        onCopyRoom={onCopyRoom}
+        onDeleteRoom={onDeleteRoom}
+        onChangeRoomType={onChangeRoomType}
+        onCreateSurface={handleSurfaceCreation}
+        onAddTreatment={handleAddTreatment}
+        onDeleteSurface={onDeleteSurface}
+        onUpdateSurface={onUpdateSurface}
+        isCreatingSurface={isCreatingSurface}
       />
 
-      <TreatmentCalculatorDialog
-        isOpen={calculatorDialogOpen}
-        onClose={() => setCalculatorDialogOpen(false)}
-        onSave={handleCalculatorSave}
-        treatmentType={currentFormData.treatmentType}
+      <RoomTreatmentDialogs
+        projectId={projectId}
+        pricingFormOpen={pricingFormOpen}
+        calculatorDialogOpen={calculatorDialogOpen}
+        currentFormData={currentFormData}
+        onClosePricingForm={() => setPricingFormOpen(false)}
+        onCloseCalculatorDialog={() => setCalculatorDialogOpen(false)}
+        onPricingFormSave={handlePricingFormSave}
+        onCalculatorSave={handleCalculatorSave}
       />
     </>
   );
