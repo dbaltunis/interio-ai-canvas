@@ -19,6 +19,7 @@ export const useProjects = () => {
           return [];
         }
 
+        console.log("Fetching projects for user:", user.id);
         const { data, error } = await supabase
           .from("projects")
           .select("*")
@@ -28,6 +29,8 @@ export const useProjects = () => {
           console.error("Projects query error:", error);
           throw error;
         }
+        
+        console.log("Projects fetched:", data?.length, "projects");
         return data || [];
       } catch (error) {
         console.error("Error in projects query:", error);
@@ -35,10 +38,10 @@ export const useProjects = () => {
       }
     },
     retry: 1,
-    staleTime: 10 * 60 * 1000, // 10 minutes - increased from 5
-    gcTime: 15 * 60 * 1000, // 15 minutes cache time
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Don't refetch on mount if we have cached data
+    staleTime: 30 * 1000, // 30 seconds - much shorter cache
+    gcTime: 5 * 60 * 1000, // 5 minutes cache time
+    refetchOnWindowFocus: true, // Refetch when window gets focus
+    refetchOnMount: true, // Always refetch on mount
   });
 };
 
@@ -116,13 +119,8 @@ export const useCreateProject = () => {
       });
     },
     onSuccess: (data) => {
-      // Replace optimistic update with real data
-      queryClient.setQueryData(["projects"], (old: any) => {
-        if (!old) return [data];
-        return old.map((project: any) => 
-          project.id.toString().startsWith('temp-') ? data : project
-        );
-      });
+      // Invalidate and refetch projects to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       
       toast({
         title: "Success",
