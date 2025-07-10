@@ -47,6 +47,20 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     );
   }
 
+  // Check if project has a temporary ID (not yet saved to database)
+  const isTemporaryProject = projectId.toString().startsWith('temp-');
+  if (isTemporaryProject) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">Saving project...</p>
+          <p className="text-sm text-gray-500">Please wait while your project is being created.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Map database templates to UI format with icons and colors
   const getProductIcon = (productType: string) => {
     switch (productType.toLowerCase()) {
