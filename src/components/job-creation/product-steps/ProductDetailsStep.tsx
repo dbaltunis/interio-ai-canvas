@@ -174,7 +174,7 @@ export const ProductDetailsStep = ({
               ) : (
                 windowCoverings.filter(wc => wc.active).map((covering) => (
                   <SelectItem key={covering.id} value={covering.id}>
-                    {covering.name} - {covering.fabrication_pricing_method?.replace('-', ' ')}
+                    {covering.name} - {covering.fabrication_pricing_method || 'per meter'}
                   </SelectItem>
                 ))
               )}
