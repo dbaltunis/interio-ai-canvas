@@ -1,14 +1,10 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { useRooms } from "@/hooks/useRooms";
-import { ProjectJobsContent } from "./ProjectJobsContent";
-import { useProjectJobsActions } from "./hooks/useProjectJobsActions";
+import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { useCreateRoom } from "@/hooks/useRooms";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Edit2, Plus } from "lucide-react";
+import { Plus, Home, Package, Palette, Wrench } from "lucide-react";
 
 interface ProjectJobsTabProps {
   project: any;
@@ -16,166 +12,92 @@ interface ProjectJobsTabProps {
 }
 
 export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps) => {
-  const { data: rooms } = useRooms(project?.project_id || project?.id);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const createRoom = useCreateRoom();
   const { toast } = useToast();
-  const [projectName, setProjectName] = useState(project?.name || "");
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isUpdatingName, setIsUpdatingName] = useState(false);
-  
-  // Room editing state
-  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-  const [editingRoomName, setEditingRoomName] = useState("");
 
-  const {
-    isCreatingRoom,
-    handleCreateRoom,
-    handleUpdateProjectName
-  } = useProjectJobsActions({
-    project,
-    rooms: rooms || [],
-    onProjectUpdate
-  });
+  const productTemplates = [
+    { id: 'curtains', name: 'Curtains & Drapes', icon: Home, color: 'bg-blue-50 border-blue-200' },
+    { id: 'blinds', name: 'Blinds & Shades', icon: Package, color: 'bg-green-50 border-green-200' },
+    { id: 'wallpaper', name: 'Wallpaper', icon: Palette, color: 'bg-purple-50 border-purple-200' },
+    { id: 'services', name: 'Services', icon: Wrench, color: 'bg-orange-50 border-orange-200' }
+  ];
 
-  // Update local state when project prop changes
-  useEffect(() => {
-    if (project?.name && project.name !== projectName) {
-      setProjectName(project.name);
-    }
-  }, [project?.name]);
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProjectName(e.target.value);
-  };
-
-  const handleSaveName = async () => {
-    if (projectName.trim() !== project?.name && projectName.trim() !== '') {
-      setIsUpdatingName(true);
-      try {
-        await handleUpdateProjectName(projectName.trim());
-        setIsEditingName(false);
-        toast({
-          title: "Success",
-          description: "Project name updated successfully",
-        });
-      } catch (error) {
-        console.error('Failed to update project name:', error);
-        setProjectName(project?.name || "");
-        toast({
-          title: "Error",
-          description: "Failed to update project name. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsUpdatingName(false);
-      }
-    } else {
-      setIsEditingName(false);
-      setProjectName(project?.name || "");
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setProjectName(project?.name || "");
-    setIsEditingName(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSaveName();
-    } else if (e.key === 'Escape') {
-      handleCancelEdit();
+  const handleCreateRoom = async () => {
+    setIsCreatingRoom(true);
+    try {
+      const roomCount = 1; // Simple increment
+      await createRoom.mutateAsync({
+        name: `Room ${roomCount}`,
+        project_id: project.id,
+        room_type: 'living_room'
+      });
+      toast({
+        title: "Room Added",
+        description: "New room created. Now add products to it.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create room",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingRoom(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Project Info Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Job Details</h2>
-          <div className="text-sm text-gray-500">
-            Job #{project?.job_number}
-          </div>
-        </div>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="project-name">Project Name</Label>
-            <div className="flex items-center space-x-2">
-              {isEditingName ? (
-                <>
-                  <Input
-                    id="project-name"
-                    value={projectName}
-                    onChange={handleNameChange}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Enter project name..."
-                    disabled={isUpdatingName}
-                    className="flex-1"
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    onClick={handleSaveName}
-                    disabled={isUpdatingName || !projectName.trim()}
-                  >
-                    {isUpdatingName ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                    disabled={isUpdatingName}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="flex-1 px-3 py-2 bg-gray-50 rounded-md border">
-                    {project?.name || "Untitled Project"}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditingName(true)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
+      {/* Simple Project Header */}
+      <div className="bg-white rounded-lg border p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">{project?.name}</h2>
+            <p className="text-sm text-muted-foreground">Job #{project?.job_number}</p>
           </div>
         </div>
       </div>
 
-      {/* Rooms Section - Simplified */}
+      {/* Simple Room Creation */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Rooms & Products</h3>
-            <p className="text-sm text-gray-600">Add rooms and select window treatments, wallpapers, and services for each space</p>
+            <h3 className="text-lg font-semibold">Add Rooms</h3>
+            <p className="text-sm text-muted-foreground">Create rooms and add products to each one</p>
           </div>
           <Button onClick={handleCreateRoom} disabled={isCreatingRoom}>
             <Plus className="h-4 w-4 mr-2" />
             {isCreatingRoom ? "Adding..." : "Add Room"}
           </Button>
         </div>
-        
-        <ProjectJobsContent 
-          rooms={rooms || []} 
-          project={project}
-          onCreateRoom={handleCreateRoom}
-          isCreatingRoom={isCreatingRoom}
-          editingRoomId={editingRoomId}
-          setEditingRoomId={setEditingRoomId}
-          editingRoomName={editingRoomName}
-          setEditingRoomName={setEditingRoomName}
-        />
+
+        {/* Product Templates */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {productTemplates.map((template) => {
+            const Icon = template.icon;
+            return (
+              <Card key={template.id} className={`p-4 cursor-pointer hover:shadow-md transition-shadow ${template.color}`}>
+                <div className="text-center space-y-2">
+                  <Icon className="h-8 w-8 mx-auto text-gray-600" />
+                  <p className="font-medium text-sm">{template.name}</p>
+                  <p className="text-xs text-muted-foreground">Use templates from settings</p>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Instructions */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+          <ol className="text-sm text-blue-700 space-y-1">
+            <li>1. Add rooms to your project</li>
+            <li>2. Select products from your templates (created in Settings)</li>
+            <li>3. Add measurements and fabric selections</li>
+            <li>4. Move to Quote to see pricing</li>
+          </ol>
+        </div>
       </div>
     </div>
   );
