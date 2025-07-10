@@ -58,9 +58,24 @@ export const useProductTemplates = () => {
     console.log("=== CREATING PRODUCT TEMPLATE ===", templateData);
     
     try {
+      // Get the current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Add user_id to the template data
+      const templateWithUser = {
+        ...templateData,
+        user_id: user.id
+      };
+
+      console.log("Template data with user_id:", templateWithUser);
+
       const { data, error } = await supabase
         .from('product_templates')
-        .insert([templateData])
+        .insert([templateWithUser])
         .select()
         .single();
 
@@ -93,10 +108,18 @@ export const useProductTemplates = () => {
     console.log("=== UPDATING PRODUCT TEMPLATE ===", id, templateData);
     
     try {
+      // Get the current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('product_templates')
         .update(templateData)
         .eq('id', id)
+        .eq('user_id', user.id) // Ensure user can only update their own templates
         .select()
         .single();
 
@@ -131,10 +154,18 @@ export const useProductTemplates = () => {
     console.log("=== DELETING PRODUCT TEMPLATE ===", id);
     
     try {
+      // Get the current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { error } = await supabase
         .from('product_templates')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // Ensure user can only delete their own templates
 
       if (error) {
         console.error('Error deleting product template:', error);
