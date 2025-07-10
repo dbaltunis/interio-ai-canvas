@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, ArrowLeft, Package, Settings, Calculator } from "lucide-react";
+import { ArrowRight, ArrowLeft, Package, Settings, Calculator, Save } from "lucide-react";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useInventory } from "@/hooks/useInventory";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductDetailsStepProps {
   product: any;
@@ -18,6 +19,7 @@ interface ProductDetailsStepProps {
   existingRooms: any[];
   onNext: () => void;
   onBack: () => void;
+  onSave?: (data: any) => void;
 }
 
 export const ProductDetailsStep = ({
@@ -27,8 +29,9 @@ export const ProductDetailsStep = ({
   onNext,
   onBack
 }: ProductDetailsStepProps) => {
-  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
+  const { windowCoverings, isLoading: windowCoveringsLoading, refetch } = useWindowCoverings();
   const { data: fabrics, isLoading: fabricsLoading } = useInventory();
+  const { toast } = useToast();
   
   const [selectedWindowCovering, setSelectedWindowCovering] = useState('');
   const [selectedFabric, setSelectedFabric] = useState('');
@@ -50,6 +53,11 @@ export const ProductDetailsStep = ({
     notes: ''
   });
 
+  // Force refresh window coverings on mount to ensure we have latest data
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
   const getRoomNames = () => {
     return selectedRooms.map(roomId => {
       const room = existingRooms.find(r => r.id === roomId);
@@ -62,6 +70,34 @@ export const ProductDetailsStep = ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleSaveData = () => {
+    const saveData = {
+      product,
+      selectedRooms,
+      selectedWindowCovering,
+      selectedFabric,
+      selectedOptions,
+      measurements,
+      productDetails,
+      calculatedPrice: (
+        ((windowCoverings.find(wc => wc.id === selectedWindowCovering)?.unit_price || 0) +
+        Object.values(selectedOptions).reduce((total, optionId) => {
+          const option = hierarchicalOptions.flatMap(h => h.subcategories || []).find(s => s.id === optionId);
+          return total + (option?.base_price || 0);
+        }, 0)) * productDetails.quantity * selectedRooms.length
+      )
+    };
+
+    console.log("Saving product configuration:", saveData);
+    
+    toast({
+      title: "Configuration Saved",
+      description: `${product?.name} configuration saved for ${selectedRooms.length} room(s)`,
+    });
+
+    return saveData;
   };
 
   const getProductSpecificFields = () => {
@@ -345,10 +381,19 @@ export const ProductDetailsStep = ({
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Rooms
         </Button>
-        <Button onClick={onNext}>
-          Open Product Canvas
-          <ArrowRight className="h-4 w-4 ml-2" />
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSaveData}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Configuration
+          </Button>
+          <Button onClick={() => {
+            handleSaveData();
+            onNext();
+          }}>
+            Open Product Canvas
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
       </div>
     </div>
   );

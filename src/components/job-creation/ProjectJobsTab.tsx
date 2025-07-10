@@ -28,7 +28,8 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const [newRooms, setNewRooms] = useState([]);
 
   const createRoom = useCreateRoom();
-  const { data: existingRooms } = useRooms(project.id);
+  const projectId = project.id || project.project_id;
+  const { data: existingRooms } = useRooms(projectId);
   const { toast } = useToast();
 
   const productTemplates = [
@@ -73,10 +74,18 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const handleCreateRoom = async () => {
     setIsCreatingRoom(true);
     try {
+      console.log("Creating room with project:", project);
+      console.log("Project ID:", project.id || project.project_id);
+      
+      const projectId = project.id || project.project_id;
+      if (!projectId) {
+        throw new Error("No valid project ID found");
+      }
+      
       const roomCount = (existingRooms?.length || 0) + 1;
       await createRoom.mutateAsync({
         name: `Room ${roomCount}`,
-        project_id: project.id,
+        project_id: projectId,
         room_type: 'living_room'
       });
       toast({
@@ -84,9 +93,10 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
         description: "New room created. Now add products to it.",
       });
     } catch (error) {
+      console.error("Room creation failed:", error);
       toast({
         title: "Error",
-        description: "Failed to create room",
+        description: error.message || "Failed to create room",
         variant: "destructive",
       });
     } finally {
@@ -104,18 +114,35 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
   const handleCreateNewRooms = async () => {
     const createdRooms = [];
+    const projectId = project.id || project.project_id;
+    
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "No valid project ID found",
+        variant: "destructive",
+      });
+      return [];
+    }
+    
     for (let i = 0; i < roomQuantity; i++) {
       const roomCount = (existingRooms?.length || 0) + i + 1;
       const roomName = newRooms[i] || `Room ${roomCount}`;
       try {
+        console.log(`Creating room ${i + 1} with name: ${roomName}, project_id: ${projectId}`);
         const room = await createRoom.mutateAsync({
           name: roomName,
-          project_id: project.id,
+          project_id: projectId,
           room_type: 'living_room'
         });
         createdRooms.push(room.id);
       } catch (error) {
         console.error('Failed to create room:', error);
+        toast({
+          title: "Error",
+          description: `Failed to create room: ${roomName}`,
+          variant: "destructive",
+        });
       }
     }
     setSelectedRooms([...selectedRooms, ...createdRooms]);
@@ -218,6 +245,10 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                 existingRooms={existingRooms || []}
                 onNext={handleNextStep}
                 onBack={() => setStep(1)}
+                onSave={(data) => {
+                  console.log("Product configuration saved:", data);
+                  // Here you could save to localStorage, state, or database
+                }}
               />
             )}
 
