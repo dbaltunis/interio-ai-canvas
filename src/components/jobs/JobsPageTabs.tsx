@@ -2,8 +2,8 @@
 import { Button } from "@/components/ui/button";
 
 interface JobsPageTabsProps {
-  activeTab: "jobs" | "clients" | "emails";
-  setActiveTab: (tab: "jobs" | "clients" | "emails") => void;
+  activeTab: "jobs" | "clients" | "emails" | "analytics";
+  setActiveTab: (tab: "jobs" | "clients" | "emails" | "analytics") => void;
   jobsCount: number;
   clientsCount: number;
   emailsCount: number;
@@ -42,7 +42,7 @@ export const JobsPageTabs = ({
       </Button>
       <Button
         variant={activeTab === "emails" ? "default" : "ghost"}
-        className={`rounded-l-none border-l-0 px-6 py-2 ${
+        className={`rounded-none border-l-0 px-6 py-2 ${
           activeTab === "emails" 
             ? "bg-gray-100 text-gray-900 border border-gray-300" 
             : "bg-white text-gray-600 border border-gray-300"
@@ -50,6 +50,17 @@ export const JobsPageTabs = ({
         onClick={() => setActiveTab("emails")}
       >
         Emails ({emailsCount})
+      </Button>
+      <Button
+        variant={activeTab === "analytics" ? "default" : "ghost"}
+        className={`rounded-l-none border-l-0 px-6 py-2 ${
+          activeTab === "analytics" 
+            ? "bg-gray-100 text-gray-900 border border-gray-300" 
+            : "bg-white text-gray-600 border border-gray-300"
+        }`}
+        onClick={() => setActiveTab("analytics")}
+      >
+        Analytics
       </Button>
     </div>
   );

@@ -6,12 +6,13 @@ import { JobsPageTabs } from "./JobsPageTabs";
 import { JobsPageActions } from "./JobsPageActions";
 import { JobsPageContent } from "./JobsPageContent";
 import { NewJobPageSimplified } from "../job-creation/NewJobPageSimplified";
+import { JobsAnalytics } from "./JobsAnalytics";
 import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 
 export const JobsPage = () => {
-  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "analytics">("jobs");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -90,6 +91,11 @@ export const JobsPage = () => {
   // Show job editing page (existing job)
   if (selectedJobId) {
     return <JobEditPage jobId={selectedJobId} onBack={handleBackToJobs} />;
+  }
+
+  // Show analytics tab
+  if (activeTab === "analytics") {
+    return <JobsAnalytics />;
   }
 
   return (

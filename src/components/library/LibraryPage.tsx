@@ -21,10 +21,11 @@ import { useCollections } from "@/hooks/useCollections";
 import { toast } from "sonner";
 import { CategoryManagementDialog } from "./CategoryManagementDialog";
 import { ShopifyIntegrationDialog } from "./ShopifyIntegrationDialog";
+import { InventoryInsights } from "./InventoryInsights";
 
 export const LibraryPage = () => {
   const { units } = useMeasurementUnits();
-  const [activeTab, setActiveTab] = useState("fabrics");
+  const [activeTab, setActiveTab] = useState("insights");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
@@ -208,6 +209,10 @@ export const LibraryPage = () => {
             />
 
             {/* Tab Contents */}
+            <TabsContent value="insights" className="space-y-4">
+              <InventoryInsights />
+            </TabsContent>
+
             <TabsContent value="categories" className="space-y-4">
               <CategoryManager />
             </TabsContent>
