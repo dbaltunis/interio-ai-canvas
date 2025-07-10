@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ArrowRight, ArrowLeft, Package, Settings, Calculator, Save } from "lucide-react";
-import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useInventory } from "@/hooks/useInventory";
 import { useToast } from "@/hooks/use-toast";
@@ -29,11 +29,11 @@ export const ProductDetailsStep = ({
   onNext,
   onBack
 }: ProductDetailsStepProps) => {
-  const { windowCoverings, isLoading: windowCoveringsLoading, refetch } = useWindowCoverings();
+  const { templates: productTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { data: fabrics, isLoading: fabricsLoading } = useInventory();
   const { toast } = useToast();
   
-  const [selectedWindowCovering, setSelectedWindowCovering] = useState('');
+  const [selectedProductTemplate, setSelectedProductTemplate] = useState('');
   const [selectedFabric, setSelectedFabric] = useState('');
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [measurements, setMeasurements] = useState({
@@ -43,7 +43,7 @@ export const ProductDetailsStep = ({
   });
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   
-  const { hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(selectedWindowCovering);
+  const { hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(selectedProductTemplate);
   
   const [productDetails, setProductDetails] = useState({
     quantity: 1,
@@ -55,10 +55,10 @@ export const ProductDetailsStep = ({
 
   // Log the actual data to debug
   useEffect(() => {
-    console.log("ProductDetailsStep - windowCoverings:", windowCoverings);
-    console.log("ProductDetailsStep - windowCoveringsLoading:", windowCoveringsLoading);
-    console.log("ProductDetailsStep - active window coverings:", windowCoverings.filter(wc => wc.active));
-  }, [windowCoverings, windowCoveringsLoading]);
+    console.log("ProductDetailsStep - productTemplates:", productTemplates);
+    console.log("ProductDetailsStep - templatesLoading:", templatesLoading);
+    console.log("ProductDetailsStep - active templates:", productTemplates.filter(t => t.active));
+  }, [productTemplates, templatesLoading]);
 
   const getRoomNames = () => {
     return selectedRooms.map(roomId => {
@@ -78,18 +78,12 @@ export const ProductDetailsStep = ({
     const saveData = {
       product,
       selectedRooms,
-      selectedWindowCovering,
+      selectedProductTemplate,
       selectedFabric,
       selectedOptions,
       measurements,
       productDetails,
-      calculatedPrice: (
-        ((windowCoverings.find(wc => wc.id === selectedWindowCovering)?.unit_price || 0) +
-        Object.values(selectedOptions).reduce((total, optionId) => {
-          const option = hierarchicalOptions.flatMap(h => h.subcategories || []).find(s => s.id === optionId);
-          return total + (option?.base_price || 0);
-        }, 0)) * productDetails.quantity * selectedRooms.length
-      )
+      calculatedPrice: (100 * productDetails.quantity * selectedRooms.length) // Simplified calculation
     };
 
     console.log("Saving product configuration:", saveData);
@@ -153,28 +147,28 @@ export const ProductDetailsStep = ({
         </div>
       </Card>
 
-      {/* Window Covering Selection */}
+      {/* Product Template Selection */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Settings className="h-4 w-4" />
-          <h4 className="font-medium">Window Covering Selection</h4>
+          <h4 className="font-medium">Product Template Selection</h4>
         </div>
         
         <div className="space-y-2">
-          <Label>Select Window Covering Type</Label>
-          <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering}>
+          <Label>Select Product Template</Label>
+          <Select value={selectedProductTemplate} onValueChange={setSelectedProductTemplate}>
             <SelectTrigger>
-              <SelectValue placeholder="Choose a window covering from your settings" />
+              <SelectValue placeholder="Choose a product template from your settings" />
             </SelectTrigger>
             <SelectContent>
-              {windowCoveringsLoading ? (
+              {templatesLoading ? (
                 <SelectItem value="loading" disabled>Loading...</SelectItem>
-              ) : windowCoverings.filter(wc => wc.active).length === 0 ? (
-                <SelectItem value="none" disabled>No active window coverings found</SelectItem>
+              ) : productTemplates.filter(t => t.active).length === 0 ? (
+                <SelectItem value="none" disabled>No active product templates found</SelectItem>
               ) : (
-                windowCoverings.filter(wc => wc.active).map((covering) => (
-                  <SelectItem key={covering.id} value={covering.id}>
-                    {covering.name} - {covering.fabrication_pricing_method || 'per meter'}
+                productTemplates.filter(t => t.active).map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} - {template.calculation_method}
                   </SelectItem>
                 ))
               )}
@@ -182,7 +176,7 @@ export const ProductDetailsStep = ({
           </Select>
         </div>
 
-        {selectedWindowCovering && (
+        {selectedProductTemplate && (
           <>
             <Separator />
             
@@ -306,15 +300,16 @@ export const ProductDetailsStep = ({
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Base price per item:</span>
-                  <span>£{windowCoverings.find(wc => wc.id === selectedWindowCovering)?.unit_price || 0}</span>
+                  <span>Base template:</span>
+                  <span>{productTemplates.find(t => t.id === selectedProductTemplate)?.name || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Selected options:</span>
-                  <span>£{Object.values(selectedOptions).reduce((total, optionId) => {
-                    const option = hierarchicalOptions.flatMap(h => h.subcategories || []).find(s => s.id === optionId);
-                    return total + (option?.base_price || 0);
-                  }, 0)}</span>
+                  <span>Calculation method:</span>
+                  <span>{productTemplates.find(t => t.id === selectedProductTemplate)?.calculation_method || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Estimated base cost:</span>
+                  <span>£100</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Quantity per room:</span>
@@ -327,13 +322,7 @@ export const ProductDetailsStep = ({
                 <Separator />
                 <div className="flex justify-between font-medium">
                   <span>Total estimated cost:</span>
-                  <span>£{(
-                    ((windowCoverings.find(wc => wc.id === selectedWindowCovering)?.unit_price || 0) +
-                    Object.values(selectedOptions).reduce((total, optionId) => {
-                      const option = hierarchicalOptions.flatMap(h => h.subcategories || []).find(s => s.id === optionId);
-                      return total + (option?.base_price || 0);
-                    }, 0)) * productDetails.quantity * selectedRooms.length
-                  ).toFixed(2)}</span>
+                  <span>£{(100 * productDetails.quantity * selectedRooms.length).toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-amber-700 mt-2">
                   * This is an estimate. Final pricing will include fabric calculations and labor costs.
