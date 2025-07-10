@@ -24,11 +24,26 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
   
   // Filter fabrics from inventory
   const fabrics = useMemo(() => {
-    return inventory?.filter(item => 
-      item.category?.toLowerCase() === 'fabric' ||
-      item.type?.toLowerCase().includes('fabric') ||
-      item.name?.toLowerCase().includes('fabric')
-    ) || [];
+    console.log('FabricSelector - Raw inventory data:', inventory);
+    console.log('FabricSelector - Total inventory items:', inventory?.length);
+    
+    const filteredFabrics = inventory?.filter(item => {
+      const isMatchingCategory = item.category?.toLowerCase() === 'fabric';
+      const isMatchingType = item.type?.toLowerCase().includes('fabric');
+      const isMatchingName = item.name?.toLowerCase().includes('fabric');
+      const matches = isMatchingCategory || isMatchingType || isMatchingName;
+      
+      if (matches) {
+        console.log('FabricSelector - Found fabric item:', item);
+      }
+      
+      return matches;
+    }) || [];
+    
+    console.log('FabricSelector - Filtered fabrics:', filteredFabrics);
+    console.log('FabricSelector - Found fabrics count:', filteredFabrics.length);
+    
+    return filteredFabrics;
   }, [inventory]);
 
   // Get selected fabric details
