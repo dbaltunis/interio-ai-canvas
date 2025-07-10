@@ -5,11 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ArrowRight, ArrowLeft, Package, Settings, Calculator, Save } from "lucide-react";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
+import { useHardwareOptions } from "@/hooks/useComponentOptions";
+import { useLiningOptions } from "@/hooks/useComponentOptions";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
+import { useServiceOptions } from "@/hooks/useServiceOptions";
 import { useToast } from "@/hooks/use-toast";
 import { FabricSelector } from "@/components/fabric/FabricSelector";
 
@@ -32,10 +37,21 @@ export const ProductDetailsStep = ({
   const { templates: productTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { toast } = useToast();
   
+  // Option hooks
+  const { data: hardwareOptions, isLoading: hardwareLoading } = useHardwareOptions();
+  const { data: liningOptions, isLoading: liningLoading } = useLiningOptions();
+  const { data: headingOptions, isLoading: headingLoading } = useHeadingOptions();
+  const { data: serviceOptions, isLoading: serviceLoading } = useServiceOptions();
+  
   const [selectedProductTemplate, setSelectedProductTemplate] = useState('');
   const [selectedFabric, setSelectedFabric] = useState('');
   const [selectedFabricObject, setSelectedFabricObject] = useState<any>(null);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({
+    hardware: [],
+    lining: [],
+    headings: [],
+    services: []
+  });
   const [measurements, setMeasurements] = useState({
     width: '',
     height: ''
@@ -76,6 +92,37 @@ export const ProductDetailsStep = ({
   const handleFabricSelect = (fabricId: string, fabric: any) => {
     setSelectedFabric(fabricId);
     setSelectedFabricObject(fabric);
+  };
+
+  const handleOptionToggle = (category: string, optionId: string, option: any) => {
+    setSelectedOptions(prev => {
+      const categoryOptions = prev[category] || [];
+      const isSelected = categoryOptions.some((opt: any) => opt.id === optionId);
+      
+      if (isSelected) {
+        return {
+          ...prev,
+          [category]: categoryOptions.filter((opt: any) => opt.id !== optionId)
+        };
+      } else {
+        return {
+          ...prev,
+          [category]: [...categoryOptions, option]
+        };
+      }
+    });
+  };
+
+  const calculateOptionsTotal = () => {
+    let total = 0;
+    Object.values(selectedOptions).forEach((options: any) => {
+      if (Array.isArray(options)) {
+        options.forEach((option: any) => {
+          total += option.price || 0;
+        });
+      }
+    });
+    return total;
   };
 
   const handleSaveData = () => {
@@ -225,42 +272,117 @@ export const ProductDetailsStep = ({
               if (!template?.components) return null;
               
               return (
-                <div className="space-y-4">
-                  <Label>Template Components Included</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {template.components.lining && (
-                      <Card className="p-3 bg-green-50 border-green-200">
-                        <h5 className="font-medium text-sm">Lining Options</h5>
-                        <p className="text-xs text-muted-foreground">
-                          {Object.keys(template.components.lining).length} options available
-                        </p>
-                      </Card>
-                    )}
-                    {template.components.hardware && (
-                      <Card className="p-3 bg-blue-50 border-blue-200">
-                        <h5 className="font-medium text-sm">Hardware Options</h5>
-                        <p className="text-xs text-muted-foreground">
-                          {Object.keys(template.components.hardware).length} options available
-                        </p>
-                      </Card>
-                    )}
-                    {template.components.headings && (
-                      <Card className="p-3 bg-purple-50 border-purple-200">
-                        <h5 className="font-medium text-sm">Heading Styles</h5>
-                        <p className="text-xs text-muted-foreground">
-                          {Object.keys(template.components.headings).length} styles available
-                        </p>
-                      </Card>
-                    )}
-                    {template.components.services && (
-                      <Card className="p-3 bg-orange-50 border-orange-200">
-                        <h5 className="font-medium text-sm">Services</h5>
-                        <p className="text-xs text-muted-foreground">
-                          {Object.keys(template.components.services).length} services available
-                        </p>
-                      </Card>
-                    )}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <Label>Select Template Components</Label>
+                    <Badge variant="secondary">
+                      Options Total: £{calculateOptionsTotal().toFixed(2)}
+                    </Badge>
                   </div>
+                  
+                  {/* Hardware Options */}
+                  {template.components.hardware && (
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-sm text-blue-900">Hardware Options</h5>
+                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-blue-50">
+                        {hardwareLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading hardware options...</p>
+                        ) : hardwareOptions?.filter(option => template.components.hardware[option.id])?.map((option) => (
+                          <div key={option.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                            <div className="flex items-center space-x-3">
+                              <Checkbox
+                                checked={selectedOptions.hardware?.some((opt: any) => opt.id === option.id)}
+                                onCheckedChange={(checked) => handleOptionToggle('hardware', option.id, option)}
+                              />
+                              <div>
+                                <span className="text-sm font-medium">{option.name}</span>
+                                <p className="text-xs text-muted-foreground">{option.unit}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline">£{option.price}</Badge>
+                          </div>
+                        )) || <p className="text-sm text-muted-foreground">No hardware options available</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lining Options */}
+                  {template.components.lining && (
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-sm text-green-900">Lining Options</h5>
+                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-green-50">
+                        {liningLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading lining options...</p>
+                        ) : liningOptions?.filter(option => template.components.lining[option.id])?.map((option) => (
+                          <div key={option.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                            <div className="flex items-center space-x-3">
+                              <Checkbox
+                                checked={selectedOptions.lining?.some((opt: any) => opt.id === option.id)}
+                                onCheckedChange={(checked) => handleOptionToggle('lining', option.id, option)}
+                              />
+                              <div>
+                                <span className="text-sm font-medium">{option.name}</span>
+                                <p className="text-xs text-muted-foreground">{option.unit}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline">£{option.price}</Badge>
+                          </div>
+                        )) || <p className="text-sm text-muted-foreground">No lining options available</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Heading Options */}
+                  {template.components.headings && (
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-sm text-purple-900">Heading Styles</h5>
+                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-purple-50">
+                        {headingLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading heading options...</p>
+                        ) : headingOptions?.filter(option => template.components.headings[option.id])?.map((option) => (
+                          <div key={option.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                            <div className="flex items-center space-x-3">
+                              <Checkbox
+                                checked={selectedOptions.headings?.some((opt: any) => opt.id === option.id)}
+                                onCheckedChange={(checked) => handleOptionToggle('headings', option.id, option)}
+                              />
+                              <div>
+                                <span className="text-sm font-medium">{option.name}</span>
+                                <p className="text-xs text-muted-foreground">{option.type} - Fullness: {option.fullness}x</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline">£{option.price}</Badge>
+                          </div>
+                        )) || <p className="text-sm text-muted-foreground">No heading options available</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Service Options */}
+                  {template.components.services && (
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-sm text-orange-900">Services</h5>
+                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-orange-50">
+                        {serviceLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading service options...</p>
+                        ) : serviceOptions?.filter(option => template.components.services[option.id])?.map((option) => (
+                          <div key={option.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                            <div className="flex items-center space-x-3">
+                              <Checkbox
+                                checked={selectedOptions.services?.some((opt: any) => opt.id === option.id)}
+                                onCheckedChange={(checked) => handleOptionToggle('services', option.id, option)}
+                              />
+                              <div>
+                                <span className="text-sm font-medium">{option.name}</span>
+                                <p className="text-xs text-muted-foreground">{option.description}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline">£{option.price} / {option.unit}</Badge>
+                          </div>
+                        )) || <p className="text-sm text-muted-foreground">No service options available</p>}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
