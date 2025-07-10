@@ -9,15 +9,9 @@ interface BrandHeaderProps {
 
 export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-12", // adjusted for better proportions
-    md: "h-16", // adjusted for better proportions  
-    lg: "h-20"  // adjusted for better proportions
-  };
-
-  const logoTextSizeClasses = {
-    sm: "text-lg",
-    md: "text-xl", 
-    lg: "text-2xl"
+    sm: "h-16", // increased from h-12
+    md: "h-20", // increased from h-16  
+    lg: "h-24"  // increased from h-20
   };
 
   const sloganSizeClasses = {
@@ -34,16 +28,16 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           alt="InterioApp Logo" 
           className={`${sizeClasses[size]} w-auto object-contain`}
         />
-        <div className="flex flex-col">
-          <h1 className={`font-bold text-brand-primary ${logoTextSizeClasses[size]} leading-tight`}>
-            InterioApp
-          </h1>
-          {showTagline && (
+        {showTagline && (
+          <div className="flex flex-col">
             <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
-              The future of window décor is online—and bespoke
+              The future of window décor is online—
             </p>
-          )}
-        </div>
+            <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
+              and bespoke
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
