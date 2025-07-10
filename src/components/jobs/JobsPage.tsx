@@ -5,6 +5,7 @@ import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { JobsPageTabs } from "./JobsPageTabs";
 import { JobsPageActions } from "./JobsPageActions";
 import { JobsPageContent } from "./JobsPageContent";
+import { NewJobPageSimplified } from "../job-creation/NewJobPageSimplified";
 import { useToast } from "@/hooks/use-toast";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
@@ -15,7 +16,7 @@ export const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showNewClient, setShowNewClient] = useState(false);
-  const [isNewJob, setIsNewJob] = useState(false);
+  const [showNewJob, setShowNewJob] = useState(false);
   const { toast } = useToast();
   
   // Get actual data for counts
@@ -40,9 +41,7 @@ export const JobsPage = () => {
   };
 
   const handleJobSelect = (jobId: string) => {
-    console.log("Selecting job:", jobId); // Debug log
     setSelectedJobId(jobId);
-    setIsNewJob(false);
   };
 
   const handleClientEdit = (clientId: string) => {
@@ -53,68 +52,49 @@ export const JobsPage = () => {
     setSelectedJobId(null);
     setSelectedClientId(null);
     setShowNewClient(false);
-    setIsNewJob(false);
+    setShowNewJob(false);
   };
 
   const handleNewJob = () => {
-    console.log("Creating new job..."); // Debug log
-    try {
-      setIsNewJob(true);
-      setSelectedJobId("new"); // Use "new" to indicate creating a new job
-      console.log("New job state set"); // Debug log
-    } catch (error) {
-      console.error("Error starting new job:", error);
-      toast({
-        title: "Error",
-        description: "Failed to start new job. Please try again.",
-        variant: "destructive"
-      });
-    }
+    setShowNewJob(true);
   };
 
   const handleNewClient = () => {
-    try {
-      setShowNewClient(true);
-    } catch (error) {
-      console.error("Error starting new client:", error);
-      toast({
-        title: "Error",
-        description: "Failed to start new client. Please try again.",
-        variant: "destructive"
-      });
-    }
+    setShowNewClient(true);
   };
 
   const handleNewEmail = () => {
     setActiveTab("emails");
-    // The EmailsTab will handle showing the compose view
   };
 
   // Calculate actual counts
   const jobsCount = quotes?.length || 0;
   const clientsCount = clients?.length || 0;
-  const emailsCount = 45; // This will be dynamic once we have email data
+  const emailsCount = 45; // Dynamic when email data is available
 
-  console.log("Current state:", { selectedJobId, isNewJob, showNewClient, selectedClientId }); // Debug log
+  // Show simplified new job page
+  if (showNewJob) {
+    return <NewJobPageSimplified onBack={handleBackToJobs} />;
+  }
 
-  // If creating a new client, show the new client page
+  // Show new client page
   if (showNewClient) {
     return <ClientCreateForm onBack={handleBackToJobs} />;
   }
 
-  // If editing a client, show the client edit form
+  // Show client edit form
   if (selectedClientId) {
     return <ClientCreateForm clientId={selectedClientId} onBack={handleBackToJobs} />;
   }
 
-  // If a job is selected (new or existing), show the job editing page
+  // Show job editing page (existing job)
   if (selectedJobId) {
     return <JobEditPage jobId={selectedJobId} onBack={handleBackToJobs} />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Tab Navigation - Always visible */}
+      {/* Tab Navigation */}
       <div className="flex items-center justify-between">
         <JobsPageTabs
           activeTab={activeTab}

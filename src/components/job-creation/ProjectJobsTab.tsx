@@ -2,13 +2,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useRooms } from "@/hooks/useRooms";
 import { ProjectJobsContent } from "./ProjectJobsContent";
 import { useProjectJobsActions } from "./hooks/useProjectJobsActions";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Edit2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, X, Edit2, Plus } from "lucide-react";
 
 interface ProjectJobsTabProps {
   project: any;
@@ -59,7 +59,6 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
         });
       } catch (error) {
         console.error('Failed to update project name:', error);
-        // Revert to original name on error
         setProjectName(project?.name || "");
         toast({
           title: "Error",
@@ -90,12 +89,16 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
   return (
     <div className="space-y-6">
-      {/* Project Name Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Project Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Project Info Header */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Job Details</h2>
+          <div className="text-sm text-gray-500">
+            Job #{project?.job_number}
+          </div>
+        </div>
+        
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="project-name">Project Name</Label>
             <div className="flex items-center space-x-2">
@@ -108,14 +111,13 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                     onKeyDown={handleKeyPress}
                     placeholder="Enter project name..."
                     disabled={isUpdatingName}
-                    className={`flex-1 ${isUpdatingName ? "opacity-50" : ""}`}
+                    className="flex-1"
                     autoFocus
                   />
                   <Button
                     size="sm"
                     onClick={handleSaveName}
                     disabled={isUpdatingName || !projectName.trim()}
-                    className="px-3"
                   >
                     {isUpdatingName ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -128,7 +130,6 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                     variant="outline"
                     onClick={handleCancelEdit}
                     disabled={isUpdatingName}
-                    className="px-3"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -142,34 +143,27 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                     size="sm"
                     variant="outline"
                     onClick={() => setIsEditingName(true)}
-                    className="px-3"
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>
                 </>
               )}
             </div>
-            {isUpdatingName && (
-              <p className="text-sm text-blue-600 flex items-center space-x-2">
-                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span>Updating project name...</span>
-              </p>
-            )}
           </div>
-          
-          {project?.description && (
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <p className="text-sm text-muted-foreground">{project.description}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Rooms Section */}
+      {/* Rooms Section - Simplified */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Rooms</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Rooms & Products</h3>
+            <p className="text-sm text-gray-600">Add rooms and select window treatments, wallpapers, and services for each space</p>
+          </div>
+          <Button onClick={handleCreateRoom} disabled={isCreatingRoom}>
+            <Plus className="h-4 w-4 mr-2" />
+            {isCreatingRoom ? "Adding..." : "Add Room"}
+          </Button>
         </div>
         
         <ProjectJobsContent 

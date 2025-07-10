@@ -23,21 +23,21 @@ export const JobsPageActions = ({
     <div className="flex items-center space-x-3">
       {activeTab === "jobs" ? (
         <Button 
-          className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-medium"
           onClick={onNewJob}
         >
           New Job
         </Button>
       ) : activeTab === "clients" ? (
         <Button 
-          className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-medium"
           onClick={onNewClient}
         >
           New Client
         </Button>
       ) : (
         <Button 
-          className="bg-slate-600 hover:bg-slate-700 text-white px-6"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-medium"
           onClick={onNewEmail}
         >
           New Email
@@ -47,10 +47,11 @@ export const JobsPageActions = ({
       {activeTab === "jobs" && (
         <Button 
           variant="outline" 
-          className="bg-slate-500 text-white hover:bg-slate-600 px-4"
+          className="border-gray-300 px-4"
           onClick={() => setShowFilters(!showFilters)}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-4 h-4 mr-2" />
+          Filters
         </Button>
       )}
     </div>
