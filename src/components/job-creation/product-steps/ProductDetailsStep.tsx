@@ -53,10 +53,12 @@ export const ProductDetailsStep = ({
     notes: ''
   });
 
-  // Force refresh window coverings on mount to ensure we have latest data
+  // Log the actual data to debug
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    console.log("ProductDetailsStep - windowCoverings:", windowCoverings);
+    console.log("ProductDetailsStep - windowCoveringsLoading:", windowCoveringsLoading);
+    console.log("ProductDetailsStep - active window coverings:", windowCoverings.filter(wc => wc.active));
+  }, [windowCoverings, windowCoveringsLoading]);
 
   const getRoomNames = () => {
     return selectedRooms.map(roomId => {
