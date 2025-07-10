@@ -1,0 +1,1 @@
+DELETE FROM window_coverings;
