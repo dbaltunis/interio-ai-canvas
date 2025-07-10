@@ -14,12 +14,12 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { DraggableKPICard } from './DraggableKPICard';
-import { KPIData } from '@/hooks/useKPIConfig';
+import { KPIData, KPIConfig } from '@/hooks/useKPIConfig';
 
 interface DraggableKPISectionProps {
   title: string;
   kpis: KPIData[];
-  kpiConfigs: any[];
+  kpiConfigs: KPIConfig[];
   onReorder: (activeId: string, overId: string) => void;
 }
 
@@ -43,7 +43,7 @@ export const DraggableKPISection = ({ title, kpis, kpiConfigs, onReorder }: Drag
     }
   };
 
-  if (kpis.length === 0) return null;
+  if (kpis.length === 0 || !kpiConfigs || kpiConfigs.length === 0) return null;
 
   return (
     <div className="space-y-2">
@@ -56,7 +56,7 @@ export const DraggableKPISection = ({ title, kpis, kpiConfigs, onReorder }: Drag
         <SortableContext items={kpis.map(kpi => kpi.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {kpis.map((kpi) => {
-              const config = kpiConfigs.find(c => c.id === kpi.id);
+              const config = kpiConfigs?.find(c => c.id === kpi.id);
               return config ? (
                 <DraggableKPICard key={kpi.id} kpi={kpi} config={config} />
               ) : null;
