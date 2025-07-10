@@ -46,6 +46,8 @@ export const NewJobPageSimplified = ({ onBack }: NewJobPageSimplifiedProps) => {
         
         const jobNumber = String(1000 + (count || 0) + 1);
         
+        console.log("Creating new project with job number:", jobNumber);
+        
         const newProject = await createProject.mutateAsync({
           name: `Job #${jobNumber}`,
           description: "",
@@ -54,6 +56,13 @@ export const NewJobPageSimplified = ({ onBack }: NewJobPageSimplifiedProps) => {
           client_id: null,
           job_number: jobNumber
         });
+        
+        console.log("Project created successfully:", newProject);
+        
+        // Verify the project was created and has a valid ID
+        if (!newProject || !newProject.id) {
+          throw new Error("Project creation failed - no valid ID returned");
+        }
         
         // Create quote
         await createQuote.mutateAsync({
@@ -67,6 +76,7 @@ export const NewJobPageSimplified = ({ onBack }: NewJobPageSimplifiedProps) => {
           notes: "New job created"
         });
         
+        console.log("Setting current project to:", newProject);
         setCurrentProject(newProject);
         
         toast({

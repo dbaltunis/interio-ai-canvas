@@ -29,10 +29,22 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const [newRooms, setNewRooms] = useState([]);
 
   const createRoom = useCreateRoom();
-  const projectId = project.id || project.project_id;
+  const projectId = project?.id || project?.project_id;
   const { data: existingRooms } = useRooms(projectId);
   const { templates: dbProductTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { toast } = useToast();
+
+  // Don't render anything if we don't have a valid project
+  if (!project || !projectId) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Map database templates to UI format with icons and colors
   const getProductIcon = (productType: string) => {
