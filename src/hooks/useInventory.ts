@@ -11,9 +11,13 @@ export const useInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const { data, error } = await supabase
         .from("inventory")
         .select("*")
+        .eq("user_id", user.id)
         .order("name");
       
       if (error) throw error;
@@ -61,9 +65,13 @@ export const useLowStockItems = () => {
   return useQuery({
     queryKey: ["inventory", "low-stock"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const { data, error } = await supabase
         .from("inventory")
         .select("*")
+        .eq("user_id", user.id)
         .or("quantity.lte.reorder_point,reorder_point.is.null.and.quantity.lte.5")
         .order("quantity");
       
