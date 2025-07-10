@@ -1,125 +1,135 @@
 
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wrench, Package, Users, ClipboardList } from "lucide-react";
-import { WorkOrdersByTreatment } from "../workshop/WorkOrdersByTreatment";
-import { SupplierOrderManager } from "../workshop/SupplierOrderManager";
-import { TaskDelegationBoard } from "../workshop/TaskDelegationBoard";
-import { useWorkshopData } from "./workshop/useWorkshopData";
-import { useWorkshopActions } from "./workshop/useWorkshopActions";
-import { ProjectInfoCard } from "./workshop/ProjectInfoCard";
-import { WorkshopOverview } from "./workshop/WorkshopOverview";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Wrench, CheckCircle, Clock, AlertCircle, Users, Package } from "lucide-react";
 
 interface ProjectWorkshopTabProps {
   project: any;
 }
 
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
-  console.log("Workshop tab - project object:", project);
-  
-  const {
-    actualProjectId,
-    client,
-    projectTreatments,
-    projectWorkOrders,
-    transformedFabricOrders,
-    transformedTeamMembers,
-    transformedWorkOrders,
-    mockTaskAssignments,
-    rooms,
-    surfaces
-  } = useWorkshopData(project);
+  // Mock workshop data - in real app this would come from project
+  const workOrders = [
+    { id: 1, item: "Living Room Curtains", status: "pending", assignee: "Sarah K.", dueDate: "2024-01-15" },
+    { id: 2, item: "Bedroom Blinds", status: "in_progress", assignee: "Mike R.", dueDate: "2024-01-18" },
+    { id: 3, item: "Installation Service", status: "completed", assignee: "Tom L.", dueDate: "2024-01-20" }
+  ];
 
-  const {
-    generateWorkOrders,
-    handleUpdateWorkOrder,
-    handleToggleCheckpoint,
-    handleUpdateFabricOrder,
-    handleBulkOrder,
-    handleReassignTask,
-    handleUpdateTaskStatus,
-    isGenerating
-  } = useWorkshopActions();
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'in_progress': return <Clock className="h-4 w-4 text-yellow-600" />;
+      default: return <AlertCircle className="h-4 w-4 text-red-600" />;
+    }
+  };
 
-  console.log("Workshop tab - using project ID:", actualProjectId);
-
-  const handleGenerateWorkOrders = () => {
-    generateWorkOrders(projectTreatments, actualProjectId, surfaces, rooms);
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      completed: "bg-green-100 text-green-800",
+      in_progress: "bg-yellow-100 text-yellow-800", 
+      pending: "bg-red-100 text-red-800"
+    };
+    return variants[status] || variants.pending;
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-2xl font-bold">Workshop Management</h3>
-          <p className="text-muted-foreground">
-            Organize treatments, manage suppliers, and delegate tasks for {project.name || "Project"}
-          </p>
+    <div className="space-y-6">
+      {/* Workshop Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <Wrench className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="text-sm text-gray-600">Total Work Orders</p>
+              <p className="text-xl font-bold">{workOrders.length}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-sm text-gray-600">Team Members</p>
+              <p className="text-xl font-bold">3</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <Package className="h-5 w-5 text-purple-600" />
+            <div>
+              <p className="text-sm text-gray-600">Materials Needed</p>
+              <p className="text-xl font-bold">5</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Work Orders */}
+      <Card>
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Work Orders</h3>
+            <Button size="sm">
+              <Wrench className="h-4 w-4 mr-2" />
+              Generate Orders
+            </Button>
+          </div>
         </div>
-        <Button onClick={handleGenerateWorkOrders} disabled={isGenerating}>
-          <Wrench className="h-4 w-4 mr-2" />
-          {isGenerating ? 'Generating...' : 'Generate Work Orders'}
+        <div className="divide-y">
+          {workOrders.map((order) => (
+            <div key={order.id} className="p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(order.status)}
+                <div>
+                  <p className="font-medium">{order.item}</p>
+                  <p className="text-sm text-gray-600">Assigned to {order.assignee}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-600">Due: {order.dueDate}</span>
+                <Badge className={getStatusBadge(order.status)}>
+                  {order.status.replace('_', ' ')}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Button variant="outline" className="h-20 flex-col">
+          <Users className="h-6 w-6 mb-2" />
+          <span className="text-sm">Assign Tasks</span>
+        </Button>
+        <Button variant="outline" className="h-20 flex-col">
+          <Package className="h-6 w-6 mb-2" />
+          <span className="text-sm">Order Materials</span>
+        </Button>
+        <Button variant="outline" className="h-20 flex-col">
+          <CheckCircle className="h-6 w-6 mb-2" />
+          <span className="text-sm">Update Status</span>
+        </Button>
+        <Button variant="outline" className="h-20 flex-col">
+          <Clock className="h-6 w-6 mb-2" />
+          <span className="text-sm">Track Progress</span>
         </Button>
       </div>
 
-      {/* Project Info */}
-      <ProjectInfoCard project={project} client={client} />
-
-      {/* Tabs for different workshop views */}
-      <Tabs defaultValue="work-orders" className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
-          <TabsTrigger value="work-orders" className="flex items-center space-x-2">
-            <ClipboardList className="h-4 w-4" />
-            <span>Work Orders</span>
-          </TabsTrigger>
-          <TabsTrigger value="suppliers" className="flex items-center space-x-2">
-            <Package className="h-4 w-4" />
-            <span>Suppliers</span>
-          </TabsTrigger>
-          <TabsTrigger value="delegation" className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>Team</span>
-          </TabsTrigger>
-          <TabsTrigger value="overview" className="flex items-center space-x-2">
-            <Wrench className="h-4 w-4" />
-            <span>Overview</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="work-orders">
-          <WorkOrdersByTreatment 
-            workOrders={transformedWorkOrders}
-            onUpdateWorkOrder={handleUpdateWorkOrder}
-            onToggleCheckpoint={handleToggleCheckpoint}
-          />
-        </TabsContent>
-
-        <TabsContent value="suppliers">
-          <SupplierOrderManager 
-            fabricOrders={transformedFabricOrders}
-            onUpdateOrder={handleUpdateFabricOrder}
-            onBulkOrder={handleBulkOrder}
-          />
-        </TabsContent>
-
-        <TabsContent value="delegation">
-          <TaskDelegationBoard 
-            teamMembers={transformedTeamMembers}
-            taskAssignments={mockTaskAssignments}
-            onReassignTask={handleReassignTask}
-            onUpdateTaskStatus={handleUpdateTaskStatus}
-          />
-        </TabsContent>
-
-        <TabsContent value="overview">
-          <WorkshopOverview 
-            projectWorkOrders={projectWorkOrders}
-            transformedFabricOrders={transformedFabricOrders}
-            transformedTeamMembers={transformedTeamMembers}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Instructions */}
+      <Card className="bg-orange-50 border-orange-200">
+        <div className="p-4">
+          <h4 className="font-medium text-orange-900 mb-2">Workshop Management</h4>
+          <ul className="text-sm text-orange-700 space-y-1">
+            <li>• Generate work orders from quote items</li>
+            <li>• Assign tasks to team members and suppliers</li>
+            <li>• Track progress and update status</li>
+            <li>• Coordinate with installers and fitters</li>
+          </ul>
+        </div>
+      </Card>
     </div>
   );
 };
