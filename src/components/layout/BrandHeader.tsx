@@ -31,10 +31,10 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
         {showTagline && (
           <div className="flex flex-col">
             <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
-              The future of window décor is online—
+              The future of window décor
             </p>
             <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
-              and bespoke
+              is online and bespoke
             </p>
           </div>
         )}
