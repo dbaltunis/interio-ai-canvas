@@ -38,8 +38,7 @@ export const ProductDetailsStep = ({
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [measurements, setMeasurements] = useState({
     width: '',
-    height: '',
-    drop: ''
+    height: ''
   });
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   
@@ -197,19 +196,19 @@ export const ProductDetailsStep = ({
 
             {/* Measurements */}
             <div className="space-y-4">
-              <Label>Measurements</Label>
-              <div className="grid grid-cols-3 gap-4">
+              <Label>Measurements (cm)</Label>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs">Width (cm)</Label>
+                  <Label className="text-xs">Width</Label>
                   <Input
                     type="number"
-                    placeholder="150"
+                    placeholder="200"
                     value={measurements.width}
                     onChange={(e) => setMeasurements(prev => ({ ...prev, width: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Height (cm)</Label>
+                  <Label className="text-xs">Height</Label>
                   <Input
                     type="number"
                     placeholder="200"
@@ -217,50 +216,54 @@ export const ProductDetailsStep = ({
                     onChange={(e) => setMeasurements(prev => ({ ...prev, height: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Drop (cm)</Label>
-                  <Input
-                    type="number"
-                    placeholder="180"
-                    value={measurements.drop}
-                    onChange={(e) => setMeasurements(prev => ({ ...prev, drop: e.target.value }))}
-                  />
-                </div>
               </div>
             </div>
 
-            {/* Options Selection */}
-            {hierarchicalOptions.length > 0 && (
-              <div className="space-y-4">
-                <Label>Window Covering Options</Label>
-                {hierarchicalOptions.map((option) => (
-                  <div key={option.id} className="space-y-2">
-                    <Label className="text-sm">{option.name}</Label>
-                    {option.subcategories && option.subcategories.length > 0 ? (
-                      <Select 
-                        value={selectedOptions[option.id] || ''} 
-                        onValueChange={(value) => setSelectedOptions(prev => ({ ...prev, [option.id]: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Select ${option.name.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {option.subcategories.map((sub) => (
-                            <SelectItem key={sub.id} value={sub.id}>
-                              {sub.name} - £{sub.base_price}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {option.description || 'No subcategories available'}
-                      </div>
+            {/* Template Components Display */}
+            {(() => {
+              const template = productTemplates.find(t => t.id === selectedProductTemplate);
+              if (!template?.components) return null;
+              
+              return (
+                <div className="space-y-4">
+                  <Label>Template Components Included</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {template.components.lining && (
+                      <Card className="p-3 bg-green-50 border-green-200">
+                        <h5 className="font-medium text-sm">Lining Options</h5>
+                        <p className="text-xs text-muted-foreground">
+                          {Object.keys(template.components.lining).length} options available
+                        </p>
+                      </Card>
+                    )}
+                    {template.components.hardware && (
+                      <Card className="p-3 bg-blue-50 border-blue-200">
+                        <h5 className="font-medium text-sm">Hardware Options</h5>
+                        <p className="text-xs text-muted-foreground">
+                          {Object.keys(template.components.hardware).length} options available
+                        </p>
+                      </Card>
+                    )}
+                    {template.components.headings && (
+                      <Card className="p-3 bg-purple-50 border-purple-200">
+                        <h5 className="font-medium text-sm">Heading Styles</h5>
+                        <p className="text-xs text-muted-foreground">
+                          {Object.keys(template.components.headings).length} styles available
+                        </p>
+                      </Card>
+                    )}
+                    {template.components.services && (
+                      <Card className="p-3 bg-orange-50 border-orange-200">
+                        <h5 className="font-medium text-sm">Services</h5>
+                        <p className="text-xs text-muted-foreground">
+                          {Object.keys(template.components.services).length} services available
+                        </p>
+                      </Card>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              );
+            })()}
 
             {/* Basic Details */}
             <Separator />
@@ -325,18 +328,7 @@ export const ProductDetailsStep = ({
         )}
       </div>
 
-      {/* Measurements */}
-      <div className="space-y-2">
-        <Label>Measurements & Dimensions</Label>
-        <Textarea
-          placeholder="Width x Height, special requirements, mounting details..."
-          value={productDetails.measurements}
-          onChange={(e) => handleInputChange('measurements', e.target.value)}
-          rows={3}
-        />
-      </div>
-
-      {/* Notes */}
+      {/* Additional Notes */}
       <div className="space-y-2">
         <Label>Additional Notes</Label>
         <Textarea
