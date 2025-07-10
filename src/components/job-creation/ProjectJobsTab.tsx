@@ -32,6 +32,11 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const { data: existingRooms } = useRooms(projectId);
   const { toast } = useToast();
 
+  // Add debug logging for rooms
+  console.log("ProjectJobsTab - Project:", project);
+  console.log("ProjectJobsTab - Project ID:", projectId);
+  console.log("ProjectJobsTab - Existing rooms:", existingRooms);
+
   const productTemplates = [
     { 
       id: 'curtains', 
@@ -74,6 +79,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const handleCreateRoom = async () => {
     setIsCreatingRoom(true);
     try {
+      console.log("=== CREATING ROOM ===");
       console.log("Creating room with project:", project);
       console.log("Project ID:", project.id || project.project_id);
       
@@ -83,14 +89,22 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
       }
       
       const roomCount = (existingRooms?.length || 0) + 1;
-      await createRoom.mutateAsync({
+      console.log("Room count will be:", roomCount);
+      console.log("Existing rooms:", existingRooms?.length || 0);
+      
+      const roomData = {
         name: `Room ${roomCount}`,
         project_id: projectId,
         room_type: 'living_room'
-      });
+      };
+      console.log("Room data to create:", roomData);
+      
+      const newRoom = await createRoom.mutateAsync(roomData);
+      console.log("Room created successfully:", newRoom);
+      
       toast({
         title: "Room Added",
-        description: "New room created. Now add products to it.",
+        description: `Room ${roomCount} created successfully and saved to database.`,
       });
     } catch (error) {
       console.error("Room creation failed:", error);

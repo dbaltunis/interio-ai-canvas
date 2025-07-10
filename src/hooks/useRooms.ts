@@ -12,6 +12,7 @@ export const useRooms = (projectId?: string) => {
     queryFn: async () => {
       if (!projectId) return [];
       
+      console.log("Fetching rooms for project:", projectId);
       const { data, error } = await supabase
         .from("rooms")
         .select("*")
@@ -19,11 +20,15 @@ export const useRooms = (projectId?: string) => {
         .order("created_at");
       
       if (error) throw error;
+      
+      console.log("Rooms fetched:", data?.length, "rooms");
       return data;
     },
     enabled: !!projectId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    staleTime: 30 * 1000, // 30 seconds - much shorter cache
+    gcTime: 5 * 60 * 1000, // 5 minutes cache time
+    refetchOnWindowFocus: true, // Refetch when window gets focus
+    refetchOnMount: true, // Always refetch on mount
   });
 };
 
@@ -50,7 +55,8 @@ export const useCreateRoom = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
+      // Invalidate all room queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast({
         title: "Success",
         description: "Room created successfully",
@@ -84,7 +90,8 @@ export const useUpdateRoom = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["rooms", data.project_id] });
+      // Invalidate all room queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
     onError: (error) => {
       toast({
