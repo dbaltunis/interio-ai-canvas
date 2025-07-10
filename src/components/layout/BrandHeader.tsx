@@ -7,35 +7,43 @@ interface BrandHeaderProps {
   showTagline?: boolean;
 }
 
-export const BrandHeader = ({ className = "", size = "md", showTagline = false }: BrandHeaderProps) => {
+export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-16", // doubled from h-8
-    md: "h-24", // doubled from h-12
-    lg: "h-32"  // doubled from h-16
+    sm: "h-12", // adjusted for better proportions
+    md: "h-16", // adjusted for better proportions  
+    lg: "h-20"  // adjusted for better proportions
   };
 
-  const textSizeClasses = {
-    sm: "text-xl",
-    md: "text-2xl",
-    lg: "text-3xl"
+  const logoTextSizeClasses = {
+    sm: "text-lg",
+    md: "text-xl", 
+    lg: "text-2xl"
+  };
+
+  const sloganSizeClasses = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base"
   };
 
   return (
-    <div className={`flex items-center space-x-3 ${className}`}>
-      <img 
-        src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-        alt="InterioApp Logo" 
-        className={`${sizeClasses[size]} w-auto object-contain`}
-      />
-      <div className="flex flex-col">
-        <h1 className={`font-bold text-brand-primary ${textSizeClasses[size]} leading-tight`}>
-          InterioApp
-        </h1>
-        {showTagline && (
-          <p className="text-sm text-brand-neutral">
-            Professional Window & Wall Covering Solutions
-          </p>
-        )}
+    <div className={`flex items-center ${className}`}>
+      <div className="flex items-center space-x-3 bg-white rounded-full px-4 py-2 shadow-sm border border-brand-secondary/20">
+        <img 
+          src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+          alt="InterioApp Logo" 
+          className={`${sizeClasses[size]} w-auto object-contain`}
+        />
+        <div className="flex flex-col">
+          <h1 className={`font-bold text-brand-primary ${logoTextSizeClasses[size]} leading-tight`}>
+            InterioApp
+          </h1>
+          {showTagline && (
+            <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
+              The future of window décor is online—and bespoke
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
