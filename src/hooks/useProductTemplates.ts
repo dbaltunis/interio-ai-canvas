@@ -10,9 +10,9 @@ export interface ProductTemplate {
   product_type: string;
   calculation_method: string;
   pricing_unit: string;
-  measurement_requirements: string[];
-  components: Record<string, any>;
-  calculation_rules: Record<string, any>;
+  measurement_requirements: any;
+  components: any;
+  calculation_rules: any;
   making_cost_required: boolean;
   pricing_grid_required: boolean;
   active: boolean;
@@ -54,7 +54,7 @@ export const useProductTemplates = () => {
     }
   };
 
-  const createTemplate = async (templateData: Omit<ProductTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const createTemplate = async (templateData: any) => {
     console.log("=== CREATING PRODUCT TEMPLATE ===", templateData);
     
     try {

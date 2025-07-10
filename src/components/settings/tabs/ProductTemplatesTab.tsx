@@ -196,7 +196,7 @@ export const ProductTemplatesTab = () => {
     }
   };
 
-  const handleEditTemplate = (template) => {
+  const handleEditTemplate = (template: any) => {
     setEditingId(template.id);
     setIsCreating(true);
     
@@ -264,7 +264,7 @@ export const ProductTemplatesTab = () => {
     }
   };
 
-  const handleCalculationRuleToggle = (category, ruleId, checked) => {
+  const handleCalculationRuleToggle = (category: string, ruleId: number, checked: boolean) => {
     console.log(`Toggling ${category} rule ${ruleId} to ${checked}`);
     setFormData(prev => {
       const currentRules = prev.calculationRules[category] || [];
@@ -313,108 +313,74 @@ export const ProductTemplatesTab = () => {
           </div>
         ) : (
           templates.map((template) => (
-          <Card key={template.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-brand-primary">{template.name}</CardTitle>
-                  <CardDescription>
-                    {template.description && <span className="block">{template.description}</span>}
-                    Calculation: {template.calculation_method} • Pricing: {template.pricing_unit}
-                    {template.selectedPricingGrid && (
-                      <span className="block text-xs text-blue-600 mt-1">
-                        Using grid: {pricingGrids.find(g => g.id === template.selectedPricingGrid)?.name || template.selectedPricingGrid}
-                      </span>
-                    )}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={template.active} />
-                  <Button variant="outline" size="sm" onClick={() => handleEditTemplate(template)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteTemplate(template.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Required Components:</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {template.components && Object.keys(template.components).filter(key => 
-                      typeof template.components[key] === 'object' 
-                        ? Object.keys(template.components[key]).length > 0
-                        : template.components[key]
-                    ).map((component) => (
-                      <Badge key={component} variant="outline">
-                        {component}
-                      </Badge>
-                    ))}
+            <Card key={template.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-brand-primary">{template.name}</CardTitle>
+                    <CardDescription>
+                      {template.description && <span className="block">{template.description}</span>}
+                      Calculation: {template.calculation_method} • Pricing: {template.pricing_unit}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={template.active} />
+                    <Button variant="outline" size="sm" onClick={() => handleEditTemplate(template)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDeleteTemplate(template.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                
-                {template.calculation_rules && (
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                      <Calculator className="h-4 w-4" />
-                      Applied Calculation Rules:
-                    </h4>
-                    <div className="space-y-2 text-xs">
-                      {template.calculation_rules.heightTiers?.length > 0 && (
-                        <div>
-                          <span className="font-medium text-blue-700">Height Tiers:</span>
-                          <div className="flex gap-1 flex-wrap mt-1">
-                            {template.calculation_rules.heightTiers.map(tierId => {
-                              const tier = availableCalculationRules.heightTiers.find(t => t.id === tierId);
-                              return tier ? (
-                                <Badge key={tierId} variant="secondary" className="text-xs">
-                                  {tier.name}
-                                </Badge>
-                              ) : null;
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {template.calculation_rules.constructionOptions?.length > 0 && (
-                        <div>
-                          <span className="font-medium text-green-700">Construction Options:</span>
-                          <div className="flex gap-1 flex-wrap mt-1">
-                            {template.calculation_rules.constructionOptions.map(optionId => {
-                              const option = availableCalculationRules.constructionOptions.find(o => o.id === optionId);
-                              return option ? (
-                                <Badge key={optionId} variant="secondary" className="text-xs">
-                                  {option.name}
-                                </Badge>
-                              ) : null;
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {template.calculation_rules.seamingOptions?.length > 0 && (
-                        <div>
-                          <span className="font-medium text-purple-700">Seaming Options:</span>
-                          <div className="flex gap-1 flex-wrap mt-1">
-                            {template.calculation_rules.seamingOptions.map(optionId => {
-                              const option = availableCalculationRules.seamingOptions.find(o => o.id === optionId);
-                              return option ? (
-                                <Badge key={optionId} variant="secondary" className="text-xs">
-                                  {option.name}
-                                </Badge>
-                              ) : null;
-                            })}
-                          </div>
-                        </div>
-                      )}
+                    <h4 className="font-medium text-sm mb-2">Required Components:</h4>
+                    <div className="flex gap-2 flex-wrap">
+                      {template.components && Object.keys(template.components).filter(key => 
+                        typeof template.components[key] === 'object' 
+                          ? Object.keys(template.components[key]).length > 0
+                          : template.components[key]
+                      ).map((component) => (
+                        <Badge key={component} variant="outline">
+                          {component}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  
+                  {template.calculation_rules && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <Calculator className="h-4 w-4" />
+                        Applied Calculation Rules:
+                      </h4>
+                      <div className="space-y-2 text-xs">
+                        {template.calculation_rules.heightTiers?.length > 0 && (
+                          <div>
+                            <span className="font-medium text-blue-700">Height Tiers:</span>
+                            <div className="flex gap-1 flex-wrap mt-1">
+                              {template.calculation_rules.heightTiers.map((tierId: number) => {
+                                const tier = availableCalculationRules.heightTiers.find(t => t.id === tierId);
+                                return tier ? (
+                                  <Badge key={tierId} variant="secondary" className="text-xs">
+                                    {tier.name}
+                                  </Badge>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* New Template Form - Only show when creating */}
@@ -538,7 +504,7 @@ export const ProductTemplatesTab = () => {
                         <Checkbox 
                           id={`height-tier-${tier.id}`}
                           checked={formData.calculationRules.heightTiers.includes(tier.id)}
-                          onCheckedChange={(checked) => handleCalculationRuleToggle('heightTiers', tier.id, checked)}
+                          onCheckedChange={(checked) => handleCalculationRuleToggle('heightTiers', tier.id, !!checked)}
                         />
                         <div className="grid gap-1.5 leading-none">
                           <label htmlFor={`height-tier-${tier.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -563,7 +529,7 @@ export const ProductTemplatesTab = () => {
                         <Checkbox 
                           id={`construction-${option.id}`}
                           checked={formData.calculationRules.constructionOptions.includes(option.id)}
-                          onCheckedChange={(checked) => handleCalculationRuleToggle('constructionOptions', option.id, checked)}
+                          onCheckedChange={(checked) => handleCalculationRuleToggle('constructionOptions', option.id, !!checked)}
                         />
                         <div className="grid gap-1.5 leading-none">
                           <label htmlFor={`construction-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -588,7 +554,7 @@ export const ProductTemplatesTab = () => {
                         <Checkbox 
                           id={`seaming-${option.id}`}
                           checked={formData.calculationRules.seamingOptions.includes(option.id)}
-                          onCheckedChange={(checked) => handleCalculationRuleToggle('seamingOptions', option.id, checked)}
+                          onCheckedChange={(checked) => handleCalculationRuleToggle('seamingOptions', option.id, !!checked)}
                         />
                         <div className="grid gap-1.5 leading-none">
                           <label htmlFor={`seaming-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
