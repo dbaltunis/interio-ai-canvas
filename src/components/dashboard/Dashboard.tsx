@@ -26,7 +26,10 @@ import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useEmailKPIs } from "@/hooks/useEmails";
+import { useKPIConfig, KPIData } from "@/hooks/useKPIConfig";
 import { KPICard } from "./KPICard";
+import { DraggableKPISection } from "./DraggableKPISection";
+import { KPIConfigDialog } from "./KPIConfigDialog";
 import { RevenueChart } from "./RevenueChart";
 import { QuickActions } from "./QuickActions";
 import { PipelineOverview } from "./PipelineOverview";
@@ -37,6 +40,7 @@ export const Dashboard = () => {
   const { data: clients } = useClients();
   const { data: quotes } = useQuotes();
   const { data: emailKPIs } = useEmailKPIs();
+  const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -50,6 +54,138 @@ export const Dashboard = () => {
   const pendingQuotes = quotes?.filter(q => q.status === 'draft').length || 0;
   const activeProjects = projects?.filter(p => p.status !== 'completed').length || 0;
   const completedJobs = quotes?.filter(q => q.status === 'completed').length || 0;
+
+  // KPI Data mapping
+  const allKPIData: KPIData[] = [
+    {
+      id: 'total-revenue',
+      title: 'Total Revenue',
+      value: formatCurrency(totalRevenue),
+      subtitle: 'All time revenue',
+      icon: DollarSign,
+      trend: { value: 12.5, isPositive: true },
+      loading: statsLoading,
+      category: 'primary'
+    },
+    {
+      id: 'active-projects',
+      title: 'Active Projects',
+      value: activeProjects,
+      subtitle: 'Currently in progress',
+      icon: Target,
+      trend: { value: 8.3, isPositive: true },
+      loading: projectsLoading,
+      category: 'primary'
+    },
+    {
+      id: 'pending-quotes',
+      title: 'Pending Quotes',
+      value: pendingQuotes,
+      subtitle: 'Awaiting response',
+      icon: Clock,
+      trend: { value: -2.1, isPositive: false },
+      loading: statsLoading,
+      category: 'primary'
+    },
+    {
+      id: 'total-clients',
+      title: 'Total Clients',
+      value: clients?.length || 0,
+      subtitle: 'Active relationships',
+      icon: Users,
+      trend: { value: 15.7, isPositive: true },
+      loading: !clients,
+      category: 'primary'
+    },
+    {
+      id: 'emails-sent',
+      title: 'Emails Sent',
+      value: emailKPIs?.totalSent || 0,
+      subtitle: 'Total emails sent',
+      icon: Send,
+      trend: { value: 23.1, isPositive: true },
+      loading: !emailKPIs,
+      category: 'email'
+    },
+    {
+      id: 'open-rate',
+      title: 'Open Rate',
+      value: `${emailKPIs?.openRate || 0}%`,
+      subtitle: 'Email open percentage',
+      icon: Eye,
+      trend: { value: 5.2, isPositive: true },
+      loading: !emailKPIs,
+      category: 'email'
+    },
+    {
+      id: 'click-rate',
+      title: 'Click Rate',
+      value: `${emailKPIs?.clickRate || 0}%`,
+      subtitle: 'Email click percentage',
+      icon: MousePointer,
+      trend: { value: 2.8, isPositive: true },
+      loading: !emailKPIs,
+      category: 'email'
+    },
+    {
+      id: 'avg-time-spent',
+      title: 'Avg. Time Spent',
+      value: emailKPIs?.avgTimeSpent || "0m 0s",
+      subtitle: 'Time spent reading emails',
+      icon: Clock,
+      trend: { value: 15.3, isPositive: true },
+      loading: !emailKPIs,
+      category: 'email'
+    },
+    {
+      id: 'conversion-rate',
+      title: 'Conversion Rate',
+      value: '68%',
+      subtitle: 'Quote to project ratio',
+      icon: TrendingUp,
+      trend: { value: 5.2, isPositive: true },
+      category: 'business'
+    },
+    {
+      id: 'avg-quote-value',
+      title: 'Avg Quote Value',
+      value: formatCurrency(totalRevenue / (quotes?.length || 1)),
+      subtitle: 'Per quote average',
+      icon: Zap,
+      trend: { value: 3.8, isPositive: true },
+      category: 'business'
+    },
+    {
+      id: 'completed-jobs',
+      title: 'Completed Jobs',
+      value: completedJobs,
+      subtitle: 'Successfully finished',
+      icon: Package,
+      trend: { value: 22.1, isPositive: true },
+      category: 'business'
+    },
+    {
+      id: 'response-time',
+      title: 'Response Time',
+      value: '2.4 hrs',
+      subtitle: 'Average quote response',
+      icon: Clock,
+      trend: { value: -15.3, isPositive: true },
+      category: 'business'
+    }
+  ];
+
+  // Get enabled KPIs for each category
+  const getKPIsForCategory = (category: 'primary' | 'email' | 'business') => {
+    const enabledConfigs = getEnabledKPIs(category);
+    return enabledConfigs.map(config => 
+      allKPIData.find(kpi => kpi.id === config.id)!
+    ).filter(Boolean);
+  };
+
+  const primaryKPIs = getKPIsForCategory('primary');
+  const emailKPIs_data = getKPIsForCategory('email');
+  const businessKPIs = getKPIsForCategory('business');
   
   // Mock data for charts (replace with real data later)
   const revenueData = [
@@ -93,6 +229,10 @@ export const Dashboard = () => {
           <p className="text-brand-neutral">Track your business performance and key metrics</p>
         </div>
         <div className="flex gap-2">
+          <KPIConfigDialog 
+            kpiConfigs={kpiConfigs}
+            onToggleKPI={toggleKPI}
+          />
           <Button variant="outline" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Export Report
@@ -104,115 +244,24 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Primary KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Total Revenue"
-          value={formatCurrency(totalRevenue)}
-          subtitle="All time revenue"
-          icon={DollarSign}
-          trend={{ value: 12.5, isPositive: true }}
-          loading={statsLoading}
-        />
-        <KPICard
-          title="Active Projects"
-          value={activeProjects}
-          subtitle="Currently in progress"
-          icon={Target}
-          trend={{ value: 8.3, isPositive: true }}
-          loading={projectsLoading}
-        />
-        <KPICard
-          title="Pending Quotes"
-          value={pendingQuotes}
-          subtitle="Awaiting response"
-          icon={Clock}
-          trend={{ value: -2.1, isPositive: false }}
-          loading={statsLoading}
-        />
-        <KPICard
-          title="Total Clients"
-          value={clients?.length || 0}
-          subtitle="Active relationships"
-          icon={Users}
-          trend={{ value: 15.7, isPositive: true }}
-          loading={!clients}
-        />
-      </div>
+      {/* KPI Sections */}
+      <DraggableKPISection
+        title="Primary KPIs"
+        kpis={primaryKPIs}
+        onReorder={(activeId, overId) => reorderKPIs('primary', activeId, overId)}
+      />
 
-      {/* Email KPI Cards */}
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">Email Performance</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard
-            title="Emails Sent"
-            value={emailKPIs?.totalSent || 0}
-            subtitle="Total emails sent"
-            icon={Send}
-            trend={{ value: 23.1, isPositive: true }}
-            loading={!emailKPIs}
-          />
-          <KPICard
-            title="Open Rate"
-            value={`${emailKPIs?.openRate || 0}%`}
-            subtitle="Email open percentage"
-            icon={Eye}
-            trend={{ value: 5.2, isPositive: true }}
-            loading={!emailKPIs}
-          />
-          <KPICard
-            title="Click Rate"
-            value={`${emailKPIs?.clickRate || 0}%`}
-            subtitle="Email click percentage"
-            icon={MousePointer}
-            trend={{ value: 2.8, isPositive: true }}
-            loading={!emailKPIs}
-          />
-          <KPICard
-            title="Avg. Time Spent"
-            value={emailKPIs?.avgTimeSpent || "0m 0s"}
-            subtitle="Time spent reading emails"
-            icon={Clock}
-            trend={{ value: 15.3, isPositive: true }}
-            loading={!emailKPIs}
-          />
-        </div>
-      </div>
+      <DraggableKPISection
+        title="Email Performance"
+        kpis={emailKPIs_data}
+        onReorder={(activeId, overId) => reorderKPIs('email', activeId, overId)}
+      />
 
-      {/* Business Performance Metrics */}
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">Business Performance</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard
-            title="Conversion Rate"
-            value="68%"
-            subtitle="Quote to project ratio"
-            icon={TrendingUp}
-            trend={{ value: 5.2, isPositive: true }}
-          />
-          <KPICard
-            title="Avg Quote Value"
-            value={formatCurrency(totalRevenue / (quotes?.length || 1))}
-            subtitle="Per quote average"
-            icon={Zap}
-            trend={{ value: 3.8, isPositive: true }}
-          />
-          <KPICard
-            title="Completed Jobs"
-            value={completedJobs}
-            subtitle="Successfully finished"
-            icon={Package}
-            trend={{ value: 22.1, isPositive: true }}
-          />
-          <KPICard
-            title="Response Time"
-            value="2.4 hrs"
-            subtitle="Average quote response"
-            icon={Clock}
-            trend={{ value: -15.3, isPositive: true }}
-          />
-        </div>
-      </div>
+      <DraggableKPISection
+        title="Business Performance"
+        kpis={businessKPIs}
+        onReorder={(activeId, overId) => reorderKPIs('business', activeId, overId)}
+      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
