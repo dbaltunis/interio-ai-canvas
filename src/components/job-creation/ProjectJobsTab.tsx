@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useCreateRoom, useRooms } from "@/hooks/useRooms";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle } from "lucide-react";
 import { RoomSelectionStep } from "./product-steps/RoomSelectionStep";
@@ -30,43 +31,54 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const createRoom = useCreateRoom();
   const projectId = project.id || project.project_id;
   const { data: existingRooms } = useRooms(projectId);
+  const { templates: dbProductTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { toast } = useToast();
 
-  // Add debug logging for rooms
-  console.log("ProjectJobsTab - Project:", project);
-  console.log("ProjectJobsTab - Project ID:", projectId);
-  console.log("ProjectJobsTab - Existing rooms:", existingRooms);
-
-  const productTemplates = [
-    { 
-      id: 'curtains', 
-      name: 'Curtains & Drapes', 
-      icon: Home, 
-      color: 'bg-blue-50 border-blue-200 hover:bg-blue-100',
-      description: 'Window treatments, panels, valances'
-    },
-    { 
-      id: 'blinds', 
-      name: 'Blinds & Shades', 
-      icon: Package, 
-      color: 'bg-green-50 border-green-200 hover:bg-green-100',
-      description: 'Venetian, roller, roman blinds'
-    },
-    { 
-      id: 'wallpaper', 
-      name: 'Wallpaper', 
-      icon: Palette, 
-      color: 'bg-purple-50 border-purple-200 hover:bg-purple-100',
-      description: 'Wall coverings and treatments'
-    },
-    { 
-      id: 'services', 
-      name: 'Services', 
-      icon: Wrench, 
-      color: 'bg-orange-50 border-orange-200 hover:bg-orange-100',
-      description: 'Installation, consulting, repairs'
+  // Map database templates to UI format with icons and colors
+  const getProductIcon = (productType: string) => {
+    switch (productType.toLowerCase()) {
+      case 'curtains':
+      case 'drapes':
+        return Home;
+      case 'blinds':
+      case 'shades':
+        return Package;
+      case 'wallpaper':
+        return Palette;
+      case 'services':
+        return Wrench;
+      default:
+        return Package;
     }
-  ];
+  };
+
+  const getProductColor = (productType: string) => {
+    switch (productType.toLowerCase()) {
+      case 'curtains':
+      case 'drapes':
+        return 'bg-blue-50 border-blue-200 hover:bg-blue-100';
+      case 'blinds':
+      case 'shades':
+        return 'bg-green-50 border-green-200 hover:bg-green-100';
+      case 'wallpaper':
+        return 'bg-purple-50 border-purple-200 hover:bg-purple-100';
+      case 'services':
+        return 'bg-orange-50 border-orange-200 hover:bg-orange-100';
+      default:
+        return 'bg-gray-50 border-gray-200 hover:bg-gray-100';
+    }
+  };
+
+  const productTemplates = dbProductTemplates
+    ?.filter(template => template.active)
+    ?.map(template => ({
+      id: template.id,
+      name: template.name,
+      icon: getProductIcon(template.product_type),
+      color: getProductColor(template.product_type),
+      description: template.description || `${template.product_type} products`,
+      template // Include the full template data for later use
+    })) || [];
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
@@ -205,27 +217,58 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
         {/* Product Templates - Now Clickable */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {productTemplates.map((template) => {
-            const Icon = template.icon;
-            return (
-              <Card 
-                key={template.id} 
-                className={`p-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${template.color}`}
-                onClick={() => handleProductClick(template)}
-              >
+          {templatesLoading ? (
+            // Loading state
+            Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="p-4 animate-pulse">
                 <div className="text-center space-y-2">
-                  <Icon className="h-8 w-8 mx-auto text-gray-600" />
-                  <p className="font-medium text-sm">{template.name}</p>
-                  <p className="text-xs text-muted-foreground">{template.description}</p>
-                  <div className="pt-2">
-                    <Badge variant="secondary" className="text-xs">
-                      Click to configure
-                    </Badge>
-                  </div>
+                  <div className="h-8 w-8 mx-auto bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded"></div>
                 </div>
               </Card>
-            );
-          })}
+            ))
+          ) : productTemplates.length > 0 ? (
+            // Product templates
+            productTemplates.map((template) => {
+              const Icon = template.icon;
+              return (
+                <Card 
+                  key={template.id} 
+                  className={`p-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${template.color}`}
+                  onClick={() => handleProductClick(template)}
+                >
+                  <div className="text-center space-y-2">
+                    <Icon className="h-8 w-8 mx-auto text-gray-600" />
+                    <p className="font-medium text-sm">{template.name}</p>
+                    <p className="text-xs text-muted-foreground">{template.description}</p>
+                    <div className="pt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Click to configure
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
+          ) : (
+            // Empty state
+            <div className="col-span-full">
+              <Card className="p-8 text-center">
+                <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Product Templates</h3>
+                <p className="text-gray-500 mb-4">
+                  Create product templates in Settings to get started with job configuration.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/settings?tab=products'}
+                >
+                  Go to Settings
+                </Button>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Product Configuration Dialog */}
