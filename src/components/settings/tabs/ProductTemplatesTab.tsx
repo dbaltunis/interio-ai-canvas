@@ -14,6 +14,7 @@ import { useHardwareOptions, useLiningOptions } from "@/hooks/useComponentOption
 import { useServiceOptions } from "@/hooks/useServiceOptions";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
+import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 
 export const ProductTemplatesTab = () => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
@@ -26,6 +27,9 @@ export const ProductTemplatesTab = () => {
   const { data: liningOptions = [] } = useLiningOptions();
   const { data: serviceOptions = [] } = useServiceOptions();
   const { data: pricingGrids = [] } = usePricingGrids();
+  
+  // Load window coverings for product type selection
+  const { windowCoverings } = useWindowCoverings();
   
   // Use the new product templates hook
   const { templates, isLoading, createTemplate, updateTemplate, deleteTemplate } = useProductTemplates();
@@ -57,7 +61,7 @@ export const ProductTemplatesTab = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    product_type: "",
+    window_covering_id: "",
     calculationMethod: "",
     pricingUnit: "",
     selectedPricingGrid: "",
@@ -119,7 +123,7 @@ export const ProductTemplatesTab = () => {
     const templateData = {
       name: formData.name.trim(),
       description: formData.description || undefined,
-      product_type: formData.product_type || formData.name.toLowerCase().replace(/\s+/g, '-'),
+      product_type: formData.window_covering_id ? windowCoverings.find(wc => wc.id === formData.window_covering_id)?.name || formData.name.toLowerCase().replace(/\s+/g, '-') : formData.name.toLowerCase().replace(/\s+/g, '-'),
       calculation_method: formData.calculationMethod,
       pricing_unit: formData.pricingUnit,
       measurement_requirements: [],
@@ -156,7 +160,7 @@ export const ProductTemplatesTab = () => {
     setFormData({
       name: "",
       description: "",
-      product_type: "",
+      window_covering_id: "",
       calculationMethod: "",
       pricingUnit: "",
       selectedPricingGrid: "",
@@ -228,7 +232,7 @@ export const ProductTemplatesTab = () => {
     setFormData({
       name: template.name,
       description: template.description || "",
-      product_type: template.product_type || "",
+      window_covering_id: windowCoverings.find(wc => wc.name === template.product_type)?.id || "",
       calculationMethod: template.calculation_method,
       pricingUnit: template.pricing_unit,
       selectedPricingGrid: template.selectedPricingGrid || "",
@@ -403,20 +407,36 @@ export const ProductTemplatesTab = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="calculationMethod">Calculation Method *</Label>
-                <Select value={formData.calculationMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, calculationMethod: value, pricingUnit: value === 'csv-pricing-grid' ? 'csv-grid' : '', selectedPricingGrid: '' }))}>
+                <Label htmlFor="windowCovering">Window Covering Type *</Label>
+                <Select value={formData.window_covering_id} onValueChange={(value) => setFormData(prev => ({ ...prev, window_covering_id: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select method" />
+                    <SelectValue placeholder="Select window covering" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="width-drop">Width × Drop (Curtains)</SelectItem>
-                    <SelectItem value="width-height">Width × Height (Blinds)</SelectItem>
-                    <SelectItem value="csv-pricing-grid">CSV Pricing Grid (Pre-defined pricing)</SelectItem>
-                    <SelectItem value="panels">Number of Panels</SelectItem>
-                    <SelectItem value="fixed">Fixed Price</SelectItem>
+                    {windowCoverings.map((covering) => (
+                      <SelectItem key={covering.id} value={covering.id}>
+                        {covering.name} - {covering.fabrication_pricing_method}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="calculationMethod">Calculation Method *</Label>
+              <Select value={formData.calculationMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, calculationMethod: value, pricingUnit: value === 'csv-pricing-grid' ? 'csv-grid' : '', selectedPricingGrid: '' }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="width-drop">Width × Drop (Curtains)</SelectItem>
+                  <SelectItem value="width-height">Width × Height (Blinds)</SelectItem>
+                  <SelectItem value="csv-pricing-grid">CSV Pricing Grid (Pre-defined pricing)</SelectItem>
+                  <SelectItem value="panels">Number of Panels</SelectItem>
+                  <SelectItem value="fixed">Fixed Price</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
