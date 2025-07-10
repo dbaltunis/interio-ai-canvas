@@ -6,13 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Settings, Edit, Trash2, Calculator } from "lucide-react";
+import { Plus, Settings, Edit, Trash2, Calculator, LoaderIcon } from "lucide-react";
 import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { useHardwareOptions, useLiningOptions } from "@/hooks/useComponentOptions";
 import { useServiceOptions } from "@/hooks/useServiceOptions";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
 
 export const ProductTemplatesTab = () => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
@@ -26,35 +27,8 @@ export const ProductTemplatesTab = () => {
   const { data: serviceOptions = [] } = useServiceOptions();
   const { data: pricingGrids = [] } = usePricingGrids();
   
-  const [templates, setTemplates] = useState([
-    {
-      id: 1,
-      name: "Curtains",
-      calculationMethod: "width-drop",
-      pricingUnit: "per-linear-meter",
-      active: true,
-      components: ["headings", "fabric", "lining", "hardware"],
-      calculationRules: {
-        heightTiers: [1, 2, 3],
-        constructionOptions: [1, 2, 3, 4, 5],
-        seamingOptions: [1, 2, 3, 4]
-      }
-    },
-    {
-      id: 2,
-      name: "Roman Blinds",
-      calculationMethod: "csv-pricing-grid",
-      pricingUnit: "csv-grid",
-      selectedPricingGrid: "roman-blinds-standard",
-      active: true,
-      components: ["fabric", "hardware", "chain"],
-      calculationRules: {
-        heightTiers: [1],
-        constructionOptions: [1],
-        seamingOptions: [1]
-      }
-    }
-  ]);
+  // Use the new product templates hook
+  const { templates, isLoading, createTemplate, updateTemplate, deleteTemplate } = useProductTemplates();
 
   // Mock calculation rules data (would come from your Calculations tab)
   const availableCalculationRules = {
@@ -79,9 +53,11 @@ export const ProductTemplatesTab = () => {
   };
   
   const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
+    product_type: "",
     calculationMethod: "",
     pricingUnit: "",
     selectedPricingGrid: "",
@@ -114,7 +90,7 @@ export const ProductTemplatesTab = () => {
   const requiresMakingCost = formData.calculationMethod !== "csv-pricing-grid";
   const requiresPricingGrid = formData.calculationMethod === "csv-pricing-grid";
 
-  const handleCreateTemplate = () => {
+  const handleCreateTemplate = async () => {
     // Validate required fields
     if (!formData.name.trim()) {
       alert("Please enter a product name");
@@ -142,52 +118,45 @@ export const ProductTemplatesTab = () => {
 
     const templateData = {
       name: formData.name.trim(),
-      calculationMethod: formData.calculationMethod,
-      pricingUnit: formData.pricingUnit,
-      selectedPricingGrid: formData.selectedPricingGrid || undefined,
-      baseMakingCost: requiresMakingCost ? parseFloat(formData.baseMakingCost) : undefined,
-      complexityMultiplier: formData.complexityMultiplier,
-      showComplexityOption: formData.showComplexityOption,
-      active: true,
-      components: Object.keys(formData.selectedComponents).filter(key => 
-        typeof formData.selectedComponents[key] === 'object' 
-          ? Object.keys(formData.selectedComponents[key]).length > 0
-          : formData.selectedComponents[key]
-      ),
-      calculationRules: {
+      description: formData.description || undefined,
+      product_type: formData.product_type || formData.name.toLowerCase().replace(/\s+/g, '-'),
+      calculation_method: formData.calculationMethod,
+      pricing_unit: formData.pricingUnit,
+      measurement_requirements: [],
+      components: formData.selectedComponents,
+      calculation_rules: {
         heightTiers: [...formData.calculationRules.heightTiers],
         constructionOptions: [...formData.calculationRules.constructionOptions],
         seamingOptions: [...formData.calculationRules.seamingOptions]
-      }
+      },
+      making_cost_required: requiresMakingCost,
+      pricing_grid_required: requiresPricingGrid,
+      active: true
     };
 
-    if (editingId) {
-      // Update existing template
-      setTemplates(prev => prev.map(template => 
-        template.id === editingId 
-          ? { ...template, ...templateData }
-          : template
-      ));
-      alert("Template updated successfully!");
-    } else {
-      // Create new template
-      const newTemplate = {
-        id: templates.length + 1,
-        ...templateData
-      };
-      setTemplates(prev => [...prev, newTemplate]);
-      alert("Template created successfully!");
-    }
+    try {
+      if (editingId) {
+        // Update existing template
+        await updateTemplate(editingId, templateData);
+      } else {
+        // Create new template
+        await createTemplate(templateData);
+      }
 
-    // Reset form
-    resetForm();
-    setIsCreating(false);
-    setEditingId(null);
+      // Reset form
+      resetForm();
+      setIsCreating(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error saving template:', error);
+    }
   };
 
   const resetForm = () => {
     setFormData({
       name: "",
+      description: "",
+      product_type: "",
       calculationMethod: "",
       pricingUnit: "",
       selectedPricingGrid: "",
@@ -258,8 +227,10 @@ export const ProductTemplatesTab = () => {
     
     setFormData({
       name: template.name,
-      calculationMethod: template.calculationMethod,
-      pricingUnit: template.pricingUnit,
+      description: template.description || "",
+      product_type: template.product_type || "",
+      calculationMethod: template.calculation_method,
+      pricingUnit: template.pricing_unit,
       selectedPricingGrid: template.selectedPricingGrid || "",
       baseMakingCost: template.baseMakingCost?.toString() || "",
       baseHeightLimit: template.baseHeightLimit?.toString() || "2.4",
@@ -276,16 +247,20 @@ export const ProductTemplatesTab = () => {
       heightRange3Start: template.heightRange3Start?.toString() || "4.0",
       selectedComponents: selectedComponents,
       calculationRules: {
-        heightTiers: template.calculationRules?.heightTiers || [],
-        constructionOptions: template.calculationRules?.constructionOptions || [],
-        seamingOptions: template.calculationRules?.seamingOptions || []
+        heightTiers: template.calculation_rules?.heightTiers || [],
+        constructionOptions: template.calculation_rules?.constructionOptions || [],
+        seamingOptions: template.calculation_rules?.seamingOptions || []
       }
     });
   };
 
-  const handleDeleteTemplate = (templateId) => {
+  const handleDeleteTemplate = async (templateId: string) => {
     if (confirm("Are you sure you want to delete this template?")) {
-      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      try {
+        await deleteTemplate(templateId);
+      } catch (error) {
+        console.error('Error deleting template:', error);
+      }
     }
   };
 
@@ -327,14 +302,25 @@ export const ProductTemplatesTab = () => {
 
       {/* Existing Templates */}
       <div className="grid gap-4">
-        {templates.map((template) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <LoaderIcon className="h-6 w-6 animate-spin mr-2" />
+            <span>Loading templates...</span>
+          </div>
+        ) : templates.length === 0 ? (
+          <div className="text-center py-8 text-brand-neutral">
+            <p>No product templates found. Create your first template to get started.</p>
+          </div>
+        ) : (
+          templates.map((template) => (
           <Card key={template.id}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-brand-primary">{template.name}</CardTitle>
                   <CardDescription>
-                    Calculation: {template.calculationMethod} • Pricing: {template.pricingUnit}
+                    {template.description && <span className="block">{template.description}</span>}
+                    Calculation: {template.calculation_method} • Pricing: {template.pricing_unit}
                     {template.selectedPricingGrid && (
                       <span className="block text-xs text-blue-600 mt-1">
                         Using grid: {pricingGrids.find(g => g.id === template.selectedPricingGrid)?.name || template.selectedPricingGrid}
@@ -358,7 +344,11 @@ export const ProductTemplatesTab = () => {
                 <div>
                   <h4 className="font-medium text-sm mb-2">Required Components:</h4>
                   <div className="flex gap-2 flex-wrap">
-                    {template.components && template.components.map((component) => (
+                    {template.components && Object.keys(template.components).filter(key => 
+                      typeof template.components[key] === 'object' 
+                        ? Object.keys(template.components[key]).length > 0
+                        : template.components[key]
+                    ).map((component) => (
                       <Badge key={component} variant="outline">
                         {component}
                       </Badge>
@@ -366,18 +356,18 @@ export const ProductTemplatesTab = () => {
                   </div>
                 </div>
                 
-                {template.calculationRules && (
+                {template.calculation_rules && (
                   <div>
                     <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                       <Calculator className="h-4 w-4" />
                       Applied Calculation Rules:
                     </h4>
                     <div className="space-y-2 text-xs">
-                      {template.calculationRules.heightTiers?.length > 0 && (
+                      {template.calculation_rules.heightTiers?.length > 0 && (
                         <div>
                           <span className="font-medium text-blue-700">Height Tiers:</span>
                           <div className="flex gap-1 flex-wrap mt-1">
-                            {template.calculationRules.heightTiers.map(tierId => {
+                            {template.calculation_rules.heightTiers.map(tierId => {
                               const tier = availableCalculationRules.heightTiers.find(t => t.id === tierId);
                               return tier ? (
                                 <Badge key={tierId} variant="secondary" className="text-xs">
@@ -388,11 +378,11 @@ export const ProductTemplatesTab = () => {
                           </div>
                         </div>
                       )}
-                      {template.calculationRules.constructionOptions?.length > 0 && (
+                      {template.calculation_rules.constructionOptions?.length > 0 && (
                         <div>
                           <span className="font-medium text-green-700">Construction Options:</span>
                           <div className="flex gap-1 flex-wrap mt-1">
-                            {template.calculationRules.constructionOptions.map(optionId => {
+                            {template.calculation_rules.constructionOptions.map(optionId => {
                               const option = availableCalculationRules.constructionOptions.find(o => o.id === optionId);
                               return option ? (
                                 <Badge key={optionId} variant="secondary" className="text-xs">
@@ -403,11 +393,11 @@ export const ProductTemplatesTab = () => {
                           </div>
                         </div>
                       )}
-                      {template.calculationRules.seamingOptions?.length > 0 && (
+                      {template.calculation_rules.seamingOptions?.length > 0 && (
                         <div>
                           <span className="font-medium text-purple-700">Seaming Options:</span>
                           <div className="flex gap-1 flex-wrap mt-1">
-                            {template.calculationRules.seamingOptions.map(optionId => {
+                            {template.calculation_rules.seamingOptions.map(optionId => {
                               const option = availableCalculationRules.seamingOptions.find(o => o.id === optionId);
                               return option ? (
                                 <Badge key={optionId} variant="secondary" className="text-xs">
@@ -461,6 +451,16 @@ export const ProductTemplatesTab = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="templateDescription">Description</Label>
+              <Input 
+                id="templateDescription" 
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Optional description of this product template" 
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

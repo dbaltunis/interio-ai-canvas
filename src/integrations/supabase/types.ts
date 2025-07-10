@@ -1413,6 +1413,60 @@ export type Database = {
           },
         ]
       }
+      product_templates: {
+        Row: {
+          active: boolean | null
+          calculation_method: string
+          calculation_rules: Json | null
+          components: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          making_cost_required: boolean | null
+          measurement_requirements: Json | null
+          name: string
+          pricing_grid_required: boolean | null
+          pricing_unit: string
+          product_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          calculation_method?: string
+          calculation_rules?: Json | null
+          components?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          making_cost_required?: boolean | null
+          measurement_requirements?: Json | null
+          name: string
+          pricing_grid_required?: boolean | null
+          pricing_unit?: string
+          product_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          calculation_method?: string
+          calculation_rules?: Json | null
+          components?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          making_cost_required?: boolean | null
+          measurement_requirements?: Json | null
+          name?: string
+          pricing_grid_required?: boolean | null
+          pricing_unit?: string
+          product_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean | null
