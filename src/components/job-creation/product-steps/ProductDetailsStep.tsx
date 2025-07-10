@@ -10,8 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowRight, ArrowLeft, Package, Settings, Calculator, Save } from "lucide-react";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
-import { useInventory } from "@/hooks/useInventory";
 import { useToast } from "@/hooks/use-toast";
+import { FabricSelector } from "@/components/fabric/FabricSelector";
 
 interface ProductDetailsStepProps {
   product: any;
@@ -30,11 +30,11 @@ export const ProductDetailsStep = ({
   onBack
 }: ProductDetailsStepProps) => {
   const { templates: productTemplates, isLoading: templatesLoading } = useProductTemplates();
-  const { data: fabrics, isLoading: fabricsLoading } = useInventory();
   const { toast } = useToast();
   
   const [selectedProductTemplate, setSelectedProductTemplate] = useState('');
   const [selectedFabric, setSelectedFabric] = useState('');
+  const [selectedFabricObject, setSelectedFabricObject] = useState<any>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [measurements, setMeasurements] = useState({
     width: '',
@@ -74,12 +74,18 @@ export const ProductDetailsStep = ({
     }));
   };
 
+  const handleFabricSelect = (fabricId: string, fabric: any) => {
+    setSelectedFabric(fabricId);
+    setSelectedFabricObject(fabric);
+  };
+
   const handleSaveData = () => {
     const saveData = {
       product,
       selectedRooms,
       selectedProductTemplate,
       selectedFabric,
+      selectedFabricObject,
       selectedOptions,
       measurements,
       productDetails,
@@ -183,24 +189,10 @@ export const ProductDetailsStep = ({
             {/* Fabric Selection */}
             <div className="space-y-2">
               <Label>Select Fabric</Label>
-              <Select value={selectedFabric} onValueChange={setSelectedFabric}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose fabric from inventory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fabricsLoading ? (
-                    <SelectItem value="loading" disabled>Loading fabrics...</SelectItem>
-                  ) : fabrics?.filter(f => f.category === 'fabric').length === 0 ? (
-                    <SelectItem value="none" disabled>No fabrics found in inventory</SelectItem>
-                  ) : (
-                    fabrics?.filter(f => f.category === 'fabric').map((fabric) => (
-                      <SelectItem key={fabric.id} value={fabric.id}>
-                        {fabric.name} - {fabric.color} ({fabric.quantity} {fabric.unit} available)
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <FabricSelector
+                selectedFabricId={selectedFabric}
+                onSelectFabric={handleFabricSelect}
+              />
             </div>
 
             {/* Measurements */}
