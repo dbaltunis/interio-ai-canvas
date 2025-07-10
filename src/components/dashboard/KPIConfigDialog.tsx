@@ -82,7 +82,10 @@ export const KPIConfigDialog = ({ kpiConfigs, onToggleKPI }: KPIConfigDialogProp
           ))}
         </div>
         
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex justify-between gap-2 mt-6">
+          <div className="text-xs text-gray-500">
+            Use drag handles on cards to reorder within sections
+          </div>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Done
           </Button>

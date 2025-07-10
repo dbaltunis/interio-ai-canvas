@@ -30,6 +30,7 @@ import { useKPIConfig, KPIData } from "@/hooks/useKPIConfig";
 import { KPICard } from "./KPICard";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { KPIConfigDialog } from "./KPIConfigDialog";
+import { KPIConfigAdvanced } from "./KPIConfigAdvanced";
 import { RevenueChart } from "./RevenueChart";
 import { QuickActions } from "./QuickActions";
 import { PipelineOverview } from "./PipelineOverview";
@@ -40,7 +41,7 @@ export const Dashboard = () => {
   const { data: clients } = useClients();
   const { data: quotes } = useQuotes();
   const { data: emailKPIs } = useEmailKPIs();
-  const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
+  const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs, updateKPIProperty, resetToDefaults } = useKPIConfig();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -233,6 +234,11 @@ export const Dashboard = () => {
             kpiConfigs={kpiConfigs}
             onToggleKPI={toggleKPI}
           />
+          <KPIConfigAdvanced
+            kpiConfigs={kpiConfigs}
+            onUpdateProperty={updateKPIProperty}
+            onResetToDefaults={resetToDefaults}
+          />
           <Button variant="outline" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Export Report
@@ -248,18 +254,21 @@ export const Dashboard = () => {
       <DraggableKPISection
         title="Primary KPIs"
         kpis={primaryKPIs}
+        kpiConfigs={kpiConfigs}
         onReorder={(activeId, overId) => reorderKPIs('primary', activeId, overId)}
       />
 
       <DraggableKPISection
         title="Email Performance"
         kpis={emailKPIs_data}
+        kpiConfigs={kpiConfigs}
         onReorder={(activeId, overId) => reorderKPIs('email', activeId, overId)}
       />
 
       <DraggableKPISection
         title="Business Performance"
         kpis={businessKPIs}
+        kpiConfigs={kpiConfigs}
         onReorder={(activeId, overId) => reorderKPIs('business', activeId, overId)}
       />
 

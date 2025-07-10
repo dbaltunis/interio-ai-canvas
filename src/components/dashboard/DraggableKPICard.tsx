@@ -2,14 +2,16 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import { KPICard } from './KPICard';
-import { KPIData } from '@/hooks/useKPIConfig';
+import { EnhancedKPICard } from './EnhancedKPICard';
+import { KPIData, KPIConfig } from '@/hooks/useKPIConfig';
 
 interface DraggableKPICardProps {
   kpi: KPIData;
+  config: KPIConfig;
   isDragging?: boolean;
 }
 
-export const DraggableKPICard = ({ kpi, isDragging }: DraggableKPICardProps) => {
+export const DraggableKPICard = ({ kpi, config, isDragging }: DraggableKPICardProps) => {
   const {
     attributes,
     listeners,
@@ -39,8 +41,8 @@ export const DraggableKPICard = ({ kpi, isDragging }: DraggableKPICardProps) => 
         <GripVertical className="h-4 w-4 text-gray-500" />
       </div>
       
-      <KPICard
-        title={kpi.title}
+      <EnhancedKPICard
+        config={config}
         value={kpi.value}
         subtitle={kpi.subtitle}
         icon={kpi.icon}
