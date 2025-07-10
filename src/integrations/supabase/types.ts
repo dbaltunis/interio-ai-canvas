@@ -305,6 +305,44 @@ export type Database = {
         }
         Relationships: []
       }
+      canvas_designs: {
+        Row: {
+          created_at: string
+          design_data: Json
+          id: string
+          preview_image_url: string | null
+          product_configuration_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_data?: Json
+          id?: string
+          preview_image_url?: string | null
+          product_configuration_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_data?: Json
+          id?: string
+          preview_image_url?: string | null
+          product_configuration_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvas_designs_product_configuration_id_fkey"
+            columns: ["product_configuration_id"]
+            isOneToOne: false
+            referencedRelation: "product_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -1235,6 +1273,145 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      product_configurations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          product_type: string
+          project_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          product_type: string
+          project_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          product_type?: string
+          project_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_configurations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_details: {
+        Row: {
+          additional_options: Json | null
+          created_at: string
+          fabric_color: string | null
+          fabric_pattern: string | null
+          fabric_type: string | null
+          hardware_details: Json | null
+          heading_style: string | null
+          id: string
+          lining_type: string | null
+          measurements: Json | null
+          product_configuration_id: string
+          style: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_options?: Json | null
+          created_at?: string
+          fabric_color?: string | null
+          fabric_pattern?: string | null
+          fabric_type?: string | null
+          hardware_details?: Json | null
+          heading_style?: string | null
+          id?: string
+          lining_type?: string | null
+          measurements?: Json | null
+          product_configuration_id: string
+          style?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_options?: Json | null
+          created_at?: string
+          fabric_color?: string | null
+          fabric_pattern?: string | null
+          fabric_type?: string | null
+          hardware_details?: Json | null
+          heading_style?: string | null
+          id?: string
+          lining_type?: string | null
+          measurements?: Json | null
+          product_configuration_id?: string
+          style?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_details_product_configuration_id_fkey"
+            columns: ["product_configuration_id"]
+            isOneToOne: false
+            referencedRelation: "product_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_room_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          product_configuration_id: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_configuration_id: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_configuration_id?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_room_assignments_product_configuration_id_fkey"
+            columns: ["product_configuration_id"]
+            isOneToOne: false
+            referencedRelation: "product_configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_room_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
