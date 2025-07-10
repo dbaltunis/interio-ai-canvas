@@ -13,6 +13,7 @@ import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle } from "l
 import { RoomSelectionStep } from "./product-steps/RoomSelectionStep";
 import { ProductDetailsStep } from "./product-steps/ProductDetailsStep";
 import { ProductCanvasStep } from "./product-steps/ProductCanvasStep";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectJobsTabProps {
   project: any;
@@ -105,17 +106,26 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     try {
       console.log("=== CREATING ROOM ===");
       console.log("Creating room with project:", project);
-      console.log("Project ID:", project.id || project.project_id);
       
       const projectId = project.id || project.project_id;
       if (!projectId) {
         throw new Error("No valid project ID found");
       }
+
+      // Verify project exists in database before creating room
+      const { data: projectExists } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", projectId)
+        .single();
+
+      if (!projectExists) {
+        throw new Error(`Project ${projectId} does not exist in database`);
+      }
+
+      console.log("Project verified, creating room...");
       
       const roomCount = (existingRooms?.length || 0) + 1;
-      console.log("Room count will be:", roomCount);
-      console.log("Existing rooms:", existingRooms?.length || 0);
-      
       const roomData = {
         name: `Room ${roomCount}`,
         project_id: projectId,
@@ -128,7 +138,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
       
       toast({
         title: "Room Added",
-        description: `Room ${roomCount} created successfully and saved to database.`,
+        description: `Room ${roomCount} created successfully.`,
       });
     } catch (error) {
       console.error("Room creation failed:", error);
