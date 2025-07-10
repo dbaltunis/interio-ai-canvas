@@ -15,6 +15,7 @@ export const useQuotes = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      console.log("Fetching quotes for user:", user.id);
       const { data, error } = await supabase
         .from("quotes")
         .select(`
@@ -32,11 +33,14 @@ export const useQuotes = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      
+      console.log("Quotes fetched:", data?.length, "quotes");
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000, // 30 seconds - much shorter cache
+    gcTime: 5 * 60 * 1000, // 5 minutes cache time  
+    refetchOnWindowFocus: true, // Refetch when window gets focus
+    refetchOnMount: true, // Always refetch on mount
   });
 };
 
@@ -107,12 +111,9 @@ export const useCreateQuote = () => {
       });
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["quotes"], (old: any) => {
-        if (!old) return [data];
-        return old.map((quote: any) => 
-          quote.id.toString().startsWith('temp-') ? data : quote
-        );
-      });
+      // Invalidate both quotes and projects to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     }
   });
 };

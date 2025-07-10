@@ -119,8 +119,9 @@ export const useCreateProject = () => {
       });
     },
     onSuccess: (data) => {
-      // Invalidate and refetch projects to ensure fresh data
+      // Invalidate both projects and quotes to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       
       toast({
         title: "Success",
