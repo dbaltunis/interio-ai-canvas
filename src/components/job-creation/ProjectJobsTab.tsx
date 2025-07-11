@@ -2,21 +2,22 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { useCreateRoom, useRooms } from "@/hooks/useRooms";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
+import { useJobHandlers } from "./JobHandlers";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle, MapPin, Square, Settings2 } from "lucide-react";
+import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle, MapPin, Square, Settings2, Eye } from "lucide-react";
 import { WindowManagementSection } from "./WindowManagementSection";
 import { ProjectStats } from "./ProjectStats";
 import { RoomSelectionStep } from "./product-steps/RoomSelectionStep";
 import { ProductDetailsStep } from "./product-steps/ProductDetailsStep";
 import { ProductCanvasStep } from "./product-steps/ProductCanvasStep";
+import { QuickTreatmentCreator } from "./QuickTreatmentCreator";
+import { ProjectOverview } from "./ProjectOverview";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectJobsTabProps {
@@ -28,7 +29,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [step, setStep] = useState(1); // 1: rooms, 2: product details, 3: canvas
+  const [step, setStep] = useState(1);
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [newRooms, setNewRooms] = useState([]);
   const [roomQuantity, setRoomQuantity] = useState(1);
@@ -41,6 +42,9 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const { data: surfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   const { templates: dbProductTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { toast } = useToast();
+
+  // Import the job handlers
+  const { handleQuickCreateTreatment } = useJobHandlers(project);
 
   // Debug logging for data fetching
   console.log("ProjectJobsTab - Data Summary:", {
@@ -126,7 +130,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
       icon: getProductIcon(template.product_type),
       color: getProductColor(template.product_type),
       description: template.description || `${template.product_type} products`,
-      template // Include the full template data for later use
+      template
     })) || [];
 
   const handleProductClick = (product) => {
@@ -135,7 +139,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     setStep(1);
     setSelectedRooms([]);
     setNewRooms([]);
-    setProductConfigurationData(null); // Reset configuration data
+    setProductConfigurationData(null);
   };
 
   const handleCreateRoom = async () => {
@@ -249,259 +253,279 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     }
   };
 
+  const handleTreatmentCreated = () => {
+    // Refresh data after treatment creation
+    console.log("Treatment created, refreshing data...");
+    // The hooks will automatically refresh due to React Query
+  };
+
   const projectTotal = treatments?.reduce((sum, t) => sum + (t.total_price || 0), 0) || 0;
 
   return (
     <div className="space-y-6">
-      {/* Project Statistics */}
-      <ProjectStats
-        roomsCount={existingRooms?.length || 0}
-        surfacesCount={surfaces?.length || 0}
-        treatmentsCount={treatments?.length || 0}
-        projectTotal={projectTotal}
-      />
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="create" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Quick Create
+          </TabsTrigger>
+          <TabsTrigger value="manage" className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Manage
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Advanced
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Window Management Section */}
-      <WindowManagementSection 
-        projectId={projectId} 
-        rooms={existingRooms || []} 
-      />
+        <TabsContent value="overview" className="space-y-6">
+          <ProjectOverview 
+            project={project}
+            rooms={existingRooms || []}
+            surfaces={surfaces || []}
+            treatments={treatments || []}
+          />
+        </TabsContent>
 
-      {/* Simple Project Header */}
-      <div className="bg-white rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">{project?.name}</h2>
-            <p className="text-sm text-muted-foreground">Job #{project?.job_number}</p>
-          </div>
-        </div>
-      </div>
+        <TabsContent value="create" className="space-y-6">
+          <QuickTreatmentCreator
+            projectId={projectId}
+            onTreatmentCreated={handleTreatmentCreated}
+            existingRooms={existingRooms || []}
+            existingTreatments={treatments || []}
+            onQuickCreate={handleQuickCreateTreatment}
+          />
+        </TabsContent>
 
-      {/* Simple Room Creation */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Add Rooms</h3>
-            <p className="text-sm text-muted-foreground">Create rooms and add products to each one</p>
-          </div>
-          <Button onClick={handleCreateRoom} disabled={isCreatingRoom}>
-            <Plus className="h-4 w-4 mr-2" />
-            {isCreatingRoom ? "Adding..." : "Add Room"}
-          </Button>
-        </div>
+        <TabsContent value="manage" className="space-y-6">
+          <WindowManagementSection 
+            projectId={projectId} 
+            rooms={existingRooms || []} 
+          />
+        </TabsContent>
 
-        {/* Product Templates - Now Clickable */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {templatesLoading ? (
-            // Loading state
-            Array.from({ length: 4 }).map((_, index) => (
-              <Card key={index} className="p-4 animate-pulse">
-                <div className="text-center space-y-2">
-                  <div className="h-8 w-8 mx-auto bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                </div>
-              </Card>
-            ))
-          ) : productTemplates.length > 0 ? (
-            // Product templates
-            productTemplates.map((template) => {
-              const Icon = template.icon;
-              return (
-                <Card 
-                  key={template.id} 
-                  className={`p-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${template.color}`}
-                  onClick={() => handleProductClick(template)}
-                >
-                  <div className="text-center space-y-2">
-                    <Icon className="h-8 w-8 mx-auto text-gray-600" />
-                    <p className="font-medium text-sm">{template.name}</p>
-                    <p className="text-xs text-muted-foreground">{template.description}</p>
-                    <div className="pt-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {template.name.toLowerCase()} products
-                      </Badge>
+        <TabsContent value="advanced" className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Advanced Product Configuration</h3>
+                <p className="text-sm text-muted-foreground">Use the full 3-step process for complex treatments</p>
+              </div>
+              <Button onClick={handleCreateRoom} disabled={isCreatingRoom}>
+                <Plus className="h-4 w-4 mr-2" />
+                {isCreatingRoom ? "Adding..." : "Add Room"}
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {templatesLoading ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <Card key={index} className="p-4 animate-pulse">
+                    <div className="text-center space-y-2">
+                      <div className="h-8 w-8 mx-auto bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-3 bg-gray-200 rounded"></div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })
-          ) : (
-            // Empty state
-            <div className="col-span-full">
-              <Card className="p-8 text-center">
-                <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Product Templates</h3>
-                <p className="text-gray-500 mb-4">
-                  Create product templates in Settings to get started with job configuration.
-                </p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.href = '/settings?tab=products'}
-                >
-                  Go to Settings
-                </Button>
-              </Card>
-            </div>
-          )}
-        </div>
-
-        {/* Product Configuration Dialog */}
-        <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                {selectedProduct && <selectedProduct.icon className="h-5 w-5" />}
-                <span>Configure {selectedProduct?.name}</span>
-                <Badge variant="outline">Step {step} of 3</Badge>
-              </DialogTitle>
-            </DialogHeader>
-
-            {step === 1 && (
-              <RoomSelectionStep 
-                existingRooms={existingRooms || []}
-                selectedRooms={selectedRooms}
-                onRoomSelection={handleRoomSelection}
-                newRooms={newRooms}
-                setNewRooms={setNewRooms}
-                roomQuantity={roomQuantity}
-                setRoomQuantity={setRoomQuantity}
-                onNext={handleNextStep}
-              />
-            )}
-
-            {step === 2 && (
-              <ProductDetailsStep 
-                product={selectedProduct}
-                selectedRooms={selectedRooms}
-                existingRooms={existingRooms || []}
-                onNext={handleNextStep}
-                onBack={() => setStep(1)}
-                onSave={(data) => {
-                  console.log("Saving product configuration:", data);
-                  setProductConfigurationData(data); // Store the curtain data
-                }}
-              />
-            )}
-
-            {step === 3 && (
-              <ProductCanvasStep 
-                product={selectedProduct}
-                selectedRooms={selectedRooms}
-                existingRooms={existingRooms || []}
-                productConfigurationData={productConfigurationData} // Pass the curtain data
-                onClose={() => setShowProductDialog(false)}
-                onBack={() => setStep(2)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Project Summary - Show Created Items */}
-        {(existingRooms?.length > 0 || treatments?.length > 0 || surfaces?.length > 0) && (
-          <div className="bg-white rounded-lg border p-4 space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Project Progress
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Rooms */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">Rooms ({existingRooms?.length || 0})</span>
-                </div>
-                {roomsLoading ? (
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                ) : existingRooms?.length > 0 ? (
-                  <div className="space-y-1">
-                    {existingRooms.slice(0, 3).map((room) => (
-                      <div key={room.id} className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
-                        {room.name}
+                  </Card>
+                ))
+              ) : productTemplates.length > 0 ? (
+                productTemplates.map((template) => {
+                  const Icon = template.icon;
+                  return (
+                    <Card 
+                      key={template.id} 
+                      className={`p-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${template.color}`}
+                      onClick={() => handleProductClick(template)}
+                    >
+                      <div className="text-center space-y-2">
+                        <Icon className="h-8 w-8 mx-auto text-gray-600" />
+                        <p className="font-medium text-sm">{template.name}</p>
+                        <p className="text-xs text-muted-foreground">{template.description}</p>
+                        <div className="pt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {template.name.toLowerCase()} products
+                          </Badge>
+                        </div>
                       </div>
-                    ))}
-                    {existingRooms.length > 3 && (
-                      <div className="text-xs text-gray-500">+{existingRooms.length - 3} more</div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No rooms created yet</p>
-                )}
-              </div>
-
-              {/* Windows/Surfaces */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Square className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium">Windows ({surfaces?.length || 0})</span>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="col-span-full">
+                  <Card className="p-8 text-center">
+                    <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Product Templates</h3>
+                    <p className="text-gray-500 mb-4">
+                      Create product templates in Settings to get started with job configuration.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.href = '/settings?tab=products'}
+                    >
+                      Go to Settings
+                    </Button>
+                  </Card>
                 </div>
-                {surfacesLoading ? (
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                ) : surfaces?.length > 0 ? (
-                  <div className="space-y-1">
-                    {surfaces.slice(0, 3).map((surface) => (
-                      <div key={surface.id} className="text-sm text-gray-600 bg-purple-50 px-2 py-1 rounded">
-                        {surface.name}
-                      </div>
-                    ))}
-                    {surfaces.length > 3 && (
-                      <div className="text-xs text-gray-500">+{surfaces.length - 3} more</div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No windows created yet</p>
-                )}
-              </div>
-
-              {/* Treatments */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Settings2 className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Treatments ({treatments?.length || 0})</span>
-                </div>
-                {treatmentsLoading ? (
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                ) : treatments?.length > 0 ? (
-                  <div className="space-y-1">
-                    {treatments.slice(0, 3).map((treatment) => (
-                      <div key={treatment.id} className="text-sm text-gray-600 bg-green-50 px-2 py-1 rounded">
-                        {treatment.treatment_type}
-                        {treatment.product_name && ` - ${treatment.product_name}`}
-                      </div>
-                    ))}
-                    {treatments.length > 3 && (
-                      <div className="text-xs text-gray-500">+{treatments.length - 3} more</div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No treatments created yet</p>
-                )}
-              </div>
+              )}
             </div>
           </div>
-        )}
+        </TabsContent>
+      </Tabs>
 
-        {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
-          <ol className="text-sm text-blue-700 space-y-1">
-            <li>1. Click "Add Room" to create rooms for your project</li>
-            <li>2. Click on product cards above to configure treatments</li>
-            <li>3. Select rooms and add measurements in the dialog</li>
-            <li>4. Use the canvas to design and customize</li>
-            <li>5. Move to Quote tab to see pricing</li>
-          </ol>
+      <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              {selectedProduct && <selectedProduct.icon className="h-5 w-5" />}
+              <span>Configure {selectedProduct?.name}</span>
+              <Badge variant="outline">Step {step} of 3</Badge>
+            </DialogTitle>
+          </DialogHeader>
+
+          {step === 1 && (
+            <RoomSelectionStep 
+              existingRooms={existingRooms || []}
+              selectedRooms={selectedRooms}
+              onRoomSelection={handleRoomSelection}
+              newRooms={newRooms}
+              setNewRooms={setNewRooms}
+              roomQuantity={roomQuantity}
+              setRoomQuantity={setRoomQuantity}
+              onNext={handleNextStep}
+            />
+          )}
+
+          {step === 2 && (
+            <ProductDetailsStep 
+              product={selectedProduct}
+              selectedRooms={selectedRooms}
+              existingRooms={existingRooms || []}
+              onNext={handleNextStep}
+              onBack={() => setStep(1)}
+              onSave={(data) => {
+                console.log("Saving product configuration:", data);
+                setProductConfigurationData(data);
+              }}
+            />
+          )}
+
+          {step === 3 && (
+            <ProductCanvasStep 
+              product={selectedProduct}
+              selectedRooms={selectedRooms}
+              existingRooms={existingRooms || []}
+              productConfigurationData={productConfigurationData}
+              onClose={() => setShowProductDialog(false)}
+              onBack={() => setStep(2)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {(existingRooms?.length > 0 || treatments?.length > 0 || surfaces?.length > 0) && (
+        <div className="bg-white rounded-lg border p-4 space-y-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            Project Progress
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-blue-600" />
+                <span className="font-medium">Rooms ({existingRooms?.length || 0})</span>
+              </div>
+              {roomsLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ) : existingRooms?.length > 0 ? (
+                <div className="space-y-1">
+                  {existingRooms.slice(0, 3).map((room) => (
+                    <div key={room.id} className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
+                      {room.name}
+                    </div>
+                  ))}
+                  {existingRooms.length > 3 && (
+                    <div className="text-xs text-gray-500">+{existingRooms.length - 3} more</div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No rooms created yet</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Square className="h-4 w-4 text-purple-600" />
+                <span className="font-medium">Windows ({surfaces?.length || 0})</span>
+              </div>
+              {surfacesLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ) : surfaces?.length > 0 ? (
+                <div className="space-y-1">
+                  {surfaces.slice(0, 3).map((surface) => (
+                    <div key={surface.id} className="text-sm text-gray-600 bg-purple-50 px-2 py-1 rounded">
+                      {surface.name}
+                    </div>
+                  ))}
+                  {surfaces.length > 3 && (
+                    <div className="text-xs text-gray-500">+{surfaces.length - 3} more</div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No windows created yet</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-green-600" />
+                <span className="font-medium">Treatments ({treatments?.length || 0})</span>
+              </div>
+              {treatmentsLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ) : treatments?.length > 0 ? (
+                <div className="space-y-1">
+                  {treatments.slice(0, 3).map((treatment) => (
+                    <div key={treatment.id} className="text-sm text-gray-600 bg-green-50 px-2 py-1 rounded">
+                      {treatment.treatment_type}
+                      {treatment.product_name && ` - ${treatment.product_name}`}
+                    </div>
+                  ))}
+                  {treatments.length > 3 && (
+                    <div className="text-xs text-gray-500">+{treatments.length - 3} more</div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No treatments created yet</p>
+              )}
+            </div>
+          </div>
         </div>
+      )}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+        <ol className="text-sm text-blue-700 space-y-1">
+          <li>1. Click "Add Room" to create rooms for your project</li>
+          <li>2. Click on product cards above to configure treatments</li>
+          <li>3. Select rooms and add measurements in the dialog</li>
+          <li>4. Use the canvas to design and customize</li>
+          <li>5. Move to Quote tab to see pricing</li>
+        </ol>
       </div>
     </div>
   );

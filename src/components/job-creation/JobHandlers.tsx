@@ -1,4 +1,3 @@
-
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment } from "@/hooks/useTreatments";
@@ -290,6 +289,86 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
+  const handleQuickCreateTreatment = async (treatmentData: any) => {
+    try {
+      console.log("=== QUICK CREATE TREATMENT ===");
+      console.log("Treatment data:", treatmentData);
+      
+      // First, ensure we have a room
+      let roomId = null;
+      const existingRoom = rooms?.find(r => r.name === treatmentData.roomName);
+      
+      if (existingRoom) {
+        roomId = existingRoom.id;
+      } else {
+        // Create new room
+        console.log("Creating new room:", treatmentData.roomName);
+        const newRoom = await createRoom.mutateAsync({
+          project_id: actualProjectId,
+          name: treatmentData.roomName,
+          room_type: 'living_room'
+        });
+        roomId = newRoom.id;
+        console.log("New room created:", newRoom);
+      }
+
+      // Then, ensure we have a surface/window
+      let surfaceId = null;
+      const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
+      const existingSurface = roomSurfaces.find(s => s.name === treatmentData.windowName);
+      
+      if (existingSurface) {
+        surfaceId = existingSurface.id;
+      } else {
+        // Create new surface
+        console.log("Creating new surface:", treatmentData.windowName);
+        const newSurface = await createSurface.mutateAsync({
+          room_id: roomId,
+          project_id: actualProjectId,
+          name: treatmentData.windowName,
+          surface_type: 'window',
+          width: treatmentData.width,
+          height: treatmentData.height,
+          surface_width: treatmentData.width,
+          surface_height: treatmentData.height
+        });
+        surfaceId = newSurface.id;
+        console.log("New surface created:", newSurface);
+      }
+
+      // Finally, create the treatment
+      const treatmentPayload = {
+        window_id: surfaceId,
+        room_id: roomId,
+        project_id: actualProjectId,
+        treatment_type: treatmentData.type || 'curtains',
+        status: "planned",
+        product_name: treatmentData.name,
+        material_cost: (treatmentData.unitPrice * treatmentData.quantity) * 0.6, // Estimate 60% material cost
+        labor_cost: (treatmentData.unitPrice * treatmentData.quantity) * 0.4, // Estimate 40% labor cost
+        total_price: treatmentData.unitPrice * treatmentData.quantity,
+        unit_price: treatmentData.unitPrice,
+        quantity: treatmentData.quantity,
+        notes: `Quick created: ${treatmentData.name}`,
+        measurements: JSON.stringify({
+          width: treatmentData.width,
+          height: treatmentData.height,
+          quantity: treatmentData.quantity
+        })
+      };
+
+      console.log("Creating treatment with payload:", treatmentPayload);
+      
+      const result = await createTreatment.mutateAsync(treatmentPayload);
+      console.log("Treatment created successfully:", result);
+      
+      return result;
+    } catch (error) {
+      console.error("Failed to quick create treatment:", error);
+      throw error;
+    }
+  };
+
   return {
     rooms,
     roomsLoading,
@@ -306,6 +385,7 @@ export const useJobHandlers = (project: any) => {
     handleCopyRoom,
     handlePasteRoom,
     handleCreateTreatment,
-    handleChangeRoomType
+    handleChangeRoomType,
+    handleQuickCreateTreatment
   };
 };
