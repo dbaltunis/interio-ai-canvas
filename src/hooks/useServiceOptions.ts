@@ -20,27 +20,35 @@ export const useServiceOptions = () => {
     queryFn: async () => {
       console.log('Fetching service options...');
       
-      // Get current user first
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No authenticated user for service options');
+          return [];
+        }
 
-      const { data, error } = await supabase
-        .from('service_options')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('active', true)
-        .order('name');
-      
-      if (error) {
-        console.error('Error fetching service options:', error);
-        throw error;
+        const { data, error } = await supabase
+          .from('service_options')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching service options:', error);
+          throw error;
+        }
+        
+        console.log('Service options fetched:', data);
+        return data as ServiceOption[];
+      } catch (err) {
+        console.error('Failed to fetch service options:', err);
+        return [];
       }
-      
-      console.log('Service options fetched:', data);
-      return data as ServiceOption[];
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 

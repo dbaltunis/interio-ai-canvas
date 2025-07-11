@@ -19,26 +19,34 @@ export const useHeadingOptions = () => {
   return useQuery({
     queryKey: ['heading-options'],
     queryFn: async () => {
-      // Get current user first
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No authenticated user for heading options');
+          return [];
+        }
 
-      const { data, error } = await supabase
-        .from('heading_options')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('active', true)
-        .order('name');
-      
-      if (error) {
-        console.error('Error fetching heading options:', error);
-        throw error;
+        const { data, error } = await supabase
+          .from('heading_options')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching heading options:', error);
+          throw error;
+        }
+        
+        return data as HeadingOption[];
+      } catch (err) {
+        console.error('Failed to fetch heading options:', err);
+        return [];
       }
-      
-      return data as HeadingOption[];
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 

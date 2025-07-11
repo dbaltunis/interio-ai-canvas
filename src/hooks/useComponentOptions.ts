@@ -20,26 +20,34 @@ export const useHardwareOptions = () => {
     queryFn: async () => {
       console.log('Fetching hardware options...');
       
-      // Get current user first
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No authenticated user for hardware options');
+          return [];
+        }
 
-      const { data, error } = await supabase
-        .from('hardware_options')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name');
-      
-      if (error) {
-        console.error('Error fetching hardware options:', error);
-        throw error;
+        const { data, error } = await supabase
+          .from('hardware_options')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching hardware options:', error);
+          throw error;
+        }
+        
+        console.log('Hardware options fetched:', data);
+        return data as HardwareOption[];
+      } catch (err) {
+        console.error('Failed to fetch hardware options:', err);
+        return [];
       }
-      
-      console.log('Hardware options fetched:', data);
-      return data as HardwareOption[];
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
@@ -135,26 +143,34 @@ export const useLiningOptions = () => {
   return useQuery({
     queryKey: ['lining-options'],
     queryFn: async () => {
-      // Get current user first
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No authenticated user for lining options');
+          return [];
+        }
 
-      const { data, error } = await supabase
-        .from('lining_options')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('active', true)
-        .order('name');
-      
-      if (error) {
-        console.error('Error fetching lining options:', error);
-        throw error;
+        const { data, error } = await supabase
+          .from('lining_options')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching lining options:', error);
+          throw error;
+        }
+        
+        return data as LiningOption[];
+      } catch (err) {
+        console.error('Failed to fetch lining options:', err);
+        return [];
       }
-      
-      return data as LiningOption[];
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
