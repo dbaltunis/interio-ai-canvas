@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   CheckCircle, 
   Edit3, 
@@ -45,6 +46,7 @@ export const ProductCanvasStep = ({
 }: ProductCanvasStepProps) => {
   const [activeRoom, setActiveRoom] = useState(selectedRooms[0]);
   const [isDesignActive, setIsDesignActive] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
   // Get initial project ID from existingRooms
@@ -66,14 +68,9 @@ export const ProductCanvasStep = ({
   const projectId = initialProjectId || allRooms?.[0]?.project_id;
 
   // Debug logging
-  console.log("Canvas Debug - Initial Project ID:", initialProjectId);
-  console.log("Canvas Debug - Final Project ID:", projectId);
-  console.log("Canvas Debug - Product Configuration Data:", productConfigurationData);
-  console.log("Canvas Debug - Existing rooms:", existingRooms);
+  console.log("Canvas Debug - Configuration Data:", productConfigurationData);
   console.log("Canvas Debug - Selected rooms:", selectedRooms);
   console.log("Canvas Debug - All treatments:", allTreatments);
-  console.log("Canvas Debug - All rooms:", allRooms);
-  console.log("Canvas Debug - All surfaces:", allSurfaces);
 
   const handleRefresh = () => {
     refetchRooms();
@@ -91,36 +88,56 @@ export const ProductCanvasStep = ({
       return;
     }
 
+    setIsSaving(true);
+
     try {
+      console.log("Starting to save configuration for rooms:", selectedRooms);
+      
       // Create treatments for all selected rooms
       for (const roomId of selectedRooms) {
-        console.log("Creating treatment for room:", roomId);
+        console.log("Processing room:", roomId);
         
-        // Get the first surface for this room, or create one if none exists
+        // Get surfaces for this room
         const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-        let surfaceId = roomSurfaces[0]?.id;
+        console.log("Found surfaces for room:", roomSurfaces);
         
-        // Create treatment data from the configuration
+        // Use first window surface, or create default if none exists
+        let targetSurfaceId = roomSurfaces.find(s => s.surface_type === 'window')?.id || roomSurfaces[0]?.id || "";
+        
+        // Create comprehensive treatment data
         const treatmentData = {
           product_name: productConfigurationData.template?.name || product.name,
           treatment_type: productConfigurationData.template?.product_type || 'curtain',
           total_price: productConfigurationData.calculation?.totalPrice || 0,
           material_cost: productConfigurationData.calculation?.fabricPrice || 0,
           labor_cost: productConfigurationData.calculation?.manufacturingPrice || 0,
-          fabric_type: productConfigurationData.fabric?.name,
+          unit_price: productConfigurationData.calculation?.totalPrice || 0,
+          quantity: 1,
+          fabric_type: productConfigurationData.fabric?.name || 'Unknown Fabric',
+          color: productConfigurationData.fabric?.color || null,
+          pattern: productConfigurationData.fabric?.pattern || null,
           measurements: productConfigurationData.measurements,
           fabric_details: productConfigurationData.fabric,
           treatment_details: productConfigurationData.template,
           calculation_details: productConfigurationData.calculation,
-          notes: `Configured via product template: ${product.name}`
+          notes: `Configured via product template: ${product.name}. Rail: ${productConfigurationData.measurements?.railWidth}cm, Drop: ${productConfigurationData.measurements?.dropHeight}cm`,
+          status: 'planned'
         };
 
-        console.log("Treatment data to save:", treatmentData);
+        console.log("Creating treatment with data:", treatmentData);
         
-        await handleCreateTreatment(roomId, surfaceId || "", treatmentData.treatment_type, treatmentData);
+        await handleCreateTreatment(
+          roomId, 
+          targetSurfaceId, 
+          treatmentData.treatment_type, 
+          treatmentData
+        );
+        
+        console.log("Treatment created successfully for room:", roomId);
       }
 
-      // Refresh data after creating treatments
+      // Force refresh all data
+      console.log("Refreshing all data...");
       await Promise.all([
         refetchRooms(),
         refetchSurfaces(), 
@@ -128,22 +145,24 @@ export const ProductCanvasStep = ({
       ]);
 
       toast({
-        title: "Configuration Saved",
-        description: `${product.name} has been configured for ${selectedRooms.length} room(s).`,
+        title: "Configuration Saved Successfully!",
+        description: `${product.name} configured for ${selectedRooms.length} room(s). Total: $${productConfigurationData.calculation?.totalPrice || 0}`,
       });
 
-      // Close the dialog after successful save
+      // Close after a short delay to show success
       setTimeout(() => {
         onClose();
-      }, 1000);
+      }, 1500);
 
     } catch (error) {
       console.error("Failed to save configuration:", error);
       toast({
         title: "Save Failed",
-        description: "Failed to save the product configuration. Please try again.",
+        description: `Failed to save the product configuration: ${error.message}`,
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -189,15 +208,15 @@ export const ProductCanvasStep = ({
         </div>
 
         {/* Room Layout Visualization */}
-        <div className="bg-gray-50 rounded-lg p-6 min-h-[300px] relative border-2 border-dashed border-gray-300">
+        <div className="bg-gray-50 rounded-lg p-4 min-h-[200px] relative border-2 border-dashed border-gray-300">
           <div className="absolute top-2 left-2">
             <Badge variant="secondary">Room Layout</Badge>
           </div>
           
           {/* Room representation */}
-          <div className="mt-8 relative">
+          <div className="mt-6 relative">
             {/* Room outline */}
-            <div className="w-full h-48 border-4 border-gray-400 bg-white/50 rounded-lg relative overflow-hidden">
+            <div className="w-full h-32 border-4 border-gray-400 bg-white/50 rounded-lg relative overflow-hidden">
               {/* Floor pattern */}
               <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-amber-100 to-amber-200"></div>
               
@@ -208,10 +227,10 @@ export const ProductCanvasStep = ({
                 
                 // Position surfaces around the room perimeter
                 const positions = [
-                  { top: '5px', left: '20%', width: '30%', height: '8px' }, // Top wall
-                  { top: '20%', right: '5px', width: '8px', height: '30%' }, // Right wall
-                  { bottom: '5px', left: '50%', width: '30%', height: '8px' }, // Bottom wall
-                  { top: '50%', left: '5px', width: '8px', height: '30%' }, // Left wall
+                  { top: '4px', left: '20%', width: '30%', height: '6px' }, // Top wall
+                  { top: '20%', right: '4px', width: '6px', height: '30%' }, // Right wall
+                  { bottom: '4px', left: '50%', width: '30%', height: '6px' }, // Bottom wall
+                  { top: '50%', left: '4px', width: '6px', height: '30%' }, // Left wall
                 ];
                 
                 const position = positions[index % positions.length];
@@ -226,15 +245,15 @@ export const ProductCanvasStep = ({
                     {/* Surface icon */}
                     <div className="flex items-center justify-center h-full">
                       {isWindow ? (
-                        <Square className="h-3 w-3 text-blue-600" />
+                        <Square className="h-2 w-2 text-blue-600" />
                       ) : (
-                        <Maximize2 className="h-3 w-3 text-gray-600" />
+                        <Maximize2 className="h-2 w-2 text-gray-600" />
                       )}
                     </div>
                     
                     {/* Treatment indicator */}
                     {surfaceTreatments.length > 0 && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white">
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white">
                         <span className="text-xs text-white font-bold flex items-center justify-center h-full">
                           {surfaceTreatments.length}
                         </span>
@@ -247,8 +266,8 @@ export const ProductCanvasStep = ({
               {/* Room center label */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-gray-600">{room.name}</p>
-                  <p className="text-sm text-gray-500 capitalize">{room.room_type?.replace('_', ' ')}</p>
+                  <p className="text-sm font-semibold text-gray-600">{room.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{room.room_type?.replace('_', ' ')}</p>
                 </div>
               </div>
             </div>
@@ -256,13 +275,13 @@ export const ProductCanvasStep = ({
         </div>
 
         {/* Surfaces and Treatments Details */}
-        <div className="grid gap-4">
+        <div className="space-y-3">
           {surfaces.map((surface) => {
             const surfaceTreatments = treatments.filter(t => t.window_id === surface.id);
             
             return (
-              <Card key={surface.id} className="p-4">
-                <div className="flex items-start justify-between mb-3">
+              <Card key={surface.id} className="p-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     {surface.surface_type === 'window' ? (
                       <Square className="h-4 w-4 text-blue-600" />
@@ -270,35 +289,35 @@ export const ProductCanvasStep = ({
                       <Maximize2 className="h-4 w-4 text-gray-600" />
                     )}
                     <div>
-                      <h5 className="font-medium">{surface.name}</h5>
-                      <p className="text-sm text-muted-foreground capitalize">
+                      <h5 className="font-medium text-sm">{surface.name}</h5>
+                      <p className="text-xs text-muted-foreground capitalize">
                         {surface.surface_type} • {surface.width}" × {surface.height}"
                       </p>
                     </div>
                   </div>
-                  <Badge variant={surface.surface_type === 'window' ? 'default' : 'secondary'}>
+                  <Badge variant={surface.surface_type === 'window' ? 'default' : 'secondary'} className="text-xs">
                     {surface.surface_type}
                   </Badge>
                 </div>
                 
                 {/* Treatments for this surface */}
                 {surfaceTreatments.length > 0 && (
-                  <div className="mt-3 pt-3 border-t">
-                    <h6 className="text-sm font-medium mb-2 text-green-700">Window Treatments:</h6>
-                    <div className="space-y-2">
+                  <div className="mt-2 pt-2 border-t">
+                    <h6 className="text-xs font-medium mb-1 text-green-700">Window Treatments:</h6>
+                    <div className="space-y-1">
                       {surfaceTreatments.map((treatment) => (
                         <div key={treatment.id} className="flex items-center justify-between p-2 bg-green-50 rounded border">
                           <div className="flex items-center space-x-2">
                             <Palette className="h-3 w-3 text-green-600" />
                             <div>
-                              <p className="text-sm font-medium">{getWindowCoveringName(treatment.treatment_type)}</p>
+                              <p className="text-xs font-medium">{getWindowCoveringName(treatment.treatment_type)}</p>
                               {treatment.fabric_type && (
                                 <p className="text-xs text-muted-foreground">Fabric: {treatment.fabric_type}</p>
                               )}
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium">${treatment.total_price || 0}</p>
+                            <p className="text-xs font-medium">${treatment.total_price || 0}</p>
                             <Badge variant="outline" className="text-xs">
                               {treatment.status}
                             </Badge>
@@ -310,8 +329,8 @@ export const ProductCanvasStep = ({
                 )}
                 
                 {surfaceTreatments.length === 0 && surface.surface_type === 'window' && (
-                  <div className="mt-3 pt-3 border-t">
-                    <p className="text-sm text-muted-foreground italic">No treatments assigned yet</p>
+                  <div className="mt-2 pt-2 border-t">
+                    <p className="text-xs text-muted-foreground italic">No treatments assigned yet</p>
                   </div>
                 )}
               </Card>
@@ -323,10 +342,10 @@ export const ProductCanvasStep = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-center flex-1">
-          <h3 className="text-lg font-semibold mb-2">Project Visualization Canvas</h3>
+          <h3 className="text-lg font-semibold mb-1">Project Visualization Canvas</h3>
           <p className="text-sm text-muted-foreground">
             Visual overview of your {product?.name} configuration across all rooms
           </p>
@@ -356,110 +375,137 @@ export const ProductCanvasStep = ({
         ))}
       </div>
 
-      {/* Canvas Content */}
-      <Card className="min-h-[500px]">
-        <div className="p-6">
-          {isDesignActive ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold flex items-center">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Design Mode: {getRoomName(activeRoom)}
-                </h4>
-                <Badge variant="default">Active Design</Badge>
-              </div>
-              
-              {/* Room Visualization */}
-              {renderRoomVisualization(activeRoom)}
-            </div>
-          ) : (
-            <div className="text-center min-h-[400px] flex items-center justify-center">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-lg">Project Overview</h4>
-                  <p className="text-muted-foreground">Ready to visualize your {product?.name} configuration</p>
+      {/* Canvas Content - Made Responsive */}
+      <Card className="min-h-[400px]">
+        <ScrollArea className="h-full">
+          <div className="p-4">
+            {isDesignActive ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Design Mode: {getRoomName(activeRoom)}
+                  </h4>
+                  <Badge variant="default">Active Design</Badge>
                 </div>
                 
-                {/* Show curtain configuration data if available */}
-                {productConfigurationData && (
-                  <Card className="p-4 bg-blue-50 border-blue-200 max-w-lg mx-auto">
-                    <div className="text-center space-y-2">
-                      <h5 className="font-medium text-blue-900">✅ Curtain Configuration Loaded</h5>
-                      <div className="text-left text-sm space-y-1">
-                        {productConfigurationData.template?.name && (
-                          <p><strong>Treatment:</strong> {productConfigurationData.template.name}</p>
-                        )}
-                        {productConfigurationData.measurements?.railWidth && (
-                          <p><strong>Rail Width:</strong> {productConfigurationData.measurements.railWidth}cm</p>
-                        )}
-                        {productConfigurationData.measurements?.dropHeight && (
-                          <p><strong>Drop:</strong> {productConfigurationData.measurements.dropHeight}cm</p>
-                        )}
-                        {productConfigurationData.fabric?.name && (
-                          <p><strong>Fabric:</strong> {productConfigurationData.fabric.name}</p>
-                        )}
-                        {productConfigurationData.calculation?.totalPrice && (
-                          <p><strong>Total Price:</strong> ${productConfigurationData.calculation.totalPrice}</p>
-                        )}
+                {/* Room Visualization */}
+                {renderRoomVisualization(activeRoom)}
+              </div>
+            ) : (
+              <div className="text-center min-h-[300px] flex items-center justify-center">
+                <div className="space-y-4 max-w-4xl">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-lg">Project Overview</h4>
+                    <p className="text-muted-foreground">Ready to visualize your {product?.name} configuration</p>
+                  </div>
+                  
+                  {/* Show curtain configuration data if available */}
+                  {productConfigurationData && (
+                    <Card className="p-4 bg-blue-50 border-blue-200 max-w-2xl mx-auto">
+                      <div className="text-center space-y-2">
+                        <h5 className="font-medium text-blue-900 flex items-center justify-center">
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Curtain Configuration Ready
+                        </h5>
+                        <div className="grid grid-cols-2 gap-4 text-left text-sm">
+                          <div className="space-y-1">
+                            {productConfigurationData.template?.name && (
+                              <p><strong>Treatment:</strong> {productConfigurationData.template.name}</p>
+                            )}
+                            {productConfigurationData.fabric?.name && (
+                              <p><strong>Fabric:</strong> {productConfigurationData.fabric.name}</p>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            {productConfigurationData.measurements?.railWidth && (
+                              <p><strong>Width:</strong> {productConfigurationData.measurements.railWidth}cm</p>
+                            )}
+                            {productConfigurationData.measurements?.dropHeight && (
+                              <p><strong>Drop:</strong> {productConfigurationData.measurements.dropHeight}cm</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t">
+                          <p className="text-lg font-semibold text-blue-900">
+                            Total: ${productConfigurationData.calculation?.totalPrice || 0}
+                          </p>
+                        </div>
                       </div>
+                    </Card>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                    <div className="p-4 bg-blue-50 rounded-lg border">
+                      <Home className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+                      <p className="font-medium">{allRooms?.length || 0} Rooms</p>
+                      <p className="text-sm text-muted-foreground">Created</p>
                     </div>
-                  </Card>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                  <div className="p-4 bg-blue-50 rounded-lg border">
-                    <Home className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                    <p className="font-medium">{allRooms?.length || 0} Rooms</p>
-                    <p className="text-sm text-muted-foreground">Created</p>
+                    <div className="p-4 bg-purple-50 rounded-lg border">
+                      <Square className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+                      <p className="font-medium">{allSurfaces?.length || 0} Surfaces</p>
+                      <p className="text-sm text-muted-foreground">Defined</p>
+                    </div>
+                    <div className="p-4 bg-green-50 rounded-lg border">
+                      <Palette className="h-8 w-8 mx-auto text-green-600 mb-2" />
+                      <p className="font-medium">{allTreatments?.length || 0} Treatments</p>
+                      <p className="text-sm text-muted-foreground">Applied</p>
+                    </div>
                   </div>
-                  <div className="p-4 bg-purple-50 rounded-lg border">
-                    <Square className="h-8 w-8 mx-auto text-purple-600 mb-2" />
-                    <p className="font-medium">{allSurfaces?.length || 0} Surfaces</p>
-                    <p className="text-sm text-muted-foreground">Defined</p>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg border">
-                    <Palette className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                    <p className="font-medium">{allTreatments?.length || 0} Treatments</p>
-                    <p className="text-sm text-muted-foreground">Applied</p>
-                  </div>
+                  
+                  <Button 
+                    variant={isDesignActive ? "default" : "outline"} 
+                    size="lg"
+                    onClick={() => setIsDesignActive(!isDesignActive)}
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    {isDesignActive ? "Exit Design Mode" : "Start Visual Design"}
+                  </Button>
                 </div>
-                
-                <Button 
-                  variant={isDesignActive ? "default" : "outline"} 
-                  size="lg"
-                  onClick={() => setIsDesignActive(!isDesignActive)}
-                >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  {isDesignActive ? "Exit Design Mode" : "Start Visual Design"}
-                </Button>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </ScrollArea>
       </Card>
 
-      {/* Action Bar */}
-      <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+      {/* Action Bar - Fixed positioning */}
+      <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border-2 border-green-200">
         <div>
-          <p className="font-medium text-green-900">Project Visualization Ready</p>
+          <p className="font-medium text-green-900">Configuration Ready to Save</p>
           <p className="text-sm text-green-700">
-            {allRooms?.length || 0} rooms with {allTreatments?.length || 0} window treatments configured
+            {productConfigurationData ? 
+              `${product?.name} configured for ${selectedRooms.length} room(s) - $${productConfigurationData.calculation?.totalPrice || 0}` :
+              `${allRooms?.length || 0} rooms with ${allTreatments?.length || 0} window treatments`
+            }
           </p>
         </div>
         <div className="flex space-x-2">
           {onBack && (
-            <Button variant="ghost" onClick={onBack}>
+            <Button variant="ghost" onClick={onBack} disabled={isSaving}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Configuration
+              Back
             </Button>
           )}
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
-            Save & Close
+            Close
           </Button>
-          <Button onClick={handleSaveConfiguration}>
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Save Configuration
+          <Button 
+            onClick={handleSaveConfiguration} 
+            disabled={!productConfigurationData || isSaving}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Save Configuration
+              </>
+            )}
           </Button>
         </div>
       </div>
