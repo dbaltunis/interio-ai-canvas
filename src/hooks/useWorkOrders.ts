@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,29 +11,51 @@ export const useWorkOrders = (projectId?: string) => {
   return useQuery({
     queryKey: ["work_orders", projectId],
     queryFn: async () => {
-      if (!projectId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return [];
+      console.log("Fetching work orders for project:", projectId);
+      
+      try {
+        if (!projectId) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            console.log("No user found for work orders");
+            return [];
+          }
 
+          const { data, error } = await supabase
+            .from("work_orders")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+          
+          if (error) {
+            console.error("Work orders query error:", error);
+            throw error;
+          }
+          
+          console.log("Work orders fetched:", data?.length || 0, "orders");
+          return data || [];
+        }
+        
         const { data, error } = await supabase
           .from("work_orders")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("project_id", projectId)
           .order("created_at", { ascending: false });
         
-        if (error) throw error;
-        return data;
+        if (error) {
+          console.error("Work orders project query error:", error);
+          throw error;
+        }
+        
+        console.log("Project work orders fetched:", data?.length || 0, "orders for project", projectId);
+        return data || [];
+      } catch (error) {
+        console.error("Error in work orders query:", error);
+        return [];
       }
-      
-      const { data, error } = await supabase
-        .from("work_orders")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data;
     },
+    retry: 1,
+    staleTime: 30 * 1000,
   });
 };
 
@@ -45,13 +68,20 @@ export const useCreateWorkOrder = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      console.log("Creating work order:", workOrder);
+
       const { data, error } = await supabase
         .from("work_orders")
         .insert({ ...workOrder, user_id: user.id })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Create work order error:", error);
+        throw error;
+      }
+      
+      console.log("Work order created successfully:", data);
       return data;
     },
     onSuccess: () => {
@@ -78,6 +108,8 @@ export const useUpdateWorkOrder = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<WorkOrder> & { id: string }) => {
+      console.log("Updating work order:", id, updates);
+      
       const { data, error } = await supabase
         .from("work_orders")
         .update(updates)
@@ -85,13 +117,19 @@ export const useUpdateWorkOrder = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update work order error:", error);
+        throw error;
+      }
+      
+      console.log("Work order updated successfully:", data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["work_orders"] });
     },
     onError: (error) => {
+      console.error("Update work order error:", error);
       toast({
         title: "Error",
         description: error.message,

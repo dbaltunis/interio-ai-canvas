@@ -1,8 +1,7 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Home, Square, Package, DollarSign, Shirt, Wrench, Eye } from "lucide-react";
+import { MapPin, Square, Settings2, DollarSign } from "lucide-react";
 
 interface ProjectOverviewProps {
   project: any;
@@ -12,181 +11,125 @@ interface ProjectOverviewProps {
 }
 
 export const ProjectOverview = ({ project, rooms, surfaces, treatments }: ProjectOverviewProps) => {
-  const totalValue = treatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-  const completedTreatments = treatments.filter(t => t.status === 'completed').length;
-  const progressPercentage = treatments.length > 0 ? (completedTreatments / treatments.length) * 100 : 0;
+  console.log("ProjectOverview render data:", { project, rooms, surfaces, treatments });
 
-  // Group treatments by room
-  const treatmentsByRoom = rooms.map(room => ({
-    ...room,
-    treatments: treatments.filter(t => t.room_id === room.id),
-    surfaces: surfaces.filter(s => s.room_id === room.id)
-  }));
+  // Safely calculate totals with error handling
+  const calculateTreatmentTotal = (treatment: any) => {
+    try {
+      if (treatment.total_price && typeof treatment.total_price === 'number') {
+        return treatment.total_price;
+      }
+      return 0;
+    } catch (error) {
+      console.error("Error calculating treatment total:", error, treatment);
+      return 0;
+    }
+  };
 
-  // Material analysis
-  const fabricTypes = [...new Set(treatments.map(t => t.fabric_type).filter(Boolean))];
-  const totalFabricUsage = treatments.reduce((sum, t) => {
-    const details = t.calculation_details ? JSON.parse(t.calculation_details) : {};
-    return sum + (details.fabricRequired || 0);
-  }, 0);
+  const projectTotal = treatments?.reduce((sum, treatment) => {
+    return sum + calculateTreatmentTotal(treatment);
+  }, 0) || 0;
 
   return (
     <div className="space-y-6">
-      {/* Project Header */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">{project.name}</CardTitle>
-              <p className="text-muted-foreground">Job #{project.job_number}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-green-600">${totalValue.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">Total Project Value</p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Home className="h-5 w-5 text-blue-600" />
-              </div>
-              <p className="text-2xl font-bold">{rooms.length}</p>
-              <p className="text-sm text-muted-foreground">Rooms</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Square className="h-5 w-5 text-purple-600" />
-              </div>
-              <p className="text-2xl font-bold">{surfaces.length}</p>
-              <p className="text-sm text-muted-foreground">Windows</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Package className="h-5 w-5 text-green-600" />
-              </div>
-              <p className="text-2xl font-bold">{treatments.length}</p>
-              <p className="text-sm text-muted-foreground">Treatments</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Eye className="h-5 w-5 text-orange-600" />
-              </div>
-              <p className="text-2xl font-bold">{Math.round(progressPercentage)}%</p>
-              <p className="text-sm text-muted-foreground">Complete</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Progress value={progressPercentage} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Room Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {treatmentsByRoom.map((room) => (
-          <Card key={room.id} className="border-l-4 border-l-blue-500">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{room.name}</span>
-                <Badge variant="secondary">
-                  {room.treatments.length} treatment{room.treatments.length !== 1 ? 's' : ''}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Room Surfaces */}
-              <div>
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Square className="h-4 w-4" />
-                  Windows & Surfaces
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {room.surfaces.map((surface) => (
-                    <div key={surface.id} className="p-2 bg-gray-50 rounded text-sm">
-                      <p className="font-medium">{surface.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {surface.width}" × {surface.height}"
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Room Treatments */}
-              <div>
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Treatments
-                </h4>
-                <div className="space-y-2">
-                  {room.treatments.map((treatment) => (
-                    <div key={treatment.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                      <div>
-                        <p className="font-medium text-sm">{treatment.product_name || treatment.treatment_type}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {treatment.fabric_type && `${treatment.fabric_type} • `}
-                          {treatment.color && `${treatment.color} • `}
-                          Qty: {treatment.quantity || 1}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">${(treatment.total_price || 0).toFixed(2)}</p>
-                        <Badge variant={treatment.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
-                          {treatment.status || 'planned'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Room Total */}
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Room Total:</span>
-                <span className="font-bold text-lg">
-                  ${room.treatments.reduce((sum, t) => sum + (t.total_price || 0), 0).toFixed(2)}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Material Summary */}
-      {fabricTypes.length > 0 && (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shirt className="h-5 w-5" />
-              Material Summary
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rooms</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <h4 className="font-medium mb-2">Fabric Types</h4>
-                <div className="space-y-1">
-                  {fabricTypes.map((fabric, index) => (
-                    <Badge key={index} variant="outline" className="mr-1 mb-1">
-                      {fabric}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Total Fabric Usage</h4>
-                <p className="text-2xl font-bold">{totalFabricUsage.toFixed(2)} yards</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Hardware Components</h4>
-                <p className="text-sm text-muted-foreground">
-                  {treatments.filter(t => t.hardware).length} treatments require hardware
-                </p>
-              </div>
+            <div className="text-2xl font-bold">{rooms?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Total rooms in project
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Surfaces</CardTitle>
+            <Square className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{surfaces?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Windows and walls
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Treatments</CardTitle>
+            <Settings2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{treatments?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Configured treatments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${projectTotal.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Project total
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {rooms && rooms.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Room Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {rooms.map((room) => {
+                const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
+                const roomTreatments = treatments?.filter(t => t.room_id === room.id) || [];
+                const roomTotal = roomTreatments.reduce((sum, t) => sum + calculateTreatmentTotal(t), 0);
+
+                return (
+                  <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">{room.name}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {room.room_type?.replace('_', ' ') || 'Unknown'}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">${roomTotal.toFixed(2)}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(!rooms || rooms.length === 0) && (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">No Rooms Yet</h3>
+            <p className="text-sm text-muted-foreground">
+              Start by adding rooms to your project using the Quick Create tab or Advanced tab.
+            </p>
           </CardContent>
         </Card>
       )}

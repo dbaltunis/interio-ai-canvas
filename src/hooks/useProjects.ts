@@ -23,6 +23,7 @@ export const useProjects = () => {
         const { data, error } = await supabase
           .from("projects")
           .select("*")
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
         
         if (error) {
@@ -30,7 +31,7 @@ export const useProjects = () => {
           throw error;
         }
         
-        console.log("Projects fetched:", data?.length, "projects");
+        console.log("Projects fetched successfully:", data?.length || 0, "projects");
         return data || [];
       } catch (error) {
         console.error("Error in projects query:", error);
@@ -38,10 +39,10 @@ export const useProjects = () => {
       }
     },
     retry: 1,
-    staleTime: 30 * 1000, // 30 seconds - much shorter cache
-    gcTime: 5 * 60 * 1000, // 5 minutes cache time
-    refetchOnWindowFocus: true, // Refetch when window gets focus
-    refetchOnMount: true, // Always refetch on mount
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
@@ -83,15 +84,15 @@ export const useCreateProject = () => {
         console.error("Create project error:", error);
         throw error;
       }
+      
+      console.log("Project created successfully:", data);
       return data;
     },
     onMutate: async (newProject) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["projects"] });
       
       const previousProjects = queryClient.getQueryData(["projects"]);
       
-      // Optimistically add the new project
       const optimisticProject = {
         id: `temp-${Date.now()}`,
         ...newProject,
@@ -107,7 +108,6 @@ export const useCreateProject = () => {
       return { previousProjects };
     },
     onError: (err, newProject, context) => {
-      // Rollback on error
       if (context?.previousProjects) {
         queryClient.setQueryData(["projects"], context.previousProjects);
       }
@@ -119,7 +119,6 @@ export const useCreateProject = () => {
       });
     },
     onSuccess: (data) => {
-      // Invalidate both projects and quotes to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       
@@ -159,12 +158,10 @@ export const useUpdateProject = () => {
       return data;
     },
     onMutate: async ({ id, ...updates }) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["projects"] });
       
       const previousProjects = queryClient.getQueryData(["projects"]);
       
-      // Optimistically update the project
       queryClient.setQueryData(["projects"], (old: any) => {
         if (!old) return old;
         return old.map((project: any) => 
@@ -175,7 +172,6 @@ export const useUpdateProject = () => {
       return { previousProjects, id, updates };
     },
     onError: (err, variables, context) => {
-      // Rollback on error
       if (context?.previousProjects) {
         queryClient.setQueryData(["projects"], context.previousProjects);
       }
@@ -187,7 +183,6 @@ export const useUpdateProject = () => {
       });
     },
     onSuccess: (data) => {
-      // Update with real data
       queryClient.setQueryData(["projects"], (old: any) => {
         if (!old) return [data];
         return old.map((project: any) => 
