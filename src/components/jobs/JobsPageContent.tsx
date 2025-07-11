@@ -47,6 +47,10 @@ export const JobsPageContent = ({
   onClientEdit,
   onJobCopy
 }: JobsPageContentProps) => {
+  console.log("=== JOBS PAGE CONTENT RENDER ===");
+  console.log("Active tab:", activeTab);
+  console.log("Show filters:", showFilters);
+
   return (
     <div className="space-y-6">
       {/* Filters - only show for jobs tab */}

@@ -4,6 +4,7 @@ import { EmptyRoomsState } from "./EmptyRoomsState";
 import { ProjectBlueprint } from "./ProjectBlueprint";
 import { QuickTreatmentCreator } from "./QuickTreatmentCreator";
 import { useJobHandlers } from "./JobHandlers";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectJobsContentProps {
   rooms: any[];
@@ -26,6 +27,12 @@ export const ProjectJobsContent = ({
   editingRoomName,
   setEditingRoomName
 }: ProjectJobsContentProps) => {
+  const { toast } = useToast();
+
+  console.log("=== PROJECT JOBS CONTENT RENDER ===");
+  console.log("Project:", project);
+  console.log("Rooms:", rooms);
+
   const {
     allSurfaces,
     allTreatments,
@@ -42,14 +49,41 @@ export const ProjectJobsContent = ({
     deleteRoom
   } = useJobHandlers(project);
 
-  // Calculate project totals
+  console.log("Job handlers data:", {
+    surfacesCount: allSurfaces?.length || 0,
+    treatmentsCount: allTreatments?.length || 0
+  });
+
+  // Calculate project totals with safe error handling
   const projectTotal = allTreatments?.reduce((sum, treatment) => {
-    return sum + (treatment.total_price || 0);
+    try {
+      const price = parseFloat(treatment?.total_price) || 0;
+      return sum + price;
+    } catch (error) {
+      console.error("Error calculating treatment price:", error, treatment);
+      return sum;
+    }
   }, 0) || 0;
+
+  console.log("Project total calculated:", projectTotal);
 
   // Wrapper function to handle the return type mismatch
   const handleQuickCreate = async (formData: any): Promise<void> => {
-    await handleQuickCreateTreatment(formData);
+    try {
+      console.log("Quick create treatment:", formData);
+      await handleQuickCreateTreatment(formData);
+      toast({
+        title: "Success",
+        description: "Treatment created successfully",
+      });
+    } catch (error) {
+      console.error("Quick create failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create treatment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

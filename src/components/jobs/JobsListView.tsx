@@ -53,8 +53,15 @@ export const JobsListView = ({
   const { data: businessSettings } = useBusinessSettings();
   const { toast } = useToast();
 
+  console.log("=== JOBS LIST VIEW RENDER ===");
+  console.log("Quotes data:", quotes);
+  console.log("Clients data:", clients);
+  console.log("Projects data:", projects);
+  console.log("Loading states:", { isLoading, error });
+
   // Handle loading and error states
   if (isLoading) {
+    console.log("JobsListView: Still loading data");
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -63,11 +70,11 @@ export const JobsListView = ({
   }
 
   if (error) {
-    console.error("Jobs list error:", error);
+    console.error("JobsListView: Error loading jobs:", error);
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center space-y-4">
-          <div className="text-red-500">Error loading jobs</div>
+          <div className="text-red-500">Error loading jobs: {error.message}</div>
           <Button onClick={() => window.location.reload()}>
             Retry
           </Button>
@@ -76,34 +83,60 @@ export const JobsListView = ({
     );
   }
 
-  // Safe filtering with error handling
+  // Safe filtering with enhanced error handling and logging
   const filteredQuotes = quotes.filter(quote => {
+    if (!quote) {
+      console.warn("JobsListView: Found null/undefined quote in quotes array");
+      return false;
+    }
+
     try {
-      const client = clients?.find(c => c.id === quote.client_id);
+      const client = clients?.find(c => c?.id === quote.client_id);
       const clientName = client?.client_type === 'B2B' ? client?.company_name : client?.name;
+      
+      console.log(`Filtering quote ${quote.id}:`, {
+        quote: quote.quote_number,
+        clientName,
+        status: quote.status,
+        searchClient,
+        searchJobNumber,
+        filterStatus
+      });
       
       // Search filters
       if (searchClient && clientName && !clientName.toLowerCase().includes(searchClient.toLowerCase())) {
+        console.log(`Quote ${quote.id} filtered out by client search`);
         return false;
       }
       
-      if (searchJobNumber && !quote.quote_number?.toLowerCase().includes(searchJobNumber.toLowerCase())) {
+      if (searchJobNumber && quote.quote_number && !quote.quote_number.toLowerCase().includes(searchJobNumber.toLowerCase())) {
+        console.log(`Quote ${quote.id} filtered out by job number search`);
         return false;
       }
       
       // Status filter
       if (filterStatus !== "all" && quote.status !== filterStatus) {
+        console.log(`Quote ${quote.id} filtered out by status filter`);
         return false;
       }
       
+      console.log(`Quote ${quote.id} passed all filters`);
       return true;
     } catch (error) {
-      console.warn("Error filtering quote:", quote.id, error);
-      return true; // Include the quote if there's an error to avoid losing data
+      console.error("Error filtering quote:", quote?.id, error);
+      // Include the quote if there's an error to avoid losing data
+      return true;
     }
   });
 
+  console.log("Filtered quotes:", filteredQuotes.length, "out of", quotes.length);
+
   const sortedQuotes = filteredQuotes.sort((a, b) => {
+    if (!a || !b) {
+      console.warn("JobsListView: Found null quotes in sorting");
+      return 0;
+    }
+
     try {
       const aValue = a[sortBy as keyof typeof a];
       const bValue = b[sortBy as keyof typeof b];
@@ -114,10 +147,12 @@ export const JobsListView = ({
         return aValue < bValue ? 1 : -1;
       }
     } catch (error) {
-      console.warn("Error sorting quotes:", error);
+      console.error("Error sorting quotes:", error);
       return 0;
     }
   });
+
+  console.log("Sorted quotes:", sortedQuotes.length);
 
   // Pagination
   const totalPages = Math.ceil(sortedQuotes.length / ITEMS_PER_PAGE);
@@ -125,7 +160,10 @@ export const JobsListView = ({
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedQuotes = sortedQuotes.slice(startIndex, endIndex);
 
+  console.log("Pagination:", { totalPages, currentPage, startIndex, endIndex, paginatedQuotes: paginatedQuotes.length });
+
   const handlePageChange = (page: number) => {
+    console.log("Page change:", page);
     setCurrentPage(page);
   };
 
