@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useCreateRoom, useRooms } from "@/hooks/useRooms";
+import { useTreatments } from "@/hooks/useTreatments";
+import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle } from "lucide-react";
+import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle, MapPin, Square, Settings2 } from "lucide-react";
 import { RoomSelectionStep } from "./product-steps/RoomSelectionStep";
 import { ProductDetailsStep } from "./product-steps/ProductDetailsStep";
 import { ProductCanvasStep } from "./product-steps/ProductCanvasStep";
@@ -31,9 +33,24 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
   const createRoom = useCreateRoom();
   const projectId = project?.id || project?.project_id;
-  const { data: existingRooms } = useRooms(projectId);
+  const { data: existingRooms, isLoading: roomsLoading } = useRooms(projectId);
+  const { data: treatments, isLoading: treatmentsLoading } = useTreatments(projectId);
+  const { data: surfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   const { templates: dbProductTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { toast } = useToast();
+
+  // Debug logging for data fetching
+  console.log("ProjectJobsTab - Data Summary:", {
+    projectId,
+    roomsCount: existingRooms?.length || 0,
+    treatmentsCount: treatments?.length || 0,
+    surfacesCount: surfaces?.length || 0,
+    templatesCount: dbProductTemplates?.length || 0,
+    roomsLoading,
+    treatmentsLoading,
+    surfacesLoading,
+    templatesLoading
+  });
 
   // Don't render anything if we don't have a valid project
   if (!project || !projectId) {
@@ -356,14 +373,109 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
           </DialogContent>
         </Dialog>
 
+        {/* Project Summary - Show Created Items */}
+        {(existingRooms?.length > 0 || treatments?.length > 0 || surfaces?.length > 0) && (
+          <div className="bg-white rounded-lg border p-4 space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Project Progress
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Rooms */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">Rooms ({existingRooms?.length || 0})</span>
+                </div>
+                {roomsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                ) : existingRooms?.length > 0 ? (
+                  <div className="space-y-1">
+                    {existingRooms.slice(0, 3).map((room) => (
+                      <div key={room.id} className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
+                        {room.name}
+                      </div>
+                    ))}
+                    {existingRooms.length > 3 && (
+                      <div className="text-xs text-gray-500">+{existingRooms.length - 3} more</div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No rooms created yet</p>
+                )}
+              </div>
+
+              {/* Windows/Surfaces */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Square className="h-4 w-4 text-purple-600" />
+                  <span className="font-medium">Windows ({surfaces?.length || 0})</span>
+                </div>
+                {surfacesLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                ) : surfaces?.length > 0 ? (
+                  <div className="space-y-1">
+                    {surfaces.slice(0, 3).map((surface) => (
+                      <div key={surface.id} className="text-sm text-gray-600 bg-purple-50 px-2 py-1 rounded">
+                        {surface.name}
+                      </div>
+                    ))}
+                    {surfaces.length > 3 && (
+                      <div className="text-xs text-gray-500">+{surfaces.length - 3} more</div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No windows created yet</p>
+                )}
+              </div>
+
+              {/* Treatments */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">Treatments ({treatments?.length || 0})</span>
+                </div>
+                {treatmentsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                ) : treatments?.length > 0 ? (
+                  <div className="space-y-1">
+                    {treatments.slice(0, 3).map((treatment) => (
+                      <div key={treatment.id} className="text-sm text-gray-600 bg-green-50 px-2 py-1 rounded">
+                        {treatment.treatment_type}
+                        {treatment.product_name && ` - ${treatment.product_name}`}
+                      </div>
+                    ))}
+                    {treatments.length > 3 && (
+                      <div className="text-xs text-gray-500">+{treatments.length - 3} more</div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No treatments created yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
           <ol className="text-sm text-blue-700 space-y-1">
-            <li>1. Click on product cards above to configure them</li>
-            <li>2. Select rooms and add measurements</li>
-            <li>3. Use the canvas to design and customize</li>
-            <li>4. Move to Quote to see pricing</li>
+            <li>1. Click "Add Room" to create rooms for your project</li>
+            <li>2. Click on product cards above to configure treatments</li>
+            <li>3. Select rooms and add measurements in the dialog</li>
+            <li>4. Use the canvas to design and customize</li>
+            <li>5. Move to Quote tab to see pricing</li>
           </ol>
         </div>
       </div>
