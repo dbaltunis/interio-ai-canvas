@@ -370,6 +370,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                 selectedRooms={selectedRooms}
                 existingRooms={existingRooms || []}
                 onClose={() => setShowProductDialog(false)}
+                onBack={() => setStep(2)}
               />
             )}
           </DialogContent>

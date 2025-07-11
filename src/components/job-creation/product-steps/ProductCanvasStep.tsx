@@ -16,7 +16,9 @@ import {
   DollarSign,
   Home,
   Square,
-  Maximize2
+  Maximize2,
+  ArrowLeft,
+  RefreshCw
 } from "lucide-react";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
@@ -28,13 +30,15 @@ interface ProductCanvasStepProps {
   selectedRooms: string[];
   existingRooms: any[];
   onClose: () => void;
+  onBack?: () => void;
 }
 
 export const ProductCanvasStep = ({
   product,
   selectedRooms,
   existingRooms,
-  onClose
+  onClose,
+  onBack
 }: ProductCanvasStepProps) => {
   const [activeRoom, setActiveRoom] = useState(selectedRooms[0]);
   const [isDesignActive, setIsDesignActive] = useState(false);
@@ -43,10 +47,22 @@ export const ProductCanvasStep = ({
   const projectId = existingRooms[0]?.project_id;
   
   // Fetch all project data
-  const { data: allRooms } = useRooms(projectId);
-  const { data: allSurfaces } = useSurfaces(projectId);
-  const { data: allTreatments } = useTreatments(projectId);
+  const { data: allRooms, refetch: refetchRooms } = useRooms(projectId);
+  const { data: allSurfaces, refetch: refetchSurfaces } = useSurfaces(projectId);
+  const { data: allTreatments, refetch: refetchTreatments } = useTreatments(projectId);
   const { windowCoverings } = useWindowCoverings();
+
+  // Debug logging
+  console.log("Canvas Debug - Project ID:", projectId);
+  console.log("Canvas Debug - All treatments:", allTreatments);
+  console.log("Canvas Debug - All rooms:", allRooms);
+  console.log("Canvas Debug - All surfaces:", allSurfaces);
+
+  const handleRefresh = () => {
+    refetchRooms();
+    refetchSurfaces();
+    refetchTreatments();
+  };
 
   const getRoomName = (roomId: string) => {
     const room = existingRooms.find(r => r.id === roomId) || allRooms?.find(r => r.id === roomId);
@@ -225,11 +241,17 @@ export const ProductCanvasStep = ({
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold mb-2">Project Visualization Canvas</h3>
-        <p className="text-sm text-muted-foreground">
-          Visual overview of your {product?.name} configuration across all rooms
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="text-center flex-1">
+          <h3 className="text-lg font-semibold mb-2">Project Visualization Canvas</h3>
+          <p className="text-sm text-muted-foreground">
+            Visual overview of your {product?.name} configuration across all rooms
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Room Selector */}
@@ -316,6 +338,12 @@ export const ProductCanvasStep = ({
           </p>
         </div>
         <div className="flex space-x-2">
+          {onBack && (
+            <Button variant="ghost" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Configuration
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>
             <Save className="h-4 w-4 mr-2" />
             Save & Close
