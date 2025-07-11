@@ -1,7 +1,7 @@
 
 import { OptionCategory, OptionSubcategory } from "@/hooks/useWindowCoveringCategories";
 
-export const blindHeadrailCategories: Partial<OptionCategory>[] = [
+export const blindHeadrailCategories: Omit<OptionCategory, 'id' | 'subcategories'>[] = [
   {
     name: "Headrail System",
     description: "Headrail mounting and operation systems for blinds",
@@ -28,7 +28,7 @@ export const blindHeadrailCategories: Partial<OptionCategory>[] = [
   }
 ];
 
-export const blindHeadrailSubcategories: Record<string, Partial<OptionSubcategory>[]> = {
+export const blindHeadrailSubcategories: Record<string, Omit<OptionSubcategory, 'id' | 'category_id'>[]> = {
   "Headrail System": [
     {
       name: "Standard Headrail",
