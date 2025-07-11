@@ -1,6 +1,6 @@
 
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
-import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+import { EnhancedTreatmentCalculator } from "./calculator/EnhancedTreatmentCalculator";
 
 interface RoomTreatmentDialogsProps {
   projectId: string;
@@ -40,7 +40,7 @@ export const RoomTreatmentDialogs = ({
         projectId={projectId}
       />
 
-      <TreatmentCalculatorDialog
+      <EnhancedTreatmentCalculator
         isOpen={calculatorDialogOpen}
         onClose={onCloseCalculatorDialog}
         onSave={onCalculatorSave}
