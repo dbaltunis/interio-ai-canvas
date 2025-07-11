@@ -433,20 +433,20 @@ export const EnhancedTreatmentCalculator = ({
                 <FabricSelector
                   selectedFabricId={formData.selectedFabric?.id}
                   onSelectFabric={(fabricId, fabric) => {
-                    console.log('Fabric selected:', fabric);
+                    console.log('Fabric selected in calculator:', fabric);
                     setFormData(prev => ({
                       ...prev,
                       selectedFabric: fabric,
-                      fabricName: fabric.name,
+                      fabricName: fabric.name || fabric.fabricName || prev.fabricName,
                       fabricWidth: fabric.width ? fabric.width.toString() : prev.fabricWidth,
-                      fabricPricePerYard: fabric.cost_per_unit ? fabric.cost_per_unit.toString() : prev.fabricPricePerYard,
-                      verticalRepeat: "0",
-                      horizontalRepeat: "0"
+                      fabricPricePerYard: fabric.cost_per_unit ? fabric.cost_per_unit.toString() : fabric.pricePerUnit ? fabric.pricePerUnit.toString() : prev.fabricPricePerYard,
+                      verticalRepeat: fabric.verticalRepeat ? fabric.verticalRepeat.toString() : "0",
+                      horizontalRepeat: fabric.horizontalRepeat ? fabric.horizontalRepeat.toString() : "0"
                     }));
                     
                     // Set the fabric orientation from the selected fabric
-                    if ((fabric as any).rotation) {
-                      setFabricOrientation((fabric as any).rotation);
+                    if (fabric.rotation) {
+                      setFabricOrientation(fabric.rotation);
                     }
                   }}
                 />

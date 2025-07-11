@@ -37,7 +37,7 @@ export interface TreatmentFormData {
   
   // Fabric Selection
   fabricMode: "library" | "manual";
-  selectedFabric: FabricLibraryItem | null;
+  selectedFabric: any;
   fabricName: string;
   fabricWidth: string;
   fabricPricePerYard: string;
