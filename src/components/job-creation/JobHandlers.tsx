@@ -274,10 +274,7 @@ export const useJobHandlers = (project: any) => {
       const result = await createTreatment.mutateAsync(treatmentPayload);
       console.log("Treatment created successfully:", result);
       
-      // Force refetch to ensure UI updates
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // No need for page reload - React Query will handle updates
       
       return result;
     } catch (error) {

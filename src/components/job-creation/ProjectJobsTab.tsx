@@ -12,6 +12,8 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle, MapPin, Square, Settings2 } from "lucide-react";
+import { WindowManagementSection } from "./WindowManagementSection";
+import { ProjectStats } from "./ProjectStats";
 import { RoomSelectionStep } from "./product-steps/RoomSelectionStep";
 import { ProductDetailsStep } from "./product-steps/ProductDetailsStep";
 import { ProductCanvasStep } from "./product-steps/ProductCanvasStep";
@@ -245,8 +247,24 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     }
   };
 
+  const projectTotal = treatments?.reduce((sum, t) => sum + (t.total_price || 0), 0) || 0;
+
   return (
     <div className="space-y-6">
+      {/* Project Statistics */}
+      <ProjectStats
+        roomsCount={existingRooms?.length || 0}
+        surfacesCount={surfaces?.length || 0}
+        treatmentsCount={treatments?.length || 0}
+        projectTotal={projectTotal}
+      />
+
+      {/* Window Management Section */}
+      <WindowManagementSection 
+        projectId={projectId} 
+        rooms={existingRooms || []} 
+      />
+
       {/* Simple Project Header */}
       <div className="bg-white rounded-lg border p-4">
         <div className="flex items-center justify-between">

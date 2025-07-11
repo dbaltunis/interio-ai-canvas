@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomCardContent } from "./RoomCardContent";
@@ -48,11 +49,23 @@ export const RoomCard = ({
     setPricingFormOpen,
     calculatorDialogOpen,
     setCalculatorDialogOpen,
-    isCreatingSurface,
     currentFormData,
-    handleSurfaceCreation,
     handleAddTreatment
   } = useRoomCardLogic(room, projectId);
+
+  // Use the parent's surface creation handler and track loading state locally
+  const [isCreatingSurface, setIsCreatingSurface] = useState(false);
+  
+  const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
+    setIsCreatingSurface(true);
+    try {
+      await onCreateSurface(room.id, surfaceType);
+    } catch (error) {
+      console.error("Surface creation failed:", error);
+    } finally {
+      setIsCreatingSurface(false);
+    }
+  };
 
   const handlePricingFormSave = (treatmentData: any) => {
     onCreateTreatment(room.id, currentFormData.surfaceId, currentFormData.treatmentType, treatmentData);
