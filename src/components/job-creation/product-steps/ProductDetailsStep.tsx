@@ -54,7 +54,9 @@ export const ProductDetailsStep = ({
   });
   const [measurements, setMeasurements] = useState({
     width: '',
-    height: ''
+    height: '',
+    railWidth: '',
+    fullness: '2.0'
   });
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   
@@ -65,7 +67,9 @@ export const ProductDetailsStep = ({
     fabric: '',
     color: '',
     measurements: '',
-    notes: ''
+    notes: '',
+    verticalPatternRepeat: '',
+    horizontalPatternRepeat: ''
   });
 
   // Log the actual data to debug
@@ -115,10 +119,38 @@ export const ProductDetailsStep = ({
 
   const calculateOptionsTotal = () => {
     let total = 0;
-    Object.values(selectedOptions).forEach((options: any) => {
+    const railWidth = parseFloat(measurements.railWidth) || 0;
+    const fullness = parseFloat(measurements.fullness) || 2.0;
+    
+    Object.entries(selectedOptions).forEach(([category, options]: [string, any]) => {
       if (Array.isArray(options)) {
         options.forEach((option: any) => {
-          total += option.price || 0;
+          let optionPrice = option.price || 0;
+          
+          // Apply dynamic calculations based on category and unit
+          if (category === 'hardware' || category === 'lining') {
+            if (option.unit === 'per-meter' || option.unit === 'per-linear-meter') {
+              const runningLength = railWidth / 100; // Convert cm to meters
+              optionPrice = option.price * runningLength * fullness;
+            } else if (option.unit === 'per-rail-width') {
+              const railLength = railWidth / 100; // Convert cm to meters
+              optionPrice = option.price * railLength;
+            }
+          } else if (category === 'headings') {
+            const runningLength = railWidth / 100; // Convert cm to meters
+            const headingFullness = option.fullness || fullness;
+            optionPrice = option.price * runningLength * headingFullness;
+          } else if (category === 'services') {
+            if (option.unit === 'per-meter' || option.unit === 'per-linear-meter') {
+              const runningLength = railWidth / 100; // Convert cm to meters
+              optionPrice = option.price * runningLength;
+            } else if (option.unit === 'per-rail-width') {
+              const railLength = railWidth / 100; // Convert cm to meters
+              optionPrice = option.price * railLength;
+            }
+          }
+          
+          total += optionPrice;
         });
       }
     });
@@ -241,26 +273,67 @@ export const ProductDetailsStep = ({
               />
             </div>
 
+            {/* Fabric Pattern Configuration */}
+            {selectedFabric && (
+              <div className="space-y-4 p-4 border rounded-lg bg-amber-50">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-amber-500 rounded-full"></div>
+                  <Label className="font-medium">Fabric Pattern Configuration</Label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Vertical Pattern Repeat (cm)</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={productDetails.verticalPatternRepeat || ''}
+                      onChange={(e) => handleInputChange('verticalPatternRepeat', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Horizontal Pattern Repeat (cm)</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={productDetails.horizontalPatternRepeat || ''}
+                      onChange={(e) => handleInputChange('horizontalPatternRepeat', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-amber-700">Pattern repeats affect fabric usage calculations and cutting requirements</p>
+              </div>
+            )}
+
             {/* Measurements */}
             <div className="space-y-4">
               <Label>Measurements (cm)</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs">Width</Label>
+                  <Label className="text-xs">Rail Width</Label>
                   <Input
                     type="number"
-                    placeholder="200"
-                    value={measurements.width}
-                    onChange={(e) => setMeasurements(prev => ({ ...prev, width: e.target.value }))}
+                    placeholder="300"
+                    value={measurements.railWidth}
+                    onChange={(e) => setMeasurements(prev => ({ ...prev, railWidth: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Height</Label>
+                  <Label className="text-xs">Drop/Height</Label>
                   <Input
                     type="number"
-                    placeholder="200"
+                    placeholder="250"
                     value={measurements.height}
                     onChange={(e) => setMeasurements(prev => ({ ...prev, height: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Fullness Ratio</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="2.0"
+                    value={measurements.fullness}
+                    onChange={(e) => setMeasurements(prev => ({ ...prev, fullness: e.target.value }))}
                   />
                 </div>
               </div>
@@ -299,7 +372,22 @@ export const ProductDetailsStep = ({
                                 <p className="text-xs text-muted-foreground">{option.unit}</p>
                               </div>
                             </div>
-                            <Badge variant="outline">£{option.price}</Badge>
+                             <Badge variant="outline">
+                               £{(() => {
+                                 const railWidth = parseFloat(measurements.railWidth) || 0;
+                                 const fullness = parseFloat(measurements.fullness) || 2.0;
+                                 
+                                 // Calculate based on unit type
+                                 if (option.unit === 'per-meter' || option.unit === 'per-linear-meter') {
+                                   const runningLength = railWidth / 100; // Convert cm to meters
+                                   return (option.price * runningLength * fullness).toFixed(2);
+                                 } else if (option.unit === 'per-rail-width') {
+                                   const railLength = railWidth / 100; // Convert cm to meters
+                                   return (option.price * railLength).toFixed(2);
+                                 }
+                                 return option.price.toFixed(2);
+                               })()}
+                             </Badge>
                           </div>
                         )) || <p className="text-sm text-muted-foreground">No hardware options available</p>}
                       </div>
@@ -325,7 +413,22 @@ export const ProductDetailsStep = ({
                                 <p className="text-xs text-muted-foreground">{option.unit}</p>
                               </div>
                             </div>
-                            <Badge variant="outline">£{option.price}</Badge>
+                            <Badge variant="outline">
+                              £{(() => {
+                                const railWidth = parseFloat(measurements.railWidth) || 0;
+                                const fullness = parseFloat(measurements.fullness) || 2.0;
+                                
+                                // Calculate based on unit type
+                                if (option.unit === 'per-meter' || option.unit === 'per-linear-meter') {
+                                  const runningLength = railWidth / 100; // Convert cm to meters
+                                  return (option.price * runningLength * fullness).toFixed(2);
+                                } else if (option.unit === 'per-rail-width') {
+                                  const railLength = railWidth / 100; // Convert cm to meters
+                                  return (option.price * railLength).toFixed(2);
+                                }
+                                return option.price.toFixed(2);
+                              })()}
+                            </Badge>
                           </div>
                         )) || <p className="text-sm text-muted-foreground">No lining options available</p>}
                       </div>
@@ -351,7 +454,17 @@ export const ProductDetailsStep = ({
                                 <p className="text-xs text-muted-foreground">{option.type} - Fullness: {option.fullness}x</p>
                               </div>
                             </div>
-                            <Badge variant="outline">£{option.price}</Badge>
+                             <Badge variant="outline">
+                               £{(() => {
+                                 const railWidth = parseFloat(measurements.railWidth) || 0;
+                                 const fullness = parseFloat(measurements.fullness) || 2.0;
+                                 
+                                 // Calculate based on heading fullness and rail width
+                                 const runningLength = railWidth / 100; // Convert cm to meters
+                                 const headingFullness = option.fullness || fullness;
+                                 return (option.price * runningLength * headingFullness).toFixed(2);
+                               })()}
+                             </Badge>
                           </div>
                         )) || <p className="text-sm text-muted-foreground">No heading options available</p>}
                       </div>
@@ -377,7 +490,24 @@ export const ProductDetailsStep = ({
                                 <p className="text-xs text-muted-foreground">{option.description}</p>
                               </div>
                             </div>
-                            <Badge variant="outline">£{option.price} / {option.unit}</Badge>
+                            <Badge variant="outline">
+                              £{(() => {
+                                const railWidth = parseFloat(measurements.railWidth) || 0;
+                                const fullness = parseFloat(measurements.fullness) || 2.0;
+                                
+                                // Services might be per-item or per-rail
+                                if (option.unit === 'per-meter' || option.unit === 'per-linear-meter') {
+                                  const runningLength = railWidth / 100; // Convert cm to meters
+                                  return (option.price * runningLength).toFixed(2);
+                                } else if (option.unit === 'per-rail-width') {
+                                  const railLength = railWidth / 100; // Convert cm to meters
+                                  return (option.price * railLength).toFixed(2);
+                                } else if (option.unit === 'per-piece' || option.unit === 'each') {
+                                  return option.price.toFixed(2);
+                                }
+                                return option.price.toFixed(2);
+                              })()} / {option.unit}
+                            </Badge>
                           </div>
                         )) || <p className="text-sm text-muted-foreground">No service options available</p>}
                       </div>
