@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { OptionCategory, OptionSubcategory, OptionSubSubcategory, OptionExtra } from './types/windowCoveringTypes';
 import { 
   fetchCategoriesFromDB,
@@ -19,7 +19,6 @@ export type { OptionCategory, OptionSubcategory, OptionSubSubcategory, OptionExt
 export const useWindowCoveringCategories = () => {
   const [categories, setCategories] = useState<OptionCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchCategories = async () => {
     console.log('useWindowCoveringCategories - Fetching categories...');
@@ -29,11 +28,7 @@ export const useWindowCoveringCategories = () => {
       setCategories(categoriesWithHierarchy);
     } catch (error) {
       console.error('useWindowCoveringCategories - Error fetching categories:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch option categories",
-        variant: "destructive"
-      });
+      toast.error("Failed to fetch option categories");
     } finally {
       setIsLoading(false);
     }
@@ -47,19 +42,12 @@ export const useWindowCoveringCategories = () => {
       
       setCategories(prev => [...prev, newCategory].sort((a, b) => a.sort_order - b.sort_order));
       
-      toast({
-        title: "Success",
-        description: "Category created successfully"
-      });
+      toast.success("Category created successfully");
 
       return newCategory;
     } catch (error) {
       console.error('useWindowCoveringCategories - Error creating category:', error);
-      toast({
-        title: "Error",
-        description: `Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -86,19 +74,12 @@ export const useWindowCoveringCategories = () => {
         ).sort((a, b) => a.sort_order - b.sort_order)
       );
       
-      toast({
-        title: "Success",
-        description: "Category updated successfully"
-      });
+      toast.success("Category updated successfully");
 
       return data;
     } catch (error) {
       console.error('useWindowCoveringCategories - Error updating category:', error);
-      toast({
-        title: "Error",
-        description: `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -120,19 +101,12 @@ export const useWindowCoveringCategories = () => {
         )
       );
       
-      toast({
-        title: "Success",
-        description: "Subcategory created successfully"
-      });
+      toast.success("Subcategory created successfully");
 
       return newSubcategory;
     } catch (error) {
       console.error('useWindowCoveringCategories - Error creating subcategory:', error);
-      toast({
-        title: "Error",
-        description: `Failed to create subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to create subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -163,19 +137,12 @@ export const useWindowCoveringCategories = () => {
         }))
       );
       
-      toast({
-        title: "Success",
-        description: "Subcategory updated successfully"
-      });
+      toast.success("Subcategory updated successfully");
 
       return typedData;
     } catch (error) {
       console.error('useWindowCoveringCategories - Error updating subcategory:', error);
-      toast({
-        title: "Error",
-        description: `Failed to update subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to update subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -200,19 +167,12 @@ export const useWindowCoveringCategories = () => {
         }))
       );
       
-      toast({
-        title: "Success",
-        description: "Sub-subcategory created successfully"
-      });
+      toast.success("Sub-subcategory created successfully");
 
       return newSubSubcategory;
     } catch (error) {
       console.error('useWindowCoveringCategories - Error creating sub-subcategory:', error);
-      toast({
-        title: "Error",
-        description: `Failed to create sub-subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to create sub-subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -240,19 +200,12 @@ export const useWindowCoveringCategories = () => {
         }))
       );
       
-      toast({
-        title: "Success",
-        description: "Extra created successfully"
-      });
+      toast.success("Extra created successfully");
 
       return newExtra;
     } catch (error) {
       console.error('useWindowCoveringCategories - Error creating extra:', error);
-      toast({
-        title: "Error",
-        description: `Failed to create extra: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to create extra: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -263,17 +216,10 @@ export const useWindowCoveringCategories = () => {
       await deleteCategoryFromDB(id);
       setCategories(prev => prev.filter(cat => cat.id !== id));
       
-      toast({
-        title: "Success",
-        description: "Category deleted successfully"
-      });
+      toast.success("Category deleted successfully");
     } catch (error) {
       console.error('useWindowCoveringCategories - Error deleting category:', error);
-      toast({
-        title: "Error",
-        description: `Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to delete category: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -294,17 +240,10 @@ export const useWindowCoveringCategories = () => {
         )
       );
       
-      toast({
-        title: "Success",
-        description: "Subcategory deleted successfully"
-      });
+      toast.success("Subcategory deleted successfully");
     } catch (error) {
       console.error('useWindowCoveringCategories - Error deleting subcategory:', error);
-      toast({
-        title: "Error",
-        description: `Failed to delete subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to delete subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -328,17 +267,10 @@ export const useWindowCoveringCategories = () => {
         }))
       );
       
-      toast({
-        title: "Success",
-        description: "Sub-subcategory deleted successfully"
-      });
+      toast.success("Sub-subcategory deleted successfully");
     } catch (error) {
       console.error('useWindowCoveringCategories - Error deleting sub-subcategory:', error);
-      toast({
-        title: "Error",
-        description: `Failed to delete sub-subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to delete sub-subcategory: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -365,17 +297,10 @@ export const useWindowCoveringCategories = () => {
         }))
       );
       
-      toast({
-        title: "Success",
-        description: "Extra deleted successfully"
-      });
+      toast.success("Extra deleted successfully");
     } catch (error) {
       console.error('useWindowCoveringCategories - Error deleting extra:', error);
-      toast({
-        title: "Error",
-        description: `Failed to delete extra: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
-      });
+      toast.error(`Failed to delete extra: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };

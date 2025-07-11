@@ -22,6 +22,7 @@ export const CategoryQuickAdd = ({ onCategoriesAdded }: CategoryQuickAddProps) =
       
       // Create categories and their subcategories
       for (const categoryData of blindHeadrailCategories) {
+        console.log('Creating category:', categoryData);
         const category = await createCategory(categoryData);
         console.log('Created category:', category);
         
@@ -29,6 +30,7 @@ export const CategoryQuickAdd = ({ onCategoriesAdded }: CategoryQuickAddProps) =
         const subcategories = blindHeadrailSubcategories[categoryData.name];
         if (subcategories) {
           for (const subData of subcategories) {
+            console.log('Creating subcategory:', subData.name, 'for category:', category.id);
             await createSubcategory({
               ...subData,
               category_id: category.id
