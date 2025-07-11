@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,12 +23,14 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useJobHandlers } from "@/components/job-creation/JobHandlers";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductCanvasStepProps {
   product: any;
   selectedRooms: string[];
   existingRooms: any[];
-  productConfigurationData?: any; // Add this to receive curtain data
+  productConfigurationData?: any;
   onClose: () => void;
   onBack?: () => void;
 }
@@ -38,12 +39,13 @@ export const ProductCanvasStep = ({
   product,
   selectedRooms,
   existingRooms,
-  productConfigurationData, // Receive the curtain data
+  productConfigurationData,
   onClose,
   onBack
 }: ProductCanvasStepProps) => {
   const [activeRoom, setActiveRoom] = useState(selectedRooms[0]);
   const [isDesignActive, setIsDesignActive] = useState(false);
+  const { toast } = useToast();
   
   // Get initial project ID from existingRooms
   const initialProjectId = existingRooms[0]?.project_id;
@@ -53,6 +55,12 @@ export const ProductCanvasStep = ({
   const { data: allSurfaces, refetch: refetchSurfaces } = useSurfaces(initialProjectId);
   const { data: allTreatments, refetch: refetchTreatments } = useTreatments(initialProjectId);
   const { windowCoverings } = useWindowCoverings();
+  
+  // Use the job handlers for creating treatments
+  const { handleCreateTreatment } = useJobHandlers({ 
+    project_id: initialProjectId,
+    id: initialProjectId 
+  });
 
   // Final project ID - try multiple sources
   const projectId = initialProjectId || allRooms?.[0]?.project_id;
@@ -71,6 +79,72 @@ export const ProductCanvasStep = ({
     refetchRooms();
     refetchSurfaces();
     refetchTreatments();
+  };
+
+  const handleSaveConfiguration = async () => {
+    if (!productConfigurationData || selectedRooms.length === 0) {
+      toast({
+        title: "No Configuration Data",
+        description: "Please configure the product before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create treatments for all selected rooms
+      for (const roomId of selectedRooms) {
+        console.log("Creating treatment for room:", roomId);
+        
+        // Get the first surface for this room, or create one if none exists
+        const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
+        let surfaceId = roomSurfaces[0]?.id;
+        
+        // Create treatment data from the configuration
+        const treatmentData = {
+          product_name: productConfigurationData.template?.name || product.name,
+          treatment_type: productConfigurationData.template?.product_type || 'curtain',
+          total_price: productConfigurationData.calculation?.totalPrice || 0,
+          material_cost: productConfigurationData.calculation?.fabricPrice || 0,
+          labor_cost: productConfigurationData.calculation?.manufacturingPrice || 0,
+          fabric_type: productConfigurationData.fabric?.name,
+          measurements: productConfigurationData.measurements,
+          fabric_details: productConfigurationData.fabric,
+          treatment_details: productConfigurationData.template,
+          calculation_details: productConfigurationData.calculation,
+          notes: `Configured via product template: ${product.name}`
+        };
+
+        console.log("Treatment data to save:", treatmentData);
+        
+        await handleCreateTreatment(roomId, surfaceId || "", treatmentData.treatment_type, treatmentData);
+      }
+
+      // Refresh data after creating treatments
+      await Promise.all([
+        refetchRooms(),
+        refetchSurfaces(), 
+        refetchTreatments()
+      ]);
+
+      toast({
+        title: "Configuration Saved",
+        description: `${product.name} has been configured for ${selectedRooms.length} room(s).`,
+      });
+
+      // Close the dialog after successful save
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+
+    } catch (error) {
+      console.error("Failed to save configuration:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save the product configuration. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getRoomName = (roomId: string) => {
@@ -312,20 +386,20 @@ export const ProductCanvasStep = ({
                     <div className="text-center space-y-2">
                       <h5 className="font-medium text-blue-900">✅ Curtain Configuration Loaded</h5>
                       <div className="text-left text-sm space-y-1">
-                        {productConfigurationData.treatmentName && (
-                          <p><strong>Treatment:</strong> {productConfigurationData.treatmentName}</p>
+                        {productConfigurationData.template?.name && (
+                          <p><strong>Treatment:</strong> {productConfigurationData.template.name}</p>
                         )}
-                        {productConfigurationData.railWidth && (
-                          <p><strong>Rail Width:</strong> {productConfigurationData.railWidth}cm</p>
+                        {productConfigurationData.measurements?.railWidth && (
+                          <p><strong>Rail Width:</strong> {productConfigurationData.measurements.railWidth}cm</p>
                         )}
-                        {productConfigurationData.curtainDrop && (
-                          <p><strong>Drop:</strong> {productConfigurationData.curtainDrop}cm</p>
+                        {productConfigurationData.measurements?.dropHeight && (
+                          <p><strong>Drop:</strong> {productConfigurationData.measurements.dropHeight}cm</p>
                         )}
-                        {productConfigurationData.fabricName && (
-                          <p><strong>Fabric:</strong> {productConfigurationData.fabricName}</p>
+                        {productConfigurationData.fabric?.name && (
+                          <p><strong>Fabric:</strong> {productConfigurationData.fabric.name}</p>
                         )}
-                        {productConfigurationData.totalPrice && (
-                          <p><strong>Total Price:</strong> ${productConfigurationData.totalPrice}</p>
+                        {productConfigurationData.calculation?.totalPrice && (
+                          <p><strong>Total Price:</strong> ${productConfigurationData.calculation.totalPrice}</p>
                         )}
                       </div>
                     </div>
@@ -383,9 +457,9 @@ export const ProductCanvasStep = ({
             <Save className="h-4 w-4 mr-2" />
             Save & Close
           </Button>
-          <Button onClick={onClose}>
+          <Button onClick={handleSaveConfiguration}>
             <CheckCircle className="h-4 w-4 mr-2" />
-            Complete Configuration
+            Save Configuration
           </Button>
         </div>
       </div>

@@ -26,15 +26,28 @@ export const useTreatments = (projectId?: string) => {
         return data;
       }
       
+      console.log("Fetching treatments for project:", projectId);
       const { data, error } = await supabase
         .from("treatments")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at");
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching treatments:", error);
+        throw error;
+      }
+      
+      console.log("Treatments fetched successfully:", data?.length, "treatments for project", projectId);
+      console.log("Treatment details:", data);
+      return data || [];
     },
+    enabled: !!projectId,
+    staleTime: 5 * 1000, // 5 seconds - short cache for testing
+    gcTime: 1 * 60 * 1000, // 1 minute cache time
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 };
 
@@ -47,17 +60,29 @@ export const useCreateTreatment = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      console.log("Creating treatment with data:", { ...treatment, user_id: user.id });
+
       const { data, error } = await supabase
         .from("treatments")
         .insert({ ...treatment, user_id: user.id })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Treatment creation error:", error);
+        throw error;
+      }
+      
+      console.log("Treatment created successfully:", data);
       return data;
     },
     onSuccess: (data) => {
+      // Invalidate all treatment queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      // Also invalidate room and project queries that might show treatment counts
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      
       toast({
         title: "Success",
         description: "Treatment created successfully",
