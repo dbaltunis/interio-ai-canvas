@@ -440,28 +440,31 @@ export const ProductTemplatesTab = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="windowCovering">Window Covering Type *</Label>
-                <Select value={formData.window_covering_id} onValueChange={(value) => setFormData(prev => ({ ...prev, window_covering_id: value }))}>
+                <Label htmlFor="windowCovering">Window Covering Type</Label>
+                <Select 
+                  value={formData.window_covering_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, window_covering_id: value }))}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder={windowCoverings.length === 0 ? "No window coverings available - create one first" : "Select window covering"} />
+                    <SelectValue placeholder="Select window covering (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {windowCoverings.length === 0 ? (
-                      <SelectItem value="" disabled>
-                        No window coverings found. Please create window coverings first in the Window Coverings tab.
-                      </SelectItem>
-                    ) : (
+                    {windowCoverings && windowCoverings.length > 0 ? (
                       windowCoverings.map((covering) => (
                         <SelectItem key={covering.id} value={covering.id}>
                           {covering.name} - {covering.fabrication_pricing_method}
                         </SelectItem>
                       ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        No window coverings found. Create some first in the Window Coverings tab.
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
-                {windowCoverings.length === 0 && (
+                {(!windowCoverings || windowCoverings.length === 0) && (
                   <p className="text-sm text-amber-600 mt-1">
-                    ⚠️ You need to create window coverings first. Go to the "Window Coverings" tab above to get started.
+                    ⚠️ You can create window coverings in the "Window Coverings" tab above if needed.
                   </p>
                 )}
               </div>
@@ -525,18 +528,18 @@ export const ProductTemplatesTab = () => {
                       <SelectValue placeholder="Choose a pricing grid" />
                     </SelectTrigger>
                     <SelectContent>
-                      {pricingGrids.length === 0 ? (
-                        <SelectItem value="" disabled>No pricing grids available - upload some first</SelectItem>
-                      ) : (
+                      {pricingGrids && pricingGrids.length > 0 ? (
                         pricingGrids.map((grid) => (
                           <SelectItem key={grid.id} value={grid.id}>
                             {grid.name} ({grid.grid_data?.dropRows?.length || 0} × {grid.grid_data?.widthColumns?.length || 0})
                           </SelectItem>
                         ))
+                      ) : (
+                        <SelectItem value="none" disabled>No pricing grids available - upload some first</SelectItem>
                       )}
                     </SelectContent>
                   </Select>
-                  {pricingGrids.length === 0 && (
+                  {(!pricingGrids || pricingGrids.length === 0) && (
                     <p className="text-xs text-orange-600 mt-1">
                       ⚠️ No pricing grids found. Upload CSV pricing grids in the Components tab first.
                     </p>
