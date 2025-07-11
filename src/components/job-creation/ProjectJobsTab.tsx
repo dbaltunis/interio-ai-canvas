@@ -32,7 +32,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const [newRooms, setNewRooms] = useState([]);
 
   const createRoom = useCreateRoom();
-  const projectId = project?.id || project?.project_id;
+  const projectId = project?.project_id || project?.id;
   const { data: existingRooms, isLoading: roomsLoading } = useRooms(projectId);
   const { data: treatments, isLoading: treatmentsLoading } = useTreatments(projectId);
   const { data: surfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
@@ -140,7 +140,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
       console.log("=== CREATING ROOM ===");
       console.log("Creating room with project:", project);
       
-      const projectId = project.id || project.project_id;
+      const projectId = project.project_id || project.id;
       if (!projectId) {
         throw new Error("No valid project ID found");
       }
@@ -195,7 +195,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
   const handleCreateNewRooms = async () => {
     const createdRooms = [];
-    const projectId = project.id || project.project_id;
+    const projectId = project.project_id || project.id;
     
     if (!projectId) {
       toast({
