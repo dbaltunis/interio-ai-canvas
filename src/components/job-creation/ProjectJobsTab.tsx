@@ -46,6 +46,11 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   // Import the job handlers
   const { handleQuickCreateTreatment } = useJobHandlers(project);
 
+  // Wrapper function to handle the return type mismatch
+  const handleQuickCreate = async (formData: any): Promise<void> => {
+    await handleQuickCreateTreatment(formData);
+  };
+
   // Debug logging for data fetching
   console.log("ProjectJobsTab - Data Summary:", {
     projectId,
@@ -294,7 +299,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
         <TabsContent value="create" className="space-y-6">
           <QuickTreatmentCreator
-            onCreateTreatment={handleQuickCreateTreatment}
+            onCreateTreatment={handleQuickCreate}
           />
         </TabsContent>
 
