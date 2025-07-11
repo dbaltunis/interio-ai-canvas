@@ -30,8 +30,9 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [step, setStep] = useState(1); // 1: rooms, 2: product details, 3: canvas
   const [selectedRooms, setSelectedRooms] = useState([]);
-  const [roomQuantity, setRoomQuantity] = useState(1);
   const [newRooms, setNewRooms] = useState([]);
+  const [roomQuantity, setRoomQuantity] = useState(1);
+  const [productConfigurationData, setProductConfigurationData] = useState(null);
 
   const createRoom = useCreateRoom();
   const projectId = project?.project_id || project?.id;
@@ -134,6 +135,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     setStep(1);
     setSelectedRooms([]);
     setNewRooms([]);
+    setProductConfigurationData(null); // Reset configuration data
   };
 
   const handleCreateRoom = async () => {
@@ -376,8 +378,8 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                 onNext={handleNextStep}
                 onBack={() => setStep(1)}
                 onSave={(data) => {
-                  console.log("Product configuration saved:", data);
-                  // Here you could save to localStorage, state, or database
+                  console.log("Saving product configuration:", data);
+                  setProductConfigurationData(data); // Store the curtain data
                 }}
               />
             )}
@@ -387,6 +389,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                 product={selectedProduct}
                 selectedRooms={selectedRooms}
                 existingRooms={existingRooms || []}
+                productConfigurationData={productConfigurationData} // Pass the curtain data
                 onClose={() => setShowProductDialog(false)}
                 onBack={() => setStep(2)}
               />

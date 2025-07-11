@@ -29,6 +29,7 @@ interface ProductCanvasStepProps {
   product: any;
   selectedRooms: string[];
   existingRooms: any[];
+  productConfigurationData?: any; // Add this to receive curtain data
   onClose: () => void;
   onBack?: () => void;
 }
@@ -37,6 +38,7 @@ export const ProductCanvasStep = ({
   product,
   selectedRooms,
   existingRooms,
+  productConfigurationData, // Receive the curtain data
   onClose,
   onBack
 }: ProductCanvasStepProps) => {
@@ -58,6 +60,7 @@ export const ProductCanvasStep = ({
   // Debug logging
   console.log("Canvas Debug - Initial Project ID:", initialProjectId);
   console.log("Canvas Debug - Final Project ID:", projectId);
+  console.log("Canvas Debug - Product Configuration Data:", productConfigurationData);
   console.log("Canvas Debug - Existing rooms:", existingRooms);
   console.log("Canvas Debug - Selected rooms:", selectedRooms);
   console.log("Canvas Debug - All treatments:", allTreatments);
@@ -302,6 +305,32 @@ export const ProductCanvasStep = ({
                   <h4 className="font-semibold text-lg">Project Overview</h4>
                   <p className="text-muted-foreground">Ready to visualize your {product?.name} configuration</p>
                 </div>
+                
+                {/* Show curtain configuration data if available */}
+                {productConfigurationData && (
+                  <Card className="p-4 bg-blue-50 border-blue-200 max-w-lg mx-auto">
+                    <div className="text-center space-y-2">
+                      <h5 className="font-medium text-blue-900">✅ Curtain Configuration Loaded</h5>
+                      <div className="text-left text-sm space-y-1">
+                        {productConfigurationData.treatmentName && (
+                          <p><strong>Treatment:</strong> {productConfigurationData.treatmentName}</p>
+                        )}
+                        {productConfigurationData.railWidth && (
+                          <p><strong>Rail Width:</strong> {productConfigurationData.railWidth}cm</p>
+                        )}
+                        {productConfigurationData.curtainDrop && (
+                          <p><strong>Drop:</strong> {productConfigurationData.curtainDrop}cm</p>
+                        )}
+                        {productConfigurationData.fabricName && (
+                          <p><strong>Fabric:</strong> {productConfigurationData.fabricName}</p>
+                        )}
+                        {productConfigurationData.totalPrice && (
+                          <p><strong>Total Price:</strong> ${productConfigurationData.totalPrice}</p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
                   <div className="p-4 bg-blue-50 rounded-lg border">
