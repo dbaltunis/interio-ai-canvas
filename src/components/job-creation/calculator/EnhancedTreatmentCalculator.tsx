@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TreatmentFormData, CalculationResult, DetailedCalculation } from './types';
 import { calculateTotalPrice, formatCurrency } from './calculationUtils';
+import { FabricSelector } from '@/components/fabric/FabricSelector';
 
 interface EnhancedTreatmentCalculatorProps {
   isOpen: boolean;
@@ -429,114 +430,26 @@ export const EnhancedTreatmentCalculator = ({
                 <CardTitle className="text-base">Fabric</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant={isManualFabric ? "default" : "outline"} 
-                    onClick={() => setIsManualFabric(true)}
-                    className="text-sm"
-                  >
-                    Enter manually
-                  </Button>
-                  <Button 
-                    variant={!isManualFabric ? "default" : "outline"} 
-                    onClick={() => setIsManualFabric(false)}
-                    className="text-sm"
-                  >
-                    Select fabric
-                  </Button>
-                </div>
-
-                {!isManualFabric && (
-                  <div>
-                    <Label>Fabric Library</Label>
-                    <Select onValueChange={handleFabricSelect}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose from library" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fabricLibrary.map(fabric => (
-                          <SelectItem key={fabric.name} value={fabric.name}>
-                            {fabric.name} - {fabric.width}cm - {formatCurrency(fabric.pricePerUnit)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div className="border rounded-lg p-4 space-y-3">
-                  <div>
-                    <Label>Fabric name</Label>
-                    <Input
-                      value={formData.fabricName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, fabricName: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Fabric width</Label>
-                      <div className="flex">
-                        <Input
-                          type="number"
-                          value={formData.fabricWidth}
-                          onChange={(e) => setFormData(prev => ({ ...prev, fabricWidth: e.target.value }))}
-                          className="rounded-r-none"
-                        />
-                        <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">cm</div>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Price/Unit</Label>
-                      <div className="flex">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={formData.fabricPricePerYard}
-                          onChange={(e) => setFormData(prev => ({ ...prev, fabricPricePerYard: e.target.value }))}
-                          className="rounded-r-none"
-                        />
-                        <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">$</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Vertical repeat</Label>
-                      <div className="flex">
-                        <Input
-                          type="number"
-                          value={formData.verticalRepeat}
-                          onChange={(e) => setFormData(prev => ({ ...prev, verticalRepeat: e.target.value }))}
-                          className="rounded-r-none"
-                        />
-                        <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">cm</div>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Horizontal repeat</Label>
-                      <div className="flex">
-                        <Input
-                          type="number"
-                          value={formData.horizontalRepeat}
-                          onChange={(e) => setFormData(prev => ({ ...prev, horizontalRepeat: e.target.value }))}
-                          className="rounded-r-none"
-                        />
-                        <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">cm</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <RadioGroup value={fabricOrientation} onValueChange={(value: "vertical" | "horizontal") => setFabricOrientation(value)}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="vertical" id="vertical" />
-                      <Label htmlFor="vertical">Vertical</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="horizontal" id="horizontal" />
-                      <Label htmlFor="horizontal">Horizontal</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+                <FabricSelector
+                  selectedFabricId={formData.selectedFabric?.id}
+                  onSelectFabric={(fabricId, fabric) => {
+                    console.log('Fabric selected:', fabric);
+                    setFormData(prev => ({
+                      ...prev,
+                      selectedFabric: fabric,
+                      fabricName: fabric.name,
+                      fabricWidth: fabric.width ? fabric.width.toString() : prev.fabricWidth,
+                      fabricPricePerYard: fabric.cost_per_unit ? fabric.cost_per_unit.toString() : prev.fabricPricePerYard,
+                      verticalRepeat: "0",
+                      horizontalRepeat: "0"
+                    }));
+                    
+                    // Set the fabric orientation from the selected fabric
+                    if ((fabric as any).rotation) {
+                      setFabricOrientation((fabric as any).rotation);
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
 
