@@ -2114,8 +2114,10 @@ export type Database = {
       }
       treatments: {
         Row: {
+          calculation_details: Json | null
           color: string | null
           created_at: string
+          fabric_details: Json | null
           fabric_type: string | null
           hardware: string | null
           id: string
@@ -2131,6 +2133,7 @@ export type Database = {
           room_id: string
           status: string | null
           total_price: number | null
+          treatment_details: Json | null
           treatment_type: string
           unit_price: number | null
           updated_at: string
@@ -2138,8 +2141,10 @@ export type Database = {
           window_id: string
         }
         Insert: {
+          calculation_details?: Json | null
           color?: string | null
           created_at?: string
+          fabric_details?: Json | null
           fabric_type?: string | null
           hardware?: string | null
           id?: string
@@ -2155,6 +2160,7 @@ export type Database = {
           room_id: string
           status?: string | null
           total_price?: number | null
+          treatment_details?: Json | null
           treatment_type: string
           unit_price?: number | null
           updated_at?: string
@@ -2162,8 +2168,10 @@ export type Database = {
           window_id: string
         }
         Update: {
+          calculation_details?: Json | null
           color?: string | null
           created_at?: string
+          fabric_details?: Json | null
           fabric_type?: string | null
           hardware?: string | null
           id?: string
@@ -2179,6 +2187,7 @@ export type Database = {
           room_id?: string
           status?: string | null
           total_price?: number | null
+          treatment_details?: Json | null
           treatment_type?: string
           unit_price?: number | null
           updated_at?: string

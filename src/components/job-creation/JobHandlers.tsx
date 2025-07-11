@@ -289,23 +289,23 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
-  const handleQuickCreateTreatment = async (treatmentData: any) => {
+  const handleQuickCreateTreatment = async (formData: any) => {
     try {
       console.log("=== QUICK CREATE TREATMENT ===");
-      console.log("Treatment data:", treatmentData);
+      console.log("Treatment data:", formData);
       
       // First, ensure we have a room
       let roomId = null;
-      const existingRoom = rooms?.find(r => r.name === treatmentData.roomName);
+      const existingRoom = rooms?.find(r => r.name === formData.roomName);
       
       if (existingRoom) {
         roomId = existingRoom.id;
       } else {
         // Create new room
-        console.log("Creating new room:", treatmentData.roomName);
+        console.log("Creating new room:", formData.roomName);
         const newRoom = await createRoom.mutateAsync({
           project_id: actualProjectId,
-          name: treatmentData.roomName,
+          name: formData.roomName,
           room_type: 'living_room'
         });
         roomId = newRoom.id;
@@ -315,22 +315,22 @@ export const useJobHandlers = (project: any) => {
       // Then, ensure we have a surface/window
       let surfaceId = null;
       const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-      const existingSurface = roomSurfaces.find(s => s.name === treatmentData.windowName);
+      const existingSurface = roomSurfaces.find(s => s.name === formData.windowName);
       
       if (existingSurface) {
         surfaceId = existingSurface.id;
       } else {
         // Create new surface
-        console.log("Creating new surface:", treatmentData.windowName);
+        console.log("Creating new surface:", formData.windowName);
         const newSurface = await createSurface.mutateAsync({
           room_id: roomId,
           project_id: actualProjectId,
-          name: treatmentData.windowName,
+          name: formData.windowName,
           surface_type: 'window',
-          width: treatmentData.width,
-          height: treatmentData.height,
-          surface_width: treatmentData.width,
-          surface_height: treatmentData.height
+          width: formData.width,
+          height: formData.height,
+          surface_width: formData.width,
+          surface_height: formData.height
         });
         surfaceId = newSurface.id;
         console.log("New surface created:", newSurface);
@@ -341,19 +341,19 @@ export const useJobHandlers = (project: any) => {
         window_id: surfaceId,
         room_id: roomId,
         project_id: actualProjectId,
-        treatment_type: treatmentData.type || 'curtains',
+        treatment_type: formData.type || 'curtains',
         status: "planned",
-        product_name: treatmentData.name,
-        material_cost: (treatmentData.unitPrice * treatmentData.quantity) * 0.6, // Estimate 60% material cost
-        labor_cost: (treatmentData.unitPrice * treatmentData.quantity) * 0.4, // Estimate 40% labor cost
-        total_price: treatmentData.unitPrice * treatmentData.quantity,
-        unit_price: treatmentData.unitPrice,
-        quantity: treatmentData.quantity,
-        notes: `Quick created: ${treatmentData.name}`,
+        product_name: formData.name,
+        material_cost: (formData.unitPrice * formData.quantity) * 0.6, // Estimate 60% material cost
+        labor_cost: (formData.unitPrice * formData.quantity) * 0.4, // Estimate 40% labor cost
+        total_price: formData.unitPrice * formData.quantity,
+        unit_price: formData.unitPrice,
+        quantity: formData.quantity,
+        notes: `Quick created: ${formData.name}`,
         measurements: JSON.stringify({
-          width: treatmentData.width,
-          height: treatmentData.height,
-          quantity: treatmentData.quantity
+          width: formData.width,
+          height: formData.height,
+          quantity: formData.quantity
         })
       };
 

@@ -43,8 +43,8 @@ export const useTreatments = (projectId?: string) => {
       return data || [];
     },
     enabled: !!projectId,
-    staleTime: 5 * 1000, // 5 seconds - short cache for testing
-    gcTime: 1 * 60 * 1000, // 1 minute cache time
+    staleTime: 2 * 1000, // 2 seconds - very short cache for immediate updates
+    gcTime: 30 * 1000, // 30 seconds cache time
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
