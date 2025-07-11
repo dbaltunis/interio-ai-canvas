@@ -31,9 +31,14 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
         <>
           <div className="mx-3 h-6 w-px bg-brand-neutral/30" />
           <div className="hidden md:block">
-            <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} lg:${sloganSizeClasses[size]} md:text-xs font-medium leading-tight`}>
-              The future of window décor is online and bespoke
-            </p>
+            <div className="flex flex-col">
+              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} lg:${sloganSizeClasses[size]} md:text-xs font-medium leading-tight`}>
+                The future of window décor
+              </p>
+              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} lg:${sloganSizeClasses[size]} md:text-xs font-medium leading-tight`}>
+                is online and bespoke
+              </p>
+            </div>
           </div>
         </>
       )}
