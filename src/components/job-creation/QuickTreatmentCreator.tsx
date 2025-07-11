@@ -58,18 +58,18 @@ export const QuickTreatmentCreator = ({ onCreateTreatment, isCreating = false }:
 
   if (!isExpanded) {
     return (
-      <Card className="mb-6 border-dashed border-2 border-gray-300 hover:border-primary/50 transition-colors">
+      <Card className="mb-6 border-dashed border-2 border-muted hover:border-primary/50 transition-colors">
         <CardContent className="p-6">
           <Button
             onClick={() => setIsExpanded(true)}
             variant="ghost"
-            className="w-full h-16 text-gray-600 hover:text-primary"
+            className="w-full h-16 text-muted-foreground hover:text-primary"
           >
             <div className="flex items-center gap-3">
               <Zap className="h-6 w-6" />
               <div className="text-left">
                 <div className="font-semibold">Quick Add Treatment</div>
-                <div className="text-sm text-gray-500">Create room, window, and treatment in one step</div>
+                <div className="text-sm text-muted-foreground">Create room, window, and treatment in one step</div>
               </div>
             </div>
           </Button>
@@ -79,7 +79,7 @@ export const QuickTreatmentCreator = ({ onCreateTreatment, isCreating = false }:
   }
 
   return (
-    <Card className="mb-6 border-primary/20">
+    <Card className="mb-6 border-primary/20 bg-primary/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
@@ -121,7 +121,7 @@ export const QuickTreatmentCreator = ({ onCreateTreatment, isCreating = false }:
                 </SelectTrigger>
                 <SelectContent>
                   {windowCoveringTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.type}>
+                    <SelectItem key={type.id} value={type.name}>
                       {type.name}
                     </SelectItem>
                   ))}

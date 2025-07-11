@@ -47,6 +47,11 @@ export const ProjectJobsContent = ({
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
+  // Wrapper function to handle the return type mismatch
+  const handleQuickCreate = async (formData: any): Promise<void> => {
+    await handleQuickCreateTreatment(formData);
+  };
+
   return (
     <div className="min-h-[400px]">
       {/* Always show blueprint */}
@@ -59,7 +64,7 @@ export const ProjectJobsContent = ({
 
       {/* Quick Treatment Creator */}
       <QuickTreatmentCreator 
-        onCreateTreatment={handleQuickCreateTreatment}
+        onCreateTreatment={handleQuickCreate}
       />
 
       {rooms.length === 0 ? (

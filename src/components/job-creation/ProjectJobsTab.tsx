@@ -294,11 +294,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
         <TabsContent value="create" className="space-y-6">
           <QuickTreatmentCreator
-            projectId={projectId}
-            onTreatmentCreated={handleTreatmentCreated}
-            existingRooms={existingRooms || []}
-            existingTreatments={treatments || []}
-            onQuickCreate={handleQuickCreateTreatment}
+            onCreateTreatment={handleQuickCreateTreatment}
           />
         </TabsContent>
 
