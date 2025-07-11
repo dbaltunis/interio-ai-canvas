@@ -280,7 +280,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
                     <p className="text-xs text-muted-foreground">{template.description}</p>
                     <div className="pt-2">
                       <Badge variant="secondary" className="text-xs">
-                        Click to configure
+                        {template.name.toLowerCase()} products
                       </Badge>
                     </div>
                   </div>
