@@ -29,6 +29,7 @@ export const ProductCanvasStep = ({
   onClose
 }: ProductCanvasStepProps) => {
   const [activeRoom, setActiveRoom] = useState(selectedRooms[0]);
+  const [isDesignActive, setIsDesignActive] = useState(false);
 
   const getRoomName = (roomId: string) => {
     const room = existingRooms.find(r => r.id === roomId);
@@ -85,9 +86,13 @@ export const ProductCanvasStep = ({
               </div>
             </div>
             
-            <Button variant="outline" size="lg">
+            <Button 
+              variant={isDesignActive ? "default" : "outline"} 
+              size="lg"
+              onClick={() => setIsDesignActive(!isDesignActive)}
+            >
               <Edit3 className="h-4 w-4 mr-2" />
-              Start Visual Design
+              {isDesignActive ? "Exit Design Mode" : "Start Visual Design"}
             </Button>
           </div>
         </div>
