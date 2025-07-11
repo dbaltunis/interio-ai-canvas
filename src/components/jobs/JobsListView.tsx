@@ -3,9 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Filter, Grid, List, Eye, Edit, Trash2, Mail, FileText, Calendar, DollarSign, User, Building2, MapPin, Phone } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
@@ -48,51 +46,76 @@ export const JobsListView = ({
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [customKPIs, setCustomKPIs] = useState([
-    { id: "total-jobs", label: "Total Jobs", description: "All time jobs", enabled: true },
-    { id: "active-jobs", label: "Active Jobs", description: "Currently active", enabled: true },
-    { id: "pending", label: "Pending", description: "Awaiting approval", enabled: true },
-    { id: "this-month", label: "This Month", description: "New this month", enabled: true },
-    { id: "total-value", label: "Total Value", description: "Combined value", enabled: true },
-    { id: "completion-rate", label: "Completion Rate", description: "Success rate", enabled: true }
-  ]);
 
-  const { data: quotes = [], isLoading } = useQuotes();
+  const { data: quotes = [], isLoading, error } = useQuotes();
   const { data: clients } = useClients();
   const { data: projects } = useProjects();
   const { data: businessSettings } = useBusinessSettings();
   const { toast } = useToast();
 
-  // Filter and sort quotes
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error("Jobs list error:", error);
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center space-y-4">
+          <div className="text-red-500">Error loading jobs</div>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Safe filtering with error handling
   const filteredQuotes = quotes.filter(quote => {
-    const client = clients?.find(c => c.id === quote.client_id);
-    const clientName = client?.client_type === 'B2B' ? client?.company_name : client?.name;
-    
-    // Search filters
-    if (searchClient && clientName && !clientName.toLowerCase().includes(searchClient.toLowerCase())) {
-      return false;
+    try {
+      const client = clients?.find(c => c.id === quote.client_id);
+      const clientName = client?.client_type === 'B2B' ? client?.company_name : client?.name;
+      
+      // Search filters
+      if (searchClient && clientName && !clientName.toLowerCase().includes(searchClient.toLowerCase())) {
+        return false;
+      }
+      
+      if (searchJobNumber && !quote.quote_number?.toLowerCase().includes(searchJobNumber.toLowerCase())) {
+        return false;
+      }
+      
+      // Status filter
+      if (filterStatus !== "all" && quote.status !== filterStatus) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn("Error filtering quote:", quote.id, error);
+      return true; // Include the quote if there's an error to avoid losing data
     }
-    
-    if (searchJobNumber && !quote.quote_number.toLowerCase().includes(searchJobNumber.toLowerCase())) {
-      return false;
-    }
-    
-    // Status filter
-    if (filterStatus !== "all" && quote.status !== filterStatus) {
-      return false;
-    }
-    
-    return true;
   });
 
   const sortedQuotes = filteredQuotes.sort((a, b) => {
-    const aValue = a[sortBy as keyof typeof a];
-    const bValue = b[sortBy as keyof typeof b];
-    
-    if (sortOrder === "asc") {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
+    try {
+      const aValue = a[sortBy as keyof typeof a];
+      const bValue = b[sortBy as keyof typeof b];
+      
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    } catch (error) {
+      console.warn("Error sorting quotes:", error);
+      return 0;
     }
   });
 
@@ -106,34 +129,18 @@ export const JobsListView = ({
     setCurrentPage(page);
   };
 
-  const handleKPIChange = (kpis: any[]) => {
-    setCustomKPIs(kpis);
-  };
-
   const handleNewJobClick = () => {
-    console.log("New Job button clicked"); // Debug log
+    console.log("New Job button clicked");
     if (onNewJob) {
       onNewJob();
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Job Overview</h2>
-        <KPICustomizer 
-          availableKPIs={customKPIs}
-          onKPIChange={handleKPIChange}
-        />
       </div>
       <JobsStatsCards quotes={quotes} />
 
@@ -149,47 +156,6 @@ export const JobsListView = ({
             </div>
             
             <div className="flex items-center space-x-3">
-              {/* Sort Controls */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="created_at">Date Created</SelectItem>
-                  <SelectItem value="quote_number">Job Number</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="total_amount">Value</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              >
-                {sortOrder === "asc" ? "↑" : "↓"}
-              </Button>
-
-              {/* View Mode Toggle */}
-              <div className="flex border rounded-md">
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-r-none"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="rounded-l-none"
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-              </div>
-
               <Button 
                 onClick={handleNewJobClick} 
                 className="bg-primary hover:bg-primary/90"
@@ -222,32 +188,15 @@ export const JobsListView = ({
             </div>
           ) : (
             <>
-              {viewMode === "grid" ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {paginatedQuotes.map((quote) => (
-                    <JobCard
-                      key={quote.id}
-                      quote={quote}
-                      client={clients?.find(c => c.id === quote.client_id)}
-                      project={projects?.find(p => p.id === quote.project_id)}
-                      onJobSelect={onJobSelect}
-                      onClientEdit={onClientEdit}
-                      onJobCopy={onJobCopy}
-                      businessSettings={businessSettings}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <JobsTableView
-                  quotes={paginatedQuotes}
-                  clients={clients}
-                  projects={projects}
-                  onJobSelect={onJobSelect}
-                  onClientEdit={onClientEdit}
-                  onJobCopy={onJobCopy}
-                  businessSettings={businessSettings}
-                />
-              )}
+              <JobsTableView
+                quotes={paginatedQuotes}
+                clients={clients}
+                projects={projects}
+                onJobSelect={onJobSelect}
+                onClientEdit={onClientEdit}
+                onJobCopy={onJobCopy}
+                businessSettings={businessSettings}
+              />
 
               {/* Pagination */}
               {totalPages > 1 && (

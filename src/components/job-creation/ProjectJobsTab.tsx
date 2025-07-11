@@ -10,9 +10,8 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useJobHandlers } from "./JobHandlers";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Home, Package, Palette, Wrench, ArrowRight, CheckCircle, MapPin, Square, Settings2, Eye } from "lucide-react";
+import { Plus, Home, Package, Palette, Wrench, Eye, Settings2 } from "lucide-react";
 import { WindowManagementSection } from "./WindowManagementSection";
-import { ProjectStats } from "./ProjectStats";
 import { RoomSelectionStep } from "./product-steps/RoomSelectionStep";
 import { ProductDetailsStep } from "./product-steps/ProductDetailsStep";
 import { ProductCanvasStep } from "./product-steps/ProductCanvasStep";
@@ -48,7 +47,16 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
   // Wrapper function to handle the return type mismatch
   const handleQuickCreate = async (formData: any): Promise<void> => {
-    await handleQuickCreateTreatment(formData);
+    try {
+      await handleQuickCreateTreatment(formData);
+    } catch (error) {
+      console.error("Quick create failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create treatment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Debug logging for data fetching
@@ -62,8 +70,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     roomsLoading,
     treatmentsLoading,
     surfacesLoading,
-    templatesLoading,
-    existingRooms: existingRooms
+    templatesLoading
   });
 
   // Don't render anything if we don't have a valid project
@@ -431,14 +438,14 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
       {(existingRooms?.length > 0 || treatments?.length > 0 || surfaces?.length > 0) && (
         <div className="bg-white rounded-lg border p-4 space-y-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+            
             Project Progress
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-blue-600" />
+                
                 <span className="font-medium">Rooms ({existingRooms?.length || 0})</span>
               </div>
               {roomsLoading ? (
@@ -464,7 +471,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Square className="h-4 w-4 text-purple-600" />
+                
                 <span className="font-medium">Windows ({surfaces?.length || 0})</span>
               </div>
               {surfacesLoading ? (
@@ -490,7 +497,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-green-600" />
+                
                 <span className="font-medium">Treatments ({treatments?.length || 0})</span>
               </div>
               {treatmentsLoading ? (
