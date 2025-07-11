@@ -201,8 +201,32 @@ export const useJobHandlers = (project: any) => {
         actualProjectId
       });
 
+      let finalSurfaceId = surfaceId;
+      
+      // If no surfaceId provided or invalid, create a default window surface
+      if (!surfaceId || surfaceId === "") {
+        console.log("No surface provided, creating default window for treatment");
+        
+        const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
+        const surfaceNumber = roomSurfaces.length + 1;
+        
+        const defaultSurface = await createSurface.mutateAsync({
+          room_id: roomId,
+          project_id: actualProjectId,
+          name: `Window ${surfaceNumber}`,
+          surface_type: 'window',
+          width: 60,
+          height: 48,
+          surface_width: 60,
+          surface_height: 48
+        });
+        
+        finalSurfaceId = defaultSurface.id;
+        console.log("Created default surface:", defaultSurface);
+      }
+
       const treatmentPayload = {
-        window_id: surfaceId,
+        window_id: finalSurfaceId,
         room_id: roomId,
         project_id: actualProjectId,
         treatment_type: treatmentType,
@@ -235,10 +259,37 @@ export const useJobHandlers = (project: any) => {
       };
 
       console.log("Final treatment payload:", treatmentPayload);
+      
+      // Validate required fields
+      if (!finalSurfaceId) {
+        throw new Error("Surface ID is required for treatment creation");
+      }
+      if (!roomId) {
+        throw new Error("Room ID is required for treatment creation");
+      }
+      if (!actualProjectId) {
+        throw new Error("Project ID is required for treatment creation");
+      }
+      
       const result = await createTreatment.mutateAsync(treatmentPayload);
       console.log("Treatment created successfully:", result);
+      
+      // Force refetch to ensure UI updates
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      
+      return result;
     } catch (error) {
       console.error("Failed to create treatment:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        roomId,
+        surfaceId,
+        actualProjectId
+      });
+      throw error;
     }
   };
 
