@@ -22,23 +22,21 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
 
   return (
     <div className={`flex items-center ${className}`}>
-      <div className="flex items-center space-x-3 bg-white rounded-full px-4 py-2 shadow-sm border border-brand-secondary/20">
-        <img 
-          src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-          alt="InterioApp Logo" 
-          className={`${sizeClasses[size]} w-auto object-contain`}
-        />
-        {showTagline && (
-          <div className="flex flex-col">
-            <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
-              The future of window décor
-            </p>
-            <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
-              is online and bespoke
+      <img 
+        src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+        alt="InterioApp Logo" 
+        className={`${sizeClasses[size]} w-auto object-contain`}
+      />
+      {showTagline && (
+        <>
+          <div className="mx-3 h-6 w-px bg-brand-neutral/30" />
+          <div className="hidden md:block">
+            <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} lg:${sloganSizeClasses[size]} md:text-xs font-medium leading-tight`}>
+              The future of window décor is online and bespoke
             </p>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };
