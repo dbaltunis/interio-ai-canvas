@@ -458,8 +458,8 @@ export const ProductDetailsStep = ({
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Select lining" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">No Lining</SelectItem>
+                       <SelectContent>
+                         <SelectItem value="none">No Lining</SelectItem>
                         {getAvailableLining().map((lining) => (
                           <SelectItem key={lining.id} value={lining.id}>
                             {lining.name} (+£{lining.price}/m)
