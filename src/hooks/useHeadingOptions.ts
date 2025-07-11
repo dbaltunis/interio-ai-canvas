@@ -19,9 +19,16 @@ export const useHeadingOptions = () => {
   return useQuery({
     queryKey: ['heading-options'],
     queryFn: async () => {
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('heading_options')
         .select('*')
+        .eq('user_id', user.id)
         .eq('active', true)
         .order('name');
       

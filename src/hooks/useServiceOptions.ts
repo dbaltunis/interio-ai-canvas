@@ -19,9 +19,17 @@ export const useServiceOptions = () => {
     queryKey: ['service-options'],
     queryFn: async () => {
       console.log('Fetching service options...');
+      
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('service_options')
         .select('*')
+        .eq('user_id', user.id)
         .eq('active', true)
         .order('name');
       

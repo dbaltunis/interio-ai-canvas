@@ -19,9 +19,17 @@ export const useHardwareOptions = () => {
     queryKey: ['hardware-options'],
     queryFn: async () => {
       console.log('Fetching hardware options...');
+      
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('hardware_options')
         .select('*')
+        .eq('user_id', user.id)
         .order('name');
       
       if (error) {
@@ -127,9 +135,16 @@ export const useLiningOptions = () => {
   return useQuery({
     queryKey: ['lining-options'],
     queryFn: async () => {
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('lining_options')
         .select('*')
+        .eq('user_id', user.id)
         .eq('active', true)
         .order('name');
       

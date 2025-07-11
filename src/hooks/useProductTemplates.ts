@@ -30,9 +30,19 @@ export const useProductTemplates = () => {
     setIsLoading(true);
     
     try {
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No authenticated user, skipping template fetch');
+        setTemplates([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('product_templates')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
