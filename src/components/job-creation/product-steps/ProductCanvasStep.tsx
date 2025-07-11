@@ -43,17 +43,23 @@ export const ProductCanvasStep = ({
   const [activeRoom, setActiveRoom] = useState(selectedRooms[0]);
   const [isDesignActive, setIsDesignActive] = useState(false);
   
-  // Get project ID from existingRooms
-  const projectId = existingRooms[0]?.project_id;
+  // Get initial project ID from existingRooms
+  const initialProjectId = existingRooms[0]?.project_id;
   
   // Fetch all project data
-  const { data: allRooms, refetch: refetchRooms } = useRooms(projectId);
-  const { data: allSurfaces, refetch: refetchSurfaces } = useSurfaces(projectId);
-  const { data: allTreatments, refetch: refetchTreatments } = useTreatments(projectId);
+  const { data: allRooms, refetch: refetchRooms } = useRooms(initialProjectId);
+  const { data: allSurfaces, refetch: refetchSurfaces } = useSurfaces(initialProjectId);
+  const { data: allTreatments, refetch: refetchTreatments } = useTreatments(initialProjectId);
   const { windowCoverings } = useWindowCoverings();
 
+  // Final project ID - try multiple sources
+  const projectId = initialProjectId || allRooms?.[0]?.project_id;
+
   // Debug logging
-  console.log("Canvas Debug - Project ID:", projectId);
+  console.log("Canvas Debug - Initial Project ID:", initialProjectId);
+  console.log("Canvas Debug - Final Project ID:", projectId);
+  console.log("Canvas Debug - Existing rooms:", existingRooms);
+  console.log("Canvas Debug - Selected rooms:", selectedRooms);
   console.log("Canvas Debug - All treatments:", allTreatments);
   console.log("Canvas Debug - All rooms:", allRooms);
   console.log("Canvas Debug - All surfaces:", allSurfaces);
