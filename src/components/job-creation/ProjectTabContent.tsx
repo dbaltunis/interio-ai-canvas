@@ -40,13 +40,15 @@ export const ProjectTabContent = ({
         client_id: clientId
       });
       
+      console.log("Project updated successfully:", updatedProject);
+      
       // Update the current project object to reflect the change immediately
       project.client_id = clientId;
       onProjectUpdate?.(updatedProject);
       
       toast({
-        title: "Success",
-        description: "Client has been assigned to the project",
+        title: "Client Assigned",
+        description: "Client has been successfully assigned to the project",
       });
     } catch (error) {
       console.error("Failed to assign client:", error);

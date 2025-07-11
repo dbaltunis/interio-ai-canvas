@@ -42,6 +42,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   // Debug logging for data fetching
   console.log("ProjectJobsTab - Data Summary:", {
     projectId,
+    project: project,
     roomsCount: existingRooms?.length || 0,
     treatmentsCount: treatments?.length || 0,
     surfacesCount: surfaces?.length || 0,
@@ -49,7 +50,8 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
     roomsLoading,
     treatmentsLoading,
     surfacesLoading,
-    templatesLoading
+    templatesLoading,
+    existingRooms: existingRooms
   });
 
   // Don't render anything if we don't have a valid project

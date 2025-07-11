@@ -10,7 +10,10 @@ export const useRooms = (projectId?: string) => {
   return useQuery({
     queryKey: ["rooms", projectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!projectId) {
+        console.log("useRooms: No projectId provided, returning empty array");
+        return [];
+      }
       
       console.log("Fetching rooms for project:", projectId);
       const { data, error } = await supabase
@@ -19,16 +22,21 @@ export const useRooms = (projectId?: string) => {
         .eq("project_id", projectId)
         .order("created_at");
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching rooms:", error);
+        throw error;
+      }
       
-      console.log("Rooms fetched:", data?.length, "rooms");
-      return data;
+      console.log("Rooms fetched successfully:", data?.length, "rooms for project", projectId);
+      console.log("Room details:", data);
+      return data || [];
     },
     enabled: !!projectId,
-    staleTime: 30 * 1000, // 30 seconds - much shorter cache
-    gcTime: 5 * 60 * 1000, // 5 minutes cache time
+    staleTime: 10 * 1000, // 10 seconds - shorter cache for testing
+    gcTime: 2 * 60 * 1000, // 2 minutes cache time
     refetchOnWindowFocus: true, // Refetch when window gets focus
     refetchOnMount: true, // Always refetch on mount
+    refetchOnReconnect: true, // Refetch when connection is restored
   });
 };
 
