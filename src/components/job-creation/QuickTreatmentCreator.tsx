@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,7 @@ interface QuickTreatmentCreatorProps {
   onTreatmentCreated: () => void;
   existingRooms: any[];
   existingTreatments: any[];
-  onQuickCreate?: (treatmentData: any) => Promise<any>; // Add this prop
+  onQuickCreate?: (treatmentData: any) => Promise<any>;
 }
 
 export const QuickTreatmentCreator = ({ 
@@ -21,11 +22,11 @@ export const QuickTreatmentCreator = ({
   onTreatmentCreated, 
   existingRooms,
   existingTreatments,
-  onQuickCreate // Add this
+  onQuickCreate
 }: QuickTreatmentCreatorProps) => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("");
-  const [treatmentData, setTreatmentData] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     roomName: "",
     windowName: "",
@@ -46,11 +47,14 @@ export const QuickTreatmentCreator = ({
 
   const handleQuickCreate = async (treatmentType: string) => {
     setSelectedTreatmentType(treatmentType);
-    setTreatmentData({
-      ...treatmentData,
+    setFormData({
       name: `${treatmentType} Treatment`,
       roomName: existingRooms.length > 0 ? existingRooms[0].name : `Room ${existingRooms.length + 1}`,
-      windowName: `Window 1`
+      windowName: `Window 1`,
+      width: 60,
+      height: 48,
+      quantity: 1,
+      unitPrice: 100
     });
     setShowDialog(true);
   };
@@ -58,27 +62,27 @@ export const QuickTreatmentCreator = ({
   const handleCreateTreatment = async () => {
     setIsCreating(true);
     try {
-      const treatmentData = {
+      const treatmentPayload = {
         type: selectedTreatmentType.toLowerCase(),
-        name: treatmentData.name,
-        roomName: treatmentData.roomName,
-        windowName: treatmentData.windowName,
-        width: treatmentData.width,
-        height: treatmentData.height,
-        quantity: treatmentData.quantity,
-        unitPrice: treatmentData.unitPrice,
+        name: formData.name,
+        roomName: formData.roomName,
+        windowName: formData.windowName,
+        width: formData.width,
+        height: formData.height,
+        quantity: formData.quantity,
+        unitPrice: formData.unitPrice,
         projectId
       };
 
       if (onQuickCreate) {
-        await onQuickCreate(treatmentData);
+        await onQuickCreate(treatmentPayload);
       } else {
-        console.log("Creating treatment:", treatmentData);
+        console.log("Creating treatment:", treatmentPayload);
       }
       
       toast({
         title: "Treatment Created",
-        description: `${treatmentData.name} has been created successfully.`,
+        description: `${formData.name} has been created successfully.`,
       });
       
       setShowDialog(false);
@@ -97,7 +101,7 @@ export const QuickTreatmentCreator = ({
 
   const handleDuplicateTreatment = (treatment: any) => {
     setSelectedTreatmentType(treatment.treatment_type);
-    setTreatmentData({
+    setFormData({
       name: `${treatment.product_name} (Copy)`,
       roomName: "New Room",
       windowName: "New Window",
@@ -184,8 +188,8 @@ export const QuickTreatmentCreator = ({
               <Label htmlFor="name">Treatment Name</Label>
               <Input
                 id="name"
-                value={treatmentData.name}
-                onChange={(e) => setTreatmentData({...treatmentData, name: e.target.value})}
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
             </div>
             
@@ -194,16 +198,16 @@ export const QuickTreatmentCreator = ({
                 <Label htmlFor="roomName">Room Name</Label>
                 <Input
                   id="roomName"
-                  value={treatmentData.roomName}
-                  onChange={(e) => setTreatmentData({...treatmentData, roomName: e.target.value})}
+                  value={formData.roomName}
+                  onChange={(e) => setFormData({...formData, roomName: e.target.value})}
                 />
               </div>
               <div>
                 <Label htmlFor="windowName">Window Name</Label>
                 <Input
                   id="windowName"
-                  value={treatmentData.windowName}
-                  onChange={(e) => setTreatmentData({...treatmentData, windowName: e.target.value})}
+                  value={formData.windowName}
+                  onChange={(e) => setFormData({...formData, windowName: e.target.value})}
                 />
               </div>
             </div>
@@ -214,8 +218,8 @@ export const QuickTreatmentCreator = ({
                 <Input
                   id="width"
                   type="number"
-                  value={treatmentData.width}
-                  onChange={(e) => setTreatmentData({...treatmentData, width: parseInt(e.target.value) || 0})}
+                  value={formData.width}
+                  onChange={(e) => setFormData({...formData, width: parseInt(e.target.value) || 0})}
                 />
               </div>
               <div>
@@ -223,8 +227,8 @@ export const QuickTreatmentCreator = ({
                 <Input
                   id="height"
                   type="number"
-                  value={treatmentData.height}
-                  onChange={(e) => setTreatmentData({...treatmentData, height: parseInt(e.target.value) || 0})}
+                  value={formData.height}
+                  onChange={(e) => setFormData({...formData, height: parseInt(e.target.value) || 0})}
                 />
               </div>
             </div>
@@ -235,8 +239,8 @@ export const QuickTreatmentCreator = ({
                 <Input
                   id="quantity"
                   type="number"
-                  value={treatmentData.quantity}
-                  onChange={(e) => setTreatmentData({...treatmentData, quantity: parseInt(e.target.value) || 1})}
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
                 />
               </div>
               <div>
@@ -244,8 +248,8 @@ export const QuickTreatmentCreator = ({
                 <Input
                   id="unitPrice"
                   type="number"
-                  value={treatmentData.unitPrice}
-                  onChange={(e) => setTreatmentData({...treatmentData, unitPrice: parseFloat(e.target.value) || 0})}
+                  value={formData.unitPrice}
+                  onChange={(e) => setFormData({...formData, unitPrice: parseFloat(e.target.value) || 0})}
                 />
               </div>
             </div>
@@ -253,7 +257,7 @@ export const QuickTreatmentCreator = ({
             <div className="flex gap-2 pt-4">
               <Button 
                 onClick={handleCreateTreatment} 
-                disabled={isCreating || !treatmentData.name}
+                disabled={isCreating || !formData.name}
                 className="flex-1"
               >
                 {isCreating ? "Creating..." : "Create Treatment"}

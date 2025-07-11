@@ -1,9 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Home, Square, Package, DollarSign, Fabric, Wrench, Eye } from "lucide-react";
+import { Home, Square, Package, DollarSign, Shirt, Wrench, Eye } from "lucide-react";
 
 interface ProjectOverviewProps {
   project: any;
@@ -161,7 +160,7 @@ export const ProjectOverview = ({ project, rooms, surfaces, treatments }: Projec
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Fabric className="h-5 w-5" />
+              <Shirt className="h-5 w-5" />
               Material Summary
             </CardTitle>
           </CardHeader>
