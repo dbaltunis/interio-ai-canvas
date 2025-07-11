@@ -443,16 +443,27 @@ export const ProductTemplatesTab = () => {
                 <Label htmlFor="windowCovering">Window Covering Type *</Label>
                 <Select value={formData.window_covering_id} onValueChange={(value) => setFormData(prev => ({ ...prev, window_covering_id: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select window covering" />
+                    <SelectValue placeholder={windowCoverings.length === 0 ? "No window coverings available - create one first" : "Select window covering"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {windowCoverings.map((covering) => (
-                      <SelectItem key={covering.id} value={covering.id}>
-                        {covering.name} - {covering.fabrication_pricing_method}
+                    {windowCoverings.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        No window coverings found. Please create window coverings first in the Window Coverings tab.
                       </SelectItem>
-                    ))}
+                    ) : (
+                      windowCoverings.map((covering) => (
+                        <SelectItem key={covering.id} value={covering.id}>
+                          {covering.name} - {covering.fabrication_pricing_method}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                {windowCoverings.length === 0 && (
+                  <p className="text-sm text-amber-600 mt-1">
+                    ⚠️ You need to create window coverings first. Go to the "Window Coverings" tab above to get started.
+                  </p>
+                )}
               </div>
             </div>
 
