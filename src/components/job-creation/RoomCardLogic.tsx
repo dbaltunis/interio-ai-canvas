@@ -35,7 +35,26 @@ export const useRoomCardLogic = (room: any, projectId: string) => {
   );
 
   const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
-    if (!surfaceType) return;
+    console.log("=== SURFACE CREATION DEBUG ===");
+    console.log("Surface type:", surfaceType);
+    console.log("Room ID:", room.id);
+    console.log("Project ID:", projectId);
+    console.log("Current room surfaces:", roomSurfaces);
+    
+    if (!surfaceType) {
+      console.error("No surface type provided");
+      return;
+    }
+    
+    if (!room.id) {
+      console.error("No room ID available");
+      return;
+    }
+    
+    if (!projectId) {
+      console.error("No project ID available");
+      return;
+    }
     
     setIsCreatingSurface(true);
     
@@ -54,14 +73,21 @@ export const useRoomCardLogic = (room: any, projectId: string) => {
         surface_height: surfaceType === 'wall' ? 96 : 48
       };
 
-      await createSurface.mutateAsync(surfaceData);
+      console.log("Creating surface with data:", surfaceData);
+      const result = await createSurface.mutateAsync(surfaceData);
+      console.log("Surface created successfully:", result);
       
       setTimeout(() => {
+        console.log("Refetching surfaces...");
         refetchSurfaces();
       }, 100);
       
     } catch (error) {
       console.error("Failed to create surface:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack
+      });
     } finally {
       setIsCreatingSurface(false);
     }
