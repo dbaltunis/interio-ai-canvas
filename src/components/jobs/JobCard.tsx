@@ -2,9 +2,12 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Phone, Mail, MapPin, Building2, User, Calendar, DollarSign, FileText, Clock } from "lucide-react";
+import { Eye, Edit, Phone, Mail, MapPin, Building2, User, Calendar, DollarSign, FileText, Clock, Home, Square, Palette } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { JobActionsMenu } from "./JobActionsMenu";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { useTreatments } from "@/hooks/useTreatments";
 
 interface JobCardProps {
   quote: any;
@@ -25,6 +28,10 @@ export const JobCard = ({
   onJobCopy,
   businessSettings 
 }: JobCardProps) => {
+  // Fetch project data
+  const { data: rooms } = useRooms(project?.id);
+  const { data: surfaces } = useSurfaces(project?.id);  
+  const { data: treatments } = useTreatments(project?.id);
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
@@ -152,9 +159,9 @@ export const JobCard = ({
           </div>
         )}
 
-        {/* Project Information */}
+        {/* Project Information with Rooms & Treatments */}
         {project && (
-          <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="p-3 bg-blue-50 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
@@ -181,6 +188,51 @@ export const JobCard = ({
                 {project.status?.replace('_', ' ').toUpperCase() || 'DRAFT'}
               </Badge>
             </div>
+
+            {/* Project Content Summary */}
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-blue-200">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-1">
+                  <Home className="h-3 w-3 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-800">{rooms?.length || 0}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Rooms</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-1">
+                  <Square className="h-3 w-3 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-800">{surfaces?.length || 0}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Windows</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-1">
+                  <Palette className="h-3 w-3 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-800">{treatments?.length || 0}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Treatments</p>
+              </div>
+            </div>
+
+            {/* Room List */}
+            {rooms && rooms.length > 0 && (
+              <div className="pt-2 border-t border-blue-200">
+                <div className="flex flex-wrap gap-1">
+                  {rooms.slice(0, 3).map((room: any) => (
+                    <Badge key={room.id} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                      {room.name}
+                    </Badge>
+                  ))}
+                  {rooms.length > 3 && (
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                      +{rooms.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

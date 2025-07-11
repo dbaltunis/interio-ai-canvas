@@ -1,10 +1,13 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Calendar, DollarSign, FileText, Building2, User } from "lucide-react";
+import { Mail, Calendar, DollarSign, FileText, Building2, User, Home, Square, Palette } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { JobActionsMenu } from "./JobActionsMenu";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { useTreatments } from "@/hooks/useTreatments";
 
 interface JobsTableViewProps {
   quotes: any[];
@@ -161,27 +164,7 @@ export const JobsTableView = ({
                 </TableCell>
                 
                 <TableCell>
-                  {project ? (
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">{project.name}</div>
-                      <Badge variant="outline" className={`text-xs ${
-                        project.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                        project.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                        project.status === 'planning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                        'bg-gray-50 text-gray-700 border-gray-200'
-                      }`}>
-                        {project.status?.replace('_', ' ').toUpperCase() || 'DRAFT'}
-                      </Badge>
-                      {project.due_date && (
-                        <div className="text-xs text-orange-600 flex items-center">
-                          <Calendar className="mr-1 h-3 w-3" />
-                          Due: {new Date(project.due_date).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">No project</span>
-                  )}
+                  <ProjectDetailsCell project={project} />
                 </TableCell>
                 
                 <TableCell>
@@ -241,6 +224,56 @@ export const JobsTableView = ({
           })}
         </TableBody>
       </Table>
+    </div>
+  );
+};
+
+const ProjectDetailsCell = ({ project }: { project: any }) => {
+  const { data: rooms } = useRooms(project?.id);
+  const { data: surfaces } = useSurfaces(project?.id);  
+  const { data: treatments } = useTreatments(project?.id);
+
+  if (!project) {
+    return <span className="text-muted-foreground text-sm">No project</span>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-medium">{project.name}</div>
+      
+      <div className="flex items-center space-x-3">
+        <Badge variant="outline" className={`text-xs ${
+          project.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+          project.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+          project.status === 'planning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+          'bg-gray-50 text-gray-700 border-gray-200'
+        }`}>
+          {project.status?.replace('_', ' ').toUpperCase() || 'DRAFT'}
+        </Badge>
+      </div>
+
+      {/* Project Content Summary */}
+      <div className="flex items-center space-x-4 text-xs">
+        <div className="flex items-center space-x-1 text-blue-600">
+          <Home className="h-3 w-3" />
+          <span>{rooms?.length || 0} rooms</span>
+        </div>
+        <div className="flex items-center space-x-1 text-green-600">
+          <Square className="h-3 w-3" />
+          <span>{surfaces?.length || 0} windows</span>
+        </div>
+        <div className="flex items-center space-x-1 text-purple-600">
+          <Palette className="h-3 w-3" />
+          <span>{treatments?.length || 0} treatments</span>
+        </div>
+      </div>
+
+      {project.due_date && (
+        <div className="text-xs text-orange-600 flex items-center">
+          <Calendar className="mr-1 h-3 w-3" />
+          Due: {new Date(project.due_date).toLocaleDateString()}
+        </div>
+      )}
     </div>
   );
 };
