@@ -34,6 +34,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     width: "",
     cost_per_unit: "",
     unit: units.fabric,
+    rotation: "vertical" as "vertical" | "horizontal",
     notes: ""
   });
   
@@ -129,6 +130,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
       width: "",
       cost_per_unit: "",
       unit: units.fabric,
+      rotation: "vertical" as "vertical" | "horizontal",
       notes: ""
     });
   };
@@ -401,18 +403,31 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                  </div>
                 
                  <div className="space-y-2">
-                   <Label htmlFor="fabric-unit">Unit</Label>
-                   <select
-                     id="fabric-unit"
-                     value={manualFabric.unit}
-                     onChange={(e) => handleManualInputChange('unit', e.target.value)}
-                     className="w-full px-3 py-2 border rounded-md text-sm bg-white"
-                   >
-                     <option value="cm">cm</option>
-                     <option value="m">m</option>
-                     <option value="inches">inches</option>
-                     <option value="yards">yards</option>
-                   </select>
+                   <Label>Fabric Rotation</Label>
+                   <div className="flex gap-4">
+                     <label className="flex items-center space-x-2 cursor-pointer">
+                       <input
+                         type="radio"
+                         name="fabric-rotation"
+                         value="vertical"
+                         checked={manualFabric.rotation === 'vertical'}
+                         onChange={(e) => handleManualInputChange('rotation', e.target.value)}
+                         className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                       />
+                       <span className="text-sm">Vertical</span>
+                     </label>
+                     <label className="flex items-center space-x-2 cursor-pointer">
+                       <input
+                         type="radio"
+                         name="fabric-rotation"
+                         value="horizontal"
+                         checked={manualFabric.rotation === 'horizontal'}
+                         onChange={(e) => handleManualInputChange('rotation', e.target.value)}
+                         className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                       />
+                       <span className="text-sm">Horizontal</span>
+                     </label>
+                   </div>
                  </div>
               </div>
               
