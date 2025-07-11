@@ -131,12 +131,29 @@ export const ProductTemplatesTab = () => {
       calculation_rules: {
         heightTiers: [...formData.calculationRules.heightTiers],
         constructionOptions: [...formData.calculationRules.constructionOptions],
-        seamingOptions: [...formData.calculationRules.seamingOptions]
+        seamingOptions: [...formData.calculationRules.seamingOptions],
+        // Include pricing data in calculation_rules for persistence
+        baseMakingCost: parseFloat(formData.baseMakingCost) || 0,
+        baseHeightLimit: parseFloat(formData.baseHeightLimit) || 2.4,
+        useHeightSurcharges: formData.useHeightSurcharges,
+        heightSurcharge1: parseFloat(formData.heightSurcharge1) || 0,
+        heightSurcharge2: parseFloat(formData.heightSurcharge2) || 0,
+        heightSurcharge3: parseFloat(formData.heightSurcharge3) || 0,
+        heightRange1Start: parseFloat(formData.heightRange1Start) || 2.4,
+        heightRange1End: parseFloat(formData.heightRange1End) || 3.0,
+        heightRange2Start: parseFloat(formData.heightRange2Start) || 3.0,
+        heightRange2End: parseFloat(formData.heightRange2End) || 4.0,
+        heightRange3Start: parseFloat(formData.heightRange3Start) || 4.0,
+        selectedPricingGrid: formData.selectedPricingGrid,
+        complexityMultiplier: formData.complexityMultiplier,
+        showComplexityOption: formData.showComplexityOption
       },
       making_cost_required: requiresMakingCost,
       pricing_grid_required: requiresPricingGrid,
       active: true
     };
+
+    console.log("=== SAVING TEMPLATE DATA ===", templateData);
 
     try {
       if (editingId) {
@@ -204,6 +221,8 @@ export const ProductTemplatesTab = () => {
     setEditingId(template.id);
     setIsCreating(true);
     
+    console.log("=== EDITING TEMPLATE ===", template);
+    
     // Convert components array back to selectedComponents object structure
     const selectedComponents = {
       headings: {},
@@ -213,42 +232,56 @@ export const ProductTemplatesTab = () => {
     };
     
     // If template has component selections, reconstruct the selectedComponents object
-    if (template.selectedComponents) {
-      Object.keys(template.selectedComponents).forEach(category => {
-        if (template.selectedComponents[category]) {
-          selectedComponents[category] = template.selectedComponents[category];
-        }
-      });
-    } else if (template.components && Array.isArray(template.components)) {
-      // Legacy support - if only components array exists, mark all as selected (but empty)
-      // This is a fallback for older templates that might not have the full structure
-      template.components.forEach(component => {
-        if (selectedComponents[component]) {
-          selectedComponents[component] = {};
-        }
-      });
+    if (template.components && typeof template.components === 'object') {
+      // If components is already in the correct format
+      if (template.components.headings) {
+        selectedComponents.headings = template.components.headings || {};
+      }
+      if (template.components.hardware) {
+        selectedComponents.hardware = template.components.hardware || {};
+      }
+      if (template.components.lining) {
+        selectedComponents.lining = template.components.lining || {};
+      }
+      if (template.components.services) {
+        selectedComponents.services = template.components.services || {};
+      }
     }
     
+    // Extract values with proper fallbacks
+    const baseMakingCost = template.baseMakingCost || template.calculation_rules?.baseMakingCost || "";
+    const baseHeightLimit = template.baseHeightLimit || template.calculation_rules?.baseHeightLimit || "2.4";
+    const heightSurcharge1 = template.heightSurcharge1 || template.calculation_rules?.heightSurcharge1 || "";
+    const heightSurcharge2 = template.heightSurcharge2 || template.calculation_rules?.heightSurcharge2 || "";
+    const heightSurcharge3 = template.heightSurcharge3 || template.calculation_rules?.heightSurcharge3 || "";
+    
+    console.log("Extracted template data:", {
+      selectedComponents,
+      baseMakingCost,
+      baseHeightLimit,
+      calculationRules: template.calculation_rules
+    });
+    
     setFormData({
-      name: template.name,
+      name: template.name || "",
       description: template.description || "",
       window_covering_id: windowCoverings.find(wc => wc.name === template.product_type)?.id || "",
-      calculationMethod: template.calculation_method,
-      pricingUnit: template.pricing_unit,
+      calculationMethod: template.calculation_method || "",
+      pricingUnit: template.pricing_unit || "",
       selectedPricingGrid: template.selectedPricingGrid || "",
-      baseMakingCost: template.baseMakingCost?.toString() || "",
-      baseHeightLimit: template.baseHeightLimit?.toString() || "2.4",
+      baseMakingCost: baseMakingCost.toString(),
+      baseHeightLimit: baseHeightLimit.toString(),
       useHeightSurcharges: template.useHeightSurcharges || false,
       complexityMultiplier: template.complexityMultiplier || "standard",
       showComplexityOption: template.showComplexityOption !== false,
-      heightSurcharge1: template.heightSurcharge1?.toString() || "",
-      heightSurcharge2: template.heightSurcharge2?.toString() || "", 
-      heightSurcharge3: template.heightSurcharge3?.toString() || "",
-      heightRange1Start: template.heightRange1Start?.toString() || "2.4",
-      heightRange1End: template.heightRange1End?.toString() || "3.0",
-      heightRange2Start: template.heightRange2Start?.toString() || "3.0", 
-      heightRange2End: template.heightRange2End?.toString() || "4.0",
-      heightRange3Start: template.heightRange3Start?.toString() || "4.0",
+      heightSurcharge1: heightSurcharge1.toString(),
+      heightSurcharge2: heightSurcharge2.toString(),
+      heightSurcharge3: heightSurcharge3.toString(),
+      heightRange1Start: (template.heightRange1Start || "2.4").toString(),
+      heightRange1End: (template.heightRange1End || "3.0").toString(),
+      heightRange2Start: (template.heightRange2Start || "3.0").toString(),
+      heightRange2End: (template.heightRange2End || "4.0").toString(),
+      heightRange3Start: (template.heightRange3Start || "4.0").toString(),
       selectedComponents: selectedComponents,
       calculationRules: {
         heightTiers: template.calculation_rules?.heightTiers || [],
