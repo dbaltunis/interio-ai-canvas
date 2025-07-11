@@ -1,16 +1,16 @@
-import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Palette, Check, Package, Plus } from "lucide-react";
+import { Search, Palette } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { formatCurrency } from "@/hooks/useBusinessSettings";
 
 interface FabricSelectorProps {
   selectedFabricId?: string;
@@ -19,133 +19,134 @@ interface FabricSelectorProps {
 
 export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [selectedType, setSelectedType] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [selectedFabric, setSelectedFabric] = useState<any>(null);
   
-  const { units, getFabricUnitLabel } = useMeasurementUnits();
-  
-  // Manual fabric entry state
   const [manualFabric, setManualFabric] = useState({
-    name: "",
-    color: "",
-    pattern: "",
-    type: "",
-    width: "",
-    cost_per_unit: "",
-    unit: units.fabric,
-    rotation: "vertical" as "vertical" | "horizontal",
-    notes: ""
+    name: '',
+    width: '',
+    pricePerUnit: '',
+    color: '',
+    pattern: '',
+    type: '',
+    rotation: 'vertical' as 'vertical' | 'horizontal'
   });
-  
-  const { data: inventory, isLoading } = useInventory();
-  
-  // Filter fabrics from inventory
-  const fabrics = useMemo(() => {
-    console.log('FabricSelector - Raw inventory data:', inventory);
-    console.log('FabricSelector - Total inventory items:', inventory?.length);
-    
-    const filteredFabrics = inventory?.filter(item => {
-      const isMatchingCategory = item.category?.toLowerCase() === 'fabric';
-      const isMatchingType = item.type?.toLowerCase().includes('fabric');
-      const isMatchingName = item.name?.toLowerCase().includes('fabric');
-      const matches = isMatchingCategory || isMatchingType || isMatchingName;
-      
-      if (matches) {
-        console.log('FabricSelector - Found fabric item:', item);
-      }
-      
-      return matches;
-    }) || [];
-    
-    console.log('FabricSelector - Filtered fabrics:', filteredFabrics);
-    console.log('FabricSelector - Found fabrics count:', filteredFabrics.length);
-    
-    return filteredFabrics;
-  }, [inventory]);
 
-  // Get selected fabric details
-  const selectedFabric = fabrics.find(f => f.id === selectedFabricId);
+  const { data: inventory, isLoading } = useInventory();
+  const { units } = useMeasurementUnits();
+  
+  const formatCurrency = (amount: number, currency = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
+  // Filter inventory to only show fabrics
+  const fabrics = useMemo(() => {
+    if (!inventory) {
+      console.log('FabricSelector - No inventory data available');
+      return [];
+    }
+    
+    const fabricItems = inventory.filter(item => 
+      item.category?.toLowerCase() === 'fabric' || 
+      item.type?.toLowerCase().includes('fabric')
+    );
+    
+    console.log('FabricSelector - Found fabrics:', fabricItems.length);
+    return fabricItems;
+  }, [inventory]);
 
   // Filter fabrics based on search and filters
   const filteredFabrics = useMemo(() => {
     return fabrics.filter(fabric => {
-      const matchesSearch = searchTerm === "" || 
+      const matchesSearch = !searchTerm || 
         fabric.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fabric.pattern?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         fabric.color?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fabric.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+        fabric.pattern?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesColor = selectedColor === "" || 
-        fabric.color?.toLowerCase().includes(selectedColor.toLowerCase());
+      const matchesColor = !selectedColor || fabric.color === selectedColor;
+      const matchesType = !selectedType || fabric.type === selectedType;
       
-      const matchesType = selectedType === "" || 
-        fabric.type?.toLowerCase().includes(selectedType.toLowerCase());
-
       return matchesSearch && matchesColor && matchesType;
     });
   }, [fabrics, searchTerm, selectedColor, selectedType]);
 
-  // Get unique colors and types for filters
-  const availableColors = useMemo(() => {
-    const colors = fabrics.map(f => f.color).filter(Boolean);
-    return [...new Set(colors)].sort();
+  // Get unique colors and types for filter options
+  const { uniqueColors, uniqueTypes } = useMemo(() => {
+    const colors = new Set(fabrics.map(f => f.color).filter(Boolean));
+    const types = new Set(fabrics.map(f => f.type).filter(Boolean));
+    
+    return {
+      uniqueColors: Array.from(colors),
+      uniqueTypes: Array.from(types)
+    };
   }, [fabrics]);
 
-  const availableTypes = useMemo(() => {
-    const types = fabrics.map(f => f.type).filter(Boolean);
-    return [...new Set(types)].sort();
-  }, [fabrics]);
+  // Update selected fabric when selectedFabricId changes
+  useEffect(() => {
+    if (selectedFabricId && fabrics.length > 0) {
+      const fabric = fabrics.find(f => f.id === selectedFabricId);
+      if (fabric) {
+        setSelectedFabric(fabric);
+      }
+    }
+  }, [selectedFabricId, fabrics]);
 
   const handleSelectFabric = (fabric: any) => {
+    console.log('FabricSelector - Fabric selected:', fabric);
+    setSelectedFabric(fabric);
     onSelectFabric(fabric.id, fabric);
     setIsOpen(false);
   };
 
   const handleManualFabricSubmit = () => {
-    if (!manualFabric.name.trim()) {
-      return; // Basic validation
+    if (!manualFabric.name || !manualFabric.width || !manualFabric.pricePerUnit) {
+      return; // Don't submit if required fields are missing
     }
-    
-    // Create a unique ID for manual fabric
-    const manualId = `manual-${Date.now()}`;
+
     const fabricData = {
-      id: manualId,
-      ...manualFabric,
-      cost_per_unit: parseFloat(manualFabric.cost_per_unit) || 0,
-      width: parseFloat(manualFabric.width) || 0,
-      quantity: 0, // Manual entries don't have inventory quantity
-      category: 'fabric'
+      id: `manual-${Date.now()}`,
+      name: manualFabric.name,
+      width: parseFloat(manualFabric.width),
+      cost_per_unit: parseFloat(manualFabric.pricePerUnit),
+      color: manualFabric.color,
+      pattern: manualFabric.pattern,
+      type: manualFabric.type,
+      rotation: manualFabric.rotation,
+      unit: units.fabric,
+      isManual: true,
+      quantity: 999 // Set high quantity for manual fabrics
     };
     
-    onSelectFabric(manualId, fabricData);
+    console.log('FabricSelector - Manual fabric created:', fabricData);
+    setSelectedFabric(fabricData);
+    onSelectFabric(fabricData.id, fabricData);
     setIsOpen(false);
     
     // Reset manual form
     setManualFabric({
-      name: "",
-      color: "",
-      pattern: "",
-      type: "",
-      width: "",
-      cost_per_unit: "",
-      unit: units.fabric,
-      rotation: "vertical" as "vertical" | "horizontal",
-      notes: ""
+      name: '',
+      width: '',
+      pricePerUnit: '',
+      color: '',
+      pattern: '',
+      type: '',
+      rotation: 'vertical'
     });
   };
 
   const handleManualInputChange = (field: string, value: string) => {
-    setManualFabric(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setManualFabric(prev => ({ ...prev, [field]: value }));
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
-    setSelectedColor("");
-    setSelectedType("");
+    setSearchTerm('');
+    setSelectedColor('');
+    setSelectedType('');
   };
 
   return (
@@ -176,7 +177,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                      <div className="mt-1 flex items-center justify-between text-xs">
                        <span>
                          {selectedFabric.width ? `${selectedFabric.width}" wide` : ''}
-                         {(selectedFabric as any).rotation ? ` • ${(selectedFabric as any).rotation}` : ''}
+                         {selectedFabric.rotation ? ` • ${selectedFabric.rotation}` : ''}
                        </span>
                       {selectedFabric.cost_per_unit && (
                         <span className="font-medium">
@@ -202,284 +203,208 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Select Fabric
-          </DialogTitle>
+          <DialogTitle>Select Fabric</DialogTitle>
         </DialogHeader>
-
-        <Tabs defaultValue="library" className="flex flex-col h-full min-h-0">
+        
+        <Tabs defaultValue="library" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="library" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              From Library
-              <Badge variant="secondary">{filteredFabrics.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="manual" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Manual Entry
-            </TabsTrigger>
+            <TabsTrigger value="library">From Library</TabsTrigger>
+            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="library" className="flex-1 min-h-0 mt-4">
+          <TabsContent value="library" className="space-y-4">
             {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2">Loading fabrics...</span>
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
-              <div className="flex flex-col h-full min-h-0">
+              <>
                 {/* Search and Filters */}
-                <div className="space-y-4 mb-4 flex-shrink-0">
+                <div className="space-y-4">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Search fabrics by name, color, pattern, or SKU..."
+                      placeholder="Search fabrics..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                   
-                  <div className="flex gap-3 flex-wrap">
-                    <div className="flex-1 min-w-32">
-                      <Label className="text-xs">Color</Label>
-                      <select 
-                        value={selectedColor} 
-                        onChange={(e) => setSelectedColor(e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border rounded-md text-sm bg-white"
-                      >
-                        <option value="">All Colors</option>
-                        {availableColors.map(color => (
-                          <option key={color} value={color}>{color}</option>
+                  <div className="flex gap-4">
+                    <Select value={selectedColor} onValueChange={setSelectedColor}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueColors.map(color => (
+                          <SelectItem key={color} value={color}>{color}</SelectItem>
                         ))}
-                      </select>
-                    </div>
+                      </SelectContent>
+                    </Select>
                     
-                    <div className="flex-1 min-w-32">
-                      <Label className="text-xs">Type</Label>
-                      <select 
-                        value={selectedType} 
-                        onChange={(e) => setSelectedType(e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border rounded-md text-sm bg-white"
-                      >
-                        <option value="">All Types</option>
-                        {availableTypes.map(type => (
-                          <option key={type} value={type}>{type}</option>
+                    <Select value={selectedType} onValueChange={setSelectedType}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueTypes.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
-                      </select>
-                    </div>
+                      </SelectContent>
+                    </Select>
                     
-                    <div className="flex items-end">
-                      <Button variant="outline" size="sm" onClick={clearFilters}>
-                        Clear Filters
-                      </Button>
-                    </div>
+                    <Button variant="outline" onClick={clearFilters}>
+                      Clear Filters
+                    </Button>
                   </div>
                 </div>
-
-                {/* Fabric Grid */}
-                <div className="flex-1 min-h-0">
-                  <ScrollArea className="h-full">
-                    {filteredFabrics.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p className="font-medium">No fabrics found</p>
-                        <p className="text-sm">Try adjusting your search or filters</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-1">
-                        {filteredFabrics.map((fabric) => (
-                          <Card
-                            key={fabric.id}
-                            className={`p-3 cursor-pointer transition-all hover:shadow-md border-2 ${
-                              selectedFabricId === fabric.id 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-border hover:border-primary/50'
-                            }`}
-                            onClick={() => handleSelectFabric(fabric)}
-                          >
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-sm truncate">{fabric.name}</h4>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {fabric.sku && `SKU: ${fabric.sku}`}
-                                  </p>
+                
+                {/* Results */}
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {filteredFabrics.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      {fabrics.length === 0 ? 'No fabrics in inventory' : 'No fabrics match your search'}
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {filteredFabrics.map((fabric) => (
+                        <Card 
+                          key={fabric.id} 
+                          className="cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => handleSelectFabric(fabric)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-2">
+                                <h3 className="font-medium">{fabric.name}</h3>
+                                <div className="flex gap-2 flex-wrap">
+                                  {fabric.color && (
+                                    <Badge variant="secondary" className="text-xs">{fabric.color}</Badge>
+                                  )}
+                                  {fabric.pattern && (
+                                    <Badge variant="secondary" className="text-xs">{fabric.pattern}</Badge>
+                                  )}
+                                  {fabric.type && (
+                                    <Badge variant="secondary" className="text-xs">{fabric.type}</Badge>
+                                  )}
                                 </div>
-                                {selectedFabricId === fabric.id && (
-                                  <Check className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
-                                )}
-                              </div>
-                              
-                              <div className="space-y-1">
-                                {fabric.color && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {fabric.color}
-                                  </Badge>
-                                )}
-                                {fabric.pattern && (
-                                  <Badge variant="outline" className="text-xs ml-1">
-                                    {fabric.pattern}
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="text-xs text-muted-foreground space-y-1">
-                                {fabric.type && (
-                                  <div>Type: {fabric.type}</div>
-                                )}
-                                <div className="flex justify-between">
-                                  <span>Available:</span>
-                                  <span className="font-medium">
-                                    {fabric.quantity} {fabric.unit}
-                                  </span>
+                                <div className="text-sm text-muted-foreground">
+                                  {fabric.width && `${fabric.width}" wide`}
+                                  {fabric.quantity !== undefined && ` • ${fabric.quantity} ${fabric.unit || 'units'} available`}
                                 </div>
-                                 {fabric.cost_per_unit && (
-                                   <div className="flex justify-between">
-                                     <span>Cost:</span>
-                                     <span className="font-medium">
-                                       {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit}
-                                     </span>
-                                   </div>
-                                 )}
+                              </div>
+                              <div className="text-right">
+                                {fabric.cost_per_unit && (
+                                  <div className="font-medium">
+                                    {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit || units.fabric}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
+              </>
             )}
           </TabsContent>
-
-          <TabsContent value="manual" className="flex-1 min-h-0 mt-4">
-            <div className="space-y-4 max-w-2xl mx-auto">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-medium">Manual Fabric Entry</h3>
-                <p className="text-sm text-muted-foreground">Enter fabric details manually</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-name">Fabric Name *</Label>
-                  <Input
-                    id="fabric-name"
-                    placeholder="e.g., Premium Cotton Velvet"
-                    value={manualFabric.name}
-                    onChange={(e) => handleManualInputChange('name', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-color">Color</Label>
-                  <Input
-                    id="fabric-color"
-                    placeholder="e.g., Navy Blue"
-                    value={manualFabric.color}
-                    onChange={(e) => handleManualInputChange('color', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-pattern">Pattern</Label>
-                  <Input
-                    id="fabric-pattern"
-                    placeholder="e.g., Solid, Striped, Floral"
-                    value={manualFabric.pattern}
-                    onChange={(e) => handleManualInputChange('pattern', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-type">Type</Label>
-                  <Input
-                    id="fabric-type"
-                    placeholder="e.g., Cotton, Silk, Linen"
-                    value={manualFabric.type}
-                    onChange={(e) => handleManualInputChange('type', e.target.value)}
-                  />
-                </div>
-                
-                 <div className="space-y-2">
-                   <Label htmlFor="fabric-width">Width ({units.length === 'inches' ? 'inches' : 'cm'})</Label>
-                   <Input
-                     id="fabric-width"
-                     type="number"
-                     placeholder={units.length === 'inches' ? '54' : '137'}
-                     value={manualFabric.width}
-                     onChange={(e) => handleManualInputChange('width', e.target.value)}
-                   />
-                 </div>
-                
-                 <div className="space-y-2">
-                   <Label htmlFor="fabric-cost">Cost per {getFabricUnitLabel()} ({units.currency})</Label>
-                   <Input
-                     id="fabric-cost"
-                     type="number"
-                     step="0.01"
-                     placeholder="25.00"
-                     value={manualFabric.cost_per_unit}
-                     onChange={(e) => handleManualInputChange('cost_per_unit', e.target.value)}
-                   />
-                 </div>
-                
-                 <div className="space-y-2">
-                   <Label>Fabric Rotation</Label>
-                   <div className="flex gap-4">
-                     <label className="flex items-center space-x-2 cursor-pointer">
-                       <input
-                         type="radio"
-                         name="fabric-rotation"
-                         value="vertical"
-                         checked={manualFabric.rotation === 'vertical'}
-                         onChange={(e) => handleManualInputChange('rotation', e.target.value)}
-                         className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
-                       />
-                       <span className="text-sm">Vertical</span>
-                     </label>
-                     <label className="flex items-center space-x-2 cursor-pointer">
-                       <input
-                         type="radio"
-                         name="fabric-rotation"
-                         value="horizontal"
-                         checked={manualFabric.rotation === 'horizontal'}
-                         onChange={(e) => handleManualInputChange('rotation', e.target.value)}
-                         className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
-                       />
-                       <span className="text-sm">Horizontal</span>
-                     </label>
-                   </div>
-                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fabric-notes">Notes (Optional)</Label>
+          
+          <TabsContent value="manual" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fabric-name">Fabric Name *</Label>
                 <Input
-                  id="fabric-notes"
-                  placeholder="Additional fabric details..."
-                  value={manualFabric.notes}
-                  onChange={(e) => handleManualInputChange('notes', e.target.value)}
+                  id="fabric-name"
+                  value={manualFabric.name}
+                  onChange={(e) => handleManualInputChange('name', e.target.value)}
+                  placeholder="Enter fabric name"
                 />
               </div>
               
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleManualFabricSubmit}
-                  disabled={!manualFabric.name.trim()}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Fabric
-                </Button>
+              <div>
+                <Label htmlFor="fabric-width">Width ({units.fabric}) *</Label>
+                <Input
+                  id="fabric-width"
+                  type="number"
+                  value={manualFabric.width}
+                  onChange={(e) => handleManualInputChange('width', e.target.value)}
+                  placeholder="Enter width"
+                />
               </div>
+              
+              <div>
+                <Label htmlFor="fabric-price">Price per {units.fabric} *</Label>
+                <Input
+                  id="fabric-price"
+                  type="number"
+                  step="0.01"
+                  value={manualFabric.pricePerUnit}
+                  onChange={(e) => handleManualInputChange('pricePerUnit', e.target.value)}
+                  placeholder="Enter price"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="fabric-color">Color</Label>
+                <Input
+                  id="fabric-color"
+                  value={manualFabric.color}
+                  onChange={(e) => handleManualInputChange('color', e.target.value)}
+                  placeholder="Enter color"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="fabric-pattern">Pattern</Label>
+                <Input
+                  id="fabric-pattern"
+                  value={manualFabric.pattern}
+                  onChange={(e) => handleManualInputChange('pattern', e.target.value)}
+                  placeholder="Enter pattern"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="fabric-type">Type</Label>
+                <Input
+                  id="fabric-type"
+                  value={manualFabric.type}
+                  onChange={(e) => handleManualInputChange('type', e.target.value)}
+                  placeholder="Enter type"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>Fabric Rotation</Label>
+              <RadioGroup 
+                value={manualFabric.rotation} 
+                onValueChange={(value: 'vertical' | 'horizontal') => handleManualInputChange('rotation', value)}
+                className="flex gap-6 mt-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="vertical" id="vertical" />
+                  <Label htmlFor="vertical">Vertical</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="horizontal" id="horizontal" />
+                  <Label htmlFor="horizontal">Horizontal</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="flex justify-end pt-4">
+              <Button 
+                onClick={handleManualFabricSubmit}
+                disabled={!manualFabric.name || !manualFabric.width || !manualFabric.pricePerUnit}
+              >
+                Add Fabric
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

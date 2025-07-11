@@ -48,7 +48,7 @@ export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps
   }
 
   // Check if project has a temporary ID (not yet saved to database)
-  const isTemporaryProject = projectId.toString().startsWith('temp-');
+  const isTemporaryProject = !projectId || projectId.toString().startsWith('temp-') || projectId.toString().length < 10;
   if (isTemporaryProject) {
     return (
       <div className="flex items-center justify-center p-8">
