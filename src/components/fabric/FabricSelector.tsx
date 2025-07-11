@@ -159,10 +159,36 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
             <Palette className="h-4 w-4 mr-2 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               {selectedFabric ? (
-                <div>
+                <div className="space-y-1">
                   <div className="font-medium truncate">{selectedFabric.name}</div>
-                  <div className="text-sm text-muted-foreground truncate">
-                    {selectedFabric.color} • {selectedFabric.pattern} • {selectedFabric.quantity} {selectedFabric.unit} available
+                  <div className="text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedFabric.color && (
+                        <Badge variant="outline" className="text-xs">{selectedFabric.color}</Badge>
+                      )}
+                      {selectedFabric.pattern && (
+                        <Badge variant="outline" className="text-xs">{selectedFabric.pattern}</Badge>
+                      )}
+                      {selectedFabric.type && (
+                        <Badge variant="outline" className="text-xs">{selectedFabric.type}</Badge>
+                      )}
+                    </div>
+                     <div className="mt-1 flex items-center justify-between text-xs">
+                       <span>
+                         {selectedFabric.width ? `${selectedFabric.width}" wide` : ''}
+                         {(selectedFabric as any).rotation ? ` • ${(selectedFabric as any).rotation}` : ''}
+                       </span>
+                      {selectedFabric.cost_per_unit && (
+                        <span className="font-medium">
+                          {formatCurrency(selectedFabric.cost_per_unit, units.currency)}/{selectedFabric.unit || units.fabric}
+                        </span>
+                      )}
+                    </div>
+                    {selectedFabric.quantity !== undefined && (
+                      <div className="text-xs text-green-600 mt-1">
+                        ✓ {selectedFabric.quantity} {selectedFabric.unit || units.fabric} available
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
