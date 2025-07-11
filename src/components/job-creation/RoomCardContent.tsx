@@ -80,6 +80,7 @@ export const RoomCardContent = ({
           <SurfaceCreationButtons
             onCreateSurface={onCreateSurface}
             isCreating={isCreatingSurface}
+            hasSurfaces={roomSurfaces.length > 0}
           />
 
           <SurfacesList
