@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Palette, Check, Package, Plus } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatCurrency } from "@/hooks/useBusinessSettings";
 
 interface FabricSelectorProps {
   selectedFabricId?: string;
@@ -21,6 +23,8 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedType, setSelectedType] = useState("");
   
+  const { units, getFabricUnitLabel } = useMeasurementUnits();
+  
   // Manual fabric entry state
   const [manualFabric, setManualFabric] = useState({
     name: "",
@@ -29,7 +33,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     type: "",
     width: "",
     cost_per_unit: "",
-    unit: "yard",
+    unit: units.fabric,
     notes: ""
   });
   
@@ -124,7 +128,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
       type: "",
       width: "",
       cost_per_unit: "",
-      unit: "yard",
+      unit: units.fabric,
       notes: ""
     });
   };
@@ -305,14 +309,14 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                                     {fabric.quantity} {fabric.unit}
                                   </span>
                                 </div>
-                                {fabric.cost_per_unit && (
-                                  <div className="flex justify-between">
-                                    <span>Cost:</span>
-                                    <span className="font-medium">
-                                      ${fabric.cost_per_unit}/{fabric.unit}
-                                    </span>
-                                  </div>
-                                )}
+                                 {fabric.cost_per_unit && (
+                                   <div className="flex justify-between">
+                                     <span>Cost:</span>
+                                     <span className="font-medium">
+                                       {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit}
+                                     </span>
+                                   </div>
+                                 )}
                               </div>
                             </div>
                           </Card>
@@ -373,42 +377,43 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-width">Width (inches)</Label>
-                  <Input
-                    id="fabric-width"
-                    type="number"
-                    placeholder="54"
-                    value={manualFabric.width}
-                    onChange={(e) => handleManualInputChange('width', e.target.value)}
-                  />
-                </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="fabric-width">Width ({units.length === 'inches' ? 'inches' : 'cm'})</Label>
+                   <Input
+                     id="fabric-width"
+                     type="number"
+                     placeholder={units.length === 'inches' ? '54' : '137'}
+                     value={manualFabric.width}
+                     onChange={(e) => handleManualInputChange('width', e.target.value)}
+                   />
+                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-cost">Cost per Unit</Label>
-                  <Input
-                    id="fabric-cost"
-                    type="number"
-                    step="0.01"
-                    placeholder="25.00"
-                    value={manualFabric.cost_per_unit}
-                    onChange={(e) => handleManualInputChange('cost_per_unit', e.target.value)}
-                  />
-                </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="fabric-cost">Cost per {getFabricUnitLabel()} ({units.currency})</Label>
+                   <Input
+                     id="fabric-cost"
+                     type="number"
+                     step="0.01"
+                     placeholder="25.00"
+                     value={manualFabric.cost_per_unit}
+                     onChange={(e) => handleManualInputChange('cost_per_unit', e.target.value)}
+                   />
+                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="fabric-unit">Unit</Label>
-                  <select
-                    id="fabric-unit"
-                    value={manualFabric.unit}
-                    onChange={(e) => handleManualInputChange('unit', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-white"
-                  >
-                    <option value="yard">Yard</option>
-                    <option value="meter">Meter</option>
-                    <option value="roll">Roll</option>
-                  </select>
-                </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="fabric-unit">Unit</Label>
+                   <select
+                     id="fabric-unit"
+                     value={manualFabric.unit}
+                     onChange={(e) => handleManualInputChange('unit', e.target.value)}
+                     className="w-full px-3 py-2 border rounded-md text-sm bg-white"
+                   >
+                     <option value="cm">cm</option>
+                     <option value="m">m</option>
+                     <option value="inches">inches</option>
+                     <option value="yards">yards</option>
+                   </select>
+                 </div>
               </div>
               
               <div className="space-y-2">
