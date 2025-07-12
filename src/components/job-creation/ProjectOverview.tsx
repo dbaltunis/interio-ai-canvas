@@ -1,16 +1,32 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Square, Settings2, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Square, Settings2, DollarSign, Plus } from "lucide-react";
+import { useState } from "react";
+import { InteractiveProjectDialog } from "./InteractiveProjectDialog";
 
 interface ProjectOverviewProps {
   project: any;
   rooms: any[];
   surfaces: any[];
   treatments: any[];
+  onCreateRoom?: () => void;
+  onCreateSurface?: (roomId: string, surfaceType: string) => void;
+  onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
 }
 
-export const ProjectOverview = ({ project, rooms, surfaces, treatments }: ProjectOverviewProps) => {
+export const ProjectOverview = ({ 
+  project, 
+  rooms, 
+  surfaces, 
+  treatments,
+  onCreateRoom,
+  onCreateSurface,
+  onCreateTreatment
+}: ProjectOverviewProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<'rooms' | 'surfaces' | 'treatments' | 'connect'>('rooms');
+
   console.log("ProjectOverview render data:", { project, rooms, surfaces, treatments });
 
   // Safely calculate totals with error handling
@@ -30,57 +46,83 @@ export const ProjectOverview = ({ project, rooms, surfaces, treatments }: Projec
     return sum + calculateTreatmentTotal(treatment);
   }, 0) || 0;
 
+  const handleCardClick = (type: 'rooms' | 'surfaces' | 'treatments' | 'connect') => {
+    setDialogType(type);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
+          onClick={() => handleCardClick('rooms')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rooms</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <Plus className="h-3 w-3 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{rooms?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Total rooms in project
+              Click to add rooms
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
+          onClick={() => handleCardClick('surfaces')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Surfaces</CardTitle>
-            <Square className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <Square className="h-4 w-4 text-muted-foreground" />
+              <Plus className="h-3 w-3 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{surfaces?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Windows and walls
+              Click to add windows & walls
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
+          onClick={() => handleCardClick('treatments')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Treatments</CardTitle>
-            <Settings2 className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              <Plus className="h-3 w-3 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{treatments?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Configured treatments
+              Click for advanced treatments
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-green-500"
+          onClick={() => handleCardClick('connect')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Connect & Calculate</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${projectTotal.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-600">${projectTotal.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Project total
+              Advanced calculations
             </p>
           </CardContent>
         </Card>
@@ -127,12 +169,29 @@ export const ProjectOverview = ({ project, rooms, surfaces, treatments }: Projec
           <CardContent className="p-6 text-center">
             <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground mb-2">No Rooms Yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Start by adding rooms to your project using the Quick Create tab or Advanced tab.
+            <p className="text-sm text-muted-foreground mb-4">
+              Click on the cards above to start adding rooms, surfaces, and treatments.
             </p>
+            <Button onClick={() => handleCardClick('rooms')} variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Get Started
+            </Button>
           </CardContent>
         </Card>
       )}
+
+      <InteractiveProjectDialog
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        type={dialogType}
+        project={project}
+        rooms={rooms}
+        surfaces={surfaces}
+        treatments={treatments}
+        onCreateRoom={onCreateRoom}
+        onCreateSurface={onCreateSurface}
+        onCreateTreatment={onCreateTreatment}
+      />
     </div>
   );
 };
