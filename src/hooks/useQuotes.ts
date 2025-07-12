@@ -21,13 +21,23 @@ export const useQuotes = () => {
         .select(`
           *,
           projects (
+            id,
             name,
             client_id,
-            job_number
+            job_number,
+            priority,
+            status,
+            start_date,
+            due_date,
+            completion_date,
+            description
           ),
           clients (
+            id,
             name,
-            company_name
+            company_name,
+            email,
+            phone
           )
         `)
         .order("created_at", { ascending: false });

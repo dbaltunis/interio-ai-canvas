@@ -74,18 +74,26 @@ export const JobsListView = ({
         .map(quote => {
           console.log("Processing quote:", quote.id, quote);
           
-          const client = quote.client_id ? clientsMap[quote.client_id] : null;
+          const client = quote.client_id ? clientsMap[quote.client_id] : quote.clients;
+          const project = quote.projects;
+          
           console.log("Found client for quote:", client);
+          console.log("Found project for quote:", project);
           
           return {
             ...quote,
             client,
-            // Ensure we have required fields with defaults
-            name: quote.name || quote.project_name || `Project ${quote.id?.slice(0, 8)}`,
-            status: quote.status || 'planning',
-            priority: quote.priority || 'medium',
+            project,
+            // Use project data or fallback to quote data with defaults
+            name: project?.name || quote.quote_number || `Quote ${quote.id?.slice(0, 8)}`,
+            status: project?.status || quote.status || 'draft',
+            priority: project?.priority || 'medium',
             total_amount: quote.total_amount || 0,
-            job_number: quote.job_number || `JOB-${quote.id?.slice(0, 8)}`,
+            job_number: project?.job_number || quote.quote_number || `QUOTE-${quote.id?.slice(0, 8)}`,
+            start_date: project?.start_date,
+            due_date: project?.due_date,
+            completion_date: project?.completion_date,
+            description: project?.description || quote.notes,
           };
         })
         .filter(job => {
