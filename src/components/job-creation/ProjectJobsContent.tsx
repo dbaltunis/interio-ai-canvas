@@ -93,7 +93,7 @@ export const ProjectJobsContent = ({
         rooms={rooms}
         surfaces={allSurfaces || []}
         treatments={allTreatments || []}
-        projectTotal={projectTotal.toString()}
+        projectTotal={projectTotal}
       />
 
       {/* Quick Treatment Creator */}
