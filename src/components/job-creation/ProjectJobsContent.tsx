@@ -91,15 +91,7 @@ export const ProjectJobsContent = ({
 
   return (
     <div className="min-h-[400px]">
-      {/* Always show blueprint */}
-      <ProjectBlueprint 
-        rooms={rooms}
-        surfaces={allSurfaces || []}
-        treatments={allTreatments || []}
-        projectTotal={projectTotalNumber.toString()}
-      />
-
-      {/* Use Streamlined Interface */}
+      {/* Use Streamlined Interface as the main interface */}
       <div className="mb-6">
         <StreamlinedJobsInterface
           project={project}
@@ -109,11 +101,6 @@ export const ProjectJobsContent = ({
           onCreateTreatment={handleCreateTreatment}
         />
       </div>
-
-      {/* Quick Treatment Creator */}
-      <QuickTreatmentCreator 
-        onCreateTreatment={handleQuickCreate}
-      />
     </div>
   );
 };

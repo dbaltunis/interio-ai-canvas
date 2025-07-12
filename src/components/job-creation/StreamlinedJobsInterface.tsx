@@ -119,7 +119,7 @@ export const StreamlinedJobsInterface = ({
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-lg font-semibold mb-2">Project Management</h3>
-        <p className="text-muted-foreground">Click + buttons to add rooms, windows, and treatments</p>
+        <p className="text-muted-foreground">Click + buttons to add rooms, windows, and treatments instantly</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
