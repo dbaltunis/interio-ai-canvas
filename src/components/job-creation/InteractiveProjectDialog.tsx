@@ -42,9 +42,9 @@ export const InteractiveProjectDialog = ({
   const [treatmentType, setTreatmentType] = useState('curtains');
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   
-  // New simplified room creation state
+  // Room creation state - starting from 1
   const [numberOfRooms, setNumberOfRooms] = useState(4);
-  const [roomNames, setRoomNames] = useState<string[]>(Array(4).fill(""));
+  const [roomNames, setRoomNames] = useState<string[]>(Array(4).fill("").map((_, index) => `Room ${index + 1}`));
   const [isCreatingRooms, setIsCreatingRooms] = useState(false);
 
   const getDialogTitle = () => {
@@ -59,9 +59,9 @@ export const InteractiveProjectDialog = ({
 
   const handleNumberOfRoomsChange = (value: string) => {
     const num = parseInt(value) || 0;
-    if (num >= 1 && num <= 20) { // reasonable limits
+    if (num >= 1 && num <= 20) {
       setNumberOfRooms(num);
-      // Adjust the roomNames array to match the new number
+      // Adjust the roomNames array to match the new number, starting from Room 1
       const newRoomNames = Array(num).fill("").map((_, index) => 
         roomNames[index] || `Room ${index + 1}`
       );
@@ -88,7 +88,7 @@ export const InteractiveProjectDialog = ({
       
       // Reset the form and close dialog
       setNumberOfRooms(4);
-      setRoomNames(Array(4).fill(""));
+      setRoomNames(Array(4).fill("").map((_, index) => `Room ${index + 1}`));
       onClose();
     } catch (error) {
       console.error("Failed to create rooms:", error);
