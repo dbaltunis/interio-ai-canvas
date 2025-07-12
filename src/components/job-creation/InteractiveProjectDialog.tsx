@@ -79,26 +79,29 @@ export const InteractiveProjectDialog = ({
 
   const handleCreateAllRooms = async () => {
     const validRoomNames = roomNames.filter(name => name.trim());
-    if (validRoomNames.length === 0) return;
+    if (validRoomNames.length === 0 || !onCreateRoom) return;
 
     setIsCreatingRooms(true);
     try {
-      // Create rooms sequentially with proper await
+      console.log("Creating rooms:", validRoomNames);
+      
+      // Create rooms sequentially with proper await and error handling
       for (let i = 0; i < validRoomNames.length; i++) {
-        if (onCreateRoom) {
-          await onCreateRoom({
-            name: validRoomNames[i].trim(),
-            room_type: "living_room"
-          });
-        }
+        const roomData = {
+          name: validRoomNames[i].trim(),
+          room_type: "living_room"
+        };
+        console.log(`Creating room ${i + 1}:`, roomData);
+        await onCreateRoom(roomData);
+        // Small delay between creations to avoid database conflicts
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
+      
+      console.log("All rooms created successfully");
       
       // Reset the form
       setNumberOfRooms(4);
       setRoomNames(Array(4).fill("").map((_, index) => `Room ${index + 1}`));
-      
-      // Small delay to allow data to propagate
-      await new Promise(resolve => setTimeout(resolve, 500));
       
     } catch (error) {
       console.error("Failed to create rooms:", error);
@@ -109,11 +112,15 @@ export const InteractiveProjectDialog = ({
 
   const handleSaveAndClose = async () => {
     await handleCreateAllRooms();
+    // Wait a bit longer for the database to update
+    await new Promise(resolve => setTimeout(resolve, 1000));
     onClose();
   };
 
   const handleAddWindows = async () => {
     await handleCreateAllRooms();
+    // Wait for rooms to be created before showing windows canvas
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setShowWindowsCanvas(true);
   };
 

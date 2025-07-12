@@ -47,7 +47,8 @@ export const ProjectJobsContent = ({
     handleChangeRoomType,
     handleQuickCreateTreatment,
     updateRoom,
-    deleteRoom
+    deleteRoom,
+    createRoom
   } = useJobHandlers(project);
 
   console.log("Job handlers data:", {
@@ -114,10 +115,28 @@ export const ProjectJobsContent = ({
     }
   };
 
-  // Wrapper to convert onCreateRoom to match expected signature
-  const handleCreateRoomWithAsync = async (roomData?: { name: string; room_type: string }) => {
-    // Call the original onCreateRoom function
-    onCreateRoom();
+  // Proper room creation handler that uses the createRoom mutation
+  const handleCreateRoomWithData = async (roomData?: { name: string; room_type: string }) => {
+    try {
+      if (roomData) {
+        console.log("Creating room with data:", roomData);
+        await createRoom.mutateAsync({
+          name: roomData.name,
+          room_type: roomData.room_type,
+          project_id: project.id
+        });
+      } else {
+        // Fallback to original function for cases without data
+        onCreateRoom();
+      }
+    } catch (error) {
+      console.error("Failed to create room:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create room. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -137,7 +156,7 @@ export const ProjectJobsContent = ({
           rooms={rooms || []}
           surfaces={allSurfaces || []}
           treatments={allTreatments || []}
-          onCreateRoom={handleCreateRoomWithAsync}
+          onCreateRoom={handleCreateRoomWithData}
           onCreateSurface={handleCreateSurface}
           onCreateTreatment={handleCreateTreatment}
           onUpdateRoom={handleUpdateRoom}
