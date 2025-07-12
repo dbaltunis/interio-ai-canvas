@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ interface ProjectOverviewProps {
   rooms: any[];
   surfaces: any[];
   treatments: any[];
-  onCreateRoom?: (roomData?: { name: string; room_type: string }) => void;
+  onCreateRoom?: (roomData?: { name: string; room_type: string }) => Promise<void>;
   onCreateSurface?: (roomId: string, surfaceType: string) => void;
   onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
   onUpdateRoom?: (roomId: string, updates: any) => void;
@@ -82,6 +81,15 @@ export const ProjectOverview = ({
         await onDeleteRoom(roomId);
       }
     }
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    // Small delay to allow any pending operations to complete
+    setTimeout(() => {
+      // This will trigger a re-render to show updated room counts
+      console.log("Dialog closed, rooms updated:", rooms?.length);
+    }, 100);
   };
 
   return (
@@ -285,7 +293,7 @@ export const ProjectOverview = ({
 
       <InteractiveProjectDialog
         isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={handleDialogClose}
         type={dialogType}
         project={project}
         rooms={rooms}

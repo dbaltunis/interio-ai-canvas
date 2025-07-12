@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Home, Square, Settings2, Calculator, Link } from "lucide-react";
+import { Plus, Home, Square, Settings2, Calculator, Link, Save, X } from "lucide-react";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+import { WindowsCanvasInterface } from "./WindowsCanvasInterface";
 
 interface InteractiveProjectDialogProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ interface InteractiveProjectDialogProps {
   rooms: any[];
   surfaces: any[];
   treatments: any[];
-  onCreateRoom?: (roomData?: { name: string; room_type: string }) => void;
+  onCreateRoom?: (roomData?: { name: string; room_type: string }) => Promise<void>;
   onCreateSurface?: (roomId: string, surfaceType: string) => void;
   onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
 }
@@ -41,6 +41,7 @@ export const InteractiveProjectDialog = ({
   const [surfaceType, setSurfaceType] = useState<'window' | 'wall'>('window');
   const [treatmentType, setTreatmentType] = useState('curtains');
   const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [showWindowsCanvas, setShowWindowsCanvas] = useState(false);
   
   // Room creation state - starting from 1
   const [numberOfRooms, setNumberOfRooms] = useState(4);
@@ -48,6 +49,7 @@ export const InteractiveProjectDialog = ({
   const [isCreatingRooms, setIsCreatingRooms] = useState(false);
 
   const getDialogTitle = () => {
+    if (showWindowsCanvas) return 'Add Windows';
     switch (type) {
       case 'rooms': return 'Add Rooms';
       case 'surfaces': return 'Add Windows & Walls';
@@ -81,23 +83,38 @@ export const InteractiveProjectDialog = ({
 
     setIsCreatingRooms(true);
     try {
-      // Create rooms sequentially with their specific names
+      // Create rooms sequentially with proper await
       for (let i = 0; i < validRoomNames.length; i++) {
-        await onCreateRoom?.({
-          name: validRoomNames[i].trim(),
-          room_type: "living_room"
-        });
+        if (onCreateRoom) {
+          await onCreateRoom({
+            name: validRoomNames[i].trim(),
+            room_type: "living_room"
+          });
+        }
       }
       
-      // Reset the form and close dialog
+      // Reset the form
       setNumberOfRooms(4);
       setRoomNames(Array(4).fill("").map((_, index) => `Room ${index + 1}`));
-      onClose();
+      
+      // Small delay to allow data to propagate
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
     } catch (error) {
       console.error("Failed to create rooms:", error);
     } finally {
       setIsCreatingRooms(false);
     }
+  };
+
+  const handleSaveAndClose = async () => {
+    await handleCreateAllRooms();
+    onClose();
+  };
+
+  const handleAddWindows = async () => {
+    await handleCreateAllRooms();
+    setShowWindowsCanvas(true);
   };
 
   const handleCreateSurface = () => {
@@ -121,6 +138,49 @@ export const InteractiveProjectDialog = ({
   };
 
   const validRoomCount = roomNames.filter(name => name.trim()).length;
+  const existingRoomCount = rooms?.length || 0;
+
+  // If showing windows canvas, render that interface
+  if (showWindowsCanvas) {
+    return (
+      <>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Square className="h-5 w-5" />
+                Add Windows
+              </DialogTitle>
+            </DialogHeader>
+
+            <WindowsCanvasInterface
+              rooms={rooms}
+              surfaces={surfaces}
+              onCreateSurface={onCreateSurface}
+              onBack={() => setShowWindowsCanvas(false)}
+            />
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowWindowsCanvas(false)}>
+                Back to Rooms
+              </Button>
+              <Button onClick={onClose}>
+                <Save className="h-4 w-4 mr-2" />
+                Save and Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <TreatmentCalculatorDialog
+          isOpen={calculatorOpen}
+          onClose={() => setCalculatorOpen(false)}
+          onSave={handleCalculatorSave}
+          treatmentType={treatmentType}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -178,25 +238,18 @@ export const InteractiveProjectDialog = ({
                     <div className="pt-4 border-t">
                       <div className="flex justify-between items-center mb-4">
                         <div className="text-sm text-muted-foreground">
-                          <div>Selected: 0 existing + {validRoomCount} new rooms</div>
-                          <div>Total: {validRoomCount} rooms</div>
+                          <div>Selected: {existingRoomCount} existing + {validRoomCount} new rooms</div>
+                          <div>Total: {existingRoomCount + validRoomCount} rooms</div>
                         </div>
-                        <Button
-                          onClick={handleCreateAllRooms}
-                          disabled={isCreatingRooms || validRoomCount === 0}
-                          className="flex items-center gap-2"
-                        >
-                          {isCreatingRooms ? 'Creating Rooms...' : `Next: Product Details`}
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {rooms.length > 0 && (
+                {existingRoomCount > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Existing Rooms ({rooms.length})</CardTitle>
+                      <CardTitle className="text-lg">Existing Rooms ({existingRoomCount})</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2">
@@ -475,6 +528,37 @@ export const InteractiveProjectDialog = ({
               </div>
             )}
           </div>
+
+          <DialogFooter>
+            {type === 'rooms' && (
+              <>
+                <Button variant="outline" onClick={onClose}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveAndClose}
+                  disabled={isCreatingRooms || validRoomCount === 0}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isCreatingRooms ? 'Saving...' : 'Save and Close'}
+                </Button>
+                <Button 
+                  onClick={handleAddWindows}
+                  disabled={isCreatingRooms || validRoomCount === 0}
+                  variant="default"
+                >
+                  <Square className="h-4 w-4 mr-2" />
+                  {isCreatingRooms ? 'Creating Rooms...' : 'Add Windows'}
+                </Button>
+              </>
+            )}
+            {type !== 'rooms' && (
+              <Button onClick={onClose}>
+                Close
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
