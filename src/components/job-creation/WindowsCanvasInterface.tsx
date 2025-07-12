@@ -21,6 +21,7 @@ export const WindowsCanvasInterface = ({
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
   const handleAddWindow = (roomId: string) => {
+    console.log("Adding window to room:", roomId);
     setSelectedRoomId(roomId);
     onCreateSurface?.(roomId, 'window');
     // Small delay to show visual feedback
