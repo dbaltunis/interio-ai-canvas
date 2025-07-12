@@ -1,6 +1,7 @@
 import { RoomsGrid } from "./RoomsGrid";
 import { EmptyRoomsState } from "./EmptyRoomsState";
 import { ProjectBlueprint } from "./ProjectBlueprint";
+import { ProjectOverview } from "./ProjectOverview";
 import { QuickTreatmentCreator } from "./QuickTreatmentCreator";
 import { useJobHandlers } from "./JobHandlers";
 import { useToast } from "@/hooks/use-toast";
