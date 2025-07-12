@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Home, Square, Settings2, Calculator, Link, Save, X } from "lucide-react";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { WindowsCanvasInterface } from "./WindowsCanvasInterface";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCreateRoom } from "@/hooks/useRooms";
+import { useToast } from "@/hooks/use-toast";
 
 interface InteractiveProjectDialogProps {
   isOpen: boolean;
@@ -37,7 +38,8 @@ export const InteractiveProjectDialog = ({
   onCreateSurface,
   onCreateTreatment
 }: InteractiveProjectDialogProps) => {
-  const queryClient = useQueryClient();
+  const createRoom = useCreateRoom();
+  const { toast } = useToast();
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [selectedSurface, setSelectedSurface] = useState<string>("");
   const [surfaceType, setSurfaceType] = useState<'window' | 'wall'>('window');
@@ -81,35 +83,59 @@ export const InteractiveProjectDialog = ({
 
   const handleCreateAllRooms = async () => {
     const validRoomNames = roomNames.filter(name => name.trim());
-    if (validRoomNames.length === 0 || !onCreateRoom) return;
+    if (validRoomNames.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please enter at least one room name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!project?.id) {
+      toast({
+        title: "Error",
+        description: "No project selected",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsCreatingRooms(true);
     try {
-      console.log("Creating rooms:", validRoomNames);
+      console.log("Creating rooms directly:", validRoomNames);
       
-      // Create rooms sequentially with proper await and error handling
+      // Create rooms directly using the createRoom mutation
       for (let i = 0; i < validRoomNames.length; i++) {
         const roomData = {
           name: validRoomNames[i].trim(),
-          room_type: "living_room"
+          room_type: "living_room",
+          project_id: project.id
         };
         console.log(`Creating room ${i + 1}:`, roomData);
-        await onCreateRoom(roomData);
+        await createRoom.mutateAsync(roomData);
         // Small delay between creations to avoid database conflicts
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       console.log("All rooms created successfully");
       
-      // Force refresh the rooms query to update the UI immediately
-      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      
       // Reset the form
       setNumberOfRooms(4);
       setRoomNames(Array(4).fill("").map((_, index) => `Room ${index + 1}`));
       
+      toast({
+        title: "Success",
+        description: `Created ${validRoomNames.length} room${validRoomNames.length > 1 ? 's' : ''} successfully`,
+      });
+      
     } catch (error) {
       console.error("Failed to create rooms:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create rooms. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsCreatingRooms(false);
     }
@@ -117,16 +143,14 @@ export const InteractiveProjectDialog = ({
 
   const handleSaveAndClose = async () => {
     await handleCreateAllRooms();
-    // Force refresh queries and wait for update
-    await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    // Small delay to let the mutation complete
     await new Promise(resolve => setTimeout(resolve, 500));
     onClose();
   };
 
   const handleAddWindows = async () => {
     await handleCreateAllRooms();
-    // Force refresh queries before showing windows canvas
-    await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    // Small delay before showing windows canvas
     await new Promise(resolve => setTimeout(resolve, 500));
     setShowWindowsCanvas(true);
   };
