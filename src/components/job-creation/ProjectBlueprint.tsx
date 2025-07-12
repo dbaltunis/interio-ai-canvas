@@ -6,7 +6,7 @@ interface ProjectBlueprintProps {
   rooms: any[];
   surfaces: any[];
   treatments: any[];
-  projectTotal: number;
+  projectTotal: number; // Ensure this is number
 }
 
 export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: ProjectBlueprintProps) => {
@@ -59,7 +59,7 @@ export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: 
               {rooms.slice(0, 3).map((room: any) => {
                 const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
                 const roomTreatments = treatments.filter(t => t.room_id === room.id);
-                const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
+                const roomTotal = roomTreatments.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0);
                 return (
                   <div key={room.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
                     <span className="font-medium">{room.name}</span>
