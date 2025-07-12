@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Home, Square, Settings2, Calculator, Link, Save, X } from "lucide-react";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { WindowsCanvasInterface } from "./WindowsCanvasInterface";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface InteractiveProjectDialogProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export const InteractiveProjectDialog = ({
   onCreateSurface,
   onCreateTreatment
 }: InteractiveProjectDialogProps) => {
+  const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [selectedSurface, setSelectedSurface] = useState<string>("");
   const [surfaceType, setSurfaceType] = useState<'window' | 'wall'>('window');
@@ -99,6 +101,9 @@ export const InteractiveProjectDialog = ({
       
       console.log("All rooms created successfully");
       
+      // Force refresh the rooms query to update the UI immediately
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      
       // Reset the form
       setNumberOfRooms(4);
       setRoomNames(Array(4).fill("").map((_, index) => `Room ${index + 1}`));
@@ -112,15 +117,17 @@ export const InteractiveProjectDialog = ({
 
   const handleSaveAndClose = async () => {
     await handleCreateAllRooms();
-    // Wait a bit longer for the database to update
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Force refresh queries and wait for update
+    await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    await new Promise(resolve => setTimeout(resolve, 500));
     onClose();
   };
 
   const handleAddWindows = async () => {
     await handleCreateAllRooms();
-    // Wait for rooms to be created before showing windows canvas
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Force refresh queries before showing windows canvas
+    await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    await new Promise(resolve => setTimeout(resolve, 500));
     setShowWindowsCanvas(true);
   };
 
