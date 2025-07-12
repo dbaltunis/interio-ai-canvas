@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Home, Square, Settings2, Calculator, Link, Minus } from "lucide-react";
+import { Plus, Home, Square, Settings2, Calculator, Link } from "lucide-react";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 
 interface InteractiveProjectDialogProps {
@@ -21,11 +22,6 @@ interface InteractiveProjectDialogProps {
   onCreateRoom?: () => void;
   onCreateSurface?: (roomId: string, surfaceType: string) => void;
   onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
-}
-
-interface RoomToCreate {
-  name: string;
-  type: string;
 }
 
 export const InteractiveProjectDialog = ({
@@ -46,10 +42,9 @@ export const InteractiveProjectDialog = ({
   const [treatmentType, setTreatmentType] = useState('curtains');
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   
-  // New state for bulk room creation
-  const [roomsToCreate, setRoomsToCreate] = useState<RoomToCreate[]>([
-    { name: "", type: "living_room" }
-  ]);
+  // New simplified room creation state
+  const [numberOfRooms, setNumberOfRooms] = useState(4);
+  const [roomNames, setRoomNames] = useState<string[]>(Array(4).fill(""));
   const [isCreatingRooms, setIsCreatingRooms] = useState(false);
 
   const getDialogTitle = () => {
@@ -62,35 +57,38 @@ export const InteractiveProjectDialog = ({
     }
   };
 
-  const addRoomSlot = () => {
-    setRoomsToCreate([...roomsToCreate, { name: "", type: "living_room" }]);
-  };
-
-  const removeRoomSlot = (index: number) => {
-    if (roomsToCreate.length > 1) {
-      setRoomsToCreate(roomsToCreate.filter((_, i) => i !== index));
+  const handleNumberOfRoomsChange = (value: string) => {
+    const num = parseInt(value) || 0;
+    if (num >= 1 && num <= 20) { // reasonable limits
+      setNumberOfRooms(num);
+      // Adjust the roomNames array to match the new number
+      const newRoomNames = Array(num).fill("").map((_, index) => 
+        roomNames[index] || `Room ${index + 1}`
+      );
+      setRoomNames(newRoomNames);
     }
   };
 
-  const updateRoomSlot = (index: number, field: 'name' | 'type', value: string) => {
-    const updated = [...roomsToCreate];
-    updated[index][field] = value;
-    setRoomsToCreate(updated);
+  const handleRoomNameChange = (index: number, value: string) => {
+    const newRoomNames = [...roomNames];
+    newRoomNames[index] = value;
+    setRoomNames(newRoomNames);
   };
 
   const handleCreateAllRooms = async () => {
-    const validRooms = roomsToCreate.filter(room => room.name.trim());
-    if (validRooms.length === 0) return;
+    const validRoomNames = roomNames.filter(name => name.trim());
+    if (validRoomNames.length === 0) return;
 
     setIsCreatingRooms(true);
     try {
       // Create rooms sequentially to avoid race conditions
-      for (const room of validRooms) {
+      for (let i = 0; i < validRoomNames.length; i++) {
         await onCreateRoom?.();
       }
       
       // Reset the form and close dialog
-      setRoomsToCreate([{ name: "", type: "living_room" }]);
+      setNumberOfRooms(4);
+      setRoomNames(Array(4).fill(""));
       onClose();
     } catch (error) {
       console.error("Failed to create rooms:", error);
@@ -119,15 +117,7 @@ export const InteractiveProjectDialog = ({
     setCalculatorOpen(false);
   };
 
-  const roomTypeOptions = [
-    { value: "living_room", label: "Living Room" },
-    { value: "bedroom", label: "Bedroom" },
-    { value: "kitchen", label: "Kitchen" },
-    { value: "dining_room", label: "Dining Room" },
-    { value: "bathroom", label: "Bathroom" },
-    { value: "office", label: "Office" },
-    { value: "other", label: "Other" }
-  ];
+  const validRoomCount = roomNames.filter(name => name.trim()).length;
 
   return (
     <>
@@ -148,67 +138,54 @@ export const InteractiveProjectDialog = ({
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Create Multiple Rooms</CardTitle>
+                    <CardTitle className="text-lg">Create New Rooms</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {roomsToCreate.map((room, index) => (
-                      <div key={index} className="flex items-end gap-3 p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <Label htmlFor={`room-name-${index}`}>Room Name</Label>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <Label htmlFor="numberOfRooms" className="font-medium">
+                        How many rooms?
+                      </Label>
+                      <Input
+                        id="numberOfRooms"
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={numberOfRooms}
+                        onChange={(e) => handleNumberOfRoomsChange(e.target.value)}
+                        className="w-20"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      {Array.from({ length: numberOfRooms }, (_, index) => (
+                        <div key={index} className="flex items-center gap-4">
+                          <Label className="font-medium min-w-[80px]">
+                            Room {index + 1}:
+                          </Label>
                           <Input
-                            id={`room-name-${index}`}
-                            value={room.name}
-                            onChange={(e) => updateRoomSlot(index, 'name', e.target.value)}
-                            placeholder="e.g., Master Bedroom, Living Room"
+                            value={roomNames[index] || ""}
+                            onChange={(e) => handleRoomNameChange(index, e.target.value)}
+                            placeholder={`Room ${index + 1}`}
+                            className="flex-1"
                           />
                         </div>
-                        <div className="flex-1">
-                          <Label>Room Type</Label>
-                          <Select 
-                            value={room.type} 
-                            onValueChange={(value) => updateRoomSlot(index, 'type', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roomTypeOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      ))}
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="text-sm text-muted-foreground">
+                          <div>Selected: 0 existing + {validRoomCount} new rooms</div>
+                          <div>Total: {validRoomCount} rooms</div>
                         </div>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => removeRoomSlot(index)}
-                          disabled={roomsToCreate.length === 1}
+                          onClick={handleCreateAllRooms}
+                          disabled={isCreatingRooms || validRoomCount === 0}
+                          className="flex items-center gap-2"
                         >
-                          <Minus className="h-4 w-4" />
+                          {isCreatingRooms ? 'Creating Rooms...' : `Next: Product Details`}
                         </Button>
                       </div>
-                    ))}
-                    
-                    <div className="flex justify-between items-center">
-                      <Button
-                        variant="outline"
-                        onClick={addRoomSlot}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Another Room
-                      </Button>
-                      
-                      <Button
-                        onClick={handleCreateAllRooms}
-                        disabled={isCreatingRooms || !roomsToCreate.some(room => room.name.trim())}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        {isCreatingRooms ? 'Creating Rooms...' : `Create ${roomsToCreate.filter(room => room.name.trim()).length} Room${roomsToCreate.filter(room => room.name.trim()).length !== 1 ? 's' : ''}`}
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
