@@ -57,7 +57,7 @@ export const ProjectJobsContent = ({
   // Calculate project totals with safe error handling
   const projectTotalNumber = allTreatments?.reduce((sum, treatment) => {
     try {
-      const price = parseFloat(treatment?.total_price) || 0;
+      const price = parseFloat(treatment?.total_price?.toString() || '0') || 0;
       return sum + price;
     } catch (error) {
       console.error("Error calculating treatment price:", error, treatment);
