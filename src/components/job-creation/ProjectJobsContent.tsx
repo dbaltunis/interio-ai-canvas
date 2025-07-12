@@ -55,7 +55,7 @@ export const ProjectJobsContent = ({
   });
 
   // Calculate project totals with safe error handling
-  const projectTotal = allTreatments?.reduce((sum, treatment) => {
+  const projectTotalNumber = allTreatments?.reduce((sum, treatment) => {
     try {
       const price = parseFloat(treatment?.total_price) || 0;
       return sum + price;
@@ -65,7 +65,7 @@ export const ProjectJobsContent = ({
     }
   }, 0) || 0;
 
-  console.log("Project total calculated:", projectTotal);
+  console.log("Project total calculated:", projectTotalNumber);
 
   // Wrapper function to handle the return type mismatch
   const handleQuickCreate = async (formData: any): Promise<void> => {
@@ -93,7 +93,7 @@ export const ProjectJobsContent = ({
         rooms={rooms}
         surfaces={allSurfaces || []}
         treatments={allTreatments || []}
-        projectTotal={projectTotal.toString()}
+        projectTotal={projectTotalNumber.toString()}
       />
 
       {/* Quick Treatment Creator */}
