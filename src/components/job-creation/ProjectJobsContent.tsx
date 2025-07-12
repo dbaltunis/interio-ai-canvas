@@ -1,3 +1,4 @@
+
 import { RoomsGrid } from "./RoomsGrid";
 import { EmptyRoomsState } from "./EmptyRoomsState";
 import { ProjectBlueprint } from "./ProjectBlueprint";
@@ -86,6 +87,33 @@ export const ProjectJobsContent = ({
     }
   };
 
+  // Handler functions for room operations
+  const handleUpdateRoom = async (roomId: string, updates: any) => {
+    try {
+      await updateRoom.mutateAsync({ id: roomId, ...updates });
+    } catch (error) {
+      console.error("Failed to update room:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update room. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    try {
+      await deleteRoom.mutateAsync(roomId);
+    } catch (error) {
+      console.error("Failed to delete room:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete room. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-[400px]">
       {/* Always show blueprint */}
@@ -106,8 +134,8 @@ export const ProjectJobsContent = ({
           onCreateRoom={onCreateRoom}
           onCreateSurface={handleCreateSurface}
           onCreateTreatment={handleCreateTreatment}
-          onUpdateRoom={updateRoom}
-          onDeleteRoom={deleteRoom}
+          onUpdateRoom={handleUpdateRoom}
+          onDeleteRoom={handleDeleteRoom}
         />
       </div>
 
@@ -124,8 +152,8 @@ export const ProjectJobsContent = ({
         <RoomsGrid
           rooms={rooms}
           projectId={project?.id}
-          onUpdateRoom={updateRoom}
-          onDeleteRoom={deleteRoom}
+          onUpdateRoom={handleUpdateRoom}
+          onDeleteRoom={handleDeleteRoom}
           onCreateTreatment={handleCreateTreatment}
           onCreateSurface={handleCreateSurface}
           onUpdateSurface={handleUpdateSurface}
