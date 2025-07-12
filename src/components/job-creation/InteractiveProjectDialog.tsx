@@ -19,7 +19,7 @@ interface InteractiveProjectDialogProps {
   rooms: any[];
   surfaces: any[];
   treatments: any[];
-  onCreateRoom?: () => void;
+  onCreateRoom?: (roomData?: { name: string; room_type: string }) => void;
   onCreateSurface?: (roomId: string, surfaceType: string) => void;
   onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
 }
@@ -81,9 +81,12 @@ export const InteractiveProjectDialog = ({
 
     setIsCreatingRooms(true);
     try {
-      // Create rooms sequentially to avoid race conditions
+      // Create rooms sequentially with their specific names
       for (let i = 0; i < validRoomNames.length; i++) {
-        await onCreateRoom?.();
+        await onCreateRoom?.({
+          name: validRoomNames[i].trim(),
+          room_type: "living_room"
+        });
       }
       
       // Reset the form and close dialog
