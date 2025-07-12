@@ -1,24 +1,18 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText } from "lucide-react";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Plus, Search, Eye, Edit, Calendar, DollarSign, User } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
-import { useProjects } from "@/hooks/useProjects";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useToast } from "@/hooks/use-toast";
-import { JobsStatsCards } from "./JobsStatsCards";
-import { JobCard } from "./JobCard";
-import { JobsTableView } from "./JobsTableView";
-import { KPICustomizer } from "./KPICustomizer";
+import { EnhancedJobsView } from "./EnhancedJobsView";
 
 interface JobsListViewProps {
   onNewJob: () => void;
   onJobSelect: (jobId: string) => void;
-  onClientEdit?: (clientId: string) => void;
+  onClientEdit: (clientId: string) => void;
   onJobCopy?: (jobId: string) => void;
   searchClient: string;
   searchJobNumber: string;
@@ -27,8 +21,6 @@ interface JobsListViewProps {
   filterOwner: string;
   filterMaker: string;
 }
-
-const ITEMS_PER_PAGE = 20;
 
 export const JobsListView = ({
   onNewJob,
@@ -42,249 +34,256 @@ export const JobsListView = ({
   filterOwner,
   filterMaker
 }: JobsListViewProps) => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const { data: quotes = [], isLoading, error } = useQuotes();
-  const { data: clients } = useClients();
-  const { data: projects } = useProjects();
-  const { data: businessSettings } = useBusinessSettings();
-  const { toast } = useToast();
-
+  const [viewMode, setViewMode] = useState<'list' | 'enhanced'>('enhanced');
+  const [searchTerm, setSearchTerm] = useState("");
+  
   console.log("=== JOBS LIST VIEW RENDER ===");
-  console.log("Quotes data:", quotes);
-  console.log("Clients data:", clients);
-  console.log("Projects data:", projects);
-  console.log("Loading states:", { isLoading, error });
+  console.log("Applied filters:", {
+    searchClient,
+    searchJobNumber,
+    filterStatus,
+    filterDeposit,
+    filterOwner,
+    filterMaker
+  });
 
-  // Handle loading and error states
-  if (isLoading) {
-    console.log("JobsListView: Still loading data");
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const { data: quotes, isLoading: quotesLoading, error: quotesError } = useQuotes();
+  const { data: clients, isLoading: clientsLoading } = useClients();
 
-  if (error) {
-    console.error("JobsListView: Error loading jobs:", error);
+  // Create client lookup for performance
+  const clientsMap = useMemo(() => {
+    if (!clients) return {};
+    return clients.reduce((acc, client) => {
+      acc[client.id] = client;
+      return acc;
+    }, {} as Record<string, any>);
+  }, [clients]);
+
+  // Filter and process quotes with error handling
+  const processedJobs = useMemo(() => {
+    console.log("Processing jobs with quotes:", quotes?.length || 0);
+    console.log("Raw quotes data:", quotes);
+    
+    if (!quotes || quotes.length === 0) {
+      console.log("No quotes available");
+      return [];
+    }
+
+    try {
+      const processed = quotes
+        .map(quote => {
+          console.log("Processing quote:", quote.id, quote);
+          
+          const client = quote.client_id ? clientsMap[quote.client_id] : null;
+          console.log("Found client for quote:", client);
+          
+          return {
+            ...quote,
+            client,
+            // Ensure we have required fields with defaults
+            name: quote.name || quote.project_name || `Project ${quote.id?.slice(0, 8)}`,
+            status: quote.status || 'planning',
+            priority: quote.priority || 'medium',
+            total_amount: quote.total_amount || 0,
+            job_number: quote.job_number || `JOB-${quote.id?.slice(0, 8)}`,
+          };
+        })
+        .filter(job => {
+          // Apply search filters
+          const matchesSearch = !searchTerm || 
+            job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.client?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+          const matchesClient = !searchClient || 
+            job.client?.name?.toLowerCase().includes(searchClient.toLowerCase());
+
+          const matchesJobNumber = !searchJobNumber || 
+            job.job_number?.toLowerCase().includes(searchJobNumber.toLowerCase());
+
+          const matchesStatus = filterStatus === 'all' || job.status === filterStatus;
+
+          console.log("Filter matches for job", job.id, {
+            matchesSearch,
+            matchesClient,
+            matchesJobNumber,
+            matchesStatus
+          });
+
+          return matchesSearch && matchesClient && matchesJobNumber && matchesStatus;
+        })
+        .sort((a, b) => {
+          // Sort by created date, newest first
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        });
+
+      console.log("Processed jobs count:", processed.length);
+      return processed;
+    } catch (error) {
+      console.error("Error processing jobs:", error);
+      return [];
+    }
+  }, [quotes, clientsMap, searchTerm, searchClient, searchJobNumber, filterStatus]);
+
+  const handleJobEdit = (jobId: string) => {
+    console.log("Editing job:", jobId);
+    onJobSelect(jobId);
+  };
+
+  const handleJobView = (jobId: string) => {
+    console.log("Viewing job details:", jobId);
+    onJobSelect(jobId);
+  };
+
+  if (quotesLoading || clientsLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
-          <div className="text-red-500">Error loading jobs: {error.message}</div>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">Loading jobs...</p>
         </div>
       </div>
     );
   }
 
-  // Safe filtering with enhanced error handling and logging
-  const filteredQuotes = quotes.filter(quote => {
-    if (!quote) {
-      console.warn("JobsListView: Found null/undefined quote in quotes array");
-      return false;
-    }
-
-    try {
-      const client = clients?.find(c => c?.id === quote.client_id);
-      const clientName = client?.client_type === 'B2B' ? client?.company_name : client?.name;
-      
-      console.log(`Filtering quote ${quote.id}:`, {
-        quote: quote.quote_number,
-        clientName,
-        status: quote.status,
-        searchClient,
-        searchJobNumber,
-        filterStatus
-      });
-      
-      // Search filters
-      if (searchClient && clientName && !clientName.toLowerCase().includes(searchClient.toLowerCase())) {
-        console.log(`Quote ${quote.id} filtered out by client search`);
-        return false;
-      }
-      
-      if (searchJobNumber && quote.quote_number && !quote.quote_number.toLowerCase().includes(searchJobNumber.toLowerCase())) {
-        console.log(`Quote ${quote.id} filtered out by job number search`);
-        return false;
-      }
-      
-      // Status filter
-      if (filterStatus !== "all" && quote.status !== filterStatus) {
-        console.log(`Quote ${quote.id} filtered out by status filter`);
-        return false;
-      }
-      
-      console.log(`Quote ${quote.id} passed all filters`);
-      return true;
-    } catch (error) {
-      console.error("Error filtering quote:", quote?.id, error);
-      // Include the quote if there's an error to avoid losing data
-      return true;
-    }
-  });
-
-  console.log("Filtered quotes:", filteredQuotes.length, "out of", quotes.length);
-
-  const sortedQuotes = filteredQuotes.sort((a, b) => {
-    if (!a || !b) {
-      console.warn("JobsListView: Found null quotes in sorting");
-      return 0;
-    }
-
-    try {
-      const aValue = a[sortBy as keyof typeof a];
-      const bValue = b[sortBy as keyof typeof b];
-      
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    } catch (error) {
-      console.error("Error sorting quotes:", error);
-      return 0;
-    }
-  });
-
-  console.log("Sorted quotes:", sortedQuotes.length);
-
-  // Pagination
-  const totalPages = Math.ceil(sortedQuotes.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedQuotes = sortedQuotes.slice(startIndex, endIndex);
-
-  console.log("Pagination:", { totalPages, currentPage, startIndex, endIndex, paginatedQuotes: paginatedQuotes.length });
-
-  const handlePageChange = (page: number) => {
-    console.log("Page change:", page);
-    setCurrentPage(page);
-  };
-
-  const handleNewJobClick = () => {
-    console.log("New Job button clicked");
-    if (onNewJob) {
-      onNewJob();
-    }
-  };
+  if (quotesError) {
+    console.error("Jobs loading error:", quotesError);
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center space-y-4">
+          <p className="text-red-600">Error loading jobs</p>
+          <p className="text-sm text-gray-500">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Job Overview</h2>
-      </div>
-      <JobsStatsCards quotes={quotes} />
-
-      {/* Jobs Management Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">Jobs Management</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Showing {startIndex + 1}-{Math.min(endIndex, sortedQuotes.length)} of {sortedQuotes.length} jobs
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <Button 
-                onClick={handleNewJobClick} 
-                className="bg-primary hover:bg-primary/90"
-                type="button"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Job
-              </Button>
-            </div>
+      {/* Search and View Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex-1 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search jobs, clients, or job numbers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </CardHeader>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === 'enhanced' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('enhanced')}
+          >
+            Enhanced View
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+          >
+            List View
+          </Button>
+          <Button onClick={onNewJob} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Job
+          </Button>
+        </div>
+      </div>
 
-        <CardContent>
-          {paginatedQuotes.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-muted-foreground mb-2">No jobs found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {quotes.length === 0 
-                  ? "Create your first job to get started!"
-                  : "Try adjusting your filters to see more results."
-                }
-              </p>
-              {quotes.length === 0 && (
-                <Button onClick={handleNewJobClick} type="button">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Job
-                </Button>
-              )}
-            </div>
-          ) : (
-            <>
-              <JobsTableView
-                quotes={paginatedQuotes}
-                clients={clients}
-                projects={projects}
-                onJobSelect={onJobSelect}
-                onClientEdit={onClientEdit}
-                onJobCopy={onJobCopy}
-                businessSettings={businessSettings}
+      {/* Jobs Display */}
+      {processedJobs.length === 0 ? (
+        <Card className="p-12 text-center">
+          <div className="space-y-4">
+            <div className="text-6xl mb-4">📋</div>
+            <h3 className="text-lg font-medium">No jobs found</h3>
+            <p className="text-gray-500 mb-4">
+              {searchTerm || searchClient || searchJobNumber ? 
+                'No jobs match your current filters.' : 
+                'Get started by creating your first job.'
+              }
+            </p>
+            <Button onClick={onNewJob} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create New Job
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {viewMode === 'enhanced' ? (
+            // Enhanced Card View
+            processedJobs.map((job) => (
+              <EnhancedJobsView
+                key={job.id}
+                job={job}
+                onEdit={handleJobEdit}
+                onViewDetails={handleJobView}
               />
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-6">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious 
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage > 1) handlePageChange(currentPage - 1);
-                          }}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
+            ))
+          ) : (
+            // Simple List View
+            processedJobs.map((job) => (
+              <Card key={job.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold">{job.name}</h3>
+                        <Badge variant="outline">{job.job_number}</Badge>
+                        <Badge className={`${
+                          job.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {job.status}
+                        </Badge>
+                      </div>
                       
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(page);
-                            }}
-                            isActive={currentPage === page}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ))}
-                      
-                      <PaginationItem>
-                        <PaginationNext 
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage < totalPages) handlePageChange(currentPage + 1);
-                          }}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {job.client?.name || 'No client'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          ${(job.total_amount || 0).toFixed(2)}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {job.created_at ? new Date(job.created_at).toLocaleDateString() : 'No date'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleJobView(job.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleJobEdit(job.id)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 };

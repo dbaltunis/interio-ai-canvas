@@ -10,6 +10,8 @@ interface ProjectBlueprintProps {
 }
 
 export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: ProjectBlueprintProps) => {
+  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+
   return (
     <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
       <CardHeader>
@@ -46,7 +48,7 @@ export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: 
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold">Project Value</span>
-            <span className="text-2xl font-bold text-green-600">${projectTotal.toFixed(2)}</span>
+            <span className="text-2xl font-bold text-green-600">{formatCurrency(projectTotal)}</span>
           </div>
         </div>
 
@@ -57,12 +59,18 @@ export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: 
               {rooms.slice(0, 3).map((room: any) => {
                 const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
                 const roomTreatments = treatments.filter(t => t.room_id === room.id);
+                const roomTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
                 return (
-                  <div key={room.id} className="flex justify-between items-center text-sm">
+                  <div key={room.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
                     <span className="font-medium">{room.name}</span>
-                    <span className="text-gray-600">
-                      {roomSurfaces.length} surfaces • {roomTreatments.length} treatments
-                    </span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-600">
+                        {roomSurfaces.length} surfaces • {roomTreatments.length} treatments
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        {formatCurrency(roomTotal)}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
