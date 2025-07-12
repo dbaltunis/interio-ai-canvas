@@ -4,6 +4,7 @@ import { EmptyRoomsState } from "./EmptyRoomsState";
 import { ProjectBlueprint } from "./ProjectBlueprint";
 import { ProjectOverview } from "./ProjectOverview";
 import { QuickTreatmentCreator } from "./QuickTreatmentCreator";
+import { StreamlinedJobsInterface } from "./StreamlinedJobsInterface";
 import { useJobHandlers } from "./JobHandlers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -88,57 +89,6 @@ export const ProjectJobsContent = ({
     }
   };
 
-  // Handler functions for room operations
-  const handleUpdateRoom = async (roomId: string, updates: any) => {
-    try {
-      await updateRoom.mutateAsync({ id: roomId, ...updates });
-    } catch (error) {
-      console.error("Failed to update room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update room. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteRoom = async (roomId: string) => {
-    try {
-      await deleteRoom.mutateAsync(roomId);
-    } catch (error) {
-      console.error("Failed to delete room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete room. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Proper room creation handler that uses the createRoom mutation
-  const handleCreateRoomWithData = async (roomData?: { name: string; room_type: string }) => {
-    try {
-      if (roomData) {
-        console.log("Creating room with data:", roomData);
-        await createRoom.mutateAsync({
-          name: roomData.name,
-          room_type: roomData.room_type,
-          project_id: project.id
-        });
-      } else {
-        // Fallback to original function for cases without data
-        onCreateRoom();
-      }
-    } catch (error) {
-      console.error("Failed to create room:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create room. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-[400px]">
       {/* Always show blueprint */}
@@ -149,18 +99,14 @@ export const ProjectJobsContent = ({
         projectTotal={projectTotalNumber.toString()}
       />
 
-      {/* Project Overview with room management */}
+      {/* Use Streamlined Interface */}
       <div className="mb-6">
-        <ProjectOverview 
+        <StreamlinedJobsInterface
           project={project}
           rooms={rooms || []}
           surfaces={allSurfaces || []}
           treatments={allTreatments || []}
-          onCreateRoom={handleCreateRoomWithData}
-          onCreateSurface={handleCreateSurface}
           onCreateTreatment={handleCreateTreatment}
-          onUpdateRoom={handleUpdateRoom}
-          onDeleteRoom={handleDeleteRoom}
         />
       </div>
 
@@ -168,32 +114,6 @@ export const ProjectJobsContent = ({
       <QuickTreatmentCreator 
         onCreateTreatment={handleQuickCreate}
       />
-
-      {rooms.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12">
-          <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
-        </div>
-      ) : (
-        <RoomsGrid
-          rooms={rooms}
-          projectId={project?.id}
-          onUpdateRoom={handleUpdateRoom}
-          onDeleteRoom={handleDeleteRoom}
-          onCreateTreatment={handleCreateTreatment}
-          onCreateSurface={handleCreateSurface}
-          onUpdateSurface={handleUpdateSurface}
-          onDeleteSurface={handleDeleteSurface}
-          onCopyRoom={handleCopyRoom}
-          editingRoomId={editingRoomId}
-          setEditingRoomId={setEditingRoomId}
-          editingRoomName={editingRoomName}
-          setEditingRoomName={setEditingRoomName}
-          onRenameRoom={handleRenameRoom}
-          onCreateRoom={onCreateRoom}
-          isCreatingRoom={isCreatingRoom}
-          onChangeRoomType={handleChangeRoomType}
-        />
-      )}
     </div>
   );
 };
