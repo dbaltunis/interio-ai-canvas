@@ -114,6 +114,12 @@ export const ProjectJobsContent = ({
     }
   };
 
+  // Wrapper to convert onCreateRoom to match expected signature
+  const handleCreateRoomWithAsync = async (roomData?: { name: string; room_type: string }) => {
+    // Call the original onCreateRoom function
+    onCreateRoom();
+  };
+
   return (
     <div className="min-h-[400px]">
       {/* Always show blueprint */}
@@ -131,7 +137,7 @@ export const ProjectJobsContent = ({
           rooms={rooms || []}
           surfaces={allSurfaces || []}
           treatments={allTreatments || []}
-          onCreateRoom={onCreateRoom}
+          onCreateRoom={handleCreateRoomWithAsync}
           onCreateSurface={handleCreateSurface}
           onCreateTreatment={handleCreateTreatment}
           onUpdateRoom={handleUpdateRoom}
