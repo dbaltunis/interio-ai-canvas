@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Square, Settings2, DollarSign, Plus } from "lucide-react";
+import { MapPin, Square, Settings2, DollarSign, Plus, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { InteractiveProjectDialog } from "./InteractiveProjectDialog";
 
@@ -10,9 +11,11 @@ interface ProjectOverviewProps {
   rooms: any[];
   surfaces: any[];
   treatments: any[];
-  onCreateRoom?: () => void;
+  onCreateRoom?: (roomData?: { name: string; room_type: string }) => void;
   onCreateSurface?: (roomId: string, surfaceType: string) => void;
   onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
+  onUpdateRoom?: (roomId: string, updates: any) => void;
+  onDeleteRoom?: (roomId: string) => void;
 }
 
 export const ProjectOverview = ({ 
@@ -22,10 +25,14 @@ export const ProjectOverview = ({
   treatments,
   onCreateRoom,
   onCreateSurface,
-  onCreateTreatment
+  onCreateTreatment,
+  onUpdateRoom,
+  onDeleteRoom
 }: ProjectOverviewProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'rooms' | 'surfaces' | 'treatments' | 'connect'>('rooms');
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [editingRoomName, setEditingRoomName] = useState("");
 
   console.log("ProjectOverview render data:", { project, rooms, surfaces, treatments });
 
@@ -49,6 +56,32 @@ export const ProjectOverview = ({
   const handleCardClick = (type: 'rooms' | 'surfaces' | 'treatments' | 'connect') => {
     setDialogType(type);
     setDialogOpen(true);
+  };
+
+  const handleEditRoom = (room: any) => {
+    setEditingRoomId(room.id);
+    setEditingRoomName(room.name);
+  };
+
+  const handleSaveRoomEdit = async (roomId: string) => {
+    if (editingRoomName.trim() && onUpdateRoom) {
+      await onUpdateRoom(roomId, { name: editingRoomName.trim() });
+      setEditingRoomId(null);
+      setEditingRoomName("");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoomId(null);
+    setEditingRoomName("");
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (confirm("Are you sure you want to delete this room? This will also delete all associated surfaces and treatments.")) {
+      if (onDeleteRoom) {
+        await onDeleteRoom(roomId);
+      }
+    }
   };
 
   return (
@@ -131,30 +164,100 @@ export const ProjectOverview = ({
       {rooms && rooms.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Room Summary</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>All Rooms ({rooms.length})</span>
+              <Button 
+                onClick={() => handleCardClick('rooms')} 
+                size="sm"
+                variant="outline"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Room
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {rooms.map((room) => {
                 const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
                 const roomTreatments = treatments?.filter(t => t.room_id === room.id) || [];
                 const roomTotal = roomTreatments.reduce((sum, t) => sum + calculateTreatmentTotal(t), 0);
 
                 return (
-                  <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="space-y-1">
+                  <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{room.name}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {room.room_type?.replace('_', ' ') || 'Unknown'}
-                        </Badge>
+                        {editingRoomId === room.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editingRoomName}
+                              onChange={(e) => setEditingRoomName(e.target.value)}
+                              className="px-2 py-1 border rounded text-sm font-medium"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveRoomEdit(room.id);
+                                } else if (e.key === 'Escape') {
+                                  handleCancelEdit();
+                                }
+                              }}
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSaveRoomEdit(room.id)}
+                              className="h-7 px-2"
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleCancelEdit}
+                              className="h-7 px-2"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <h4 className="font-medium">{room.name}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {room.room_type?.replace('_', ' ') || 'Unknown'}
+                            </Badge>
+                          </>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">${roomTotal.toFixed(2)}</div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="text-right mr-4">
+                        <div className="font-medium">${roomTotal.toFixed(2)}</div>
+                      </div>
+                      
+                      {editingRoomId !== room.id && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditRoom(room)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteRoom(room.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

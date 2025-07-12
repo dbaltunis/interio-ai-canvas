@@ -1,4 +1,3 @@
-
 import { RoomsGrid } from "./RoomsGrid";
 import { EmptyRoomsState } from "./EmptyRoomsState";
 import { ProjectBlueprint } from "./ProjectBlueprint";
@@ -95,6 +94,21 @@ export const ProjectJobsContent = ({
         treatments={allTreatments || []}
         projectTotal={projectTotalNumber.toString()}
       />
+
+      {/* Project Overview with room management */}
+      <div className="mb-6">
+        <ProjectOverview 
+          project={project}
+          rooms={rooms || []}
+          surfaces={allSurfaces || []}
+          treatments={allTreatments || []}
+          onCreateRoom={onCreateRoom}
+          onCreateSurface={handleCreateSurface}
+          onCreateTreatment={handleCreateTreatment}
+          onUpdateRoom={updateRoom}
+          onDeleteRoom={deleteRoom}
+        />
+      </div>
 
       {/* Quick Treatment Creator */}
       <QuickTreatmentCreator 
