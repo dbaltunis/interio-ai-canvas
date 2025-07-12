@@ -6,11 +6,14 @@ interface ProjectBlueprintProps {
   rooms: any[];
   surfaces: any[];
   treatments: any[];
-  projectTotal: number; // Ensure this is number
+  projectTotal: string; // Change to string to match usage
 }
 
 export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: ProjectBlueprintProps) => {
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `$${numAmount.toFixed(2)}`;
+  };
 
   return (
     <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
