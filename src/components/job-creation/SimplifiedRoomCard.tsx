@@ -10,7 +10,7 @@ import {
   Trash2,
   ChevronDown
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useToast } from "@/hooks/use-toast";
 import { SimplifiedTreatmentCard } from "./SimplifiedTreatmentCard";
-import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
 
 interface SimplifiedRoomCardProps {
   room: any;
@@ -46,10 +46,10 @@ export const SimplifiedRoomCard = ({
   const updateRoom = useUpdateRoom();
   const deleteRoom = useDeleteRoom();
   const { toast } = useToast();
-  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
+  const { templates, isLoading: templatesLoading } = useProductTemplates();
 
-  // Filter active window covering templates
-  const activeTemplates = windowCoverings?.filter(wc => wc.active) || [];
+  // Filter active product templates
+  const activeTemplates = templates?.filter(t => t.active) || [];
 
   const roomTotal = treatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
@@ -198,7 +198,7 @@ export const SimplifiedRoomCard = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg">
-            {windowCoveringsLoading ? (
+            {templatesLoading ? (
               <DropdownMenuItem disabled>
                 Loading templates...
               </DropdownMenuItem>
