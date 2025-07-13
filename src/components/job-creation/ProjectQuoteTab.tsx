@@ -2,9 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Mail, Printer, DollarSign } from "lucide-react";
+import { FileText, Mail, Printer, DollarSign, MapPin } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
+import { useTreatments } from "@/hooks/useTreatments";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
 
 interface ProjectQuoteTabProps {
   project: any;
@@ -13,16 +16,31 @@ interface ProjectQuoteTabProps {
 
 export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: ProjectQuoteTabProps) => {
   const { data: clients } = useClients();
+  const { data: treatments = [] } = useTreatments(project?.id);
+  const { data: rooms = [] } = useRooms(project?.id);
+  const { data: surfaces = [] } = useSurfaces(project?.id);
   const { toast } = useToast();
 
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Mock quote data - in real app this would come from project rooms/products
-  const quoteItems = [
-    { id: 1, description: "Living Room Curtains", quantity: 2, unitPrice: 450, total: 900 },
-    { id: 2, description: "Bedroom Blinds", quantity: 3, unitPrice: 280, total: 840 },
-    { id: 3, description: "Installation Service", quantity: 1, unitPrice: 200, total: 200 }
-  ];
+  // Generate quote items from treatments
+  const quoteItems = treatments.map(treatment => {
+    const room = rooms.find(r => r.id === treatment.room_id);
+    const surface = surfaces.find(s => s.id === treatment.window_id);
+    
+    return {
+      id: treatment.id,
+      description: `${room?.name || 'Room'} - ${treatment.product_name || treatment.treatment_type}`,
+      location: room?.name || 'Unknown Room',
+      window: surface?.name || 'Window',
+      quantity: treatment.quantity || 1,
+      unitPrice: treatment.unit_price || 0,
+      total: treatment.total_price || 0,
+      treatment_type: treatment.treatment_type,
+      fabric_type: treatment.fabric_type,
+      measurements: treatment.measurements || {}
+    };
+  });
   
   const subtotal = quoteItems.reduce((sum, item) => sum + item.total, 0);
   const tax = subtotal * 0.1; // 10% tax
@@ -107,7 +125,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Item</TableHead>
+              <TableHead>Item & Location</TableHead>
               <TableHead className="text-center">Qty</TableHead>
               <TableHead className="text-right">Unit Price</TableHead>
               <TableHead className="text-right">Total</TableHead>
@@ -117,13 +135,26 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
             {quoteItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                  No items added yet. Complete the job setup to generate quote items.
+                  No treatments added yet. Add treatments in the Jobs tab to generate quote items.
                 </TableCell>
               </TableRow>
             ) : (
               quoteItems.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.description}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="font-medium">{item.description}</div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {item.location} • {item.window}
+                      </div>
+                      {item.fabric_type && (
+                        <div className="text-xs text-gray-500">
+                          {item.fabric_type} • {item.treatment_type}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
                   <TableCell className="text-right font-medium">{formatCurrency(item.total)}</TableCell>

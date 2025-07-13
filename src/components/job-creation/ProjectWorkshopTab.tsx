@@ -2,19 +2,46 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, CheckCircle, Clock, AlertCircle, Users, Package } from "lucide-react";
+import { Wrench, CheckCircle, Clock, AlertCircle, Users, Package, MapPin, Scissors } from "lucide-react";
+import { useTreatments } from "@/hooks/useTreatments";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
 
 interface ProjectWorkshopTabProps {
   project: any;
 }
 
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
-  // Mock workshop data - in real app this would come from project
-  const workOrders = [
-    { id: 1, item: "Living Room Curtains", status: "pending", assignee: "Sarah K.", dueDate: "2024-01-15" },
-    { id: 2, item: "Bedroom Blinds", status: "in_progress", assignee: "Mike R.", dueDate: "2024-01-18" },
-    { id: 3, item: "Installation Service", status: "completed", assignee: "Tom L.", dueDate: "2024-01-20" }
-  ];
+  const { data: treatments = [] } = useTreatments(project?.id);
+  const { data: rooms = [] } = useRooms(project?.id);
+  const { data: surfaces = [] } = useSurfaces(project?.id);
+  
+  // Generate work orders from treatments
+  const workOrders = treatments.map(treatment => {
+    const room = rooms.find(r => r.id === treatment.room_id);
+    const surface = surfaces.find(s => s.id === treatment.window_id);
+    
+    return {
+      id: treatment.id,
+      item: `${treatment.product_name || treatment.treatment_type}`,
+      location: room?.name || 'Unknown Room',
+      window: surface?.name || 'Window',
+      status: treatment.status || "pending",
+      assignee: "Workshop Team",
+      dueDate: "2024-01-20",
+      treatment_type: treatment.treatment_type,
+      fabric_type: treatment.fabric_type,
+      color: treatment.color,
+      pattern: treatment.pattern,
+      hardware: treatment.hardware,
+      measurements: treatment.measurements || {},
+      material_cost: treatment.material_cost || 0,
+      labor_cost: treatment.labor_cost || 0,
+      total_cost: treatment.total_price || 0,
+      fabric_details: treatment.fabric_details || {},
+      notes: treatment.notes
+    };
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -78,23 +105,85 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
           </div>
         </div>
         <div className="divide-y">
-          {workOrders.map((order) => (
-            <div key={order.id} className="p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon(order.status)}
-                <div>
-                  <p className="font-medium">{order.item}</p>
-                  <p className="text-sm text-gray-600">Assigned to {order.assignee}</p>
+          {workOrders.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No treatments created yet. Add treatments in the Jobs tab to generate work orders.
+            </div>
+          ) : (
+            workOrders.map((order) => (
+              <div key={order.id} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    {getStatusIcon(order.status)}
+                    <div>
+                      <p className="font-medium">{order.item}</p>
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {order.location} • {order.window}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-600">Due: {order.dueDate}</span>
+                    <Badge className={getStatusBadge(order.status)}>
+                      {order.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </div>
+                
+                {/* Manufacturing Details */}
+                <div className="ml-8 pl-3 border-l-2 border-gray-100 space-y-2">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Treatment:</span> {order.treatment_type}
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Fabric:</span> {order.fabric_type || 'N/A'}
+                    </div>
+                    {order.color && (
+                      <div>
+                        <span className="text-gray-600">Color:</span> {order.color}
+                      </div>
+                    )}
+                    {order.pattern && (
+                      <div>
+                        <span className="text-gray-600">Pattern:</span> {order.pattern}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {order.measurements && Object.keys(order.measurements).length > 0 && (
+                    <div className="flex items-center space-x-4 text-sm">
+                      <Scissors className="h-3 w-3 text-gray-400" />
+                      <span className="text-gray-600">Measurements:</span>
+                      {typeof order.measurements === 'object' && order.measurements !== null && (
+                        <>
+                          {(order.measurements as any).rail_width && (
+                            <span>W: {(order.measurements as any).rail_width}cm</span>
+                          )}
+                          {(order.measurements as any).drop && (
+                            <span>H: {(order.measurements as any).drop}cm</span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm pt-2">
+                    <span className="text-gray-600">Assigned to {order.assignee}</span>
+                    <div className="space-x-3">
+                      {order.material_cost > 0 && (
+                        <span className="text-gray-600">Materials: £{order.material_cost.toFixed(2)}</span>
+                      )}
+                      {order.labor_cost > 0 && (
+                        <span className="text-gray-600">Labor: £{order.labor_cost.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600">Due: {order.dueDate}</span>
-                <Badge className={getStatusBadge(order.status)}>
-                  {order.status.replace('_', ' ')}
-                </Badge>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </Card>
 

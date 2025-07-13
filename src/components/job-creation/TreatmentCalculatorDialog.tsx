@@ -49,13 +49,18 @@ export const TreatmentCalculatorDialog = ({
   const [calculations, setCalculations] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter window coverings by treatment type
-  const filteredWindowCoverings = windowCoverings?.filter(wc => {
+  // Filter window coverings by treatment type - show all active templates first, then filter by name
+  const allActiveWindowCoverings = windowCoverings?.filter(wc => wc.active && wc.making_cost_id) || [];
+  const matchingWindowCoverings = allActiveWindowCoverings.filter(wc => {
     const hasMatchingName = wc.name.toLowerCase().includes(treatmentType.toLowerCase()) ||
                            (treatmentType === 'curtains' && wc.name.toLowerCase().includes('curtain'));
-    const hasMakingCost = Boolean(wc.making_cost_id);
-    return hasMatchingName && hasMakingCost;
-  }) || [];
+    return hasMatchingName;
+  });
+  
+  // Show matching templates first, then all other templates
+  const filteredWindowCoverings = matchingWindowCoverings.length > 0 
+    ? matchingWindowCoverings 
+    : allActiveWindowCoverings;
 
   // Load making cost data when window covering changes
   useEffect(() => {
@@ -234,8 +239,8 @@ export const TreatmentCalculatorDialog = ({
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              No window coverings with making cost configurations found for "{treatmentType}". 
-              Create a window covering with making cost configuration in Settings first.
+              No window covering templates found. 
+              Create window covering templates with making cost configurations in Settings to use the Smart Calculator.
             </AlertDescription>
           </Alert>
           <div className="flex justify-end mt-4">
@@ -283,11 +288,26 @@ export const TreatmentCalculatorDialog = ({
                     <SelectValue placeholder="Select window covering" />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredWindowCoverings.map((wc) => (
+                    {matchingWindowCoverings.length > 0 && (
+                      <>
+                        {matchingWindowCoverings.map((wc) => (
+                          <SelectItem key={wc.id} value={wc.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{wc.name}</span>
+                              <Badge variant="default">Recommended</Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        {allActiveWindowCoverings.length > matchingWindowCoverings.length && (
+                          <div className="px-2 py-1 text-xs text-gray-500 border-t">Other Templates</div>
+                        )}
+                      </>
+                    )}
+                    {allActiveWindowCoverings.filter(wc => !matchingWindowCoverings.includes(wc)).map((wc) => (
                       <SelectItem key={wc.id} value={wc.id}>
                         <div className="flex items-center gap-2">
                           <span>{wc.name}</span>
-                          <Badge variant="secondary">Smart</Badge>
+                          <Badge variant="secondary">Template</Badge>
                         </div>
                       </SelectItem>
                     ))}
