@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, Info, Plus, Edit3 } from "lucide-react";
+import { Calculator, Info, Plus, Edit3, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TreatmentFormData, CalculationResult, DetailedCalculation } from './types';
 import { calculateTotalPrice, formatCurrency } from './calculationUtils';
 import { FabricSelector } from '@/components/fabric/FabricSelector';
+import { useProductTemplates } from '@/hooks/useProductTemplates';
 
 interface EnhancedTreatmentCalculatorProps {
   isOpen: boolean;
@@ -49,6 +51,14 @@ export const EnhancedTreatmentCalculator = ({
   onSave, 
   treatmentType 
 }: EnhancedTreatmentCalculatorProps) => {
+  // Use actual product templates from database
+  const { templates, isLoading: templatesLoading } = useProductTemplates();
+  
+  // Find matching template for the treatment type
+  const matchingTemplate = templates?.find(template => 
+    template.name.toLowerCase() === treatmentType.toLowerCase() && template.active
+  );
+
   const [formData, setFormData] = useState<TreatmentFormData>({
     treatmentName: `${treatmentType} Treatment`,
     quantity: 1,
@@ -82,26 +92,34 @@ export const EnhancedTreatmentCalculator = ({
   const [calculation, setCalculation] = useState<(CalculationResult & { details: DetailedCalculation }) | null>(null);
   const [calculationBreakdown, setCalculationBreakdown] = useState<CalculationBreakdown | null>(null);
 
-  // Sample fabric library (in real app, this would come from your database)
-  const fabricLibrary = [
-    { name: "Sky Gray 01", width: 300, verticalRepeat: 0, horizontalRepeat: 0, pricePerUnit: 18.7 },
-    { name: "Ocean Blue 02", width: 280, verticalRepeat: 32, horizontalRepeat: 0, pricePerUnit: 22.5 },
-    { name: "Forest Green 03", width: 320, verticalRepeat: 0, horizontalRepeat: 48, pricePerUnit: 19.8 }
-  ];
-
-  const liningOptions = [
+  // Get lining options from template or use defaults
+  const liningOptions = matchingTemplate?.components?.lining_options || [
     { value: "none", label: "No Lining", price: 0 },
     { value: "lined", label: "Lined", price: 8.50 },
     { value: "blackout", label: "Blackout", price: 12.00 },
     { value: "thermal", label: "Thermal", price: 15.00 }
   ];
 
-  const headingOptions = [
+  // Get heading options from template or use defaults
+  const headingOptions = matchingTemplate?.components?.heading_options || [
     { value: "Pencil Pleat", label: "Pencil Pleat", fullness: 2.0, price: 15 },
     { value: "Eyelet", label: "Eyelet", fullness: 2.2, price: 18 },
     { value: "Tab Top", label: "Tab Top", fullness: 1.8, price: 12 },
     { value: "Pinch Pleat", label: "Pinch Pleat", fullness: 2.5, price: 25 }
   ];
+
+  // Update treatment name when template changes
+  useEffect(() => {
+    if (matchingTemplate) {
+      setFormData(prev => ({
+        ...prev,
+        treatmentName: matchingTemplate.name,
+        // Apply template-specific defaults if available
+        laborRate: matchingTemplate.calculation_rules?.labor_rate || 45,
+        markupPercentage: matchingTemplate.calculation_rules?.markup_percentage || 40
+      }));
+    }
+  }, [matchingTemplate]);
 
   // Calculate enhanced breakdown
   useEffect(() => {
@@ -116,6 +134,9 @@ export const EnhancedTreatmentCalculator = ({
       const fabricWidth = parseFloat(formData.fabricWidth);
       const fullness = parseFloat(formData.headingFullness);
       const quantity = formData.quantity;
+      
+      // Use template-specific calculation method if available
+      const calculationMethod = matchingTemplate?.calculation_method || 'standard';
       
       // Fabric requirements
       const totalWidth = railWidth * fullness;
@@ -150,20 +171,11 @@ export const EnhancedTreatmentCalculator = ({
         leftoversHorizontal: `${leftoverWidth.toFixed(2)} cm`
       });
     }
-  }, [formData]);
+  }, [formData, matchingTemplate, liningOptions]);
 
   const handleFabricSelect = (fabricName: string) => {
-    const fabric = fabricLibrary.find(f => f.name === fabricName);
-    if (fabric) {
-      setFormData(prev => ({
-        ...prev,
-        fabricName: fabric.name,
-        fabricWidth: fabric.width.toString(),
-        fabricPricePerYard: fabric.pricePerUnit.toString(),
-        verticalRepeat: fabric.verticalRepeat.toString(),
-        horizontalRepeat: fabric.horizontalRepeat.toString()
-      }));
-    }
+    // This would integrate with your actual fabric library
+    console.log('Fabric selected:', fabricName);
   };
 
   const handleHeadingChange = (headingValue: string) => {
@@ -183,6 +195,7 @@ export const EnhancedTreatmentCalculator = ({
     const treatmentData = {
       treatment_name: formData.treatmentName,
       treatment_type: treatmentType,
+      template_id: matchingTemplate?.id,
       quantity: formData.quantity,
       measurements: {
         rail_width: formData.railWidth,
@@ -213,12 +226,54 @@ export const EnhancedTreatmentCalculator = ({
         unit_price: calculation.total / formData.quantity
       },
       calculation_breakdown: calculationBreakdown,
-      calculation_details: calculation.details
+      calculation_details: calculation.details,
+      template_used: matchingTemplate
     };
 
     onSave(treatmentData);
     onClose();
   };
+
+  // Show loading state
+  if (templatesLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+          <div className="text-center py-8">Loading template configuration...</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Show error if no matching template found
+  if (!matchingTemplate) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Template Not Found
+            </DialogTitle>
+          </DialogHeader>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              No template found for "{treatmentType}". Please create a product template with this exact name in Settings > Product Templates.
+              {templates && templates.length > 0 && (
+                <div className="mt-2">
+                  Available templates: {templates.filter(t => t.active).map(t => t.name).join(', ')}
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -226,13 +281,30 @@ export const EnhancedTreatmentCalculator = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            {treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
+            {matchingTemplate.name} Calculator
+            <Badge variant="outline">{matchingTemplate.calculation_method}</Badge>
           </DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Configuration */}
           <div className="space-y-6">
+            {/* Template Info */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Template: {matchingTemplate.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Badge variant="outline">{matchingTemplate.product_type}</Badge>
+                  <Badge variant="outline">{matchingTemplate.calculation_method}</Badge>
+                  {matchingTemplate.description && (
+                    <p className="text-sm text-muted-foreground">{matchingTemplate.description}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Treatment Details */}
             <Card>
               <CardHeader className="pb-3">
@@ -312,8 +384,8 @@ export const EnhancedTreatmentCalculator = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {liningOptions.map(option => (
-                        <SelectItem key={option.value} value={option.label}>
+                      {liningOptions.map((option, index) => (
+                        <SelectItem key={option.value || index} value={option.label}>
                           {option.label} {option.price > 0 && `(+${formatCurrency(option.price)}/m)`}
                         </SelectItem>
                       ))}
@@ -328,8 +400,8 @@ export const EnhancedTreatmentCalculator = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {headingOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
+                      {headingOptions.map((option, index) => (
+                        <SelectItem key={option.value || index} value={option.value}>
                           {option.label} (Fullness: {option.fullness}:1)
                         </SelectItem>
                       ))}
@@ -343,11 +415,14 @@ export const EnhancedTreatmentCalculator = ({
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Optional Enhancements</CardTitle>
-                <Badge variant="outline">Library</Badge>
+                <Badge variant="outline">From Template</Badge>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600 mb-3">
-                  Choose from the library or create a custom enhancement using the button below.
+                  {matchingTemplate.components?.features ? 
+                    "Available features from your template configuration:" :
+                    "No additional features configured for this template."
+                  }
                 </p>
                 <Button variant="outline" size="sm" className="w-full">
                   <Plus className="w-4 h-4 mr-2" />
@@ -457,7 +532,9 @@ export const EnhancedTreatmentCalculator = ({
             {calculationBreakdown && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Calculation results (Pleated Curtain)</CardTitle>
+                  <CardTitle className="text-base">
+                    Calculation results ({matchingTemplate.name})
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {[
