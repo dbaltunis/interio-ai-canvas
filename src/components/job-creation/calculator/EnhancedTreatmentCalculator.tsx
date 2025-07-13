@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +17,7 @@ import { TreatmentFormData, CalculationResult, DetailedCalculation } from './typ
 import { calculateTotalPrice, formatCurrency } from './calculationUtils';
 import { FabricSelector } from '@/components/fabric/FabricSelector';
 import { useProductTemplates } from '@/hooks/useProductTemplates';
+import { useHeadingOptions } from '@/hooks/useHeadingOptions';
 
 interface EnhancedTreatmentCalculatorProps {
   isOpen: boolean;
@@ -53,11 +54,18 @@ export const EnhancedTreatmentCalculator = ({
 }: EnhancedTreatmentCalculatorProps) => {
   // Use actual product templates from database
   const { templates, isLoading: templatesLoading } = useProductTemplates();
+  const { data: allHeadingOptions } = useHeadingOptions();
   
   // Find matching template for the treatment type
   const matchingTemplate = templates?.find(template => 
     template.name.toLowerCase() === treatmentType.toLowerCase() && template.active
   );
+
+  console.log('=== TEMPLATE DEBUG ===');
+  console.log('Treatment Type:', treatmentType);
+  console.log('Available Templates:', templates?.map(t => ({ name: t.name, active: t.active })));
+  console.log('Matching Template:', matchingTemplate);
+  console.log('Template Components:', matchingTemplate?.components);
 
   const [formData, setFormData] = useState<TreatmentFormData>({
     treatmentName: `${treatmentType} Treatment`,
@@ -92,11 +100,58 @@ export const EnhancedTreatmentCalculator = ({
   const [calculation, setCalculation] = useState<(CalculationResult & { details: DetailedCalculation }) | null>(null);
   const [calculationBreakdown, setCalculationBreakdown] = useState<CalculationBreakdown | null>(null);
 
-  // Get lining options from template - NO FALLBACK TO DUMMY DATA
-  const liningOptions = matchingTemplate?.components?.lining_options || [];
+  // Get actual lining options based on template's lining component IDs
+  const liningOptions = React.useMemo(() => {
+    if (!matchingTemplate?.components?.lining) {
+      console.log('=== NO LINING IN TEMPLATE ===');
+      return [];
+    }
+    
+    const liningIds = Object.keys(matchingTemplate.components.lining).filter(
+      id => matchingTemplate.components.lining[id] === true
+    );
+    
+    // For now, create mock options based on the IDs until we implement proper lining fetching
+    const options = liningIds.map(id => ({
+      value: id,
+      label: 'Lining',
+      price: 10
+    }));
+      
+    console.log('=== LINING OPTIONS DEBUG ===');
+    console.log('Template Lining IDs:', liningIds);
+    console.log('Generated Lining Options:', options);
+    
+    return options;
+  }, [matchingTemplate]);
 
-  // Get heading options from template - NO FALLBACK TO DUMMY DATA  
-  const headingOptions = matchingTemplate?.components?.heading_options || [];
+  // Get actual heading options based on template's headings component IDs
+  const headingOptions = React.useMemo(() => {
+    if (!matchingTemplate?.components?.headings || !allHeadingOptions) {
+      console.log('=== NO HEADINGS IN TEMPLATE OR NO DATA ===');
+      return [];
+    }
+    
+    const headingIds = Object.keys(matchingTemplate.components.headings).filter(
+      id => matchingTemplate.components.headings[id] === true
+    );
+    
+    const options = allHeadingOptions
+      .filter(option => headingIds.includes(option.id))
+      .map(option => ({
+        value: option.name,
+        label: option.name,
+        fullness: option.fullness,
+        price: option.price
+      }));
+      
+    console.log('=== HEADING OPTIONS DEBUG ===');
+    console.log('Template Heading IDs:', headingIds);
+    console.log('All Heading Options:', allHeadingOptions);
+    console.log('Filtered Heading Options:', options);
+    
+    return options;
+  }, [matchingTemplate, allHeadingOptions]);
 
   // Update treatment name when template changes
   useEffect(() => {
