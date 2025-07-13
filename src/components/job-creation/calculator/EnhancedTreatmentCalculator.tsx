@@ -110,24 +110,26 @@ export const EnhancedTreatmentCalculator = ({
 
   // Get actual lining options based on template's lining component IDs
   const liningOptions = React.useMemo(() => {
-    if (!matchingTemplate?.components?.lining) {
-      console.log('=== NO LINING IN TEMPLATE ===');
-      return [];
-    }
+    const templateLiningIds = matchingTemplate?.components?.lining ? 
+      Object.keys(matchingTemplate.components.lining).filter(
+        id => matchingTemplate.components.lining[id] === true
+      ) : [];
     
-    const liningIds = Object.keys(matchingTemplate.components.lining).filter(
-      id => matchingTemplate.components.lining[id] === true
-    );
-    
-    // For now, create mock options based on the IDs until we implement proper lining fetching
-    const options = liningIds.map(id => ({
-      value: id,
-      label: 'Lining',
-      price: 10
-    }));
+    // If template has no lining IDs specified, show default options
+    const options = templateLiningIds.length > 0 
+      ? templateLiningIds.map(id => ({
+          value: id,
+          label: 'Lining',
+          price: 10
+        }))
+      : [
+          { value: 'standard', label: 'Standard Lining', price: 25 },
+          { value: 'blackout', label: 'Blackout Lining', price: 35 },
+          { value: 'thermal', label: 'Thermal Lining', price: 45 }
+        ];
       
     console.log('=== LINING OPTIONS DEBUG ===');
-    console.log('Template Lining IDs:', liningIds);
+    console.log('Template Lining IDs:', templateLiningIds);
     console.log('Generated Lining Options:', options);
     
     return options;
@@ -135,26 +137,35 @@ export const EnhancedTreatmentCalculator = ({
 
   // Get actual heading options based on template's headings component IDs
   const headingOptions = React.useMemo(() => {
-    if (!matchingTemplate?.components?.headings || !allHeadingOptions) {
-      console.log('=== NO HEADINGS IN TEMPLATE OR NO DATA ===');
+    if (!allHeadingOptions) {
+      console.log('=== NO HEADING DATA AVAILABLE ===');
       return [];
     }
     
-    const headingIds = Object.keys(matchingTemplate.components.headings).filter(
-      id => matchingTemplate.components.headings[id] === true
-    );
+    const templateHeadingIds = matchingTemplate?.components?.headings ? 
+      Object.keys(matchingTemplate.components.headings).filter(
+        id => matchingTemplate.components.headings[id] === true
+      ) : [];
     
-    const options = allHeadingOptions
-      .filter(option => headingIds.includes(option.id))
-      .map(option => ({
-        value: option.name,
-        label: option.name,
-        fullness: option.fullness,
-        price: option.price
-      }));
+    // If template has no heading IDs specified, show ALL available heading options
+    const options = templateHeadingIds.length > 0
+      ? allHeadingOptions
+          .filter(option => templateHeadingIds.includes(option.id))
+          .map(option => ({
+            value: option.name,
+            label: option.name,
+            fullness: option.fullness,
+            price: option.price
+          }))
+      : allHeadingOptions.map(option => ({
+          value: option.name,
+          label: option.name,
+          fullness: option.fullness,
+          price: option.price
+        }));
       
     console.log('=== HEADING OPTIONS DEBUG ===');
-    console.log('Template Heading IDs:', headingIds);
+    console.log('Template Heading IDs:', templateHeadingIds);
     console.log('All Heading Options:', allHeadingOptions);
     console.log('Filtered Heading Options:', options);
     
