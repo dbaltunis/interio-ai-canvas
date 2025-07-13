@@ -49,18 +49,19 @@ export const TreatmentCalculatorDialog = ({
   const [calculations, setCalculations] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter window coverings by treatment type - show all active templates first, then filter by name
-  const allActiveWindowCoverings = windowCoverings?.filter(wc => wc.active && wc.making_cost_id) || [];
-  const matchingWindowCoverings = allActiveWindowCoverings.filter(wc => {
+  // Show all active window covering templates from settings
+  const filteredWindowCoverings = windowCoverings?.filter(wc => wc.active) || [];
+  
+  // Separate templates by relevance (optional - for better UX)
+  const matchingWindowCoverings = filteredWindowCoverings.filter(wc => {
     const hasMatchingName = wc.name.toLowerCase().includes(treatmentType.toLowerCase()) ||
                            (treatmentType === 'curtains' && wc.name.toLowerCase().includes('curtain'));
     return hasMatchingName;
   });
   
-  // Show matching templates first, then all other templates
-  const filteredWindowCoverings = matchingWindowCoverings.length > 0 
-    ? matchingWindowCoverings 
-    : allActiveWindowCoverings;
+  const otherWindowCoverings = filteredWindowCoverings.filter(wc => 
+    !matchingWindowCoverings.includes(wc)
+  );
 
   // Load making cost data when window covering changes
   useEffect(() => {
@@ -298,12 +299,12 @@ export const TreatmentCalculatorDialog = ({
                             </div>
                           </SelectItem>
                         ))}
-                        {allActiveWindowCoverings.length > matchingWindowCoverings.length && (
+                        {filteredWindowCoverings.length > matchingWindowCoverings.length && (
                           <div className="px-2 py-1 text-xs text-gray-500 border-t">Other Templates</div>
                         )}
                       </>
                     )}
-                    {allActiveWindowCoverings.filter(wc => !matchingWindowCoverings.includes(wc)).map((wc) => (
+                    {otherWindowCoverings.map((wc) => (
                       <SelectItem key={wc.id} value={wc.id}>
                         <div className="flex items-center gap-2">
                           <span>{wc.name}</span>
