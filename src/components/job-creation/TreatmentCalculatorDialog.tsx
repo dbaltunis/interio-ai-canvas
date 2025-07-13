@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, AlertTriangle } from "lucide-react";
+import { Calculator, AlertTriangle, Edit, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMakingCosts } from "@/hooks/useMakingCosts";
@@ -254,282 +254,260 @@ export const TreatmentCalculatorDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            Smart {treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
+            {selectedWindowCovering?.name || treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Left Column - Treatment Details */}
+          <div className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {/* Window Covering Selection */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Product Selection</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Window Covering</Label>
-                <Select
-                  value={selectedWindowCovering?.id || ''}
-                  onValueChange={(value) => {
-                    const wc = windowCoverings?.find(w => w.id === value);
-                    setSelectedWindowCovering(wc || null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select window covering" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {matchingWindowCoverings.length > 0 && (
-                      <>
-                        {matchingWindowCoverings.map((wc) => (
-                          <SelectItem key={wc.id} value={wc.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{wc.name}</span>
-                              <Badge variant="default">Recommended</Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                        {filteredWindowCoverings.length > matchingWindowCoverings.length && (
-                          <div className="px-2 py-1 text-xs text-gray-500 border-t">Other Templates</div>
-                        )}
-                      </>
-                    )}
-                    {otherWindowCoverings.map((wc) => (
-                      <SelectItem key={wc.id} value={wc.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{wc.name}</span>
-                          <Badge variant="secondary">Template</Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label>Product Name</Label>
-                <Input
-                  value={formData.product_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, product_name: e.target.value }))}
-                  placeholder="Custom product name"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Measurements */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Measurements ({units?.length || 'cm'})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label>Rail Width *</Label>
-                  <Input
-                    type="number"
-                    value={formData.rail_width}
-                    onChange={(e) => setFormData(prev => ({ ...prev, rail_width: e.target.value }))}
-                    placeholder="150"
-                  />
-                </div>
-                <div>
-                  <Label>Drop *</Label>
-                  <Input
-                    type="number"
-                    value={formData.drop}
-                    onChange={(e) => setFormData(prev => ({ ...prev, drop: e.target.value }))}
-                    placeholder="200"
-                  />
-                </div>
-                <div>
-                  <Label>Pooling</Label>
-                  <Input
-                    type="number"
-                    value={formData.pooling}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pooling: e.target.value }))}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Options */}
-          {makingCostData && (
+            {/* Treatment Details Section */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Options - {makingCostData.name}</CardTitle>
+                <CardTitle className="text-base">Treatment Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {makingCostData.heading_options?.length > 0 && (
-                  <div>
-                    <Label>Heading</Label>
-                    <Select value={formData.selected_heading} onValueChange={(value) => setFormData(prev => ({ ...prev, selected_heading: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select heading" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no-heading">No heading</SelectItem>
-                        {makingCostData.heading_options.map((option: any, index: number) => (
-                          <SelectItem key={index} value={option.name}>
-                            {option.name} - {formatCurrency(option.base_price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Treatment name</Label>
+                  <Input
+                    value={formData.product_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, product_name: e.target.value }))}
+                    placeholder="Treatment"
+                  />
+                </div>
+                
+                <div>
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
 
-                {makingCostData.hardware_options?.length > 0 && (
+                {calculations && (
                   <div>
-                    <Label>Hardware</Label>
-                    <Select value={formData.selected_hardware} onValueChange={(value) => setFormData(prev => ({ ...prev, selected_hardware: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select hardware" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no-hardware">No hardware</SelectItem>
-                        {makingCostData.hardware_options.map((option: any, index: number) => (
-                          <SelectItem key={index} value={option.name}>
-                            {option.name} - {formatCurrency(option.base_price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {makingCostData.lining_options?.length > 0 && (
-                  <div>
-                    <Label>Lining</Label>
-                    <Select value={formData.selected_lining} onValueChange={(value) => setFormData(prev => ({ ...prev, selected_lining: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select lining" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no-lining">No lining</SelectItem>
-                        {makingCostData.lining_options.map((option: any, index: number) => (
-                          <SelectItem key={index} value={option.name}>
-                            {option.name} - {formatCurrency(option.base_price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Price</Label>
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(calculations.costs.totalCost)}
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          )}
 
-          {/* Fabric */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Fabric Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Cost Per Yard</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.fabric_cost_per_yard}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fabric_cost_per_yard: e.target.value }))}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <Label>Fabric Width (cm)</Label>
-                  <Input
-                    type="number"
-                    value={formData.fabric_width}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fabric_width: e.target.value }))}
-                    placeholder="137"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Results */}
-          {calculations && (
+            {/* Visual Representation */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Calculation Results</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="p-3 bg-blue-50 rounded">
-                  <div className="text-sm font-medium mb-1">Fabric Usage</div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {units?.fabric === 'yards' 
-                      ? calculations.fabricUsage?.yards?.toFixed(1) 
-                      : calculations.fabricUsage?.meters?.toFixed(1)
-                    } {units?.fabric || 'meters'}
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center space-y-4">
+                  {/* Curtain Visual */}
+                  <div className="relative">
+                    <div className="w-48 h-32 bg-gray-200 rounded-t-lg relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-2 bg-gray-800"></div>
+                      <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-800"></div>
+                      <div className="w-full h-full bg-gradient-to-b from-gray-300 to-gray-400 opacity-80"></div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600">
-                    Widths needed: {calculations.fabricUsage?.widthsRequired || 1}
+                  
+                  {/* Single/Pair Options */}
+                  <div className="flex items-center space-x-6">
+                    <label className="flex items-center space-x-2">
+                      <input 
+                        type="radio" 
+                        name="curtainType" 
+                        value="single" 
+                        defaultChecked 
+                        className="w-4 h-4 text-primary" 
+                      />
+                      <span>Single</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input 
+                        type="radio" 
+                        name="curtainType" 
+                        value="pair" 
+                        className="w-4 h-4 text-primary" 
+                      />
+                      <span>Pair</span>
+                    </label>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Fabric Cost:</span>
-                    <span>{formatCurrency(calculations.costs?.fabricCost)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Making Cost:</span>
-                    <span>{formatCurrency(calculations.costs?.makingCost)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrency(calculations.costs?.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Margin ({calculations.costs?.margin}%):</span>
-                    <span>{formatCurrency((calculations.costs?.totalCost || 0) - (calculations.costs?.subtotal || 0))}</span>
-                  </div>
-                  <div className="flex justify-between font-bold border-t pt-2">
-                    <span>Total:</span>
-                    <span>{formatCurrency(calculations.costs?.totalCost)}</span>
+                  {/* Action Buttons */}
+                  <div className="space-y-2 w-full">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit treatment hems
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add hardware
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-gray-600">
+          {/* Right Column - Measurements & Details */}
+          <div className="space-y-6">
+            {/* Treatment Measurements */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Treatment measurements</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Rail width</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="number"
+                        value={formData.rail_width}
+                        onChange={(e) => setFormData(prev => ({ ...prev, rail_width: e.target.value }))}
+                        placeholder="300"
+                      />
+                      <span className="text-sm text-gray-500">cm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Curtain drop</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="number"
+                        value={formData.drop}
+                        onChange={(e) => setFormData(prev => ({ ...prev, drop: e.target.value }))}
+                        placeholder="200"
+                      />
+                      <span className="text-sm text-gray-500">cm</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Curtain pooling</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="number"
+                      value={formData.pooling}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pooling: e.target.value }))}
+                      placeholder="0"
+                    />
+                    <span className="text-sm text-gray-500">cm</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Fabric Section */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Fabric</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full justify-start h-12">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center">
+                      <Plus className="h-3 w-3" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium">Select Fabric</div>
+                      <div className="text-xs text-gray-500">Choose from library or enter manually</div>
+                    </div>
+                  </div>
+                </Button>
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <Label>Cost Per Yard</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.fabric_cost_per_yard}
+                      onChange={(e) => setFormData(prev => ({ ...prev, fabric_cost_per_yard: e.target.value }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Calculation Results */}
             {calculations && (
-              <span className="font-bold text-lg text-green-600">
-                Total: {formatCurrency(calculations.costs?.totalCost)}
-              </span>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">
+                    Calculation results ({selectedWindowCovering?.name || treatmentType})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Fabric amount</span>
+                      <span className="font-medium">{(calculations.fabricUsage.meters * 100).toFixed(0)} cm</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Curtain width total</span>
+                      <span className="font-medium">{calculations.fabricUsage.widthsRequired} Drops ({calculations.fabricUsage.meters.toFixed(2)})</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Fabric drop requirements</span>
+                      <span className="font-medium">{(calculations.fabricUsage.meters * 100).toFixed(0)} cm</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Fabric width requirements</span>
+                      <span className="font-medium">{(calculations.fabricUsage.meters * 100).toFixed(0)} cm</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Lining price</span>
+                      <span className="font-medium">{formatCurrency(19.13)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Manufacturing price</span>
+                      <span className="font-medium">{formatCurrency(calculations.costs.makingCost)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Fabric price</span>
+                      <span className="font-medium">{formatCurrency(calculations.costs.fabricCost)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Leftovers-Vertical</span>
+                      <span className="font-medium">25.00 cm</span>
+                    </div>
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex justify-between items-center font-bold">
+                        <span>Total Price</span>
+                        <span className="text-lg text-green-600">{formatCurrency(calculations.costs.totalCost)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={!formData.rail_width || !formData.drop || !calculations}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Save Treatment
-            </Button>
-          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex justify-end space-x-3 pt-6 border-t">
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!selectedWindowCovering || !formData.rail_width || !formData.drop}
+          >
+            Save Treatment
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
