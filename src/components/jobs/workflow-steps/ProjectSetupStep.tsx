@@ -66,7 +66,9 @@ export const ProjectSetupStep = ({ client, project, onProjectUpdate }: ProjectSe
     try {
       const createdProject = await createProjectMutation.mutateAsync({
         ...projectData,
-        client_id: client.id
+        client_id: client.id,
+        start_date: projectData.start_date || null,
+        due_date: projectData.due_date || null
       });
 
       onProjectUpdate(createdProject);
