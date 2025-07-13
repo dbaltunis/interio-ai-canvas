@@ -18,6 +18,7 @@ import { calculateTotalPrice, formatCurrency } from './calculationUtils';
 import { FabricSelector } from '@/components/fabric/FabricSelector';
 import { useProductTemplates } from '@/hooks/useProductTemplates';
 import { useHeadingOptions } from '@/hooks/useHeadingOptions';
+import { HemEditDialog } from './HemEditDialog';
 
 interface EnhancedTreatmentCalculatorProps {
   isOpen: boolean;
@@ -99,6 +100,13 @@ export const EnhancedTreatmentCalculator = ({
   const [dontUpdateTotalPrice, setDontUpdateTotalPrice] = useState(false);
   const [calculation, setCalculation] = useState<(CalculationResult & { details: DetailedCalculation }) | null>(null);
   const [calculationBreakdown, setCalculationBreakdown] = useState<CalculationBreakdown | null>(null);
+  const [isHemDialogOpen, setIsHemDialogOpen] = useState(false);
+  const [hemConfig, setHemConfig] = useState({
+    header_hem: "15",
+    bottom_hem: "10",
+    side_hem: "5", 
+    seam_hem: "3"
+  });
 
   // Get actual lining options based on template's lining component IDs
   const liningOptions = React.useMemo(() => {
@@ -234,6 +242,13 @@ export const EnhancedTreatmentCalculator = ({
     }
   };
 
+  const handleHemSave = (newHemConfig: typeof hemConfig) => {
+    setHemConfig(newHemConfig);
+    console.log('Hem configuration updated:', newHemConfig);
+    // Recalculate everything with new hem values
+    // This will be integrated with your existing fabric calculations
+  };
+
   const handleSave = () => {
     if (!calculation) return;
 
@@ -262,6 +277,7 @@ export const EnhancedTreatmentCalculator = ({
         lining: formData.lining,
         hardware: formData.hardware
       },
+      hem_configuration: hemConfig,
       pricing: {
         fabric_cost: calculation.fabricCost,
         labor_cost: calculation.laborCost,
@@ -404,7 +420,12 @@ export const EnhancedTreatmentCalculator = ({
                 </RadioGroup>
 
                 <div className="mt-4 space-y-2">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => setIsHemDialogOpen(true)}
+                  >
                     <Edit3 className="w-4 h-4 mr-2" />
                     Edit treatment hems
                   </Button>
@@ -642,6 +663,15 @@ export const EnhancedTreatmentCalculator = ({
             </Button>
           </div>
         </div>
+
+        {/* Hem Edit Dialog */}
+        <HemEditDialog
+          isOpen={isHemDialogOpen}
+          onClose={() => setIsHemDialogOpen(false)}
+          onSave={handleHemSave}
+          initialValues={hemConfig}
+          treatmentType={treatmentType}
+        />
       </DialogContent>
     </Dialog>
   );
