@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useToast } from "@/hooks/use-toast";
 import { SimplifiedTreatmentCard } from "./SimplifiedTreatmentCard";
+import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 
 interface SimplifiedRoomCardProps {
   room: any;
@@ -45,6 +46,10 @@ export const SimplifiedRoomCard = ({
   const updateRoom = useUpdateRoom();
   const deleteRoom = useDeleteRoom();
   const { toast } = useToast();
+  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
+
+  // Filter active window covering templates
+  const activeTemplates = windowCoverings?.filter(wc => wc.active) || [];
 
   const roomTotal = treatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
 
@@ -192,22 +197,36 @@ export const SimplifiedRoomCard = ({
               <ChevronDown className="h-4 w-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48">
-            <DropdownMenuItem onClick={() => handleAddTreatment("Curtains")}>
-              Add Curtains
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddTreatment("Blinds")}>
-              Add Blinds
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddTreatment("Services")}>
-              Add Services
-            </DropdownMenuItem>
+          <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg">
+            {windowCoveringsLoading ? (
+              <DropdownMenuItem disabled>
+                Loading templates...
+              </DropdownMenuItem>
+            ) : activeTemplates.length > 0 ? (
+              activeTemplates.map((template) => (
+                <DropdownMenuItem 
+                  key={template.id} 
+                  onClick={() => handleAddTreatment(template.name)}
+                  className="flex items-center gap-2 hover:bg-muted cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add {template.name}
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled className="text-muted-foreground">
+                No templates found. Create templates in Settings first.
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
         {treatments.length === 0 && (
           <p className="text-center text-muted-foreground text-sm py-4">
-            No treatments yet. Add curtains, blinds, or services to get started.
+            {activeTemplates.length > 0 
+              ? "No treatments yet. Add treatments from your configured templates."
+              : "No treatments yet. Create product templates in Settings to get started."
+            }
           </p>
         )}
       </CardContent>
