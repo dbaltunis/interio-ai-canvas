@@ -9,7 +9,7 @@ import {
   MoreVertical,
   Square
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -38,7 +38,7 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
   const currentWindowName = surface?.name || "Window #1";
 
   // Initialize window name
-  React.useEffect(() => {
+  useEffect(() => {
     setWindowName(currentWindowName);
   }, [currentWindowName]);
 
@@ -72,12 +72,17 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
 
   const handleCopyTreatment = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       // Create a new surface for the copied treatment
       const surfaceData = {
         name: `${currentWindowName} (Copy)`,
         project_id: projectId,
         room_id: treatment.room_id,
         surface_type: 'window',
+        user_id: user.id,
         width: surface?.width || 60,
         height: surface?.height || 48
       };
@@ -95,6 +100,7 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
           room_id: treatment.room_id,
           window_id: newSurface.id,
           treatment_type: treatment.treatment_type,
+          user_id: user.id,
           product_name: treatment.product_name,
           fabric_type: treatment.fabric_type,
           color: treatment.color,

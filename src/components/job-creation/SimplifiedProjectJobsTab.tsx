@@ -113,6 +113,10 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
       
       const newRoom = await createRoom.mutateAsync(newRoomData);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       // Copy treatments from original room
       const roomTreatments = treatments?.filter(t => t.room_id === room.id) || [];
       
@@ -123,6 +127,7 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
           project_id: projectId,
           room_id: newRoom.id,
           surface_type: 'window',
+          user_id: user.id,
           width: 60,
           height: 48
         };
@@ -140,6 +145,7 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
             room_id: newRoom.id,
             window_id: newSurface.id,
             treatment_type: treatment.treatment_type,
+            user_id: user.id,
             product_name: treatment.product_name,
             fabric_type: treatment.fabric_type,
             color: treatment.color,
@@ -185,6 +191,10 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
     if (!currentTreatmentData) return;
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       // Create auto-generated window/surface
       const windowCount = treatments?.filter(t => t.room_id === currentTreatmentData.roomId).length + 1;
       const surfaceData = {
@@ -192,7 +202,7 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
         project_id: projectId,
         room_id: currentTreatmentData.roomId,
         surface_type: 'window',
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+        user_id: user.id,
         width: treatmentData.measurements?.width || 60,
         height: treatmentData.measurements?.height || 48
       };
@@ -210,6 +220,7 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
           room_id: currentTreatmentData.roomId,
           window_id: newSurface.id,
           treatment_type: currentTreatmentData.treatmentType,
+          user_id: user.id,
           ...treatmentData
         };
 
