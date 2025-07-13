@@ -9,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, AlertTriangle, Edit, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useWindowCoverings } from "@/hooks/useWindowCoverings";
-import { useMakingCosts } from "@/hooks/useMakingCosts";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface TreatmentCalculatorDialogProps {
@@ -26,12 +25,10 @@ export const TreatmentCalculatorDialog = ({
   onSave, 
   treatmentType 
 }: TreatmentCalculatorDialogProps) => {
-  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
-  const { makingCosts, isLoading: makingCostsLoading } = useMakingCosts();
+  const { templates, isLoading: templatesLoading } = useProductTemplates();
   const { units } = useMeasurementUnits();
   
-  const [selectedWindowCovering, setSelectedWindowCovering] = useState<any>(null);
-  const [makingCostData, setMakingCostData] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [formData, setFormData] = useState({
     product_name: "",
     rail_width: "",
@@ -41,6 +38,7 @@ export const TreatmentCalculatorDialog = ({
     fabric_cost_per_yard: "",
     fabric_width: "137",
     roll_direction: "vertical",
+    curtain_type: "single",
     selected_heading: "",
     selected_hardware: "",
     selected_lining: "",
@@ -49,42 +47,28 @@ export const TreatmentCalculatorDialog = ({
   const [calculations, setCalculations] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Show all active window covering templates from settings
-  const filteredWindowCoverings = windowCoverings?.filter(wc => wc.active) || [];
+  // Filter active templates
+  const activeTemplates = templates?.filter(t => t.active) || [];
   
-  // Separate templates by relevance (optional - for better UX)
-  const matchingWindowCoverings = filteredWindowCoverings.filter(wc => {
-    const hasMatchingName = wc.name.toLowerCase().includes(treatmentType.toLowerCase()) ||
-                           (treatmentType === 'curtains' && wc.name.toLowerCase().includes('curtain'));
-    return hasMatchingName;
-  });
-  
-  const otherWindowCoverings = filteredWindowCoverings.filter(wc => 
-    !matchingWindowCoverings.includes(wc)
+  // Find matching template for the treatment type
+  const matchingTemplate = activeTemplates.find(template => 
+    template.name.toLowerCase() === treatmentType.toLowerCase()
   );
 
-  // Load making cost data when window covering changes
+  // Auto-select the matching template when dialog opens
   useEffect(() => {
-    if (selectedWindowCovering?.making_cost_id && makingCosts) {
-      const makingCost = makingCosts.find(mc => mc.id === selectedWindowCovering.making_cost_id);
-      setMakingCostData(makingCost || null);
+    if (isOpen && matchingTemplate && !selectedTemplate) {
+      setSelectedTemplate(matchingTemplate);
       setFormData(prev => ({
         ...prev,
-        product_name: selectedWindowCovering.name || ''
+        product_name: matchingTemplate.name || ''
       }));
     }
-  }, [selectedWindowCovering, makingCosts]);
+  }, [isOpen, matchingTemplate, selectedTemplate]);
 
-  // Auto-select first window covering
+  // Calculate treatment based on template configuration
   useEffect(() => {
-    if (isOpen && filteredWindowCoverings.length > 0 && !selectedWindowCovering) {
-      setSelectedWindowCovering(filteredWindowCoverings[0]);
-    }
-  }, [isOpen, filteredWindowCoverings, selectedWindowCovering]);
-
-  // Simple calculation
-  useEffect(() => {
-    if (!selectedWindowCovering || !formData.rail_width || !formData.drop) {
+    if (!selectedTemplate || !formData.rail_width || !formData.drop) {
       setCalculations(null);
       setError(null);
       return;
@@ -96,64 +80,63 @@ export const TreatmentCalculatorDialog = ({
       const pooling = parseFloat(formData.pooling) || 0;
       const fabricWidth = parseFloat(formData.fabric_width) || 137;
       const fabricCost = parseFloat(formData.fabric_cost_per_yard) || 0;
+      const quantity = formData.quantity || 1;
       
-      // Basic fabric calculation
+      // Calculate fabric requirements based on template
       const totalDrop = drop + pooling;
-      const widthsNeeded = Math.ceil(railWidth / fabricWidth);
+      let widthsNeeded = 1;
+      
+      // Adjust for curtain type
+      if (formData.curtain_type === "pair") {
+        widthsNeeded = Math.ceil((railWidth * 2.5) / fabricWidth); // 2.5x fullness for pairs
+      } else {
+        widthsNeeded = Math.ceil((railWidth * 2) / fabricWidth); // 2x fullness for single
+      }
+      
       const fabricUsageMeters = (totalDrop * widthsNeeded) / 100; // Convert cm to meters
       const fabricUsageYards = fabricUsageMeters * 1.094; // Convert to yards
       
-      const fabricCostTotal = fabricUsageYards * fabricCost;
+      const fabricCostTotal = fabricUsageYards * fabricCost * quantity;
       
-      // Making cost calculation
-      let makingCostTotal = 0;
-      if (makingCostData) {
-        // Base making cost (simplified)
-        makingCostTotal = railWidth * 0.5; // £0.50 per cm of width
-        
-        // Add selected options
-        if (formData.selected_heading && formData.selected_heading !== "no-heading" && makingCostData.heading_options) {
-          const headingOption = makingCostData.heading_options.find((opt: any) => opt.name === formData.selected_heading);
-          if (headingOption) makingCostTotal += headingOption.base_price || 0;
-        }
-        
-        if (formData.selected_hardware && formData.selected_hardware !== "no-hardware" && makingCostData.hardware_options) {
-          const hardwareOption = makingCostData.hardware_options.find((opt: any) => opt.name === formData.selected_hardware);
-          if (hardwareOption) makingCostTotal += hardwareOption.base_price || 0;
-        }
-        
-        if (formData.selected_lining && formData.selected_lining !== "no-lining" && makingCostData.lining_options) {
-          const liningOption = makingCostData.lining_options.find((opt: any) => opt.name === formData.selected_lining);
-          if (liningOption) makingCostTotal += liningOption.base_price || 0;
-        }
+      // Basic making cost calculation (would be more complex with real making cost data)
+      let makingCostTotal = railWidth * 0.75 * quantity; // £0.75 per cm of width
+      
+      // Add complexity for pairs
+      if (formData.curtain_type === "pair") {
+        makingCostTotal *= 1.5;
       }
       
+      // Apply template-specific calculations if available
+      const templateMarkup = 40; // Default 40% markup
       const subtotal = fabricCostTotal + makingCostTotal;
-      const margin = selectedWindowCovering.margin_percentage || 40;
-      const totalCost = subtotal * (1 + margin / 100);
+      const totalCost = subtotal * (1 + templateMarkup / 100);
       
       setCalculations({
         fabricUsage: {
           meters: fabricUsageMeters,
           yards: fabricUsageYards,
           widthsRequired: widthsNeeded,
-          orientation: formData.roll_direction
+          orientation: formData.roll_direction,
+          totalDrop: totalDrop
         },
         costs: {
           fabricCost: fabricCostTotal,
           makingCost: makingCostTotal,
+          liningCost: 19.13 * quantity, // Example lining cost
           subtotal: subtotal,
-          margin: margin,
+          margin: templateMarkup,
           totalCost: totalCost
-        }
+        },
+        template: selectedTemplate
       });
       
       setError(null);
     } catch (err) {
+      console.error('Calculation error:', err);
       setError('Calculation error');
       setCalculations(null);
     }
-  }, [selectedWindowCovering, makingCostData, formData]);
+  }, [selectedTemplate, formData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -169,7 +152,7 @@ export const TreatmentCalculatorDialog = ({
     }
 
     const treatmentData = {
-      product_name: formData.product_name || selectedWindowCovering?.name || '',
+      product_name: formData.product_name || selectedTemplate?.name || treatmentType,
       treatment_type: treatmentType,
       quantity: formData.quantity || 1,
       material_cost: calculations.costs?.fabricCost || 0,
@@ -180,7 +163,8 @@ export const TreatmentCalculatorDialog = ({
         rail_width: formData.rail_width,
         drop: formData.drop,
         pooling: formData.pooling,
-        fabric_usage: units?.fabric === 'yards' ? calculations.fabricUsage?.yards : calculations.fabricUsage?.meters
+        fabric_usage: calculations.fabricUsage?.meters,
+        curtain_type: formData.curtain_type
       },
       fabric_details: {
         fabric_cost_per_yard: formData.fabric_cost_per_yard,
@@ -188,23 +172,23 @@ export const TreatmentCalculatorDialog = ({
         roll_direction: formData.roll_direction
       },
       selected_options: [formData.selected_heading, formData.selected_hardware, formData.selected_lining].filter(opt => opt && !opt.startsWith('no-')),
-      notes: formData.notes || `Smart calculator generated ${treatmentType}`,
+      notes: formData.notes || `${selectedTemplate?.name || treatmentType} - calculated using template`,
       status: "planned",
-      window_covering: selectedWindowCovering,
+      template_used: selectedTemplate,
       calculation_details: calculations
     };
 
+    console.log('Submitting treatment data:', treatmentData);
     onSave(treatmentData);
     handleClose();
   };
 
   const handleClose = () => {
-    setSelectedWindowCovering(null);
-    setMakingCostData(null);
+    setSelectedTemplate(matchingTemplate || null);
     setCalculations(null);
     setError(null);
     setFormData({
-      product_name: "",
+      product_name: matchingTemplate?.name || "",
       rail_width: "",
       drop: "",
       pooling: "0",
@@ -212,6 +196,7 @@ export const TreatmentCalculatorDialog = ({
       fabric_cost_per_yard: "",
       fabric_width: "137",
       roll_direction: "vertical",
+      curtain_type: "single",
       selected_heading: "",
       selected_hardware: "",
       selected_lining: "",
@@ -220,28 +205,51 @@ export const TreatmentCalculatorDialog = ({
     onClose();
   };
 
-  if (windowCoveringsLoading || makingCostsLoading) {
+  if (templatesLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl">
-          <div className="text-center py-8">Loading...</div>
+          <div className="text-center py-8">Loading templates...</div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  if (filteredWindowCoverings.length === 0) {
+  if (!matchingTemplate && activeTemplates.length === 0) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>No Smart Calculator Available</DialogTitle>
+            <DialogTitle>No Template Available</DialogTitle>
           </DialogHeader>
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              No window covering templates found. 
-              Create window covering templates with making cost configurations in Settings to use the Smart Calculator.
+              No product templates found for "{treatmentType}". 
+              Create product templates in Settings to use the calculator.
+            </AlertDescription>
+          </Alert>
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={handleClose}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!matchingTemplate) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>No Template Found</DialogTitle>
+          </DialogHeader>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              No template found for "{treatmentType}". 
+              Available templates: {activeTemplates.map(t => t.name).join(', ')}.
+              Please create a template with the exact name "{treatmentType}" in Settings.
             </AlertDescription>
           </Alert>
           <div className="flex justify-end mt-4">
@@ -258,7 +266,7 @@ export const TreatmentCalculatorDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            {selectedWindowCovering?.name || treatmentType.charAt(0).toUpperCase() + treatmentType.slice(1)} Calculator
+            {selectedTemplate?.name || treatmentType} Calculator
           </DialogTitle>
         </DialogHeader>
         
@@ -272,6 +280,24 @@ export const TreatmentCalculatorDialog = ({
               </Alert>
             )}
 
+            {/* Template Info */}
+            {selectedTemplate && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Template: {selectedTemplate.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Badge variant="outline">{selectedTemplate.product_type}</Badge>
+                    <Badge variant="outline">{selectedTemplate.calculation_method}</Badge>
+                    {selectedTemplate.description && (
+                      <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Treatment Details Section */}
             <Card>
               <CardHeader className="pb-3">
@@ -283,7 +309,7 @@ export const TreatmentCalculatorDialog = ({
                   <Input
                     value={formData.product_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, product_name: e.target.value }))}
-                    placeholder="Treatment"
+                    placeholder="Treatment name"
                   />
                 </div>
                 
@@ -299,7 +325,7 @@ export const TreatmentCalculatorDialog = ({
 
                 {calculations && (
                   <div>
-                    <Label>Price</Label>
+                    <Label>Total Price</Label>
                     <div className="text-2xl font-bold text-green-600">
                       {formatCurrency(calculations.costs.totalCost)}
                     </div>
@@ -318,6 +344,9 @@ export const TreatmentCalculatorDialog = ({
                       <div className="absolute top-0 left-0 w-full h-2 bg-gray-800"></div>
                       <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-800"></div>
                       <div className="w-full h-full bg-gradient-to-b from-gray-300 to-gray-400 opacity-80"></div>
+                      {formData.curtain_type === "pair" && (
+                        <div className="absolute top-0 left-1/2 w-px h-full bg-gray-600 transform -translate-x-px"></div>
+                      )}
                     </div>
                   </div>
                   
@@ -328,7 +357,8 @@ export const TreatmentCalculatorDialog = ({
                         type="radio" 
                         name="curtainType" 
                         value="single" 
-                        defaultChecked 
+                        checked={formData.curtain_type === "single"}
+                        onChange={(e) => setFormData(prev => ({ ...prev, curtain_type: e.target.value }))}
                         className="w-4 h-4 text-primary" 
                       />
                       <span>Single</span>
@@ -338,6 +368,8 @@ export const TreatmentCalculatorDialog = ({
                         type="radio" 
                         name="curtainType" 
                         value="pair" 
+                        checked={formData.curtain_type === "pair"}
+                        onChange={(e) => setFormData(prev => ({ ...prev, curtain_type: e.target.value }))}
                         className="w-4 h-4 text-primary" 
                       />
                       <span>Pair</span>
@@ -447,7 +479,7 @@ export const TreatmentCalculatorDialog = ({
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">
-                    Calculation results ({selectedWindowCovering?.name || treatmentType})
+                    Calculation results ({selectedTemplate?.name})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -458,19 +490,19 @@ export const TreatmentCalculatorDialog = ({
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Curtain width total</span>
-                      <span className="font-medium">{calculations.fabricUsage.widthsRequired} Drops ({calculations.fabricUsage.meters.toFixed(2)})</span>
+                      <span className="font-medium">{calculations.fabricUsage.widthsRequired} Drops ({calculations.fabricUsage.meters.toFixed(2)}m)</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Fabric drop requirements</span>
-                      <span className="font-medium">{(calculations.fabricUsage.meters * 100).toFixed(0)} cm</span>
+                      <span className="font-medium">{calculations.fabricUsage.totalDrop} cm</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Fabric width requirements</span>
-                      <span className="font-medium">{(calculations.fabricUsage.meters * 100).toFixed(0)} cm</span>
+                      <span className="text-sm">Curtain type</span>
+                      <span className="font-medium">{formData.curtain_type === "pair" ? "Pair" : "Single"}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Lining price</span>
-                      <span className="font-medium">{formatCurrency(19.13)}</span>
+                      <span className="font-medium">{formatCurrency(calculations.costs.liningCost)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Manufacturing price</span>
@@ -479,10 +511,6 @@ export const TreatmentCalculatorDialog = ({
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Fabric price</span>
                       <span className="font-medium">{formatCurrency(calculations.costs.fabricCost)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Leftovers-Vertical</span>
-                      <span className="font-medium">25.00 cm</span>
                     </div>
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between items-center font-bold">
@@ -504,7 +532,7 @@ export const TreatmentCalculatorDialog = ({
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!selectedWindowCovering || !formData.rail_width || !formData.drop}
+            disabled={!selectedTemplate || !formData.rail_width || !formData.drop}
           >
             Save Treatment
           </Button>
