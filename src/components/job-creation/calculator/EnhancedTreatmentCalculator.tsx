@@ -259,7 +259,7 @@ export const EnhancedTreatmentCalculator = ({
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              No template found for "{treatmentType}". Please create a product template with this exact name in Settings > Product Templates.
+              No template found for "{treatmentType}". Please create a product template with this exact name in Settings &gt; Product Templates.
               {templates && templates.length > 0 && (
                 <div className="mt-2">
                   Available templates: {templates.filter(t => t.active).map(t => t.name).join(', ')}
