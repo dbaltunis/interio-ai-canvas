@@ -92,21 +92,11 @@ export const EnhancedTreatmentCalculator = ({
   const [calculation, setCalculation] = useState<(CalculationResult & { details: DetailedCalculation }) | null>(null);
   const [calculationBreakdown, setCalculationBreakdown] = useState<CalculationBreakdown | null>(null);
 
-  // Get lining options from template or use defaults
-  const liningOptions = matchingTemplate?.components?.lining_options || [
-    { value: "none", label: "No Lining", price: 0 },
-    { value: "lined", label: "Lined", price: 8.50 },
-    { value: "blackout", label: "Blackout", price: 12.00 },
-    { value: "thermal", label: "Thermal", price: 15.00 }
-  ];
+  // Get lining options from template - NO FALLBACK TO DUMMY DATA
+  const liningOptions = matchingTemplate?.components?.lining_options || [];
 
-  // Get heading options from template or use defaults
-  const headingOptions = matchingTemplate?.components?.heading_options || [
-    { value: "Pencil Pleat", label: "Pencil Pleat", fullness: 2.0, price: 15 },
-    { value: "Eyelet", label: "Eyelet", fullness: 2.2, price: 18 },
-    { value: "Tab Top", label: "Tab Top", fullness: 1.8, price: 12 },
-    { value: "Pinch Pleat", label: "Pinch Pleat", fullness: 2.5, price: 25 }
-  ];
+  // Get heading options from template - NO FALLBACK TO DUMMY DATA  
+  const headingOptions = matchingTemplate?.components?.heading_options || [];
 
   // Update treatment name when template changes
   useEffect(() => {
