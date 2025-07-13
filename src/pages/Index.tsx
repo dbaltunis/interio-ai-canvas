@@ -5,7 +5,7 @@ import { UserProfile } from "@/components/layout/UserProfile";
 import { BrandHeader } from "@/components/layout/BrandHeader";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { SimplifiedJobsPage } from "@/components/jobs/SimplifiedJobsPage";
+import { JobsPage } from "@/components/jobs/JobsPage";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { Button } from "@/components/ui/button";
@@ -48,13 +48,13 @@ const Index = () => {
       case "dashboard":
         return <Dashboard />;
       case "jobs":
-        return <SimplifiedJobsPage />;
+        return <JobsPage />;
       case "library":
         return <LibraryPage />;
       case "calendar":
         return <CalendarView />;
       default:
-        return <SimplifiedJobsPage />;
+        return <JobsPage />;
     }
   };
 
