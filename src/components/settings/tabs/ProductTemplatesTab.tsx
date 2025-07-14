@@ -84,6 +84,12 @@ export const ProductTemplatesTab = () => {
       lining: {},
       services: {}
     },
+    requiredComponents: {
+      headings: {},
+      hardware: {},
+      lining: {},
+      services: {}
+    },
     calculationRules: {
       heightTiers: [],
       constructionOptions: [],
@@ -127,7 +133,10 @@ export const ProductTemplatesTab = () => {
       calculation_method: formData.calculationMethod,
       pricing_unit: formData.pricingUnit,
       measurement_requirements: [],
-      components: formData.selectedComponents,
+      components: {
+        ...formData.selectedComponents,
+        required: formData.requiredComponents
+      },
       calculation_rules: {
         heightTiers: [...formData.calculationRules.heightTiers],
         constructionOptions: [...formData.calculationRules.constructionOptions],
@@ -193,13 +202,19 @@ export const ProductTemplatesTab = () => {
       heightRange1End: "3.0",
       heightRange2Start: "3.0", 
       heightRange2End: "4.0",
-      heightRange3Start: "4.0",
-      selectedComponents: {
-        headings: {},
-        hardware: {},
-        lining: {},
-        services: {}
-      },
+    heightRange3Start: "4.0",
+    selectedComponents: {
+      headings: {},
+      hardware: {},
+      lining: {},
+      services: {}
+    },
+    requiredComponents: {
+      headings: {},
+      hardware: {},
+      lining: {},
+      services: {}
+    },
       calculationRules: {
         heightTiers: [],
         constructionOptions: [],
@@ -231,6 +246,13 @@ export const ProductTemplatesTab = () => {
       services: {}
     };
     
+    const requiredComponents = {
+      headings: {},
+      hardware: {},
+      lining: {},
+      services: {}
+    };
+    
     // If template has component selections, reconstruct the selectedComponents object
     if (template.components && typeof template.components === 'object') {
       // If components is already in the correct format
@@ -246,6 +268,14 @@ export const ProductTemplatesTab = () => {
       if (template.components.services) {
         selectedComponents.services = template.components.services || {};
       }
+      
+      // Load required components if available
+      if (template.components.required) {
+        requiredComponents.headings = template.components.required.headings || {};
+        requiredComponents.hardware = template.components.required.hardware || {};
+        requiredComponents.lining = template.components.required.lining || {};
+        requiredComponents.services = template.components.required.services || {};
+      }
     }
     
     // Extract values with proper fallbacks
@@ -257,6 +287,7 @@ export const ProductTemplatesTab = () => {
     
     console.log("Extracted template data:", {
       selectedComponents,
+      requiredComponents,
       baseMakingCost,
       baseHeightLimit,
       calculationRules: template.calculation_rules
@@ -283,6 +314,7 @@ export const ProductTemplatesTab = () => {
       heightRange2End: (template.heightRange2End || "4.0").toString(),
       heightRange3Start: (template.heightRange3Start || "4.0").toString(),
       selectedComponents: selectedComponents,
+      requiredComponents: requiredComponents,
       calculationRules: {
         heightTiers: template.calculation_rules?.heightTiers || [],
         constructionOptions: template.calculation_rules?.constructionOptions || [],
@@ -882,26 +914,51 @@ export const ProductTemplatesTab = () => {
                       <p className="text-sm text-gray-500 italic">No heading options created yet. Create some in the Components tab.</p>
                     ) : (
                       headingOptions.map((heading) => (
-                        <div key={heading.id} className="flex items-center gap-2">
-                          <Checkbox 
-                            id={`heading-${heading.id}`}
-                            checked={formData.selectedComponents.headings[heading.id] || false}
-                            onCheckedChange={(checked) => 
-                              setFormData(prev => ({
-                                ...prev,
-                                selectedComponents: {
-                                  ...prev.selectedComponents,
-                                  headings: {
-                                    ...prev.selectedComponents.headings,
-                                    [heading.id]: checked === true
+                        <div key={heading.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`heading-${heading.id}`}
+                              checked={formData.selectedComponents.headings[heading.id] || false}
+                              onCheckedChange={(checked) => 
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedComponents: {
+                                    ...prev.selectedComponents,
+                                    headings: {
+                                      ...prev.selectedComponents.headings,
+                                      [heading.id]: checked === true
+                                    }
                                   }
+                                }))
+                              }
+                            />
+                            <label htmlFor={`heading-${heading.id}`} className="text-sm font-medium">
+                              {heading.name} ({heading.fullness}x) - ${heading.price}/{fabricUnit}
+                            </label>
+                          </div>
+                          {formData.selectedComponents.headings[heading.id] && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Checkbox 
+                                id={`heading-required-${heading.id}`}
+                                checked={formData.requiredComponents.headings[heading.id] || false}
+                                onCheckedChange={(checked) => 
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    requiredComponents: {
+                                      ...prev.requiredComponents,
+                                      headings: {
+                                        ...prev.requiredComponents.headings,
+                                        [heading.id]: checked === true
+                                      }
+                                    }
+                                  }))
                                 }
-                              }))
-                            }
-                          />
-                          <label htmlFor={`heading-${heading.id}`} className="text-sm">
-                            {heading.name} ({heading.fullness}x) - ${heading.price}/{fabricUnit}
-                          </label>
+                              />
+                              <label htmlFor={`heading-required-${heading.id}`} className="text-xs text-orange-600">
+                                Required component (customer must select)
+                              </label>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
@@ -915,26 +972,51 @@ export const ProductTemplatesTab = () => {
                       <p className="text-sm text-gray-500 italic">No hardware options created yet. Create some in the Components tab.</p>
                     ) : (
                       hardwareOptions.map((hardware) => (
-                        <div key={hardware.id} className="flex items-center gap-2">
-                          <Checkbox 
-                            id={`hardware-${hardware.id}`}
-                            checked={formData.selectedComponents.hardware[hardware.id] || false}
-                            onCheckedChange={(checked) => 
-                              setFormData(prev => ({
-                                ...prev,
-                                selectedComponents: {
-                                  ...prev.selectedComponents,
-                                  hardware: {
-                                    ...prev.selectedComponents.hardware,
-                                    [hardware.id]: checked === true
+                        <div key={hardware.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`hardware-${hardware.id}`}
+                              checked={formData.selectedComponents.hardware[hardware.id] || false}
+                              onCheckedChange={(checked) => 
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedComponents: {
+                                    ...prev.selectedComponents,
+                                    hardware: {
+                                      ...prev.selectedComponents.hardware,
+                                      [hardware.id]: checked === true
+                                    }
                                   }
+                                }))
+                              }
+                            />
+                            <label htmlFor={`hardware-${hardware.id}`} className="text-sm font-medium">
+                              {hardware.name} - ${hardware.price}/{hardware.unit}
+                            </label>
+                          </div>
+                          {formData.selectedComponents.hardware[hardware.id] && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Checkbox 
+                                id={`hardware-required-${hardware.id}`}
+                                checked={formData.requiredComponents.hardware[hardware.id] || false}
+                                onCheckedChange={(checked) => 
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    requiredComponents: {
+                                      ...prev.requiredComponents,
+                                      hardware: {
+                                        ...prev.requiredComponents.hardware,
+                                        [hardware.id]: checked === true
+                                      }
+                                    }
+                                  }))
                                 }
-                              }))
-                            }
-                          />
-                          <label htmlFor={`hardware-${hardware.id}`} className="text-sm">
-                            {hardware.name} - ${hardware.price}/{hardware.unit}
-                          </label>
+                              />
+                              <label htmlFor={`hardware-required-${hardware.id}`} className="text-xs text-orange-600">
+                                Required component (customer must select)
+                              </label>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
@@ -950,26 +1032,51 @@ export const ProductTemplatesTab = () => {
                       <p className="text-sm text-gray-500 italic">No lining options created yet. Create some in the Components tab.</p>
                     ) : (
                       liningOptions.map((lining) => (
-                        <div key={lining.id} className="flex items-center gap-2">
-                          <Checkbox 
-                            id={`lining-${lining.id}`}
-                            checked={formData.selectedComponents.lining[lining.id] || false}
-                            onCheckedChange={(checked) => 
-                              setFormData(prev => ({
-                                ...prev,
-                                selectedComponents: {
-                                  ...prev.selectedComponents,
-                                  lining: {
-                                    ...prev.selectedComponents.lining,
-                                    [lining.id]: checked === true
+                        <div key={lining.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`lining-${lining.id}`}
+                              checked={formData.selectedComponents.lining[lining.id] || false}
+                              onCheckedChange={(checked) => 
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedComponents: {
+                                    ...prev.selectedComponents,
+                                    lining: {
+                                      ...prev.selectedComponents.lining,
+                                      [lining.id]: checked === true
+                                    }
                                   }
+                                }))
+                              }
+                            />
+                            <label htmlFor={`lining-${lining.id}`} className="text-sm font-medium">
+                              {lining.name} - ${lining.price}/{lining.unit}
+                            </label>
+                          </div>
+                          {formData.selectedComponents.lining[lining.id] && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Checkbox 
+                                id={`lining-required-${lining.id}`}
+                                checked={formData.requiredComponents.lining[lining.id] || false}
+                                onCheckedChange={(checked) => 
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    requiredComponents: {
+                                      ...prev.requiredComponents,
+                                      lining: {
+                                        ...prev.requiredComponents.lining,
+                                        [lining.id]: checked === true
+                                      }
+                                    }
+                                  }))
                                 }
-                              }))
-                            }
-                          />
-                          <label htmlFor={`lining-${lining.id}`} className="text-sm">
-                            {lining.name} - ${lining.price}/{lining.unit}
-                          </label>
+                              />
+                              <label htmlFor={`lining-required-${lining.id}`} className="text-xs text-orange-600">
+                                Required component (customer must select)
+                              </label>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
@@ -983,26 +1090,51 @@ export const ProductTemplatesTab = () => {
                       <p className="text-sm text-gray-500 italic">No service options created yet. Create some in the Components tab.</p>
                     ) : (
                       serviceOptions.map((service) => (
-                        <div key={service.id} className="flex items-center gap-2">
-                          <Checkbox 
-                            id={`service-${service.id}`}
-                            checked={formData.selectedComponents.services[service.id] || false}
-                            onCheckedChange={(checked) => 
-                              setFormData(prev => ({
-                                ...prev,
-                                selectedComponents: {
-                                  ...prev.selectedComponents,
-                                  services: {
-                                    ...prev.selectedComponents.services,
-                                    [service.id]: checked === true
+                        <div key={service.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`service-${service.id}`}
+                              checked={formData.selectedComponents.services[service.id] || false}
+                              onCheckedChange={(checked) => 
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedComponents: {
+                                    ...prev.selectedComponents,
+                                    services: {
+                                      ...prev.selectedComponents.services,
+                                      [service.id]: checked === true
+                                    }
                                   }
+                                }))
+                              }
+                            />
+                            <label htmlFor={`service-${service.id}`} className="text-sm font-medium">
+                              {service.name} - ${service.price}/{service.unit}
+                            </label>
+                          </div>
+                          {formData.selectedComponents.services[service.id] && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Checkbox 
+                                id={`service-required-${service.id}`}
+                                checked={formData.requiredComponents.services[service.id] || false}
+                                onCheckedChange={(checked) => 
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    requiredComponents: {
+                                      ...prev.requiredComponents,
+                                      services: {
+                                        ...prev.requiredComponents.services,
+                                        [service.id]: checked === true
+                                      }
+                                    }
+                                  }))
                                 }
-                              }))
-                            }
-                          />
-                          <label htmlFor={`service-${service.id}`} className="text-sm">
-                            {service.name} - ${service.price}/{service.unit}
-                          </label>
+                              />
+                              <label htmlFor={`service-required-${service.id}`} className="text-xs text-orange-600">
+                                Required component (customer must select)
+                              </label>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
