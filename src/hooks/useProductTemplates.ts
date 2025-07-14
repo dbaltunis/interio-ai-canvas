@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export interface ProductTemplate {
   id: string;
@@ -11,6 +11,7 @@ export interface ProductTemplate {
   product_category: string; // 'curtain', 'blind', or 'both'
   calculation_method: string;
   pricing_unit: string;
+  pricing_grid_id?: string; // Add this property
   measurement_requirements: any;
   components: any;
   calculation_rules: any;

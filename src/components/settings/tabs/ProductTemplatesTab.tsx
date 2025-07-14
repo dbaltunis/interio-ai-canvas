@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { toast } from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -32,7 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
-import { useComponentOptions } from "@/hooks/useComponentOptions";
+import { useHardwareOptions } from "@/hooks/useComponentOptions";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import {
@@ -109,10 +110,21 @@ export const ProductTemplatesTab = () => {
     updateTemplate,
     deleteTemplate
   } = useProductTemplates();
-  const { components, isLoading: componentsLoading } = useComponentOptions();
+  const { data: hardwareOptions = [], isLoading: componentsLoading } = useHardwareOptions();
   const { data: pricingGrids, isLoading: pricingGridsLoading } =
     usePricingGrids();
   const { data: businessSettings } = useBusinessSettings();
+  const { toast } = useToast();
+
+  // Create a mock components object for backward compatibility
+  const components = {
+    hardware: hardwareOptions || [],
+    headings: [],
+    lining: [],
+    parts: [],
+    trimming: [],
+    service: []
+  };
 
   useEffect(() => {
     if (businessSettings) {
@@ -188,7 +200,11 @@ export const ProductTemplatesTab = () => {
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      toast.error("Please enter a template name");
+      toast({
+        title: "Error",
+        description: "Please enter a template name",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -243,20 +259,27 @@ export const ProductTemplatesTab = () => {
       });
 
       if (editingTemplate) {
-        await updateTemplate.mutateAsync({
-          id: editingTemplate.id,
-          updates: templateData
+        await updateTemplate(editingTemplate.id, templateData);
+        toast({
+          title: "Success",
+          description: "Template updated successfully"
         });
-        toast.success("Template updated successfully");
       } else {
-        await createTemplate.mutateAsync(templateData);
-        toast.success("Template created successfully");
+        await createTemplate(templateData);
+        toast({
+          title: "Success", 
+          description: "Template created successfully"
+        });
       }
 
       handleCancel();
     } catch (error) {
       console.error("Error saving template:", error);
-      toast.error("Failed to save template");
+      toast({
+        title: "Error",
+        description: "Failed to save template",
+        variant: "destructive"
+      });
     } finally {
       setIsSaving(false);
     }
@@ -314,11 +337,18 @@ export const ProductTemplatesTab = () => {
 
   const handleDelete = async (templateId: string) => {
     try {
-      await deleteTemplate.mutateAsync(templateId);
-      toast.success("Template deleted successfully");
+      await deleteTemplate(templateId);
+      toast({
+        title: "Success",
+        description: "Template deleted successfully"
+      });
     } catch (error) {
       console.error("Error deleting template:", error);
-      toast.error("Failed to delete template");
+      toast({
+        title: "Error",
+        description: "Failed to delete template",
+        variant: "destructive"
+      });
     }
   };
 
@@ -369,7 +399,7 @@ export const ProductTemplatesTab = () => {
       description: template.description || "",
       product_type: template.product_type || "",
       product_category: template.product_category || "",
-      window_covering_id: windowCoverings.find(wc => wc.name === template.product_type)?.id || "",
+      window_covering_id: windowCoverings?.find(wc => wc.name === template.product_type)?.id || "",
       calculationMethod: template.calculation_method || "",
       pricingUnit: template.pricing_unit || "",
       selectedPricingGrid: selectedPricingGrid, // FIXED: Use the properly extracted value
@@ -534,7 +564,7 @@ export const ProductTemplatesTab = () => {
                 <Select
                   value={formData.window_covering_id}
                   onValueChange={value => {
-                    const windowCovering = windowCoverings.find(
+                    const windowCovering = windowCoverings?.find(
                       wc => wc.id === value
                     );
                     handleSelectChange(
@@ -548,7 +578,7 @@ export const ProductTemplatesTab = () => {
                     <SelectValue placeholder="Select product type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {windowCoverings.map(wc => (
+                    {windowCoverings?.map(wc => (
                       <SelectItem key={wc.id} value={wc.id}>
                         {wc.name}
                       </SelectItem>
@@ -583,7 +613,6 @@ export const ProductTemplatesTab = () => {
                   <SelectContent>
                     <SelectItem value="fabric_area">Fabric Area</SelectItem>
                     <SelectItem value="pricing_grid">Pricing Grid</SelectItem>
-                    {/* <SelectItem value="complex">Complex</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -800,7 +829,7 @@ export const ProductTemplatesTab = () => {
                           <div key={category} className="space-y-2">
                             <h4>{category}</h4>
                             <div className="space-y-1">
-                              {componentList.map(component => (
+                              {Array.isArray(componentList) && componentList.map(component => (
                                 <div
                                   key={component.id}
                                   className="flex items-center space-x-2"
@@ -817,7 +846,7 @@ export const ProductTemplatesTab = () => {
                                         category,
                                         component.id,
                                         checked === true,
-                                        component.is_required
+                                        component.is_required || false
                                       )
                                     }
                                   />
@@ -849,7 +878,7 @@ export const ProductTemplatesTab = () => {
               <Button variant="ghost" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={isSaving} isLoading={isSaving}>
+              <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? "Saving..." : "Save Template"}
               </Button>
             </div>
