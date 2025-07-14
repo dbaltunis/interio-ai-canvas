@@ -183,6 +183,7 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
   };
 
   const handleAddTreatment = (roomId: string, treatmentType: string) => {
+    console.log('Project tab - received treatment type:', treatmentType);
     setCurrentTreatmentData({ roomId, treatmentType });
     setCalculatorOpen(true);
   };
@@ -246,7 +247,14 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
         };
 
         console.log('Saving treatment with fabric details:', finalTreatmentData);
-        await supabase.from('treatments').insert(finalTreatmentData);
+        const { data: insertedTreatment, error: treatmentError } = await supabase.from('treatments').insert(finalTreatmentData).select();
+        
+        if (treatmentError) {
+          console.error('Treatment insert error:', treatmentError);
+          throw treatmentError;
+        }
+        
+        console.log('Treatment saved successfully:', insertedTreatment);
         
         toast({
           title: "Treatment Added",

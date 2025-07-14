@@ -99,6 +99,7 @@ export const SimplifiedRoomCard = ({
   };
 
   const handleAddTreatment = (treatmentType: string) => {
+    console.log('Room card - calling onAddTreatment with:', treatmentType);
     onAddTreatment(room.id, treatmentType);
     setShowTreatmentDropdown(false);
   };
