@@ -84,21 +84,19 @@ export const WindowSelectionDialog = ({
               {selectedOption === 'existing' && (
                 <div className="ml-6 space-y-2">
                   {existingWindows.length > 0 ? (
-                    <div className="space-y-2">
+                    <RadioGroup value={selectedWindowId} onValueChange={setSelectedWindowId}>
                       {existingWindows.map((window) => (
                         <div key={window.id} className="flex items-center space-x-2">
                           <RadioGroupItem 
                             value={window.id} 
                             id={window.id}
-                            checked={selectedWindowId === window.id}
-                            onCheckedChange={() => setSelectedWindowId(window.id)}
                           />
                           <Label htmlFor={window.id} className="text-sm">
                             {window.name} ({window.width || 60}" × {window.height || 48}")
                           </Label>
                         </div>
                       ))}
-                    </div>
+                    </RadioGroup>
                   ) : (
                     <div className="text-sm text-muted-foreground italic">
                       No existing windows in this room
