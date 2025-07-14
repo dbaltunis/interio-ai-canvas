@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -152,6 +153,7 @@ export const useTreatments = (projectId?: string) => {
     },
     retry: 1,
     staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
     meta: {
       onError: (error: any) => {
         console.error("TanStack Query error in useTreatments:", error);
@@ -229,7 +231,9 @@ export const useCreateTreatment = () => {
     },
     onSuccess: (data) => {
       console.log("Create treatment success, invalidating queries");
+      // Invalidate all treatment queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.refetchQueries({ queryKey: ["treatments"] });
       toast({
         title: "Success",
         description: "Treatment created successfully",
@@ -291,7 +295,9 @@ export const useUpdateTreatment = () => {
     },
     onSuccess: () => {
       console.log("Update treatment success, invalidating queries");
+      // Invalidate all treatment queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.refetchQueries({ queryKey: ["treatments"] });
     },
     onError: (error) => {
       console.error("Update treatment mutation error:", error);

@@ -33,6 +33,8 @@ export const usePricingGrids = () => {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -50,6 +52,8 @@ export const usePricingGrid = (gridId: string) => {
       return data;
     },
     enabled: !!gridId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -72,6 +76,7 @@ export const useCreatePricingGrid = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });
+      queryClient.refetchQueries({ queryKey: ["pricing-grids"] });
     },
   });
 };
@@ -90,6 +95,7 @@ export const useDeletePricingGrid = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });
+      queryClient.refetchQueries({ queryKey: ["pricing-grids"] });
     },
   });
 };

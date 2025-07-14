@@ -37,7 +37,14 @@ export const PricingGridPreview = ({
   currentWidth,
   currentDrop
 }: PricingGridPreviewProps) => {
-  const { data: gridData, isLoading } = usePricingGrid(gridId);
+  const { data: gridData, isLoading, refetch } = usePricingGrid(gridId);
+
+  // Force refetch when dialog opens
+  React.useEffect(() => {
+    if (isOpen && gridId) {
+      refetch();
+    }
+  }, [isOpen, gridId, refetch]);
 
   if (!gridId) return null;
 
