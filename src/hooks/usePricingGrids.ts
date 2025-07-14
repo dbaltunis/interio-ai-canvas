@@ -102,10 +102,32 @@ export const useDeletePricingGrid = () => {
 
 // Helper function to parse CSV data and find price based on width and drop
 export const getPriceFromGrid = (gridData: any, width: number, drop: number): number => {
-  if (!gridData || !gridData.rows) return 0;
+  if (!gridData) return 0;
   
   try {
+    // Handle the actual data structure with dropRows
+    if (gridData.dropRows) {
+      const dropRows = gridData.dropRows;
+      const dropInCm = Math.round(drop * 100); // Convert meters to cm
+      
+      // Find the matching drop row
+      const matchingRow = dropRows.find((row: any) => {
+        const rowDrop = parseInt(row.drop);
+        return rowDrop === dropInCm;
+      });
+      
+      if (matchingRow && matchingRow.prices && matchingRow.prices.length > 0) {
+        // For now, return the first price since we don't have width mapping
+        // This could be enhanced to map width to specific price index
+        return parseFloat(matchingRow.prices[0].toString()) || 0;
+      }
+      
+      return 0;
+    }
+    
+    // Handle the old structure with rows and columns (fallback)
     const rows = gridData.rows;
+    if (!rows) return 0;
     
     // Find the appropriate row based on drop ranges
     let matchingRow = null;
