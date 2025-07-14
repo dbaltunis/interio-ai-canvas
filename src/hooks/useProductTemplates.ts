@@ -8,6 +8,7 @@ export interface ProductTemplate {
   name: string;
   description?: string;
   product_type: string;
+  product_category: string; // 'curtain', 'blind', or 'both'
   calculation_method: string;
   pricing_unit: string;
   measurement_requirements: any;

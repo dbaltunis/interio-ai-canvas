@@ -1427,6 +1427,7 @@ export type Database = {
           name: string
           pricing_grid_required: boolean | null
           pricing_unit: string
+          product_category: string | null
           product_type: string
           updated_at: string
           user_id: string
@@ -1444,6 +1445,7 @@ export type Database = {
           name: string
           pricing_grid_required?: boolean | null
           pricing_unit?: string
+          product_category?: string | null
           product_type: string
           updated_at?: string
           user_id: string
@@ -1461,6 +1463,7 @@ export type Database = {
           name?: string
           pricing_grid_required?: boolean | null
           pricing_unit?: string
+          product_category?: string | null
           product_type?: string
           updated_at?: string
           user_id?: string

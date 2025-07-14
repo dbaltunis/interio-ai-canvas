@@ -63,6 +63,7 @@ export const ProductTemplatesTab = () => {
     name: "",
     description: "",
     window_covering_id: "",
+    product_category: "curtain",
     calculationMethod: "",
     pricingUnit: "",
     selectedPricingGrid: "",
@@ -134,6 +135,7 @@ export const ProductTemplatesTab = () => {
     const templateData = {
       name: formData.name.trim(),
       description: formData.description || undefined,
+      product_category: formData.product_category,
       product_type: formData.window_covering_id ? windowCoverings.find(wc => wc.id === formData.window_covering_id)?.name || formData.name.toLowerCase().replace(/\s+/g, '-') : formData.name.toLowerCase().replace(/\s+/g, '-'),
       calculation_method: formData.calculationMethod,
       pricing_unit: formData.pricingUnit,
@@ -191,6 +193,7 @@ export const ProductTemplatesTab = () => {
     setFormData({
       name: "",
       description: "",
+      product_category: "curtain",
       window_covering_id: "",
       calculationMethod: "",
       pricingUnit: "",
@@ -317,6 +320,7 @@ export const ProductTemplatesTab = () => {
     setFormData({
       name: template.name || "",
       description: template.description || "",
+      product_category: template.product_category || "curtain",
       window_covering_id: windowCoverings.find(wc => wc.name === template.product_type)?.id || "",
       calculationMethod: template.calculation_method || "",
       pricingUnit: template.pricing_unit || "",
@@ -381,13 +385,30 @@ export const ProductTemplatesTab = () => {
           <h3 className="text-lg font-semibold text-brand-primary">Product Templates</h3>
           <p className="text-sm text-brand-neutral">Define how different window covering products are calculated</p>
         </div>
-        <Button 
-          onClick={handleToggleCreating}
-          className="bg-brand-primary hover:bg-brand-accent"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {isCreating ? "Cancel" : "Add Template"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Filter:</span>
+            <select 
+              className="px-2 py-1 border rounded text-sm"
+              onChange={(e) => {
+                // This shows how the category field could be used for filtering
+                console.log('Filter by category:', e.target.value);
+              }}
+            >
+              <option value="all">All Products</option>
+              <option value="curtain">🪟 Curtains Only</option>
+              <option value="blind">🪟 Blinds Only</option>
+              <option value="both">🪟 Both Types</option>
+            </select>
+          </div>
+          <Button 
+            onClick={handleToggleCreating}
+            className="bg-brand-primary hover:bg-brand-accent"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isCreating ? "Cancel" : "Add Template"}
+          </Button>
+        </div>
       </div>
 
       {/* Existing Templates */}
@@ -410,7 +431,14 @@ export const ProductTemplatesTab = () => {
                     <CardTitle className="text-brand-primary">{template.name}</CardTitle>
                     <CardDescription>
                       {template.description && <span className="block">{template.description}</span>}
-                      Calculation: {template.calculation_method} • Pricing: {template.pricing_unit}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant={template.product_category === 'curtain' ? 'default' : template.product_category === 'blind' ? 'secondary' : 'outline'}>
+                          {template.product_category === 'curtain' ? '🪟 Curtain' : template.product_category === 'blind' ? '🪟 Blind' : '🪟 Both'}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          Calculation: {template.calculation_method} • Pricing: {template.pricing_unit}
+                        </span>
+                      </div>
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -522,6 +550,28 @@ export const ProductTemplatesTab = () => {
                     ⚠️ You can create window coverings in the "Window Coverings" tab above if needed.
                   </p>
                 )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="productCategory">Product Category *</Label>
+                <Select 
+                  value={formData.product_category} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, product_category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="curtain">🪟 Curtain</SelectItem>
+                    <SelectItem value="blind">🪟 Blind</SelectItem>
+                    <SelectItem value="both">🪟 Both (Curtain & Blind)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  This helps categorize and filter templates for future use
+                </p>
               </div>
             </div>
 
