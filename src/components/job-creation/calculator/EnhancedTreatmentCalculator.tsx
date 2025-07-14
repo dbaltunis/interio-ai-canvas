@@ -1,4 +1,3 @@
-
 import React, { useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,8 @@ import { FabricSelectionCard } from './components/FabricSelectionCard';
 import { CalculationResultsCard } from './components/CalculationResultsCard';
 import { useCalculatorState } from './hooks/useCalculatorState';
 import { useCalculatorLogic } from './hooks/useCalculatorLogic';
+import { PricingGridButton } from './components/PricingGridButton';
+import { usePricingGrid } from '@/hooks/usePricingGrids';
 
 interface EnhancedTreatmentCalculatorProps {
   isOpen: boolean;
@@ -162,13 +163,21 @@ export const EnhancedTreatmentCalculator = ({
     }
   }, [matchingTemplate, updateFormData]);
 
-  // Use calculation logic hook
+  // Get the pricing grid ID from the template
+  const pricingGridId = matchingTemplate?.pricing_grid_id || 
+                       matchingTemplate?.calculation_rules?.selectedPricingGrid;
+
+  // Fetch pricing grid data if using pricing grid method
+  const { data: gridData } = usePricingGrid(pricingGridId || '');
+
+  // Use calculation logic hook with gridData
   const { calculation, calculationBreakdown } = useCalculatorLogic(
     formData,
     hemConfig,
     matchingTemplate,
     liningOptions,
-    businessSettings
+    businessSettings,
+    gridData
   );
 
   const handleHeadingChange = (headingValue: string) => {
@@ -296,6 +305,15 @@ export const EnhancedTreatmentCalculator = ({
             <Calculator className="h-5 w-5" />
             {matchingTemplate.name} Calculator
             <Badge variant="outline">{matchingTemplate.calculation_method}</Badge>
+            {/* Add the clickable pricing grid button */}
+            {matchingTemplate.calculation_method === 'pricing_grid' && (
+              <PricingGridButton
+                gridId={pricingGridId}
+                gridName={matchingTemplate.name}
+                currentWidth={parseFloat(formData.railWidth) || undefined}
+                currentDrop={parseFloat(formData.curtainDrop) || undefined}
+              />
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -309,6 +327,14 @@ export const EnhancedTreatmentCalculator = ({
                 <div className="flex gap-2">
                   <Badge variant="outline">{matchingTemplate.product_type}</Badge>
                   <Badge variant="outline">{matchingTemplate.calculation_method}</Badge>
+                  {pricingGridId && (
+                    <PricingGridButton
+                      gridId={pricingGridId}
+                      gridName={`${matchingTemplate.name} Pricing Grid`}
+                      currentWidth={parseFloat(formData.railWidth) || undefined}
+                      currentDrop={parseFloat(formData.curtainDrop) || undefined}
+                    />
+                  )}
                 </div>
                 {matchingTemplate.description && (
                   <p className="text-sm text-muted-foreground">{matchingTemplate.description}</p>

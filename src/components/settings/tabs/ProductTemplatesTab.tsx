@@ -1,71 +1,67 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Settings, Edit, Trash2, Calculator, LoaderIcon } from "lucide-react";
-import { useState } from "react";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { useHeadingOptions } from "@/hooks/useHeadingOptions";
-import { useHardwareOptions, useLiningOptions, usePartsOptions } from "@/hooks/useComponentOptions";
-import { useServiceOptions } from "@/hooks/useServiceOptions";
-import { usePricingGrids } from "@/hooks/usePricingGrids";
-import { useProductTemplates } from "@/hooks/useProductTemplates";
+import { Textarea } from "@/components/ui/textarea";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
+import { useComponentOptions } from "@/hooks/useComponentOptions";
+import { usePricingGrids } from "@/hooks/usePricingGrids";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const ProductTemplatesTab = () => {
-  const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
-  const lengthUnit = getLengthUnitLabel();
-  const fabricUnit = getFabricUnitLabel();
-  
-  // Load actual component options
-  const { data: headingOptions = [] } = useHeadingOptions();
-  const { data: hardwareOptions = [] } = useHardwareOptions();
-  const { data: liningOptions = [] } = useLiningOptions();
-  const { data: partsOptions = [] } = usePartsOptions();
-  const { data: serviceOptions = [] } = useServiceOptions();
-  const { data: pricingGrids = [] } = usePricingGrids();
-  
-  // Load window coverings for product type selection
-  const { windowCoverings } = useWindowCoverings();
-  
-  // Use the new product templates hook
-  const { templates, isLoading, createTemplate, updateTemplate, deleteTemplate } = useProductTemplates();
-
-  // Mock calculation rules data (would come from your Calculations tab)
-  const availableCalculationRules = {
-    heightTiers: [
-      { id: 1, name: "Standard Height (0-240cm)", description: "Standard curtains up to 2.4m drop" },
-      { id: 2, name: "Extra Height (240-300cm)", description: "Tall curtains 2.4m to 3.0m drop" },
-      { id: 3, name: "Super Height (300cm+)", description: "Very tall curtains 3.0m+ drop" }
-    ],
-    constructionOptions: [
-      { id: 1, name: "Unlined", description: "Basic curtain with no lining" },
-      { id: 2, name: "Standard Lined", description: "Curtain with cotton sateen lining" },
-      { id: 3, name: "Detachable Lined", description: "Curtain with detachable lining" },
-      { id: 4, name: "Interlined", description: "Curtain with interlining for insulation" },
-      { id: 5, name: "Lined & Interlined", description: "Premium construction" }
-    ],
-    seamingOptions: [
-      { id: 1, name: "No Seams Required", description: "Single width fabric" },
-      { id: 2, name: "Standard Seaming", description: "Basic straight seams" },
-      { id: 3, name: "Pattern Matching Seams", description: "Careful pattern alignment" },
-      { id: 4, name: "Complex Pattern Match", description: "Intricate patterns" }
-    ]
-  };
-  
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    product_type: "",
+    product_category: "",
     window_covering_id: "",
-    product_category: "curtain",
-    calculationMethod: "",
-    pricingUnit: "",
+    calculationMethod: "fabric_area",
+    pricingUnit: "per-sq-meter",
     selectedPricingGrid: "",
     baseMakingCost: "",
     baseHeightLimit: "2.4",
@@ -73,85 +69,140 @@ export const ProductTemplatesTab = () => {
     complexityMultiplier: "standard",
     showComplexityOption: true,
     heightSurcharge1: "",
-    heightSurcharge2: "", 
+    heightSurcharge2: "",
     heightSurcharge3: "",
     heightRange1Start: "2.4",
     heightRange1End: "3.0",
-    heightRange2Start: "3.0", 
+    heightRange2Start: "3.0",
     heightRange2End: "4.0",
     heightRange3Start: "4.0",
     selectedComponents: {
       headings: {},
-      hardware: {},
       lining: {},
+      hardware: {},
       parts: {},
-      services: {},
-      grids: {}
+      trimming: {},
+      service: {}
     },
     requiredComponents: {
-      headings: {},
-      hardware: {},
-      lining: {},
-      parts: {},
-      services: {},
-      grids: {}
+      headings: [],
+      lining: [],
+      hardware: [],
+      parts: [],
+      trimming: [],
+      service: []
     },
     calculationRules: {
-      heightTiers: [],
-      constructionOptions: [],
-      seamingOptions: []
-    }
+      baseMakingCost: 0,
+      markup_percentage: 40,
+      labor_rate: 45
+    },
+    measurementRequirements: {}
   });
 
-  const requiresMakingCost = formData.calculationMethod !== "csv-pricing-grid";
-  const requiresPricingGrid = formData.calculationMethod === "csv-pricing-grid";
+  const { windowCoverings, isLoading: windowCoveringsLoading } =
+    useWindowCoverings();
+  const {
+    templates,
+    isLoading: templatesLoading,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate
+  } = useProductTemplates();
+  const { components, isLoading: componentsLoading } = useComponentOptions();
+  const { data: pricingGrids, isLoading: pricingGridsLoading } =
+    usePricingGrids();
+  const { data: businessSettings } = useBusinessSettings();
 
-  const handleCreateTemplate = async () => {
-    // Validate required fields
+  useEffect(() => {
+    if (businessSettings) {
+      setFormData(prev => ({
+        ...prev,
+        calculationRules: {
+          ...prev.calculationRules,
+          labor_rate: parseFloat(businessSettings?.labor_rate?.toString() || "45")
+        }
+      }));
+    }
+  }, [businessSettings]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
+    }));
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (
+    name: string,
+    value: string,
+    windowCoveringId?: string
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      window_covering_id: windowCoveringId || prev.window_covering_id
+    }));
+  };
+
+  const handleComponentChange = (
+    category: string,
+    componentId: string,
+    isChecked: boolean,
+    isRequired: boolean
+  ) => {
+    setFormData(prev => {
+      const updatedSelectedComponents = {
+        ...prev.selectedComponents,
+        [category]: {
+          ...prev.selectedComponents[category],
+          [componentId]: isChecked
+        }
+      };
+
+      const updatedRequiredComponents = {
+        ...prev.requiredComponents,
+        [category]: isRequired
+          ? [...(prev.requiredComponents[category] || []), componentId]
+          : (prev.requiredComponents[category] || []).filter(
+              id => id !== componentId
+            )
+      };
+
+      return {
+        ...prev,
+        selectedComponents: updatedSelectedComponents,
+        requiredComponents: updatedRequiredComponents
+      };
+    });
+  };
+
+  const handleSave = async () => {
     if (!formData.name.trim()) {
-      alert("Please enter a product name");
-      return;
-    }
-    if (!formData.calculationMethod) {
-      alert("Please select a calculation method");
-      return;
-    }
-    if (!formData.pricingUnit) {
-      alert("Please select a pricing unit");
-      return;
-    }
-    
-    // Validate based on calculation method
-    if (requiresMakingCost && !formData.baseMakingCost) {
-      alert("Please enter a base making cost");
-      return;
-    }
-    
-    if (requiresPricingGrid && !formData.selectedPricingGrid) {
-      alert("Please select a pricing grid");
+      toast.error("Please enter a template name");
       return;
     }
 
-    const templateData = {
-      name: formData.name.trim(),
-      description: formData.description || undefined,
-      product_category: formData.product_category,
-      product_type: formData.window_covering_id ? windowCoverings.find(wc => wc.id === formData.window_covering_id)?.name || formData.name.toLowerCase().replace(/\s+/g, '-') : formData.name.toLowerCase().replace(/\s+/g, '-'),
-      calculation_method: formData.calculationMethod,
-      pricing_unit: formData.pricingUnit,
-      measurement_requirements: [],
-      components: {
-        ...formData.selectedComponents,
-        required: formData.requiredComponents
-      },
-      calculation_rules: {
-        heightTiers: [...formData.calculationRules.heightTiers],
-        constructionOptions: [...formData.calculationRules.constructionOptions],
-        seamingOptions: [...formData.calculationRules.seamingOptions],
-        // Include pricing data in calculation_rules for persistence
+    try {
+      setIsSaving(true);
+
+      // Build calculation rules object with pricing grid reference
+      const calculationRules = {
         baseMakingCost: parseFloat(formData.baseMakingCost) || 0,
+        markup_percentage: 40,
+        labor_rate: parseFloat(businessSettings?.labor_rate?.toString() || "45"),
         baseHeightLimit: parseFloat(formData.baseHeightLimit) || 2.4,
         useHeightSurcharges: formData.useHeightSurcharges,
+        complexityMultiplier: formData.complexityMultiplier,
         heightSurcharge1: parseFloat(formData.heightSurcharge1) || 0,
         heightSurcharge2: parseFloat(formData.heightSurcharge2) || 0,
         heightSurcharge3: parseFloat(formData.heightSurcharge3) || 0,
@@ -160,43 +211,68 @@ export const ProductTemplatesTab = () => {
         heightRange2Start: parseFloat(formData.heightRange2Start) || 3.0,
         heightRange2End: parseFloat(formData.heightRange2End) || 4.0,
         heightRange3Start: parseFloat(formData.heightRange3Start) || 4.0,
-        selectedPricingGrid: formData.selectedPricingGrid,
-        complexityMultiplier: formData.complexityMultiplier,
-        showComplexityOption: formData.showComplexityOption
-      },
-      making_cost_required: requiresMakingCost,
-      pricing_grid_required: requiresPricingGrid,
-      active: true
-    };
+        // Save the selected pricing grid ID
+        selectedPricingGrid: formData.selectedPricingGrid || null
+      };
 
-    console.log("=== SAVING TEMPLATE DATA ===", templateData);
+      const templateData = {
+        name: formData.name,
+        description: formData.description,
+        product_type: formData.product_type,
+        product_category: formData.product_category,
+        calculation_method: formData.calculationMethod,
+        pricing_unit: formData.pricingUnit,
+        calculation_rules: calculationRules,
+        // Also save pricing grid ID at template level for easier access
+        pricing_grid_id: formData.selectedPricingGrid || null,
+        components: {
+          headings: formData.selectedComponents.headings || {},
+          lining: formData.selectedComponents.lining || {},
+          hardware: formData.selectedComponents.hardware || {},
+          parts: formData.selectedComponents.parts || {},
+          trimming: formData.selectedComponents.trimming || {},
+          service: formData.selectedComponents.service || {}
+        },
+        measurement_requirements: formData.measurementRequirements,
+        active: true
+      };
 
-    try {
-      if (editingId) {
-        // Update existing template
-        await updateTemplate(editingId, templateData);
+      console.log("Saving template with pricing grid:", {
+        templateData,
+        selectedPricingGrid: formData.selectedPricingGrid
+      });
+
+      if (editingTemplate) {
+        await updateTemplate.mutateAsync({
+          id: editingTemplate.id,
+          updates: templateData
+        });
+        toast.success("Template updated successfully");
       } else {
-        // Create new template
-        await createTemplate(templateData);
+        await createTemplate.mutateAsync(templateData);
+        toast.success("Template created successfully");
       }
 
-      // Reset form
-      resetForm();
-      setIsCreating(false);
-      setEditingId(null);
+      handleCancel();
     } catch (error) {
-      console.error('Error saving template:', error);
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const resetForm = () => {
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingTemplate(null);
     setFormData({
       name: "",
       description: "",
-      product_category: "curtain",
+      product_type: "",
+      product_category: "",
       window_covering_id: "",
-      calculationMethod: "",
-      pricingUnit: "",
+      calculationMethod: "fabric_area",
+      pricingUnit: "per-sq-meter",
       selectedPricingGrid: "",
       baseMakingCost: "",
       baseHeightLimit: "2.4",
@@ -204,131 +280,99 @@ export const ProductTemplatesTab = () => {
       complexityMultiplier: "standard",
       showComplexityOption: true,
       heightSurcharge1: "",
-      heightSurcharge2: "", 
+      heightSurcharge2: "",
       heightSurcharge3: "",
       heightRange1Start: "2.4",
       heightRange1End: "3.0",
-      heightRange2Start: "3.0", 
+      heightRange2Start: "3.0",
       heightRange2End: "4.0",
-    heightRange3Start: "4.0",
-    selectedComponents: {
-      headings: {},
-      hardware: {},
-      lining: {},
-      parts: {},
-      services: {},
-      grids: {}
-    },
-    requiredComponents: {
-      headings: {},
-      hardware: {},
-      lining: {},
-      parts: {},
-      services: {},
-      grids: {}
-    },
+      heightRange3Start: "4.0",
+      selectedComponents: {
+        headings: {},
+        lining: {},
+        hardware: {},
+        parts: {},
+        trimming: {},
+        service: {}
+      },
+      requiredComponents: {
+        headings: [],
+        lining: [],
+        hardware: [],
+        parts: [],
+        trimming: [],
+        service: []
+      },
       calculationRules: {
-        heightTiers: [],
-        constructionOptions: [],
-        seamingOptions: []
-      }
+        baseMakingCost: 0,
+        markup_percentage: 40,
+        labor_rate: 45
+      },
+      measurementRequirements: {}
     });
   };
 
-  const handleToggleCreating = () => {
-    setIsCreating(!isCreating);
-    setEditingId(null);
-    // Reset form when canceling
-    if (isCreating) {
-      resetForm();
+  const handleDelete = async (templateId: string) => {
+    try {
+      await deleteTemplate.mutateAsync(templateId);
+      toast.success("Template deleted successfully");
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast.error("Failed to delete template");
     }
   };
 
-  const handleEditTemplate = (template: any) => {
-    setEditingId(template.id);
-    setIsCreating(true);
+  const handleEdit = (template: any) => {
+    setEditingTemplate(template);
     
-    console.log("=== EDITING TEMPLATE ===", template);
-    
-    // Convert components array back to selectedComponents object structure
+    // Extract selected components
     const selectedComponents = {
-      headings: {},
-      hardware: {},
-      lining: {},
-      parts: {},
-      services: {},
-      grids: {}
+      headings: template.components?.headings || {},
+      lining: template.components?.lining || {},
+      hardware: template.components?.hardware || {},
+      parts: template.components?.parts || {},
+      trimming: template.components?.trimming || {},
+      service: template.components?.service || {}
     };
     
+    // Extract required components
     const requiredComponents = {
-      headings: {},
-      hardware: {},
-      lining: {},
-      parts: {},
-      services: {},
-      grids: {}
+      headings: [],
+      lining: [],
+      hardware: [],
+      parts: [],
+      trimming: [],
+      service: []
     };
     
-    // If template has component selections, reconstruct the selectedComponents object
-    if (template.components && typeof template.components === 'object') {
-      // If components is already in the correct format
-      if (template.components.headings) {
-        selectedComponents.headings = template.components.headings || {};
-      }
-      if (template.components.hardware) {
-        selectedComponents.hardware = template.components.hardware || {};
-      }
-      if (template.components.lining) {
-        selectedComponents.lining = template.components.lining || {};
-      }
-      if (template.components.parts) {
-        selectedComponents.parts = template.components.parts || {};
-      }
-      if (template.components.services) {
-        selectedComponents.services = template.components.services || {};
-      }
-      if (template.components.grids) {
-        selectedComponents.grids = template.components.grids || {};
-      }
-      
-      // Load required components if available
-      if (template.components.required) {
-        requiredComponents.headings = template.components.required.headings || {};
-        requiredComponents.hardware = template.components.required.hardware || {};
-        requiredComponents.lining = template.components.required.lining || {};
-        requiredComponents.parts = template.components.required.parts || {};
-        requiredComponents.services = template.components.required.services || {};
-        requiredComponents.grids = template.components.required.grids || {};
-      }
-    }
-    
-    // Extract values with proper fallbacks - fix the selectedPricingGrid loading
+    // Extract values with proper fallbacks - FIXED pricing grid loading
     const baseMakingCost = template.baseMakingCost || template.calculation_rules?.baseMakingCost || "";
     const baseHeightLimit = template.baseHeightLimit || template.calculation_rules?.baseHeightLimit || "2.4";
     const heightSurcharge1 = template.heightSurcharge1 || template.calculation_rules?.heightSurcharge1 || "";
     const heightSurcharge2 = template.heightSurcharge2 || template.calculation_rules?.heightSurcharge2 || "";
     const heightSurcharge3 = template.heightSurcharge3 || template.calculation_rules?.heightSurcharge3 || "";
     
-    // Fix: Load selectedPricingGrid from calculation_rules
-    const selectedPricingGrid = template.selectedPricingGrid || template.calculation_rules?.selectedPricingGrid || "";
+    // FIXED: Load selectedPricingGrid from multiple possible locations
+    const selectedPricingGrid = template.pricing_grid_id || 
+                                template.calculation_rules?.selectedPricingGrid || 
+                                template.selectedPricingGrid || "";
     
-    console.log("Extracted template data:", {
-      selectedComponents,
-      requiredComponents,
-      baseMakingCost,
-      baseHeightLimit,
+    console.log("Loading template for edit:", {
+      templateId: template.id,
       selectedPricingGrid,
+      pricingGridId: template.pricing_grid_id,
       calculationRules: template.calculation_rules
     });
     
     setFormData({
       name: template.name || "",
       description: template.description || "",
-      product_category: template.product_category || "curtain",
+      product_type: template.product_type || "",
+      product_category: template.product_category || "",
       window_covering_id: windowCoverings.find(wc => wc.name === template.product_type)?.id || "",
       calculationMethod: template.calculation_method || "",
       pricingUnit: template.pricing_unit || "",
-      selectedPricingGrid: selectedPricingGrid, // Fix: Use the extracted value
+      selectedPricingGrid: selectedPricingGrid, // FIXED: Use the properly extracted value
       baseMakingCost: baseMakingCost.toString(),
       baseHeightLimit: baseHeightLimit.toString(),
       useHeightSurcharges: template.useHeightSurcharges || template.calculation_rules?.useHeightSurcharges || false,
@@ -345,1009 +389,470 @@ export const ProductTemplatesTab = () => {
       selectedComponents: selectedComponents,
       requiredComponents: requiredComponents,
       calculationRules: {
-        heightTiers: template.calculation_rules?.heightTiers || [],
-        constructionOptions: template.calculation_rules?.constructionOptions || [],
-        seamingOptions: template.calculation_rules?.seamingOptions || []
-      }
+        baseMakingCost: parseFloat(baseMakingCost.toString()) || 0,
+        markup_percentage: 40,
+        labor_rate: 45
+      },
+      measurementRequirements: template.measurement_requirements || {}
     });
+    
+    setShowForm(true);
   };
 
-  const handleDeleteTemplate = async (templateId: string) => {
-    if (confirm("Are you sure you want to delete this template?")) {
-      try {
-        await deleteTemplate(templateId);
-      } catch (error) {
-        console.error('Error deleting template:', error);
-      }
-    }
-  };
-
-  const handleCalculationRuleToggle = (category: string, ruleId: number, checked: boolean) => {
-    console.log(`Toggling ${category} rule ${ruleId} to ${checked}`);
-    setFormData(prev => {
-      const currentRules = prev.calculationRules[category] || [];
-      const newRules = checked 
-        ? [...currentRules, ruleId]
-        : currentRules.filter(id => id !== ruleId);
-      
-      console.log(`Updated ${category} rules:`, newRules);
-      
-      return {
-        ...prev,
-        calculationRules: {
-          ...prev.calculationRules,
-          [category]: newRules
-        }
-      };
-    });
-  };
+  if (windowCoveringsLoading || templatesLoading || componentsLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Product Templates</CardTitle>
+          <CardDescription>Loading templates...</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Skeleton className="h-10 w-[200px]" />
+          <Skeleton className="h-4 w-[300px]" />
+          <Separator />
+          <div className="grid grid-cols-3 gap-4">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-brand-primary">Product Templates</h3>
-          <p className="text-sm text-brand-neutral">Define how different window covering products are calculated</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>Filter:</span>
-            <select 
-              className="px-2 py-1 border rounded text-sm"
-              onChange={(e) => {
-                // This shows how the category field could be used for filtering
-                console.log('Filter by category:', e.target.value);
-              }}
-            >
-              <option value="all">All Products</option>
-              <option value="curtain">🪟 Curtains Only</option>
-              <option value="blind">🪟 Blinds Only</option>
-              <option value="both">🪟 Both Types</option>
-            </select>
-          </div>
-          <Button 
-            onClick={handleToggleCreating}
-            className="bg-brand-primary hover:bg-brand-accent"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {isCreating ? "Cancel" : "Add Template"}
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Product Templates</CardTitle>
+          <CardDescription>
+            Manage product templates for different window coverings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => setShowForm(true)}>Add Template</Button>
+        </CardContent>
+      </Card>
 
-      {/* Existing Templates */}
-      <div className="grid gap-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <LoaderIcon className="h-6 w-6 animate-spin mr-2" />
-            <span>Loading templates...</span>
-          </div>
-        ) : templates.length === 0 ? (
-          <div className="text-center py-8 text-brand-neutral">
-            <p>No product templates found. Create your first template to get started.</p>
-          </div>
-        ) : (
-          templates.map((template) => (
-            <Card key={template.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-brand-primary">{template.name}</CardTitle>
-                    <CardDescription>
-                      {template.description && <span className="block">{template.description}</span>}
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={template.product_category === 'curtain' ? 'default' : template.product_category === 'blind' ? 'secondary' : 'outline'}>
-                          {template.product_category === 'curtain' ? '🪟 Curtain' : template.product_category === 'blind' ? '🪟 Blind' : '🪟 Both'}
-                        </Badge>
-                        <span className="text-sm text-gray-500">
-                          Calculation: {template.calculation_method} • Pricing: {template.pricing_unit}
-                        </span>
-                      </div>
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch checked={template.active} />
-                    <Button variant="outline" size="sm" onClick={() => handleEditTemplate(template)}>
-                      <Edit className="h-4 w-4" />
+      <Table>
+        <TableCaption>A list of your product templates.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Name</TableHead>
+            <TableHead>Product Type</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Calculation Method</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {templates?.map(template => (
+            <TableRow key={template.id}>
+              <TableCell className="font-medium">{template.name}</TableCell>
+              <TableCell>{template.product_type}</TableCell>
+              <TableCell>{template.product_category}</TableCell>
+              <TableCell>{template.calculation_method}</TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleEdit(template)}
+                >
+                  Edit
+                </Button>{" "}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Delete
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDeleteTemplate(template.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-medium text-sm mb-2">Available Components:</h4>
-                    <div className="flex gap-2 flex-wrap">
-                      {template.components && Object.keys(template.components).filter(key => 
-                        key !== 'required' && (
-                          typeof template.components[key] === 'object' 
-                            ? Object.keys(template.components[key]).length > 0
-                            : template.components[key]
-                        )
-                      ).map((component) => (
-                        <Badge key={component} variant="outline">
-                          {component}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {template.calculation_rules && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                        <Calculator className="h-4 w-4" />
-                        Applied Calculation Rules:
-                      </h4>
-                      <div className="space-y-2 text-xs">
-                        {template.calculation_rules.heightTiers?.length > 0 && (
-                          <div>
-                            <span className="font-medium text-blue-700">Height Tiers:</span>
-                            <div className="flex gap-1 flex-wrap mt-1">
-                              {template.calculation_rules.heightTiers.map((tierId: number) => {
-                                const tier = availableCalculationRules.heightTiers.find(t => t.id === tierId);
-                                return tier ? (
-                                  <Badge key={tierId} variant="secondary" className="text-xs">
-                                    {tier.name}
-                                  </Badge>
-                                ) : null;
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete
+                        the template and remove its data from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(template.id)}>
+                        Continue
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={5}>
+              {templates?.length} template(s) in total
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
 
-      {/* New Template Form - Only show when creating */}
-      {isCreating && (
+      {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? "Edit Product Template" : "Create New Product Template"}</CardTitle>
-            <CardDescription>{editingId ? "Update the window covering product template" : "Define a new window covering product type"}</CardDescription>
+            <CardTitle>{editingTemplate ? "Edit Template" : "Add Template"}</CardTitle>
+            <CardDescription>
+              {editingTemplate
+                ? "Edit the details of the selected template."
+                : "Create a new product template."}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Basic Info Section */}
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="grid gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="templateName">Product Name *</Label>
-                <Input 
-                  id="templateName" 
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Curtains, Roman Blinds" 
+                  onChange={handleInputChange}
                 />
               </div>
               <div>
-                <Label htmlFor="windowCovering">Window Covering Type</Label>
-                <Select 
-                  value={formData.window_covering_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, window_covering_id: value }))}
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleTextareaChange}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="product_type">Product Type</Label>
+                <Select
+                  value={formData.window_covering_id}
+                  onValueChange={value => {
+                    const windowCovering = windowCoverings.find(
+                      wc => wc.id === value
+                    );
+                    handleSelectChange(
+                      "product_type",
+                      windowCovering?.name || "",
+                      value
+                    );
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select window covering (optional)" />
+                    <SelectValue placeholder="Select product type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {windowCoverings && windowCoverings.length > 0 ? (
-                      windowCoverings.map((covering) => (
-                        <SelectItem key={covering.id} value={covering.id}>
-                          {covering.name} - {covering.fabrication_pricing_method}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled>
-                        No window coverings found. Create some first in the Window Coverings tab.
+                    {windowCoverings.map(wc => (
+                      <SelectItem key={wc.id} value={wc.id}>
+                        {wc.name}
                       </SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
-                {(!windowCoverings || windowCoverings.length === 0) && (
-                  <p className="text-sm text-amber-600 mt-1">
-                    ⚠️ You can create window coverings in the "Window Coverings" tab above if needed.
-                  </p>
-                )}
+              </div>
+              <div>
+                <Label htmlFor="product_category">Product Category</Label>
+                <Input
+                  type="text"
+                  id="product_category"
+                  name="product_category"
+                  value={formData.product_category}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="productCategory">Product Category *</Label>
-                <Select 
-                  value={formData.product_category} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, product_category: value }))}
+                <Label htmlFor="calculationMethod">Calculation Method</Label>
+                <Select
+                  value={formData.calculationMethod}
+                  onValueChange={value =>
+                    handleSelectChange("calculationMethod", value)
+                  }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder="Select calculation method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="curtain">🪟 Curtain</SelectItem>
-                    <SelectItem value="blind">🪟 Blind</SelectItem>
-                    <SelectItem value="both">🪟 Both (Curtain & Blind)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500 mt-1">
-                  This helps categorize and filter templates for future use
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="calculationMethod">Calculation Method *</Label>
-              <Select value={formData.calculationMethod} onValueChange={(value) => setFormData(prev => ({ ...prev, calculationMethod: value, pricingUnit: value === 'csv-pricing-grid' ? 'csv-grid' : '', selectedPricingGrid: '' }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="width-drop">Width × Drop (Curtains)</SelectItem>
-                  <SelectItem value="width-height">Width × Height (Blinds)</SelectItem>
-                  <SelectItem value="csv-pricing-grid">CSV Pricing Grid (Pre-defined pricing)</SelectItem>
-                  <SelectItem value="panels">Number of Panels</SelectItem>
-                  <SelectItem value="fixed">Fixed Price</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="templateDescription">Description</Label>
-              <Input 
-                id="templateDescription" 
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description of this product template" 
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pricingUnit">Pricing Unit *</Label>
-                <Select value={formData.pricingUnit} onValueChange={(value) => setFormData(prev => ({ ...prev, pricingUnit: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {requiresPricingGrid ? (
-                      <SelectItem value="csv-grid">From CSV Pricing Grid</SelectItem>
-                    ) : (
-                      <>
-                        <SelectItem value="per-linear-meter">Per Linear Meter</SelectItem>
-                        <SelectItem value="per-sqm">Per Square Meter</SelectItem>
-                        <SelectItem value="per-panel">Per Panel</SelectItem>
-                        <SelectItem value="per-drop">Per Drop</SelectItem>
-                        <SelectItem value="fixed">Fixed Price</SelectItem>
-                      </>
-                    )}
+                    <SelectItem value="fabric_area">Fabric Area</SelectItem>
+                    <SelectItem value="pricing_grid">Pricing Grid</SelectItem>
+                    {/* <SelectItem value="complex">Complex</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Pricing Grid Selection - only show when CSV pricing grid is selected */}
-              {requiresPricingGrid && (
+              {formData.calculationMethod === "pricing_grid" && (
                 <div>
-                  <Label htmlFor="selectedPricingGrid">Select Pricing Grid *</Label>
-                  <Select value={formData.selectedPricingGrid} onValueChange={(value) => setFormData(prev => ({ ...prev, selectedPricingGrid: value }))}>
+                  <Label htmlFor="selectedPricingGrid">Pricing Grid</Label>
+                  <Select
+                    value={formData.selectedPricingGrid}
+                    onValueChange={value =>
+                      handleSelectChange("selectedPricingGrid", value)
+                    }
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose a pricing grid" />
+                      <SelectValue placeholder="Select pricing grid" />
                     </SelectTrigger>
                     <SelectContent>
-                      {pricingGrids && pricingGrids.length > 0 ? (
-                        pricingGrids.map((grid) => (
-                          <SelectItem key={grid.id} value={grid.id}>
-                            {grid.name} ({(grid.grid_data as any)?.dropRows?.length || 0} drop ranges × {(grid.grid_data as any)?.widthColumns?.length || 0} width ranges)
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="none" disabled>No pricing grids available - upload some first</SelectItem>
-                      )}
+                      {pricingGrids?.map(grid => (
+                        <SelectItem key={grid.id} value={grid.id}>
+                          {grid.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {(!pricingGrids || pricingGrids.length === 0) && (
-                    <p className="text-xs text-orange-600 mt-1">
-                      ⚠️ No pricing grids found. Upload CSV pricing grids in the Components tab first.
-                    </p>
-                  )}
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="pricingUnit">Pricing Unit</Label>
+                <Select
+                  value={formData.pricingUnit}
+                  onValueChange={value => handleSelectChange("pricingUnit", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select pricing unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="per-sq-meter">Per Square Meter</SelectItem>
+                    <SelectItem value="per-linear-meter">
+                      Per Linear Meter
+                    </SelectItem>
+                    <SelectItem value="per-unit">Per Unit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="baseMakingCost">Base Making Cost</Label>
+                <Input
+                  type="number"
+                  id="baseMakingCost"
+                  name="baseMakingCost"
+                  value={formData.baseMakingCost}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <h3>Height Surcharges</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="baseHeightLimit">Base Height Limit (m)</Label>
+                <Input
+                  type="number"
+                  id="baseHeightLimit"
+                  name="baseHeightLimit"
+                  value={formData.baseHeightLimit}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="useHeightSurcharges">Use Height Surcharges</Label>
+                <Switch
+                  id="useHeightSurcharges"
+                  name="useHeightSurcharges"
+                  checked={formData.useHeightSurcharges}
+                  onCheckedChange={checked =>
+                    setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))
+                  }
+                />
+              </div>
+              {formData.useHeightSurcharges && (
+                <div>
+                  <Label htmlFor="complexityMultiplier">Complexity Multiplier</Label>
+                  <Select
+                    value={formData.complexityMultiplier}
+                    onValueChange={value =>
+                      handleSelectChange("complexityMultiplier", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select complexity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="complex">Complex</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
 
-            {/* Calculation Rules Selection */}
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calculator className="h-5 w-5 text-blue-600" />
-                  Select Applicable Calculation Rules
-                </CardTitle>
-                <CardDescription>
-                  Choose which calculation rules from the Calculations tab apply to this product type
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                
-                {/* Height-Based Pricing Rules */}
+            {formData.useHeightSurcharges && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-blue-900">Height-Based Pricing Tiers</Label>
-                  <p className="text-xs text-blue-700 mb-3">Select which height ranges apply to this product</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {availableCalculationRules.heightTiers.map((tier) => (
-                      <div key={tier.id} className="flex items-start space-x-2">
-                        <Checkbox 
-                          id={`height-tier-${tier.id}`}
-                          checked={formData.calculationRules.heightTiers.includes(tier.id)}
-                          onCheckedChange={(checked) => handleCalculationRuleToggle('heightTiers', tier.id, !!checked)}
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <label htmlFor={`height-tier-${tier.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {tier.name}
-                          </label>
-                          <p className="text-xs text-muted-foreground">
-                            {tier.description}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Construction Complexity Rules */}
-                <div>
-                  <Label className="text-sm font-medium text-green-900">Construction & Lining Options</Label>
-                  <p className="text-xs text-green-700 mb-3">Select which construction types are available for this product</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {availableCalculationRules.constructionOptions.map((option) => (
-                      <div key={option.id} className="flex items-start space-x-2">
-                        <Checkbox 
-                          id={`construction-${option.id}`}
-                          checked={formData.calculationRules.constructionOptions.includes(option.id)}
-                          onCheckedChange={(checked) => handleCalculationRuleToggle('constructionOptions', option.id, !!checked)}
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <label htmlFor={`construction-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {option.name}
-                          </label>
-                          <p className="text-xs text-muted-foreground">
-                            {option.description}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Seaming Complexity Rules */}
-                <div>
-                  <Label className="text-sm font-medium text-purple-900">Seaming & Pattern Matching</Label>
-                  <p className="text-xs text-purple-700 mb-3">Select which seaming complexities apply to this product</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {availableCalculationRules.seamingOptions.map((option) => (
-                      <div key={option.id} className="flex items-start space-x-2">
-                        <Checkbox 
-                          id={`seaming-${option.id}`}
-                          checked={formData.calculationRules.seamingOptions.includes(option.id)}
-                          onCheckedChange={(checked) => handleCalculationRuleToggle('seamingOptions', option.id, !!checked)}
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <label htmlFor={`seaming-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {option.name}
-                          </label>
-                          <p className="text-xs text-muted-foreground">
-                            {option.description}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </CardContent>
-            </Card>
-
-            {/* Pricing Structure Explanation */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">💡 Pricing Structure Explanation:</h4>
-              <div className="space-y-2 text-sm text-blue-800">
-                {requiresPricingGrid ? (
-                  <>
-                    <p><strong>CSV Pricing Grid Method:</strong></p>
-                    <p>• Final price comes directly from your uploaded CSV grid</p>
-                    <p>• No additional component costs are added to avoid double pricing</p>
-                    <p>• Components selected below are for display purposes only</p>
-                    <p>• Perfect for supplier-provided complete pricing</p>
-                  </>
-                ) : (
-                  <>
-                    <p><strong>Component-Based Pricing Method:</strong></p>
-                    <p>• Base making cost + fabric cost + selected component costs</p>
-                    <p>• Each component adds its individual cost to the total</p>
-                    <p>• Flexible for mixing and matching components</p>
-                    <p>• Perfect for bespoke custom work pricing</p>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Making Cost Structure - only show when NOT using pricing grid */}
-            {requiresMakingCost && (
-              <div className="space-y-4">
-                <h4 className="font-medium text-brand-primary">Making Cost Structure</h4>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="baseMakingCost">Base Making Cost *</Label>
-                    <Input 
-                      id="baseMakingCost" 
-                      type="number" 
-                      step="0.01" 
-                      value={formData.baseMakingCost}
-                      onChange={(e) => setFormData(prev => ({ ...prev, baseMakingCost: e.target.value }))}
-                      placeholder="45.00" 
-                    />
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500">Per {fabricUnit} up to</span>
-                      <Input 
-                        type="number" 
-                        step="0.1" 
-                        value={formData.baseHeightLimit}
-                        onChange={(e) => setFormData(prev => ({ ...prev, baseHeightLimit: e.target.value }))}
-                        placeholder="2.4" 
-                        className="w-16 h-6 text-xs"
-                      />
-                      <span className="text-xs text-gray-500">{lengthUnit} height</span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="showComplexityOption">Complexity Options</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="showComplexityOption" defaultChecked />
-                        <label htmlFor="showComplexityOption" className="text-sm">
-                          Show complexity multiplier option in calculator
-                        </label>
-                      </div>
-                      
-                      <div className="p-3 bg-gray-50 rounded-lg space-y-2">
-                        <h5 className="text-sm font-medium">Available Complexity Levels:</h5>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between">
-                            <span>• Standard (Basic installation)</span>
-                            <span>1.0x</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>• Medium (Bay windows, pattern matching)</span>
-                            <span>1.2x</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>• Complex (Difficult access, intricate details)</span>
-                            <span>1.5x</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>• Custom (User-defined multiplier)</span>
-                            <span>Variable</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        ℹ️ Users will see this option in the calculator to adjust pricing based on job complexity
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Height Surcharges Toggle */}
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="space-y-1">
-                    <h5 className="font-medium text-blue-900">Height-Based Surcharges</h5>
-                    <p className="text-sm text-blue-700">Add extra charges for windows above the base height limit</p>
-                  </div>
-                  <Switch 
-                    checked={formData.useHeightSurcharges}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))}
+                  <Label htmlFor="heightSurcharge1">Height Surcharge 1</Label>
+                  <Input
+                    type="number"
+                    id="heightSurcharge1"
+                    name="heightSurcharge1"
+                    value={formData.heightSurcharge1}
+                    onChange={handleInputChange}
                   />
                 </div>
-
-                {/* Height-based surcharges - only show when enabled */}
-                {formData.useHeightSurcharges && (
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-                    <h5 className="font-medium mb-3">Height-Based Surcharges</h5>
-                    
-                    {/* Range 1 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Height Range 1</Label>
-                      <div className="grid grid-cols-5 gap-2 items-end">
-                        <div>
-                          <Label htmlFor="range1Start" className="text-xs">From ({lengthUnit})</Label>
-                          <Input
-                            id="range1Start" 
-                            type="number" 
-                            step="0.1" 
-                            value={formData.heightRange1Start}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightRange1Start: e.target.value }))}
-                            placeholder="2.4" 
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="range1End" className="text-xs">To ({lengthUnit})</Label>
-                          <Input
-                            id="range1End" 
-                            type="number" 
-                            step="0.1" 
-                            value={formData.heightRange1End}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightRange1End: e.target.value }))}
-                            placeholder="3.0" 
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Label htmlFor="height1" className="text-xs">Surcharge per {fabricUnit}</Label>
-                          <Input
-                            id="height1" 
-                            type="number" 
-                            step="0.01" 
-                            value={formData.heightSurcharge1}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge1: e.target.value }))}
-                            placeholder="5.00" 
-                          />
-                        </div>
-                        <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
-                      </div>
-                    </div>
-                    
-                    {/* Range 2 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Height Range 2</Label>
-                      <div className="grid grid-cols-5 gap-2 items-end">
-                        <div>
-                          <Label htmlFor="range2Start" className="text-xs">From ({lengthUnit})</Label>
-                          <Input
-                            id="range2Start" 
-                            type="number" 
-                            step="0.1" 
-                            value={formData.heightRange2Start}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightRange2Start: e.target.value }))}
-                            placeholder="3.0" 
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="range2End" className="text-xs">To ({lengthUnit})</Label>
-                          <Input
-                            id="range2End" 
-                            type="number" 
-                            step="0.1" 
-                            value={formData.heightRange2End}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightRange2End: e.target.value }))}
-                            placeholder="4.0" 
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Label htmlFor="height2" className="text-xs">Surcharge per {fabricUnit}</Label>
-                          <Input
-                            id="height2" 
-                            type="number" 
-                            step="0.01" 
-                            value={formData.heightSurcharge2}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge2: e.target.value }))}
-                            placeholder="10.00" 
-                          />
-                        </div>
-                        <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
-                      </div>
-                    </div>
-                    
-                    {/* Range 3 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Height Range 3</Label>
-                      <div className="grid grid-cols-4 gap-2 items-end">
-                        <div>
-                          <Label htmlFor="range3Start" className="text-xs">Above ({lengthUnit})</Label>
-                          <Input
-                            id="range3Start" 
-                            type="number" 
-                            step="0.1" 
-                            value={formData.heightRange3Start}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightRange3Start: e.target.value }))}
-                            placeholder="4.0" 
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Label htmlFor="height3" className="text-xs">Surcharge per {fabricUnit}</Label>
-                          <Input
-                            id="height3" 
-                            type="number" 
-                            step="0.01" 
-                            value={formData.heightSurcharge3}
-                            onChange={(e) => setFormData(prev => ({ ...prev, heightSurcharge3: e.target.value }))}
-                            placeholder="20.00" 
-                          />
-                        </div>
-                        <div className="text-xs text-gray-500 self-center">+$ per {fabricUnit}</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <Label htmlFor="heightSurcharge2">Height Surcharge 2</Label>
+                  <Input
+                    type="number"
+                    id="heightSurcharge2"
+                    name="heightSurcharge2"
+                    value={formData.heightSurcharge2}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="heightSurcharge3">Height Surcharge 3</Label>
+                  <Input
+                    type="number"
+                    id="heightSurcharge3"
+                    name="heightSurcharge3"
+                    value={formData.heightSurcharge3}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
             )}
 
-            {/* Component Selection */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-brand-primary">Component Selection</h4>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-yellow-800">
-                  {requiresPricingGrid 
-                    ? "⚠️ CSV Pricing Grid Method: Components with individual prices will be added separately to quotes. Select components for display and customer choice."
-                    : "✓ Component-Based Pricing: Selected components will have their costs added to the final price calculation."
-                  }
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+            {formData.useHeightSurcharges && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Heading Options</Label>
-                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {headingOptions.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic">No heading options created yet. Create some in the Components tab.</p>
-                    ) : (
-                      headingOptions.map((heading) => (
-                        <div key={heading.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`heading-${heading.id}`}
-                              checked={formData.selectedComponents.headings[heading.id] || false}
-                              onCheckedChange={(checked) => 
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedComponents: {
-                                    ...prev.selectedComponents,
-                                    headings: {
-                                      ...prev.selectedComponents.headings,
-                                      [heading.id]: checked === true
-                                    }
-                                  }
-                                }))
-                              }
-                            />
-                            <label htmlFor={`heading-${heading.id}`} className="text-sm font-medium">
-                              {heading.name} ({heading.fullness}x) - ${heading.price}/{fabricUnit}
-                            </label>
-                          </div>
-                          {formData.selectedComponents.headings[heading.id] && (
-                            <div className="ml-6 flex items-center gap-2">
-                              <Checkbox 
-                                id={`heading-required-${heading.id}`}
-                                checked={formData.requiredComponents.headings[heading.id] || false}
-                                onCheckedChange={(checked) => 
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    requiredComponents: {
-                                      ...prev.requiredComponents,
-                                      headings: {
-                                        ...prev.requiredComponents.headings,
-                                        [heading.id]: checked === true
-                                      }
-                                    }
-                                  }))
-                                }
-                              />
-                              <label htmlFor={`heading-required-${heading.id}`} className="text-xs text-orange-600">
-                                Required component (customer must select)
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <Label htmlFor="heightRange1Start">Height Range 1 Start (m)</Label>
+                  <Input
+                    type="number"
+                    id="heightRange1Start"
+                    name="heightRange1Start"
+                    value={formData.heightRange1Start}
+                    onChange={handleInputChange}
+                  />
                 </div>
-                
                 <div>
-                  <Label>Hardware Options</Label>
-                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {hardwareOptions.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic">No hardware options created yet. Create some in the Components tab.</p>
-                    ) : (
-                      hardwareOptions.map((hardware) => (
-                        <div key={hardware.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`hardware-${hardware.id}`}
-                              checked={formData.selectedComponents.hardware[hardware.id] || false}
-                              onCheckedChange={(checked) => 
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedComponents: {
-                                    ...prev.selectedComponents,
-                                    hardware: {
-                                      ...prev.selectedComponents.hardware,
-                                      [hardware.id]: checked === true
-                                    }
-                                  }
-                                }))
-                              }
-                            />
-                            <label htmlFor={`hardware-${hardware.id}`} className="text-sm font-medium">
-                              {hardware.name} - ${hardware.price}/{hardware.unit}
-                            </label>
-                          </div>
-                          {formData.selectedComponents.hardware[hardware.id] && (
-                            <div className="ml-6 flex items-center gap-2">
-                              <Checkbox 
-                                id={`hardware-required-${hardware.id}`}
-                                checked={formData.requiredComponents.hardware[hardware.id] || false}
-                                onCheckedChange={(checked) => 
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    requiredComponents: {
-                                      ...prev.requiredComponents,
-                                      hardware: {
-                                        ...prev.requiredComponents.hardware,
-                                        [hardware.id]: checked === true
-                                      }
-                                    }
-                                  }))
-                                }
-                              />
-                              <label htmlFor={`hardware-required-${hardware.id}`} className="text-xs text-orange-600">
-                                Required component (customer must select)
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <Label htmlFor="heightRange1End">Height Range 1 End (m)</Label>
+                  <Input
+                    type="number"
+                    id="heightRange1End"
+                    name="heightRange1End"
+                    value={formData.heightRange1End}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="heightRange2Start">Height Range 2 Start (m)</Label>
+                  <Input
+                    type="number"
+                    id="heightRange2Start"
+                    name="heightRange2Start"
+                    value={formData.heightRange2Start}
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-2 gap-4">
+            {formData.useHeightSurcharges && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Lining Options</Label>
-                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {liningOptions.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic">No lining options created yet. Create some in the Components tab.</p>
-                    ) : (
-                      liningOptions.map((lining) => (
-                        <div key={lining.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`lining-${lining.id}`}
-                              checked={formData.selectedComponents.lining[lining.id] || false}
-                              onCheckedChange={(checked) => 
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedComponents: {
-                                    ...prev.selectedComponents,
-                                    lining: {
-                                      ...prev.selectedComponents.lining,
-                                      [lining.id]: checked === true
-                                    }
-                                  }
-                                }))
-                              }
-                            />
-                            <label htmlFor={`lining-${lining.id}`} className="text-sm font-medium">
-                              {lining.name} - ${lining.price}/{lining.unit}
-                            </label>
-                          </div>
-                          {formData.selectedComponents.lining[lining.id] && (
-                            <div className="ml-6 flex items-center gap-2">
-                              <Checkbox 
-                                id={`lining-required-${lining.id}`}
-                                checked={formData.requiredComponents.lining[lining.id] || false}
-                                onCheckedChange={(checked) => 
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    requiredComponents: {
-                                      ...prev.requiredComponents,
-                                      lining: {
-                                        ...prev.requiredComponents.lining,
-                                        [lining.id]: checked === true
-                                      }
-                                    }
-                                  }))
-                                }
-                              />
-                              <label htmlFor={`lining-required-${lining.id}`} className="text-xs text-orange-600">
-                                Required component (customer must select)
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <Label htmlFor="heightRange2End">Height Range 2 End (m)</Label>
+                  <Input
+                    type="number"
+                    id="heightRange2End"
+                    name="heightRange2End"
+                    value={formData.heightRange2End}
+                    onChange={handleInputChange}
+                  />
                 </div>
-                
                 <div>
-                  <Label>Additional Services</Label>
-                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {serviceOptions.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic">No service options created yet. Create some in the Components tab.</p>
-                    ) : (
-                      serviceOptions.map((service) => (
-                        <div key={service.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`service-${service.id}`}
-                              checked={formData.selectedComponents.services[service.id] || false}
-                              onCheckedChange={(checked) => 
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedComponents: {
-                                    ...prev.selectedComponents,
-                                    services: {
-                                      ...prev.selectedComponents.services,
-                                      [service.id]: checked === true
-                                    }
-                                  }
-                                }))
-                              }
-                            />
-                            <label htmlFor={`service-${service.id}`} className="text-sm font-medium">
-                              {service.name} - ${service.price}/{service.unit}
-                            </label>
-                          </div>
-                          {formData.selectedComponents.services[service.id] && (
-                            <div className="ml-6 flex items-center gap-2">
-                              <Checkbox 
-                                id={`service-required-${service.id}`}
-                                checked={formData.requiredComponents.services[service.id] || false}
-                                onCheckedChange={(checked) => 
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    requiredComponents: {
-                                      ...prev.requiredComponents,
-                                      services: {
-                                        ...prev.requiredComponents.services,
-                                        [service.id]: checked === true
-                                      }
-                                    }
-                                  }))
-                                }
-                              />
-                              <label htmlFor={`service-required-${service.id}`} className="text-xs text-orange-600">
-                                Required component (customer must select)
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <Label htmlFor="heightRange3Start">Height Range 3 Start (m)</Label>
+                  <Input
+                    type="number"
+                    id="heightRange3Start"
+                    name="heightRange3Start"
+                    value={formData.heightRange3Start}
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Parts & Accessories</Label>
-                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {partsOptions.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic">No parts options created yet. Create some in the Components tab.</p>
-                    ) : (
-                      partsOptions.map((part) => (
-                        <div key={part.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`part-${part.id}`}
-                              checked={formData.selectedComponents.parts[part.id] || false}
-                              onCheckedChange={(checked) => 
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedComponents: {
-                                    ...prev.selectedComponents,
-                                    parts: {
-                                      ...prev.selectedComponents.parts,
-                                      [part.id]: checked === true
+            <h3>Components</h3>
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Components</CardTitle>
+                <CardDescription>
+                  Choose which components are included in this product template.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px] w-full rounded-md border">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+                    {components &&
+                      Object.entries(components).map(
+                        ([category, componentList]) => (
+                          <div key={category} className="space-y-2">
+                            <h4>{category}</h4>
+                            <div className="space-y-1">
+                              {componentList.map(component => (
+                                <div
+                                  key={component.id}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`${category}-${component.id}`}
+                                    checked={
+                                      formData.selectedComponents[category]?.[
+                                        component.id
+                                      ] || false
                                     }
-                                  }
-                                }))
-                              }
-                            />
-                            <label htmlFor={`part-${part.id}`} className="text-sm font-medium">
-                              {part.name} - ${part.price}/{part.unit}
-                              {part.category && <span className="text-xs text-gray-500 ml-1">({part.category})</span>}
-                            </label>
-                          </div>
-                          {formData.selectedComponents.parts[part.id] && (
-                            <div className="ml-6 flex items-center gap-2">
-                              <Checkbox 
-                                id={`part-required-${part.id}`}
-                                checked={formData.requiredComponents.parts[part.id] || false}
-                                onCheckedChange={(checked) => 
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    requiredComponents: {
-                                      ...prev.requiredComponents,
-                                      parts: {
-                                        ...prev.requiredComponents.parts,
-                                        [part.id]: checked === true
-                                      }
+                                    onCheckedChange={checked =>
+                                      handleComponentChange(
+                                        category,
+                                        component.id,
+                                        checked === true,
+                                        component.is_required
+                                      )
                                     }
-                                  }))
-                                }
-                              />
-                              <label htmlFor={`part-required-${part.id}`} className="text-xs text-orange-600">
-                                Required component (customer must select)
-                              </label>
+                                  />
+                                  <div className="flex items-center">
+                                    <Label
+                                      htmlFor={`${category}-${component.id}`}
+                                      className={component.is_required ? "font-bold" : ""}
+                                    >
+                                      {component.name}
+                                    </Label>
+                                    {component.is_required && (
+                                      <span className="ml-1 text-xs text-gray-500">
+                                        (Required)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <Label>Pricing Grids (Sewing)</Label>
-                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {pricingGrids.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic">No pricing grids created yet. Create some in the Components tab.</p>
-                    ) : (
-                      pricingGrids.map((grid) => (
-                        <div key={grid.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id={`grid-${grid.id}`}
-                              checked={formData.selectedComponents.grids[grid.id] || false}
-                              onCheckedChange={(checked) => 
-                                setFormData(prev => ({
-                                  ...prev,
-                                  selectedComponents: {
-                                    ...prev.selectedComponents,
-                                    grids: {
-                                      ...prev.selectedComponents.grids,
-                                      [grid.id]: checked === true
-                                    }
-                                  }
-                                }))
-                              }
-                            />
-                            <label htmlFor={`grid-${grid.id}`} className="text-sm font-medium">
-                              {grid.name}
-                              <span className="text-xs text-blue-600 ml-1">(Pricing Grid)</span>
-                            </label>
                           </div>
-                          {formData.selectedComponents.grids[grid.id] && (
-                            <div className="ml-6 flex items-center gap-2">
-                              <Checkbox 
-                                id={`grid-required-${grid.id}`}
-                                checked={formData.requiredComponents.grids[grid.id] || false}
-                                onCheckedChange={(checked) => 
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    requiredComponents: {
-                                      ...prev.requiredComponents,
-                                      grids: {
-                                        ...prev.requiredComponents.grids,
-                                        [grid.id]: checked === true
-                                      }
-                                    }
-                                  }))
-                                }
-                              />
-                              <label htmlFor={`grid-required-${grid.id}`} className="text-xs text-orange-600">
-                                Required component (customer must select)
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
+                        )
+                      )}
                   </div>
-                </div>
-              </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isSaving} isLoading={isSaving}>
+                {isSaving ? "Saving..." : "Save Template"}
+              </Button>
             </div>
-
-            <Button 
-              onClick={handleCreateTemplate}
-              className="bg-brand-primary hover:bg-brand-accent"
-            >
-              {editingId ? "Update Template" : "Create Template"}
-            </Button>
           </CardContent>
         </Card>
       )}
