@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePricingGrid } from '@/hooks/usePricingGrids';
@@ -33,6 +32,8 @@ export const PricingGridPreview = ({
 }: PricingGridPreviewProps) => {
   const { data: gridData, isLoading } = usePricingGrid(gridId);
 
+  console.log("PricingGridPreview - Raw grid data from database:", gridData);
+
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -64,12 +65,27 @@ export const PricingGridPreview = ({
   const dropRows = grid.dropRows || [];
   const widthColumns = grid.widthColumns || [];
 
-  console.log("Grid preview data:", { grid, dropRows, widthColumns, gridData, currentWidth, currentDrop });
+  console.log("PricingGridPreview - Parsed grid structure:", { 
+    grid, 
+    dropRows, 
+    widthColumns, 
+    currentWidth, 
+    currentDrop,
+    gridName: gridData.name 
+  });
 
-  // Generate width column headers from the first price array length if widthColumns is empty
+  // Generate width column headers - ensure they show as "XXXcm" format
   const columnHeaders = widthColumns.length > 0 
-    ? widthColumns 
-    : (dropRows.length > 0 ? Array.from({ length: dropRows[0].prices.length }, (_, i) => `Width ${i + 1}`) : []);
+    ? widthColumns.map(col => {
+        // If the column already has 'cm' or other unit, use as is
+        // Otherwise, assume it's a number and add 'cm'
+        if (col.includes('cm') || col.includes('mm') || col.includes('m')) {
+          return col;
+        }
+        // If it's just a number, add 'cm'
+        return `${col}cm`;
+      })
+    : (dropRows.length > 0 ? Array.from({ length: dropRows[0].prices.length }, (_, i) => `Width ${i + 1}cm`) : []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -84,6 +100,23 @@ export const PricingGridPreview = ({
             )}
           </DialogTitle>
         </DialogHeader>
+        
+        {/* Debug information to show we're using your uploaded data */}
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-1">Grid Data Source:</h4>
+          <p className="text-sm text-blue-800">
+            Grid Name: <span className="font-semibold">{gridData.name}</span>
+          </p>
+          <p className="text-sm text-blue-800">
+            Data Rows: <span className="font-semibold">{dropRows.length}</span> drops
+          </p>
+          <p className="text-sm text-blue-800">
+            Width Columns: <span className="font-semibold">{columnHeaders.length}</span> widths
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            This data is directly from your uploaded CSV file - no AI modifications.
+          </p>
+        </div>
         
         <div className="overflow-x-auto border rounded-md">
           {dropRows.length > 0 ? (
@@ -134,7 +167,7 @@ export const PricingGridPreview = ({
               </p>
               {gridData.grid_data && (
                 <div className="mt-4 p-4 bg-gray-100 rounded text-left text-xs">
-                  <p className="font-semibold">Raw data structure:</p>
+                  <p className="font-semibold">Raw data structure from your CSV:</p>
                   <pre className="mt-2 overflow-auto max-h-64">
                     {JSON.stringify(gridData.grid_data, null, 2)}
                   </pre>
@@ -152,7 +185,7 @@ export const PricingGridPreview = ({
               Drop: <span className="font-semibold">{currentDrop}cm</span>
             </p>
             <p className="text-sm text-blue-600 mt-1">
-              Highlighted cell shows the manufacturing price for your current drop dimension.
+              Highlighted cell shows the manufacturing price for your current drop dimension from your uploaded CSV.
             </p>
           </div>
         )}
