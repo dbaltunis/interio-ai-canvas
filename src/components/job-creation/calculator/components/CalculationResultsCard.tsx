@@ -1,11 +1,12 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Info, FileText } from "lucide-react";
 import { formatCurrency } from '../calculationUtils';
+import { PricingGridPreview } from './PricingGridPreview';
 
 interface CalculationResultsCardProps {
   calculationBreakdown: any;
@@ -28,7 +29,11 @@ export const CalculationResultsCard = ({
   businessSettings,
   liningOptions
 }: CalculationResultsCardProps) => {
+  const [showPricingGrid, setShowPricingGrid] = useState(false);
+
   if (!calculationBreakdown) return null;
+
+  const isPricingGrid = matchingTemplate?.calculation_method === 'pricing_grid';
 
   const calculationItems = [
     { label: "Fabric amount", value: calculationBreakdown.fabricAmount },
@@ -55,9 +60,8 @@ export const CalculationResultsCard = ({
       case "Lining price":
         return `Lining cost: ${liningOptions.find(l => l.label === formData.lining)?.price || 0}/m × fabric amount in meters.`;
       case "Manufacturing price":
-        const isPricingGrid = matchingTemplate?.calculation_method === 'pricing_grid';
         if (isPricingGrid) {
-          return `Making cost from pricing grid: ${matchingTemplate.name}. Values pulled from CSV pricing grid based on width and drop measurements.`;
+          return `Making cost from pricing grid: ${matchingTemplate.name}. Values pulled from CSV pricing grid based on rail width (${formData.railWidth}cm) and curtain drop (${formData.curtainDrop}cm) measurements.`;
         } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
           return `Making cost from template: ${matchingTemplate.name}. Base cost: $${matchingTemplate.calculation_rules.baseMakingCost}${matchingTemplate.pricing_unit === 'per-linear-meter' ? '/running linear meter' : '/unit'}. Running linear meters: ${calculationBreakdown.fabricWidthRequirements} ÷ 100 = ${(parseFloat(calculationBreakdown.fabricWidthRequirements) / 100).toFixed(2)}m.`;
         } else {
@@ -75,43 +79,66 @@ export const CalculationResultsCard = ({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">
-          Calculation results ({matchingTemplate.name})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {calculationItems.map((item, index) => (
-          <div key={index} className="flex justify-between items-center text-sm">
-            <span className="text-gray-600">{item.label}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{item.value}</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>{getTooltipContent(item.label)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">
+              Calculation results ({matchingTemplate.name})
+            </CardTitle>
+            {isPricingGrid && matchingTemplate?.pricing_grid_id && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPricingGrid(true)}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                View Grid
+              </Button>
+            )}
           </div>
-        ))}
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {calculationItems.map((item, index) => (
+            <div key={index} className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">{item.label}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{item.value}</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-gray-400" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>{getTooltipContent(item.label)}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          ))}
 
-        <div className="flex items-center space-x-2 mt-4">
-          <Checkbox 
-            id="dont-update-price" 
-            checked={dontUpdateTotalPrice}
-            onCheckedChange={(checked) => onDontUpdatePriceChange(checked === true)}
-          />
-          <Label htmlFor="dont-update-price" className="text-sm">
-            Don't update the total price
-          </Label>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex items-center space-x-2 mt-4">
+            <Checkbox 
+              id="dont-update-price" 
+              checked={dontUpdateTotalPrice}
+              onCheckedChange={(checked) => onDontUpdatePriceChange(checked === true)}
+            />
+            <Label htmlFor="dont-update-price" className="text-sm">
+              Don't update the total price
+            </Label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pricing Grid Preview Dialog */}
+      <PricingGridPreview
+        isOpen={showPricingGrid}
+        onClose={() => setShowPricingGrid(false)}
+        gridId={matchingTemplate?.pricing_grid_id || ''}
+        gridName={matchingTemplate?.name}
+      />
+    </>
   );
 };

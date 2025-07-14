@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { CalculationResult, DetailedCalculation } from '../types';
 import { calculateTotalPrice, formatCurrency } from '../calculationUtils';
+import { getPriceFromGrid, usePricingGrid } from '@/hooks/usePricingGrids';
 
 interface CalculationBreakdown {
   fabricAmount: string;
@@ -25,6 +25,11 @@ export const useCalculatorLogic = (
   const [calculation, setCalculation] = useState<(CalculationResult & { details: DetailedCalculation }) | null>(null);
   const [calculationBreakdown, setCalculationBreakdown] = useState<CalculationBreakdown | null>(null);
 
+  // Get pricing grid data if template uses pricing grid
+  const isPricingGrid = matchingTemplate?.calculation_method === 'pricing_grid';
+  const pricingGridId = matchingTemplate?.pricing_grid_id;
+  const { data: pricingGridData } = usePricingGrid(pricingGridId);
+
   useEffect(() => {
     if (formData.railWidth && formData.curtainDrop && formData.fabricWidth && formData.fabricPricePerYard) {
       const calc = calculateTotalPrice(formData, matchingTemplate);
@@ -37,7 +42,6 @@ export const useCalculatorLogic = (
       const fabricWidth = parseFloat(formData.fabricWidth) || 0;
       
       // Check if template uses pricing grid (no fullness)
-      const isPricingGrid = matchingTemplate?.calculation_method === 'pricing_grid';
       const fullness = isPricingGrid ? 1 : (parseFloat(formData.headingFullness) || 2);
       const quantity = formData.quantity || 1;
       
@@ -79,16 +83,13 @@ export const useCalculatorLogic = (
       // Manufacturing price calculation
       let manufacturingPrice = 0;
       
-      if (isPricingGrid && matchingTemplate?.pricing_grid_id) {
-        // Use CSV pricing grid values
-        // For now, we'll use a placeholder calculation until pricing grid lookup is implemented
-        // This should lookup the actual grid data based on width and drop measurements
-        console.log('Using pricing grid for manufacturing cost:', matchingTemplate.pricing_grid_id);
+      if (isPricingGrid && pricingGridData?.grid_data) {
+        // Use actual CSV pricing grid values
+        console.log('Using pricing grid for manufacturing cost:', pricingGridData.name);
         
-        // TODO: Implement actual pricing grid lookup
-        // For now, use a base calculation as fallback
-        const runningLinearMeters = totalFabricWidthRequired / 100;
-        manufacturingPrice = runningLinearMeters * 50; // Placeholder rate
+        // Get price from grid based on rail width and curtain drop
+        manufacturingPrice = getPriceFromGrid(pricingGridData.grid_data, railWidth, curtainDrop);
+        console.log('Grid price found:', manufacturingPrice, 'for width:', railWidth, 'drop:', curtainDrop);
         
       } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
         // Use template's making cost with running linear metres
@@ -180,7 +181,7 @@ export const useCalculatorLogic = (
       // Clear calculations when required fields are empty
       setCalculationBreakdown(null);
     }
-  }, [formData, matchingTemplate, liningOptions, hemConfig, businessSettings]);
+  }, [formData, matchingTemplate, liningOptions, hemConfig, businessSettings, isPricingGrid, pricingGridData]);
 
   return {
     calculation,
