@@ -76,10 +76,69 @@ export const useCalculatorLogic = (
       // Total fabric amount including seams
       const totalFabricCm = (fabricLengthsNeeded * totalDropRequired) + totalSeamAllowance;
       
-      // Manufacturing price - use business settings labor rate
-      const laborRate = businessSettings?.labor_rate || 45;
-      const railWidthInMeters = railWidth / 100;
-      const manufacturingPrice = railWidthInMeters * laborRate; // Labor rate per linear meter
+      // Manufacturing price - prioritize template making cost over business settings labor rate
+      let manufacturingPrice = 0;
+      
+      if (matchingTemplate?.calculation_rules?.baseMakingCost) {
+        // Use template's making cost
+        const baseMakingCost = parseFloat(matchingTemplate.calculation_rules.baseMakingCost) || 0;
+        
+        if (matchingTemplate.pricing_unit === 'per-linear-meter') {
+          const railWidthInMeters = railWidth / 100;
+          manufacturingPrice = railWidthInMeters * baseMakingCost;
+        } else {
+          manufacturingPrice = baseMakingCost * quantity;
+        }
+        
+        // Apply height surcharges if configured
+        if (matchingTemplate.calculation_rules.useHeightSurcharges) {
+          const baseHeightLimit = parseFloat(matchingTemplate.calculation_rules.baseHeightLimit) || 240;
+          
+          if (curtainDrop > baseHeightLimit) {
+            const heightSurcharge1 = parseFloat(matchingTemplate.calculation_rules.heightSurcharge1) || 0;
+            const heightSurcharge2 = parseFloat(matchingTemplate.calculation_rules.heightSurcharge2) || 0;
+            const heightSurcharge3 = parseFloat(matchingTemplate.calculation_rules.heightSurcharge3) || 0;
+            
+            const range1Start = parseFloat(matchingTemplate.calculation_rules.heightRange1Start) || 240;
+            const range1End = parseFloat(matchingTemplate.calculation_rules.heightRange1End) || 300;
+            const range2Start = parseFloat(matchingTemplate.calculation_rules.heightRange2Start) || 300;
+            const range2End = parseFloat(matchingTemplate.calculation_rules.heightRange2End) || 400;
+            const range3Start = parseFloat(matchingTemplate.calculation_rules.heightRange3Start) || 400;
+            
+            if (curtainDrop >= range1Start && curtainDrop < range1End) {
+              manufacturingPrice += heightSurcharge1;
+            } else if (curtainDrop >= range2Start && curtainDrop < range2End) {
+              manufacturingPrice += heightSurcharge2;
+            } else if (curtainDrop >= range3Start) {
+              manufacturingPrice += heightSurcharge3;
+            }
+          }
+        }
+        
+        // Apply complexity multiplier
+        if (matchingTemplate.calculation_rules.complexityMultiplier) {
+          let complexityMultiplier = 1.0;
+          switch (matchingTemplate.calculation_rules.complexityMultiplier) {
+            case 'standard':
+              complexityMultiplier = 1.0;
+              break;
+            case 'medium':
+              complexityMultiplier = 1.2;
+              break;
+            case 'complex':
+              complexityMultiplier = 1.5;
+              break;
+            default:
+              complexityMultiplier = parseFloat(matchingTemplate.calculation_rules.complexityMultiplier) || 1.0;
+          }
+          manufacturingPrice *= complexityMultiplier;
+        }
+      } else {
+        // Fallback to business settings labor rate if no template making cost
+        const laborRate = businessSettings?.labor_rate || 45;
+        const railWidthInMeters = railWidth / 100;
+        manufacturingPrice = railWidthInMeters * laborRate;
+      }
       
       // Fabric pricing
       const fabricPricePerCm = parseFloat(formData.fabricPricePerYard) / 91.44; // Convert yard to cm
