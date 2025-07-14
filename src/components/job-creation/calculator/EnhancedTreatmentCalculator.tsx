@@ -76,6 +76,23 @@ export const EnhancedTreatmentCalculator = ({
   console.log('Available Templates:', templates?.map(t => ({ name: t.name, active: t.active })));
   console.log('Matching Template:', matchingTemplate);
   console.log('Template Components:', matchingTemplate?.components);
+  
+  // Debug template component selections
+  if (matchingTemplate?.components) {
+    console.log('=== TEMPLATE COMPONENT ANALYSIS ===');
+    Object.entries(matchingTemplate.components).forEach(([componentType, selections]) => {
+      console.log(`${componentType.toUpperCase()}:`, selections);
+      if (Array.isArray(selections) && selections.length > 0) {
+        console.log(`  -> Selected ${componentType}: ${selections.length} items`);
+        selections.forEach((selection, index) => {
+          console.log(`    ${index + 1}. ID: ${selection.id}, Name: ${selection.name || 'N/A'}`);
+        });
+      } else {
+        console.log(`  -> No ${componentType} selected`);
+      }
+    });
+    console.log('=== END COMPONENT ANALYSIS ===');
+  }
 
   const [formData, setFormData] = useState<TreatmentFormData>({
     treatmentName: `${treatmentType} Treatment`,
