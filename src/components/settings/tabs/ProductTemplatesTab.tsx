@@ -636,7 +636,7 @@ export const ProductTemplatesTab = () => {
                       {pricingGrids && pricingGrids.length > 0 ? (
                         pricingGrids.map((grid) => (
                           <SelectItem key={grid.id} value={grid.id}>
-                            {grid.name} ({grid.grid_data?.dropRows?.length || 0} × {grid.grid_data?.widthColumns?.length || 0})
+                            {grid.name} ({(grid.grid_data as any)?.dropRows?.length || 0} drop ranges × {(grid.grid_data as any)?.widthColumns?.length || 0} width ranges)
                           </SelectItem>
                         ))
                       ) : (
