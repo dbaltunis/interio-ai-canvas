@@ -57,10 +57,13 @@ export const useCreatePricingGrid = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (gridData: { name: string; grid_data: GridData }) => {
+    mutationFn: async (gridData: { name: string; grid_data: any }) => {
       const { data, error } = await supabase
         .from("pricing_grids")
-        .insert([gridData])
+        .insert([{
+          name: gridData.name,
+          grid_data: gridData.grid_data as any
+        }])
         .select()
         .single();
       
