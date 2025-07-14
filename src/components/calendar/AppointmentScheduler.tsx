@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, User, Phone, Mail } from "lucide-react";
 import { format, addDays, setHours, setMinutes } from "date-fns";
+import { PublicBookingForm } from "@/components/booking/PublicBookingForm";
 
 interface TimeSlot {
   time: string;
@@ -18,16 +18,23 @@ interface TimeSlot {
 }
 
 interface AppointmentSchedulerProps {
-  onSchedule: (appointment: any) => void;
+  onSchedule?: (appointment: any) => void;
   availableSlots?: TimeSlot[];
   businessHours?: { start: string; end: string };
+  slug?: string;
 }
 
 export const AppointmentScheduler = ({ 
   onSchedule, 
   availableSlots,
-  businessHours = { start: "09:00", end: "17:00" }
+  businessHours = { start: "09:00", end: "17:00" },
+  slug
 }: AppointmentSchedulerProps) => {
+  // If slug is provided, use the public booking form
+  if (slug) {
+    return <PublicBookingForm slug={slug} />;
+  }
+
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>();
   const [appointmentType, setAppointmentType] = useState<string>();
@@ -101,7 +108,9 @@ export const AppointmentScheduler = ({
       location: 'To be confirmed'
     };
 
-    onSchedule(appointment);
+    if (onSchedule) {
+      onSchedule(appointment);
+    }
   };
 
   return (
