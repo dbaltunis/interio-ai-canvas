@@ -16,14 +16,23 @@ export const PricingRulesSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
 
+  // Debug logging
+  console.log("PricingRulesSection - Data:", pricingRules);
+  console.log("PricingRulesSection - Loading:", isLoading);
+  console.log("PricingRulesSection - Search term:", searchTerm);
+  console.log("PricingRulesSection - Filter category:", filterCategory);
+
   const handleAddRule = async (newRule: Omit<PricingRule, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+    console.log("Adding new rule:", newRule);
     try {
       await createPricingRule.mutateAsync(newRule);
+      console.log("Rule created successfully");
       toast({
         title: "Success",
         description: "Pricing rule created successfully"
       });
     } catch (error) {
+      console.error("Failed to create pricing rule:", error);
       toast({
         title: "Error",
         description: "Failed to create pricing rule",
@@ -33,6 +42,7 @@ export const PricingRulesSection = () => {
   };
 
   const handleToggleRule = async (ruleId: string, active: boolean) => {
+    console.log("Toggling rule:", ruleId, "to:", active);
     try {
       await updatePricingRule.mutateAsync({ id: ruleId, active });
       toast({
@@ -40,6 +50,7 @@ export const PricingRulesSection = () => {
         description: `Pricing rule ${active ? 'activated' : 'deactivated'}`
       });
     } catch (error) {
+      console.error("Failed to update pricing rule:", error);
       toast({
         title: "Error",
         description: "Failed to update pricing rule",
@@ -49,7 +60,7 @@ export const PricingRulesSection = () => {
   };
 
   const handleEditRule = (rule: PricingRule) => {
-    // TODO: Implement edit functionality
+    console.log("Edit rule clicked:", rule);
     toast({
       title: "Edit Rule",
       description: "Edit functionality coming soon"
@@ -57,6 +68,7 @@ export const PricingRulesSection = () => {
   };
 
   const handleDeleteRule = async (ruleId: string) => {
+    console.log("Delete rule clicked:", ruleId);
     if (!confirm("Are you sure you want to delete this rule?")) return;
     
     try {
@@ -66,6 +78,7 @@ export const PricingRulesSection = () => {
         description: "Pricing rule deleted successfully"
       });
     } catch (error) {
+      console.error("Failed to delete pricing rule:", error);
       toast({
         title: "Error",
         description: "Failed to delete pricing rule",
@@ -82,6 +95,8 @@ export const PricingRulesSection = () => {
     return matchesSearch && matchesCategory;
   }) || [];
 
+  console.log("Filtered rules:", filteredRules);
+
   // Group rules by category
   const rulesByCategory = filteredRules.reduce((acc, rule) => {
     const category = rule.category || 'General';
@@ -90,8 +105,11 @@ export const PricingRulesSection = () => {
     return acc;
   }, {} as Record<string, PricingRule[]>);
 
+  console.log("Rules by category:", rulesByCategory);
+
   // Get unique categories for filter
   const categories = Array.from(new Set(pricingRules?.map(rule => rule.category || 'General') || []));
+  console.log("Available categories:", categories);
 
   return (
     <Card>
@@ -111,6 +129,15 @@ export const PricingRulesSection = () => {
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* Debug Info */}
+        <div className="bg-gray-100 p-4 rounded text-sm">
+          <strong>Debug Info:</strong><br/>
+          Total Rules: {pricingRules?.length || 0}<br/>
+          Loading: {isLoading ? 'Yes' : 'No'}<br/>
+          Filtered Rules: {filteredRules.length}<br/>
+          Categories: {categories.join(', ') || 'None'}
+        </div>
+
         {/* Search and Filter Controls */}
         <div className="flex gap-4">
           <div className="relative flex-1">
