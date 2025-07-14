@@ -82,10 +82,11 @@ export const EnhancedTreatmentCalculator = ({
     console.log('=== TEMPLATE COMPONENT ANALYSIS ===');
     Object.entries(matchingTemplate.components).forEach(([componentType, selections]) => {
       console.log(`${componentType.toUpperCase()}:`, selections);
-      if (Array.isArray(selections) && selections.length > 0) {
-        console.log(`  -> Selected ${componentType}: ${selections.length} items`);
-        selections.forEach((selection, index) => {
-          console.log(`    ${index + 1}. ID: ${selection.id}, Name: ${selection.name || 'N/A'}`);
+      if (typeof selections === 'object' && selections !== null && Object.keys(selections).length > 0) {
+        const selectedItems = Object.entries(selections).filter(([id, selected]) => selected === true);
+        console.log(`  -> Selected ${componentType}: ${selectedItems.length} items`);
+        selectedItems.forEach(([id], index) => {
+          console.log(`    ${index + 1}. ID: ${id}`);
         });
       } else {
         console.log(`  -> No ${componentType} selected`);
@@ -668,9 +669,10 @@ export const EnhancedTreatmentCalculator = ({
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Options</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+               <CardContent className="space-y-4">
                 {/* Show Lining options only if template has lining selected */}
-                {matchingTemplate?.components?.lining && Object.keys(matchingTemplate.components.lining).length > 0 && (
+                {matchingTemplate?.components?.lining && 
+                 Object.entries(matchingTemplate.components.lining).some(([id, selected]) => selected === true) && (
                   <div>
                     <Label>Select lining</Label>
                     <Select value={formData.lining} onValueChange={(value) => setFormData(prev => ({ ...prev, lining: value }))}>
@@ -689,7 +691,8 @@ export const EnhancedTreatmentCalculator = ({
                 )}
 
                 {/* Show Heading options only if template has headings selected */}
-                {matchingTemplate?.components?.headings && Object.keys(matchingTemplate.components.headings).length > 0 && (
+                {matchingTemplate?.components?.headings && 
+                 Object.entries(matchingTemplate.components.headings).some(([id, selected]) => selected === true) && (
                   <div>
                     <Label>Select curtain heading style</Label>
                     <Select value={formData.headingStyle} onValueChange={handleHeadingChange}>
@@ -708,21 +711,26 @@ export const EnhancedTreatmentCalculator = ({
                 )}
 
                 {/* Heading Fullness - moved here for better UX */}
-                <div>
-                  <Label>Heading fullness</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={formData.headingFullness}
-                    onChange={(e) => setFormData(prev => ({ ...prev, headingFullness: e.target.value }))}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Current: {formData.headingFullness}:1 ratio
-                  </p>
-                </div>
+                {matchingTemplate?.components?.headings && 
+                 Object.entries(matchingTemplate.components.headings).some(([id, selected]) => selected === true) && (
+                  <div>
+                    <Label>Heading fullness</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={formData.headingFullness}
+                      onChange={(e) => setFormData(prev => ({ ...prev, headingFullness: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Current: {formData.headingFullness}:1 ratio
+                    </p>
+                  </div>
+                )}
 
                 {/* Hardware Options - only show if template has hardware selected */}
-                {matchingTemplate?.components?.hardware && Object.keys(matchingTemplate.components.hardware).length > 0 && hardwareOptions.length > 0 && (
+                {matchingTemplate?.components?.hardware && 
+                 Object.entries(matchingTemplate.components.hardware).some(([id, selected]) => selected === true) && 
+                 hardwareOptions.length > 0 && (
                   <div>
                     <Label>Select hardware</Label>
                     <Select value={formData.hardware} onValueChange={(value) => setFormData(prev => ({ ...prev, hardware: value }))}>
@@ -743,7 +751,8 @@ export const EnhancedTreatmentCalculator = ({
                 )}
 
                 {/* Parts & Accessories with Subcategories */}
-                {matchingTemplate?.components?.parts && Object.keys(matchingTemplate.components.parts).length > 0 && (
+                {matchingTemplate?.components?.parts && 
+                 Object.entries(matchingTemplate.components.parts).some(([id, selected]) => selected === true) && (
                   <div className="space-y-4">
                     <Label className="text-base font-medium">Parts & Accessories</Label>
                     
@@ -795,7 +804,9 @@ export const EnhancedTreatmentCalculator = ({
                 )}
 
                 {/* Service Options with Subcategories */}
-                {matchingTemplate?.components?.services && Object.keys(matchingTemplate.components.services).length > 0 && serviceOptions.length > 0 && (
+                {matchingTemplate?.components?.services && 
+                 Object.entries(matchingTemplate.components.services).some(([id, selected]) => selected === true) && 
+                 serviceOptions.length > 0 && (
                   <div>
                     <Label>Select services</Label>
                     <div className="space-y-2">
