@@ -23,6 +23,16 @@ interface AvailableSlot {
 
 const DAYS_OF_WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
+// Type guard to check if data is a valid DayAvailability array
+const isDayAvailabilityArray = (data: any): data is DayAvailability[] => {
+  return Array.isArray(data) && data.every(item => 
+    typeof item === 'object' &&
+    typeof item.day === 'string' &&
+    typeof item.enabled === 'boolean' &&
+    Array.isArray(item.timeSlots)
+  );
+};
+
 export const useAppointmentBooking = (slug: string) => {
   const { data: scheduler, isLoading } = usePublicScheduler(slug);
   
@@ -31,9 +41,15 @@ export const useAppointmentBooking = (slug: string) => {
       return [];
     }
 
+    // Safely cast the availability data
+    const availabilityData = scheduler.availability;
+    if (!isDayAvailabilityArray(availabilityData)) {
+      console.error('Invalid availability data format:', availabilityData);
+      return [];
+    }
+
     const dayOfWeek = DAYS_OF_WEEK[selectedDate.getDay()];
-    const availability = scheduler.availability as DayAvailability[];
-    const dayAvailability = availability.find(day => day.day === dayOfWeek);
+    const dayAvailability = availabilityData.find(day => day.day === dayOfWeek);
 
     if (!dayAvailability || !dayAvailability.enabled) {
       return [];
@@ -90,11 +106,17 @@ export const useAppointmentBooking = (slug: string) => {
     
     const startDate = addDays(new Date(), Math.ceil(minHours / 24));
     
+    // Safely cast the availability data
+    const availabilityData = scheduler.availability;
+    if (!isDayAvailabilityArray(availabilityData)) {
+      console.error('Invalid availability data format:', availabilityData);
+      return [];
+    }
+    
     for (let i = 0; i < maxDays; i++) {
       const date = addDays(startDate, i);
       const dayOfWeek = DAYS_OF_WEEK[date.getDay()];
-      const availability = scheduler.availability as DayAvailability[];
-      const dayAvailability = availability.find(day => day.day === dayOfWeek);
+      const dayAvailability = availabilityData.find(day => day.day === dayOfWeek);
       
       if (dayAvailability && dayAvailability.enabled) {
         dates.push(date);
