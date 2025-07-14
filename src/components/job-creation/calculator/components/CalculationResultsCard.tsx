@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,7 +62,7 @@ export const CalculationResultsCard = ({
         return `Lining cost: ${liningOptions.find(l => l.label === formData.lining)?.price || 0}/m × fabric amount in meters.`;
       case "Manufacturing price":
         if (isPricingGrid) {
-          return `Making cost from pricing grid: ${matchingTemplate.name}. Values pulled from CSV pricing grid based on rail width (${formData.railWidth}cm) and curtain drop (${formData.curtainDrop}cm) measurements.`;
+          return `Making cost from pricing grid: ${matchingTemplate.name}. Values pulled from CSV pricing grid based on rail width (${formData.railWidth}cm) and curtain drop (${formData.curtainDrop}cm) measurements. Click "View Grid" to see the full pricing matrix.`;
         } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
           return `Making cost from template: ${matchingTemplate.name}. Base cost: $${matchingTemplate.calculation_rules.baseMakingCost}${matchingTemplate.pricing_unit === 'per-linear-meter' ? '/running linear meter' : '/unit'}. Running linear meters: ${calculationBreakdown.fabricWidthRequirements} ÷ 100 = ${(parseFloat(calculationBreakdown.fabricWidthRequirements) / 100).toFixed(2)}m.`;
         } else {
@@ -138,6 +139,8 @@ export const CalculationResultsCard = ({
         onClose={() => setShowPricingGrid(false)}
         gridId={matchingTemplate?.pricing_grid_id || ''}
         gridName={matchingTemplate?.name}
+        currentWidth={parseFloat(formData.railWidth) || undefined}
+        currentDrop={parseFloat(formData.curtainDrop) || undefined}
       />
     </>
   );
