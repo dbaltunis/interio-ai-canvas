@@ -259,23 +259,34 @@ export const EnhancedTreatmentCalculator = ({
       const sideHem = parseFloat(hemConfig.side_hem) || 5;
       const seamHem = parseFloat(hemConfig.seam_hem) || 3;
       
-      // For single/pair - pair only affects side hems (more side hems), not fabric calculation
-      const effectiveSideHems = quantity === 1 ? 2 : 4; // Single: 2 sides, Pair: 4 sides total
+      // Side hems calculation: Single = 2 sides, Pair = 4 sides total
+      const totalSideHems = quantity === 1 ? 2 : 4;
+      const totalSideHemWidth = totalSideHems * sideHem;
       
-      // Width calculations - CORRECTED
+      // Width calculations with hems
       const finishedCurtainWidth = railWidth / quantity; // Each curtain's finished width
-      const fabricWidthPerCurtain = finishedCurtainWidth * fullness; // Required fabric width per curtain
+      const fabricWidthPerCurtain = (finishedCurtainWidth * fullness) + (2 * sideHem); // Include side hems per curtain
       const totalFabricWidthRequired = fabricWidthPerCurtain * quantity; // Total fabric width needed
       
       // Drop calculations - including all hems
       const totalDropRequired = curtainDrop + pooling + headerHem + bottomHem;
       
-      // Calculate drops that fit across fabric width
-      const dropsPerFabricWidth = Math.floor(fabricWidth / fabricWidthPerCurtain);
-      const fabricLengthsNeeded = Math.ceil(quantity / Math.max(dropsPerFabricWidth, 1));
+      // Calculate how many curtain widths fit across fabric width
+      const curtainWidthsPerFabricWidth = Math.floor(fabricWidth / fabricWidthPerCurtain);
       
-      // Total fabric amount
-      const totalFabricCm = fabricLengthsNeeded * totalDropRequired;
+      // Calculate number of fabric lengths needed
+      const fabricLengthsNeeded = Math.ceil(quantity / Math.max(curtainWidthsPerFabricWidth, 1));
+      
+      // Add seam allowances for joined widths
+      let totalSeamAllowance = 0;
+      if (curtainWidthsPerFabricWidth < quantity) {
+        // Calculate seams needed per curtain
+        const seamsPerCurtain = Math.ceil(fabricWidthPerCurtain / fabricWidth) - 1;
+        totalSeamAllowance = seamsPerCurtain * quantity * seamHem;
+      }
+      
+      // Total fabric amount including seams
+      const totalFabricCm = (fabricLengthsNeeded * totalDropRequired) + totalSeamAllowance;
       
       // Manufacturing price - use business settings labor rate
       const laborRate = businessSettings?.labor_rate || 45;
@@ -291,13 +302,13 @@ export const EnhancedTreatmentCalculator = ({
       const liningPrice = liningOption ? liningOption.price * (totalFabricCm / 100) : 0; // Per meter
       
       // Leftovers calculation
-      const fabricUsedWidth = fabricWidthPerCurtain * dropsPerFabricWidth;
+      const fabricUsedWidth = fabricWidthPerCurtain * curtainWidthsPerFabricWidth;
       const leftoverHorizontal = fabricWidth - fabricUsedWidth;
-      const leftoverVertical = totalDropRequired - curtainDrop;
+      const leftoverVertical = totalDropRequired - curtainDrop - pooling; // Only hem allowances
       
       setCalculationBreakdown({
         fabricAmount: `${totalFabricCm.toFixed(0)} cm`,
-        curtainWidthTotal: `${dropsPerFabricWidth} Drops (${dropsPerFabricWidth > 0 ? (fabricWidthPerCurtain * dropsPerFabricWidth / 100).toFixed(2) : '0.00'}m)`,
+        curtainWidthTotal: `${curtainWidthsPerFabricWidth} Drops (${curtainWidthsPerFabricWidth > 0 ? (fabricWidthPerCurtain * curtainWidthsPerFabricWidth / 100).toFixed(2) : '0.00'}m)`,
         fabricDropRequirements: `${totalDropRequired.toFixed(0)} cm`,
         fabricWidthRequirements: `${totalFabricWidthRequired.toFixed(0)} cm`,
         liningPrice: liningPrice,
