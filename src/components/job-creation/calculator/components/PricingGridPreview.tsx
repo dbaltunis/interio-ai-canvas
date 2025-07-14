@@ -13,6 +13,19 @@ interface PricingGridPreviewProps {
   gridName?: string;
 }
 
+interface GridData {
+  rows?: Array<{
+    drop_min: number;
+    drop_max: number;
+    [key: string]: any;
+  }>;
+  columns?: Array<{
+    width_min: number;
+    width_max: number;
+    key: string;
+  }>;
+}
+
 export const PricingGridPreview = ({ 
   isOpen, 
   onClose, 
@@ -24,11 +37,17 @@ export const PricingGridPreview = ({
   if (!gridId) return null;
 
   const renderGridTable = () => {
-    if (!gridData?.grid_data?.rows || !gridData?.grid_data?.columns) {
+    if (!gridData?.grid_data) {
       return <div className="text-center py-4">No pricing data available</div>;
     }
 
-    const { rows, columns } = gridData.grid_data;
+    const typedGridData = gridData.grid_data as GridData;
+    
+    if (!typedGridData.rows || !typedGridData.columns) {
+      return <div className="text-center py-4">Invalid pricing grid format</div>;
+    }
+
+    const { rows, columns } = typedGridData;
 
     return (
       <div className="overflow-x-auto">

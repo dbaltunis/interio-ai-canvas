@@ -1,6 +1,24 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+interface GridData {
+  rows?: Array<{
+    drop_min: number;
+    drop_max: number;
+    [key: string]: any;
+  }>;
+  columns?: Array<{
+    width_min: number;
+    width_max: number;
+    key: string;
+  }>;
+  dropRows?: Array<{
+    drop: string;
+    prices: number[];
+  }>;
+  widthColumns?: string[];
+}
 
 export const usePricingGrids = () => {
   return useQuery({
@@ -35,6 +53,44 @@ export const usePricingGrid = (gridId: string) => {
   });
 };
 
+export const useCreatePricingGrid = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (gridData: { name: string; grid_data: GridData }) => {
+      const { data, error } = await supabase
+        .from("pricing_grids")
+        .insert([gridData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });
+    },
+  });
+};
+
+export const useDeletePricingGrid = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (gridId: string) => {
+      const { error } = await supabase
+        .from("pricing_grids")
+        .delete()
+        .eq("id", gridId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pricing-grids"] });
+    },
+  });
+};
+
 // Helper function to parse CSV data and find price based on width and drop
 export const getPriceFromGrid = (gridData: any, width: number, drop: number): number => {
   if (!gridData || !gridData.rows) return 0;
@@ -64,7 +120,7 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       }
     }
     
-    return parseFloat(matchingPrice) || 0;
+    return parseFloat(matchingPrice.toString()) || 0;
   } catch (error) {
     console.error("Error parsing pricing grid:", error);
     return 0;

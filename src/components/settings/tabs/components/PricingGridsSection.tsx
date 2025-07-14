@@ -9,6 +9,14 @@ import { Plus, Download, Upload, FileSpreadsheet, Trash2, Eye } from "lucide-rea
 import { toast } from "sonner";
 import { usePricingGrids, useCreatePricingGrid, useDeletePricingGrid } from "@/hooks/usePricingGrids";
 
+interface GridDataStructure {
+  widthColumns?: string[];
+  dropRows?: Array<{
+    drop: string;
+    prices: number[];
+  }>;
+}
+
 export const PricingGridsSection = () => {
   const [gridName, setGridName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -285,41 +293,44 @@ export const PricingGridsSection = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {pricingGrids.map((grid) => (
-                <div key={grid.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileSpreadsheet className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <h5 className="font-medium">{grid.name}</h5>
-                      <p className="text-xs text-gray-500">
-                        {grid.grid_data?.dropRows?.length || 0} drop ranges × {grid.grid_data?.widthColumns?.length || 0} width ranges
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Created {new Date(grid.created_at).toLocaleDateString()}
-                      </p>
+              {pricingGrids.map((grid) => {
+                const typedGridData = grid.grid_data as GridDataStructure;
+                return (
+                  <div key={grid.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileSpreadsheet className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <h5 className="font-medium">{grid.name}</h5>
+                        <p className="text-xs text-gray-500">
+                          {typedGridData?.dropRows?.length || 0} drop ranges × {typedGridData?.widthColumns?.length || 0} width ranges
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Created {new Date(grid.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={grid.active ? "default" : "secondary"}>
+                        {grid.active ? "Active" : "Inactive"}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePreview(grid)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(grid.id, grid.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={grid.active ? "default" : "secondary"}>
-                      {grid.active ? "Active" : "Inactive"}
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(grid)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(grid.id, grid.name)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -340,13 +351,13 @@ export const PricingGridsSection = () => {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="border border-gray-300 px-2 py-1 text-xs">Drop/Width</th>
-                    {showPreview.grid_data?.widthColumns?.map((width: string, index: number) => (
+                    {(showPreview.grid_data as GridDataStructure)?.widthColumns?.map((width: string, index: number) => (
                       <th key={index} className="border border-gray-300 px-2 py-1 text-xs">{width}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {showPreview.grid_data?.dropRows?.map((row: any, index: number) => (
+                  {(showPreview.grid_data as GridDataStructure)?.dropRows?.map((row: any, index: number) => (
                     <tr key={index}>
                       <td className="border border-gray-300 px-2 py-1 text-xs font-medium">{row.drop}</td>
                       {row.prices?.map((price: number, priceIndex: number) => (
