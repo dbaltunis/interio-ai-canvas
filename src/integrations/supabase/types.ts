@@ -771,6 +771,87 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_integrations: {
+        Row: {
+          access_token: string
+          calendar_id: string | null
+          created_at: string
+          id: string
+          refresh_token: string | null
+          sync_enabled: boolean
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_calendar_sync_events: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          google_event_id: string
+          id: string
+          integration_id: string
+          last_synced_at: string
+          sync_direction: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          google_event_id: string
+          id?: string
+          integration_id: string
+          last_synced_at?: string
+          sync_direction: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          google_event_id?: string
+          id?: string
+          integration_id?: string
+          last_synced_at?: string
+          sync_direction?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_sync_events_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_sync_events_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "google_calendar_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hardware_options: {
         Row: {
           active: boolean | null

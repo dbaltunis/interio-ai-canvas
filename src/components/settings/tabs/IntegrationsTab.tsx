@@ -2,8 +2,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Zap, CreditCard, MessageSquare } from "lucide-react";
+import { Mail, Zap, CreditCard, MessageSquare, Calendar } from "lucide-react";
 import { SendGridIntegrationTab } from "./SendGridIntegrationTab";
+import { GoogleCalendarTab } from "./GoogleCalendarTab";
 
 export const IntegrationsTab = () => {
   return (
@@ -16,10 +17,14 @@ export const IntegrationsTab = () => {
       </div>
 
       <Tabs defaultValue="email" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Calendar
           </TabsTrigger>
           <TabsTrigger value="automation" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -37,6 +42,10 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="email">
           <SendGridIntegrationTab />
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <GoogleCalendarTab />
         </TabsContent>
 
         <TabsContent value="automation">
