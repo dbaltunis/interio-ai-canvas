@@ -18,6 +18,9 @@ import { calculateTotalPrice, formatCurrency } from './calculationUtils';
 import { FabricSelector } from '@/components/fabric/FabricSelector';
 import { useProductTemplates } from '@/hooks/useProductTemplates';
 import { useHeadingOptions } from '@/hooks/useHeadingOptions';
+import { useHardwareOptions } from '@/hooks/useComponentOptions';
+import { useServiceOptions } from '@/hooks/useServiceOptions';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { HemEditDialog } from './HemEditDialog';
 
 interface EnhancedTreatmentCalculatorProps {
@@ -56,6 +59,9 @@ export const EnhancedTreatmentCalculator = ({
   // Use actual product templates from database
   const { templates, isLoading: templatesLoading } = useProductTemplates();
   const { data: allHeadingOptions } = useHeadingOptions();
+  const { data: hardwareOptions = [] } = useHardwareOptions();
+  const { data: serviceOptions = [] } = useServiceOptions();
+  const { data: businessSettings } = useBusinessSettings();
   
   // Find matching template for the treatment type
   const matchingTemplate = templates?.find(template => 
@@ -77,8 +83,8 @@ export const EnhancedTreatmentCalculator = ({
     headingFullness: "2",
     lining: "Lined",
     mounting: "",
-    railWidth: "300",
-    curtainDrop: "200",
+    railWidth: "0", // Start with 0 as requested
+    curtainDrop: "0", // Start with 0 as requested
     curtainPooling: "0",
     returnDepth: "15",
     fabricMode: "manual",
@@ -91,8 +97,8 @@ export const EnhancedTreatmentCalculator = ({
     hardware: "",
     hardwareFinish: "",
     additionalFeatures: [],
-    laborRate: 45,
-    markupPercentage: 40
+    laborRate: businessSettings?.labor_rate || 45,
+    markupPercentage: businessSettings?.default_markup || 40
   });
 
   const [fabricOrientation, setFabricOrientation] = useState<"vertical" | "horizontal">("vertical");
@@ -185,57 +191,78 @@ export const EnhancedTreatmentCalculator = ({
     }
   }, [matchingTemplate]);
 
-  // Calculate enhanced breakdown
+  // Calculate enhanced breakdown with detailed explanations
   useEffect(() => {
     if (formData.railWidth && formData.curtainDrop && formData.fabricWidth && formData.fabricPricePerYard) {
       const calc = calculateTotalPrice(formData);
       setCalculation(calc);
 
-      // Enhanced calculations matching your screenshot
-      const railWidth = parseFloat(formData.railWidth);
-      const curtainDrop = parseFloat(formData.curtainDrop);
+      // Enhanced calculations with proper logic
+      const railWidth = parseFloat(formData.railWidth) || 0;
+      const curtainDrop = parseFloat(formData.curtainDrop) || 0;
       const pooling = parseFloat(formData.curtainPooling) || 0;
-      const fabricWidth = parseFloat(formData.fabricWidth);
-      const fullness = parseFloat(formData.headingFullness);
-      const quantity = formData.quantity;
+      const fabricWidth = parseFloat(formData.fabricWidth) || 0;
+      const fullness = parseFloat(formData.headingFullness) || 2;
+      const quantity = formData.quantity || 1;
       
-      // Use template-specific calculation method if available
-      const calculationMethod = matchingTemplate?.calculation_method || 'standard';
+      // Get actual hem values
+      const headerHem = parseFloat(hemConfig.header_hem) || 15;
+      const bottomHem = parseFloat(hemConfig.bottom_hem) || 10;
+      const sideHem = parseFloat(hemConfig.side_hem) || 5;
+      const seamHem = parseFloat(hemConfig.seam_hem) || 3;
       
-      // Fabric requirements
-      const totalWidth = railWidth * fullness;
-      const dropsPerWidth = Math.floor(fabricWidth / (totalWidth / quantity));
-      const widthsRequired = Math.ceil(quantity / Math.max(dropsPerWidth, 1));
-      const fabricLength = curtainDrop + pooling + 25; // Including allowances
-      const totalFabricCm = widthsRequired * fabricLength;
+      // For single/pair - pair only affects side hems (more side hems), not fabric calculation
+      const effectiveSideHems = quantity === 1 ? 2 : 4; // Single: 2 sides, Pair: 4 sides total
       
-      // Pricing calculations
+      // Width calculations - CORRECTED
+      const finishedCurtainWidth = railWidth / quantity; // Each curtain's finished width
+      const fabricWidthPerCurtain = finishedCurtainWidth * fullness; // Required fabric width per curtain
+      const totalFabricWidthRequired = fabricWidthPerCurtain * quantity; // Total fabric width needed
+      
+      // Drop calculations - including all hems
+      const totalDropRequired = curtainDrop + pooling + headerHem + bottomHem;
+      
+      // Calculate drops that fit across fabric width
+      const dropsPerFabricWidth = Math.floor(fabricWidth / fabricWidthPerCurtain);
+      const fabricLengthsNeeded = Math.ceil(quantity / Math.max(dropsPerFabricWidth, 1));
+      
+      // Total fabric amount
+      const totalFabricCm = fabricLengthsNeeded * totalDropRequired;
+      
+      // Manufacturing price - use business settings labor rate
+      const laborRate = businessSettings?.labor_rate || 45;
+      const railWidthInMeters = railWidth / 100;
+      const manufacturingPrice = railWidthInMeters * laborRate; // Labor rate per linear meter
+      
+      // Fabric pricing
       const fabricPricePerCm = parseFloat(formData.fabricPricePerYard) / 91.44; // Convert yard to cm
       const fabricPrice = totalFabricCm * fabricPricePerCm;
       
+      // Lining calculations
       const liningOption = liningOptions.find(l => l.label === formData.lining);
       const liningPrice = liningOption ? liningOption.price * (totalFabricCm / 100) : 0; // Per meter
       
-      const manufacturingPrice = railWidth * 3.95; // Base manufacturing cost per cm
-      
       // Leftovers calculation
-      const usedWidth = (totalWidth / quantity) * quantity;
-      const leftoverWidth = fabricWidth - (usedWidth % fabricWidth);
-      const leftoverLength = fabricLength - curtainDrop;
+      const fabricUsedWidth = fabricWidthPerCurtain * dropsPerFabricWidth;
+      const leftoverHorizontal = fabricWidth - fabricUsedWidth;
+      const leftoverVertical = totalDropRequired - curtainDrop;
       
       setCalculationBreakdown({
-        fabricAmount: `${totalFabricCm} cm`,
-        curtainWidthTotal: `${dropsPerWidth} Drops (${(dropsPerWidth * 0.75).toFixed(2)})`,
-        fabricDropRequirements: `${fabricLength} cm`,
-        fabricWidthRequirements: `${totalFabricCm} cm`,
+        fabricAmount: `${totalFabricCm.toFixed(0)} cm`,
+        curtainWidthTotal: `${dropsPerFabricWidth} Drops (${dropsPerFabricWidth > 0 ? (fabricWidthPerCurtain * dropsPerFabricWidth / 100).toFixed(2) : '0.00'}m)`,
+        fabricDropRequirements: `${totalDropRequired.toFixed(0)} cm`,
+        fabricWidthRequirements: `${totalFabricWidthRequired.toFixed(0)} cm`,
         liningPrice: liningPrice,
         manufacturingPrice: manufacturingPrice,
         fabricPrice: fabricPrice,
-        leftoversVertical: `${leftoverLength.toFixed(2)} cm`,
-        leftoversHorizontal: `${leftoverWidth.toFixed(2)} cm`
+        leftoversVertical: `${leftoverVertical.toFixed(2)} cm`,
+        leftoversHorizontal: `${leftoverHorizontal.toFixed(2)} cm`
       });
+    } else {
+      // Clear calculations when required fields are empty
+      setCalculationBreakdown(null);
     }
-  }, [formData, matchingTemplate, liningOptions]);
+  }, [formData, matchingTemplate, liningOptions, hemConfig, businessSettings]);
 
   const handleFabricSelect = (fabricName: string) => {
     // This would integrate with your actual fabric library
@@ -430,6 +457,17 @@ export const EnhancedTreatmentCalculator = ({
                   </div>
                 </RadioGroup>
 
+                {/* Current Hem Configuration Display */}
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <Label className="text-sm font-medium">Current Hems:</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                    <div>Header: {hemConfig.header_hem}cm</div>
+                    <div>Bottom: {hemConfig.bottom_hem}cm</div>
+                    <div>Side: {hemConfig.side_hem}cm</div>
+                    <div>Seam: {hemConfig.seam_hem}cm</div>
+                  </div>
+                </div>
+
                 <div className="mt-4 space-y-2">
                   <Button 
                     variant="outline" 
@@ -485,35 +523,8 @@ export const EnhancedTreatmentCalculator = ({
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Optional Enhancements */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Optional Enhancements</CardTitle>
-                <Badge variant="outline">From Template</Badge>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-3">
-                  {matchingTemplate.components?.features ? 
-                    "Available features from your template configuration:" :
-                    "No additional features configured for this template."
-                  }
-                </p>
-                <Button variant="outline" size="sm" className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Feature
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Heading Fullness */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{formData.headingStyle}</CardTitle>
-              </CardHeader>
-              <CardContent>
+                {/* Heading Fullness - moved here for better UX */}
                 <div>
                   <Label>Heading fullness</Label>
                   <Input
@@ -522,9 +533,70 @@ export const EnhancedTreatmentCalculator = ({
                     value={formData.headingFullness}
                     onChange={(e) => setFormData(prev => ({ ...prev, headingFullness: e.target.value }))}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Current: {formData.headingFullness}:1 ratio
+                  </p>
                 </div>
+
+                {/* Hardware Options */}
+                {hardwareOptions.length > 0 && (
+                  <div>
+                    <Label>Select hardware</Label>
+                    <Select value={formData.hardware} onValueChange={(value) => setFormData(prev => ({ ...prev, hardware: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose hardware..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hardwareOptions.map((option) => (
+                          <SelectItem key={option.id} value={option.name}>
+                            {option.name} (+{formatCurrency(option.price)}/{option.unit})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Service Options */}
+                {serviceOptions.length > 0 && (
+                  <div>
+                    <Label>Select services</Label>
+                    <div className="space-y-2">
+                      {serviceOptions.map((service) => (
+                        <div key={service.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`service-${service.id}`}
+                            checked={formData.additionalFeatures.some(f => f.id === service.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  additionalFeatures: [...prev.additionalFeatures, {
+                                    id: service.id,
+                                    name: service.name,
+                                    price: service.price,
+                                    selected: true
+                                  }]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  additionalFeatures: prev.additionalFeatures.filter(f => f.id !== service.id)
+                                }));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`service-${service.id}`} className="text-sm">
+                            {service.name} (+{formatCurrency(service.price)}/{service.unit})
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
           </div>
 
           {/* Right Column - Measurements and Calculations */}
@@ -629,16 +701,42 @@ export const EnhancedTreatmentCalculator = ({
                       <span className="text-gray-600">{item.label}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{item.value}</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-3 w-3 text-gray-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Calculation details for {item.label}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                         <TooltipProvider>
+                           <Tooltip>
+                             <TooltipTrigger>
+                               <Info className="h-3 w-3 text-gray-400" />
+                             </TooltipTrigger>
+                             <TooltipContent className="max-w-xs">
+                               {item.label === "Fabric amount" && (
+                                 <p>Total fabric needed: {calculationBreakdown.fabricAmount}. Calculated as fabric lengths needed × total drop required (including hems).</p>
+                               )}
+                               {item.label === "Curtain width total" && (
+                                 <p>Number of drops that fit across fabric width. Each drop is the finished curtain width × fullness ratio.</p>
+                               )}
+                               {item.label === "Fabric drop requirements" && (
+                                 <p>Total drop needed: curtain drop + pooling + header hem ({hemConfig.header_hem}cm) + bottom hem ({hemConfig.bottom_hem}cm).</p>
+                               )}
+                               {item.label === "Fabric width requirements" && (
+                                 <p>Total fabric width needed: finished width × fullness ({formData.headingFullness}) × quantity ({formData.quantity}).</p>
+                               )}
+                               {item.label === "Lining price" && (
+                                 <p>Lining cost: {liningOptions.find(l => l.label === formData.lining)?.price || 0}/m × fabric amount in meters.</p>
+                               )}
+                               {item.label === "Manufacturing price" && (
+                                 <p>Labor cost: rail width ({formData.railWidth}cm) ÷ 100 × labor rate (${businessSettings?.labor_rate || 45}/linear meter).</p>
+                               )}
+                               {item.label === "Fabric price" && (
+                                 <p>Fabric cost: total fabric amount × price per cm (${formData.fabricPricePerYard}/yard ÷ 91.44cm).</p>
+                               )}
+                               {item.label === "Leftovers-Vertical" && (
+                                 <p>Vertical waste: total drop required - actual curtain drop. Includes hem allowances.</p>
+                               )}
+                               {item.label === "Leftovers-Horizontal" && (
+                                 <p>Horizontal waste: fabric width - used width per drop.</p>
+                               )}
+                             </TooltipContent>
+                           </Tooltip>
+                         </TooltipProvider>
                       </div>
                     </div>
                   ))}
