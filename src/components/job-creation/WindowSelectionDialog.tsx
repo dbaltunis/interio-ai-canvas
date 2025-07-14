@@ -53,6 +53,15 @@ export const WindowSelectionDialog = ({
     });
   };
 
+  const handleOptionChange = (value: string) => {
+    setSelectedOption(value as 'existing' | 'new');
+    if (value === 'existing' && existingWindows.length > 0) {
+      setSelectedWindowId(existingWindows[0].id);
+    } else {
+      setSelectedWindowId('');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
@@ -73,7 +82,7 @@ export const WindowSelectionDialog = ({
             Room: <span className="font-medium">{roomName}</span>
           </div>
 
-          <RadioGroup value={selectedOption} onValueChange={(value: 'existing' | 'new') => setSelectedOption(value)}>
+          <RadioGroup value={selectedOption} onValueChange={handleOptionChange}>
             {/* Existing Window Option */}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
@@ -89,9 +98,9 @@ export const WindowSelectionDialog = ({
                         <div key={window.id} className="flex items-center space-x-2">
                           <RadioGroupItem 
                             value={window.id} 
-                            id={window.id}
+                            id={`window-${window.id}`}
                           />
-                          <Label htmlFor={window.id} className="text-sm">
+                          <Label htmlFor={`window-${window.id}`} className="text-sm">
                             {window.name} ({window.width || 60}" × {window.height || 48}")
                           </Label>
                         </div>
@@ -155,7 +164,7 @@ export const WindowSelectionDialog = ({
             <Button 
               onClick={handleConfirm}
               disabled={
-                (selectedOption === 'existing' && !selectedWindowId) ||
+                (selectedOption === 'existing' && (!selectedWindowId || existingWindows.length === 0)) ||
                 (selectedOption === 'new' && !newWindowData.name)
               }
               className="flex items-center gap-2"

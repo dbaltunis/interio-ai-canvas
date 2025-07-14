@@ -8,6 +8,7 @@ import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { WindowSelectionDialog } from "./WindowSelectionDialog";
 import { useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
+import { useCreateTreatment } from "@/hooks/useTreatments";
 import { useToast } from "@/hooks/use-toast";
 
 interface StreamlinedJobsInterfaceProps {
@@ -28,6 +29,7 @@ export const StreamlinedJobsInterface = ({
   const { toast } = useToast();
   const createRoom = useCreateRoom();
   const createSurface = useCreateSurface();
+  const createTreatment = useCreateTreatment();
   
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
@@ -83,7 +85,9 @@ export const StreamlinedJobsInterface = ({
         name: `Window ${windowNumber}`,
         surface_type: 'window',
         room_id: roomId,
-        project_id: project.id
+        project_id: project.id,
+        width: 60,
+        height: 48
       });
       
       toast({
@@ -108,6 +112,7 @@ export const StreamlinedJobsInterface = ({
 
   // Handle window selection for treatment
   const handleWindowSelection = (windowId: string, windowName: string) => {
+    console.log("Window selected:", windowId, windowName);
     setSelectedSurface(windowId);
     setWindowSelectionOpen(false);
     setTreatmentDialogOpen(true);
@@ -118,6 +123,7 @@ export const StreamlinedJobsInterface = ({
     if (!project?.id || !selectedRoom) return;
     
     try {
+      console.log("Creating new window:", windowName, windowData);
       const newSurface = await createSurface.mutateAsync({
         name: windowName,
         surface_type: 'window',
@@ -127,6 +133,7 @@ export const StreamlinedJobsInterface = ({
         height: windowData.height
       });
       
+      console.log("New window created:", newSurface);
       setSelectedSurface(newSurface.id);
       setWindowSelectionOpen(false);
       setTreatmentDialogOpen(true);
@@ -146,13 +153,47 @@ export const StreamlinedJobsInterface = ({
   };
 
   // Handle treatment save from calculator
-  const handleTreatmentSave = (treatmentData: any) => {
-    if (selectedSurface && selectedRoom) {
-      onCreateTreatment?.(selectedRoom, selectedSurface, treatmentType);
+  const handleTreatmentSave = async (treatmentData: any) => {
+    if (!selectedSurface || !selectedRoom || !project?.id) {
+      console.error("Missing required data for treatment creation");
+      return;
     }
-    setTreatmentDialogOpen(false);
-    setSelectedSurface(null);
-    setSelectedRoom(null);
+
+    try {
+      console.log("Creating treatment with data:", treatmentData);
+      
+      await createTreatment.mutateAsync({
+        project_id: project.id,
+        room_id: selectedRoom,
+        window_id: selectedSurface,
+        treatment_type: treatmentData.treatmentType || 'curtains',
+        product_name: treatmentData.productName || '',
+        material_cost: treatmentData.materialCost || 0,
+        labor_cost: treatmentData.laborCost || 0,
+        total_price: treatmentData.totalPrice || 0,
+        quantity: treatmentData.quantity || 1,
+        measurements: treatmentData.measurements || {},
+        fabric_details: treatmentData.fabricDetails || {},
+        treatment_details: treatmentData.treatmentDetails || {},
+        calculation_details: treatmentData.calculationDetails || {}
+      });
+
+      toast({
+        title: "Success",
+        description: "Treatment created successfully",
+      });
+
+      setTreatmentDialogOpen(false);
+      setSelectedSurface(null);
+      setSelectedRoom(null);
+    } catch (error) {
+      console.error("Failed to create treatment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create treatment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
