@@ -13,6 +13,19 @@ interface PricingGridPreviewProps {
   currentDrop?: number;
 }
 
+interface GridDataStructure {
+  rows?: Array<{
+    drop_min: number;
+    drop_max: number;
+    [key: string]: any;
+  }>;
+  columns?: Array<{
+    width_min: number;
+    width_max: number;
+    key: string;
+  }>;
+}
+
 export const PricingGridPreview = ({
   isOpen,
   onClose,
@@ -49,7 +62,8 @@ export const PricingGridPreview = ({
     );
   }
 
-  const grid = gridData.grid_data;
+  // Type cast the grid_data to our expected structure
+  const grid = gridData.grid_data as GridDataStructure;
   const rows = grid.rows || [];
   const columns = grid.columns || [];
 
