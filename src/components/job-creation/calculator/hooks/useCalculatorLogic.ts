@@ -27,6 +27,12 @@ export const useCalculatorLogic = (
       return null;
     }
 
+    console.log("Calculator input values:", {
+      railWidth: parsedRailWidth,
+      curtainDrop: parsedCurtainDrop,
+      quantity: parsedQuantity
+    });
+
     const headerHem = hemConfig?.header_hem || 0;
     const bottomHem = hemConfig?.bottom_hem || 0;
     const pooling = parseFloat(formData.curtainPooling || "0");
@@ -53,6 +59,7 @@ export const useCalculatorLogic = (
                            matchingTemplate.calculation_rules?.selectedPricingGrid;
       
       if (pricingGridId && gridData) {
+        // Pass the values directly as they're already in the correct units (cm)
         manufacturingPrice = getPriceFromGrid(
           gridData.grid_data, 
           parsedRailWidth, 
@@ -60,8 +67,8 @@ export const useCalculatorLogic = (
         );
         console.log("Manufacturing price from pricing grid:", {
           pricingGridId,
-          railWidth,
-          curtainDrop,
+          railWidth: parsedRailWidth,
+          curtainDrop: parsedCurtainDrop,
           manufacturingPrice
         });
       }
@@ -85,8 +92,8 @@ export const useCalculatorLogic = (
     const verticalRepeat = parseFloat(formData.verticalRepeat || "0");
     const horizontalRepeat = parseFloat(formData.horizontalRepeat || "0");
 
-    const leftoversVertical = fabricDropRequirements % verticalRepeat;
-    const leftoversHorizontal = fabricWidth % horizontalRepeat;
+    const leftoversVertical = verticalRepeat > 0 ? fabricDropRequirements % verticalRepeat : 0;
+    const leftoversHorizontal = horizontalRepeat > 0 ? fabricWidth % horizontalRepeat : 0;
 
     return {
       fabricCost: fabricPrice,
@@ -97,9 +104,9 @@ export const useCalculatorLogic = (
       details: {
         railWidth: parsedRailWidth,
         curtainDrop: parsedCurtainDrop,
-        fabricDropRequirements: fabricDropRequirements, // Ensure this is a number
-        fabricWidthRequirements: fabricWidthRequirements, // Ensure this is a number
-        fabricAmount: fabricAmount, // Ensure this is a number
+        fabricDropRequirements: fabricDropRequirements,
+        fabricWidthRequirements: fabricWidthRequirements,
+        fabricAmount: fabricAmount,
         fabricPricePerYard,
         liningPricePerMeter,
         headerHem,

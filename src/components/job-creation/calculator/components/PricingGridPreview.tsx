@@ -64,7 +64,7 @@ export const PricingGridPreview = ({
   const dropRows = grid.dropRows || [];
   const widthColumns = grid.widthColumns || [];
 
-  console.log("Grid data:", { grid, dropRows, widthColumns, gridData });
+  console.log("Grid preview data:", { grid, dropRows, widthColumns, gridData, currentWidth, currentDrop });
 
   // Generate width column headers from the first price array length if widthColumns is empty
   const columnHeaders = widthColumns.length > 0 
@@ -76,10 +76,10 @@ export const PricingGridPreview = ({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {gridName || gridData.name || 'Pricing Grid'}
+            {gridData.name || 'Pricing Grid'}
             {currentWidth && currentDrop && (
               <Badge variant="outline">
-                {currentWidth}m × {currentDrop}m
+                Current: {currentWidth}cm × {currentDrop}cm
               </Badge>
             )}
           </DialogTitle>
@@ -107,9 +107,9 @@ export const PricingGridPreview = ({
                       {row.drop}cm
                     </td>
                     {row.prices.map((price, colIndex) => {
-                      // Simple highlighting based on drop value if currentDrop is provided
+                      // Highlight the current selection - values are already in cm
                       const isHighlighted = currentDrop && 
-                        parseInt(row.drop) === Math.round(currentDrop * 100); // Convert meters to cm for comparison
+                        parseInt(row.drop) === Math.round(currentDrop); // currentDrop is already in cm
                       
                       return (
                         <td 
@@ -118,7 +118,7 @@ export const PricingGridPreview = ({
                             isHighlighted ? 'bg-blue-100 font-bold text-blue-900' : 'bg-white'
                           }`}
                         >
-                          ${parseFloat(price.toString()).toFixed(2)}
+                          £{parseFloat(price.toString()).toFixed(2)}
                         </td>
                       );
                     })}
@@ -148,11 +148,11 @@ export const PricingGridPreview = ({
           <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 className="font-medium mb-2 text-blue-900">Current Selection:</h4>
             <p className="text-blue-800">
-              Width: <span className="font-semibold">{currentWidth}m</span>, 
-              Drop: <span className="font-semibold">{currentDrop}m ({Math.round(currentDrop * 100)}cm)</span>
+              Width: <span className="font-semibold">{currentWidth}cm</span>, 
+              Drop: <span className="font-semibold">{currentDrop}cm</span>
             </p>
             <p className="text-sm text-blue-600 mt-1">
-              Highlighted cell shows the price for your current drop dimension.
+              Highlighted cell shows the manufacturing price for your current drop dimension.
             </p>
           </div>
         )}

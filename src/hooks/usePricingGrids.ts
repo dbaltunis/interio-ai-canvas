@@ -105,23 +105,32 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
   if (!gridData) return 0;
   
   try {
+    console.log("getPriceFromGrid called with:", { width, drop, gridData });
+    
     // Handle the actual data structure with dropRows
     if (gridData.dropRows) {
       const dropRows = gridData.dropRows;
-      const dropInCm = Math.round(drop * 100); // Convert meters to cm
+      // Input values are already in cm, so use them directly
+      const dropInCm = Math.round(drop);
+      
+      console.log("Looking for drop:", dropInCm, "cm in dropRows:", dropRows);
       
       // Find the matching drop row
       const matchingRow = dropRows.find((row: any) => {
         const rowDrop = parseInt(row.drop);
+        console.log("Comparing rowDrop:", rowDrop, "with dropInCm:", dropInCm);
         return rowDrop === dropInCm;
       });
       
       if (matchingRow && matchingRow.prices && matchingRow.prices.length > 0) {
         // For now, return the first price since we don't have width mapping
         // This could be enhanced to map width to specific price index
-        return parseFloat(matchingRow.prices[0].toString()) || 0;
+        const price = parseFloat(matchingRow.prices[0].toString()) || 0;
+        console.log("Found matching price:", price, "for drop:", dropInCm);
+        return price;
       }
       
+      console.log("No matching row found for drop:", dropInCm);
       return 0;
     }
     

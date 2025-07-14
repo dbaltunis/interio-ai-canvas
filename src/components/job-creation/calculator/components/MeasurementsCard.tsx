@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface MeasurementsCardProps {
   railWidth: string;
@@ -17,6 +18,8 @@ export const MeasurementsCard = ({
   curtainPooling,
   onMeasurementChange
 }: MeasurementsCardProps) => {
+  const { getLengthUnitLabel } = useMeasurementUnits();
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -33,7 +36,7 @@ export const MeasurementsCard = ({
                 onChange={(e) => onMeasurementChange('railWidth', e.target.value)}
                 className="rounded-r-none"
               />
-              <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">cm</div>
+              <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">{getLengthUnitLabel()}</div>
             </div>
           </div>
           <div>
@@ -45,7 +48,7 @@ export const MeasurementsCard = ({
                 onChange={(e) => onMeasurementChange('curtainDrop', e.target.value)}
                 className="rounded-r-none"
               />
-              <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">cm</div>
+              <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">{getLengthUnitLabel()}</div>
             </div>
           </div>
         </div>
@@ -58,7 +61,7 @@ export const MeasurementsCard = ({
               onChange={(e) => onMeasurementChange('curtainPooling', e.target.value)}
               className="rounded-r-none"
             />
-            <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">cm</div>
+            <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">{getLengthUnitLabel()}</div>
           </div>
         </div>
       </CardContent>
