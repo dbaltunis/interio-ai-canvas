@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Info, FileText } from "lucide-react";
+import { Info, FileText, Eye } from "lucide-react";
 import { formatCurrency } from '../calculationUtils';
 import { PricingGridPreview } from './PricingGridPreview';
 
@@ -79,6 +79,15 @@ export const CalculationResultsCard = ({
     }
   };
 
+  const handleViewGrid = () => {
+    console.log("Opening pricing grid preview", {
+      isPricingGrid,
+      templateId: matchingTemplate?.id,
+      pricingGridId: matchingTemplate?.pricing_grid_id
+    });
+    setShowPricingGrid(true);
+  };
+
   return (
     <>
       <Card>
@@ -87,15 +96,15 @@ export const CalculationResultsCard = ({
             <CardTitle className="text-base">
               Calculation results ({matchingTemplate.name})
             </CardTitle>
-            {isPricingGrid && matchingTemplate?.pricing_grid_id && (
+            {isPricingGrid && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowPricingGrid(true)}
-                className="flex items-center gap-2"
+                onClick={handleViewGrid}
+                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 hover:text-blue-800"
               >
-                <FileText className="h-4 w-4" />
-                View Grid
+                <Eye className="h-4 w-4" />
+                View Pricing Grid
               </Button>
             )}
           </div>
@@ -119,6 +128,21 @@ export const CalculationResultsCard = ({
               </div>
             </div>
           ))}
+
+          {/* Make the manufacturing price row clickable if it's from pricing grid */}
+          {isPricingGrid && (
+            <div className="mt-3 pt-2 border-t">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewGrid}
+                className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Click to view full pricing grid matrix
+              </Button>
+            </div>
+          )}
 
           <div className="flex items-center space-x-2 mt-4">
             <Checkbox 
