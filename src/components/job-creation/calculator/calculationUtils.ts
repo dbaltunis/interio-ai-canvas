@@ -2,7 +2,7 @@
 import { TreatmentFormData, CalculationResult, DetailedCalculation } from './types';
 
 
-export const calculateTotalPrice = (formData: TreatmentFormData): CalculationResult & { details: DetailedCalculation } => {
+export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate?: any): CalculationResult & { details: DetailedCalculation } => {
   const railWidth = parseFloat(formData.railWidth) || 0;
   const curtainDrop = parseFloat(formData.curtainDrop) || 0;
   const fullness = parseFloat(formData.headingFullness) || 2.5;
@@ -48,12 +48,81 @@ export const calculateTotalPrice = (formData: TreatmentFormData): CalculationRes
   const fabricPricePerYard = formData.selectedFabric?.pricePerYard || parseFloat(formData.fabricPricePerYard) || 0;
   const fabricCost = totalFabricYards * fabricPricePerYard;
   
-  // Labor cost calculation based on complexity
+  // Apply product template making cost and calculation rules
+  let makingCost = 0;
+  let complexityMultiplier = 1.0;
+  
+  if (productTemplate?.calculation_rules) {
+    const rules = productTemplate.calculation_rules;
+    const baseMakingCost = parseFloat(rules.baseMakingCost) || 0;
+    const baseHeightLimit = parseFloat(rules.baseHeightLimit) || 240; // cm
+    
+    console.log('=== MAKING COST CALCULATION ===');
+    console.log('Base Making Cost:', baseMakingCost);
+    console.log('Base Height Limit:', baseHeightLimit);
+    console.log('Curtain Drop:', curtainDrop);
+    
+    // Apply base making cost per linear meter
+    if (productTemplate.pricing_unit === 'per-linear-meter') {
+      makingCost = (railWidth / 100) * baseMakingCost; // Convert cm to meters
+      console.log('Making Cost (per linear meter):', makingCost);
+    } else {
+      makingCost = baseMakingCost * quantity;
+      console.log('Making Cost (per unit):', makingCost);
+    }
+    
+    // Apply height surcharges if configured
+    if (rules.useHeightSurcharges && curtainDrop > baseHeightLimit) {
+      const heightSurcharge1 = parseFloat(rules.heightSurcharge1) || 0;
+      const heightSurcharge2 = parseFloat(rules.heightSurcharge2) || 0;
+      const heightSurcharge3 = parseFloat(rules.heightSurcharge3) || 0;
+      
+      const range1Start = parseFloat(rules.heightRange1Start) || 240;
+      const range1End = parseFloat(rules.heightRange1End) || 300;
+      const range2Start = parseFloat(rules.heightRange2Start) || 300;
+      const range2End = parseFloat(rules.heightRange2End) || 400;
+      const range3Start = parseFloat(rules.heightRange3Start) || 400;
+      
+      if (curtainDrop >= range1Start && curtainDrop < range1End) {
+        makingCost += heightSurcharge1;
+        console.log('Applied height surcharge 1:', heightSurcharge1);
+      } else if (curtainDrop >= range2Start && curtainDrop < range2End) {
+        makingCost += heightSurcharge2;
+        console.log('Applied height surcharge 2:', heightSurcharge2);
+      } else if (curtainDrop >= range3Start) {
+        makingCost += heightSurcharge3;
+        console.log('Applied height surcharge 3:', heightSurcharge3);
+      }
+    }
+    
+    // Apply complexity multiplier
+    if (rules.complexityMultiplier) {
+      switch (rules.complexityMultiplier) {
+        case 'standard':
+          complexityMultiplier = 1.0;
+          break;
+        case 'medium':
+          complexityMultiplier = 1.2;
+          break;
+        case 'complex':
+          complexityMultiplier = 1.5;
+          break;
+        default:
+          complexityMultiplier = parseFloat(rules.complexityMultiplier) || 1.0;
+      }
+      console.log('Complexity Multiplier:', complexityMultiplier);
+      makingCost *= complexityMultiplier;
+    }
+  }
+  
+  // Labor cost calculation (legacy calculation for templates without making cost)
   const baseHours = 2; // Base time for setup
   const sewingHours = (railWidth * curtainDrop * fullness) / 25000; // Adjusted for complexity
   const finishingHours = quantity * 0.5; // Finishing time per panel
   const laborHours = Math.max(4, baseHours + sewingHours + finishingHours);
-  const laborCost = laborHours * formData.laborRate;
+  const laborCost = makingCost > 0 ? makingCost : (laborHours * formData.laborRate);
+  
+  console.log('Final Making/Labor Cost:', laborCost);
   
   // Features cost with detailed breakdown
   const selectedFeatures = formData.additionalFeatures.filter(f => f.selected);

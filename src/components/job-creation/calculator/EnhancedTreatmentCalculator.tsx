@@ -117,34 +117,49 @@ export const EnhancedTreatmentCalculator = ({
   // Auto-save functionality
   const storageKey = `treatment-draft-${treatmentType}`;
   
-  // Reset form to defaults when dialog opens (start fresh each time)
+  // Apply template data when dialog opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && matchingTemplate) {
       // Clear any existing draft and start fresh
       localStorage.removeItem(storageKey);
       
-      // Reset to default form data
+      console.log('=== APPLYING TEMPLATE DATA ===');
+      console.log('Template:', matchingTemplate);
+      console.log('Template Components:', matchingTemplate.components);
+      console.log('Template Calculation Rules:', matchingTemplate.calculation_rules);
+      
+      // Get default selections from template
+      const templateHeadings = matchingTemplate.components?.headings || {};
+      const templateHardware = matchingTemplate.components?.hardware || {};
+      const templateLining = matchingTemplate.components?.lining || {};
+      
+      // Find first selected option for each component type
+      const defaultHeading = Object.keys(templateHeadings).find(id => templateHeadings[id]) || "";
+      const defaultHardware = Object.keys(templateHardware).find(id => templateHardware[id]) || "";
+      const defaultLining = Object.keys(templateLining).find(id => templateLining[id]) || "";
+      
+      // Reset to default form data with template values applied
       setFormData({
-        treatmentName: "",
+        treatmentName: `${treatmentType} Treatment`,
         quantity: 1,
         windowPosition: "",
         windowType: "",
-        headingStyle: "",
+        headingStyle: defaultHeading,
         headingFullness: "2",
-        lining: "",
+        lining: defaultLining,
         mounting: "",
-        railWidth: "200",
-        curtainDrop: "240",
+        railWidth: "0", // Start with 0 as requested
+        curtainDrop: "0", // Start with 0 as requested
         curtainPooling: "0",
         returnDepth: "8",
         fabricMode: "manual",
         selectedFabric: null,
         fabricName: "Sky Gray 01",
-        fabricWidth: "300",
+        fabricWidth: "140", // Default fabric width
         fabricPricePerYard: "18.7",
         verticalRepeat: "0",
         horizontalRepeat: "0",
-        hardware: "",
+        hardware: defaultHardware,
         hardwareFinish: "",
         additionalFeatures: [],
         laborRate: businessSettings?.labor_rate || 45,
@@ -163,8 +178,50 @@ export const EnhancedTreatmentCalculator = ({
       setDontUpdateTotalPrice(false);
       setCalculation(null);
       setCalculationBreakdown(null);
+    } else if (isOpen && !matchingTemplate) {
+      // No template found, use defaults
+      localStorage.removeItem(storageKey);
+      
+      setFormData({
+        treatmentName: `${treatmentType} Treatment`,
+        quantity: 1,
+        windowPosition: "",
+        windowType: "",
+        headingStyle: "",
+        headingFullness: "2",
+        lining: "",
+        mounting: "",
+        railWidth: "0",
+        curtainDrop: "0",
+        curtainPooling: "0",
+        returnDepth: "8",
+        fabricMode: "manual",
+        selectedFabric: null,
+        fabricName: "Sky Gray 01",
+        fabricWidth: "140",
+        fabricPricePerYard: "18.7",
+        verticalRepeat: "0",
+        horizontalRepeat: "0",
+        hardware: "",
+        hardwareFinish: "",
+        additionalFeatures: [],
+        laborRate: businessSettings?.labor_rate || 45,
+        markupPercentage: businessSettings?.default_markup || 40
+      });
+      
+      setHemConfig({
+        header_hem: "15",
+        bottom_hem: "10",
+        side_hem: "5", 
+        seam_hem: "3"
+      });
+      setFabricOrientation("vertical");
+      setIsManualFabric(true);
+      setDontUpdateTotalPrice(false);
+      setCalculation(null);
+      setCalculationBreakdown(null);
     }
-  }, [isOpen, storageKey, businessSettings]);
+  }, [isOpen, storageKey, businessSettings, matchingTemplate, treatmentType]);
 
   // Auto-save form data when it changes
   const autoSave = useCallback(() => {
@@ -273,7 +330,7 @@ export const EnhancedTreatmentCalculator = ({
   // Calculate enhanced breakdown with detailed explanations
   useEffect(() => {
     if (formData.railWidth && formData.curtainDrop && formData.fabricWidth && formData.fabricPricePerYard) {
-      const calc = calculateTotalPrice(formData);
+      const calc = calculateTotalPrice(formData, matchingTemplate);
       setCalculation(calc);
 
       // Enhanced calculations with proper logic
