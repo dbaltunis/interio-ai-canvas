@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -113,6 +113,54 @@ export const EnhancedTreatmentCalculator = ({
     side_hem: "5", 
     seam_hem: "3"
   });
+
+  // Auto-save functionality
+  const storageKey = `treatment-draft-${treatmentType}`;
+  
+  // Load saved draft when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      const savedDraft = localStorage.getItem(storageKey);
+      if (savedDraft) {
+        try {
+          const parsedDraft = JSON.parse(savedDraft);
+          console.log('Loading saved draft:', parsedDraft);
+          setFormData(prev => ({ ...prev, ...parsedDraft.formData }));
+          setHemConfig(parsedDraft.hemConfig || hemConfig);
+          setFabricOrientation(parsedDraft.fabricOrientation || "vertical");
+        } catch (error) {
+          console.error('Error loading draft:', error);
+        }
+      }
+    }
+  }, [isOpen, storageKey]);
+
+  // Auto-save form data when it changes
+  const autoSave = useCallback(() => {
+    if (!isOpen) return;
+    
+    const draftData = {
+      formData,
+      hemConfig,
+      fabricOrientation,
+      lastSaved: new Date().toISOString()
+    };
+    
+    localStorage.setItem(storageKey, JSON.stringify(draftData));
+    console.log('Auto-saved draft for:', treatmentType);
+  }, [formData, hemConfig, fabricOrientation, isOpen, storageKey, treatmentType]);
+
+  // Auto-save after changes with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(autoSave, 1000); // Save after 1 second of inactivity
+    return () => clearTimeout(timeoutId);
+  }, [autoSave]);
+
+  // Clear draft when successfully saved
+  const clearDraft = useCallback(() => {
+    localStorage.removeItem(storageKey);
+    console.log('Cleared draft for:', treatmentType);
+  }, [storageKey, treatmentType]);
 
   // Get actual lining options based on template's lining component IDs
   const liningOptions = React.useMemo(() => {
@@ -334,6 +382,7 @@ export const EnhancedTreatmentCalculator = ({
     };
 
     onSave(treatmentData);
+    clearDraft(); // Clear the auto-saved draft after successful save
     onClose();
   };
 
