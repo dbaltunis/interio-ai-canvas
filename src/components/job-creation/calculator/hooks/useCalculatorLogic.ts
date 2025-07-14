@@ -84,8 +84,9 @@ export const useCalculatorLogic = (
         const baseMakingCost = parseFloat(matchingTemplate.calculation_rules.baseMakingCost) || 0;
         
         if (matchingTemplate.pricing_unit === 'per-linear-meter') {
-          const railWidthInMeters = railWidth / 100;
-          manufacturingPrice = railWidthInMeters * baseMakingCost;
+          // Calculate running linear meters: total fabric width needed in meters
+          const runningLinearMeters = totalFabricWidthRequired / 100; // Convert cm to meters
+          manufacturingPrice = runningLinearMeters * baseMakingCost;
         } else {
           manufacturingPrice = baseMakingCost * quantity;
         }
@@ -136,8 +137,8 @@ export const useCalculatorLogic = (
       } else {
         // Fallback to business settings labor rate if no template making cost
         const laborRate = businessSettings?.labor_rate || 45;
-        const railWidthInMeters = railWidth / 100;
-        manufacturingPrice = railWidthInMeters * laborRate;
+        const runningLinearMeters = totalFabricWidthRequired / 100; // Convert cm to meters
+        manufacturingPrice = runningLinearMeters * laborRate;
       }
       
       // Fabric pricing
