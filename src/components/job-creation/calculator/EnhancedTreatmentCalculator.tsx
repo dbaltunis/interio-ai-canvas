@@ -307,7 +307,11 @@ export const EnhancedTreatmentCalculator = ({
         price_per_yard: formData.fabricPricePerYard,
         vertical_repeat: formData.verticalRepeat,
         horizontal_repeat: formData.horizontalRepeat,
-        orientation: fabricOrientation
+        orientation: fabricOrientation,
+        color: formData.selectedFabric?.color,
+        pattern: formData.selectedFabric?.pattern,
+        type: formData.selectedFabric?.type,
+        fabric_id: formData.selectedFabric?.id
       },
       options: {
         heading_style: formData.headingStyle,

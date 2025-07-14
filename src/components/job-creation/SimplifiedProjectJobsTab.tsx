@@ -221,9 +221,31 @@ export const SimplifiedProjectJobsTab = ({ project, onProjectUpdate }: Simplifie
           window_id: newSurface.id,
           treatment_type: currentTreatmentData.treatmentType,
           user_id: user.id,
-          ...treatmentData
+          product_name: treatmentData.treatment_name,
+          quantity: treatmentData.quantity,
+          unit_price: treatmentData.pricing?.unit_price || 0,
+          total_price: treatmentData.pricing?.total || 0,
+          labor_cost: treatmentData.pricing?.labor_cost || 0,
+          material_cost: treatmentData.pricing?.fabric_cost || 0,
+          measurements: treatmentData.measurements,
+          fabric_details: treatmentData.fabric_details,
+          calculation_details: treatmentData.calculation_details,
+          treatment_details: {
+            template_id: treatmentData.template_id,
+            options: treatmentData.options,
+            hem_configuration: treatmentData.hem_configuration,
+            calculation_breakdown: treatmentData.calculation_breakdown
+          },
+          // Map fabric details to individual columns for backward compatibility
+          fabric_type: treatmentData.fabric_details?.name,
+          color: treatmentData.fabric_details?.color,
+          pattern: treatmentData.fabric_details?.pattern,
+          hardware: treatmentData.options?.hardware,
+          notes: `${treatmentData.treatment_name} - Enhanced Calculator`,
+          status: 'planned'
         };
 
+        console.log('Saving treatment with fabric details:', finalTreatmentData);
         await supabase.from('treatments').insert(finalTreatmentData);
         
         toast({
