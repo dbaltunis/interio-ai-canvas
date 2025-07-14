@@ -302,18 +302,22 @@ export const ProductTemplatesTab = () => {
       }
     }
     
-    // Extract values with proper fallbacks
+    // Extract values with proper fallbacks - fix the selectedPricingGrid loading
     const baseMakingCost = template.baseMakingCost || template.calculation_rules?.baseMakingCost || "";
     const baseHeightLimit = template.baseHeightLimit || template.calculation_rules?.baseHeightLimit || "2.4";
     const heightSurcharge1 = template.heightSurcharge1 || template.calculation_rules?.heightSurcharge1 || "";
     const heightSurcharge2 = template.heightSurcharge2 || template.calculation_rules?.heightSurcharge2 || "";
     const heightSurcharge3 = template.heightSurcharge3 || template.calculation_rules?.heightSurcharge3 || "";
     
+    // Fix: Load selectedPricingGrid from calculation_rules
+    const selectedPricingGrid = template.selectedPricingGrid || template.calculation_rules?.selectedPricingGrid || "";
+    
     console.log("Extracted template data:", {
       selectedComponents,
       requiredComponents,
       baseMakingCost,
       baseHeightLimit,
+      selectedPricingGrid,
       calculationRules: template.calculation_rules
     });
     
@@ -324,20 +328,20 @@ export const ProductTemplatesTab = () => {
       window_covering_id: windowCoverings.find(wc => wc.name === template.product_type)?.id || "",
       calculationMethod: template.calculation_method || "",
       pricingUnit: template.pricing_unit || "",
-      selectedPricingGrid: template.selectedPricingGrid || "",
+      selectedPricingGrid: selectedPricingGrid, // Fix: Use the extracted value
       baseMakingCost: baseMakingCost.toString(),
       baseHeightLimit: baseHeightLimit.toString(),
-      useHeightSurcharges: template.useHeightSurcharges || false,
-      complexityMultiplier: template.complexityMultiplier || "standard",
+      useHeightSurcharges: template.useHeightSurcharges || template.calculation_rules?.useHeightSurcharges || false,
+      complexityMultiplier: template.complexityMultiplier || template.calculation_rules?.complexityMultiplier || "standard",
       showComplexityOption: template.showComplexityOption !== false,
       heightSurcharge1: heightSurcharge1.toString(),
       heightSurcharge2: heightSurcharge2.toString(),
       heightSurcharge3: heightSurcharge3.toString(),
-      heightRange1Start: (template.heightRange1Start || "2.4").toString(),
-      heightRange1End: (template.heightRange1End || "3.0").toString(),
-      heightRange2Start: (template.heightRange2Start || "3.0").toString(),
-      heightRange2End: (template.heightRange2End || "4.0").toString(),
-      heightRange3Start: (template.heightRange3Start || "4.0").toString(),
+      heightRange1Start: (template.heightRange1Start || template.calculation_rules?.heightRange1Start || "2.4").toString(),
+      heightRange1End: (template.heightRange1End || template.calculation_rules?.heightRange1End || "3.0").toString(),
+      heightRange2Start: (template.heightRange2Start || template.calculation_rules?.heightRange2Start || "3.0").toString(),
+      heightRange2End: (template.heightRange2End || template.calculation_rules?.heightRange2End || "4.0").toString(),
+      heightRange3Start: (template.heightRange3Start || template.calculation_rules?.heightRange3Start || "4.0").toString(),
       selectedComponents: selectedComponents,
       requiredComponents: requiredComponents,
       calculationRules: {

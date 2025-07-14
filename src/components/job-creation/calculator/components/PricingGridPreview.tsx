@@ -192,7 +192,7 @@ export const PricingGridPreview = ({
                 columns.map(col => parseFloat(row[col.key]) || 0)
               )))} - {formatCurrency(Math.max(...rows.flatMap(row => 
                 columns.map(col => parseFloat(row[col.key]) || 0)
-              ))))}
+              )))}
             </span>
             <span>
               Total cells: {rows.length * columns.length}
