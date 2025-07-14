@@ -8,7 +8,7 @@ import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { ProductTemplatesTab } from "./tabs/ProductTemplatesTab";
 import { ComponentsTab } from "./tabs/ComponentsTab";
-import { CalculationsTab } from "./tabs/CalculationsTab";
+import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
@@ -106,7 +106,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="calculations">
-          <CalculationsTab />
+          <PricingRulesTab />
         </TabsContent>
 
         <TabsContent value="users">
