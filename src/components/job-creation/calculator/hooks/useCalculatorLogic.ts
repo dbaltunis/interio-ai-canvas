@@ -27,7 +27,8 @@ export const useCalculatorLogic = (
       return null;
     }
 
-    console.log("Calculator input values:", {
+    console.log("=== CALCULATION DEBUG START ===");
+    console.log("Calculator input values (in cm from form):", {
       railWidth: parsedRailWidth,
       curtainDrop: parsedCurtainDrop,
       quantity: parsedQuantity
@@ -37,18 +38,39 @@ export const useCalculatorLogic = (
     const bottomHem = hemConfig?.bottom_hem || 0;
     const pooling = parseFloat(formData.curtainPooling || "0");
 
+    // All calculations in centimeters - DO NOT convert to meters
     const fabricDropRequirements = parsedCurtainDrop + pooling + headerHem + bottomHem;
     const fabricWidthRequirements = parsedRailWidth * parsedHeadingFullness;
-    const fabricAmount = fabricWidthRequirements * fabricDropRequirements;
+    
+    // Fabric amount in square centimeters
+    const fabricAmountCm2 = fabricWidthRequirements * fabricDropRequirements;
+    // Convert to square meters for pricing (divide by 10000)
+    const fabricAmountM2 = fabricAmountCm2 / 10000;
 
-    // Calculate lining price
+    console.log("Fabric calculations:", {
+      fabricDropRequirements: fabricDropRequirements + "cm",
+      fabricWidthRequirements: fabricWidthRequirements + "cm", 
+      fabricAmountCm2: fabricAmountCm2 + "cm²",
+      fabricAmountM2: fabricAmountM2 + "m²"
+    });
+
+    // Calculate lining price (per square meter)
     const liningType = liningOptions.find(l => l.value === formData.lining);
     const liningPricePerMeter = liningType?.price || 0;
-    const liningPrice = liningPricePerMeter * (fabricAmount / 10000);
+    const liningPrice = liningPricePerMeter * fabricAmountM2;
 
     // Calculate fabric price
     const fabricPricePerYard = parseFloat(formData.fabricPricePerYard || "0");
-    const fabricPrice = (fabricAmount / 10000) * (fabricPricePerYard / 0.9144);
+    // Convert square meters to yards (1 yard = 0.9144 meters)
+    const fabricPricePerM2 = fabricPricePerYard / 0.9144;
+    const fabricPrice = fabricAmountM2 * fabricPricePerM2;
+
+    console.log("Fabric pricing:", {
+      fabricPricePerYard,
+      fabricPricePerM2,
+      fabricAmountM2,
+      fabricPrice
+    });
 
     // Calculate manufacturing/makeup cost based on template method
     let manufacturingPrice = 0;
@@ -67,16 +89,18 @@ export const useCalculatorLogic = (
         );
         console.log("Manufacturing price from pricing grid:", {
           pricingGridId,
-          railWidth: parsedRailWidth,
-          curtainDrop: parsedCurtainDrop,
-          manufacturingPrice
+          railWidth: parsedRailWidth + "cm",
+          curtainDrop: parsedCurtainDrop + "cm",
+          manufacturingPrice: "£" + manufacturingPrice
         });
+      } else {
+        console.log("No pricing grid data available for manufacturing cost");
       }
     } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
       // Use template-based making cost
       const baseCost = parseFloat(matchingTemplate.calculation_rules.baseMakingCost.toString()) || 0;
       if (matchingTemplate.pricing_unit === 'per-linear-meter') {
-        const runningLinearMeters = fabricWidthRequirements / 100;
+        const runningLinearMeters = fabricWidthRequirements / 100; // Convert cm to meters
         manufacturingPrice = baseCost * runningLinearMeters;
       } else {
         manufacturingPrice = baseCost;
@@ -84,7 +108,7 @@ export const useCalculatorLogic = (
     } else {
       // Use business settings labor rate
       const laborRate = parseFloat(businessSettings?.labor_rate?.toString() || "45");
-      const runningLinearMeters = fabricWidthRequirements / 100;
+      const runningLinearMeters = fabricWidthRequirements / 100; // Convert cm to meters
       manufacturingPrice = laborRate * runningLinearMeters;
     }
 
@@ -95,9 +119,9 @@ export const useCalculatorLogic = (
     const leftoversVertical = verticalRepeat > 0 ? fabricDropRequirements % verticalRepeat : 0;
     const leftoversHorizontal = horizontalRepeat > 0 ? fabricWidth % horizontalRepeat : 0;
 
-    return {
+    const finalCalculation = {
       fabricCost: fabricPrice,
-      laborCost: manufacturingPrice, // Use the calculated manufacturing price
+      laborCost: manufacturingPrice,
       featuresCost: liningPrice,
       subtotal: fabricPrice + manufacturingPrice + liningPrice,
       total: (fabricPrice + manufacturingPrice + liningPrice) * parsedQuantity,
@@ -106,7 +130,7 @@ export const useCalculatorLogic = (
         curtainDrop: parsedCurtainDrop,
         fabricDropRequirements: fabricDropRequirements,
         fabricWidthRequirements: fabricWidthRequirements,
-        fabricAmount: fabricAmount,
+        fabricAmount: fabricAmountM2, // Store in square meters for display
         fabricPricePerYard,
         liningPricePerMeter,
         headerHem,
@@ -120,6 +144,11 @@ export const useCalculatorLogic = (
         pricingGridUsed: matchingTemplate?.calculation_method === 'pricing_grid'
       }
     };
+
+    console.log("Final calculation result:", finalCalculation);
+    console.log("=== CALCULATION DEBUG END ===");
+
+    return finalCalculation;
   }, [
     formData,
     hemConfig,
@@ -139,7 +168,7 @@ export const useCalculatorLogic = (
     };
 
     return {
-      fabricAmount: safeToFixed(calculation.details.fabricAmount),
+      fabricAmount: safeToFixed(calculation.details.fabricAmount), // This is now in m²
       curtainWidthTotal: safeToFixed(calculation.details.fabricWidthRequirements),
       fabricDropRequirements: safeToFixed(calculation.details.fabricDropRequirements),
       fabricWidthRequirements: safeToFixed(calculation.details.fabricWidthRequirements),
