@@ -10,7 +10,7 @@ import { Plus, Settings, Edit, Trash2, Calculator, LoaderIcon } from "lucide-rea
 import { useState } from "react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
-import { useHardwareOptions, useLiningOptions } from "@/hooks/useComponentOptions";
+import { useHardwareOptions, useLiningOptions, usePartsOptions } from "@/hooks/useComponentOptions";
 import { useServiceOptions } from "@/hooks/useServiceOptions";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
@@ -25,6 +25,7 @@ export const ProductTemplatesTab = () => {
   const { data: headingOptions = [] } = useHeadingOptions();
   const { data: hardwareOptions = [] } = useHardwareOptions();
   const { data: liningOptions = [] } = useLiningOptions();
+  const { data: partsOptions = [] } = usePartsOptions();
   const { data: serviceOptions = [] } = useServiceOptions();
   const { data: pricingGrids = [] } = usePricingGrids();
   
@@ -82,13 +83,17 @@ export const ProductTemplatesTab = () => {
       headings: {},
       hardware: {},
       lining: {},
-      services: {}
+      parts: {},
+      services: {},
+      grids: {}
     },
     requiredComponents: {
       headings: {},
       hardware: {},
       lining: {},
-      services: {}
+      parts: {},
+      services: {},
+      grids: {}
     },
     calculationRules: {
       heightTiers: [],
@@ -207,13 +212,17 @@ export const ProductTemplatesTab = () => {
       headings: {},
       hardware: {},
       lining: {},
-      services: {}
+      parts: {},
+      services: {},
+      grids: {}
     },
     requiredComponents: {
       headings: {},
       hardware: {},
       lining: {},
-      services: {}
+      parts: {},
+      services: {},
+      grids: {}
     },
       calculationRules: {
         heightTiers: [],
@@ -243,14 +252,18 @@ export const ProductTemplatesTab = () => {
       headings: {},
       hardware: {},
       lining: {},
-      services: {}
+      parts: {},
+      services: {},
+      grids: {}
     };
     
     const requiredComponents = {
       headings: {},
       hardware: {},
       lining: {},
-      services: {}
+      parts: {},
+      services: {},
+      grids: {}
     };
     
     // If template has component selections, reconstruct the selectedComponents object
@@ -265,8 +278,14 @@ export const ProductTemplatesTab = () => {
       if (template.components.lining) {
         selectedComponents.lining = template.components.lining || {};
       }
+      if (template.components.parts) {
+        selectedComponents.parts = template.components.parts || {};
+      }
       if (template.components.services) {
         selectedComponents.services = template.components.services || {};
+      }
+      if (template.components.grids) {
+        selectedComponents.grids = template.components.grids || {};
       }
       
       // Load required components if available
@@ -274,7 +293,9 @@ export const ProductTemplatesTab = () => {
         requiredComponents.headings = template.components.required.headings || {};
         requiredComponents.hardware = template.components.required.hardware || {};
         requiredComponents.lining = template.components.required.lining || {};
+        requiredComponents.parts = template.components.required.parts || {};
         requiredComponents.services = template.components.required.services || {};
+        requiredComponents.grids = template.components.required.grids || {};
       }
     }
     
@@ -406,12 +427,14 @@ export const ProductTemplatesTab = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium text-sm mb-2">Required Components:</h4>
+                    <h4 className="font-medium text-sm mb-2">Available Components:</h4>
                     <div className="flex gap-2 flex-wrap">
                       {template.components && Object.keys(template.components).filter(key => 
-                        typeof template.components[key] === 'object' 
-                          ? Object.keys(template.components[key]).length > 0
-                          : template.components[key]
+                        key !== 'required' && (
+                          typeof template.components[key] === 'object' 
+                            ? Object.keys(template.components[key]).length > 0
+                            : template.components[key]
+                        )
                       ).map((component) => (
                         <Badge key={component} variant="outline">
                           {component}
@@ -899,12 +922,14 @@ export const ProductTemplatesTab = () => {
             {/* Component Selection */}
             <div className="space-y-4">
               <h4 className="font-medium text-brand-primary">Component Selection</h4>
-              <p className="text-sm text-gray-600">
-                {requiresPricingGrid 
-                  ? "Select components for display purposes only (pricing comes from CSV grid)"
-                  : "Select components that will be available for this product (costs will be added to final price)"
-                }
-              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-yellow-800">
+                  {requiresPricingGrid 
+                    ? "⚠️ CSV Pricing Grid Method: Components with individual prices will be added separately to quotes. Select components for display and customer choice."
+                    : "✓ Component-Based Pricing: Selected components will have their costs added to the final price calculation."
+                  }
+                </p>
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1131,6 +1156,126 @@ export const ProductTemplatesTab = () => {
                                 }
                               />
                               <label htmlFor={`service-required-${service.id}`} className="text-xs text-orange-600">
+                                Required component (customer must select)
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Parts & Accessories</Label>
+                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                    {partsOptions.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic">No parts options created yet. Create some in the Components tab.</p>
+                    ) : (
+                      partsOptions.map((part) => (
+                        <div key={part.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`part-${part.id}`}
+                              checked={formData.selectedComponents.parts[part.id] || false}
+                              onCheckedChange={(checked) => 
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedComponents: {
+                                    ...prev.selectedComponents,
+                                    parts: {
+                                      ...prev.selectedComponents.parts,
+                                      [part.id]: checked === true
+                                    }
+                                  }
+                                }))
+                              }
+                            />
+                            <label htmlFor={`part-${part.id}`} className="text-sm font-medium">
+                              {part.name} - ${part.price}/{part.unit}
+                              {part.category && <span className="text-xs text-gray-500 ml-1">({part.category})</span>}
+                            </label>
+                          </div>
+                          {formData.selectedComponents.parts[part.id] && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Checkbox 
+                                id={`part-required-${part.id}`}
+                                checked={formData.requiredComponents.parts[part.id] || false}
+                                onCheckedChange={(checked) => 
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    requiredComponents: {
+                                      ...prev.requiredComponents,
+                                      parts: {
+                                        ...prev.requiredComponents.parts,
+                                        [part.id]: checked === true
+                                      }
+                                    }
+                                  }))
+                                }
+                              />
+                              <label htmlFor={`part-required-${part.id}`} className="text-xs text-orange-600">
+                                Required component (customer must select)
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Pricing Grids (Sewing)</Label>
+                  <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                    {pricingGrids.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic">No pricing grids created yet. Create some in the Components tab.</p>
+                    ) : (
+                      pricingGrids.map((grid) => (
+                        <div key={grid.id} className="space-y-2 p-2 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`grid-${grid.id}`}
+                              checked={formData.selectedComponents.grids[grid.id] || false}
+                              onCheckedChange={(checked) => 
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedComponents: {
+                                    ...prev.selectedComponents,
+                                    grids: {
+                                      ...prev.selectedComponents.grids,
+                                      [grid.id]: checked === true
+                                    }
+                                  }
+                                }))
+                              }
+                            />
+                            <label htmlFor={`grid-${grid.id}`} className="text-sm font-medium">
+                              {grid.name}
+                              <span className="text-xs text-blue-600 ml-1">(Pricing Grid)</span>
+                            </label>
+                          </div>
+                          {formData.selectedComponents.grids[grid.id] && (
+                            <div className="ml-6 flex items-center gap-2">
+                              <Checkbox 
+                                id={`grid-required-${grid.id}`}
+                                checked={formData.requiredComponents.grids[grid.id] || false}
+                                onCheckedChange={(checked) => 
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    requiredComponents: {
+                                      ...prev.requiredComponents,
+                                      grids: {
+                                        ...prev.requiredComponents.grids,
+                                        [grid.id]: checked === true
+                                      }
+                                    }
+                                  }))
+                                }
+                              />
+                              <label htmlFor={`grid-required-${grid.id}`} className="text-xs text-orange-600">
                                 Required component (customer must select)
                               </label>
                             </div>
