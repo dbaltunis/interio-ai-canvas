@@ -51,13 +51,18 @@ export const CalculationResultsCard = ({
       case "Fabric drop requirements":
         return `Total drop needed: curtain drop + pooling + header hem (${hemConfig.header_hem}cm) + bottom hem (${hemConfig.bottom_hem}cm).`;
       case "Fabric width requirements":
-        return `Total fabric width needed: finished width × fullness (${formData.headingFullness || 1}) × quantity (${formData.quantity}).`;
+        return `Total fabric width needed: rail width (${formData.railWidth}cm) × fullness (${formData.headingFullness || 1}) + hems = ${calculationBreakdown.fabricWidthRequirements}.`;
       case "Lining price":
         return `Lining cost: ${liningOptions.find(l => l.label === formData.lining)?.price || 0}/m × fabric amount in meters.`;
       case "Manufacturing price":
-        return matchingTemplate?.calculation_rules?.baseMakingCost 
-          ? `Making cost from template: ${matchingTemplate.name}. Base cost: $${matchingTemplate.calculation_rules.baseMakingCost}${matchingTemplate.pricing_unit === 'per-linear-meter' ? '/running linear meter' : '/unit'}. Running linear meters: ${calculationBreakdown.fabricWidthRequirements} ÷ 100 = ${(parseFloat(calculationBreakdown.fabricWidthRequirements) / 100).toFixed(2)}m.`
-          : `Labor cost: total fabric width (${calculationBreakdown.fabricWidthRequirements}) ÷ 100 × labor rate ($${businessSettings?.labor_rate || 45}/running linear meter).`;
+        const isPricingGrid = matchingTemplate?.calculation_method === 'pricing_grid';
+        if (isPricingGrid) {
+          return `Making cost from pricing grid: ${matchingTemplate.name}. Values pulled from CSV pricing grid based on width and drop measurements.`;
+        } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
+          return `Making cost from template: ${matchingTemplate.name}. Base cost: $${matchingTemplate.calculation_rules.baseMakingCost}${matchingTemplate.pricing_unit === 'per-linear-meter' ? '/running linear meter' : '/unit'}. Running linear meters: ${calculationBreakdown.fabricWidthRequirements} ÷ 100 = ${(parseFloat(calculationBreakdown.fabricWidthRequirements) / 100).toFixed(2)}m.`;
+        } else {
+          return `Labor cost: running linear meters (${calculationBreakdown.fabricWidthRequirements} ÷ 100 = ${(parseFloat(calculationBreakdown.fabricWidthRequirements) / 100).toFixed(2)}m) × labor rate ($${businessSettings?.labor_rate || 45}/running linear meter).`;
+        }
       case "Fabric price":
         return `Fabric cost: total fabric amount × price per cm ($${formData.fabricPricePerYard}/yard ÷ 91.44cm).`;
       case "Leftovers-Vertical":

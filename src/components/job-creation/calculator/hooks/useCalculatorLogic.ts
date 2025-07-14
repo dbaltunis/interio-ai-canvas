@@ -76,11 +76,22 @@ export const useCalculatorLogic = (
       // Total fabric amount including seams
       const totalFabricCm = (fabricLengthsNeeded * totalDropRequired) + totalSeamAllowance;
       
-      // Manufacturing price - prioritize template making cost over business settings labor rate
+      // Manufacturing price calculation
       let manufacturingPrice = 0;
       
-      if (matchingTemplate?.calculation_rules?.baseMakingCost) {
-        // Use template's making cost
+      if (isPricingGrid && matchingTemplate?.pricing_grid_id) {
+        // Use CSV pricing grid values
+        // For now, we'll use a placeholder calculation until pricing grid lookup is implemented
+        // This should lookup the actual grid data based on width and drop measurements
+        console.log('Using pricing grid for manufacturing cost:', matchingTemplate.pricing_grid_id);
+        
+        // TODO: Implement actual pricing grid lookup
+        // For now, use a base calculation as fallback
+        const runningLinearMeters = totalFabricWidthRequired / 100;
+        manufacturingPrice = runningLinearMeters * 50; // Placeholder rate
+        
+      } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
+        // Use template's making cost with running linear metres
         const baseMakingCost = parseFloat(matchingTemplate.calculation_rules.baseMakingCost) || 0;
         
         if (matchingTemplate.pricing_unit === 'per-linear-meter') {
@@ -135,7 +146,7 @@ export const useCalculatorLogic = (
           manufacturingPrice *= complexityMultiplier;
         }
       } else {
-        // Fallback to business settings labor rate if no template making cost
+        // Fallback to business settings labor rate using running linear metres
         const laborRate = businessSettings?.labor_rate || 45;
         const runningLinearMeters = totalFabricWidthRequired / 100; // Convert cm to meters
         manufacturingPrice = runningLinearMeters * laborRate;
