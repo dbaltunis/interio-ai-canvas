@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Home, Square, Settings2 } from "lucide-react";
 import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
+import { WindowSelectionDialog } from "./WindowSelectionDialog";
 import { useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +30,9 @@ export const StreamlinedJobsInterface = ({
   const createSurface = useCreateSurface();
   
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [treatmentDialogOpen, setTreatmentDialogOpen] = useState(false);
+  const [windowSelectionOpen, setWindowSelectionOpen] = useState(false);
   const [treatmentType, setTreatmentType] = useState('curtains');
 
   // Get surfaces for a specific room
@@ -97,22 +100,59 @@ export const StreamlinedJobsInterface = ({
     }
   };
 
-  // Open treatment calculator for a surface
-  const handleAddTreatment = (surfaceId: string) => {
-    setSelectedSurface(surfaceId);
+  // Open treatment selection with window choice
+  const handleAddTreatment = (roomId: string) => {
+    setSelectedRoom(roomId);
+    setWindowSelectionOpen(true);
+  };
+
+  // Handle window selection for treatment
+  const handleWindowSelection = (windowId: string, windowName: string) => {
+    setSelectedSurface(windowId);
+    setWindowSelectionOpen(false);
     setTreatmentDialogOpen(true);
+  };
+
+  // Handle creating new window for treatment
+  const handleCreateNewWindow = async (windowName: string, windowData: any) => {
+    if (!project?.id || !selectedRoom) return;
+    
+    try {
+      const newSurface = await createSurface.mutateAsync({
+        name: windowName,
+        surface_type: 'window',
+        room_id: selectedRoom,
+        project_id: project.id,
+        width: windowData.width,
+        height: windowData.height
+      });
+      
+      setSelectedSurface(newSurface.id);
+      setWindowSelectionOpen(false);
+      setTreatmentDialogOpen(true);
+      
+      toast({
+        title: "Success",
+        description: `Window "${windowName}" created successfully`,
+      });
+    } catch (error) {
+      console.error("Failed to create window:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create window. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle treatment save from calculator
   const handleTreatmentSave = (treatmentData: any) => {
-    if (selectedSurface) {
-      const surface = surfaces.find(s => s.id === selectedSurface);
-      if (surface) {
-        onCreateTreatment?.(surface.room_id, selectedSurface, treatmentType);
-      }
+    if (selectedSurface && selectedRoom) {
+      onCreateTreatment?.(selectedRoom, selectedSurface, treatmentType);
     }
     setTreatmentDialogOpen(false);
     setSelectedSurface(null);
+    setSelectedRoom(null);
   };
 
   return (
@@ -173,7 +213,7 @@ export const StreamlinedJobsInterface = ({
                             </div>
                             <Button
                               size="sm"
-                              onClick={() => handleAddTreatment(surface.id)}
+                              onClick={() => handleAddTreatment(room.id)}
                               className="h-6 w-6 p-0"
                             >
                               <Plus className="h-3 w-3" />
@@ -212,6 +252,17 @@ export const StreamlinedJobsInterface = ({
                       </div>
                     )}
                   </div>
+
+                  {/* Add Treatment Button for Room */}
+                  <Button
+                    onClick={() => handleAddTreatment(room.id)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Treatment
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -236,12 +287,26 @@ export const StreamlinedJobsInterface = ({
         </Card>
       </div>
 
+      {/* Window Selection Dialog */}
+      <WindowSelectionDialog
+        isOpen={windowSelectionOpen}
+        onClose={() => {
+          setWindowSelectionOpen(false);
+          setSelectedRoom(null);
+        }}
+        onSelectWindow={handleWindowSelection}
+        onCreateNewWindow={handleCreateNewWindow}
+        existingWindows={selectedRoom ? getRoomSurfaces(selectedRoom) : []}
+        roomName={selectedRoom ? rooms.find(r => r.id === selectedRoom)?.name || '' : ''}
+      />
+
       {/* Treatment Calculator Dialog */}
       <TreatmentCalculatorDialog
         isOpen={treatmentDialogOpen}
         onClose={() => {
           setTreatmentDialogOpen(false);
           setSelectedSurface(null);
+          setSelectedRoom(null);
         }}
         onSave={handleTreatmentSave}
         treatmentType={treatmentType}

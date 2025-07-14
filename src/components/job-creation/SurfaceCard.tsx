@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { TreatmentEditDialog } from "./TreatmentEditDialog";
 
 interface SurfaceCardProps {
   surface: any;
@@ -25,6 +26,7 @@ export const SurfaceCard = ({
   const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
   const [isEditing, setIsEditing] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [editingTreatment, setEditingTreatment] = useState<any>(null);
   const [editData, setEditData] = useState({
     name: surface.name,
     width: surface.width || surface.surface_width || 0,
@@ -47,6 +49,10 @@ export const SurfaceCard = ({
     console.log("Selected template:", windowCovering);
     onAddTreatment(surface.id, windowCovering.name, windowCovering);
     setShowTemplates(false);
+  };
+
+  const handleTreatmentEdit = (treatment: any) => {
+    setEditingTreatment(treatment);
   };
 
   const getAvailableWindowCoverings = () => {
@@ -154,7 +160,7 @@ export const SurfaceCard = ({
         <CardContent className="p-6 space-y-4">
           {/* Existing Treatments */}
           {treatments.map((treatment) => (
-            <div key={treatment.id} className="border-2 border-brand-secondary/20 rounded-xl p-4 bg-brand-light shadow-sm hover:shadow-md transition-shadow">
+            <div key={treatment.id} className="border-2 border-brand-secondary/20 rounded-xl p-4 bg-brand-light shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleTreatmentEdit(treatment)}>
               <div className="flex items-start space-x-4">
                 {treatment.window_covering?.image_url && (
                   <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border-2 border-brand-secondary/20">
@@ -171,9 +177,22 @@ export const SurfaceCard = ({
                     <h4 className="font-semibold text-brand-primary text-lg">
                       {treatment.product_name || treatment.treatment_type}
                     </h4>
-                    <span className="font-bold text-green-600 text-lg">
-                      {formatCurrency(treatment.total_price || 0)}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-green-600 text-lg">
+                        {formatCurrency(treatment.total_price || 0)}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTreatmentEdit(treatment);
+                        }}
+                        className="hover:bg-brand-secondary/10 text-brand-primary"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   
                   {/* Measurements */}
@@ -341,6 +360,20 @@ export const SurfaceCard = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Treatment Edit Dialog */}
+      {editingTreatment && (
+        <TreatmentEditDialog
+          isOpen={!!editingTreatment}
+          onClose={() => setEditingTreatment(null)}
+          treatment={editingTreatment}
+          onSave={(updatedTreatment) => {
+            // Handle treatment update
+            console.log("Updated treatment:", updatedTreatment);
+            setEditingTreatment(null);
+          }}
+        />
       )}
     </>
   );
