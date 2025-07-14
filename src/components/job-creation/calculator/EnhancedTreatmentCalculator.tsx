@@ -64,9 +64,12 @@ export const EnhancedTreatmentCalculator = ({
   const { data: businessSettings } = useBusinessSettings();
   
   // Find matching template for the treatment type
-  const matchingTemplate = templates?.find(template => 
-    template.name.toLowerCase() === treatmentType.toLowerCase() && template.active
-  );
+  const matchingTemplate = templates?.find(template => {
+    const templateName = template.name?.toLowerCase()?.trim();
+    const searchType = treatmentType?.toLowerCase()?.trim();
+    console.log('Comparing template:', templateName, 'with treatment type:', searchType);
+    return templateName === searchType && template.active;
+  });
 
   console.log('=== TEMPLATE DEBUG ===');
   console.log('Treatment Type:', treatmentType);
