@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { usePricingGrid } from '@/hooks/usePricingGrids';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
@@ -96,9 +97,9 @@ export const useCalculatorLogic = (
       details: {
         railWidth: parsedRailWidth,
         curtainDrop: parsedCurtainDrop,
-        fabricDropRequirements,
-        fabricWidthRequirements,
-        fabricAmount,
+        fabricDropRequirements: fabricDropRequirements, // Ensure this is a number
+        fabricWidthRequirements: fabricWidthRequirements, // Ensure this is a number
+        fabricAmount: fabricAmount, // Ensure this is a number
         fabricPricePerYard,
         liningPricePerMeter,
         headerHem,
@@ -124,11 +125,17 @@ export const useCalculatorLogic = (
   const calculationBreakdown = useMemo(() => {
     if (!calculation) return null;
 
+    // Safely convert to numbers and apply toFixed
+    const safeToFixed = (value: any, decimals: number = 2): string => {
+      const numValue = parseFloat(value) || 0;
+      return numValue.toFixed(decimals);
+    };
+
     return {
-      fabricAmount: calculation.details.fabricAmount.toFixed(2),
-      curtainWidthTotal: calculation.details.fabricWidthRequirements.toFixed(2),
-      fabricDropRequirements: calculation.details.fabricDropRequirements.toFixed(2),
-      fabricWidthRequirements: calculation.details.fabricWidthRequirements.toFixed(2),
+      fabricAmount: safeToFixed(calculation.details.fabricAmount),
+      curtainWidthTotal: safeToFixed(calculation.details.fabricWidthRequirements),
+      fabricDropRequirements: safeToFixed(calculation.details.fabricDropRequirements),
+      fabricWidthRequirements: safeToFixed(calculation.details.fabricWidthRequirements),
       liningPrice: calculation.featuresCost,
       manufacturingPrice: calculation.laborCost,
       fabricPrice: calculation.fabricCost,
