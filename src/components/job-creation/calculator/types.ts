@@ -54,6 +54,12 @@ export interface TreatmentFormData {
   // Pricing
   laborRate: number;
   markupPercentage: number;
+  
+  // Selected Parts for subcategories
+  selectedParts?: {
+    headrail?: string;
+    chainSide?: string;
+  };
 }
 
 export interface FeatureBreakdown {

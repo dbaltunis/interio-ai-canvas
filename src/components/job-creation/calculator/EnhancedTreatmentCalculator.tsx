@@ -742,76 +742,118 @@ export const EnhancedTreatmentCalculator = ({
                   </div>
                 )}
 
-                {/* Parts & Accessories - only show if template has parts selected */}
+                {/* Parts & Accessories with Subcategories */}
                 {matchingTemplate?.components?.parts && Object.keys(matchingTemplate.components.parts).length > 0 && (
-                  <div>
-                    <Label>Parts & Accessories</Label>
-                    <div className="space-y-2">
-                      {Object.entries(matchingTemplate.components.parts)
-                        .filter(([partId, selected]) => selected === true)
-                        .map(([partId]) => {
-                          // Find the part name from parts_options table
-                          const partName = {
-                            '3977a2b7-8980-46f9-9010-98e48969d98b': 'headrail',
-                            '9325895e-089f-4e6b-b091-df71c2a562f9': 'Chain side'
-                          }[partId] || 'Unknown Part';
-                          
-                          return (
-                            <div key={partId} className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`part-${partId}`}
-                                defaultChecked={true}
-                                onCheckedChange={(checked) => {
-                                  // Handle part selection logic here
-                                  console.log(`Part ${partName} ${checked ? 'selected' : 'deselected'}`);
-                                }}
-                              />
-                              <Label htmlFor={`part-${partId}`} className="text-sm">
-                                {partName}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                    </div>
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium">Parts & Accessories</Label>
+                    
+                    {/* Headrail Options */}
+                    {Object.keys(matchingTemplate.components.parts).includes('3977a2b7-8980-46f9-9010-98e48969d98b') && (
+                      <div>
+                        <Label className="text-sm">Headrail</Label>
+                        <Select 
+                          value={formData.selectedParts?.headrail || ''} 
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            selectedParts: { ...prev.selectedParts, headrail: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose headrail type..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="standard">Standard (+£50.00/meter)</SelectItem>
+                            <SelectItem value="motorised">Motorised (+£150.00/meter)</SelectItem>
+                            <SelectItem value="remote">Remote (+£0.00/unit)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {/* Chain Side Options */}
+                    {Object.keys(matchingTemplate.components.parts).includes('9325895e-089f-4e6b-b091-df71c2a562f9') && (
+                      <div>
+                        <Label className="text-sm">Chain Side</Label>
+                        <Select 
+                          value={formData.selectedParts?.chainSide || ''} 
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            selectedParts: { ...prev.selectedParts, chainSide: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose chain side..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="left">Left (+£0.00/unit)</SelectItem>
+                            <SelectItem value="right">Right (+£0.00/unit)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Service Options - only show if template has services selected */}
+                {/* Service Options with Subcategories */}
                 {matchingTemplate?.components?.services && Object.keys(matchingTemplate.components.services).length > 0 && serviceOptions.length > 0 && (
                   <div>
                     <Label>Select services</Label>
                     <div className="space-y-2">
-                      {serviceOptions.filter(service => 
-                        Object.keys(matchingTemplate.components.services).includes(service.id)
-                      ).map((service) => (
-                        <div key={service.id} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`service-${service.id}`}
-                            checked={formData.additionalFeatures.some(f => f.id === service.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  additionalFeatures: [...prev.additionalFeatures, {
-                                    id: service.id,
-                                    name: service.name,
-                                    price: service.price,
-                                    selected: true
-                                  }]
-                                }));
-                              } else {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  additionalFeatures: prev.additionalFeatures.filter(f => f.id !== service.id)
-                                }));
-                              }
-                            }}
-                          />
-                          <Label htmlFor={`service-${service.id}`} className="text-sm">
-                            {service.name} (+{formatCurrency(service.price)}/{service.unit})
-                          </Label>
-                        </div>
-                      ))}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="service-fitting"
+                          checked={formData.additionalFeatures.some(f => f.name === 'fitting')}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                additionalFeatures: [...prev.additionalFeatures, {
+                                  id: 'fitting',
+                                  name: 'fitting',
+                                  price: 50,
+                                  selected: true
+                                }]
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                additionalFeatures: prev.additionalFeatures.filter(f => f.name !== 'fitting')
+                              }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor="service-fitting" className="text-sm">
+                          Fitting (+£50.00/unit)
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="service-installation"
+                          checked={formData.additionalFeatures.some(f => f.name === 'installation')}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                additionalFeatures: [...prev.additionalFeatures, {
+                                  id: 'installation',
+                                  name: 'installation',
+                                  price: 100,
+                                  selected: true
+                                }]
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                additionalFeatures: prev.additionalFeatures.filter(f => f.name !== 'installation')
+                              }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor="service-installation" className="text-sm">
+                          Installation (+£100.00/unit)
+                        </Label>
+                      </div>
                     </div>
                   </div>
                 )}
