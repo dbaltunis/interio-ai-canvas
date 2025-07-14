@@ -629,27 +629,32 @@ export const EnhancedTreatmentCalculator = ({
                   </div>
                 </RadioGroup>
 
-                {/* Current Hem Configuration Display */}
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <Label className="text-sm font-medium">Current Hems:</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                    <div>Header: {hemConfig.header_hem}cm</div>
-                    <div>Bottom: {hemConfig.bottom_hem}cm</div>
-                    <div>Side: {hemConfig.side_hem}cm</div>
-                    <div>Seam: {hemConfig.seam_hem}cm</div>
+                {/* Current Hem Configuration Display - only for curtain types */}
+                {matchingTemplate?.product_category === 'curtain' && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <Label className="text-sm font-medium">Current Hems:</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                      <div>Header: {hemConfig.header_hem}cm</div>
+                      <div>Bottom: {hemConfig.bottom_hem}cm</div>
+                      <div>Side: {hemConfig.side_hem}cm</div>
+                      <div>Seam: {hemConfig.seam_hem}cm</div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="mt-4 space-y-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => setIsHemDialogOpen(true)}
-                  >
-                    <Edit3 className="w-4 h-4 mr-2" />
-                    Edit treatment hems
-                  </Button>
+                  {/* Show hem edit only for curtains */}
+                  {matchingTemplate?.product_category === 'curtain' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setIsHemDialogOpen(true)}
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Edit treatment hems
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" className="w-full">
                     <Plus className="w-4 h-4 mr-2" />
                     Add hardware
@@ -658,43 +663,49 @@ export const EnhancedTreatmentCalculator = ({
               </CardContent>
             </Card>
 
-            {/* Options */}
+            {/* Template-Based Components */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Select lining</Label>
-                  <Select value={formData.lining} onValueChange={(value) => setFormData(prev => ({ ...prev, lining: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {liningOptions.map((option, index) => (
-                        <SelectItem key={option.value || index} value={option.label}>
-                          {option.label} {option.price > 0 && `(+${formatCurrency(option.price)}/m)`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Show Lining options only if template has lining selected */}
+                {matchingTemplate?.components?.lining && Object.keys(matchingTemplate.components.lining).length > 0 && (
+                  <div>
+                    <Label>Select lining</Label>
+                    <Select value={formData.lining} onValueChange={(value) => setFormData(prev => ({ ...prev, lining: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {liningOptions.map((option, index) => (
+                          <SelectItem key={option.value || index} value={option.label}>
+                            {option.label} {option.price > 0 && `(+${formatCurrency(option.price)}/m)`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-                <div>
-                  <Label>Select curtain heading style</Label>
-                  <Select value={formData.headingStyle} onValueChange={handleHeadingChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {headingOptions.map((option, index) => (
-                        <SelectItem key={option.value || index} value={option.value}>
-                          {option.label} (Fullness: {option.fullness}:1)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Show Heading options only if template has headings selected */}
+                {matchingTemplate?.components?.headings && Object.keys(matchingTemplate.components.headings).length > 0 && (
+                  <div>
+                    <Label>Select curtain heading style</Label>
+                    <Select value={formData.headingStyle} onValueChange={handleHeadingChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {headingOptions.map((option, index) => (
+                          <SelectItem key={option.value || index} value={option.value}>
+                            {option.label} (Fullness: {option.fullness}:1)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Heading Fullness - moved here for better UX */}
                 <div>
@@ -710,8 +721,8 @@ export const EnhancedTreatmentCalculator = ({
                   </p>
                 </div>
 
-                {/* Hardware Options */}
-                {hardwareOptions.length > 0 && (
+                {/* Hardware Options - only show if template has hardware selected */}
+                {matchingTemplate?.components?.hardware && Object.keys(matchingTemplate.components.hardware).length > 0 && hardwareOptions.length > 0 && (
                   <div>
                     <Label>Select hardware</Label>
                     <Select value={formData.hardware} onValueChange={(value) => setFormData(prev => ({ ...prev, hardware: value }))}>
@@ -719,7 +730,9 @@ export const EnhancedTreatmentCalculator = ({
                         <SelectValue placeholder="Choose hardware..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {hardwareOptions.map((option) => (
+                        {hardwareOptions.filter(option => 
+                          Object.keys(matchingTemplate.components.hardware).includes(option.id)
+                        ).map((option) => (
                           <SelectItem key={option.id} value={option.name}>
                             {option.name} (+{formatCurrency(option.price)}/{option.unit})
                           </SelectItem>
@@ -729,12 +742,48 @@ export const EnhancedTreatmentCalculator = ({
                   </div>
                 )}
 
-                {/* Service Options */}
-                {serviceOptions.length > 0 && (
+                {/* Parts & Accessories - only show if template has parts selected */}
+                {matchingTemplate?.components?.parts && Object.keys(matchingTemplate.components.parts).length > 0 && (
+                  <div>
+                    <Label>Parts & Accessories</Label>
+                    <div className="space-y-2">
+                      {Object.entries(matchingTemplate.components.parts)
+                        .filter(([partId, selected]) => selected === true)
+                        .map(([partId]) => {
+                          // Find the part name from parts_options table
+                          const partName = {
+                            '3977a2b7-8980-46f9-9010-98e48969d98b': 'headrail',
+                            '9325895e-089f-4e6b-b091-df71c2a562f9': 'Chain side'
+                          }[partId] || 'Unknown Part';
+                          
+                          return (
+                            <div key={partId} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`part-${partId}`}
+                                defaultChecked={true}
+                                onCheckedChange={(checked) => {
+                                  // Handle part selection logic here
+                                  console.log(`Part ${partName} ${checked ? 'selected' : 'deselected'}`);
+                                }}
+                              />
+                              <Label htmlFor={`part-${partId}`} className="text-sm">
+                                {partName}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Service Options - only show if template has services selected */}
+                {matchingTemplate?.components?.services && Object.keys(matchingTemplate.components.services).length > 0 && serviceOptions.length > 0 && (
                   <div>
                     <Label>Select services</Label>
                     <div className="space-y-2">
-                      {serviceOptions.map((service) => (
+                      {serviceOptions.filter(service => 
+                        Object.keys(matchingTemplate.components.services).includes(service.id)
+                      ).map((service) => (
                         <div key={service.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`service-${service.id}`}
