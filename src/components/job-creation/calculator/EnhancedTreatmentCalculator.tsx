@@ -117,23 +117,54 @@ export const EnhancedTreatmentCalculator = ({
   // Auto-save functionality
   const storageKey = `treatment-draft-${treatmentType}`;
   
-  // Load saved draft when dialog opens
+  // Reset form to defaults when dialog opens (start fresh each time)
   useEffect(() => {
     if (isOpen) {
-      const savedDraft = localStorage.getItem(storageKey);
-      if (savedDraft) {
-        try {
-          const parsedDraft = JSON.parse(savedDraft);
-          console.log('Loading saved draft:', parsedDraft);
-          setFormData(prev => ({ ...prev, ...parsedDraft.formData }));
-          setHemConfig(parsedDraft.hemConfig || hemConfig);
-          setFabricOrientation(parsedDraft.fabricOrientation || "vertical");
-        } catch (error) {
-          console.error('Error loading draft:', error);
-        }
-      }
+      // Clear any existing draft and start fresh
+      localStorage.removeItem(storageKey);
+      
+      // Reset to default form data
+      setFormData({
+        treatmentName: "",
+        quantity: 1,
+        windowPosition: "",
+        windowType: "",
+        headingStyle: "",
+        headingFullness: "2",
+        lining: "",
+        mounting: "",
+        railWidth: "200",
+        curtainDrop: "240",
+        curtainPooling: "0",
+        returnDepth: "8",
+        fabricMode: "manual",
+        selectedFabric: null,
+        fabricName: "Sky Gray 01",
+        fabricWidth: "300",
+        fabricPricePerYard: "18.7",
+        verticalRepeat: "0",
+        horizontalRepeat: "0",
+        hardware: "",
+        hardwareFinish: "",
+        additionalFeatures: [],
+        laborRate: businessSettings?.labor_rate || 45,
+        markupPercentage: businessSettings?.default_markup || 40
+      });
+      
+      // Reset other state
+      setHemConfig({
+        header_hem: "15",
+        bottom_hem: "10",
+        side_hem: "5", 
+        seam_hem: "3"
+      });
+      setFabricOrientation("vertical");
+      setIsManualFabric(true);
+      setDontUpdateTotalPrice(false);
+      setCalculation(null);
+      setCalculationBreakdown(null);
     }
-  }, [isOpen, storageKey]);
+  }, [isOpen, storageKey, businessSettings]);
 
   // Auto-save form data when it changes
   const autoSave = useCallback(() => {
