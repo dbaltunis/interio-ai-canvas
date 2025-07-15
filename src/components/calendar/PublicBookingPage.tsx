@@ -52,46 +52,30 @@ export const PublicBookingPage = () => {
     }
     
     const slots: string[] = [];
-    const duration = scheduler.duration || 60;
-    const bufferTime = scheduler.buffer_time || 15;
     
-    // Process each configured time slot
+    // Use the EXACT time slots configured by the user - don't generate additional slots
     dayAvailability.timeSlots.forEach((timeSlot: any) => {
-      console.log('Processing time slot:', timeSlot);
+      console.log('Processing configured time slot:', timeSlot);
       
+      // Use the exact start time from the configured time slot
+      const timeString = timeSlot.startTime;
+      
+      // Parse the time to create a proper date for comparison
       const [startHour, startMin] = timeSlot.startTime.split(':').map(Number);
-      const [endHour, endMin] = timeSlot.endTime.split(':').map(Number);
+      const slotDateTime = new Date(date);
+      slotDateTime.setHours(startHour, startMin, 0, 0);
       
-      let currentTime = new Date(date);
-      currentTime.setHours(startHour, startMin, 0, 0);
+      // Check if slot is in the future (for today only)
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      const isInFuture = !isToday || slotDateTime > now;
       
-      const endTime = new Date(date);
-      endTime.setHours(endHour, endMin, 0, 0);
-      
-      // Generate appointment slots within this time window
-      while (currentTime < endTime) {
-        const slotEndTime = new Date(currentTime.getTime() + duration * 60000);
-        
-        // Check if the slot fits within the availability window
-        if (slotEndTime <= endTime) {
-          const timeString = format(currentTime, 'HH:mm');
-          
-          // Check if slot is in the future (for today only)
-          const now = new Date();
-          const isToday = date.toDateString() === now.toDateString();
-          const isInFuture = !isToday || currentTime > now;
-          
-          if (isInFuture) {
-            slots.push(timeString);
-          }
-        }
-        
-        // Move to next slot (duration + buffer time)
-        currentTime = new Date(currentTime.getTime() + (duration + bufferTime) * 60000);
+      if (isInFuture) {
+        slots.push(timeString);
       }
     });
     
-    console.log('Generated slots:', slots);
+    console.log('Generated exact time slots:', slots);
     return slots.sort();
   };
 

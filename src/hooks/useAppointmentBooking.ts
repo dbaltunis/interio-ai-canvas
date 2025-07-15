@@ -62,54 +62,36 @@ export const useAppointmentBooking = (slug: string) => {
 
     const slots: AvailableSlot[] = [];
     const duration = scheduler.duration || 60;
-    const bufferTime = scheduler.buffer_time || 15;
 
     console.log('Processing time slots:', dayAvailability.timeSlots);
 
-    // Process each configured time slot
+    // Use the EXACT time slots configured by the user - don't generate additional slots
     dayAvailability.timeSlots.forEach((timeSlot, index) => {
       console.log(`Processing time slot ${index}:`, timeSlot);
       
-      // Parse start and end times
+      // Use the exact start time from the configured time slot
+      const timeString = timeSlot.startTime;
+      
+      // Parse the time to create a proper date for comparison
       const [startHour, startMin] = timeSlot.startTime.split(':').map(Number);
-      const [endHour, endMin] = timeSlot.endTime.split(':').map(Number);
+      const slotDateTime = new Date(selectedDate);
+      slotDateTime.setHours(startHour, startMin, 0, 0);
       
-      let currentTime = new Date(selectedDate);
-      currentTime.setHours(startHour, startMin, 0, 0);
+      // Check if slot is in the future (for today only)
+      const now = new Date();
+      const isToday = selectedDate.toDateString() === now.toDateString();
+      const isInFuture = !isToday || slotDateTime > now;
       
-      const endTime = new Date(selectedDate);
-      endTime.setHours(endHour, endMin, 0, 0);
-
-      console.log(`Time slot from ${currentTime.toLocaleTimeString()} to ${endTime.toLocaleTimeString()}`);
-
-      // Generate appointment slots within this time window
-      while (currentTime < endTime) {
-        const slotEndTime = addMinutes(currentTime, duration);
-        
-        // Check if the slot fits within the availability window
-        if (slotEndTime <= endTime) {
-          const timeString = format(currentTime, 'HH:mm');
-          
-          // Check if slot is in the future (for today only)
-          const now = new Date();
-          const isToday = selectedDate.toDateString() === now.toDateString();
-          const isInFuture = !isToday || currentTime > now;
-          
-          console.log(`Adding slot: ${timeString}, available: ${isInFuture}`);
-          
-          slots.push({
-            time: timeString,
-            available: isInFuture,
-            duration: duration
-          });
-        }
-        
-        // Move to next slot (duration + buffer time)
-        currentTime = addMinutes(currentTime, duration + bufferTime);
-      }
+      console.log(`Adding exact time slot: ${timeString}, available: ${isInFuture}`);
+      
+      slots.push({
+        time: timeString,
+        available: isInFuture,
+        duration: duration
+      });
     });
 
-    console.log('Final slots:', slots);
+    console.log('Final slots (exact from config):', slots);
     return slots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
