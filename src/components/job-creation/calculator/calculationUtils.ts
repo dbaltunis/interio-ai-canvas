@@ -1,13 +1,14 @@
 
 import { TreatmentFormData, CalculationResult, DetailedCalculation } from './types';
 
-
 export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate?: any): CalculationResult & { details: DetailedCalculation } => {
   const railWidth = parseFloat(formData.railWidth) || 0;
   const curtainDrop = parseFloat(formData.curtainDrop) || 0;
   const fullness = parseFloat(formData.headingFullness) || 2.5;
   const quantity = formData.quantity;
   const pooling = parseFloat(formData.curtainPooling) || 0;
+  const fabricWidth = parseFloat(formData.fabricWidth) || 137;
+  const fabricPricePerYard = parseFloat(formData.fabricPricePerYard) || 0;
   
   if (!railWidth || !curtainDrop) {
     return {
@@ -32,100 +33,57 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
     };
   }
 
-  // Calculate fabric requirements with detailed breakdown
-  const fabricWidthRequired = railWidth * fullness;
-  const fabricLengthRequired = curtainDrop + pooling + 20; // Add 20cm allowances (hem + heading)
+  // Calculate fabric requirements with proper allowances
+  const headerHem = 15; // cm
+  const bottomHem = 10; // cm
+  const fabricLengthRequired = curtainDrop + pooling + headerHem + bottomHem; // Total drop in cm
+  const fabricWidthRequired = railWidth * fullness; // Total width needed in cm
   
   // Calculate drops per fabric width
-  const fabricWidth = formData.selectedFabric?.width || parseFloat(formData.fabricWidth) || 140;
-  const dropsPerWidth = Math.floor(fabricWidth / (fabricWidthRequired / quantity));
+  const dropsPerWidth = Math.floor(fabricWidth / (railWidth / quantity));
   const widthsRequired = Math.ceil(quantity / Math.max(dropsPerWidth, 1));
   
-  // Total fabric needed in yards
-  const totalFabricYards = (widthsRequired * fabricLengthRequired) / 91.44; // Convert cm to yards
+  // Total fabric length in cm
+  const totalFabricLengthCm = widthsRequired * fabricLengthRequired;
+  
+  // Convert to yards (1 yard = 91.44 cm)
+  const totalFabricYards = totalFabricLengthCm / 91.44;
   
   // Fabric cost calculation
-  const fabricPricePerYard = formData.selectedFabric?.pricePerYard || parseFloat(formData.fabricPricePerYard) || 0;
   const fabricCost = totalFabricYards * fabricPricePerYard;
   
-  // Apply product template making cost and calculation rules
-  let makingCost = 0;
-  let complexityMultiplier = 1.0;
+  // Labor/manufacturing cost calculation
+  let laborCost = 0;
   
   if (productTemplate?.calculation_rules) {
     const rules = productTemplate.calculation_rules;
     const baseMakingCost = parseFloat(rules.baseMakingCost) || 0;
-    const baseHeightLimit = parseFloat(rules.baseHeightLimit) || 240; // cm
     
-    console.log('=== MAKING COST CALCULATION ===');
-    console.log('Base Making Cost:', baseMakingCost);
-    console.log('Base Height Limit:', baseHeightLimit);
-    console.log('Curtain Drop:', curtainDrop);
-    
-    // Apply base making cost per linear meter
     if (productTemplate.pricing_unit === 'per-linear-meter') {
-      makingCost = (railWidth / 100) * baseMakingCost; // Convert cm to meters
-      console.log('Making Cost (per linear meter):', makingCost);
+      laborCost = baseMakingCost * (railWidth / 100) * quantity; // Convert cm to meters
     } else {
-      makingCost = baseMakingCost * quantity;
-      console.log('Making Cost (per unit):', makingCost);
+      laborCost = baseMakingCost * quantity;
     }
     
     // Apply height surcharges if configured
-    if (rules.useHeightSurcharges && curtainDrop > baseHeightLimit) {
-      const heightSurcharge1 = parseFloat(rules.heightSurcharge1) || 0;
-      const heightSurcharge2 = parseFloat(rules.heightSurcharge2) || 0;
-      const heightSurcharge3 = parseFloat(rules.heightSurcharge3) || 0;
-      
-      const range1Start = parseFloat(rules.heightRange1Start) || 240;
-      const range1End = parseFloat(rules.heightRange1End) || 300;
-      const range2Start = parseFloat(rules.heightRange2Start) || 300;
-      const range2End = parseFloat(rules.heightRange2End) || 400;
-      const range3Start = parseFloat(rules.heightRange3Start) || 400;
-      
-      if (curtainDrop >= range1Start && curtainDrop < range1End) {
-        makingCost += heightSurcharge1;
-        console.log('Applied height surcharge 1:', heightSurcharge1);
-      } else if (curtainDrop >= range2Start && curtainDrop < range2End) {
-        makingCost += heightSurcharge2;
-        console.log('Applied height surcharge 2:', heightSurcharge2);
-      } else if (curtainDrop >= range3Start) {
-        makingCost += heightSurcharge3;
-        console.log('Applied height surcharge 3:', heightSurcharge3);
+    if (rules.useHeightSurcharges) {
+      const baseHeightLimit = parseFloat(rules.baseHeightLimit) || 240;
+      if (curtainDrop > baseHeightLimit) {
+        const heightSurcharge = parseFloat(rules.heightSurcharge1) || 0;
+        laborCost += heightSurcharge * quantity;
       }
     }
-    
-    // Apply complexity multiplier
-    if (rules.complexityMultiplier) {
-      switch (rules.complexityMultiplier) {
-        case 'standard':
-          complexityMultiplier = 1.0;
-          break;
-        case 'medium':
-          complexityMultiplier = 1.2;
-          break;
-        case 'complex':
-          complexityMultiplier = 1.5;
-          break;
-        default:
-          complexityMultiplier = parseFloat(rules.complexityMultiplier) || 1.0;
-      }
-      console.log('Complexity Multiplier:', complexityMultiplier);
-      makingCost *= complexityMultiplier;
-    }
+  } else {
+    // Fallback labor calculation
+    const laborRate = formData.laborRate || 45;
+    const baseHours = 2;
+    const sewingHours = (railWidth * curtainDrop * fullness) / 25000;
+    const totalHours = Math.max(3, baseHours + sewingHours);
+    laborCost = totalHours * laborRate * quantity;
   }
   
-  // Labor cost calculation (legacy calculation for templates without making cost)
-  const baseHours = 2; // Base time for setup
-  const sewingHours = (railWidth * curtainDrop * fullness) / 25000; // Adjusted for complexity
-  const finishingHours = quantity * 0.5; // Finishing time per panel
-  const laborHours = Math.max(4, baseHours + sewingHours + finishingHours);
-  const laborCost = makingCost > 0 ? makingCost : (laborHours * formData.laborRate);
-  
-  console.log('Final Making/Labor Cost:', laborCost);
-  
-  // Features cost with detailed breakdown
-  const selectedFeatures = formData.additionalFeatures.filter(f => f.selected);
+  // Features cost calculation
+  const selectedFeatures = formData.additionalFeatures?.filter(f => f.selected) || [];
   const featureBreakdown = selectedFeatures.map(feature => ({
     name: feature.name,
     unitPrice: feature.price,
@@ -138,17 +96,19 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
   
   // Subtotal and total
   const subtotal = fabricCost + laborCost + featuresCost;
-  const total = subtotal * (1 + formData.markupPercentage / 100);
+  const total = subtotal * (1 + (formData.markupPercentage || 0) / 100);
   
   // Detailed calculations for display
-  const fabricCalculation = `${railWidth}cm × ${fullness} fullness = ${fabricWidthRequired.toFixed(0)}cm width needed. Length: ${curtainDrop}cm + ${pooling}cm pooling + 20cm allowances = ${fabricLengthRequired.toFixed(0)}cm. Total: ${totalFabricYards.toFixed(1)} yards × £${fabricPricePerYard.toFixed(2)} = £${fabricCost.toFixed(2)}`;
+  const fabricCalculation = `${railWidth}cm × ${fullness} fullness = ${fabricWidthRequired.toFixed(0)}cm width needed. ` +
+    `Length: ${curtainDrop}cm + ${pooling}cm pooling + ${headerHem + bottomHem}cm allowances = ${fabricLengthRequired.toFixed(0)}cm. ` +
+    `${widthsRequired} width(s) × ${fabricLengthRequired.toFixed(0)}cm = ${totalFabricLengthCm.toFixed(0)}cm = ${totalFabricYards.toFixed(2)} yards × £${fabricPricePerYard.toFixed(2)} = £${fabricCost.toFixed(2)}`;
   
-  const laborCalculation = `Base: ${baseHours}h + Sewing: ${sewingHours.toFixed(1)}h + Finishing: ${finishingHours.toFixed(1)}h = ${laborHours.toFixed(1)}h × £${formData.laborRate}/hour = £${laborCost.toFixed(2)}`;
+  const laborCalculation = `Manufacturing cost: £${laborCost.toFixed(2)} for ${quantity} panel(s)`;
   
   return {
     fabricYards: Math.ceil(totalFabricYards * 10) / 10,
     fabricCost,
-    laborHours: Math.ceil(laborHours * 10) / 10,
+    laborHours: Math.ceil((laborCost / (formData.laborRate || 45)) * 10) / 10,
     laborCost,
     featuresCost,
     subtotal,
