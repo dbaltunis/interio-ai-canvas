@@ -18,10 +18,10 @@ export const HardwareComponentsManager = () => {
     try {
       const data = { ...componentData, component_type: 'hardware' };
       if (editingComponent) {
-        await updateComponent.mutateAsync({ ...data, id: editingComponent.id });
+        await updateComponent({ ...data, id: editingComponent.id });
         setEditingComponent(null);
       } else {
-        await createComponent.mutateAsync(data);
+        await createComponent(data);
         setIsCreating(false);
       }
     } catch (error) {
@@ -75,7 +75,7 @@ export const HardwareComponentsManager = () => {
           <ComponentsList
             components={hardwareComponents}
             onEdit={setEditingComponent}
-            onDelete={deleteComponent.mutateAsync}
+            onDelete={deleteComponent}
           />
         </CardContent>
       </Card>

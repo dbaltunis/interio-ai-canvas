@@ -15,10 +15,10 @@ export const FabricsManager = () => {
   const handleSave = async (fabricData: any) => {
     try {
       if (editingFabric) {
-        await updateFabric.mutateAsync({ ...fabricData, id: editingFabric.id });
+        await updateFabric({ ...fabricData, id: editingFabric.id });
         setEditingFabric(null);
       } else {
-        await createFabric.mutateAsync(fabricData);
+        await createFabric(fabricData);
         setIsCreating(false);
       }
     } catch (error) {
@@ -71,7 +71,7 @@ export const FabricsManager = () => {
           <FabricsList
             fabrics={fabrics || []}
             onEdit={setEditingFabric}
-            onDelete={deleteFabric.mutateAsync}
+            onDelete={deleteFabric}
           />
         </CardContent>
       </Card>

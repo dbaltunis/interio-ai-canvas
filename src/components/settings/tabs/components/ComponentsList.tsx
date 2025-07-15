@@ -7,7 +7,7 @@ import { Edit, Trash2 } from "lucide-react";
 interface ComponentsListProps {
   components: any[];
   onEdit: (component: any) => void;
-  onDelete: any;
+  onDelete: (id: string) => void;
 }
 
 export const ComponentsList = ({ components, onEdit, onDelete }: ComponentsListProps) => {
@@ -37,7 +37,7 @@ export const ComponentsList = ({ components, onEdit, onDelete }: ComponentsListP
                 <Button variant="outline" size="sm" onClick={() => onEdit(component)}>
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => onDelete.mutate(component.id)}>
+                <Button variant="outline" size="sm" onClick={() => onDelete(component.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
