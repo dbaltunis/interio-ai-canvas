@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { useServiceOptions } from "@/hooks/useServiceOptions";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { PricingGridPreview } from "@/components/job-creation/calculator/components/PricingGridPreview";
 
 interface ProductTemplateFormProps {
   template?: any;
@@ -23,70 +23,6 @@ interface ProductTemplateFormProps {
   onCancel: () => void;
   isEditing: boolean;
 }
-
-interface PricingGridPreviewProps {
-  gridData: any;
-  isVisible: boolean;
-  onToggle: () => void;
-}
-
-const PricingGridPreview = ({ gridData, isVisible, onToggle }: PricingGridPreviewProps) => {
-  if (!gridData) return null;
-
-  return (
-    <div className="space-y-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onToggle}
-        className="flex items-center gap-2"
-      >
-        {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        {isVisible ? 'Hide' : 'Preview'} Pricing Grid
-      </Button>
-      
-      {isVisible && (
-        <Card className="max-w-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Pricing Grid Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-xs border-collapse">
-                <thead>
-                  <tr>
-                    {gridData.headers?.map((header: string, index: number) => (
-                      <th key={index} className="border border-gray-300 px-2 py-1 bg-gray-50">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {gridData.rows?.slice(0, 5).map((row: string[], rowIndex: number) => (
-                    <tr key={rowIndex}>
-                      {row.map((cell: string, cellIndex: number) => (
-                        <td key={cellIndex} className="border border-gray-300 px-2 py-1 text-center">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {gridData.rows?.length > 5 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  ... and {gridData.rows.length - 5} more rows
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
 
 export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: ProductTemplateFormProps) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -323,15 +259,21 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
                 <SelectValue placeholder="Select window covering type" />
               </SelectTrigger>
               <SelectContent>
-                {windowCoverings?.map(wc => (
-                  <SelectItem key={wc.id} value={wc.id}>
-                    {wc.name}
+                {windowCoverings && windowCoverings.length > 0 ? (
+                  windowCoverings.map(wc => (
+                    <SelectItem key={wc.id} value={wc.id}>
+                      {wc.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    No window coverings available - Add them in Window Coverings tab
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 mt-1">
-              Choose the window covering product this template is for
+              Choose the window covering product this template is for. Add new window coverings in the "Window Coverings" tab.
             </p>
           </div>
           <div>
@@ -404,21 +346,40 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
                   <SelectValue placeholder="Select pricing grid" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pricingGrids?.map(grid => (
-                    <SelectItem key={grid.id} value={grid.id}>
-                      {grid.name}
+                  {pricingGrids && pricingGrids.length > 0 ? (
+                    pricingGrids.map(grid => (
+                      <SelectItem key={grid.id} value={grid.id}>
+                        {grid.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      No pricing grids available - Add them in Pricing Grids section
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
             
             {selectedPricingGrid && (
-              <PricingGridPreview
-                gridData={selectedPricingGrid.grid_data}
-                isVisible={showPricingPreview}
-                onToggle={() => setShowPricingPreview(!showPricingPreview)}
-              />
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPricingPreview(true)}
+                  className="flex items-center gap-2"
+                >
+                  Preview Pricing Grid
+                </Button>
+                
+                <PricingGridPreview
+                  isOpen={showPricingPreview}
+                  onClose={() => setShowPricingPreview(false)}
+                  gridId={formData.selectedPricingGrid}
+                  gridName={selectedPricingGrid.name}
+                />
+              </div>
             )}
           </div>
         )}
