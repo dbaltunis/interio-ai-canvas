@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Wand2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface CalculationFormulaFormProps {
   formula?: any;
@@ -14,6 +16,10 @@ interface CalculationFormulaFormProps {
 }
 
 export const CalculationFormulaForm = ({ formula, onSave, onCancel }: CalculationFormulaFormProps) => {
+  const { toast } = useToast();
+  const [isGeneratingFormula, setIsGeneratingFormula] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     category: 'fabric_calculation',
@@ -43,6 +49,93 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
       });
     }
   }, [formula]);
+
+  const generateFormulaWithAI = async () => {
+    if (!formData.description.trim()) {
+      toast({
+        title: "Description Required",
+        description: "Please enter a description of what you want to calculate first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingFormula(true);
+    try {
+      const response = await fetch('/api/generate-formula', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: formData.description,
+          category: formData.category,
+          outputUnit: formData.output_unit
+        })
+      });
+
+      const data = await response.json();
+      if (data.formula) {
+        setFormData(prev => ({
+          ...prev,
+          formula_expression: data.formula
+        }));
+        toast({
+          title: "Formula Generated",
+          description: "AI has generated a formula based on your description."
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate formula. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingFormula(false);
+    }
+  };
+
+  const generateDescriptionWithAI = async () => {
+    if (!formData.category) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    try {
+      const response = await fetch('/api/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: formData.category,
+          name: formData.name
+        })
+      });
+
+      const data = await response.json();
+      if (data.description) {
+        setFormData(prev => ({
+          ...prev,
+          description: data.description
+        }));
+        toast({
+          title: "Description Generated",
+          description: "AI has generated a description for this formula category."
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate description. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,17 +180,47 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="description">Description</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={generateDescriptionWithAI}
+                disabled={isGeneratingDescription}
+                className="text-xs"
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                {isGeneratingDescription ? 'Generating...' : 'AI Generate'}
+              </Button>
+            </div>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe what this formula calculates"
+              placeholder="Describe what this formula calculates or what you want to achieve"
+              className="min-h-20"
             />
+            <p className="text-xs text-brand-neutral mt-1">
+              Describe what you want to calculate and AI can generate the formula for you
+            </p>
           </div>
 
           <div>
-            <Label htmlFor="formula_expression">Formula Expression</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="formula_expression">Formula Expression</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={generateFormulaWithAI}
+                disabled={isGeneratingFormula || !formData.description.trim()}
+                className="text-xs"
+              >
+                <Wand2 className="h-3 w-3 mr-1" />
+                {isGeneratingFormula ? 'Generating...' : 'AI Generate Formula'}
+              </Button>
+            </div>
             <Textarea
               id="formula_expression"
               value={formData.formula_expression}
@@ -108,7 +231,7 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
               required
             />
             <p className="text-xs text-brand-neutral mt-1">
-              Use variables like: width, height, fullness, pattern_repeat, etc.
+              Use variables like: width, height, fullness, pattern_repeat, etc. AI can generate this based on your description above.
             </p>
           </div>
 
