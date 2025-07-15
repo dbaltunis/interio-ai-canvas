@@ -39,12 +39,12 @@ export const EmailComposer = ({
   sendEmailMutation,
   emailSettings
 }: EmailComposerProps) => {
-  const { data: templates } = useEmailTemplates();
+  const { data: emailTemplates } = useEmailTemplates();
   const { toast } = useToast();
   const [attachments, setAttachments] = useState<File[]>([]);
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = templates?.find(t => t.id === templateId);
+    const template = emailTemplates?.find(t => t.id === templateId);
     if (template) {
       setNewEmail({
         ...newEmail,
@@ -54,7 +54,7 @@ export const EmailComposer = ({
       });
       toast({
         title: "Template Applied",
-        description: `${template.name} has been applied to your email.`
+        description: `Template has been applied to your email.`
       });
     }
   };
@@ -158,9 +158,9 @@ export const EmailComposer = ({
                   <SelectValue placeholder="Choose a template..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {templates?.map((template) => (
+                  {emailTemplates?.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.name}
+                      {template.subject}
                     </SelectItem>
                   ))}
                 </SelectContent>

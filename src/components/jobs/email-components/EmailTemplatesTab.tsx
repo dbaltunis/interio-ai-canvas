@@ -10,17 +10,10 @@ import { Plus, FileText } from "lucide-react";
 import { predefinedEmailTemplates } from "@/data/emailTemplates";
 import { RichTextEditor } from "./RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
-
-interface EmailTemplate {
-  id: string;
-  name: string;
-  subject: string;
-  content: string;
-  template_type: string;
-}
+import { EmailTemplateScheduler } from "@/hooks/useEmailTemplates";
 
 interface EmailTemplatesTabProps {
-  templates: EmailTemplate[] | undefined;
+  templates: EmailTemplateScheduler[] | undefined;
   onCreateTemplate: (templateData: any) => void;
   onApplyTemplate: (subject: string, content: string, templateId?: string) => void;
   isCreating: boolean;
@@ -34,7 +27,6 @@ export const EmailTemplatesTab = ({
 }: EmailTemplatesTabProps) => {
   const [customTemplateDialogOpen, setCustomTemplateDialogOpen] = useState(false);
   const [newTemplate, setNewTemplate] = useState({
-    name: "",
     subject: "",
     content: "",
     template_type: "custom" as const
@@ -44,11 +36,9 @@ export const EmailTemplatesTab = ({
   const handleCreateCustomTemplate = () => {
     onCreateTemplate({
       ...newTemplate,
-      variables: [],
       active: true
     });
     setNewTemplate({
-      name: "",
       subject: "",
       content: "",
       template_type: "custom"
@@ -58,11 +48,9 @@ export const EmailTemplatesTab = ({
 
   const handleCreateTemplateFromPredefined = (templateData: any) => {
     onCreateTemplate({
-      name: templateData.name,
       subject: templateData.subject,
       content: templateData.content,
       template_type: templateData.template_type,
-      variables: templateData.variables,
       active: true
     });
   };
@@ -138,7 +126,7 @@ export const EmailTemplatesTab = ({
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-medium truncate">{template.name}</h4>
+                  <h4 className="font-medium truncate">{template.subject}</h4>
                   <p className="text-sm text-gray-600 capitalize">{template.template_type.replace(/_/g, ' ')}</p>
                 </div>
                 <FileText className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
@@ -151,7 +139,7 @@ export const EmailTemplatesTab = ({
                     onApplyTemplate(template.subject, template.content, template.id);
                     toast({
                       title: "Template Applied",
-                      description: `${template.name} template has been applied.`
+                      description: `Template has been applied.`
                     });
                   }}
                 >
@@ -184,15 +172,6 @@ export const EmailTemplatesTab = ({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="template_name">Template Name</Label>
-              <Input
-                id="template_name"
-                placeholder="e.g., Quote Follow-up"
-                value={newTemplate.name}
-                onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-            <div>
               <Label htmlFor="template_subject">Subject Line</Label>
               <Input
                 id="template_subject"
@@ -220,7 +199,7 @@ export const EmailTemplatesTab = ({
               </Button>
               <Button 
                 onClick={handleCreateCustomTemplate}
-                disabled={!newTemplate.name || !newTemplate.subject || !newTemplate.content || isCreating}
+                disabled={!newTemplate.subject || !newTemplate.content || isCreating}
                 className="w-full sm:w-auto"
               >
                 {isCreating ? "Creating..." : "Create Template"}

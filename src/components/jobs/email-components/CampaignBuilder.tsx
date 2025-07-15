@@ -183,7 +183,7 @@ export const CampaignBuilder = ({
       }));
       toast({
         title: "Template Applied",
-        description: `${template.name} template has been applied to your campaign.`
+        description: `Template has been applied to your campaign.`
       });
     }
   };
@@ -343,7 +343,7 @@ export const CampaignBuilder = ({
                         ))}
                         {emailTemplates?.map((template) => (
                           <SelectItem key={template.id} value={template.id}>
-                            {template.name}
+                            {template.subject}
                           </SelectItem>
                         ))}
                       </SelectContent>
