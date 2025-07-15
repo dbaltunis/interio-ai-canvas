@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -181,9 +180,10 @@ export const ProductTemplatesTab = () => {
         }
       };
 
+      // Remove from required if unchecked
       const updatedRequiredComponents = {
         ...prev.requiredComponents,
-        [category]: isRequired
+        [category]: isRequired && isChecked
           ? [...(prev.requiredComponents[category] || []), componentId]
           : (prev.requiredComponents[category] || []).filter(
               id => id !== componentId
@@ -660,156 +660,164 @@ export const ProductTemplatesTab = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="baseMakingCost">Base Making Cost</Label>
-                <Input
-                  type="number"
-                  id="baseMakingCost"
-                  name="baseMakingCost"
-                  value={formData.baseMakingCost}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <h3>Height Surcharges</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="baseHeightLimit">Base Height Limit (m)</Label>
-                <Input
-                  type="number"
-                  id="baseHeightLimit"
-                  name="baseHeightLimit"
-                  value={formData.baseHeightLimit}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div>
-                <Label htmlFor="useHeightSurcharges">Use Height Surcharges</Label>
-                <Switch
-                  id="useHeightSurcharges"
-                  name="useHeightSurcharges"
-                  checked={formData.useHeightSurcharges}
-                  onCheckedChange={checked =>
-                    setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))
-                  }
-                />
-              </div>
-              {formData.useHeightSurcharges && (
+            {/* Only show base making cost for fabric_area calculation method */}
+            {formData.calculationMethod === "fabric_area" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="complexityMultiplier">Complexity Multiplier</Label>
-                  <Select
-                    value={formData.complexityMultiplier}
-                    onValueChange={value =>
-                      handleSelectChange("complexityMultiplier", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select complexity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="complex">Complex</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-
-            {formData.useHeightSurcharges && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="heightSurcharge1">Height Surcharge 1</Label>
+                  <Label htmlFor="baseMakingCost">Base Making Cost</Label>
                   <Input
                     type="number"
-                    id="heightSurcharge1"
-                    name="heightSurcharge1"
-                    value={formData.heightSurcharge1}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="heightSurcharge2">Height Surcharge 2</Label>
-                  <Input
-                    type="number"
-                    id="heightSurcharge2"
-                    name="heightSurcharge2"
-                    value={formData.heightSurcharge2}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="heightSurcharge3">Height Surcharge 3</Label>
-                  <Input
-                    type="number"
-                    id="heightSurcharge3"
-                    name="heightSurcharge3"
-                    value={formData.heightSurcharge3}
+                    id="baseMakingCost"
+                    name="baseMakingCost"
+                    value={formData.baseMakingCost}
                     onChange={handleInputChange}
                   />
                 </div>
               </div>
             )}
 
-            {formData.useHeightSurcharges && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="heightRange1Start">Height Range 1 Start (m)</Label>
-                  <Input
-                    type="number"
-                    id="heightRange1Start"
-                    name="heightRange1Start"
-                    value={formData.heightRange1Start}
-                    onChange={handleInputChange}
-                  />
+            {/* Only show height surcharges for fabric_area calculation method */}
+            {formData.calculationMethod === "fabric_area" && (
+              <>
+                <h3>Height Surcharges</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="baseHeightLimit">Base Height Limit (m)</Label>
+                    <Input
+                      type="number"
+                      id="baseHeightLimit"
+                      name="baseHeightLimit"
+                      value={formData.baseHeightLimit}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="useHeightSurcharges">Use Height Surcharges</Label>
+                    <Switch
+                      id="useHeightSurcharges"
+                      name="useHeightSurcharges"
+                      checked={formData.useHeightSurcharges}
+                      onCheckedChange={checked =>
+                        setFormData(prev => ({ ...prev, useHeightSurcharges: checked }))
+                      }
+                    />
+                  </div>
+                  {formData.useHeightSurcharges && (
+                    <div>
+                      <Label htmlFor="complexityMultiplier">Complexity Multiplier</Label>
+                      <Select
+                        value={formData.complexityMultiplier}
+                        onValueChange={value =>
+                          handleSelectChange("complexityMultiplier", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select complexity" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="complex">Complex</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="heightRange1End">Height Range 1 End (m)</Label>
-                  <Input
-                    type="number"
-                    id="heightRange1End"
-                    name="heightRange1End"
-                    value={formData.heightRange1End}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="heightRange2Start">Height Range 2 Start (m)</Label>
-                  <Input
-                    type="number"
-                    id="heightRange2Start"
-                    name="heightRange2Start"
-                    value={formData.heightRange2Start}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            )}
 
-            {formData.useHeightSurcharges && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="heightRange2End">Height Range 2 End (m)</Label>
-                  <Input
-                    type="number"
-                    id="heightRange2End"
-                    name="heightRange2End"
-                    value={formData.heightRange2End}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="heightRange3Start">Height Range 3 Start (m)</Label>
-                  <Input
-                    type="number"
-                    id="heightRange3Start"
-                    name="heightRange3Start"
-                    value={formData.heightRange3Start}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
+                {formData.useHeightSurcharges && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="heightSurcharge1">Height Surcharge 1</Label>
+                      <Input
+                        type="number"
+                        id="heightSurcharge1"
+                        name="heightSurcharge1"
+                        value={formData.heightSurcharge1}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="heightSurcharge2">Height Surcharge 2</Label>
+                      <Input
+                        type="number"
+                        id="heightSurcharge2"
+                        name="heightSurcharge2"
+                        value={formData.heightSurcharge2}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="heightSurcharge3">Height Surcharge 3</Label>
+                      <Input
+                        type="number"
+                        id="heightSurcharge3"
+                        name="heightSurcharge3"
+                        value={formData.heightSurcharge3}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {formData.useHeightSurcharges && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="heightRange1Start">Height Range 1 Start (m)</Label>
+                      <Input
+                        type="number"
+                        id="heightRange1Start"
+                        name="heightRange1Start"
+                        value={formData.heightRange1Start}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="heightRange1End">Height Range 1 End (m)</Label>
+                      <Input
+                        type="number"
+                        id="heightRange1End"
+                        name="heightRange1End"
+                        value={formData.heightRange1End}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="heightRange2Start">Height Range 2 Start (m)</Label>
+                      <Input
+                        type="number"
+                        id="heightRange2Start"
+                        name="heightRange2Start"
+                        value={formData.heightRange2Start}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {formData.useHeightSurcharges && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="heightRange2End">Height Range 2 End (m)</Label>
+                      <Input
+                        type="number"
+                        id="heightRange2End"
+                        name="heightRange2End"
+                        value={formData.heightRange2End}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="heightRange3Start">Height Range 3 Start (m)</Label>
+                      <Input
+                        type="number"
+                        id="heightRange3Start"
+                        name="heightRange3Start"
+                        value={formData.heightRange3Start}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <h3>Components</h3>
@@ -817,7 +825,7 @@ export const ProductTemplatesTab = () => {
               <CardHeader>
                 <CardTitle>Select Components</CardTitle>
                 <CardDescription>
-                  Choose which components are included in this product template.
+                  Choose which components are included in this product template. Components can be left unselected if not needed.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -827,44 +835,50 @@ export const ProductTemplatesTab = () => {
                       Object.entries(components).map(
                         ([category, componentList]) => (
                           <div key={category} className="space-y-2">
-                            <h4>{category}</h4>
+                            <h4 className="font-medium capitalize">{category}</h4>
                             <div className="space-y-1">
-                              {Array.isArray(componentList) && componentList.map(component => (
-                                <div
-                                  key={component.id}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <Checkbox
-                                    id={`${category}-${component.id}`}
-                                    checked={
-                                      formData.selectedComponents[category]?.[
-                                        component.id
-                                      ] || false
-                                    }
-                                    onCheckedChange={checked =>
-                                      handleComponentChange(
-                                        category,
-                                        component.id,
-                                        checked === true,
-                                        component.is_required || false
-                                      )
-                                    }
-                                  />
-                                  <div className="flex items-center">
-                                    <Label
-                                      htmlFor={`${category}-${component.id}`}
-                                      className={component.is_required ? "font-bold" : ""}
-                                    >
-                                      {component.name}
-                                    </Label>
-                                    {component.is_required && (
-                                      <span className="ml-1 text-xs text-gray-500">
-                                        (Required)
-                                      </span>
-                                    )}
+                              {Array.isArray(componentList) && componentList.length > 0 ? (
+                                componentList.map(component => (
+                                  <div
+                                    key={component.id}
+                                    className="flex items-center space-x-2"
+                                  >
+                                    <Checkbox
+                                      id={`${category}-${component.id}`}
+                                      checked={
+                                        formData.selectedComponents[category]?.[
+                                          component.id
+                                        ] || false
+                                      }
+                                      onCheckedChange={checked =>
+                                        handleComponentChange(
+                                          category,
+                                          component.id,
+                                          checked === true,
+                                          component.is_required || false
+                                        )
+                                      }
+                                    />
+                                    <div className="flex items-center">
+                                      <Label
+                                        htmlFor={`${category}-${component.id}`}
+                                        className={component.is_required ? "font-bold" : ""}
+                                      >
+                                        {component.name}
+                                      </Label>
+                                      {component.is_required && (
+                                        <span className="ml-1 text-xs text-gray-500">
+                                          (Required)
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">
+                                  No {category} components available. Add components in Settings → Components.
+                                </p>
+                              )}
                             </div>
                           </div>
                         )
