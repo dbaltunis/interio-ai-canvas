@@ -108,41 +108,55 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
   }
   
   try {
-    console.log("🔍 === PRICING GRID LOOKUP (YOUR UPLOADED CSV) ===");
-    console.log("📊 Input values from user form:", { width: width + "cm", drop: drop + "cm" });
-    console.log("📁 Your uploaded CSV data structure:", gridData);
+    console.log("🔍 === PRICING GRID LOOKUP ===");
+    console.log("📊 Looking for:", { width: width + "cm", drop: drop + "cm" });
+    console.log("📁 Grid data structure:", gridData);
     
-    // Handle the actual data structure with dropRows (from your CSV)
-    if (gridData.dropRows) {
+    // Handle the actual data structure with dropRows (from uploaded CSV)
+    if (gridData.dropRows && gridData.widthColumns) {
       const dropRows = gridData.dropRows;
-      // Input values are already in cm from the form, so use them directly
-      const dropInCm = Math.round(drop);
+      const widthColumns = gridData.widthColumns;
       
-      console.log("🎯 Looking for drop:", dropInCm + "cm", "in your uploaded CSV dropRows");
-      console.log("📋 Available drops in your CSV:", dropRows.map((r: any) => r.drop + "cm"));
+      console.log("📋 Available drops:", dropRows.map((r: any) => r.drop + "cm"));
+      console.log("📋 Available widths:", widthColumns.map((w: string) => w + "cm"));
       
-      // Find the matching drop row from YOUR uploaded data
-      const matchingRow = dropRows.find((row: any) => {
+      // Find the exact drop row
+      const matchingDropRow = dropRows.find((row: any) => {
         const rowDrop = parseInt(row.drop);
-        return rowDrop === dropInCm;
+        return rowDrop === drop;
       });
       
-      if (matchingRow && matchingRow.prices && matchingRow.prices.length > 0) {
-        // For now, return the first price since we don't have width column mapping yet
-        // This uses the EXACT price from your uploaded CSV file
-        const price = parseFloat(matchingRow.prices[0].toString()) || 0;
-        console.log("✅ FOUND EXACT MATCH in your CSV:");
-        console.log("  📏 Drop:", dropInCm + "cm");
-        console.log("  💰 Manufacturing Price from YOUR CSV:", "£" + price);
-        console.log("  📄 Full CSV row data:", matchingRow);
-        console.log("🔍 === END PRICING GRID LOOKUP ===");
-        return price;
+      if (!matchingDropRow) {
+        console.log("❌ No exact drop match found for:", drop + "cm");
+        return 0;
       }
       
-      console.log("❌ No matching row found in your CSV for drop:", dropInCm + "cm");
-      console.log("📋 Available drops in your CSV:", dropRows.map((r: any) => r.drop + "cm"));
+      console.log("✅ Found matching drop row:", matchingDropRow.drop + "cm");
+      
+      // Find the exact width column index
+      const widthIndex = widthColumns.findIndex((col: string) => {
+        const colWidth = parseInt(col.toString());
+        return colWidth === width;
+      });
+      
+      if (widthIndex === -1) {
+        console.log("❌ No exact width match found for:", width + "cm");
+        console.log("Available widths:", widthColumns);
+        return 0;
+      }
+      
+      console.log("✅ Found matching width at index:", widthIndex, "for width:", width + "cm");
+      
+      // Get the price from the matching row and column
+      const price = parseFloat(matchingDropRow.prices[widthIndex]?.toString() || "0");
+      
+      console.log("✅ EXACT MATCH FOUND:");
+      console.log("  📏 Width:", width + "cm");
+      console.log("  📏 Drop:", drop + "cm");
+      console.log("  💰 Manufacturing Price:", "£" + price);
       console.log("🔍 === END PRICING GRID LOOKUP ===");
-      return 0;
+      
+      return price;
     }
     
     // Handle the old structure with rows and columns (fallback for legacy data)
@@ -180,7 +194,7 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
     console.log("📊 Legacy pricing calculation result:", "£" + matchingPrice);
     return parseFloat(matchingPrice.toString()) || 0;
   } catch (error) {
-    console.error("❌ Error parsing pricing grid (this is YOUR uploaded CSV data):", error);
+    console.error("❌ Error parsing pricing grid:", error);
     return 0;
   }
 };

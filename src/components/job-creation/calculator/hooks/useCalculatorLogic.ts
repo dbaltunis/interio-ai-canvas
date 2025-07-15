@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 
@@ -29,7 +28,7 @@ export const useCalculatorLogic = (
     }
 
     console.log("=== CALCULATION DEBUG START ===");
-    console.log("🔢 Input values:", {
+    console.log("🔢 Input values from form:", {
       railWidth: parsedRailWidth + "cm",
       curtainDrop: parsedCurtainDrop + "cm", 
       quantity: parsedQuantity,
@@ -43,7 +42,7 @@ export const useCalculatorLogic = (
     const bottomHem = hemConfig?.bottom_hem || 10;
     const pooling = parseFloat(formData.curtainPooling || "0");
 
-    // Calculate fabric requirements
+    // Calculate fabric requirements for display (this is for fabric calculation)
     const totalFabricDrop = parsedCurtainDrop + pooling + headerHem + bottomHem;
     const totalFabricWidth = parsedRailWidth * parsedHeadingFullness;
     
@@ -90,7 +89,7 @@ export const useCalculatorLogic = (
       totalLiningCost: "£" + liningCost.toFixed(2)
     });
 
-    // Calculate manufacturing/makeup cost
+    // Calculate manufacturing/makeup cost using EXACT form values
     let manufacturingCost = 0;
     
     if (matchingTemplate?.calculation_method === 'pricing_grid') {
@@ -98,15 +97,21 @@ export const useCalculatorLogic = (
                            matchingTemplate.calculation_rules?.selectedPricingGrid;
       
       if (pricingGridId && gridData) {
+        // Use EXACT values from the form - no rounding, no conversion
+        console.log("🎯 Using exact form values for pricing grid lookup:");
+        console.log("  Width from form:", parsedRailWidth + "cm");
+        console.log("  Drop from form:", parsedCurtainDrop + "cm");
+        
         manufacturingCost = getPriceFromGrid(
           gridData.grid_data, 
-          parsedRailWidth, 
-          parsedCurtainDrop
+          parsedRailWidth,  // Use exact width from form
+          parsedCurtainDrop // Use exact drop from form
         );
+        
         console.log("🏭 Manufacturing cost from pricing grid:", {
           pricingGridId,
-          railWidth: parsedRailWidth + "cm",
-          curtainDrop: parsedCurtainDrop + "cm",
+          exactWidth: parsedRailWidth + "cm",
+          exactDrop: parsedCurtainDrop + "cm",
           manufacturingCost: "£" + manufacturingCost
         });
       }
