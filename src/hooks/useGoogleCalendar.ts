@@ -26,10 +26,13 @@ export const useGoogleCalendarIntegration = () => {
 
   const connectMutation = useMutation({
     mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Start OAuth flow
-      const redirectUrl = `${window.location.origin}/auth/google/callback`;
+      const redirectUrl = `${window.location.origin.replace('localhost', '127.0.0.1')}/functions/v1/google-oauth-callback`;
       const scope = "https://www.googleapis.com/auth/calendar";
-      const clientId = "YOUR_GOOGLE_CLIENT_ID"; // This should be from environment
+      const clientId = "1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com";
       
       const authUrl = `https://accounts.google.com/o/oauth2/auth?` +
         `client_id=${clientId}&` +
@@ -37,9 +40,41 @@ export const useGoogleCalendarIntegration = () => {
         `scope=${encodeURIComponent(scope)}&` +
         `response_type=code&` +
         `access_type=offline&` +
-        `prompt=consent`;
+        `prompt=consent&` +
+        `state=${user.id}`;
       
-      window.location.href = authUrl;
+      // Open popup window
+      const popup = window.open(authUrl, 'google-auth', 'width=500,height=600');
+      
+      return new Promise((resolve, reject) => {
+        const messageListener = (event: MessageEvent) => {
+          if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+            window.removeEventListener('message', messageListener);
+            queryClient.invalidateQueries({ queryKey: ["google-calendar-integration"] });
+            resolve(undefined);
+          } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+            window.removeEventListener('message', messageListener);
+            reject(new Error(event.data.error));
+          }
+        };
+        
+        window.addEventListener('message', messageListener);
+        
+        // Check if popup was closed manually
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', messageListener);
+            reject(new Error('Authentication cancelled'));
+          }
+        }, 1000);
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Connected",
+        description: "Google Calendar has been successfully connected.",
+      });
     },
     onError: (error) => {
       toast({

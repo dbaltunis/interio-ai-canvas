@@ -67,8 +67,8 @@ serve(async (req) => {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: Deno.env.get('GOOGLE_CLIENT_ID') ?? '',
-          client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') ?? '',
+          client_id: '1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com',
+          client_secret: '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',
           refresh_token: integration.refresh_token ?? '',
           grant_type: 'refresh_token',
         }),
