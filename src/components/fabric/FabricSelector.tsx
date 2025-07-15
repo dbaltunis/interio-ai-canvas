@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedFabric, setSelectedFabric] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('library');
   
   const [manualFabric, setManualFabric] = useState({
     name: '',
@@ -86,15 +88,48 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     };
   }, [fabrics]);
 
-  // Update selected fabric when selectedFabricId changes
+  // Update selected fabric when selectedFabricId changes and populate manual form if it's a manual fabric
   useEffect(() => {
-    if (selectedFabricId && fabrics.length > 0) {
-      const fabric = fabrics.find(f => f.id === selectedFabricId);
-      if (fabric) {
-        setSelectedFabric(fabric);
+    if (selectedFabricId) {
+      // First check if it's from inventory
+      const inventoryFabric = fabrics.find(f => f.id === selectedFabricId);
+      if (inventoryFabric) {
+        setSelectedFabric(inventoryFabric);
+        setActiveTab('library');
+      } else {
+        // Check if it's a manual fabric (stored in selectedFabric)
+        if (selectedFabric && selectedFabric.id === selectedFabricId && selectedFabric.isManual) {
+          // Populate manual form with existing data
+          setManualFabric({
+            name: selectedFabric.name || '',
+            width: selectedFabric.width?.toString() || '',
+            pricePerUnit: selectedFabric.cost_per_unit?.toString() || '',
+            color: selectedFabric.color || '',
+            pattern: selectedFabric.pattern || '',
+            type: selectedFabric.type || '',
+            rotation: selectedFabric.rotation || 'vertical'
+          });
+          setActiveTab('manual');
+        }
       }
     }
-  }, [selectedFabricId, fabrics]);
+  }, [selectedFabricId, fabrics, selectedFabric]);
+
+  // When dialog opens, restore the current fabric data
+  useEffect(() => {
+    if (isOpen && selectedFabric && selectedFabric.isManual) {
+      setManualFabric({
+        name: selectedFabric.name || '',
+        width: selectedFabric.width?.toString() || '',
+        pricePerUnit: selectedFabric.cost_per_unit?.toString() || '',
+        color: selectedFabric.color || '',
+        pattern: selectedFabric.pattern || '',
+        type: selectedFabric.type || '',
+        rotation: selectedFabric.rotation || 'vertical'
+      });
+      setActiveTab('manual');
+    }
+  }, [isOpen, selectedFabric]);
 
   const handleSelectFabric = (fabric: any) => {
     console.log('FabricSelector - Fabric selected:', fabric);
@@ -109,7 +144,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     }
 
     const fabricData = {
-      id: `manual-${Date.now()}`,
+      id: selectedFabric?.isManual && selectedFabric?.id ? selectedFabric.id : `manual-${Date.now()}`,
       name: manualFabric.name,
       width: parseFloat(manualFabric.width),
       cost_per_unit: parseFloat(manualFabric.pricePerUnit),
@@ -122,21 +157,10 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
       quantity: 999 // Set high quantity for manual fabrics
     };
     
-    console.log('FabricSelector - Manual fabric created:', fabricData);
+    console.log('FabricSelector - Manual fabric saved:', fabricData);
     setSelectedFabric(fabricData);
     onSelectFabric(fabricData.id, fabricData);
     setIsOpen(false);
-    
-    // Reset manual form
-    setManualFabric({
-      name: '',
-      width: '',
-      pricePerUnit: '',
-      color: '',
-      pattern: '',
-      type: '',
-      rotation: 'vertical'
-    });
   };
 
   const handleManualInputChange = (field: string, value: string) => {
@@ -147,6 +171,18 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     setSearchTerm('');
     setSelectedColor('');
     setSelectedType('');
+  };
+
+  const resetManualForm = () => {
+    setManualFabric({
+      name: '',
+      width: '',
+      pricePerUnit: '',
+      color: '',
+      pattern: '',
+      type: '',
+      rotation: 'vertical'
+    });
   };
 
   return (
@@ -208,7 +244,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
           <DialogTitle>Select Fabric</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="library" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="library">From Library</TabsTrigger>
             <TabsTrigger value="manual">Manual Entry</TabsTrigger>
@@ -398,12 +434,18 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
               </RadioGroup>
             </div>
             
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end gap-3 pt-4">
+              <Button 
+                variant="outline"
+                onClick={resetManualForm}
+              >
+                Clear Form
+              </Button>
               <Button 
                 onClick={handleManualFabricSubmit}
                 disabled={!manualFabric.name || !manualFabric.width || !manualFabric.pricePerUnit}
               >
-                Add Fabric
+                {selectedFabric?.isManual ? 'Update Fabric' : 'Add Fabric'}
               </Button>
             </div>
           </TabsContent>
