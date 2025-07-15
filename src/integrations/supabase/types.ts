@@ -976,14 +976,17 @@ export type Database = {
           fabric_code: string | null
           fabric_type: string | null
           fabric_width: number
+          horizontal_repeat: number | null
           id: string
           image_url: string | null
           name: string
           pattern_repeat: number | null
+          roll_direction: string | null
           rotation_allowed: boolean | null
           supplier: string | null
           updated_at: string
           user_id: string
+          vertical_repeat: number | null
           weight: string | null
         }
         Insert: {
@@ -995,14 +998,17 @@ export type Database = {
           fabric_code?: string | null
           fabric_type?: string | null
           fabric_width?: number
+          horizontal_repeat?: number | null
           id?: string
           image_url?: string | null
           name: string
           pattern_repeat?: number | null
+          roll_direction?: string | null
           rotation_allowed?: boolean | null
           supplier?: string | null
           updated_at?: string
           user_id: string
+          vertical_repeat?: number | null
           weight?: string | null
         }
         Update: {
@@ -1014,14 +1020,17 @@ export type Database = {
           fabric_code?: string | null
           fabric_type?: string | null
           fabric_width?: number
+          horizontal_repeat?: number | null
           id?: string
           image_url?: string | null
           name?: string
           pattern_repeat?: number | null
+          roll_direction?: string | null
           rotation_allowed?: boolean | null
           supplier?: string | null
           updated_at?: string
           user_id?: string
+          vertical_repeat?: number | null
           weight?: string | null
         }
         Relationships: []

@@ -10,6 +10,8 @@ export interface Fabric {
   description?: string;
   fabric_width: number;
   pattern_repeat: number;
+  vertical_repeat: number;
+  horizontal_repeat: number;
   rotation_allowed: boolean;
   fabric_type?: string;
   weight?: string;
@@ -19,6 +21,7 @@ export interface Fabric {
   cost_per_meter: number;
   active: boolean;
   image_url?: string;
+  roll_direction: string;
   created_at: string;
   updated_at: string;
 }

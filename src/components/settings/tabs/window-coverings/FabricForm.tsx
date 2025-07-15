@@ -21,7 +21,7 @@ export const FabricForm = ({ fabric, onSave, onCancel }: FabricFormProps) => {
     name: '',
     description: '',
     fabric_width: 137,
-    pattern_repeat: 0, // Keep for backward compatibility
+    pattern_repeat: 0,
     vertical_repeat: 0,
     horizontal_repeat: 0,
     rotation_allowed: true,
@@ -32,7 +32,7 @@ export const FabricForm = ({ fabric, onSave, onCancel }: FabricFormProps) => {
     fabric_code: '',
     cost_per_meter: 0,
     active: true,
-    roll_direction: 'auto' // New field for roll direction
+    roll_direction: 'auto'
   });
 
   useEffect(() => {
