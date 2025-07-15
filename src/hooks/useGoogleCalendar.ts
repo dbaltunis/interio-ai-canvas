@@ -29,8 +29,8 @@ export const useGoogleCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Start OAuth flow
-      const redirectUrl = `${window.location.origin.replace('localhost', '127.0.0.1')}/functions/v1/google-oauth-callback`;
+      // Use the actual Supabase URL for the redirect
+      const redirectUrl = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`;
       const scope = "https://www.googleapis.com/auth/calendar";
       const clientId = "1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com";
       
@@ -43,11 +43,18 @@ export const useGoogleCalendarIntegration = () => {
         `prompt=consent&` +
         `state=${user.id}`;
       
+      console.log('Opening Google auth URL:', authUrl);
+      
       // Open popup window
       const popup = window.open(authUrl, 'google-auth', 'width=500,height=600');
       
+      if (!popup) {
+        throw new Error('Failed to open authentication window. Please allow popups for this site.');
+      }
+      
       return new Promise((resolve, reject) => {
         const messageListener = (event: MessageEvent) => {
+          console.log('Received message:', event.data);
           if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
             window.removeEventListener('message', messageListener);
             queryClient.invalidateQueries({ queryKey: ["google-calendar-integration"] });
@@ -77,6 +84,7 @@ export const useGoogleCalendarIntegration = () => {
       });
     },
     onError: (error) => {
+      console.error('Connection error:', error);
       toast({
         title: "Connection Failed",
         description: error.message,
