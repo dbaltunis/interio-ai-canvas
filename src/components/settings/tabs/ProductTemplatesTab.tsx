@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -32,7 +33,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
-import { useHardwareOptions } from "@/hooks/useComponentOptions";
+import { useHardwareOptions, useLiningOptions, usePartsOptions } from "@/hooks/useComponentOptions";
+import { useServiceOptions } from "@/hooks/useServiceOptions";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import {
@@ -100,8 +103,7 @@ export const ProductTemplatesTab = () => {
     measurementRequirements: {}
   });
 
-  const { windowCoverings, isLoading: windowCoveringsLoading } =
-    useWindowCoverings();
+  const { windowCoverings, isLoading: windowCoveringsLoading } = useWindowCoverings();
   const {
     templates,
     isLoading: templatesLoading,
@@ -109,21 +111,29 @@ export const ProductTemplatesTab = () => {
     updateTemplate,
     deleteTemplate
   } = useProductTemplates();
-  const { data: hardwareOptions = [], isLoading: componentsLoading } = useHardwareOptions();
-  const { data: pricingGrids, isLoading: pricingGridsLoading } =
-    usePricingGrids();
+  
+  // Load all component types
+  const { data: hardwareOptions = [], isLoading: hardwareLoading } = useHardwareOptions();
+  const { data: liningOptions = [], isLoading: liningLoading } = useLiningOptions();
+  const { data: partsOptions = [], isLoading: partsLoading } = usePartsOptions();
+  const { data: serviceOptions = [], isLoading: serviceLoading } = useServiceOptions();
+  const { data: headingOptions = [], isLoading: headingLoading } = useHeadingOptions();
+  
+  const { data: pricingGrids, isLoading: pricingGridsLoading } = usePricingGrids();
   const { data: businessSettings } = useBusinessSettings();
   const { toast } = useToast();
 
-  // Create a mock components object for backward compatibility
+  // Create components object with all loaded components
   const components = {
     hardware: hardwareOptions || [],
-    headings: [],
-    lining: [],
-    parts: [],
-    trimming: [],
-    service: []
+    headings: headingOptions || [],
+    lining: liningOptions || [],
+    parts: partsOptions || [],
+    trimming: [], // Add trimming hook if you have one
+    service: serviceOptions || []
   };
+
+  const componentsLoading = hardwareLoading || liningLoading || partsLoading || serviceLoading || headingLoading;
 
   useEffect(() => {
     if (businessSettings) {
@@ -227,7 +237,6 @@ export const ProductTemplatesTab = () => {
         heightRange2Start: parseFloat(formData.heightRange2Start) || 3.0,
         heightRange2End: parseFloat(formData.heightRange2End) || 4.0,
         heightRange3Start: parseFloat(formData.heightRange3Start) || 4.0,
-        // Save the selected pricing grid ID
         selectedPricingGrid: formData.selectedPricingGrid || null
       };
 
@@ -239,7 +248,6 @@ export const ProductTemplatesTab = () => {
         calculation_method: formData.calculationMethod,
         pricing_unit: formData.pricingUnit,
         calculation_rules: calculationRules,
-        // Also save pricing grid ID at template level for easier access
         pricing_grid_id: formData.selectedPricingGrid || null,
         components: {
           headings: formData.selectedComponents.headings || {},
@@ -250,13 +258,12 @@ export const ProductTemplatesTab = () => {
           service: formData.selectedComponents.service || {}
         },
         measurement_requirements: formData.measurementRequirements,
+        making_cost_required: formData.calculationMethod === 'fabric_area',
+        pricing_grid_required: formData.calculationMethod === 'pricing_grid',
         active: true
       };
 
-      console.log("Saving template with pricing grid:", {
-        templateData,
-        selectedPricingGrid: formData.selectedPricingGrid
-      });
+      console.log("Saving template with data:", templateData);
 
       if (editingTemplate) {
         await updateTemplate(editingTemplate.id, templateData);
@@ -277,7 +284,7 @@ export const ProductTemplatesTab = () => {
       console.error("Error saving template:", error);
       toast({
         title: "Error",
-        description: "Failed to save template",
+        description: error instanceof Error ? error.message : "Failed to save template",
         variant: "destructive"
       });
     } finally {
@@ -375,14 +382,13 @@ export const ProductTemplatesTab = () => {
       service: []
     };
     
-    // Extract values with proper fallbacks - FIXED pricing grid loading
+    // Extract values with proper fallbacks
     const baseMakingCost = template.baseMakingCost || template.calculation_rules?.baseMakingCost || "";
     const baseHeightLimit = template.baseHeightLimit || template.calculation_rules?.baseHeightLimit || "2.4";
     const heightSurcharge1 = template.heightSurcharge1 || template.calculation_rules?.heightSurcharge1 || "";
     const heightSurcharge2 = template.heightSurcharge2 || template.calculation_rules?.heightSurcharge2 || "";
     const heightSurcharge3 = template.heightSurcharge3 || template.calculation_rules?.heightSurcharge3 || "";
     
-    // FIXED: Load selectedPricingGrid from multiple possible locations
     const selectedPricingGrid = template.pricing_grid_id || 
                                 template.calculation_rules?.selectedPricingGrid || 
                                 template.selectedPricingGrid || "";
@@ -402,7 +408,7 @@ export const ProductTemplatesTab = () => {
       window_covering_id: windowCoverings?.find(wc => wc.name === template.product_type)?.id || "",
       calculationMethod: template.calculation_method || "",
       pricingUnit: template.pricing_unit || "",
-      selectedPricingGrid: selectedPricingGrid, // FIXED: Use the properly extracted value
+      selectedPricingGrid: selectedPricingGrid,
       baseMakingCost: baseMakingCost.toString(),
       baseHeightLimit: baseHeightLimit.toString(),
       useHeightSurcharges: template.useHeightSurcharges || template.calculation_rules?.useHeightSurcharges || false,
@@ -831,58 +837,55 @@ export const ProductTemplatesTab = () => {
               <CardContent>
                 <ScrollArea className="h-[400px] w-full rounded-md border">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-                    {components &&
-                      Object.entries(components).map(
-                        ([category, componentList]) => (
-                          <div key={category} className="space-y-2">
-                            <h4 className="font-medium capitalize">{category}</h4>
-                            <div className="space-y-1">
-                              {Array.isArray(componentList) && componentList.length > 0 ? (
-                                componentList.map(component => (
-                                  <div
-                                    key={component.id}
-                                    className="flex items-center space-x-2"
+                    {Object.entries(components).map(([category, componentList]) => (
+                      <div key={category} className="space-y-2">
+                        <h4 className="font-medium capitalize">{category}</h4>
+                        <div className="space-y-1">
+                          {Array.isArray(componentList) && componentList.length > 0 ? (
+                            componentList.map(component => (
+                              <div
+                                key={component.id}
+                                className="flex items-center space-x-2"
+                              >
+                                <Checkbox
+                                  id={`${category}-${component.id}`}
+                                  checked={
+                                    formData.selectedComponents[category]?.[
+                                      component.id
+                                    ] || false
+                                  }
+                                  onCheckedChange={checked =>
+                                    handleComponentChange(
+                                      category,
+                                      component.id,
+                                      checked === true,
+                                      component.is_required || false
+                                    )
+                                  }
+                                />
+                                <div className="flex items-center">
+                                  <Label
+                                    htmlFor={`${category}-${component.id}`}
+                                    className={component.is_required ? "font-bold" : ""}
                                   >
-                                    <Checkbox
-                                      id={`${category}-${component.id}`}
-                                      checked={
-                                        formData.selectedComponents[category]?.[
-                                          component.id
-                                        ] || false
-                                      }
-                                      onCheckedChange={checked =>
-                                        handleComponentChange(
-                                          category,
-                                          component.id,
-                                          checked === true,
-                                          component.is_required || false
-                                        )
-                                      }
-                                    />
-                                    <div className="flex items-center">
-                                      <Label
-                                        htmlFor={`${category}-${component.id}`}
-                                        className={component.is_required ? "font-bold" : ""}
-                                      >
-                                        {component.name}
-                                      </Label>
-                                      {component.is_required && (
-                                        <span className="ml-1 text-xs text-gray-500">
-                                          (Required)
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-sm text-gray-500">
-                                  No {category} components available. Add components in Settings → Components.
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      )}
+                                    {component.name}
+                                  </Label>
+                                  {component.is_required && (
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      (Required)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500">
+                              No {category} components available. Add components in Settings → Components.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </ScrollArea>
               </CardContent>

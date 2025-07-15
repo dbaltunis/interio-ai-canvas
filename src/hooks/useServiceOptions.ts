@@ -59,9 +59,18 @@ export const useCreateServiceOption = () => {
     mutationFn: async (option: Omit<ServiceOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       console.log('Creating service option:', option);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('service_options')
-        .insert([option])
+        .insert([{
+          ...option,
+          user_id: user.id
+        }])
         .select()
         .single();
       
@@ -88,8 +97,6 @@ export const useUpdateServiceOption = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ServiceOption> & { id: string }) => {
-      console.log('Updating service option:', id, updates);
-      
       const { data, error } = await supabase
         .from('service_options')
         .update(updates)
@@ -101,16 +108,10 @@ export const useUpdateServiceOption = () => {
         console.error('Error updating service option:', error);
         throw error;
       }
-      
-      console.log('Service option updated:', data);
       return data;
     },
     onSuccess: () => {
-      console.log('Service option updated successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
-    },
-    onError: (error) => {
-      console.error('Service option update failed:', error);
     },
   });
 };
@@ -120,8 +121,6 @@ export const useDeleteServiceOption = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting service option:', id);
-      
       const { error } = await supabase
         .from('service_options')
         .delete()
@@ -131,15 +130,9 @@ export const useDeleteServiceOption = () => {
         console.error('Error deleting service option:', error);
         throw error;
       }
-      
-      console.log('Service option deleted successfully');
     },
     onSuccess: () => {
-      console.log('Service option deleted successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['service-options'] });
-    },
-    onError: (error) => {
-      console.error('Service option deletion failed:', error);
     },
   });
 };

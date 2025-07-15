@@ -32,6 +32,7 @@ export const useHardwareOptions = () => {
           .from('hardware_options')
           .select('*')
           .eq('user_id', user.id)
+          .eq('active', true)
           .order('name');
         
         if (error) {
@@ -58,9 +59,18 @@ export const useCreateHardwareOption = () => {
     mutationFn: async (option: Omit<HardwareOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       console.log('Creating hardware option:', option);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('hardware_options')
-        .insert([option])
+        .insert([{
+          ...option,
+          user_id: user.id
+        }])
         .select()
         .single();
       
@@ -270,19 +280,36 @@ export const usePartsOptions = () => {
     queryKey: ['parts-options'],
     queryFn: async () => {
       console.log('Fetching parts options...');
-      const { data, error } = await supabase
-        .from('parts_options')
-        .select('*')
-        .order('name');
       
-      if (error) {
-        console.error('Error fetching parts options:', error);
-        throw error;
+      try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No authenticated user for parts options');
+          return [];
+        }
+
+        const { data, error } = await supabase
+          .from('parts_options')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching parts options:', error);
+          throw error;
+        }
+        
+        console.log('Parts options fetched:', data);
+        return data as PartsOption[];
+      } catch (err) {
+        console.error('Failed to fetch parts options:', err);
+        return [];
       }
-      
-      console.log('Parts options fetched:', data);
-      return data as PartsOption[];
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
