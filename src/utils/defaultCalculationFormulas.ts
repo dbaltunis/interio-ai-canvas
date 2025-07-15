@@ -12,11 +12,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "top_turn", type: "number", unit: "cm", description: "Top turn allowance (typically 10cm)", default: 10 },
       { name: "bottom_hem", type: "number", unit: "cm", description: "Bottom hem allowance (typically 20cm)", default: 20 }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "fabric_calculation",
-    output_unit: "cm"
+    active: true
   },
   {
     name: "Pattern Repeat Adjusted Drop",
@@ -27,15 +23,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "cut_drop", type: "number", unit: "cm", description: "Cut drop from previous calculation" },
       { name: "vertical_repeat", type: "number", unit: "cm", description: "Vertical pattern repeat (0 if no pattern)", default: 0 }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {
-      "if": "vertical_repeat > 0",
-      "then": "ceiling(cut_drop / vertical_repeat) * vertical_repeat", 
-      "else": "cut_drop"
-    },
-    formula_type: "fabric_calculation",
-    output_unit: "cm"
+    active: true
   },
   {
     name: "Total Gather Width",
@@ -46,11 +34,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "track_width", type: "number", unit: "cm", description: "Width of the curtain track or pole" },
       { name: "fullness_ratio", type: "number", unit: "ratio", description: "Fullness ratio based on heading style", default: 2.2 }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "fabric_calculation", 
-    output_unit: "cm"
+    active: true
   },
   {
     name: "Number of Fabric Widths",
@@ -61,11 +45,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "total_gather_width", type: "number", unit: "cm", description: "Total gather width from previous calculation" },
       { name: "fabric_width", type: "number", unit: "cm", description: "Width of the fabric (typically 137cm)", default: 137 }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "fabric_calculation",
-    output_unit: "widths"
+    active: true
   },
   {
     name: "Total Fabric Meterage",
@@ -76,11 +56,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "number_of_widths", type: "number", unit: "widths", description: "Number of fabric widths from previous calculation" },
       { name: "adjusted_drop", type: "number", unit: "cm", description: "Pattern repeat adjusted drop" }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "fabric_calculation",
-    output_unit: "meters"
+    active: true
   },
   {
     name: "Quick Fabric Estimate",
@@ -96,11 +72,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "bottom_hem", type: "number", unit: "cm", description: "Bottom hem allowance", default: 20 },
       { name: "vertical_repeat", type: "number", unit: "cm", description: "Pattern repeat (0 if none)", default: 0 }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "fabric_calculation",
-    output_unit: "meters"
+    active: true
   },
   {
     name: "Fabric Cost Calculation", 
@@ -111,11 +83,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "total_meterage", type: "number", unit: "meters", description: "Total fabric meterage from calculation" },
       { name: "fabric_price_per_meter", type: "number", unit: "currency", description: "Price per meter of fabric" }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "pricing_formula",
-    output_unit: "currency"
+    active: true
   },
   {
     name: "Labor Time Estimate",
@@ -127,11 +95,7 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "total_meterage", type: "number", unit: "meters", description: "Total fabric meterage" },
       { name: "complexity_factor", type: "number", unit: "hours", description: "Additional time per meter", default: 0.2 }
     ],
-    active: true,
-    applies_to: ["curtains", "drapes"],
-    conditions: {},
-    formula_type: "pricing_formula",
-    output_unit: "hours"
+    active: true
   }
 ];
 
