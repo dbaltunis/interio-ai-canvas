@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +28,6 @@ export const useGoogleCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Use the actual Supabase URL for the redirect
       const redirectUrl = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`;
       const scope = "https://www.googleapis.com/auth/calendar";
       const clientId = "1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com";
@@ -46,7 +44,7 @@ export const useGoogleCalendarIntegration = () => {
       console.log('Opening Google auth URL:', authUrl);
       
       // Open popup window
-      const popup = window.open(authUrl, 'google-auth', 'width=500,height=600');
+      const popup = window.open(authUrl, 'google-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
       
       if (!popup) {
         throw new Error('Failed to open authentication window. Please allow popups for this site.');
@@ -54,13 +52,22 @@ export const useGoogleCalendarIntegration = () => {
       
       return new Promise((resolve, reject) => {
         const messageListener = (event: MessageEvent) => {
-          console.log('Received message:', event.data);
+          console.log('Received message:', event.data, 'from origin:', event.origin);
+          
+          // Accept messages from Google and our Supabase function
+          if (event.origin !== 'https://accounts.google.com' && 
+              event.origin !== 'https://ldgrcodffsalkevafbkb.supabase.co') {
+            return;
+          }
+          
           if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
             window.removeEventListener('message', messageListener);
+            popup.close();
             queryClient.invalidateQueries({ queryKey: ["google-calendar-integration"] });
             resolve(undefined);
           } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
             window.removeEventListener('message', messageListener);
+            popup.close();
             reject(new Error(event.data.error));
           }
         };
@@ -72,9 +79,19 @@ export const useGoogleCalendarIntegration = () => {
           if (popup?.closed) {
             clearInterval(checkClosed);
             window.removeEventListener('message', messageListener);
-            reject(new Error('Authentication cancelled'));
+            reject(new Error('Authentication cancelled by user'));
           }
         }, 1000);
+        
+        // Timeout after 5 minutes
+        setTimeout(() => {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageListener);
+          if (!popup.closed) {
+            popup.close();
+          }
+          reject(new Error('Authentication timeout'));
+        }, 300000);
       });
     },
     onSuccess: () => {

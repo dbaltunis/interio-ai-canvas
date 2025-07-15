@@ -26,6 +26,7 @@ serve(async (req) => {
       console.error('OAuth error:', error);
       return new Response(
         `<html><body><script>
+          console.log('Sending auth error to parent');
           if (window.opener) {
             window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: '${error}' }, '*');
           }
@@ -36,10 +37,21 @@ serve(async (req) => {
     }
 
     if (!code) {
-      throw new Error('No authorization code received');
+      console.error('No authorization code received');
+      return new Response(
+        `<html><body><script>
+          console.log('Sending no code error to parent');
+          if (window.opener) {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: 'No authorization code received' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: No authorization code received</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
     }
 
     // Exchange code for tokens
+    console.log('Exchanging code for tokens...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -57,27 +69,22 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('Token exchange failed:', errorText);
-      throw new Error('Failed to exchange code for tokens');
+      return new Response(
+        `<html><body><script>
+          console.log('Sending token exchange error to parent');
+          if (window.opener) {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: 'Failed to exchange authorization code' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: Token exchange failed</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
     }
 
     const tokens = await tokenResponse.json();
     console.log('Token exchange successful');
-    
-    // Get user info from Google
-    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        'Authorization': `Bearer ${tokens.access_token}`,
-      },
-    });
 
-    if (!userInfoResponse.ok) {
-      throw new Error('Failed to get user info from Google');
-    }
-
-    const userInfo = await userInfoResponse.json();
-    console.log('Got user info from Google');
-
-    // Create Supabase client
+    // Create Supabase client with service role key
     const supabaseClient = createClient(
       'https://ldgrcodffsalkevafbkb.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZ3Jjb2RmZnNhbGtldmFmYmtiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY5MDIwMSwiZXhwIjoyMDY2MjY2MjAxfQ.QMPtI88SaDNZY5g8V5x4mPCY5HnUZ55jlLN49x9aXW4'
@@ -87,10 +94,23 @@ serve(async (req) => {
     const userId = state;
     
     if (!userId) {
-      throw new Error('No user ID in state parameter');
+      console.error('No user ID in state parameter');
+      return new Response(
+        `<html><body><script>
+          console.log('Sending user ID error to parent');
+          if (window.opener) {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: 'Authentication state error' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: Invalid state</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
     }
 
     console.log('Storing integration for user:', userId);
+
+    // Calculate token expiration
+    const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000)).toISOString();
 
     // Store or update the integration
     const { error: dbError } = await supabaseClient
@@ -99,7 +119,7 @@ serve(async (req) => {
         user_id: userId,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
-        token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+        token_expires_at: expiresAt,
         calendar_id: 'primary',
         sync_enabled: true,
         updated_at: new Date().toISOString(),
@@ -109,7 +129,16 @@ serve(async (req) => {
 
     if (dbError) {
       console.error('Database error:', dbError);
-      throw new Error('Failed to save integration');
+      return new Response(
+        `<html><body><script>
+          console.log('Sending database error to parent');
+          if (window.opener) {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: 'Failed to save integration' }, '*');
+          }
+          window.close();
+        </script><p>Authentication failed: Database error</p></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
     }
 
     console.log('Integration saved successfully');
@@ -137,9 +166,9 @@ serve(async (req) => {
       `<html>
         <body>
           <script>
-            console.log('Sending error message to parent window');
+            console.log('Sending unexpected error to parent window');
             if (window.opener) {
-              window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: '${error.message}' }, '*');
+              window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: 'Unexpected error occurred' }, '*');
             }
             setTimeout(() => window.close(), 1000);
           </script>
