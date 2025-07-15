@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export interface EmailTemplate {
+export interface EmailTemplateScheduler {
   id: string;
   user_id: string;
   scheduler_id: string | null;
@@ -32,7 +32,7 @@ export const useEmailTemplates = (schedulerId?: string) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as EmailTemplate[];
+      return data as EmailTemplateScheduler[];
     },
     enabled: !!schedulerId,
   });
@@ -43,7 +43,7 @@ export const useCreateEmailTemplate = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (templateData: Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+    mutationFn: async (templateData: Omit<EmailTemplateScheduler, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
@@ -78,7 +78,7 @@ export const useUpdateEmailTemplate = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<EmailTemplate> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<EmailTemplateScheduler> & { id: string }) => {
       const { data, error } = await supabase
         .from('email_templates_scheduler')
         .update(updates)

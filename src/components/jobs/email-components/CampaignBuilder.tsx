@@ -66,7 +66,7 @@ export const CampaignBuilder = ({
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: clients } = useClients();
-  const { data: templates } = useEmailTemplates();
+  const { data: emailTemplates } = useEmailTemplates();
   const { toast } = useToast();
 
   const steps = [
@@ -172,7 +172,7 @@ export const CampaignBuilder = ({
     }
     
     const template = predefinedEmailTemplates.find(t => t.id === templateId) || 
-                    templates?.find(t => t.id === templateId);
+                    emailTemplates?.find(t => t.id === templateId);
     
     if (template) {
       setCampaignData(prev => ({
@@ -341,7 +341,7 @@ export const CampaignBuilder = ({
                             {template.name}
                           </SelectItem>
                         ))}
-                        {templates?.map((template) => (
+                        {emailTemplates?.map((template) => (
                           <SelectItem key={template.id} value={template.id}>
                             {template.name}
                           </SelectItem>

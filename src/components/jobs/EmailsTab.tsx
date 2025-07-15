@@ -53,7 +53,7 @@ export const EmailsTab = () => {
   const { data: emails, isLoading: emailsLoading } = useEmails();
   const { data: emailKPIs, isLoading: kpisLoading } = useEmailKPIs();
   const { data: campaigns } = useEmailCampaigns();
-  const { data: templates } = useEmailTemplates();
+  const { data: emailTemplates } = useEmailTemplates();
   const { data: emailSettings } = useEmailSettings();
   const sendEmailMutation = useSendEmail();
   const createCampaignMutation = useCreateEmailCampaign();
@@ -249,7 +249,7 @@ export const EmailsTab = () => {
         {/* Templates Tab */}
         <TabsContent value="templates">
           <EmailTemplatesTab
-            templates={templates}
+            templates={emailTemplates}
             onCreateTemplate={(templateData) => createTemplateMutation.mutate(templateData)}
             onApplyTemplate={handleApplyTemplate}
             isCreating={createTemplateMutation.isPending}
