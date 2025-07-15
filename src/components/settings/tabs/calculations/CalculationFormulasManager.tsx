@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { useCalculationFormulas } from "@/hooks/useCalculationFormulas";
 import { CalculationFormulaForm } from "./CalculationFormulaForm";
 import { CalculationFormulasList } from "./CalculationFormulasList";
+import { DefaultFormulasLoader } from "./DefaultFormulasLoader";
 
 export const CalculationFormulasManager = () => {
   const { data: formulas, isLoading, createFormula, updateFormula, deleteFormula } = useCalculationFormulas();
@@ -64,6 +65,13 @@ export const CalculationFormulasManager = () => {
                   setEditingFormula(null);
                 }}
               />
+            </div>
+          )}
+
+          {/* Default Formulas Loader */}
+          {!isCreating && !editingFormula && (
+            <div className="mb-6">
+              <DefaultFormulasLoader />
             </div>
           )}
 
