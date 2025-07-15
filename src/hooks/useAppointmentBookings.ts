@@ -30,26 +30,66 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: async (booking: AppointmentBookingInsert) => {
+      console.log('Creating booking:', booking);
+      
       const { data, error } = await supabase
         .from("appointments_booked")
         .insert(booking)
-        .select()
+        .select(`
+          *,
+          appointment_schedulers (
+            name,
+            user_id
+          )
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Booking creation error:', error);
+        throw error;
+      }
+      
+      console.log('Booking created successfully:', data);
+
+      // Send confirmation email and sync to calendar
+      try {
+        await supabase.functions.invoke('send-booking-confirmation', {
+          body: {
+            bookingId: data.id,
+            schedulerName: data.appointment_schedulers.name,
+            customerName: data.customer_name,
+            customerEmail: data.customer_email,
+            appointmentDate: data.appointment_date,
+            appointmentTime: data.appointment_time,
+            timezone: data.customer_timezone || 'UTC',
+            locationType: data.location_type,
+            customMessage: data.booking_message
+          }
+        });
+
+        // Sync to Google Calendar if integration is enabled
+        await supabase.functions.invoke('sync-to-google-calendar', {
+          body: { appointmentId: data.id }
+        });
+      } catch (emailError) {
+        console.error('Failed to send confirmation or sync calendar:', emailError);
+        // Don't throw error here as booking was successful
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["scheduler-bookings", data.scheduler_id] });
       toast({
         title: "Booking Confirmed!",
-        description: "Your appointment has been successfully booked.",
+        description: "Your appointment has been successfully booked and a confirmation email has been sent.",
       });
     },
     onError: (error) => {
+      console.error('Booking mutation error:', error);
       toast({
         title: "Booking Failed",
-        description: error.message,
+        description: error.message || "Failed to create booking. Please try again.",
         variant: "destructive",
       });
     },

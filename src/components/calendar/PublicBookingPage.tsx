@@ -1,22 +1,26 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Clock, MapPin, Video, User, Mail, Phone } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Video, User, Mail, Phone, Globe } from "lucide-react";
 import { format, addDays, isSameDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { usePublicScheduler } from "@/hooks/useAppointmentSchedulers";
 import { useCreateBooking } from "@/hooks/useAppointmentBookings";
+import { useTimezone } from "@/hooks/useTimezone";
 
 interface BookingFormData {
   name: string;
   email: string;
   phone: string;
   notes: string;
+  message: string;
 }
 
 export const PublicBookingPage = () => {
@@ -24,6 +28,7 @@ export const PublicBookingPage = () => {
   const { toast } = useToast();
   const { data: scheduler, isLoading, error } = usePublicScheduler(schedulerSlug || '');
   const createBooking = useCreateBooking();
+  const { userTimezone, formatTimeInTimezone } = useTimezone();
 
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>("");
@@ -32,7 +37,8 @@ export const PublicBookingPage = () => {
     name: "",
     email: "",
     phone: "",
-    notes: ""
+    notes: "",
+    message: ""
   });
   const [step, setStep] = useState<'datetime' | 'location' | 'details' | 'confirmation'>('datetime');
 
@@ -51,9 +57,9 @@ export const PublicBookingPage = () => {
       return [];
     }
     
-    const slots: string[] = [];
+    const slots: Array<{time: string, displayTime: string}> = [];
     
-    // Use the EXACT time slots configured by the user - don't generate additional slots
+    // Use the EXACT time slots configured by the user
     dayAvailability.timeSlots.forEach((timeSlot: any) => {
       console.log('Processing configured time slot:', timeSlot);
       
@@ -71,12 +77,16 @@ export const PublicBookingPage = () => {
       const isInFuture = !isToday || slotDateTime > now;
       
       if (isInFuture) {
-        slots.push(timeString);
+        const displayTime = formatTimeInTimezone(timeString, userTimezone);
+        slots.push({
+          time: timeString,
+          displayTime: displayTime
+        });
       }
     });
     
     console.log('Generated exact time slots:', slots);
-    return slots.sort();
+    return slots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const handleDateTimeNext = () => {
@@ -119,7 +129,10 @@ export const PublicBookingPage = () => {
         appointment_date: format(selectedDate, 'yyyy-MM-dd'),
         appointment_time: selectedTime,
         location_type: selectedLocation,
-        notes: formData.notes
+        notes: formData.notes,
+        booking_message: formData.message,
+        customer_timezone: userTimezone,
+        appointment_timezone: userTimezone
       });
       
       setStep('confirmation');
@@ -165,7 +178,10 @@ export const PublicBookingPage = () => {
             <div className="p-4 bg-green-50 rounded-lg">
               <h3 className="font-medium">{scheduler.name}</h3>
               <p className="text-sm text-gray-600">
-                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
+                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </p>
+              <p className="text-sm text-gray-600">
+                {formatTimeInTimezone(selectedTime, userTimezone)} ({userTimezone})
               </p>
             </div>
             <p className="text-sm text-gray-600">
@@ -196,9 +212,15 @@ export const PublicBookingPage = () => {
               )}
             </div>
           </div>
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm">{scheduler.duration} minutes</span>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{scheduler.duration} minutes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              <span className="text-sm">Your timezone: {userTimezone}</span>
+            </div>
           </div>
         </div>
 
@@ -225,6 +247,10 @@ export const PublicBookingPage = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Select Date & Time</CardTitle>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Globe className="w-4 h-4" />
+                    <span>Times shown in your timezone ({userTimezone})</span>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Calendar
@@ -249,15 +275,16 @@ export const PublicBookingPage = () => {
                   {selectedDate && (
                     <div>
                       <Label>Available Times</Label>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        {generateTimeSlots(selectedDate).map((time) => (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {generateTimeSlots(selectedDate).map((slot) => (
                           <Button
-                            key={time}
-                            variant={selectedTime === time ? "default" : "outline"}
+                            key={slot.time}
+                            variant={selectedTime === slot.time ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setSelectedTime(time)}
+                            onClick={() => setSelectedTime(slot.time)}
+                            className="text-xs"
                           >
-                            {time}
+                            {slot.displayTime}
                           </Button>
                         ))}
                       </div>
@@ -375,12 +402,24 @@ export const PublicBookingPage = () => {
                   </div>
 
                   <div>
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      value={formData.message}
+                      onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                      placeholder="Tell us about your needs or questions"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
                     <Label htmlFor="notes">Additional Notes</Label>
-                    <Input
+                    <Textarea
                       id="notes"
                       value={formData.notes}
                       onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Anything you'd like us to know?"
+                      placeholder="Anything else you'd like us to know?"
+                      rows={2}
                     />
                   </div>
 
@@ -418,7 +457,7 @@ export const PublicBookingPage = () => {
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-gray-400" />
                   <span className="text-sm">
-                    {selectedTime || 'Select time'} ({scheduler.duration} minutes)
+                    {selectedTime ? `${formatTimeInTimezone(selectedTime, userTimezone)} (${userTimezone})` : 'Select time'} ({scheduler.duration} minutes)
                   </span>
                 </div>
 

@@ -142,10 +142,13 @@ export type Database = {
         Row: {
           appointment_date: string
           appointment_time: string
+          appointment_timezone: string | null
+          booking_message: string | null
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string | null
+          customer_timezone: string | null
           id: string
           location_type: string
           notes: string | null
@@ -156,10 +159,13 @@ export type Database = {
         Insert: {
           appointment_date: string
           appointment_time: string
+          appointment_timezone?: string | null
+          booking_message?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone?: string | null
+          customer_timezone?: string | null
           id?: string
           location_type: string
           notes?: string | null
@@ -170,10 +176,13 @@ export type Database = {
         Update: {
           appointment_date?: string
           appointment_time?: string
+          appointment_timezone?: string | null
+          booking_message?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
+          customer_timezone?: string | null
           id?: string
           location_type?: string
           notes?: string | null
@@ -304,6 +313,47 @@ export type Database = {
           variables?: Json | null
         }
         Relationships: []
+      }
+      calendar_integration_settings: {
+        Row: {
+          created_at: string
+          google_calendar_id: string | null
+          id: string
+          scheduler_id: string | null
+          sync_enabled: boolean
+          updated_at: string
+          user_id: string
+          visibility_setting: string
+        }
+        Insert: {
+          created_at?: string
+          google_calendar_id?: string | null
+          id?: string
+          scheduler_id?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          visibility_setting?: string
+        }
+        Update: {
+          created_at?: string
+          google_calendar_id?: string | null
+          id?: string
+          scheduler_id?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          visibility_setting?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_integration_settings_scheduler_id_fkey"
+            columns: ["scheduler_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_schedulers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       canvas_designs: {
         Row: {
@@ -488,6 +538,44 @@ export type Database = {
         }
         Relationships: []
       }
+      email_reminders: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          reminder_type: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          reminder_type: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          reminder_type?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_reminders_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_booked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_settings: {
         Row: {
           active: boolean
@@ -562,6 +650,50 @@ export type Database = {
           variables?: Json | null
         }
         Relationships: []
+      }
+      email_templates_scheduler: {
+        Row: {
+          active: boolean
+          content: string
+          created_at: string
+          id: string
+          scheduler_id: string | null
+          subject: string
+          template_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          created_at?: string
+          id?: string
+          scheduler_id?: string | null
+          subject: string
+          template_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          created_at?: string
+          id?: string
+          scheduler_id?: string | null
+          subject?: string
+          template_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_scheduler_scheduler_id_fkey"
+            columns: ["scheduler_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_schedulers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       emails: {
         Row: {
