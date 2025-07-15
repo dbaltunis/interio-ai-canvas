@@ -8,7 +8,8 @@ export interface HeadingOption {
   name: string;
   fullness: number;
   price: number;
-  unit: string;
+  type: string;
+  extras?: any;
   description?: string;
   active: boolean;
   created_at: string;
