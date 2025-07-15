@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 
@@ -42,39 +43,37 @@ export const useCalculatorLogic = (
     const bottomHem = hemConfig?.bottom_hem || 10;
     const pooling = parseFloat(formData.curtainPooling || "0");
 
-    // Calculate fabric requirements for display (this is for fabric calculation)
-    const totalFabricDrop = parsedCurtainDrop + pooling + headerHem + bottomHem;
-    const totalFabricWidth = parsedRailWidth * parsedHeadingFullness;
+    // Calculate fabric requirements - FIXED CALCULATION
+    const fabricDropWithAllowances = parsedCurtainDrop + pooling + headerHem + bottomHem;
+    const curtainWidthPerPanel = parsedRailWidth / parsedQuantity;
+    const fabricWidthRequiredPerPanel = curtainWidthPerPanel * parsedHeadingFullness;
     
-    console.log("📏 Fabric requirements:", {
+    console.log("📏 Fabric requirements per panel:", {
       curtainDrop: parsedCurtainDrop + "cm",
       pooling: pooling + "cm",
       headerHem: headerHem + "cm",
       bottomHem: bottomHem + "cm",
-      totalFabricDrop: totalFabricDrop + "cm",
-      railWidth: parsedRailWidth + "cm",
-      headingFullness: parsedHeadingFullness,
-      totalFabricWidth: totalFabricWidth + "cm"
+      fabricDropWithAllowances: fabricDropWithAllowances + "cm",
+      curtainWidthPerPanel: curtainWidthPerPanel + "cm",
+      fabricWidthRequiredPerPanel: fabricWidthRequiredPerPanel + "cm"
     });
 
-    // Calculate how many fabric widths are needed
-    const dropsPerWidth = Math.floor(parsedFabricWidth / (parsedRailWidth / parsedQuantity));
-    const widthsRequired = Math.ceil(parsedQuantity / Math.max(dropsPerWidth, 1));
+    // Calculate how many fabric widths needed per panel
+    const fabricWidthsNeededPerPanel = Math.ceil(fabricWidthRequiredPerPanel / parsedFabricWidth);
     
-    // Total fabric length needed in cm
-    const totalFabricLengthCm = widthsRequired * totalFabricDrop;
+    // Total fabric length needed for all panels
+    const totalFabricLengthCm = fabricDropWithAllowances * fabricWidthsNeededPerPanel * parsedQuantity;
     
     // Convert to yards (1 yard = 91.44 cm)
     const totalFabricYards = totalFabricLengthCm / 91.44;
     
     console.log("🧮 Fabric calculation:", {
-      dropsPerWidth: dropsPerWidth,
-      widthsRequired: widthsRequired,
+      fabricWidthsNeededPerPanel: fabricWidthsNeededPerPanel,
       totalFabricLengthCm: totalFabricLengthCm + "cm",
       totalFabricYards: totalFabricYards.toFixed(2) + " yards"
     });
 
-    // Calculate fabric cost
+    // Calculate fabric cost - FIXED
     const fabricCost = totalFabricYards * parsedFabricPricePerYard;
 
     // Calculate lining cost
@@ -97,32 +96,30 @@ export const useCalculatorLogic = (
                            matchingTemplate.calculation_rules?.selectedPricingGrid;
       
       if (pricingGridId && gridData) {
-        // Use EXACT values from the form - no rounding, no conversion
         console.log("🎯 Using exact form values for pricing grid lookup:");
         console.log("  Width from form:", parsedRailWidth + "cm");
         console.log("  Drop from form:", parsedCurtainDrop + "cm");
         
         manufacturingCost = getPriceFromGrid(
           gridData.grid_data, 
-          parsedRailWidth,  // Use exact width from form
-          parsedCurtainDrop // Use exact drop from form
-        );
+          parsedRailWidth,
+          parsedCurtainDrop
+        ) * parsedQuantity; // Multiply by quantity for total cost
         
         console.log("🏭 Manufacturing cost from pricing grid:", {
           pricingGridId,
           exactWidth: parsedRailWidth + "cm",
           exactDrop: parsedCurtainDrop + "cm",
-          manufacturingCost: "£" + manufacturingCost
+          costPerPanel: manufacturingCost / parsedQuantity,
+          totalManufacturingCost: "£" + manufacturingCost
         });
       }
     } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
       const baseCost = parseFloat(matchingTemplate.calculation_rules.baseMakingCost.toString()) || 0;
       
       if (matchingTemplate.pricing_unit === 'per-linear-meter') {
-        // Cost per linear meter of rail width
         manufacturingCost = baseCost * (parsedRailWidth / 100) * parsedQuantity;
       } else {
-        // Fixed cost per unit
         manufacturingCost = baseCost * parsedQuantity;
       }
       
@@ -172,11 +169,11 @@ export const useCalculatorLogic = (
       details: {
         railWidth: parsedRailWidth,
         curtainDrop: parsedCurtainDrop,
-        fabricDropRequirements: totalFabricDrop,
-        fabricWidthRequirements: totalFabricWidth,
+        fabricDropRequirements: fabricDropWithAllowances,
+        fabricWidthRequirements: fabricWidthRequiredPerPanel * parsedQuantity,
         fabricYards: totalFabricYards,
-        widthsRequired: widthsRequired,
-        dropsPerWidth: dropsPerWidth,
+        widthsRequired: fabricWidthsNeededPerPanel * parsedQuantity,
+        dropsPerWidth: fabricWidthsNeededPerPanel,
         fabricPricePerYard: parsedFabricPricePerYard,
         liningPricePerYard: liningPricePerYard,
         headerHem,

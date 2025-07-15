@@ -33,23 +33,25 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
     };
   }
 
-  // Calculate fabric requirements with proper allowances
+  // Calculate fabric requirements with proper allowances - FIXED
   const headerHem = 15; // cm
   const bottomHem = 10; // cm
-  const fabricLengthRequired = curtainDrop + pooling + headerHem + bottomHem; // Total drop in cm
-  const fabricWidthRequired = railWidth * fullness; // Total width needed in cm
+  const fabricDropWithAllowances = curtainDrop + pooling + headerHem + bottomHem;
   
-  // Calculate drops per fabric width
-  const dropsPerWidth = Math.floor(fabricWidth / (railWidth / quantity));
-  const widthsRequired = Math.ceil(quantity / Math.max(dropsPerWidth, 1));
+  // Calculate per panel requirements
+  const curtainWidthPerPanel = railWidth / quantity;
+  const fabricWidthRequiredPerPanel = curtainWidthPerPanel * fullness;
+  
+  // Calculate how many fabric widths needed per panel
+  const fabricWidthsNeededPerPanel = Math.ceil(fabricWidthRequiredPerPanel / fabricWidth);
   
   // Total fabric length in cm
-  const totalFabricLengthCm = widthsRequired * fabricLengthRequired;
+  const totalFabricLengthCm = fabricDropWithAllowances * fabricWidthsNeededPerPanel * quantity;
   
   // Convert to yards (1 yard = 91.44 cm)
   const totalFabricYards = totalFabricLengthCm / 91.44;
   
-  // Fabric cost calculation
+  // Fabric cost calculation - FIXED
   const fabricCost = totalFabricYards * fabricPricePerYard;
   
   // Labor/manufacturing cost calculation
@@ -60,7 +62,7 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
     const baseMakingCost = parseFloat(rules.baseMakingCost) || 0;
     
     if (productTemplate.pricing_unit === 'per-linear-meter') {
-      laborCost = baseMakingCost * (railWidth / 100) * quantity; // Convert cm to meters
+      laborCost = baseMakingCost * (railWidth / 100) * quantity;
     } else {
       laborCost = baseMakingCost * quantity;
     }
@@ -99,9 +101,10 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
   const total = subtotal * (1 + (formData.markupPercentage || 0) / 100);
   
   // Detailed calculations for display
-  const fabricCalculation = `${railWidth}cm × ${fullness} fullness = ${fabricWidthRequired.toFixed(0)}cm width needed. ` +
-    `Length: ${curtainDrop}cm + ${pooling}cm pooling + ${headerHem + bottomHem}cm allowances = ${fabricLengthRequired.toFixed(0)}cm. ` +
-    `${widthsRequired} width(s) × ${fabricLengthRequired.toFixed(0)}cm = ${totalFabricLengthCm.toFixed(0)}cm = ${totalFabricYards.toFixed(2)} yards × £${fabricPricePerYard.toFixed(2)} = £${fabricCost.toFixed(2)}`;
+  const fabricCalculation = `${railWidth}cm rail ÷ ${quantity} panels = ${curtainWidthPerPanel.toFixed(0)}cm per panel. ` +
+    `${curtainWidthPerPanel.toFixed(0)}cm × ${fullness} fullness = ${fabricWidthRequiredPerPanel.toFixed(0)}cm width needed per panel. ` +
+    `Drop: ${curtainDrop}cm + ${pooling}cm pooling + ${headerHem + bottomHem}cm allowances = ${fabricDropWithAllowances.toFixed(0)}cm. ` +
+    `${fabricWidthsNeededPerPanel} width(s) per panel × ${quantity} panels × ${fabricDropWithAllowances.toFixed(0)}cm = ${totalFabricLengthCm.toFixed(0)}cm = ${totalFabricYards.toFixed(2)} yards × £${fabricPricePerYard.toFixed(2)} = £${fabricCost.toFixed(2)}`;
   
   const laborCalculation = `Manufacturing cost: £${laborCost.toFixed(2)} for ${quantity} panel(s)`;
   
@@ -119,10 +122,10 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
       featureBreakdown,
       totalUnits: quantity,
       fabricPricePerYard,
-      fabricWidthRequired,
-      fabricLengthRequired,
-      dropsPerWidth,
-      widthsRequired
+      fabricWidthRequired: fabricWidthRequiredPerPanel * quantity,
+      fabricLengthRequired: fabricDropWithAllowances,
+      dropsPerWidth: fabricWidthsNeededPerPanel,
+      widthsRequired: fabricWidthsNeededPerPanel * quantity
     }
   };
 };
