@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CalculationFormulaFormProps {
   formula?: any;
@@ -62,18 +63,17 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
 
     setIsGeneratingFormula(true);
     try {
-      const response = await fetch('/api/generate-formula', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('generate-formula', {
+        body: {
           description: formData.description,
           category: formData.category,
           outputUnit: formData.output_unit
-        })
+        }
       });
 
-      const data = await response.json();
-      if (data.formula) {
+      if (error) throw error;
+
+      if (data?.formula) {
         setFormData(prev => ({
           ...prev,
           formula_expression: data.formula
@@ -84,6 +84,7 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
         });
       }
     } catch (error) {
+      console.error('Error generating formula:', error);
       toast({
         title: "Generation Failed",
         description: "Failed to generate formula. Please try again.",
@@ -106,17 +107,16 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
 
     setIsGeneratingDescription(true);
     try {
-      const response = await fetch('/api/generate-description', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('generate-description', {
+        body: {
           category: formData.category,
           name: formData.name
-        })
+        }
       });
 
-      const data = await response.json();
-      if (data.description) {
+      if (error) throw error;
+
+      if (data?.description) {
         setFormData(prev => ({
           ...prev,
           description: data.description
@@ -127,6 +127,7 @@ export const CalculationFormulaForm = ({ formula, onSave, onCancel }: Calculatio
         });
       }
     } catch (error) {
+      console.error('Error generating description:', error);
       toast({
         title: "Generation Failed",
         description: "Failed to generate description. Please try again.",
