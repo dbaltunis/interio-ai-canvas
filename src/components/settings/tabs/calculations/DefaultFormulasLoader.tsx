@@ -59,8 +59,8 @@ export const DefaultFormulasLoader = () => {
           Industry Standard Formulas
         </CardTitle>
         <CardDescription>
-          Load proven fabric and pricing calculation formulas used by professional curtain makers. 
-          Includes step-by-step calculations for fabric usage, costs, and complete project pricing.
+          Load proven fabric, pricing, and labor calculation formulas used by professional curtain makers. 
+          Includes step-by-step calculations for fabric usage, costs, labor time, and complete project pricing.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,9 +94,17 @@ export const DefaultFormulasLoader = () => {
               </div>
 
               <div>
-                <p className="font-medium text-purple-700 mb-1">⏱️ Labor Calculations ({laborFormulas.length} formulas):</p>
+                <p className="font-medium text-purple-700 mb-1">👷‍♀️ Labor Calculations ({laborFormulas.length} formulas):</p>
                 <ul className="space-y-1 ml-4 text-xs">
-                  <li>• <strong>Time Estimation</strong> - Based on fabric quantity and complexity</li>
+                  <li>• <strong>Labor Per Width</strong> - Common for traditional curtains</li>
+                  <li>• <strong>Labor Per Meter</strong> - Often used for wave curtains</li>
+                  <li>• <strong>Fixed Rate Per Pair</strong> - Best for simple projects</li>
+                  <li>• <strong>Lining & Heading Labor</strong> - Separate labor charges</li>
+                  <li>• <strong>Panel Joining</strong> - Cost per join when needed</li>
+                  <li>• <strong>Roman Blind Labor</strong> - Per meter and tiered pricing</li>
+                  <li>• <strong>Installation Labor</strong> - Per meter and fixed rates</li>
+                  <li>• <strong>Total Labor Cost</strong> - Complete labor breakdown</li>
+                  <li>• <strong>Time Estimation</strong> - Hours based on complexity</li>
                 </ul>
               </div>
             </div>

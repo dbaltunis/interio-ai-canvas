@@ -1,3 +1,4 @@
+
 import { CalculationFormula } from "@/hooks/useCalculationFormulas";
 
 export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_at' | 'updated_at' | 'user_id'>[] = [
@@ -185,6 +186,133 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
     variables: [
       { name: "subtotal", type: "number", unit: "currency", description: "Total cost before VAT" },
       { name: "vat_rate", type: "number", unit: "percentage", description: "VAT rate as percentage", default: 20 }
+    ],
+    active: true
+  },
+  
+  // === LABOR CALCULATION FORMULAS ===
+  {
+    name: "Labor Cost - Per Width Method",
+    category: "labor_calculation",
+    formula_expression: "number_of_widths * labor_rate_per_width",
+    description: "Calculate labor cost based on number of fabric widths. Common for pinch pleats, pencil pleats, and traditional curtain types.",
+    variables: [
+      { name: "number_of_widths", type: "number", unit: "widths", description: "Number of fabric widths needed" },
+      { name: "labor_rate_per_width", type: "number", unit: "currency", description: "Labor rate per fabric width", default: 18 }
+    ],
+    active: true
+  },
+  {
+    name: "Labor Cost - Per Meter Track",
+    category: "labor_calculation",
+    formula_expression: "(track_width / 100) * labor_rate_per_meter",
+    description: "Calculate labor cost based on track width in meters. Often used for wave curtains or when track length reflects work better than widths.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "labor_rate_per_meter", type: "number", unit: "currency", description: "Labor rate per meter of track", default: 35 }
+    ],
+    active: true
+  },
+  {
+    name: "Labor Cost - Fixed Rate per Pair",
+    category: "labor_calculation",
+    formula_expression: "number_of_pairs * flat_rate_per_pair",
+    description: "Calculate labor cost using a fixed rate per curtain pair. Best for smaller projects or simple sheers.",
+    variables: [
+      { name: "number_of_pairs", type: "number", unit: "pairs", description: "Number of curtain pairs" },
+      { name: "flat_rate_per_pair", type: "number", unit: "currency", description: "Fixed labor rate per curtain pair", default: 90 }
+    ],
+    active: true
+  },
+  {
+    name: "Lining Labor Cost",
+    category: "labor_calculation",
+    formula_expression: "total_meterage * lining_labor_rate",
+    description: "Calculate additional labor cost for lining when charged separately from main sewing work.",
+    variables: [
+      { name: "total_meterage", type: "number", unit: "meters", description: "Total fabric meterage used" },
+      { name: "lining_labor_rate", type: "number", unit: "currency", description: "Labor rate per meter for lining", default: 2 }
+    ],
+    active: true
+  },
+  {
+    name: "Heading Labor Cost",
+    category: "labor_calculation",
+    formula_expression: "(track_width / 100) * heading_labor_rate",
+    description: "Calculate labor cost for pleat/heading construction when charged separately from main sewing.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "heading_labor_rate", type: "number", unit: "currency", description: "Labor rate per meter for heading work", default: 10 }
+    ],
+    active: true
+  },
+  {
+    name: "Panel Joining Labor Cost",
+    category: "labor_calculation",
+    formula_expression: "number_of_joins * rate_per_join",
+    description: "Calculate labor cost for joining fabric panels together when charged separately.",
+    variables: [
+      { name: "number_of_joins", type: "number", unit: "joins", description: "Number of panel joins needed" },
+      { name: "rate_per_join", type: "number", unit: "currency", description: "Labor rate per panel join", default: 5 }
+    ],
+    active: true
+  },
+  {
+    name: "Roman Blind Labor Cost",
+    category: "labor_calculation",
+    formula_expression: "(blind_width / 100) * blind_labor_rate",
+    description: "Calculate labor cost for Roman blinds based on blind width in meters.",
+    variables: [
+      { name: "blind_width", type: "number", unit: "cm", description: "Width of the Roman blind" },
+      { name: "blind_labor_rate", type: "number", unit: "currency", description: "Labor rate per meter for Roman blinds", default: 45 }
+    ],
+    active: true
+  },
+  {
+    name: "Roman Blind Labor - Tiered Pricing",
+    category: "labor_calculation",
+    formula_expression: "blind_width <= 120 ? 60 : (blind_width <= 180 ? 75 : (blind_width <= 240 ? 90 : 110))",
+    description: "Calculate Roman blind labor using tiered pricing: Up to 1.2m = £60, 1.3-1.8m = £75, 1.9-2.4m = £90, Over 2.4m = £110.",
+    variables: [
+      { name: "blind_width", type: "number", unit: "cm", description: "Width of the Roman blind in centimeters" }
+    ],
+    active: true
+  },
+  {
+    name: "Installation Labor - Per Meter",
+    category: "labor_calculation",
+    formula_expression: "(track_width / 100) * installation_labor_rate",
+    description: "Calculate installation labor cost based on track width in meters.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "installation_labor_rate", type: "number", unit: "currency", description: "Installation labor rate per meter", default: 25 }
+    ],
+    active: true
+  },
+  {
+    name: "Installation Labor - Fixed Rate",
+    category: "labor_calculation",
+    formula_expression: "curtain_sets * curtain_install_rate + blind_units * blind_install_rate",
+    description: "Calculate installation labor using fixed rates per item installed.",
+    variables: [
+      { name: "curtain_sets", type: "number", unit: "sets", description: "Number of curtain sets to install", default: 0 },
+      { name: "curtain_install_rate", type: "number", unit: "currency", description: "Fixed rate per curtain set", default: 35 },
+      { name: "blind_units", type: "number", unit: "units", description: "Number of blinds to install", default: 0 },
+      { name: "blind_install_rate", type: "number", unit: "currency", description: "Fixed rate per blind", default: 25 }
+    ],
+    active: true
+  },
+  {
+    name: "Total Labor Cost",
+    category: "labor_calculation",
+    formula_expression: "base_sewing_cost + lining_labor_cost + heading_labor_cost + joining_cost + installation_labor_cost",
+    description: "Calculate total labor cost by adding all labor components together.",
+    variables: [
+      { name: "base_sewing_cost", type: "number", unit: "currency", description: "Base sewing/making labor cost" },
+      { name: "lining_labor_cost", type: "number", unit: "currency", description: "Lining labor cost", default: 0 },
+      { name: "heading_labor_cost", type: "number", unit: "currency", description: "Heading/pleating labor cost", default: 0 },
+      { name: "joining_cost", type: "number", unit: "currency", description: "Panel joining cost", default: 0 },
+      { name: "installation_labor_cost", type: "number", unit: "currency", description: "Installation labor cost", default: 0 }
     ],
     active: true
   },
