@@ -33,28 +33,40 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
     };
   }
 
-  // Calculate fabric requirements with proper allowances - FIXED
-  const headerHem = 15; // cm
-  const bottomHem = 10; // cm
-  const fabricDropWithAllowances = curtainDrop + pooling + headerHem + bottomHem;
-  
-  // Calculate per panel requirements
-  const curtainWidthPerPanel = railWidth / quantity;
-  const fabricWidthRequiredPerPanel = curtainWidthPerPanel * fullness;
-  
-  // Calculate how many fabric widths needed per panel
-  const fabricWidthsNeededPerPanel = Math.ceil(fabricWidthRequiredPerPanel / fabricWidth);
-  
-  // Total fabric length in cm
-  const totalFabricLengthCm = fabricDropWithAllowances * fabricWidthsNeededPerPanel * quantity;
-  
-  // Convert to yards (1 yard = 91.44 cm)
-  const totalFabricYards = totalFabricLengthCm / 91.44;
-  
-  // Fabric cost calculation - FIXED
+  // Determine if this is a blind or curtain treatment
+  const treatmentName = productTemplate?.name?.toLowerCase() || '';
+  const isBlind = treatmentName.includes('blind') || productTemplate?.product_type?.toLowerCase().includes('blind');
+
+  let totalFabricYards = 0;
+  let fabricCalculation = "";
+
+  if (isBlind) {
+    // For blinds: simple area calculation with minimal waste
+    const fabricAreaCm = railWidth * curtainDrop;
+    const fabricAreaYards = fabricAreaCm / (91.44 * 91.44); // Convert cm² to yards²
+    totalFabricYards = fabricAreaYards * quantity;
+    
+    fabricCalculation = `Blind fabric: ${railWidth}cm × ${curtainDrop}cm = ${fabricAreaCm}cm² per blind × ${quantity} = ${totalFabricYards.toFixed(2)} yards`;
+  } else {
+    // For curtains: traditional calculation with hems and fullness
+    const headerHem = 15;
+    const bottomHem = 10;
+    const fabricDropWithAllowances = curtainDrop + pooling + headerHem + bottomHem;
+    
+    const curtainWidthPerPanel = railWidth / quantity;
+    const fabricWidthRequiredPerPanel = curtainWidthPerPanel * fullness;
+    
+    const fabricWidthsNeededPerPanel = Math.ceil(fabricWidthRequiredPerPanel / fabricWidth);
+    const totalFabricLengthCm = fabricDropWithAllowances * fabricWidthsNeededPerPanel * quantity;
+    totalFabricYards = totalFabricLengthCm / 91.44;
+    
+    fabricCalculation = `Curtain fabric: ${railWidth}cm rail ÷ ${quantity} panels = ${curtainWidthPerPanel.toFixed(0)}cm per panel. ${curtainWidthPerPanel.toFixed(0)}cm × ${fullness} fullness = ${fabricWidthRequiredPerPanel.toFixed(0)}cm width needed per panel. Drop: ${curtainDrop}cm + ${pooling}cm pooling + ${headerHem + bottomHem}cm allowances = ${fabricDropWithAllowances.toFixed(0)}cm. ${fabricWidthsNeededPerPanel} width(s) per panel × ${quantity} panels × ${fabricDropWithAllowances.toFixed(0)}cm = ${totalFabricLengthCm.toFixed(0)}cm = ${totalFabricYards.toFixed(2)} yards`;
+  }
+
+  // Fabric cost calculation
   const fabricCost = totalFabricYards * fabricPricePerYard;
   
-  // Labor/manufacturing cost calculation
+  // Labor/manufacturing cost calculation - follow template settings exactly
   let laborCost = 0;
   
   if (productTemplate?.calculation_rules) {
@@ -67,8 +79,8 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
       laborCost = baseMakingCost * quantity;
     }
     
-    // Apply height surcharges if configured
-    if (rules.useHeightSurcharges) {
+    // Apply height surcharges only if configured and not for blinds
+    if (!isBlind && rules.useHeightSurcharges) {
       const baseHeightLimit = parseFloat(rules.baseHeightLimit) || 240;
       if (curtainDrop > baseHeightLimit) {
         const heightSurcharge = parseFloat(rules.heightSurcharge1) || 0;
@@ -78,14 +90,12 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
   } else {
     // Fallback labor calculation
     const laborRate = formData.laborRate || 45;
-    const baseHours = 2;
-    const sewingHours = (railWidth * curtainDrop * fullness) / 25000;
-    const totalHours = Math.max(3, baseHours + sewingHours);
-    laborCost = totalHours * laborRate * quantity;
+    const estimatedHours = isBlind ? 1.5 : 3; // Blinds take less time
+    laborCost = estimatedHours * laborRate * quantity;
   }
   
-  // Features cost calculation
-  const selectedFeatures = formData.additionalFeatures?.filter(f => f.selected) || [];
+  // Features cost calculation - no lining for blinds
+  const selectedFeatures = isBlind ? [] : (formData.additionalFeatures?.filter(f => f.selected) || []);
   const featureBreakdown = selectedFeatures.map(feature => ({
     name: feature.name,
     unitPrice: feature.price,
@@ -100,13 +110,7 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
   const subtotal = fabricCost + laborCost + featuresCost;
   const total = subtotal * (1 + (formData.markupPercentage || 0) / 100);
   
-  // Detailed calculations for display
-  const fabricCalculation = `${railWidth}cm rail ÷ ${quantity} panels = ${curtainWidthPerPanel.toFixed(0)}cm per panel. ` +
-    `${curtainWidthPerPanel.toFixed(0)}cm × ${fullness} fullness = ${fabricWidthRequiredPerPanel.toFixed(0)}cm width needed per panel. ` +
-    `Drop: ${curtainDrop}cm + ${pooling}cm pooling + ${headerHem + bottomHem}cm allowances = ${fabricDropWithAllowances.toFixed(0)}cm. ` +
-    `${fabricWidthsNeededPerPanel} width(s) per panel × ${quantity} panels × ${fabricDropWithAllowances.toFixed(0)}cm = ${totalFabricLengthCm.toFixed(0)}cm = ${totalFabricYards.toFixed(2)} yards × £${fabricPricePerYard.toFixed(2)} = £${fabricCost.toFixed(2)}`;
-  
-  const laborCalculation = `Manufacturing cost: £${laborCost.toFixed(2)} for ${quantity} panel(s)`;
+  const laborCalculation = `Manufacturing cost: £${laborCost.toFixed(2)} for ${quantity} ${isBlind ? 'blind(s)' : 'panel(s)'}`;
   
   return {
     fabricYards: Math.ceil(totalFabricYards * 10) / 10,
@@ -122,10 +126,10 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
       featureBreakdown,
       totalUnits: quantity,
       fabricPricePerYard,
-      fabricWidthRequired: fabricWidthRequiredPerPanel * quantity,
-      fabricLengthRequired: fabricDropWithAllowances,
-      dropsPerWidth: fabricWidthsNeededPerPanel,
-      widthsRequired: fabricWidthsNeededPerPanel * quantity
+      fabricWidthRequired: isBlind ? railWidth : (railWidth / quantity) * fullness * quantity,
+      fabricLengthRequired: isBlind ? curtainDrop : curtainDrop + pooling + 25,
+      dropsPerWidth: 1,
+      widthsRequired: isBlind ? 1 : Math.ceil((railWidth * fullness) / fabricWidth)
     }
   };
 };

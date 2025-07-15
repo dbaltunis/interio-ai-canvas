@@ -1,3 +1,4 @@
+
 import React, { useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -71,11 +72,9 @@ export const EnhancedTreatmentCalculator = ({
   // Apply template data when dialog opens
   useEffect(() => {
     if (isOpen && matchingTemplate) {
-      // Clear any existing draft and start fresh
       localStorage.removeItem(storageKey);
       resetToDefaults(matchingTemplate, businessSettings);
     } else if (isOpen && !matchingTemplate) {
-      // No template found, use defaults
       localStorage.removeItem(storageKey);
       resetToDefaults(null, businessSettings);
     }
@@ -106,8 +105,14 @@ export const EnhancedTreatmentCalculator = ({
     localStorage.removeItem(storageKey);
   }, [storageKey]);
 
-  // Get actual lining options based on template's lining component IDs
+  // Get actual lining options based on template's lining component IDs - ONLY FOR CURTAINS
   const liningOptions = React.useMemo(() => {
+    const isBlind = treatmentType?.toLowerCase().includes('blind');
+    
+    if (isBlind) {
+      return []; // No lining options for blinds
+    }
+    
     const templateLiningIds = matchingTemplate?.components?.lining ? 
       Object.keys(matchingTemplate.components.lining).filter(
         id => matchingTemplate.components.lining[id] === true
@@ -124,11 +129,15 @@ export const EnhancedTreatmentCalculator = ({
           { value: 'blackout', label: 'Blackout Lining', price: 35 },
           { value: 'thermal', label: 'Thermal Lining', price: 45 }
         ];
-  }, [matchingTemplate]);
+  }, [matchingTemplate, treatmentType]);
 
-  // Get actual heading options based on template's headings component IDs
+  // Get actual heading options based on template's headings component IDs - ONLY FOR CURTAINS
   const headingOptions = React.useMemo(() => {
-    if (!allHeadingOptions) return [];
+    const isBlind = treatmentType?.toLowerCase().includes('blind');
+    
+    if (isBlind || !allHeadingOptions) {
+      return []; // No heading options for blinds
+    }
     
     const templateHeadingIds = matchingTemplate?.components?.headings ? 
       Object.keys(matchingTemplate.components.headings).filter(
@@ -150,7 +159,7 @@ export const EnhancedTreatmentCalculator = ({
           fullness: option.fullness,
           price: option.price
         }));
-  }, [matchingTemplate, allHeadingOptions]);
+  }, [matchingTemplate, allHeadingOptions, treatmentType]);
 
   // Update treatment name when template changes
   useEffect(() => {
@@ -305,7 +314,6 @@ export const EnhancedTreatmentCalculator = ({
             <Calculator className="h-5 w-5" />
             {matchingTemplate.name} Calculator
             <Badge variant="outline">{matchingTemplate.calculation_method}</Badge>
-            {/* Add the clickable pricing grid button */}
             {matchingTemplate.calculation_method === 'pricing_grid' && (
               <PricingGridButton
                 gridId={pricingGridId}
@@ -376,6 +384,7 @@ export const EnhancedTreatmentCalculator = ({
               railWidth={formData.railWidth}
               curtainDrop={formData.curtainDrop}
               curtainPooling={formData.curtainPooling}
+              treatmentType={treatmentType}
               onMeasurementChange={(field, value) => updateFormData({ [field]: value })}
             />
 

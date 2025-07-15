@@ -10,15 +10,25 @@ interface MeasurementsCardProps {
   curtainDrop: string;
   curtainPooling: string;
   onMeasurementChange: (field: string, value: string) => void;
+  treatmentType?: string;
 }
 
 export const MeasurementsCard = ({
   railWidth,
   curtainDrop,
   curtainPooling,
-  onMeasurementChange
+  onMeasurementChange,
+  treatmentType
 }: MeasurementsCardProps) => {
   const { getLengthUnitLabel } = useMeasurementUnits();
+  
+  // Determine if this is a blind treatment
+  const isBlind = treatmentType?.toLowerCase().includes('blind');
+  
+  // Use appropriate terminology
+  const widthLabel = isBlind ? "Blind width" : "Rail width";
+  const dropLabel = isBlind ? "Blind drop" : "Curtain drop";
+  const poolingLabel = isBlind ? "Bottom clearance" : "Curtain pooling";
 
   return (
     <Card>
@@ -28,7 +38,7 @@ export const MeasurementsCard = ({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Rail width</Label>
+            <Label>{widthLabel}</Label>
             <div className="flex">
               <Input
                 type="number"
@@ -40,7 +50,7 @@ export const MeasurementsCard = ({
             </div>
           </div>
           <div>
-            <Label>Curtain drop</Label>
+            <Label>{dropLabel}</Label>
             <div className="flex">
               <Input
                 type="number"
@@ -52,18 +62,20 @@ export const MeasurementsCard = ({
             </div>
           </div>
         </div>
-        <div>
-          <Label>Curtain pooling</Label>
-          <div className="flex">
-            <Input
-              type="number"
-              value={curtainPooling}
-              onChange={(e) => onMeasurementChange('curtainPooling', e.target.value)}
-              className="rounded-r-none"
-            />
-            <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">{getLengthUnitLabel()}</div>
+        {!isBlind && (
+          <div>
+            <Label>{poolingLabel}</Label>
+            <div className="flex">
+              <Input
+                type="number"
+                value={curtainPooling}
+                onChange={(e) => onMeasurementChange('curtainPooling', e.target.value)}
+                className="rounded-r-none"
+              />
+              <div className="bg-gray-100 border border-l-0 px-3 py-2 rounded-r text-sm text-gray-600">{getLengthUnitLabel()}</div>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

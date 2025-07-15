@@ -1,6 +1,7 @@
 
 import { useMemo } from 'react';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
 
 export const useCalculatorLogic = (
   formData: any,
@@ -11,6 +12,7 @@ export const useCalculatorLogic = (
   gridData?: any
 ) => {
   const { railWidth, curtainDrop, quantity, headingFullness, fabricWidth, fabricPricePerYard } = formData;
+  const { units, convertToUserUnit, formatLength, formatFabric } = useMeasurementUnits();
 
   const calculation = useMemo(() => {
     if (!railWidth || !curtainDrop || !quantity) {
@@ -35,60 +37,72 @@ export const useCalculatorLogic = (
       quantity: parsedQuantity,
       headingFullness: parsedHeadingFullness,
       fabricWidth: parsedFabricWidth + "cm",
-      fabricPricePerYard: "£" + parsedFabricPricePerYard
+      fabricPricePerYard: "£" + parsedFabricPricePerYard,
+      templateName: matchingTemplate?.name,
+      productType: matchingTemplate?.product_type
     });
 
-    // Calculate hem allowances
-    const headerHem = hemConfig?.header_hem || 15;
-    const bottomHem = hemConfig?.bottom_hem || 10;
-    const pooling = parseFloat(formData.curtainPooling || "0");
-
-    // Calculate fabric requirements - FIXED CALCULATION
-    const fabricDropWithAllowances = parsedCurtainDrop + pooling + headerHem + bottomHem;
-    const curtainWidthPerPanel = parsedRailWidth / parsedQuantity;
-    const fabricWidthRequiredPerPanel = curtainWidthPerPanel * parsedHeadingFullness;
+    // Determine if this is a blind or curtain treatment
+    const treatmentName = matchingTemplate?.name?.toLowerCase() || '';
+    const isBlind = treatmentName.includes('blind') || matchingTemplate?.product_type?.toLowerCase().includes('blind');
     
-    console.log("📏 Fabric requirements per panel:", {
-      curtainDrop: parsedCurtainDrop + "cm",
-      pooling: pooling + "cm",
-      headerHem: headerHem + "cm",
-      bottomHem: bottomHem + "cm",
-      fabricDropWithAllowances: fabricDropWithAllowances + "cm",
-      curtainWidthPerPanel: curtainWidthPerPanel + "cm",
-      fabricWidthRequiredPerPanel: fabricWidthRequiredPerPanel + "cm"
+    console.log("🎯 Treatment type detection:", {
+      treatmentName,
+      productType: matchingTemplate?.product_type,
+      isBlind
     });
 
-    // Calculate how many fabric widths needed per panel
-    const fabricWidthsNeededPerPanel = Math.ceil(fabricWidthRequiredPerPanel / parsedFabricWidth);
-    
-    // Total fabric length needed for all panels
-    const totalFabricLengthCm = fabricDropWithAllowances * fabricWidthsNeededPerPanel * parsedQuantity;
-    
-    // Convert to yards (1 yard = 91.44 cm)
-    const totalFabricYards = totalFabricLengthCm / 91.44;
-    
-    console.log("🧮 Fabric calculation:", {
-      fabricWidthsNeededPerPanel: fabricWidthsNeededPerPanel,
-      totalFabricLengthCm: totalFabricLengthCm + "cm",
-      totalFabricYards: totalFabricYards.toFixed(2) + " yards"
+    // Calculate fabric requirements based on treatment type
+    let totalFabricYards = 0;
+    let fabricCalculationDetails = "";
+
+    if (isBlind) {
+      // For blinds: fabric area = width × drop (no fullness, minimal waste)
+      const fabricAreaCm = parsedRailWidth * parsedCurtainDrop;
+      const fabricAreaYards = fabricAreaCm / (91.44 * 91.44); // Convert cm² to yards²
+      totalFabricYards = fabricAreaYards * parsedQuantity;
+      
+      fabricCalculationDetails = `Blind: ${parsedRailWidth}cm × ${parsedCurtainDrop}cm = ${fabricAreaCm}cm² per blind × ${parsedQuantity} = ${totalFabricYards.toFixed(2)} yards`;
+    } else {
+      // For curtains: use traditional curtain calculation
+      const headerHem = hemConfig?.header_hem || 15;
+      const bottomHem = hemConfig?.bottom_hem || 10;
+      const pooling = parseFloat(formData.curtainPooling || "0");
+      
+      const fabricDropWithAllowances = parsedCurtainDrop + pooling + headerHem + bottomHem;
+      const curtainWidthPerPanel = parsedRailWidth / parsedQuantity;
+      const fabricWidthRequiredPerPanel = curtainWidthPerPanel * parsedHeadingFullness;
+      
+      const fabricWidthsNeededPerPanel = Math.ceil(fabricWidthRequiredPerPanel / parsedFabricWidth);
+      const totalFabricLengthCm = fabricDropWithAllowances * fabricWidthsNeededPerPanel * parsedQuantity;
+      totalFabricYards = totalFabricLengthCm / 91.44;
+      
+      fabricCalculationDetails = `Curtains: ${parsedRailWidth}cm ÷ ${parsedQuantity} panels × ${parsedHeadingFullness} fullness = ${fabricWidthRequiredPerPanel.toFixed(0)}cm width needed. Drop: ${parsedCurtainDrop}cm + allowances = ${fabricDropWithAllowances}cm. Total: ${totalFabricYards.toFixed(2)} yards`;
+    }
+
+    console.log("📏 Fabric calculation:", {
+      isBlind,
+      totalFabricYards: totalFabricYards.toFixed(2),
+      fabricCalculationDetails
     });
 
-    // Calculate fabric cost - FIXED
+    // Calculate fabric cost using user's preferred fabric units
     const fabricCost = totalFabricYards * parsedFabricPricePerYard;
 
-    // Calculate lining cost
-    const liningType = liningOptions.find(l => l.value === formData.lining);
-    const liningPricePerYard = liningType?.price || 0;
-    const liningCost = liningPricePerYard * totalFabricYards;
+    // Calculate lining cost (only for curtains, not blinds)
+    let liningCost = 0;
+    if (!isBlind) {
+      const liningType = liningOptions.find(l => l.value === formData.lining);
+      const liningPricePerYard = liningType?.price || 0;
+      liningCost = liningPricePerYard * totalFabricYards;
+    }
 
     console.log("🧵 Lining calculation:", {
-      liningType: liningType?.label || "None",
-      liningPricePerYard: "£" + liningPricePerYard + "/yard",
-      totalFabricYards: totalFabricYards.toFixed(2) + " yards",
-      totalLiningCost: "£" + liningCost.toFixed(2)
+      isBlind,
+      liningCost: "£" + liningCost.toFixed(2)
     });
 
-    // Calculate manufacturing/makeup cost using EXACT form values
+    // Calculate manufacturing/makeup cost - RESPECT TEMPLATE SETTINGS ONLY
     let manufacturingCost = 0;
     
     if (matchingTemplate?.calculation_method === 'pricing_grid') {
@@ -96,22 +110,22 @@ export const useCalculatorLogic = (
                            matchingTemplate.calculation_rules?.selectedPricingGrid;
       
       if (pricingGridId && gridData) {
-        console.log("🎯 Using exact form values for pricing grid lookup:");
-        console.log("  Width from form:", parsedRailWidth + "cm");
-        console.log("  Drop from form:", parsedCurtainDrop + "cm");
+        console.log("🎯 Using pricing grid with exact measurements:");
+        console.log("  Width:", parsedRailWidth + "cm");
+        console.log("  Drop:", parsedCurtainDrop + "cm");
         
-        manufacturingCost = getPriceFromGrid(
+        const gridPrice = getPriceFromGrid(
           gridData.grid_data, 
           parsedRailWidth,
           parsedCurtainDrop
-        ) * parsedQuantity; // Multiply by quantity for total cost
+        );
+        
+        manufacturingCost = gridPrice * parsedQuantity;
         
         console.log("🏭 Manufacturing cost from pricing grid:", {
-          pricingGridId,
-          exactWidth: parsedRailWidth + "cm",
-          exactDrop: parsedCurtainDrop + "cm",
-          costPerPanel: manufacturingCost / parsedQuantity,
-          totalManufacturingCost: "£" + manufacturingCost
+          gridPrice: "£" + gridPrice,
+          quantity: parsedQuantity,
+          totalManufacturingCost: "£" + manufacturingCost.toFixed(2)
         });
       }
     } else if (matchingTemplate?.calculation_rules?.baseMakingCost) {
@@ -123,37 +137,20 @@ export const useCalculatorLogic = (
         manufacturingCost = baseCost * parsedQuantity;
       }
       
-      // Apply height surcharges if configured
-      if (matchingTemplate.calculation_rules?.useHeightSurcharges) {
-        const baseHeightLimit = parseFloat(matchingTemplate.calculation_rules.baseHeightLimit) || 240;
-        if (parsedCurtainDrop > baseHeightLimit) {
-          const heightSurcharge = parseFloat(matchingTemplate.calculation_rules.heightSurcharge1) || 0;
-          manufacturingCost += heightSurcharge * parsedQuantity;
-        }
-      }
-      
-      console.log("🏭 Manufacturing cost from template:", {
+      console.log("🏭 Manufacturing cost from template rules:", {
         baseCost: "£" + baseCost,
-        pricingUnit: matchingTemplate.pricing_unit,
-        railWidth: parsedRailWidth + "cm",
-        quantity: parsedQuantity,
-        manufacturingCost: "£" + manufacturingCost
+        manufacturingCost: "£" + manufacturingCost.toFixed(2)
       });
     } else {
-      // Fallback to labor rate calculation
+      // Only use fallback if no template settings exist
       const laborRate = parseFloat(businessSettings?.labor_rate?.toString() || "45");
-      const baseHours = 2;
-      const sewingHours = (parsedRailWidth * parsedCurtainDrop * parsedHeadingFullness) / 25000;
-      const totalHours = baseHours + sewingHours;
-      manufacturingCost = totalHours * laborRate * parsedQuantity;
+      const estimatedHours = isBlind ? 1.5 : 3; // Blinds take less time than curtains
+      manufacturingCost = estimatedHours * laborRate * parsedQuantity;
       
-      console.log("🏭 Manufacturing cost from labor calculation:", {
+      console.log("🏭 Fallback manufacturing cost:", {
         laborRate: "£" + laborRate + "/hour",
-        baseHours: baseHours,
-        sewingHours: sewingHours.toFixed(2),
-        totalHours: totalHours.toFixed(2),
-        quantity: parsedQuantity,
-        manufacturingCost: "£" + manufacturingCost
+        estimatedHours,
+        manufacturingCost: "£" + manufacturingCost.toFixed(2)
       });
     }
 
@@ -169,19 +166,21 @@ export const useCalculatorLogic = (
       details: {
         railWidth: parsedRailWidth,
         curtainDrop: parsedCurtainDrop,
-        fabricDropRequirements: fabricDropWithAllowances,
-        fabricWidthRequirements: fabricWidthRequiredPerPanel * parsedQuantity,
+        fabricDropRequirements: isBlind ? parsedCurtainDrop : parsedCurtainDrop + (hemConfig?.header_hem || 15) + (hemConfig?.bottom_hem || 10),
+        fabricWidthRequirements: isBlind ? parsedRailWidth : parsedRailWidth * parsedHeadingFullness,
         fabricYards: totalFabricYards,
-        widthsRequired: fabricWidthsNeededPerPanel * parsedQuantity,
-        dropsPerWidth: fabricWidthsNeededPerPanel,
+        widthsRequired: isBlind ? 1 : Math.ceil((parsedRailWidth * parsedHeadingFullness) / parsedFabricWidth),
+        dropsPerWidth: 1,
         fabricPricePerYard: parsedFabricPricePerYard,
-        liningPricePerYard: liningPricePerYard,
-        headerHem,
-        bottomHem,
-        pooling,
+        liningPricePerYard: liningOptions.find(l => l.value === formData.lining)?.price || 0,
+        headerHem: hemConfig?.header_hem || 0,
+        bottomHem: hemConfig?.bottom_hem || 0,
+        pooling: parseFloat(formData.curtainPooling || "0"),
         fabricWidth: parsedFabricWidth,
         manufacturingMethod: matchingTemplate?.calculation_method,
-        pricingGridUsed: matchingTemplate?.calculation_method === 'pricing_grid'
+        pricingGridUsed: matchingTemplate?.calculation_method === 'pricing_grid',
+        isBlind,
+        treatmentType: isBlind ? 'blind' : 'curtain'
       }
     };
 
@@ -189,9 +188,9 @@ export const useCalculatorLogic = (
       fabricCost: "£" + fabricCost.toFixed(2),
       manufacturingCost: "£" + manufacturingCost.toFixed(2),
       liningCost: "£" + liningCost.toFixed(2),
-      subtotal: "£" + subtotal.toFixed(2),
       total: "£" + total.toFixed(2),
-      fabricYards: totalFabricYards.toFixed(2) + " yards"
+      fabricYards: totalFabricYards.toFixed(2) + " yards",
+      treatmentType: isBlind ? 'blind' : 'curtain'
     });
     console.log("=== CALCULATION DEBUG END ===");
 
@@ -202,7 +201,8 @@ export const useCalculatorLogic = (
     matchingTemplate,
     liningOptions,
     businessSettings,
-    gridData
+    gridData,
+    units
   ]);
 
   const calculationBreakdown = useMemo(() => {
@@ -223,7 +223,8 @@ export const useCalculatorLogic = (
       fabricPrice: calculation.fabricCost,
       widthsRequired: calculation.details.widthsRequired,
       dropsPerWidth: calculation.details.dropsPerWidth,
-      fabricYards: calculation.details.fabricYards
+      fabricYards: calculation.details.fabricYards,
+      treatmentType: calculation.details.treatmentType
     };
   }, [calculation]);
 
