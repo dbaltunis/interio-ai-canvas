@@ -1,4 +1,3 @@
-
 import { CalculationFormula } from "@/hooks/useCalculationFormulas";
 
 export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_at' | 'updated_at' | 'user_id'>[] = [
@@ -325,6 +324,107 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
       { name: "base_making_time", type: "number", unit: "hours", description: "Base time to make curtains", default: 3 },
       { name: "total_meterage", type: "number", unit: "meters", description: "Total fabric meterage" },
       { name: "complexity_factor", type: "number", unit: "hours", description: "Additional time per meter", default: 0.2 }
+    ],
+    active: true
+  },
+
+  // === HARDWARE CALCULATION FORMULAS ===
+  {
+    name: "Track Cost - Per Meter Method",
+    category: "hardware_calculation",
+    formula_expression: "(track_width / 100) * track_price_per_meter",
+    description: "Calculate track or pole cost based on width in meters. Most common method for curtain tracks, wave tracks, and poles.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track or pole" },
+      { name: "track_price_per_meter", type: "number", unit: "currency", description: "Track price per meter", default: 22 }
+    ],
+    active: true
+  },
+  {
+    name: "Track Cost - Per Set Method",
+    category: "hardware_calculation",
+    formula_expression: "quantity * unit_price",
+    description: "Calculate track cost when sold in fixed lengths or complete sets. Use for poles sold in 2m, 3m sets.",
+    variables: [
+      { name: "quantity", type: "number", unit: "sets", description: "Number of track sets or poles needed" },
+      { name: "unit_price", type: "number", unit: "currency", description: "Price per set or pole", default: 40 }
+    ],
+    active: true
+  },
+  {
+    name: "Gliders and Rings Cost",
+    category: "hardware_calculation",
+    formula_expression: "(track_width / 100) * gliders_per_meter * glider_unit_price",
+    description: "Calculate cost for gliders, rings, or hooks based on track width and density per meter.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "gliders_per_meter", type: "number", unit: "units", description: "Number of gliders per meter", default: 10 },
+      { name: "glider_unit_price", type: "number", unit: "currency", description: "Price per glider/ring", default: 0.15 }
+    ],
+    active: true
+  },
+  {
+    name: "Brackets Cost Calculation",
+    category: "hardware_calculation",
+    formula_expression: "(ceiling((track_width / 100) / 1.5) + 1) * bracket_unit_price",
+    description: "Calculate bracket cost. Usually 1 bracket every 1.5m plus 1 extra for safety.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "bracket_unit_price", type: "number", unit: "currency", description: "Price per bracket", default: 3.50 }
+    ],
+    active: true
+  },
+  {
+    name: "Motorised Track Cost",
+    category: "hardware_calculation",
+    formula_expression: "((track_width / 100) * track_price_per_meter) + motor_unit_price",
+    description: "Calculate motorised track cost by adding base track cost plus motor unit price.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "track_price_per_meter", type: "number", unit: "currency", description: "Base track price per meter", default: 30 },
+      { name: "motor_unit_price", type: "number", unit: "currency", description: "Motor unit price", default: 250 }
+    ],
+    active: true
+  },
+  {
+    name: "Fixings and Screws Cost",
+    category: "hardware_calculation",
+    formula_expression: "track_width <= 0 ? flat_rate : ((track_width / 100) * rate_per_meter)",
+    description: "Calculate fixing cost either as flat rate per job or per meter of track.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track (use 0 for flat rate)" },
+      { name: "flat_rate", type: "number", unit: "currency", description: "Flat rate for fixings", default: 5 },
+      { name: "rate_per_meter", type: "number", unit: "currency", description: "Rate per meter for fixings", default: 1.50 }
+    ],
+    active: true
+  },
+  {
+    name: "Control System Cost",
+    category: "hardware_calculation",
+    formula_expression: "remote_units * remote_price + app_control_units * app_price + smart_hub_units * hub_price",
+    description: "Calculate cost for motor control systems: remotes, app control, smart home integration.",
+    variables: [
+      { name: "remote_units", type: "number", unit: "units", description: "Number of remote controls", default: 0 },
+      { name: "remote_price", type: "number", unit: "currency", description: "Price per remote control", default: 45 },
+      { name: "app_control_units", type: "number", unit: "units", description: "Number of app control modules", default: 0 },
+      { name: "app_price", type: "number", unit: "currency", description: "Price per app control module", default: 65 },
+      { name: "smart_hub_units", type: "number", unit: "units", description: "Number of smart home hubs", default: 0 },
+      { name: "hub_price", type: "number", unit: "currency", description: "Price per smart hub", default: 120 }
+    ],
+    active: true
+  },
+  {
+    name: "Total Hardware Cost",
+    category: "hardware_calculation",
+    formula_expression: "track_cost + gliders_cost + brackets_cost + motor_cost + fixings_cost + control_cost",
+    description: "Calculate total hardware cost by adding all hardware components together.",
+    variables: [
+      { name: "track_cost", type: "number", unit: "currency", description: "Track or pole cost" },
+      { name: "gliders_cost", type: "number", unit: "currency", description: "Gliders/rings cost", default: 0 },
+      { name: "brackets_cost", type: "number", unit: "currency", description: "Brackets cost", default: 0 },
+      { name: "motor_cost", type: "number", unit: "currency", description: "Motor cost (0 if manual)", default: 0 },
+      { name: "fixings_cost", type: "number", unit: "currency", description: "Fixings and screws cost", default: 0 },
+      { name: "control_cost", type: "number", unit: "currency", description: "Control system cost", default: 0 }
     ],
     active: true
   }

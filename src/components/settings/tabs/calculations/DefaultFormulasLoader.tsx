@@ -50,6 +50,7 @@ export const DefaultFormulasLoader = () => {
   const fabricFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'fabric_calculation');
   const pricingFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'pricing_calculation');
   const laborFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'labor_calculation');
+  const hardwareFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'hardware_calculation');
 
   return (
     <Card>
@@ -59,8 +60,8 @@ export const DefaultFormulasLoader = () => {
           Industry Standard Formulas
         </CardTitle>
         <CardDescription>
-          Load proven fabric, pricing, and labor calculation formulas used by professional curtain makers. 
-          Includes step-by-step calculations for fabric usage, costs, labor time, and complete project pricing.
+          Load proven fabric, pricing, labor, and hardware calculation formulas used by professional curtain makers. 
+          Includes step-by-step calculations for fabric usage, costs, labor time, hardware requirements, and complete project pricing.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -105,6 +106,19 @@ export const DefaultFormulasLoader = () => {
                   <li>• <strong>Installation Labor</strong> - Per meter and fixed rates</li>
                   <li>• <strong>Total Labor Cost</strong> - Complete labor breakdown</li>
                   <li>• <strong>Time Estimation</strong> - Hours based on complexity</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-orange-700 mb-1">🔧 Hardware Calculations ({hardwareFormulas.length} formulas):</p>
+                <ul className="space-y-1 ml-4 text-xs">
+                  <li>• <strong>Track Cost</strong> - Per meter and per set methods</li>
+                  <li>• <strong>Gliders & Rings</strong> - Based on track width and density</li>
+                  <li>• <strong>Brackets Cost</strong> - Auto-calculated based on track length</li>
+                  <li>• <strong>Motorised Tracks</strong> - Track + motor pricing</li>
+                  <li>• <strong>Control Systems</strong> - Remotes, app control, smart hubs</li>
+                  <li>• <strong>Fixings & Screws</strong> - Flat rate or per meter</li>
+                  <li>• <strong>Total Hardware</strong> - Complete hardware breakdown</li>
                 </ul>
               </div>
             </div>
