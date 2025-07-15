@@ -171,11 +171,6 @@ export const WindowCoveringSelectionDialog = ({
                               <Badge variant="secondary" className="text-xs">
                                 {windowCovering.margin_percentage}% margin
                               </Badge>
-                              {windowCovering.optionsCount > 0 && (
-                                <Badge variant="outline" className="text-xs text-green-600">
-                                  {windowCovering.optionsCount} variants available
-                                </Badge>
-                              )}
                             </div>
                           </div>
                           {windowCovering.unit_price && (

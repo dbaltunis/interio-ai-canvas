@@ -40,7 +40,7 @@ export const usePricingMethods = () => {
     mutationFn: async (pricingMethod: Omit<PricingMethod, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('pricing_methods')
-        .insert([pricingMethod])
+        .insert([{ ...pricingMethod, user_id: (await supabase.auth.getUser()).data.user?.id! }])
         .select()
         .single();
       
@@ -102,8 +102,8 @@ export const usePricingMethods = () => {
     pricingMethods,
     isLoading,
     error,
-    createPricingMethod,
-    updatePricingMethod,
-    deletePricingMethod
+    createPricingMethod: createPricingMethod.mutateAsync,
+    updatePricingMethod: updatePricingMethod.mutateAsync,
+    deletePricingMethod: deletePricingMethod.mutateAsync
   };
 };

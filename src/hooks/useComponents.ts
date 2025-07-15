@@ -41,7 +41,7 @@ export const useComponents = () => {
     mutationFn: async (component: Omit<Component, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('components')
-        .insert([component])
+        .insert([{ ...component, user_id: (await supabase.auth.getUser()).data.user?.id! }])
         .select()
         .single();
       
@@ -103,8 +103,8 @@ export const useComponents = () => {
     components,
     isLoading,
     error,
-    createComponent,
-    updateComponent,
-    deleteComponent
+    createComponent: createComponent.mutateAsync,
+    updateComponent: updateComponent.mutateAsync,
+    deleteComponent: deleteComponent.mutateAsync
   };
 };

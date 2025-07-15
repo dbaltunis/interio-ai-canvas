@@ -47,7 +47,7 @@ export const useWindowCoverings = () => {
     mutationFn: async (windowCovering: Omit<WindowCovering, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('window_coverings')
-        .insert([windowCovering])
+        .insert([{ ...windowCovering, user_id: (await supabase.auth.getUser()).data.user?.id! }])
         .select()
         .single();
       
@@ -109,8 +109,8 @@ export const useWindowCoverings = () => {
     windowCoverings,
     isLoading,
     error,
-    createWindowCovering,
-    updateWindowCovering,
-    deleteWindowCovering
+    createWindowCovering: createWindowCovering.mutateAsync,
+    updateWindowCovering: updateWindowCovering.mutateAsync,
+    deleteWindowCovering: deleteWindowCovering.mutateAsync
   };
 };

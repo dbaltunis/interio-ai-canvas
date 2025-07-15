@@ -44,7 +44,7 @@ export const useFabrics = () => {
     mutationFn: async (fabric: Omit<Fabric, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('fabrics')
-        .insert([fabric])
+        .insert([{ ...fabric, user_id: (await supabase.auth.getUser()).data.user?.id! }])
         .select()
         .single();
       
@@ -106,8 +106,8 @@ export const useFabrics = () => {
     fabrics,
     isLoading,
     error,
-    createFabric,
-    updateFabric,
-    deleteFabric
+    createFabric: createFabric.mutateAsync,
+    updateFabric: updateFabric.mutateAsync,
+    deleteFabric: deleteFabric.mutateAsync
   };
 };
