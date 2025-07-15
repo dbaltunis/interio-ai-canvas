@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,29 +40,59 @@ export const PublicBookingPage = () => {
     if (!scheduler?.availability) return [];
     
     const dayName = format(date, 'EEEE').toLowerCase();
-    const dayAvailability = (scheduler.availability as any[]).find(day => day.day === dayName);
+    const availabilityData = scheduler.availability as any[];
+    const dayAvailability = availabilityData.find(day => day.day === dayName);
     
-    if (!dayAvailability?.enabled) return [];
+    console.log('Generating time slots for:', dayName);
+    console.log('Day availability:', dayAvailability);
+    
+    if (!dayAvailability?.enabled || !dayAvailability?.timeSlots?.length) {
+      console.log('No time slots configured for this day');
+      return [];
+    }
     
     const slots: string[] = [];
-    dayAvailability.timeSlots?.forEach((timeSlot: any) => {
-      const startHour = parseInt(timeSlot.startTime.split(':')[0]);
-      const startMinute = parseInt(timeSlot.startTime.split(':')[1]);
-      const endHour = parseInt(timeSlot.endTime.split(':')[0]);
-      const endMinute = parseInt(timeSlot.endTime.split(':')[1]);
+    const duration = scheduler.duration || 60;
+    const bufferTime = scheduler.buffer_time || 15;
+    
+    // Process each configured time slot
+    dayAvailability.timeSlots.forEach((timeSlot: any) => {
+      console.log('Processing time slot:', timeSlot);
       
-      let currentTime = startHour * 60 + startMinute;
-      const endTime = endHour * 60 + endMinute;
+      const [startHour, startMin] = timeSlot.startTime.split(':').map(Number);
+      const [endHour, endMin] = timeSlot.endTime.split(':').map(Number);
       
+      let currentTime = new Date(date);
+      currentTime.setHours(startHour, startMin, 0, 0);
+      
+      const endTime = new Date(date);
+      endTime.setHours(endHour, endMin, 0, 0);
+      
+      // Generate appointment slots within this time window
       while (currentTime < endTime) {
-        const hour = Math.floor(currentTime / 60);
-        const minute = currentTime % 60;
-        slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
-        currentTime += scheduler.duration || 60;
+        const slotEndTime = new Date(currentTime.getTime() + duration * 60000);
+        
+        // Check if the slot fits within the availability window
+        if (slotEndTime <= endTime) {
+          const timeString = format(currentTime, 'HH:mm');
+          
+          // Check if slot is in the future (for today only)
+          const now = new Date();
+          const isToday = date.toDateString() === now.toDateString();
+          const isInFuture = !isToday || currentTime > now;
+          
+          if (isInFuture) {
+            slots.push(timeString);
+          }
+        }
+        
+        // Move to next slot (duration + buffer time)
+        currentTime = new Date(currentTime.getTime() + (duration + bufferTime) * 60000);
       }
     });
     
-    return slots;
+    console.log('Generated slots:', slots);
+    return slots.sort();
   };
 
   const handleDateTimeNext = () => {
@@ -218,7 +247,18 @@ export const PublicBookingPage = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date() || date > addDays(new Date(), scheduler.max_advance_booking)}
+                    disabled={(date) => {
+                      if (date < new Date() || date > addDays(new Date(), scheduler?.max_advance_booking || 30)) {
+                        return true;
+                      }
+                      
+                      // Check if this date has any available time slots
+                      const dayName = format(date, 'EEEE').toLowerCase();
+                      const availabilityData = scheduler?.availability as any[];
+                      const dayAvailability = availabilityData?.find(day => day.day === dayName);
+                      
+                      return !dayAvailability?.enabled || !dayAvailability?.timeSlots?.length;
+                    }}
                     className="rounded-md border"
                   />
                   
@@ -237,6 +277,9 @@ export const PublicBookingPage = () => {
                           </Button>
                         ))}
                       </div>
+                      {generateTimeSlots(selectedDate).length === 0 && (
+                        <p className="text-sm text-gray-500 mt-2">No available times for this date.</p>
+                      )}
                     </div>
                   )}
                   

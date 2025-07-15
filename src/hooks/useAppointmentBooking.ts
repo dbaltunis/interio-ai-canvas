@@ -38,6 +38,7 @@ export const useAppointmentBooking = (slug: string) => {
   
   const generateAvailableSlots = (selectedDate: Date): AvailableSlot[] => {
     if (!scheduler || !scheduler.availability) {
+      console.log('No scheduler or availability data');
       return [];
     }
 
@@ -51,7 +52,11 @@ export const useAppointmentBooking = (slug: string) => {
     const dayOfWeek = DAYS_OF_WEEK[selectedDate.getDay()];
     const dayAvailability = availabilityData.find(day => day.day === dayOfWeek);
 
-    if (!dayAvailability || !dayAvailability.enabled) {
+    console.log('Day of week:', dayOfWeek);
+    console.log('Day availability:', dayAvailability);
+
+    if (!dayAvailability || !dayAvailability.enabled || !dayAvailability.timeSlots?.length) {
+      console.log('Day not available or no time slots configured');
       return [];
     }
 
@@ -59,7 +64,13 @@ export const useAppointmentBooking = (slug: string) => {
     const duration = scheduler.duration || 60;
     const bufferTime = scheduler.buffer_time || 15;
 
-    dayAvailability.timeSlots.forEach(timeSlot => {
+    console.log('Processing time slots:', dayAvailability.timeSlots);
+
+    // Process each configured time slot
+    dayAvailability.timeSlots.forEach((timeSlot, index) => {
+      console.log(`Processing time slot ${index}:`, timeSlot);
+      
+      // Parse start and end times
       const [startHour, startMin] = timeSlot.startTime.split(':').map(Number);
       const [endHour, endMin] = timeSlot.endTime.split(':').map(Number);
       
@@ -69,7 +80,9 @@ export const useAppointmentBooking = (slug: string) => {
       const endTime = new Date(selectedDate);
       endTime.setHours(endHour, endMin, 0, 0);
 
-      // Generate slots within the time window
+      console.log(`Time slot from ${currentTime.toLocaleTimeString()} to ${endTime.toLocaleTimeString()}`);
+
+      // Generate appointment slots within this time window
       while (currentTime < endTime) {
         const slotEndTime = addMinutes(currentTime, duration);
         
@@ -81,6 +94,8 @@ export const useAppointmentBooking = (slug: string) => {
           const now = new Date();
           const isToday = selectedDate.toDateString() === now.toDateString();
           const isInFuture = !isToday || currentTime > now;
+          
+          console.log(`Adding slot: ${timeString}, available: ${isInFuture}`);
           
           slots.push({
             time: timeString,
@@ -94,6 +109,7 @@ export const useAppointmentBooking = (slug: string) => {
       }
     });
 
+    console.log('Final slots:', slots);
     return slots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
@@ -118,7 +134,8 @@ export const useAppointmentBooking = (slug: string) => {
       const dayOfWeek = DAYS_OF_WEEK[date.getDay()];
       const dayAvailability = availabilityData.find(day => day.day === dayOfWeek);
       
-      if (dayAvailability && dayAvailability.enabled) {
+      // Only include dates that have enabled availability and configured time slots
+      if (dayAvailability && dayAvailability.enabled && dayAvailability.timeSlots?.length > 0) {
         dates.push(date);
       }
     }
