@@ -1,7 +1,12 @@
-
 import { TreatmentFormData, CalculationResult, DetailedCalculation } from './types';
+import { CalculationService, CalculationInput } from '@/services/calculationService';
+import { CalculationFormula } from '@/hooks/useCalculationFormulas';
 
-export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate?: any): CalculationResult & { details: DetailedCalculation } => {
+export const calculateTotalPrice = (
+  formData: TreatmentFormData, 
+  productTemplate?: any,
+  formulas?: CalculationFormula[]
+): CalculationResult & { details: DetailedCalculation } => {
   const railWidth = parseFloat(formData.railWidth) || 0;
   const curtainDrop = parseFloat(formData.curtainDrop) || 0;
   const fullness = parseFloat(formData.headingFullness) || 2.5;
@@ -33,6 +38,86 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
     };
   }
 
+  // Use formula-based calculation if formulas are available
+  if (formulas && formulas.length > 0) {
+    return calculateWithFormulas(formData, productTemplate, formulas);
+  }
+
+  // Fall back to original calculation logic
+  return calculateWithOriginalLogic(formData, productTemplate);
+};
+
+function calculateWithFormulas(
+  formData: TreatmentFormData,
+  productTemplate: any,
+  formulas: CalculationFormula[]
+): CalculationResult & { details: DetailedCalculation } {
+  const calculationService = new CalculationService();
+  
+  const input: CalculationInput = {
+    railWidth: parseFloat(formData.railWidth) || 0,
+    curtainDrop: parseFloat(formData.curtainDrop) || 0,
+    quantity: formData.quantity,
+    headingFullness: parseFloat(formData.headingFullness) || 2.5,
+    fabricWidth: parseFloat(formData.fabricWidth) || 137,
+    fabricPricePerYard: parseFloat(formData.fabricPricePerYard) || 0,
+    curtainPooling: parseFloat(formData.curtainPooling) || 0,
+    treatmentType: productTemplate?.name?.toLowerCase() || 'curtain',
+    // Add any additional variables from form data
+    labor_rate: formData.laborRate || 85,
+    markup_percentage: formData.markupPercentage || 0
+  };
+
+  const result = calculationService.calculateTreatmentCost(input, formulas);
+  
+  // Calculate features cost (lining, etc.)
+  const selectedFeatures = formData.additionalFeatures?.filter(f => f.selected) || [];
+  const featureBreakdown = selectedFeatures.map(feature => ({
+    name: feature.name,
+    unitPrice: feature.price,
+    quantity: formData.quantity,
+    totalPrice: feature.price * formData.quantity,
+    calculation: `${feature.price.toFixed(2)} × ${formData.quantity} panels = ${(feature.price * formData.quantity).toFixed(2)}`
+  }));
+  
+  const featuresCost = featureBreakdown.reduce((sum, feature) => sum + feature.totalPrice, 0);
+  const subtotal = result.totalCost + featuresCost;
+  const total = subtotal * (1 + (formData.markupPercentage || 0) / 100);
+
+  return {
+    fabricYards: Math.ceil(result.details.fabricYards * 10) / 10,
+    fabricCost: result.fabricCost,
+    laborHours: result.details.laborHours || 0,
+    laborCost: result.laborCost,
+    featuresCost,
+    subtotal,
+    total,
+    details: {
+      fabricCalculation: result.breakdown.fabric.breakdown,
+      laborCalculation: result.breakdown.labor.breakdown,
+      featureBreakdown,
+      totalUnits: formData.quantity,
+      fabricPricePerYard: parseFloat(formData.fabricPricePerYard) || 0,
+      fabricWidthRequired: parseFloat(formData.railWidth) || 0,
+      fabricLengthRequired: parseFloat(formData.curtainDrop) || 0,
+      dropsPerWidth: 1,
+      widthsRequired: Math.ceil((parseFloat(formData.railWidth) * parseFloat(formData.headingFullness)) / parseFloat(formData.fabricWidth))
+    }
+  };
+}
+
+function calculateWithOriginalLogic(
+  formData: TreatmentFormData,
+  productTemplate?: any
+): CalculationResult & { details: DetailedCalculation } {
+  const railWidth = parseFloat(formData.railWidth) || 0;
+  const curtainDrop = parseFloat(formData.curtainDrop) || 0;
+  const fullness = parseFloat(formData.headingFullness) || 2.5;
+  const quantity = formData.quantity;
+  const pooling = parseFloat(formData.curtainPooling) || 0;
+  const fabricWidth = parseFloat(formData.fabricWidth) || 137;
+  const fabricPricePerYard = parseFloat(formData.fabricPricePerYard) || 0;
+  
   // Determine if this is a blind or curtain treatment
   const treatmentName = productTemplate?.name?.toLowerCase() || '';
   const isBlind = treatmentName.includes('blind') || productTemplate?.product_type?.toLowerCase().includes('blind');
@@ -132,7 +217,7 @@ export const calculateTotalPrice = (formData: TreatmentFormData, productTemplate
       widthsRequired: isBlind ? 1 : Math.ceil((railWidth * fullness) / fabricWidth)
     }
   };
-};
+}
 
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-GB', {

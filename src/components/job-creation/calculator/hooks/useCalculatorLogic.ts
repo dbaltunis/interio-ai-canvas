@@ -1,7 +1,8 @@
-
 import { useMemo } from 'react';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
+import { useCalculationFormulas } from '@/hooks/useCalculationFormulas';
+import { CalculationService } from '@/services/calculationService';
 
 export const useCalculatorLogic = (
   formData: any,
@@ -13,6 +14,7 @@ export const useCalculatorLogic = (
 ) => {
   const { railWidth, curtainDrop, quantity, headingFullness, fabricWidth, fabricPricePerYard } = formData;
   const { units, convertToUserUnit, formatLength, formatFabric } = useMeasurementUnits();
+  const { data: formulas = [] } = useCalculationFormulas();
 
   const calculation = useMemo(() => {
     if (!railWidth || !curtainDrop || !quantity) {
@@ -39,10 +41,79 @@ export const useCalculatorLogic = (
       fabricWidth: parsedFabricWidth + "cm",
       fabricPricePerYard: "£" + parsedFabricPricePerYard,
       templateName: matchingTemplate?.name,
-      productType: matchingTemplate?.product_type
+      productType: matchingTemplate?.product_type,
+      formulasAvailable: formulas.length
     });
 
-    // Determine if this is a blind or curtain treatment
+    // Use formula-based calculation if formulas are available
+    if (formulas.length > 0) {
+      const calculationService = new CalculationService();
+      
+      const input = {
+        railWidth: parsedRailWidth,
+        curtainDrop: parsedCurtainDrop,
+        quantity: parsedQuantity,
+        headingFullness: parsedHeadingFullness,
+        fabricWidth: parsedFabricWidth,
+        fabricPricePerYard: parsedFabricPricePerYard,
+        curtainPooling: parseFloat(formData.curtainPooling || "0"),
+        treatmentType: matchingTemplate?.name?.toLowerCase() || 'curtain',
+        labor_rate: businessSettings?.labor_rate || 85,
+        // Add hem configuration
+        header_hem: hemConfig?.header_hem || 15,
+        bottom_hem: hemConfig?.bottom_hem || 10,
+        // Add track pricing
+        track_price_per_meter: 25,
+        bracket_price: 5,
+        glider_price: 0.15
+      };
+
+      const result = calculationService.calculateTreatmentCost(input, formulas);
+      
+      console.log("🧮 Formula-based calculation result:", {
+        fabricCost: "£" + result.fabricCost.toFixed(2),
+        laborCost: "£" + result.laborCost.toFixed(2),
+        hardwareCost: "£" + result.hardwareCost.toFixed(2),
+        totalCost: "£" + result.totalCost.toFixed(2),
+        fabricYards: result.details.fabricYards?.toFixed(2) + " yards"
+      });
+
+      return {
+        fabricCost: result.fabricCost,
+        laborCost: result.laborCost,
+        featuresCost: result.hardwareCost,
+        subtotal: result.totalCost,
+        total: result.totalCost,
+        details: {
+          railWidth: parsedRailWidth,
+          curtainDrop: parsedCurtainDrop,
+          fabricDropRequirements: parsedCurtainDrop + (hemConfig?.header_hem || 15) + (hemConfig?.bottom_hem || 10),
+          fabricWidthRequirements: parsedRailWidth * parsedHeadingFullness,
+          fabricYards: result.details.fabricYards || 0,
+          widthsRequired: Math.ceil((parsedRailWidth * parsedHeadingFullness) / parsedFabricWidth),
+          dropsPerWidth: 1,
+          fabricPricePerYard: parsedFabricPricePerYard,
+          liningPricePerYard: liningOptions.find(l => l.value === formData.lining)?.price || 0,
+          headerHem: hemConfig?.header_hem || 0,
+          bottomHem: hemConfig?.bottom_hem || 0,
+          pooling: parseFloat(formData.curtainPooling || "0"),
+          fabricWidth: parsedFabricWidth,
+          manufacturingMethod: 'formula-based',
+          pricingGridUsed: false,
+          isBlind: matchingTemplate?.name?.toLowerCase().includes('blind'),
+          treatmentType: matchingTemplate?.name?.toLowerCase().includes('blind') ? 'blind' : 'curtain',
+          formulaBreakdown: {
+            fabric: result.breakdown.fabric.breakdown,
+            labor: result.breakdown.labor.breakdown,
+            hardware: result.breakdown.hardware.breakdown
+          }
+        }
+      };
+    }
+
+    // Fall back to original calculation logic if no formulas available
+    console.log("⚠️ No formulas available, using original calculation logic");
+    
     const treatmentName = matchingTemplate?.name?.toLowerCase() || '';
     const isBlind = treatmentName.includes('blind') || matchingTemplate?.product_type?.toLowerCase().includes('blind');
     
@@ -202,7 +273,8 @@ export const useCalculatorLogic = (
     liningOptions,
     businessSettings,
     gridData,
-    units
+    units,
+    formulas
   ]);
 
   const calculationBreakdown = useMemo(() => {
@@ -224,7 +296,8 @@ export const useCalculatorLogic = (
       widthsRequired: calculation.details.widthsRequired,
       dropsPerWidth: calculation.details.dropsPerWidth,
       fabricYards: calculation.details.fabricYards,
-      treatmentType: calculation.details.treatmentType
+      treatmentType: calculation.details.treatmentType,
+      formulaBreakdown: calculation.details.formulaBreakdown
     };
   }, [calculation]);
 

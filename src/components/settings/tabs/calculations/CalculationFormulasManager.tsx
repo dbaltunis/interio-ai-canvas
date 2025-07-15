@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Calculator } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCalculationFormulas } from "@/hooks/useCalculationFormulas";
 import { CalculationFormulaForm } from "./CalculationFormulaForm";
 import { CalculationFormulasList } from "./CalculationFormulasList";
 import { DefaultFormulasLoader } from "./DefaultFormulasLoader";
+import { FormulaCalculator } from "./FormulaCalculator";
 
 export const CalculationFormulasManager = () => {
   const { data: formulas, isLoading, createFormula, updateFormula, deleteFormula } = useCalculationFormulas();
@@ -41,46 +43,62 @@ export const CalculationFormulasManager = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center mb-6">
-            <p className="text-sm text-brand-neutral">
-              Build formulas for fabric usage, fullness calculations, hems, linings, and pricing rules
-            </p>
-            <Button 
-              onClick={() => setIsCreating(true)}
-              className="bg-brand-primary hover:bg-brand-accent"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Formula
-            </Button>
-          </div>
+          <Tabs defaultValue="manage" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="manage">Manage Formulas</TabsTrigger>
+              <TabsTrigger value="calculator">
+                <Calculator className="h-4 w-4 mr-2" />
+                Test Calculator
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Create/Edit Form */}
-          {(isCreating || editingFormula) && (
-            <div className="mb-6">
-              <CalculationFormulaForm
-                formula={editingFormula}
-                onSave={handleSave}
-                onCancel={() => {
-                  setIsCreating(false);
-                  setEditingFormula(null);
-                }}
+            <TabsContent value="manage" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-brand-neutral">
+                  Build formulas for fabric usage, fullness calculations, hems, linings, and pricing rules
+                </p>
+                <Button 
+                  onClick={() => setIsCreating(true)}
+                  className="bg-brand-primary hover:bg-brand-accent"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Formula
+                </Button>
+              </div>
+
+              {/* Create/Edit Form */}
+              {(isCreating || editingFormula) && (
+                <div className="mb-6">
+                  <CalculationFormulaForm
+                    formula={editingFormula}
+                    onSave={handleSave}
+                    onCancel={() => {
+                      setIsCreating(false);
+                      setEditingFormula(null);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Default Formulas Loader */}
+              {!isCreating && !editingFormula && (
+                <div className="mb-6">
+                  <DefaultFormulasLoader />
+                </div>
+              )}
+
+              {/* Formulas List */}
+              <CalculationFormulasList
+                formulas={formulas || []}
+                onEdit={setEditingFormula}
+                onDelete={deleteFormula.mutateAsync}
               />
-            </div>
-          )}
+            </TabsContent>
 
-          {/* Default Formulas Loader */}
-          {!isCreating && !editingFormula && (
-            <div className="mb-6">
-              <DefaultFormulasLoader />
-            </div>
-          )}
-
-          {/* Formulas List */}
-          <CalculationFormulasList
-            formulas={formulas || []}
-            onEdit={setEditingFormula}
-            onDelete={deleteFormula.mutateAsync}
-          />
+            <TabsContent value="calculator">
+              <FormulaCalculator />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
