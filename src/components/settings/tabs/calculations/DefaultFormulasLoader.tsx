@@ -47,6 +47,10 @@ export const DefaultFormulasLoader = () => {
     DEFAULT_FABRIC_FORMULAS.some(df => df.name === f.name)
   );
 
+  const fabricFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'fabric_calculation');
+  const pricingFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'pricing_calculation');
+  const laborFormulas = DEFAULT_FABRIC_FORMULAS.filter(f => f.category === 'labor_calculation');
+
   return (
     <Card>
       <CardHeader>
@@ -55,24 +59,47 @@ export const DefaultFormulasLoader = () => {
           Industry Standard Formulas
         </CardTitle>
         <CardDescription>
-          Load proven fabric calculation formulas used by professional curtain makers. 
-          Includes step-by-step calculations for cut drop, pattern repeats, gather width, and meterage.
+          Load proven fabric and pricing calculation formulas used by professional curtain makers. 
+          Includes step-by-step calculations for fabric usage, costs, and complete project pricing.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="text-sm text-brand-neutral">
-            <p className="font-medium mb-2">This will add the following formulas:</p>
-            <ul className="space-y-1 ml-4">
-              <li>• <strong>Curtain Fabric Cut Drop</strong> - Basic length calculation with allowances</li>
-              <li>• <strong>Pattern Repeat Adjusted Drop</strong> - Handles pattern matching</li>
-              <li>• <strong>Total Gather Width</strong> - Track width × fullness ratio</li>
-              <li>• <strong>Number of Fabric Widths</strong> - Convert width to fabric widths needed</li>
-              <li>• <strong>Total Fabric Meterage</strong> - Final meterage to order</li>
-              <li>• <strong>Quick Fabric Estimate</strong> - All-in-one calculation</li>
-              <li>• <strong>Fabric Cost Calculation</strong> - Pricing based on meterage</li>
-              <li>• <strong>Labor Time Estimate</strong> - Time estimation for making</li>
-            </ul>
+            <p className="font-medium mb-3">This will add {DEFAULT_FABRIC_FORMULAS.length} professional formulas:</p>
+            
+            <div className="space-y-3">
+              <div>
+                <p className="font-medium text-green-700 mb-1">📏 Fabric Calculations ({fabricFormulas.length} formulas):</p>
+                <ul className="space-y-1 ml-4 text-xs">
+                  <li>• <strong>Cut Drop Calculation</strong> - Basic length with allowances</li>
+                  <li>• <strong>Pattern Repeat Adjustment</strong> - Handles pattern matching</li>
+                  <li>• <strong>Gather Width & Fabric Widths</strong> - Track width × fullness calculations</li>
+                  <li>• <strong>Total Meterage</strong> - Final fabric to order</li>
+                  <li>• <strong>Quick Estimate</strong> - All-in-one fabric calculation</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-blue-700 mb-1">💰 Pricing Calculations ({pricingFormulas.length} formulas):</p>
+                <ul className="space-y-1 ml-4 text-xs">
+                  <li>• <strong>Fabric Cost</strong> - Meterage × price per meter</li>
+                  <li>• <strong>Making Costs</strong> - Per width OR per meter methods</li>
+                  <li>• <strong>Lining & Heading</strong> - Separate pricing when needed</li>
+                  <li>• <strong>Track & Installation</strong> - Hardware and fitting costs</li>
+                  <li>• <strong>Accessories</strong> - Tiebacks, hooks, extras</li>
+                  <li>• <strong>Total Project Cost</strong> - Complete cost breakdown</li>
+                  <li>• <strong>Final Price with VAT</strong> - Customer pricing</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-purple-700 mb-1">⏱️ Labor Calculations ({laborFormulas.length} formulas):</p>
+                <ul className="space-y-1 ml-4 text-xs">
+                  <li>• <strong>Time Estimation</strong> - Based on fabric quantity and complexity</li>
+                </ul>
+              </div>
+            </div>
           </div>
           
           {hasAnyDefaults && (
@@ -87,7 +114,7 @@ export const DefaultFormulasLoader = () => {
             className="w-full bg-brand-primary hover:bg-brand-accent"
           >
             <Download className="h-4 w-4 mr-2" />
-            {isLoading ? 'Loading Formulas...' : 'Load Industry Standard Formulas'}
+            {isLoading ? 'Loading Formulas...' : `Load ${DEFAULT_FABRIC_FORMULAS.length} Industry Standard Formulas`}
           </Button>
         </div>
       </CardContent>

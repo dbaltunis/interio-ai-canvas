@@ -1,4 +1,3 @@
-
 import { CalculationFormula } from "@/hooks/useCalculationFormulas";
 
 export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_at' | 'updated_at' | 'user_id'>[] = [
@@ -86,6 +85,110 @@ export const DEFAULT_FABRIC_FORMULAS: Omit<CalculationFormula, 'id' | 'created_a
     active: true
   },
   {
+    name: "Making Cost - Per Width Method",
+    category: "pricing_calculation",
+    formula_expression: "number_of_widths * making_price_per_width",
+    description: "Calculate making/sewing cost based on number of fabric widths. Common method for workrooms that charge per width of fabric.",
+    variables: [
+      { name: "number_of_widths", type: "number", unit: "widths", description: "Number of fabric widths needed" },
+      { name: "making_price_per_width", type: "number", unit: "currency", description: "Making charge per width of fabric", default: 30 }
+    ],
+    active: true
+  },
+  {
+    name: "Making Cost - Per Meter Track",
+    category: "pricing_calculation",
+    formula_expression: "(track_width / 100) * making_price_per_meter",
+    description: "Calculate making/sewing cost based on track width in meters. Alternative method for workrooms that charge per meter of track.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "making_price_per_meter", type: "number", unit: "currency", description: "Making charge per meter of track", default: 50 }
+    ],
+    active: true
+  },
+  {
+    name: "Lining Cost Calculation",
+    category: "pricing_calculation",
+    formula_expression: "total_meterage * lining_price_per_meter",
+    description: "Calculate lining cost when charged separately from main fabric. Uses same meterage as main fabric.",
+    variables: [
+      { name: "total_meterage", type: "number", unit: "meters", description: "Total fabric meterage (same as main fabric)" },
+      { name: "lining_price_per_meter", type: "number", unit: "currency", description: "Price per meter of lining fabric", default: 8 }
+    ],
+    active: true
+  },
+  {
+    name: "Heading Charge - Per Meter Track",
+    category: "pricing_calculation",
+    formula_expression: "(track_width / 100) * heading_charge_per_meter",
+    description: "Calculate heading/pleating charge when priced separately per meter of track. Common for wave headings or complex pleating.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "heading_charge_per_meter", type: "number", unit: "currency", description: "Heading charge per meter", default: 12 }
+    ],
+    active: true
+  },
+  {
+    name: "Track Hardware Cost",
+    category: "pricing_calculation",
+    formula_expression: "(track_width / 100) * track_price_per_meter",
+    description: "Calculate track or pole cost based on width. Includes brackets and fittings in per-meter rate.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track or pole" },
+      { name: "track_price_per_meter", type: "number", unit: "currency", description: "Track/pole price per meter including fittings", default: 20 }
+    ],
+    active: true
+  },
+  {
+    name: "Installation Cost",
+    category: "pricing_calculation",
+    formula_expression: "(track_width / 100) * installation_rate_per_meter",
+    description: "Calculate installation cost when charged per meter of track width. Covers measuring, fitting and hanging.",
+    variables: [
+      { name: "track_width", type: "number", unit: "cm", description: "Width of curtain track" },
+      { name: "installation_rate_per_meter", type: "number", unit: "currency", description: "Installation charge per meter", default: 25 }
+    ],
+    active: true
+  },
+  {
+    name: "Accessories Cost per Item",
+    category: "pricing_calculation",
+    formula_expression: "quantity * unit_price",
+    description: "Calculate cost for accessories like tiebacks, hooks, or buckram. Use for any items charged per piece or per meter.",
+    variables: [
+      { name: "quantity", type: "number", unit: "units", description: "Number of items or meters needed" },
+      { name: "unit_price", type: "number", unit: "currency", description: "Price per unit/meter of accessory" }
+    ],
+    active: true
+  },
+  {
+    name: "Total Project Cost",
+    category: "pricing_calculation",
+    formula_expression: "fabric_cost + making_cost + lining_cost + heading_cost + track_cost + installation_cost + accessories_cost",
+    description: "Calculate total project cost before VAT by adding all component costs. Use this as subtotal for final pricing.",
+    variables: [
+      { name: "fabric_cost", type: "number", unit: "currency", description: "Total fabric cost" },
+      { name: "making_cost", type: "number", unit: "currency", description: "Making/sewing cost" },
+      { name: "lining_cost", type: "number", unit: "currency", description: "Lining cost (0 if included in fabric)", default: 0 },
+      { name: "heading_cost", type: "number", unit: "currency", description: "Heading charge (0 if included in making)", default: 0 },
+      { name: "track_cost", type: "number", unit: "currency", description: "Track/pole cost", default: 0 },
+      { name: "installation_cost", type: "number", unit: "currency", description: "Installation cost", default: 0 },
+      { name: "accessories_cost", type: "number", unit: "currency", description: "Accessories cost", default: 0 }
+    ],
+    active: true
+  },
+  {
+    name: "Final Price with VAT",
+    category: "pricing_calculation",
+    formula_expression: "subtotal * (1 + (vat_rate / 100))",
+    description: "Calculate final price including VAT. VAT rate should be entered as percentage (e.g., 20 for 20%).",
+    variables: [
+      { name: "subtotal", type: "number", unit: "currency", description: "Total cost before VAT" },
+      { name: "vat_rate", type: "number", unit: "percentage", description: "VAT rate as percentage", default: 20 }
+    ],
+    active: true
+  },
+  {
     name: "Labor Time Estimate",
     category: "labor_calculation", 
     formula_expression: "base_making_time + (total_meterage * complexity_factor)",
@@ -114,4 +217,14 @@ export const DEFAULT_HEM_ALLOWANCES = {
   "bottom_hem": 20, // cm  
   "side_hem": 2.5, // cm per side
   "lining_allowance": 5 // cm shorter than main fabric
+};
+
+export const DEFAULT_PRICING_RATES = {
+  "making_per_width": 30, // £ per width
+  "making_per_meter": 50, // £ per meter of track
+  "lining_per_meter": 8, // £ per meter
+  "heading_per_meter": 12, // £ per meter
+  "track_per_meter": 20, // £ per meter
+  "installation_per_meter": 25, // £ per meter
+  "vat_rate": 20 // percentage
 };
