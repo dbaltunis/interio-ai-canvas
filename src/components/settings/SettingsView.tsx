@@ -3,12 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
-import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
+import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
+import { ComponentsTab } from "./tabs/ComponentsTab";
+import { CalculationsTab } from "./tabs/CalculationsTab";
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
-import { ProductTemplatesTab } from "./tabs/ProductTemplatesTab";
-import { ComponentsTab } from "./tabs/ComponentsTab";
-import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
@@ -59,9 +58,9 @@ export const SettingsView = () => {
             <Ruler className="h-3 w-3" />
             <span className="hidden sm:inline">Units</span>
           </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-1">
+          <TabsTrigger value="window-coverings" className="flex items-center gap-1">
             <Package className="h-3 w-3" />
-            <span className="hidden sm:inline">Products</span>
+            <span className="hidden sm:inline">Window Coverings</span>
           </TabsTrigger>
           <TabsTrigger value="components" className="flex items-center gap-1">
             <Layers className="h-3 w-3" />
@@ -97,8 +96,8 @@ export const SettingsView = () => {
           <MeasurementUnitsTab />
         </TabsContent>
 
-        <TabsContent value="products">
-          <ProductTemplatesTab />
+        <TabsContent value="window-coverings">
+          <WindowCoveringsTab />
         </TabsContent>
 
         <TabsContent value="components">
@@ -106,7 +105,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="calculations">
-          <PricingRulesTab />
+          <CalculationsTab />
         </TabsContent>
 
         <TabsContent value="users">

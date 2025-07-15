@@ -278,36 +278,48 @@ export type Database = {
       calculation_formulas: {
         Row: {
           active: boolean | null
+          applies_to: string[] | null
           category: string
+          conditions: Json | null
           created_at: string
           description: string | null
           formula_expression: string
+          formula_type: string | null
           id: string
           name: string
+          output_unit: string | null
           updated_at: string
           user_id: string
           variables: Json | null
         }
         Insert: {
           active?: boolean | null
+          applies_to?: string[] | null
           category: string
+          conditions?: Json | null
           created_at?: string
           description?: string | null
           formula_expression: string
+          formula_type?: string | null
           id?: string
           name: string
+          output_unit?: string | null
           updated_at?: string
           user_id: string
           variables?: Json | null
         }
         Update: {
           active?: boolean | null
+          applies_to?: string[] | null
           category?: string
+          conditions?: Json | null
           created_at?: string
           description?: string | null
           formula_expression?: string
+          formula_type?: string | null
           id?: string
           name?: string
+          output_unit?: string | null
           updated_at?: string
           user_id?: string
           variables?: Json | null
@@ -454,6 +466,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      components: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          component_type: string
+          created_at: string
+          description: string | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          specifications: Json | null
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          component_type: string
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price?: number
+          specifications?: Json | null
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          component_type?: string
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          specifications?: Json | null
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       email_analytics: {
         Row: {
@@ -900,6 +963,66 @@ export type Database = {
           updated_at?: string
           user_id?: string
           work_order_ids?: string[] | null
+        }
+        Relationships: []
+      }
+      fabrics: {
+        Row: {
+          active: boolean | null
+          care_instructions: string | null
+          cost_per_meter: number | null
+          created_at: string
+          description: string | null
+          fabric_code: string | null
+          fabric_type: string | null
+          fabric_width: number
+          id: string
+          image_url: string | null
+          name: string
+          pattern_repeat: number | null
+          rotation_allowed: boolean | null
+          supplier: string | null
+          updated_at: string
+          user_id: string
+          weight: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          care_instructions?: string | null
+          cost_per_meter?: number | null
+          created_at?: string
+          description?: string | null
+          fabric_code?: string | null
+          fabric_type?: string | null
+          fabric_width?: number
+          id?: string
+          image_url?: string | null
+          name: string
+          pattern_repeat?: number | null
+          rotation_allowed?: boolean | null
+          supplier?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          care_instructions?: string | null
+          cost_per_meter?: number | null
+          created_at?: string
+          description?: string | null
+          fabric_code?: string | null
+          fabric_type?: string | null
+          fabric_width?: number
+          id?: string
+          image_url?: string | null
+          name?: string
+          pattern_repeat?: number | null
+          rotation_allowed?: boolean | null
+          supplier?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: string | null
         }
         Relationships: []
       }
@@ -1409,6 +1532,54 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      pricing_methods: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_formula_id: string | null
+          created_at: string
+          description: string | null
+          height_tiers: Json | null
+          id: string
+          method_type: string
+          name: string
+          pricing_grid_id: string | null
+          updated_at: string
+          user_id: string
+          width_tiers: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_formula_id?: string | null
+          created_at?: string
+          description?: string | null
+          height_tiers?: Json | null
+          id?: string
+          method_type: string
+          name: string
+          pricing_grid_id?: string | null
+          updated_at?: string
+          user_id: string
+          width_tiers?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_formula_id?: string | null
+          created_at?: string
+          description?: string | null
+          height_tiers?: Json | null
+          id?: string
+          method_type?: string
+          name?: string
+          pricing_grid_id?: string | null
+          updated_at?: string
+          user_id?: string
+          width_tiers?: Json | null
         }
         Relationships: []
       }
@@ -2724,6 +2895,39 @@ export type Database = {
           },
         ]
       }
+      window_covering_components: {
+        Row: {
+          component_id: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          is_required: boolean | null
+          sort_order: number | null
+          user_id: string
+          window_covering_id: string
+        }
+        Insert: {
+          component_id: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          is_required?: boolean | null
+          sort_order?: number | null
+          user_id: string
+          window_covering_id: string
+        }
+        Update: {
+          component_id?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          is_required?: boolean | null
+          sort_order?: number | null
+          user_id?: string
+          window_covering_id?: string
+        }
+        Relationships: []
+      }
       window_covering_option_assignments: {
         Row: {
           category_id: string
@@ -3096,13 +3300,20 @@ export type Database = {
       window_coverings: {
         Row: {
           active: boolean
+          calculation_method_id: string | null
           created_at: string
+          default_components: string[] | null
           description: string | null
+          fabric_id: string | null
           fabrication_pricing_method: string | null
           id: string
           image_url: string | null
           making_cost_id: string | null
           margin_percentage: number
+          maximum_height: number | null
+          maximum_width: number | null
+          minimum_height: number | null
+          minimum_width: number | null
           name: string
           pricing_grid_data: string | null
           unit_price: number | null
@@ -3111,13 +3322,20 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          calculation_method_id?: string | null
           created_at?: string
+          default_components?: string[] | null
           description?: string | null
+          fabric_id?: string | null
           fabrication_pricing_method?: string | null
           id?: string
           image_url?: string | null
           making_cost_id?: string | null
           margin_percentage?: number
+          maximum_height?: number | null
+          maximum_width?: number | null
+          minimum_height?: number | null
+          minimum_width?: number | null
           name: string
           pricing_grid_data?: string | null
           unit_price?: number | null
@@ -3126,13 +3344,20 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          calculation_method_id?: string | null
           created_at?: string
+          default_components?: string[] | null
           description?: string | null
+          fabric_id?: string | null
           fabrication_pricing_method?: string | null
           id?: string
           image_url?: string | null
           making_cost_id?: string | null
           margin_percentage?: number
+          maximum_height?: number | null
+          maximum_width?: number | null
+          minimum_height?: number | null
+          minimum_width?: number | null
           name?: string
           pricing_grid_data?: string | null
           unit_price?: number | null

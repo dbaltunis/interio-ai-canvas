@@ -1,0 +1,80 @@
+
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { useCalculationFormulas } from "@/hooks/useCalculationFormulas";
+import { CalculationFormulaForm } from "./CalculationFormulaForm";
+import { CalculationFormulasList } from "./CalculationFormulasList";
+
+export const CalculationFormulasManager = () => {
+  const { data: formulas, isLoading, createFormula, updateFormula, deleteFormula } = useCalculationFormulas();
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingFormula, setEditingFormula] = useState(null);
+
+  const handleSave = async (formulaData: any) => {
+    try {
+      if (editingFormula) {
+        await updateFormula({ ...formulaData, id: editingFormula.id });
+        setEditingFormula(null);
+      } else {
+        await createFormula(formulaData);
+        setIsCreating(false);
+      }
+    } catch (error) {
+      console.error('Error saving formula:', error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading calculation formulas...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Calculation Formulas</CardTitle>
+          <CardDescription>
+            Create complex IF/THEN formulas for fabric usage, pricing calculations, and business logic
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-sm text-brand-neutral">
+              Build formulas for fabric usage, fullness calculations, hems, linings, and pricing rules
+            </p>
+            <Button 
+              onClick={() => setIsCreating(true)}
+              className="bg-brand-primary hover:bg-brand-accent"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Formula
+            </Button>
+          </div>
+
+          {/* Create/Edit Form */}
+          {(isCreating || editingFormula) && (
+            <div className="mb-6">
+              <CalculationFormulaForm
+                formula={editingFormula}
+                onSave={handleSave}
+                onCancel={() => {
+                  setIsCreating(false);
+                  setEditingFormula(null);
+                }}
+              />
+            </div>
+          )}
+
+          {/* Formulas List */}
+          <CalculationFormulasList
+            formulas={formulas || []}
+            onEdit={setEditingFormula}
+            onDelete={deleteFormula}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
