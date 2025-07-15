@@ -17,6 +17,12 @@ serve(async (req) => {
   try {
     const { category, name } = await req.json();
 
+    console.log('Generating description for category:', category, 'name:', name);
+
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const systemPrompt = `You are an expert in window treatment and fabric calculations. Generate clear, concise descriptions for calculation formulas based on the category.
 
 Write descriptions that explain:
@@ -55,7 +61,20 @@ Formula Name: ${name || 'Not specified'}`;
       }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Unexpected OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
+
     const description = data.choices[0].message.content.trim();
 
     return new Response(JSON.stringify({ description }), {

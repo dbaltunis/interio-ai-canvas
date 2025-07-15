@@ -17,6 +17,12 @@ serve(async (req) => {
   try {
     const { description, category, outputUnit } = await req.json();
 
+    console.log('Generating formula for description:', description, 'category:', category, 'outputUnit:', outputUnit);
+
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const systemPrompt = `You are an expert in window treatment and fabric calculation formulas. Generate mathematical formulas for fabric calculations based on user descriptions.
 
 Available variables you can use:
@@ -56,7 +62,20 @@ Examples:
       }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Unexpected OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
+
     const formula = data.choices[0].message.content.trim();
 
     return new Response(JSON.stringify({ formula }), {
