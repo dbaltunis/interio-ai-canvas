@@ -30,11 +30,29 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: async (booking: AppointmentBookingInsert) => {
-      console.log('Creating booking:', booking);
+      console.log('Creating booking with data:', booking);
       
+      // Ensure all required fields are present
+      const bookingData = {
+        scheduler_id: booking.scheduler_id,
+        customer_name: booking.customer_name,
+        customer_email: booking.customer_email,
+        customer_phone: booking.customer_phone || '',
+        appointment_date: booking.appointment_date,
+        appointment_time: booking.appointment_time,
+        location_type: booking.location_type,
+        notes: booking.notes || '',
+        booking_message: booking.booking_message || '',
+        customer_timezone: booking.customer_timezone || 'UTC',
+        appointment_timezone: booking.appointment_timezone || 'UTC',
+        status: 'confirmed'
+      };
+
+      console.log('Sanitized booking data:', bookingData);
+
       const { data, error } = await supabase
         .from("appointments_booked")
-        .insert(booking)
+        .insert(bookingData)
         .select(`
           *,
           appointment_schedulers (
@@ -56,7 +74,7 @@ export const useCreateBooking = () => {
         await supabase.functions.invoke('send-booking-confirmation', {
           body: {
             bookingId: data.id,
-            schedulerName: data.appointment_schedulers.name,
+            schedulerName: data.appointment_schedulers?.name || 'Unknown',
             customerName: data.customer_name,
             customerEmail: data.customer_email,
             appointmentDate: data.appointment_date,

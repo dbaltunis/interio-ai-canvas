@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,7 +120,7 @@ export const PublicBookingPage = () => {
     }
 
     try {
-      await createBooking.mutateAsync({
+      console.log('Submitting booking with:', {
         scheduler_id: scheduler.id,
         customer_name: formData.name,
         customer_email: formData.email,
@@ -131,6 +130,20 @@ export const PublicBookingPage = () => {
         location_type: selectedLocation,
         notes: formData.notes,
         booking_message: formData.message,
+        customer_timezone: userTimezone,
+        appointment_timezone: userTimezone
+      });
+
+      await createBooking.mutateAsync({
+        scheduler_id: scheduler.id,
+        customer_name: formData.name,
+        customer_email: formData.email,
+        customer_phone: formData.phone || '',
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        appointment_time: selectedTime,
+        location_type: selectedLocation,
+        notes: formData.notes || '',
+        booking_message: formData.message || '',
         customer_timezone: userTimezone,
         appointment_timezone: userTimezone
       });
