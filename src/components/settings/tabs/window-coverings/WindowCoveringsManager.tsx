@@ -15,10 +15,10 @@ export const WindowCoveringsManager = () => {
   const handleSave = async (windowCoveringData: any) => {
     try {
       if (editingWindowCovering) {
-        await updateWindowCovering({ ...windowCoveringData, id: editingWindowCovering.id });
+        await updateWindowCovering.mutateAsync({ ...windowCoveringData, id: editingWindowCovering.id });
         setEditingWindowCovering(null);
       } else {
-        await createWindowCovering(windowCoveringData);
+        await createWindowCovering.mutateAsync(windowCoveringData);
         setIsCreating(false);
       }
     } catch (error) {

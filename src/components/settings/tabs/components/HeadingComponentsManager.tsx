@@ -18,10 +18,10 @@ export const HeadingComponentsManager = () => {
     try {
       const data = { ...componentData, component_type: 'heading' };
       if (editingComponent) {
-        await updateComponent({ ...data, id: editingComponent.id });
+        await updateComponent.mutateAsync({ ...data, id: editingComponent.id });
         setEditingComponent(null);
       } else {
-        await createComponent(data);
+        await createComponent.mutateAsync(data);
         setIsCreating(false);
       }
     } catch (error) {
@@ -75,7 +75,7 @@ export const HeadingComponentsManager = () => {
           <ComponentsList
             components={headingComponents}
             onEdit={setEditingComponent}
-            onDelete={deleteComponent}
+            onDelete={deleteComponent.mutateAsync}
           />
         </CardContent>
       </Card>

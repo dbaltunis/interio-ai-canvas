@@ -15,10 +15,10 @@ export const CalculationFormulasManager = () => {
   const handleSave = async (formulaData: any) => {
     try {
       if (editingFormula) {
-        await updateFormula({ ...formulaData, id: editingFormula.id });
+        await updateFormula.mutateAsync({ ...formulaData, id: editingFormula.id });
         setEditingFormula(null);
       } else {
-        await createFormula(formulaData);
+        await createFormula.mutateAsync(formulaData);
         setIsCreating(false);
       }
     } catch (error) {
@@ -71,7 +71,7 @@ export const CalculationFormulasManager = () => {
           <CalculationFormulasList
             formulas={formulas || []}
             onEdit={setEditingFormula}
-            onDelete={deleteFormula}
+            onDelete={deleteFormula.mutateAsync}
           />
         </CardContent>
       </Card>

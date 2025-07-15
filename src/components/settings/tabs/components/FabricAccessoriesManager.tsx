@@ -18,10 +18,10 @@ export const FabricAccessoriesManager = () => {
     try {
       const data = { ...componentData, component_type: 'fabric_accessory' };
       if (editingComponent) {
-        await updateComponent({ ...data, id: editingComponent.id });
+        await updateComponent.mutateAsync({ ...data, id: editingComponent.id });
         setEditingComponent(null);
       } else {
-        await createComponent(data);
+        await createComponent.mutateAsync(data);
         setIsCreating(false);
       }
     } catch (error) {
@@ -75,7 +75,7 @@ export const FabricAccessoriesManager = () => {
           <ComponentsList
             components={fabricAccessories}
             onEdit={setEditingComponent}
-            onDelete={deleteComponent}
+            onDelete={deleteComponent.mutateAsync}
           />
         </CardContent>
       </Card>

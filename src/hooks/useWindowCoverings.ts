@@ -1,273 +1,116 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface WindowCovering {
   id: string;
+  user_id: string;
   name: string;
   description?: string;
   margin_percentage: number;
-  fabrication_pricing_method?: 'per-panel' | 'per-drop' | 'per-meter' | 'per-yard' | 'pricing-grid';
-  image_url?: string;
   active: boolean;
   unit_price?: number;
-  pricing_grid_data?: string;
   making_cost_id?: string;
-  optionsCount?: number;
+  fabric_id?: string;
+  default_components?: string[];
+  calculation_method_id?: string;
+  minimum_width?: number;
+  maximum_width?: number;
+  minimum_height?: number;
+  maximum_height?: number;
+  pricing_grid_data?: string;
+  image_url?: string;
+  fabrication_pricing_method?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useWindowCoverings = () => {
-  const [windowCoverings, setWindowCoverings] = useState<WindowCovering[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchWindowCoverings = async () => {
-    console.log("=== FETCHING WINDOW COVERINGS ===");
-    setIsLoading(true);
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("No authenticated user");
-        throw new Error("Not authenticated");
-      }
-
-      console.log("Fetching window coverings for user:", user.id);
-
+  const { data: windowCoverings, isLoading, error } = useQuery({
+    queryKey: ['window-coverings'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('window_coverings')
-        .select(`
-          id,
-          name,
-          description,
-          margin_percentage,
-          fabrication_pricing_method,
-          image_url,
-          active,
-          unit_price,
-          pricing_grid_data,
-          making_cost_id,
-          user_id
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      console.log("Window coverings query result:", { data, error, count: data?.length });
-
-      if (error) {
-        console.error("Error fetching window coverings:", error);
-        throw error;
-      }
-
-      if (!data || data.length === 0) {
-        console.log("No window coverings found for user");
-        setWindowCoverings([]);
-        return;
-      }
-
-      // Get options count for each window covering
-      const windowCoveringsWithCounts = await Promise.all(
-        data.map(async (wc) => {
-          const { count } = await supabase
-            .from('window_covering_options')
-            .select('*', { count: 'exact', head: true })
-            .eq('window_covering_id', wc.id);
-
-          return {
-            id: wc.id,
-            name: wc.name,
-            description: wc.description || undefined,
-            margin_percentage: wc.margin_percentage,
-            fabrication_pricing_method: wc.fabrication_pricing_method as WindowCovering['fabrication_pricing_method'],
-            image_url: wc.image_url || undefined,
-            active: wc.active,
-            unit_price: wc.unit_price || undefined,
-            pricing_grid_data: wc.pricing_grid_data || undefined,
-            making_cost_id: wc.making_cost_id || undefined,
-            optionsCount: count || 0
-          } as WindowCovering;
-        })
-      );
-
-      console.log("Final window coverings with counts:", windowCoveringsWithCounts);
-      console.log("Active window coverings:", windowCoveringsWithCounts.filter(wc => wc.active));
-      console.log("Total count:", windowCoveringsWithCounts.length);
+        .select('*')
+        .eq('active', true)
+        .order('name');
       
-      setWindowCoverings(windowCoveringsWithCounts);
-    } catch (error) {
-      console.error('Error fetching window coverings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch window coverings",
-        variant: "destructive"
-      });
-      setWindowCoverings([]);
-    } finally {
-      setIsLoading(false);
+      if (error) throw error;
+      return data as WindowCovering[];
     }
-  };
+  });
 
-  const createWindowCovering = async (windowCovering: Omit<WindowCovering, 'id' | 'optionsCount'>) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Remove the id from the data being inserted, let database generate it
-      const insertData = {
-        name: windowCovering.name,
-        description: windowCovering.description,
-        margin_percentage: windowCovering.margin_percentage,
-        fabrication_pricing_method: windowCovering.fabrication_pricing_method,
-        image_url: windowCovering.image_url,
-        active: windowCovering.active,
-        unit_price: windowCovering.unit_price,
-        pricing_grid_data: windowCovering.pricing_grid_data,
-        making_cost_id: windowCovering.making_cost_id,
-        user_id: user.id
-      };
-
+  const createWindowCovering = useMutation({
+    mutationFn: async (windowCovering: Omit<WindowCovering, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('window_coverings')
-        .insert([insertData])
+        .insert([windowCovering])
         .select()
         .single();
-
-      if (error) throw error;
-
-      const newWindowCovering: WindowCovering = {
-        id: data.id,
-        name: data.name,
-        description: data.description || undefined,
-        margin_percentage: data.margin_percentage,
-        fabrication_pricing_method: data.fabrication_pricing_method as WindowCovering['fabrication_pricing_method'],
-        image_url: data.image_url || undefined,
-        active: data.active,
-        unit_price: data.unit_price || undefined,
-        pricing_grid_data: data.pricing_grid_data || undefined,
-        making_cost_id: data.making_cost_id || undefined,
-        optionsCount: 0
-      };
-
-      setWindowCoverings(prev => [newWindowCovering, ...prev]);
       
-      toast({
-        title: "Success",
-        description: "Window covering created successfully"
-      });
-
-      return newWindowCovering;
-    } catch (error) {
-      console.error('Error creating window covering:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create window covering",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  const updateWindowCovering = async (id: string, updates: Partial<WindowCovering>) => {
-    try {
-      const { data, error } = await supabase
-        .from('window_coverings')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
       if (error) throw error;
-
-      const updatedWindowCovering: WindowCovering = {
-        id: data.id,
-        name: data.name,
-        description: data.description || undefined,
-        margin_percentage: data.margin_percentage,
-        fabrication_pricing_method: data.fabrication_pricing_method as WindowCovering['fabrication_pricing_method'],
-        image_url: data.image_url || undefined,
-        active: data.active,
-        unit_price: data.unit_price || undefined,
-        pricing_grid_data: data.pricing_grid_data || undefined,
-        making_cost_id: data.making_cost_id || undefined,
-      };
-
-      setWindowCoverings(prev => 
-        prev.map(wc => wc.id === id ? { ...wc, ...updatedWindowCovering } : wc)
-      );
-
-      toast({
-        title: "Success",
-        description: "Window covering updated successfully"
-      });
-
       return data;
-    } catch (error) {
-      console.error('Error updating window covering:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update window covering",
-        variant: "destructive"
-      });
-      throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['window-coverings'] });
+      toast.success('Window covering created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create window covering');
+      console.error('Error creating window covering:', error);
     }
-  };
+  });
 
-  const deleteWindowCovering = async (id: string) => {
-    try {
+  const updateWindowCovering = useMutation({
+    mutationFn: async (windowCovering: Partial<WindowCovering> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('window_coverings')
+        .update(windowCovering)
+        .eq('id', windowCovering.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['window-coverings'] });
+      toast.success('Window covering updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update window covering');
+      console.error('Error updating window covering:', error);
+    }
+  });
+
+  const deleteWindowCovering = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('window_coverings')
-        .delete()
+        .update({ active: false })
         .eq('id', id);
-
-      if (error) throw error;
-
-      setWindowCoverings(prev => prev.filter(wc => wc.id !== id));
       
-      toast({
-        title: "Success",
-        description: "Window covering deleted successfully"
-      });
-    } catch (error) {
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['window-coverings'] });
+      toast.success('Window covering deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete window covering');
       console.error('Error deleting window covering:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete window covering",
-        variant: "destructive"
-      });
-      throw error;
     }
-  };
-
-  useEffect(() => {
-    console.log("useWindowCoverings - Initial fetch");
-    fetchWindowCoverings();
-  }, []);
-
-  // Also run when auth state changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          fetchWindowCoverings();
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  console.log("useWindowCoverings hook state:", { 
-    windowCoveringsCount: windowCoverings?.length || 0, 
-    isLoading,
-    activeCount: windowCoverings?.filter(wc => wc.active)?.length || 0
   });
 
   return {
     windowCoverings,
     isLoading,
+    error,
     createWindowCovering,
     updateWindowCovering,
-    deleteWindowCovering,
-    refetch: fetchWindowCoverings
+    deleteWindowCovering
   };
 };
