@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
@@ -248,10 +249,15 @@ export const useCalculatorLogic = (
         bottomHem: hemConfig?.bottom_hem || 0,
         pooling: parseFloat(formData.curtainPooling || "0"),
         fabricWidth: parsedFabricWidth,
-        manufacturingMethod: matchingTemplate?.calculation_method,
+        manufacturingMethod: matchingTemplate?.calculation_method || 'legacy',
         pricingGridUsed: matchingTemplate?.calculation_method === 'pricing_grid',
         isBlind,
-        treatmentType: isBlind ? 'blind' : 'curtain'
+        treatmentType: isBlind ? 'blind' : 'curtain',
+        formulaBreakdown: {
+          fabric: `Legacy calculation: ${fabricCalculationDetails}`,
+          labor: `Legacy labor: £${manufacturingCost.toFixed(2)} for ${parsedQuantity} ${isBlind ? 'blind(s)' : 'panel(s)'}`,
+          hardware: `Legacy lining: £${liningCost.toFixed(2)}`
+        }
       }
     };
 
@@ -297,7 +303,7 @@ export const useCalculatorLogic = (
       dropsPerWidth: calculation.details.dropsPerWidth,
       fabricYards: calculation.details.fabricYards,
       treatmentType: calculation.details.treatmentType,
-      formulaBreakdown: calculation.details.formulaBreakdown || null
+      formulaBreakdown: calculation.details.formulaBreakdown
     };
   }, [calculation]);
 
