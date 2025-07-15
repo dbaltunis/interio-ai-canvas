@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -256,7 +257,11 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select window covering type" />
+                <SelectValue placeholder={
+                  windowCoverings && windowCoverings.length > 0 
+                    ? "Select window covering type" 
+                    : "No window coverings available - Add them in Window Coverings tab"
+                } />
               </SelectTrigger>
               <SelectContent>
                 {windowCoverings && windowCoverings.length > 0 ? (
@@ -265,11 +270,7 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
                       {wc.name}
                     </SelectItem>
                   ))
-                ) : (
-                  <SelectItem value="" disabled>
-                    No window coverings available - Add them in Window Coverings tab
-                  </SelectItem>
-                )}
+                ) : null}
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 mt-1">
@@ -343,7 +344,11 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
                 onValueChange={value => handleSelectChange("selectedPricingGrid", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select pricing grid" />
+                  <SelectValue placeholder={
+                    pricingGrids && pricingGrids.length > 0 
+                      ? "Select pricing grid" 
+                      : "No pricing grids available - Add them in Pricing Grids section"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {pricingGrids && pricingGrids.length > 0 ? (
@@ -352,11 +357,7 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
                         {grid.name}
                       </SelectItem>
                     ))
-                  ) : (
-                    <SelectItem value="" disabled>
-                      No pricing grids available - Add them in Pricing Grids section
-                    </SelectItem>
-                  )}
+                  ) : null}
                 </SelectContent>
               </Select>
             </div>
@@ -367,10 +368,11 @@ export const ProductTemplateForm = ({ template, onSave, onCancel, isEditing }: P
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowPricingPreview(true)}
+                  onClick={() => setShowPricingPreview(!showPricingPreview)}
                   className="flex items-center gap-2"
                 >
-                  Preview Pricing Grid
+                  {showPricingPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPricingPreview ? "Hide" : "Preview"} Pricing Grid
                 </Button>
                 
                 <PricingGridPreview
