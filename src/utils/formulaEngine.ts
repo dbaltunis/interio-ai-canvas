@@ -1,4 +1,3 @@
-
 interface FormulaVariable {
   name: string;
   value: number;
@@ -19,13 +18,13 @@ export interface FormulaResult {
 }
 
 export class FormulaEngine {
-  private variables: Map<string, number> = new Map();
+  private variables: Map<string, number | string> = new Map();
 
-  setVariable(name: string, value: number): void {
+  setVariable(name: string, value: number | string): void {
     this.variables.set(name, value);
   }
 
-  setVariables(vars: Record<string, number>): void {
+  setVariables(vars: Record<string, number | string>): void {
     Object.entries(vars).forEach(([name, value]) => {
       this.variables.set(name, value);
     });
@@ -38,7 +37,9 @@ export class FormulaEngine {
         return {
           value: 0,
           breakdown: "Conditions not met",
-          variables: Array.from(this.variables.entries()).map(([name, value]) => ({ name, value }))
+          variables: Array.from(this.variables.entries())
+            .filter(([_, value]) => typeof value === 'number')
+            .map(([name, value]) => ({ name, value: value as number }))
         };
       }
 
@@ -49,10 +50,13 @@ export class FormulaEngine {
       for (const variable of variableMatches) {
         if (this.variables.has(variable)) {
           const value = this.variables.get(variable)!;
-          processedExpression = processedExpression.replace(
-            new RegExp(`\\b${variable}\\b`, 'g'),
-            value.toString()
-          );
+          // Only replace numeric variables in expressions
+          if (typeof value === 'number') {
+            processedExpression = processedExpression.replace(
+              new RegExp(`\\b${variable}\\b`, 'g'),
+              value.toString()
+            );
+          }
         }
       }
 
@@ -65,13 +69,17 @@ export class FormulaEngine {
       return {
         value: result,
         breakdown: this.generateBreakdown(expression, result),
-        variables: Array.from(this.variables.entries()).map(([name, value]) => ({ name, value }))
+        variables: Array.from(this.variables.entries())
+          .filter(([_, value]) => typeof value === 'number')
+          .map(([name, value]) => ({ name, value: value as number }))
       };
     } catch (error) {
       return {
         value: 0,
         breakdown: "Formula evaluation failed",
-        variables: Array.from(this.variables.entries()).map(([name, value]) => ({ name, value })),
+        variables: Array.from(this.variables.entries())
+          .filter(([_, value]) => typeof value === 'number')
+          .map(([name, value]) => ({ name, value: value as number })),
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
@@ -80,7 +88,7 @@ export class FormulaEngine {
   private checkConditions(conditions: FormulaCondition[]): boolean {
     return conditions.every(condition => {
       const value = this.variables.get(condition.variable);
-      if (value === undefined) return false;
+      if (value === undefined || typeof value !== 'number') return false;
 
       switch (condition.operator) {
         case 'gt': return value > condition.value;
@@ -135,10 +143,12 @@ export class FormulaEngine {
     
     // Replace variables with their values for display
     for (const [name, value] of this.variables.entries()) {
-      breakdown = breakdown.replace(
-        new RegExp(`\\b${name}\\b`, 'g'),
-        value.toString()
-      );
+      if (typeof value === 'number') {
+        breakdown = breakdown.replace(
+          new RegExp(`\\b${name}\\b`, 'g'),
+          value.toString()
+        );
+      }
     }
 
     return `${breakdown} = ${result.toFixed(2)}`;

@@ -297,7 +297,7 @@ export const useCalculatorLogic = (
       dropsPerWidth: calculation.details.dropsPerWidth,
       fabricYards: calculation.details.fabricYards,
       treatmentType: calculation.details.treatmentType,
-      formulaBreakdown: calculation.details.formulaBreakdown
+      formulaBreakdown: calculation.details.formulaBreakdown || null
     };
   }, [calculation]);
 

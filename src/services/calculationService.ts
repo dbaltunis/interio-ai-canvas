@@ -43,8 +43,8 @@ export class CalculationService {
     input: CalculationInput,
     formulas: CalculationFormula[]
   ): CalculationOutput {
-    // Set up variables for formula engine
-    this.formulaEngine.setVariables({
+    // Set up variables for formula engine - separate numeric and string variables
+    const numericVariables: Record<string, number> = {
       width: input.railWidth,
       height: input.curtainDrop,
       drop: input.curtainDrop,
@@ -54,7 +54,19 @@ export class CalculationService {
       fabric_price: input.fabricPricePerYard || 0,
       pooling: input.curtainPooling || 0,
       track_width: input.railWidth / 100, // Convert to meters
-      ...input // Include any additional variables
+    };
+
+    // Add other numeric properties from input
+    Object.entries(input).forEach(([key, value]) => {
+      if (typeof value === 'number' && key !== 'treatmentType') {
+        numericVariables[key] = value;
+      }
+    });
+
+    // Set all variables (numeric and string)
+    this.formulaEngine.setVariables({
+      ...numericVariables,
+      treatmentType: input.treatmentType
     });
 
     // Calculate fabric cost

@@ -13,6 +13,8 @@ export interface CalculationFormula {
   created_at: string;
   updated_at: string;
   user_id: string;
+  applies_to?: string[];
+  conditions?: Record<string, any>;
 }
 
 export const useCalculationFormulas = () => {
