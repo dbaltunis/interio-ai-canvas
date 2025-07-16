@@ -2,13 +2,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calculator } from "lucide-react";
+import { Plus, Calculator, Cog } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCalculationFormulas } from "@/hooks/useCalculationFormulas";
 import { CalculationFormulaForm } from "./CalculationFormulaForm";
 import { CalculationFormulasList } from "./CalculationFormulasList";
 import { DefaultFormulasLoader } from "./DefaultFormulasLoader";
 import { FormulaCalculator } from "./FormulaCalculator";
+import { FormulaIntegrationDemo } from "./FormulaIntegrationDemo";
 
 export const CalculationFormulasManager = () => {
   const { data: formulas, isLoading, createFormula, updateFormula, deleteFormula } = useCalculationFormulas();
@@ -44,11 +45,15 @@ export const CalculationFormulasManager = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="manage" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="manage">Manage Formulas</TabsTrigger>
               <TabsTrigger value="calculator">
                 <Calculator className="h-4 w-4 mr-2" />
                 Test Calculator
+              </TabsTrigger>
+              <TabsTrigger value="integration">
+                <Cog className="h-4 w-4 mr-2" />
+                Job Integration
               </TabsTrigger>
             </TabsList>
 
@@ -97,6 +102,10 @@ export const CalculationFormulasManager = () => {
 
             <TabsContent value="calculator">
               <FormulaCalculator />
+            </TabsContent>
+
+            <TabsContent value="integration">
+              <FormulaIntegrationDemo />
             </TabsContent>
           </Tabs>
         </CardContent>
