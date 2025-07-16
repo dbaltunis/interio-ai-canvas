@@ -1,208 +1,128 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
 
-export interface MakingCostOption {
-  name: string;
-  pricing_method: string;
-  base_price: number;
-  fullness?: number;
-  sort_order: number;
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface MakingCost {
   id: string;
-  name: string;
-  pricing_method: string;
-  include_fabric_selection: boolean;
-  measurement_type: string;
-  heading_options: MakingCostOption[];
-  hardware_options: MakingCostOption[];
-  lining_options: MakingCostOption[];
-  drop_ranges: Array<{
-    min: number;
-    max: number;
-    price: number;
-  }>;
-  description?: string;
-  active: boolean;
   user_id: string;
+  name: string;
+  product_type_id?: string;
+  base_cost: number;
+  cost_per_width: number;
+  cost_per_meter: number;
+  cost_per_hour: number;
+  minimum_charge: number;
+  complexity_multiplier: number;
+  includes_lining: boolean;
+  includes_heading: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-type MakingCostRow = Database['public']['Tables']['making_costs']['Row'];
-type MakingCostInsert = Database['public']['Tables']['making_costs']['Insert'];
-type MakingCostUpdate = Database['public']['Tables']['making_costs']['Update'];
+export interface MakingCostFormData {
+  name: string;
+  product_type_id?: string;
+  base_cost: number;
+  cost_per_width: number;
+  cost_per_meter: number;
+  cost_per_hour: number;
+  minimum_charge: number;
+  complexity_multiplier: number;
+  includes_lining: boolean;
+  includes_heading: boolean;
+  active: boolean;
+}
 
 export const useMakingCosts = () => {
-  const [makingCosts, setMakingCosts] = useState<MakingCost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const transformRow = (row: MakingCostRow): MakingCost => ({
-    id: row.id,
-    name: row.name,
-    pricing_method: row.pricing_method,
-    include_fabric_selection: row.include_fabric_selection || false,
-    measurement_type: row.measurement_type,
-    heading_options: (row.heading_options as unknown as MakingCostOption[]) || [],
-    hardware_options: (row.hardware_options as unknown as MakingCostOption[]) || [],
-    lining_options: (row.lining_options as unknown as MakingCostOption[]) || [],
-    drop_ranges: (row.drop_ranges as unknown as Array<{min: number; max: number; price: number}>) || [],
-    description: row.description || '',
-    active: row.active || false,
-    user_id: row.user_id,
-    created_at: row.created_at,
-    updated_at: row.updated_at
-  });
-
-  const fetchMakingCosts = async () => {
-    try {
+  const {
+    data: makingCosts = [],
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['making_costs'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('making_costs')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name', { ascending: true });
 
       if (error) throw error;
-      setMakingCosts((data || []).map(transformRow));
-    } catch (error) {
-      console.error('Error fetching making costs:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch making costs",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      return data as MakingCost[];
     }
-  };
+  });
 
-  const createMakingCost = async (costData: Omit<MakingCost, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-    try {
-      const insertData = {
-        name: costData.name,
-        pricing_method: costData.pricing_method,
-        include_fabric_selection: costData.include_fabric_selection,
-        measurement_type: costData.measurement_type,
-        heading_options: costData.heading_options as any,
-        hardware_options: costData.hardware_options as any,
-        lining_options: costData.lining_options as any,
-        drop_ranges: costData.drop_ranges as any,
-        description: costData.description,
-        active: costData.active
-      };
-
+  const createMakingCost = useMutation({
+    mutationFn: async (makingCost: MakingCostFormData) => {
       const { data, error } = await supabase
         .from('making_costs')
-        .insert([insertData as any])
+        .insert([makingCost])
         .select()
         .single();
 
       if (error) throw error;
-
-      const transformedData = transformRow(data);
-      setMakingCosts(prev => [transformedData, ...prev]);
-      toast({
-        title: "Success",
-        description: "Making cost configuration created successfully"
-      });
-
-      return transformedData;
-    } catch (error) {
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['making_costs'] });
+      toast.success('Making cost created successfully');
+    },
+    onError: (error) => {
       console.error('Error creating making cost:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create making cost configuration",
-        variant: "destructive"
-      });
-      throw error;
+      toast.error('Failed to create making cost');
     }
-  };
+  });
 
-  const updateMakingCost = async (id: string, updates: Partial<MakingCost>) => {
-    try {
-      const updateData: MakingCostUpdate = {
-        name: updates.name,
-        pricing_method: updates.pricing_method,
-        include_fabric_selection: updates.include_fabric_selection,
-        measurement_type: updates.measurement_type,
-        heading_options: updates.heading_options as any,
-        hardware_options: updates.hardware_options as any,
-        lining_options: updates.lining_options as any,
-        drop_ranges: updates.drop_ranges as any,
-        description: updates.description,
-        active: updates.active
-      };
-
+  const updateMakingCost = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<MakingCostFormData>) => {
       const { data, error } = await supabase
         .from('making_costs')
-        .update(updateData)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-
-      const transformedData = transformRow(data);
-      setMakingCosts(prev => 
-        prev.map(cost => cost.id === id ? transformedData : cost)
-      );
-
-      toast({
-        title: "Success",
-        description: "Making cost configuration updated successfully"
-      });
-
-      return transformedData;
-    } catch (error) {
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['making_costs'] });
+      toast.success('Making cost updated successfully');
+    },
+    onError: (error) => {
       console.error('Error updating making cost:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update making cost configuration",
-        variant: "destructive"
-      });
-      throw error;
+      toast.error('Failed to update making cost');
     }
-  };
+  });
 
-  const deleteMakingCost = async (id: string) => {
-    try {
+  const deleteMakingCost = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('making_costs')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-
-      setMakingCosts(prev => prev.filter(cost => cost.id !== id));
-      
-      toast({
-        title: "Success",
-        description: "Making cost configuration deleted successfully"
-      });
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['making_costs'] });
+      toast.success('Making cost deleted successfully');
+    },
+    onError: (error) => {
       console.error('Error deleting making cost:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete making cost configuration",
-        variant: "destructive"
-      });
-      throw error;
+      toast.error('Failed to delete making cost');
     }
-  };
-
-  useEffect(() => {
-    fetchMakingCosts();
-  }, []);
+  });
 
   return {
     makingCosts,
     isLoading,
+    error,
     createMakingCost,
     updateMakingCost,
-    deleteMakingCost,
-    refetch: fetchMakingCosts
+    deleteMakingCost
   };
 };
