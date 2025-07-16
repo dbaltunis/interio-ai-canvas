@@ -26,6 +26,14 @@ export const MakingCostsManager = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMakingCost.mutateAsync(id);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading making costs...</div>;
   }
@@ -72,7 +80,7 @@ export const MakingCostsManager = () => {
           <MakingCostList
             makingCosts={makingCosts}
             onEdit={setEditingMakingCost}
-            onDelete={deleteMakingCost.mutateAsync}
+            onDelete={handleDelete}
           />
         </CardContent>
       </Card>
