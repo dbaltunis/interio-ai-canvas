@@ -1,4 +1,3 @@
-
 import { FormulaEngine } from '@/utils/formulaEngine';
 
 export interface CalculationInput {
@@ -16,6 +15,7 @@ export interface CalculationInput {
   track_price_per_meter?: number;
   bracket_price?: number;
   glider_price?: number;
+  markup_percentage?: number;
 }
 
 export interface CalculationResult {

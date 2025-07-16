@@ -63,7 +63,6 @@ function calculateWithFormulas(
     fabricPricePerYard: parseFloat(formData.fabricPricePerYard) || 0,
     curtainPooling: parseFloat(formData.curtainPooling) || 0,
     treatmentType: productTemplate?.name?.toLowerCase() || 'curtain',
-    // Add any additional variables from form data
     labor_rate: formData.laborRate || 85,
     markup_percentage: formData.markupPercentage || 0
   };
