@@ -21,23 +21,18 @@ export const JobsPageActions = ({
 }: JobsPageActionsProps) => {
   return (
     <div className="flex items-center space-x-3">
-      {activeTab === "jobs" ? (
+      {activeTab === "clients" && (
         <Button 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-medium"
-          onClick={onNewJob}
-        >
-          New Job
-        </Button>
-      ) : activeTab === "clients" ? (
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-medium"
+          className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium"
           onClick={onNewClient}
         >
           New Client
         </Button>
-      ) : (
+      )}
+      
+      {activeTab === "emails" && (
         <Button 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-medium"
+          className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium"
           onClick={onNewEmail}
         >
           New Email
