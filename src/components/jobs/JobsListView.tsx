@@ -8,6 +8,7 @@ import { useClients } from "@/hooks/useClients";
 import { JobsHeader } from "./JobsHeader";
 import { JobGridView } from "./JobGridView";
 import { JobListView } from "./JobListView";
+import { JobsFilters } from "./JobsFilters";
 
 interface JobsListViewProps {
   onNewJob: () => void;
@@ -37,6 +38,7 @@ export const JobsListView = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date_created");
+  const [showFilters, setShowFilters] = useState(false);
   
   const { data: quotes, isLoading: quotesLoading, error: quotesError } = useQuotes();
   const { data: clients, isLoading: clientsLoading } = useClients();
@@ -158,7 +160,30 @@ export const JobsListView = ({
         onSortChange={setSortBy}
         onNewJob={onNewJob}
         jobsCount={processedJobs.length}
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(!showFilters)}
       />
+
+      {/* Filters Section */}
+      {showFilters && (
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <JobsFilters
+            searchClient={searchClient}
+            setSearchClient={() => {}}
+            searchJobNumber={searchJobNumber}
+            setSearchJobNumber={() => {}}
+            filterStatus={filterStatus}
+            setFilterStatus={() => {}}
+            filterDeposit={filterDeposit}
+            setFilterDeposit={() => {}}
+            filterOwner={filterOwner}
+            setFilterOwner={() => {}}
+            filterMaker={filterMaker}
+            setFilterMaker={() => {}}
+            onClearAll={() => {}}
+          />
+        </div>
+      )}
 
       {/* Jobs Display */}
       {processedJobs.length === 0 ? (
@@ -185,12 +210,14 @@ export const JobsListView = ({
               jobs={processedJobs}
               onJobEdit={handleJobEdit}
               onJobView={handleJobView}
+              onJobCopy={onJobCopy}
             />
           ) : (
             <JobListView
               jobs={processedJobs}
               onJobEdit={handleJobEdit}
               onJobView={handleJobView}
+              onJobCopy={onJobCopy}
             />
           )}
         </div>

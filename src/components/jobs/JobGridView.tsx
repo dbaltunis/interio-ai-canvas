@@ -1,22 +1,23 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Eye, Edit, User, Calendar, DollarSign, FileText } from "lucide-react";
+import { User, Calendar, DollarSign, FileText } from "lucide-react";
 import { JobStatusBadge } from "./JobStatusBadge";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobGridViewProps {
   jobs: any[];
   onJobView: (jobId: string) => void;
   onJobEdit: (jobId: string) => void;
+  onJobCopy?: (jobId: string) => void;
 }
 
-export const JobGridView = ({ jobs, onJobView, onJobEdit }: JobGridViewProps) => {
+export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridViewProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount || 0);
   };
 
   return (
@@ -28,29 +29,29 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit }: JobGridViewProps) =>
           onClick={() => onJobView(job.id)}
         >
           <CardContent className="p-6">
-            {/* Header */}
+            {/* Header with Actions */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                  {job.name}
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <FileText className="h-3 w-3" />
-                  {job.job_number}
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="h-4 w-4 text-gray-400" />
+                  <span className="font-semibold text-lg text-gray-900">
+                    {job.job_number}
+                  </span>
                 </div>
+                <JobStatusBadge status={job.status} />
               </div>
-              <JobStatusBadge status={job.status} />
+              <div onClick={(e) => e.stopPropagation()}>
+                <JobActionsMenu 
+                  quote={job}
+                  client={job.client}
+                  project={job.project}
+                  onJobCopy={onJobCopy}
+                />
+              </div>
             </div>
 
-            {/* Description */}
-            {job.description && (
-              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                {job.description}
-              </p>
-            )}
-
-            {/* Details */}
-            <div className="space-y-3 mb-4">
+            {/* Job Details */}
+            <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-600">
@@ -61,7 +62,7 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit }: JobGridViewProps) =>
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="h-4 w-4 text-gray-400" />
                 <span className="font-medium text-gray-900">
-                  {job.total_amount ? formatCurrency(job.total_amount) : 'TBD'}
+                  {formatCurrency(job.total_amount)}
                 </span>
               </div>
               
@@ -71,34 +72,10 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit }: JobGridViewProps) =>
                   {job.created_at ? new Date(job.created_at).toLocaleDateString() : 'No date'}
                 </span>
               </div>
-            </div>
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t border-gray-100">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onJobView(job.id);
-                }}
-                className="flex-1 border-gray-300 text-gray-600 hover:bg-gray-50"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                View
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onJobEdit(job.id);
-                }}
-                className="flex-1 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              <div className="text-sm text-gray-600">
+                <span className="text-gray-500">User:</span> System User
+              </div>
             </div>
           </CardContent>
         </Card>

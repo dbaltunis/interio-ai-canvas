@@ -1,101 +1,97 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Eye, Edit, User, Calendar, DollarSign, FileText } from "lucide-react";
+import { User, Calendar, DollarSign, FileText } from "lucide-react";
 import { JobStatusBadge } from "./JobStatusBadge";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobListViewProps {
   jobs: any[];
   onJobView: (jobId: string) => void;
   onJobEdit: (jobId: string) => void;
+  onJobCopy?: (jobId: string) => void;
 }
 
-export const JobListView = ({ jobs, onJobView, onJobEdit }: JobListViewProps) => {
+export const JobListView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobListViewProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount || 0);
   };
 
   return (
     <div className="space-y-3">
+      {/* Header Row */}
+      <div className="grid grid-cols-7 gap-4 px-6 py-3 bg-gray-50 rounded-lg text-sm font-medium text-gray-700 border">
+        <div>Job Number</div>
+        <div>Client Name</div>
+        <div>Value</div>
+        <div>Date Created</div>
+        <div>Status</div>
+        <div>User</div>
+        <div className="text-center">Actions</div>
+      </div>
+
+      {/* Job Rows */}
       {jobs.map((job) => (
         <Card 
           key={job.id} 
           className="hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-brand-secondary cursor-pointer"
           onClick={() => onJobView(job.id)}
         >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              {/* Left side - Job Info */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                {/* Job Details */}
-                <div className="md:col-span-2">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-gray-900">{job.name}</h3>
-                    <JobStatusBadge status={job.status} />
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <FileText className="h-3 w-3" />
-                    {job.job_number}
-                  </div>
-                  {job.description && (
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-                      {job.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Client */}
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600">
-                    {job.client?.name || 'No client'}
-                  </span>
-                </div>
-
-                {/* Value */}
-                <div className="flex items-center gap-2 text-sm">
-                  <DollarSign className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium text-gray-900">
-                    {job.total_amount ? formatCurrency(job.total_amount) : 'TBD'}
-                  </span>
-                </div>
-
-                {/* Date */}
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600">
-                    {job.created_at ? new Date(job.created_at).toLocaleDateString() : 'No date'}
-                  </span>
-                </div>
+          <CardContent className="p-0">
+            <div className="grid grid-cols-7 gap-4 items-center px-6 py-4">
+              {/* Job Number */}
+              <div className="flex items-center gap-2 text-sm">
+                <FileText className="h-4 w-4 text-gray-400" />
+                <span className="font-medium text-gray-900">
+                  {job.job_number}
+                </span>
               </div>
 
-              {/* Right side - Actions */}
-              <div className="flex gap-2 ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onJobView(job.id);
-                  }}
-                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onJobEdit(job.id);
-                  }}
-                  className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+              {/* Client Name */}
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600">
+                  {job.client?.name || 'No client'}
+                </span>
+              </div>
+
+              {/* Value */}
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign className="h-4 w-4 text-gray-400" />
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(job.total_amount)}
+                </span>
+              </div>
+
+              {/* Date Created */}
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600">
+                  {job.created_at ? new Date(job.created_at).toLocaleDateString() : 'No date'}
+                </span>
+              </div>
+
+              {/* Status */}
+              <div>
+                <JobStatusBadge status={job.status} />
+              </div>
+
+              {/* User */}
+              <div className="text-sm text-gray-600">
+                System User
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                <JobActionsMenu 
+                  quote={job}
+                  client={job.client}
+                  project={job.project}
+                  onJobCopy={onJobCopy}
+                />
               </div>
             </div>
           </CardContent>
