@@ -7,15 +7,14 @@ export interface MakingCost {
   id: string;
   user_id: string;
   name: string;
-  product_type_id?: string;
-  base_cost: number;
-  cost_per_width: number;
-  cost_per_meter: number;
-  cost_per_hour: number;
-  minimum_charge: number;
-  complexity_multiplier: number;
-  includes_lining: boolean;
-  includes_heading: boolean;
+  pricing_method: string;
+  include_fabric_selection: boolean;
+  measurement_type: string;
+  heading_options: any;
+  hardware_options: any;
+  lining_options: any;
+  drop_ranges: any;
+  description?: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -23,15 +22,14 @@ export interface MakingCost {
 
 export interface MakingCostFormData {
   name: string;
-  product_type_id?: string;
-  base_cost: number;
-  cost_per_width: number;
-  cost_per_meter: number;
-  cost_per_hour: number;
-  minimum_charge: number;
-  complexity_multiplier: number;
-  includes_lining: boolean;
-  includes_heading: boolean;
+  pricing_method: string;
+  include_fabric_selection: boolean;
+  measurement_type: string;
+  heading_options: any;
+  hardware_options: any;
+  lining_options: any;
+  drop_ranges: any;
+  description?: string;
   active: boolean;
 }
 

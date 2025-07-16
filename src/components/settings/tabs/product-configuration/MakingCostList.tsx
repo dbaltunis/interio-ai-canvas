@@ -31,7 +31,7 @@ export const MakingCostList = ({ makingCosts, onEdit, onDelete }: MakingCostList
               <div>
                 <CardTitle className="text-lg">{makingCost.name}</CardTitle>
                 <CardDescription>
-                  {makingCost.product_type_id ? 'Product-specific' : 'General making cost'}
+                  {makingCost.description || 'No description provided'}
                 </CardDescription>
               </div>
               <div className="flex space-x-1">
@@ -57,24 +57,18 @@ export const MakingCostList = ({ makingCosts, onEdit, onDelete }: MakingCostList
               <Badge variant={makingCost.active ? "default" : "secondary"}>
                 {makingCost.active ? "Active" : "Inactive"}
               </Badge>
-              {makingCost.includes_lining && (
-                <Badge variant="outline">Includes Lining</Badge>
-              )}
-              {makingCost.includes_heading && (
-                <Badge variant="outline">Includes Heading</Badge>
+              {makingCost.include_fabric_selection && (
+                <Badge variant="outline">Includes Fabric Selection</Badge>
               )}
             </div>
             
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Base: ${makingCost.base_cost}</div>
-              <div>Per Width: ${makingCost.cost_per_width}</div>
-              <div>Per Meter: ${makingCost.cost_per_meter}</div>
-              <div>Per Hour: ${makingCost.cost_per_hour}</div>
+            <div className="grid grid-cols-1 gap-2 text-sm">
+              <div>Pricing Method: {makingCost.pricing_method}</div>
+              <div>Measurement Type: {makingCost.measurement_type}</div>
             </div>
             
             <div className="text-sm text-muted-foreground">
-              <div>Minimum: ${makingCost.minimum_charge}</div>
-              <div>Complexity: {makingCost.complexity_multiplier}x</div>
+              <div>Options configured: {(makingCost.heading_options as any[])?.length || 0} heading, {(makingCost.hardware_options as any[])?.length || 0} hardware, {(makingCost.lining_options as any[])?.length || 0} lining</div>
             </div>
           </CardContent>
         </Card>

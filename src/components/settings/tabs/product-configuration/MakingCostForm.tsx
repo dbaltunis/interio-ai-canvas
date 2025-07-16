@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MakingCost, MakingCostFormData } from "@/hooks/useMakingCosts";
-import { useProductTypes } from "@/hooks/useProductTypes";
 
 interface MakingCostFormProps {
   makingCost?: MakingCost;
@@ -17,19 +16,16 @@ interface MakingCostFormProps {
 }
 
 export const MakingCostForm = ({ makingCost, onSave, onCancel, isEditing }: MakingCostFormProps) => {
-  const { productTypes } = useProductTypes();
-  
   const [formData, setFormData] = useState<MakingCostFormData>({
     name: makingCost?.name || '',
-    product_type_id: makingCost?.product_type_id || '',
-    base_cost: makingCost?.base_cost || 0,
-    cost_per_width: makingCost?.cost_per_width || 0,
-    cost_per_meter: makingCost?.cost_per_meter || 0,
-    cost_per_hour: makingCost?.cost_per_hour || 0,
-    minimum_charge: makingCost?.minimum_charge || 0,
-    complexity_multiplier: makingCost?.complexity_multiplier || 1.0,
-    includes_lining: makingCost?.includes_lining ?? false,
-    includes_heading: makingCost?.includes_heading ?? false,
+    pricing_method: makingCost?.pricing_method || 'per-linear-meter',
+    include_fabric_selection: makingCost?.include_fabric_selection ?? true,
+    measurement_type: makingCost?.measurement_type || 'fabric-drop-required',
+    heading_options: makingCost?.heading_options || [],
+    hardware_options: makingCost?.hardware_options || [],
+    lining_options: makingCost?.lining_options || [],
+    drop_ranges: makingCost?.drop_ranges || [],
+    description: makingCost?.description || '',
     active: makingCost?.active ?? true
   });
 
@@ -58,21 +54,20 @@ export const MakingCostForm = ({ makingCost, onSave, onCancel, isEditing }: Maki
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product_type">Product Type (Optional)</Label>
+              <Label htmlFor="pricing_method">Pricing Method</Label>
               <Select
-                value={formData.product_type_id || ""}
-                onValueChange={(value) => setFormData({ ...formData, product_type_id: value || undefined })}
+                value={formData.pricing_method}
+                onValueChange={(value) => setFormData({ ...formData, pricing_method: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select product type" />
+                  <SelectValue placeholder="Select pricing method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific type</SelectItem>
-                  {productTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="per-linear-meter">Per Linear Meter</SelectItem>
+                  <SelectItem value="per-drop">Per Drop</SelectItem>
+                  <SelectItem value="per-panel">Per Panel</SelectItem>
+                  <SelectItem value="pricing-grid">Pricing Grid</SelectItem>
+                  <SelectItem value="fixed-price">Fixed Price</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -80,104 +75,54 @@ export const MakingCostForm = ({ makingCost, onSave, onCancel, isEditing }: Maki
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="base_cost">Base Cost ($)</Label>
-              <Input
-                id="base_cost"
-                type="number"
-                step="0.01"
-                value={formData.base_cost}
-                onChange={(e) => setFormData({ ...formData, base_cost: parseFloat(e.target.value) || 0 })}
-              />
+              <Label htmlFor="measurement_type">Measurement Type</Label>
+              <Select
+                value={formData.measurement_type}
+                onValueChange={(value) => setFormData({ ...formData, measurement_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select measurement type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fabric-drop-required">Fabric Drop Required</SelectItem>
+                  <SelectItem value="width-only">Width Only</SelectItem>
+                  <SelectItem value="area-based">Area Based</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="minimum_charge">Minimum Charge ($)</Label>
+              <Label htmlFor="description">Description</Label>
               <Input
-                id="minimum_charge"
-                type="number"
-                step="0.01"
-                value={formData.minimum_charge}
-                onChange={(e) => setFormData({ ...formData, minimum_charge: parseFloat(e.target.value) || 0 })}
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Optional description"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cost_per_width">Cost per Width ($)</Label>
-              <Input
-                id="cost_per_width"
-                type="number"
-                step="0.01"
-                value={formData.cost_per_width}
-                onChange={(e) => setFormData({ ...formData, cost_per_width: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cost_per_meter">Cost per Meter ($)</Label>
-              <Input
-                id="cost_per_meter"
-                type="number"
-                step="0.01"
-                value={formData.cost_per_meter}
-                onChange={(e) => setFormData({ ...formData, cost_per_meter: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cost_per_hour">Cost per Hour ($)</Label>
-              <Input
-                id="cost_per_hour"
-                type="number"
-                step="0.01"
-                value={formData.cost_per_hour}
-                onChange={(e) => setFormData({ ...formData, cost_per_hour: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="complexity_multiplier">Complexity Multiplier</Label>
-            <Input
-              id="complexity_multiplier"
-              type="number"
-              step="0.1"
-              value={formData.complexity_multiplier}
-              onChange={(e) => setFormData({ ...formData, complexity_multiplier: parseFloat(e.target.value) || 1.0 })}
-            />
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-semibold">Included Services</h4>
+            <h4 className="font-semibold">Settings</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="includes_lining"
-                  checked={formData.includes_lining}
-                  onCheckedChange={(checked) => setFormData({ ...formData, includes_lining: checked })}
+                  id="include_fabric_selection"
+                  checked={formData.include_fabric_selection}
+                  onCheckedChange={(checked) => setFormData({ ...formData, include_fabric_selection: checked })}
                 />
-                <Label htmlFor="includes_lining">Includes Lining</Label>
+                <Label htmlFor="include_fabric_selection">Include Fabric Selection</Label>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="includes_heading"
-                  checked={formData.includes_heading}
-                  onCheckedChange={(checked) => setFormData({ ...formData, includes_heading: checked })}
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                 />
-                <Label htmlFor="includes_heading">Includes Heading</Label>
+                <Label htmlFor="active">Active</Label>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="active"
-              checked={formData.active}
-              onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-            />
-            <Label htmlFor="active">Active</Label>
           </div>
 
           <div className="flex justify-end space-x-2">
