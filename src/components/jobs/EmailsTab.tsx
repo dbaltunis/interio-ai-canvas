@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useEmailCampaigns, useCreateEmailCampaign, useUpdateEmailCampaign } from "@/hooks/useEmailCampaigns";
@@ -48,6 +48,7 @@ export const EmailsTab = () => {
   });
   const [activeTabValue, setActiveTabValue] = useState("history");
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const { toast } = useToast();
   const { data: emails, isLoading: emailsLoading } = useEmails();
@@ -96,15 +97,6 @@ export const EmailsTab = () => {
       });
       return;
     }
-
-    console.log("Sending email with data:", {
-      recipients: allRecipients,
-      subject: newEmail.subject,
-      content: newEmail.content,
-      selectedClients: selectedClients.length,
-      selectedQuotes: selectedQuotes.length,
-      attachments: attachments.length
-    });
 
     for (const recipient of allRecipients) {
       try {
@@ -193,7 +185,35 @@ export const EmailsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Basic KPIs Dashboard */}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-brand-primary">Email Management</h1>
+          <p className="text-gray-600 mt-1">Send and track your email communications</p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="border-gray-300 px-4"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filters
+          </Button>
+          
+          <Button 
+            onClick={() => setComposeDialogOpen(true)}
+            className="bg-brand-primary hover:bg-brand-accent text-white px-6 py-2 font-medium"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            New Email
+          </Button>
+        </div>
+      </div>
+
+      {/* KPIs Dashboard */}
       <EmailKPIsDashboard kpis={emailKPIs} />
 
       {/* Integration and Settings Banners */}
@@ -205,20 +225,9 @@ export const EmailsTab = () => {
 
       {/* Main Email Interface */}
       <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <EmailTabsNavigation activeTab={activeTabValue} onTabChange={setActiveTabValue} />
-          
-          <Button 
-            onClick={() => setComposeDialogOpen(true)}
-            className="bg-primary hover:bg-accent text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl w-full sm:w-auto"
-            size="lg"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Email
-          </Button>
-        </div>
+        <EmailTabsNavigation activeTab={activeTabValue} onTabChange={setActiveTabValue} />
 
-        {/* History Tab */}
+        {/* Tab Contents */}
         <TabsContent value="history">
           <EmailHistoryTab
             emails={emails}
@@ -229,7 +238,6 @@ export const EmailsTab = () => {
           />
         </TabsContent>
 
-        {/* Compose Email Tab */}
         <TabsContent value="compose">
           <EmailComposeTab
             selectedClients={selectedClients}
@@ -246,7 +254,6 @@ export const EmailsTab = () => {
           />
         </TabsContent>
 
-        {/* Templates Tab */}
         <TabsContent value="templates">
           <EmailTemplatesTab
             templates={emailTemplates}
@@ -256,7 +263,6 @@ export const EmailsTab = () => {
           />
         </TabsContent>
 
-        {/* Campaigns Tab */}
         <TabsContent value="campaigns">
           <EmailCampaignsTab
             campaigns={campaigns}
@@ -308,7 +314,7 @@ export const EmailsTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Email Settings Dialog */}
+      {/* Other Dialogs */}
       <EmailSettingsDialog
         open={emailSettingsOpen}
         onOpenChange={setEmailSettingsOpen}
@@ -319,7 +325,6 @@ export const EmailsTab = () => {
         }}
       />
 
-      {/* Other Dialogs */}
       <CampaignBuilder
         open={campaignBuilderOpen}
         onOpenChange={setCampaignBuilderOpen}

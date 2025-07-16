@@ -1,35 +1,41 @@
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Users, FileText, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface EmailTabsNavigationProps {
   activeTab: string;
-  onTabChange: (value: string) => void;
+  onTabChange: (tab: string) => void;
 }
 
 export const EmailTabsNavigation = ({ activeTab, onTabChange }: EmailTabsNavigationProps) => {
+  const tabs = [
+    { id: "history", label: "History" },
+    { id: "campaigns", label: "Campaigns" },
+    { id: "templates", label: "Templates" },
+    { id: "compose", label: "Compose" }
+  ];
+
   return (
-    <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
-      <TabsTrigger value="history" className="flex items-center gap-2">
-        <Clock className="h-4 w-4" />
-        <span className="hidden sm:inline">History</span>
-        <span className="sm:hidden">Hist</span>
-      </TabsTrigger>
-      <TabsTrigger value="campaigns" className="flex items-center gap-2">
-        <Users className="h-4 w-4" />
-        <span className="hidden sm:inline">Campaigns</span>
-        <span className="sm:hidden">Camps</span>
-      </TabsTrigger>
-      <TabsTrigger value="templates" className="flex items-center gap-2">
-        <FileText className="h-4 w-4" />
-        <span className="hidden sm:inline">Templates</span>
-        <span className="sm:hidden">Temps</span>
-      </TabsTrigger>
-      <TabsTrigger value="compose" className="flex items-center gap-2">
-        <Mail className="h-4 w-4" />
-        <span className="hidden sm:inline">Compose</span>
-        <span className="sm:hidden">Email</span>
-      </TabsTrigger>
-    </TabsList>
+    <div className="flex items-center space-x-0">
+      {tabs.map((tab, index) => (
+        <Button
+          key={tab.id}
+          variant={activeTab === tab.id ? "default" : "ghost"}
+          className={`px-6 py-2 ${
+            index === 0 
+              ? "rounded-r-none" 
+              : index === tabs.length - 1 
+                ? "rounded-l-none border-l-0" 
+                : "rounded-none border-l-0"
+          } ${
+            activeTab === tab.id 
+              ? "bg-gray-100 text-gray-900 border border-gray-300" 
+              : "bg-white text-gray-600 border border-gray-300"
+          }`}
+          onClick={() => onTabChange(tab.id)}
+        >
+          {tab.label}
+        </Button>
+      ))}
+    </div>
   );
 };

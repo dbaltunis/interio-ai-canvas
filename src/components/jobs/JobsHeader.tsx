@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid, List, Download, Filter } from "lucide-react";
+import { Plus, LayoutGrid, List, Download } from "lucide-react";
 
 interface JobsHeaderProps {
   searchTerm: string;
@@ -34,26 +34,6 @@ export const JobsHeader = ({
         <div>
           <h1 className="text-3xl font-bold text-brand-primary">Jobs Management</h1>
           <p className="text-gray-600 mt-1">{jobsCount} jobs found</p>
-        </div>
-        
-        {/* Action Buttons Group */}
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline"
-            onClick={onToggleFilters}
-            className={`border-gray-300 px-4 ${showFilters ? 'bg-gray-100' : ''}`}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
-          
-          <Button 
-            onClick={onNewJob}
-            className="bg-brand-primary hover:bg-brand-accent text-white px-6 py-2 font-medium"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Job
-          </Button>
         </div>
       </div>
 
