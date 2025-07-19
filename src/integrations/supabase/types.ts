@@ -482,6 +482,7 @@ export type Database = {
           quantity: number | null
           sku: string | null
           supplier: string | null
+          unit: string | null
           unit_price: number | null
           updated_at: string
           user_id: string
@@ -497,6 +498,7 @@ export type Database = {
           quantity?: number | null
           sku?: string | null
           supplier?: string | null
+          unit?: string | null
           unit_price?: number | null
           updated_at?: string
           user_id: string
@@ -512,6 +514,7 @@ export type Database = {
           quantity?: number | null
           sku?: string | null
           supplier?: string | null
+          unit?: string | null
           unit_price?: number | null
           updated_at?: string
           user_id?: string
@@ -675,6 +678,171 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          project_id: string
+          room_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          project_id: string
+          room_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          project_id?: string
+          room_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      surfaces: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          name: string
+          project_id: string
+          room_id: string
+          surface_height: number | null
+          surface_type: string
+          surface_width: number | null
+          updated_at: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          name: string
+          project_id: string
+          room_id: string
+          surface_height?: number | null
+          surface_type?: string
+          surface_width?: number | null
+          updated_at?: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          name?: string
+          project_id?: string
+          room_id?: string
+          surface_height?: number | null
+          surface_type?: string
+          surface_width?: number | null
+          updated_at?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
+      treatments: {
+        Row: {
+          calculation_details: Json | null
+          color: string | null
+          created_at: string
+          fabric_details: Json | null
+          fabric_type: string | null
+          hardware: string | null
+          id: string
+          labor_cost: number | null
+          material_cost: number | null
+          measurements: Json | null
+          mounting_type: string | null
+          notes: string | null
+          pattern: string | null
+          product_name: string | null
+          project_id: string
+          quantity: number | null
+          room_id: string
+          status: string | null
+          total_price: number | null
+          treatment_details: Json | null
+          treatment_type: string
+          unit_price: number | null
+          updated_at: string
+          user_id: string
+          window_id: string
+        }
+        Insert: {
+          calculation_details?: Json | null
+          color?: string | null
+          created_at?: string
+          fabric_details?: Json | null
+          fabric_type?: string | null
+          hardware?: string | null
+          id?: string
+          labor_cost?: number | null
+          material_cost?: number | null
+          measurements?: Json | null
+          mounting_type?: string | null
+          notes?: string | null
+          pattern?: string | null
+          product_name?: string | null
+          project_id: string
+          quantity?: number | null
+          room_id: string
+          status?: string | null
+          total_price?: number | null
+          treatment_details?: Json | null
+          treatment_type?: string
+          unit_price?: number | null
+          updated_at?: string
+          user_id: string
+          window_id: string
+        }
+        Update: {
+          calculation_details?: Json | null
+          color?: string | null
+          created_at?: string
+          fabric_details?: Json | null
+          fabric_type?: string | null
+          hardware?: string | null
+          id?: string
+          labor_cost?: number | null
+          material_cost?: number | null
+          measurements?: Json | null
+          mounting_type?: string | null
+          notes?: string | null
+          pattern?: string | null
+          product_name?: string | null
+          project_id?: string
+          quantity?: number | null
+          room_id?: string
+          status?: string | null
+          total_price?: number | null
+          treatment_details?: Json | null
+          treatment_type?: string
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string
+          window_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

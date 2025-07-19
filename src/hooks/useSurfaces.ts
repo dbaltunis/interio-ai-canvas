@@ -1,6 +1,11 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+
+type Surface = Tables<"surfaces">;
+type SurfaceInsert = TablesInsert<"surfaces">;
 
 export const useSurfaces = (projectId?: string) => {
   return useQuery({
@@ -39,7 +44,7 @@ export const useCreateSurface = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (surface: any) => {
+    mutationFn: async (surface: Omit<SurfaceInsert, "user_id">) => {
       console.log("=== CREATING SURFACE ===");
       console.log("Surface data being sent:", surface);
       
@@ -95,7 +100,7 @@ export const useUpdateSurface = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: any) => {
+    mutationFn: async ({ id, ...updates }: Partial<Surface> & { id: string }) => {
       const { data, error } = await supabase
         .from("surfaces")
         .update(updates)
