@@ -1,247 +1,224 @@
-import { FormulaEngine } from '@/utils/formulaEngine';
+
+import { FormulaEngine, FormulaResult } from '@/utils/formulaEngine';
+import { CalculationFormula } from '@/hooks/useCalculationFormulas';
 
 export interface CalculationInput {
   railWidth: number;
   curtainDrop: number;
   quantity: number;
-  headingFullness: number;
-  fabricWidth: number;
-  fabricPricePerYard: number;
-  curtainPooling?: number;
+  headingFullness?: number;
+  fabricWidth?: number;
+  fabricPricePerYard?: number;
   treatmentType: string;
-  labor_rate: number;
-  header_hem?: number;
-  bottom_hem?: number;
-  track_price_per_meter?: number;
-  bracket_price?: number;
-  glider_price?: number;
-  markup_percentage?: number;
+  curtainPooling?: number;
+  // Additional variables for different formula types
+  [key: string]: any;
 }
 
-export interface CalculationResult {
+export interface CalculationOutput {
   fabricCost: number;
   laborCost: number;
   hardwareCost: number;
   totalCost: number;
   breakdown: {
-    fabric: { value: number; breakdown: string };
-    labor: { value: number; breakdown: string };
-    hardware: { value: number; breakdown: string };
+    fabric: FormulaResult;
+    labor: FormulaResult;
+    hardware: FormulaResult;
   };
   details: {
-    fabricYards?: number;
+    fabricYards: number;
     laborHours?: number;
-    hardwareItems?: any[];
+    hardwareItems?: string[];
   };
 }
 
 export class CalculationService {
-  private engine: FormulaEngine;
+  private formulaEngine: FormulaEngine;
 
   constructor() {
-    this.engine = new FormulaEngine();
+    this.formulaEngine = new FormulaEngine();
   }
 
-  calculateTreatmentCost(input: CalculationInput, formulas: any[]): CalculationResult {
-    console.log("🔧 CalculationService: Starting calculation with formulas", {
-      inputType: input.treatmentType,
-      formulasCount: formulas.length,
-      railWidth: input.railWidth,
-      curtainDrop: input.curtainDrop
-    });
-
-    // Set all variables in the engine
-    this.engine.setVariables({
+  calculateTreatmentCost(
+    input: CalculationInput,
+    formulas: CalculationFormula[]
+  ): CalculationOutput {
+    // Set up variables for formula engine - separate numeric and string variables
+    const numericVariables: Record<string, number> = {
       width: input.railWidth,
       height: input.curtainDrop,
+      drop: input.curtainDrop,
       quantity: input.quantity,
-      fullness: input.headingFullness,
-      fabric_width: input.fabricWidth,
-      fabric_price: input.fabricPricePerYard,
-      curtain_pooling: input.curtainPooling || 0,
-      labor_rate: input.labor_rate,
-      header_hem: input.header_hem || 15,
-      bottom_hem: input.bottom_hem || 10,
-      track_price_per_meter: input.track_price_per_meter || 25,
-      bracket_price: input.bracket_price || 5,
-      glider_price: input.glider_price || 0.15
+      fullness: input.headingFullness || 2.5,
+      fabric_width: input.fabricWidth || 137,
+      fabric_price: input.fabricPricePerYard || 0,
+      pooling: input.curtainPooling || 0,
+      track_width: input.railWidth / 100, // Convert to meters
+    };
+
+    // Add other numeric properties from input
+    Object.entries(input).forEach(([key, value]) => {
+      if (typeof value === 'number' && key !== 'treatmentType') {
+        numericVariables[key] = value;
+      }
     });
 
-    const result: CalculationResult = {
-      fabricCost: 0,
-      laborCost: 0,
-      hardwareCost: 0,
-      totalCost: 0,
-      breakdown: {
-        fabric: { value: 0, breakdown: 'No fabric formula found' },
-        labor: { value: 0, breakdown: 'No labor formula found' },
-        hardware: { value: 0, breakdown: 'No hardware formula found' }
-      },
-      details: {}
-    };
+    // Set all variables (numeric and string)
+    this.formulaEngine.setVariables({
+      ...numericVariables,
+      treatmentType: input.treatmentType
+    });
 
     // Calculate fabric cost
-    const fabricFormula = this.findApplicableFormula(formulas, input.treatmentType, 'fabric');
-    if (fabricFormula) {
-      console.log("📐 Using fabric formula:", fabricFormula.name);
-      const fabricResult = this.engine.evaluateFormula(fabricFormula.formula_expression);
-      if (!fabricResult.error) {
-        result.fabricCost = fabricResult.value * input.fabricPricePerYard;
-        result.breakdown.fabric = {
-          value: result.fabricCost,
-          breakdown: `${fabricFormula.name}: ${fabricResult.breakdown} × £${input.fabricPricePerYard}/yard = £${result.fabricCost.toFixed(2)}`
-        };
-        result.details.fabricYards = fabricResult.value;
-        console.log("✅ Fabric calculation:", result.breakdown.fabric.breakdown);
-      } else {
-        console.error("❌ Fabric formula error:", fabricResult.error);
-      }
-    }
-
+    const fabricResult = this.calculateFabricCost(input, formulas);
+    
     // Calculate labor cost
-    const laborFormula = this.findApplicableFormula(formulas, input.treatmentType, 'labor');
-    if (laborFormula) {
-      console.log("👷 Using labor formula:", laborFormula.name);
-      const laborResult = this.engine.evaluateFormula(laborFormula.formula_expression);
-      if (!laborResult.error) {
-        result.laborCost = laborResult.value;
-        result.breakdown.labor = {
-          value: result.laborCost,
-          breakdown: `${laborFormula.name}: ${laborResult.breakdown} = £${result.laborCost.toFixed(2)}`
-        };
-        result.details.laborHours = laborResult.value / input.labor_rate;
-        console.log("✅ Labor calculation:", result.breakdown.labor.breakdown);
-      } else {
-        console.error("❌ Labor formula error:", laborResult.error);
-      }
-    }
-
+    const laborResult = this.calculateLaborCost(input, formulas, fabricResult.value);
+    
     // Calculate hardware cost
-    const hardwareFormula = this.findApplicableFormula(formulas, input.treatmentType, 'hardware');
-    if (hardwareFormula) {
-      console.log("🔧 Using hardware formula:", hardwareFormula.name);
-      const hardwareResult = this.engine.evaluateFormula(hardwareFormula.formula_expression);
-      if (!hardwareResult.error) {
-        result.hardwareCost = hardwareResult.value;
-        result.breakdown.hardware = {
-          value: result.hardwareCost,
-          breakdown: `${hardwareFormula.name}: ${hardwareResult.breakdown} = £${result.hardwareCost.toFixed(2)}`
-        };
-        console.log("✅ Hardware calculation:", result.breakdown.hardware.breakdown);
-      } else {
-        console.error("❌ Hardware formula error:", hardwareResult.error);
+    const hardwareResult = this.calculateHardwareCost(input, formulas);
+
+    return {
+      fabricCost: fabricResult.value,
+      laborCost: laborResult.value,
+      hardwareCost: hardwareResult.value,
+      totalCost: fabricResult.value + laborResult.value + hardwareResult.value,
+      breakdown: {
+        fabric: fabricResult,
+        labor: laborResult,
+        hardware: hardwareResult
+      },
+      details: {
+        fabricYards: this.extractFabricYards(fabricResult),
+        laborHours: this.extractLaborHours(laborResult),
+        hardwareItems: this.extractHardwareItems(hardwareResult)
       }
-    }
-
-    // Fallback calculations if no formulas are found
-    if (!fabricFormula) {
-      const fallbackFabric = this.calculateFallbackFabric(input);
-      result.fabricCost = fallbackFabric.cost;
-      result.breakdown.fabric = fallbackFabric.breakdown;
-      result.details.fabricYards = fallbackFabric.yards;
-    }
-
-    if (!laborFormula) {
-      const fallbackLabor = this.calculateFallbackLabor(input);
-      result.laborCost = fallbackLabor.cost;
-      result.breakdown.labor = fallbackLabor.breakdown;
-    }
-
-    if (!hardwareFormula) {
-      const fallbackHardware = this.calculateFallbackHardware(input);
-      result.hardwareCost = fallbackHardware.cost;
-      result.breakdown.hardware = fallbackHardware.breakdown;
-    }
-
-    result.totalCost = result.fabricCost + result.laborCost + result.hardwareCost;
-
-    console.log("💰 Final calculation result:", {
-      fabricCost: result.fabricCost,
-      laborCost: result.laborCost,
-      hardwareCost: result.hardwareCost,
-      totalCost: result.totalCost
-    });
-
-    return result;
+    };
   }
 
-  private findApplicableFormula(formulas: any[], treatmentType: string, category: string) {
-    // First try to find formula that applies specifically to this treatment type
-    let formula = formulas.find(f => 
-      f.category === category &&
+  private calculateFabricCost(input: CalculationInput, formulas: CalculationFormula[]): FormulaResult {
+    // Find appropriate fabric formula based on treatment type
+    const fabricFormula = formulas.find(f => 
+      f.category === 'fabric' && 
       f.active &&
-      f.applies_to?.includes(treatmentType.toLowerCase())
+      (f.applies_to?.includes(input.treatmentType) || f.applies_to?.includes('all'))
     );
 
-    // If not found, try to find formula that applies to 'all'
-    if (!formula) {
-      formula = formulas.find(f => 
-        f.category === category &&
-        f.active &&
-        (f.applies_to?.includes('all') || !f.applies_to || f.applies_to.length === 0)
-      );
+    if (!fabricFormula) {
+      return this.fallbackFabricCalculation(input);
     }
 
-    return formula;
+    // Add formula-specific variables
+    const conditions = fabricFormula.conditions ? Object.entries(fabricFormula.conditions).map(([variable, condition]: [string, any]) => ({
+      variable,
+      operator: condition.operator,
+      value: condition.value
+    })) : undefined;
+
+    return this.formulaEngine.evaluateFormula(fabricFormula.formula_expression, conditions);
   }
 
-  private calculateFallbackFabric(input: CalculationInput) {
-    const isBlind = input.treatmentType.toLowerCase().includes('blind');
-    let yards = 0;
-    let breakdown = '';
+  private calculateLaborCost(input: CalculationInput, formulas: CalculationFormula[], fabricYards: number): FormulaResult {
+    // Add fabric yards to variables for labor calculations
+    this.formulaEngine.setVariable('fabric_yards', fabricYards);
+    this.formulaEngine.setVariable('fabric_metres', fabricYards * 0.9144); // Convert to metres
 
-    if (isBlind) {
-      // For blinds: simple area calculation
-      const areaSquareCm = input.railWidth * input.curtainDrop;
-      yards = (areaSquareCm / (91.44 * 91.44)) * input.quantity;
-      breakdown = `Fallback blind: ${input.railWidth}cm × ${input.curtainDrop}cm × ${input.quantity} = ${yards.toFixed(2)} yards`;
-    } else {
-      // For curtains: traditional calculation
-      const dropWithHems = input.curtainDrop + (input.header_hem || 15) + (input.bottom_hem || 10) + (input.curtainPooling || 0);
-      const widthPerPanel = input.railWidth / input.quantity;
-      const fabricWidthNeeded = widthPerPanel * input.headingFullness;
-      const widthsNeeded = Math.ceil(fabricWidthNeeded / input.fabricWidth);
-      yards = (dropWithHems * widthsNeeded * input.quantity) / 91.44;
-      breakdown = `Fallback curtain: ${dropWithHems}cm drop × ${widthsNeeded} widths × ${input.quantity} panels = ${yards.toFixed(2)} yards`;
+    const laborFormula = formulas.find(f => 
+      f.category === 'labor' && 
+      f.active &&
+      (f.applies_to?.includes(input.treatmentType) || f.applies_to?.includes('all'))
+    );
+
+    if (!laborFormula) {
+      return this.fallbackLaborCalculation(input);
     }
 
-    return {
-      cost: yards * input.fabricPricePerYard,
-      yards,
-      breakdown: {
-        value: yards * input.fabricPricePerYard,
-        breakdown
-      }
-    };
+    const conditions = laborFormula.conditions ? Object.entries(laborFormula.conditions).map(([variable, condition]: [string, any]) => ({
+      variable,
+      operator: condition.operator,
+      value: condition.value
+    })) : undefined;
+
+    return this.formulaEngine.evaluateFormula(laborFormula.formula_expression, conditions);
   }
 
-  private calculateFallbackLabor(input: CalculationInput) {
-    const isBlind = input.treatmentType.toLowerCase().includes('blind');
-    const estimatedHours = isBlind ? 1.5 : 3;
-    const cost = estimatedHours * input.labor_rate * input.quantity;
+  private calculateHardwareCost(input: CalculationInput, formulas: CalculationFormula[]): FormulaResult {
+    const hardwareFormula = formulas.find(f => 
+      f.category === 'hardware' && 
+      f.active &&
+      (f.applies_to?.includes(input.treatmentType) || f.applies_to?.includes('all'))
+    );
+
+    if (!hardwareFormula) {
+      return this.fallbackHardwareCalculation(input);
+    }
+
+    const conditions = hardwareFormula.conditions ? Object.entries(hardwareFormula.conditions).map(([variable, condition]: [string, any]) => ({
+      variable,
+      operator: condition.operator,
+      value: condition.value
+    })) : undefined;
+
+    return this.formulaEngine.evaluateFormula(hardwareFormula.formula_expression, conditions);
+  }
+
+  // Fallback calculations for when no formulas are found
+  private fallbackFabricCalculation(input: CalculationInput): FormulaResult {
+    const fabricYards = (input.railWidth * input.curtainDrop * (input.headingFullness || 2.5)) / (input.fabricWidth || 137) / 91.44;
+    const cost = fabricYards * (input.fabricPricePerYard || 0);
     
     return {
-      cost,
-      breakdown: {
-        value: cost,
-        breakdown: `Fallback labor: ${estimatedHours}h × £${input.labor_rate}/h × ${input.quantity} items = £${cost.toFixed(2)}`
-      }
+      value: cost,
+      breakdown: `Fallback: ${fabricYards.toFixed(2)} yards × £${input.fabricPricePerYard || 0} = £${cost.toFixed(2)}`,
+      variables: []
     };
   }
 
-  private calculateFallbackHardware(input: CalculationInput) {
-    const trackLength = input.railWidth / 100; // Convert to meters
-    const trackCost = trackLength * (input.track_price_per_meter || 25);
-    const bracketCost = Math.ceil(trackLength / 1.5) * (input.bracket_price || 5); // Bracket every 1.5m
-    const gliderCost = input.quantity * 10 * (input.glider_price || 0.15); // 10 gliders per panel
-    const totalCost = trackCost + bracketCost + gliderCost;
-
+  private fallbackLaborCalculation(input: CalculationInput): FormulaResult {
+    const baseCost = 85; // Default labor rate
+    const hours = input.treatmentType.includes('blind') ? 1.5 : 3;
+    const cost = hours * baseCost * input.quantity;
+    
     return {
-      cost: totalCost,
-      breakdown: {
-        value: totalCost,
-        breakdown: `Fallback hardware: Track £${trackCost.toFixed(2)} + Brackets £${bracketCost.toFixed(2)} + Gliders £${gliderCost.toFixed(2)} = £${totalCost.toFixed(2)}`
-      }
+      value: cost,
+      breakdown: `Fallback: ${hours} hours × £${baseCost} × ${input.quantity} = £${cost.toFixed(2)}`,
+      variables: []
     };
+  }
+
+  private fallbackHardwareCalculation(input: CalculationInput): FormulaResult {
+    const trackCost = (input.railWidth / 100) * 25; // £25 per meter
+    const bracketCost = Math.ceil(input.railWidth / 150) * 5; // £5 per bracket
+    const cost = trackCost + bracketCost;
+    
+    return {
+      value: cost,
+      breakdown: `Fallback: Track £${trackCost.toFixed(2)} + Brackets £${bracketCost.toFixed(2)} = £${cost.toFixed(2)}`,
+      variables: []
+    };
+  }
+
+  private extractFabricYards(result: FormulaResult): number {
+    // Try to extract fabric yards from variables or calculate from value
+    const fabricVariable = result.variables.find(v => v.name.includes('fabric') || v.name.includes('yards'));
+    return fabricVariable?.value || 0;
+  }
+
+  private extractLaborHours(result: FormulaResult): number {
+    const hoursVariable = result.variables.find(v => v.name.includes('hours') || v.name.includes('time'));
+    return hoursVariable?.value || 0;
+  }
+
+  private extractHardwareItems(result: FormulaResult): string[] {
+    // Extract hardware items from the breakdown
+    const breakdown = result.breakdown.toLowerCase();
+    const items: string[] = [];
+    
+    if (breakdown.includes('track')) items.push('Track');
+    if (breakdown.includes('bracket')) items.push('Brackets');
+    if (breakdown.includes('glider')) items.push('Gliders');
+    if (breakdown.includes('motor')) items.push('Motor');
+    
+    return items;
   }
 }

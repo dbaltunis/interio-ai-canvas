@@ -4,51 +4,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateFabricUsage } from "./fabric-calculation/fabricUsageCalculator";
 import { calculateOptionCost, calculateHierarchicalOptionCost } from "./fabric-calculation/optionCostCalculator";
-
-// Temporary interface until service is fully migrated
-interface FabricCalculationParams {
-  windowCoveringId: string;
-  makingCostId: string;
-  measurements: {
-    railWidth: number;
-    drop: number;
-    pooling: number;
-  };
-  selectedOptions: string[];
-  fabricDetails: {
-    fabricWidth: number;
-    fabricCostPerYard: number;
-    rollDirection: 'horizontal' | 'vertical';
-  };
-}
-
-// Mock implementation since the service is deprecated
-const calculateIntegratedFabricUsage = async (params: FabricCalculationParams) => {
-  console.warn('Making Cost Integration Service has been deprecated. Please use the new Product Configuration system.');
-  
-  return {
-    fabricUsage: {
-      yards: 0,
-      meters: 0,
-      orientation: 'vertical' as const,
-      seamsRequired: 0,
-      seamLaborHours: 0,
-      widthsRequired: 1
-    },
-    costs: {
-      fabricCost: 0,
-      makingCost: 0,
-      additionalOptionsCost: 0,
-      laborCost: 0,
-      totalCost: 0
-    },
-    breakdown: {
-      makingCostOptions: [],
-      additionalOptions: []
-    },
-    warnings: ['This calculation service has been deprecated. Please use the new Product Configuration system.']
-  };
-};
+import { calculateIntegratedFabricUsage, type FabricCalculationParams } from "@/hooks/services/makingCostIntegrationService";
 
 export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
   const { units } = useMeasurementUnits();
@@ -186,7 +142,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const windowCovering = formData.window_covering;
     const makingCostId = windowCovering?.making_cost_id;
     
-    // If making cost is linked, use integrated calculation (deprecated)
+    // If making cost is linked, use integrated calculation
     if (makingCostId && windowCovering?.id) {
       try {
         const params: FabricCalculationParams = {
@@ -215,7 +171,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
           totalCost: integratedResult.costs.totalCost.toFixed(2),
           fabricUsage: units.fabric === 'yards' ? integratedResult.fabricUsage.yards.toFixed(1) : integratedResult.fabricUsage.meters.toFixed(1),
           fabricOrientation: integratedResult.fabricUsage.orientation,
-          costComparison: null,
+          costComparison: null, // TODO: Implement if needed
           warnings: integratedResult.warnings,
           seamsRequired: integratedResult.fabricUsage.seamsRequired,
           seamLaborHours: integratedResult.fabricUsage.seamLaborHours,

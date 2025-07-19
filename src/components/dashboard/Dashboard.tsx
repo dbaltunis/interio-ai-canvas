@@ -101,7 +101,7 @@ export const Dashboard = () => {
     {
       id: 'emails-sent',
       title: 'Emails Sent',
-      value: emailKPIs?.total_sent || 0,
+      value: emailKPIs?.totalSent || 0,
       subtitle: 'Total emails sent',
       icon: Send,
       trend: { value: 23.1, isPositive: true },
@@ -111,7 +111,7 @@ export const Dashboard = () => {
     {
       id: 'open-rate',
       title: 'Open Rate',
-      value: `${emailKPIs?.open_rate || 0}%`,
+      value: `${emailKPIs?.openRate || 0}%`,
       subtitle: 'Email open percentage',
       icon: Eye,
       trend: { value: 5.2, isPositive: true },
@@ -121,7 +121,7 @@ export const Dashboard = () => {
     {
       id: 'click-rate',
       title: 'Click Rate',
-      value: `${emailKPIs?.click_rate || 0}%`,
+      value: `${emailKPIs?.clickRate || 0}%`,
       subtitle: 'Email click percentage',
       icon: MousePointer,
       trend: { value: 2.8, isPositive: true },
@@ -131,7 +131,7 @@ export const Dashboard = () => {
     {
       id: 'avg-time-spent',
       title: 'Avg. Time Spent',
-      value: "2m 30s",
+      value: emailKPIs?.avgTimeSpent || "0m 0s",
       subtitle: 'Time spent reading emails',
       icon: Clock,
       trend: { value: 15.3, isPositive: true },
@@ -406,7 +406,7 @@ export const Dashboard = () => {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Email Delivery Rate</span>
-              <Badge className="bg-green-100 text-green-800">{emailKPIs?.bounce_rate ? (100 - emailKPIs.bounce_rate) : 0}%</Badge>
+              <Badge className="bg-green-100 text-green-800">{emailKPIs?.deliveryRate || 0}%</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">SendGrid Integration</span>

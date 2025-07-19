@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield, ShoppingCart } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
 import { ComponentsTab } from "./tabs/ComponentsTab";
@@ -11,7 +11,6 @@ import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
-import { ProductConfigurationTab } from "./tabs/ProductConfigurationTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { Button } from "@/components/ui/button";
@@ -50,14 +49,10 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10 text-xs">
+        <TabsList className="grid w-full grid-cols-9 text-xs">
           <TabsTrigger value="business" className="flex items-center gap-1">
             <Settings className="h-3 w-3" />
             <span className="hidden sm:inline">Business</span>
-          </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-1">
-            <ShoppingCart className="h-3 w-3" />
-            <span className="hidden sm:inline">Products</span>
           </TabsTrigger>
           <TabsTrigger value="units" className="flex items-center gap-1">
             <Ruler className="h-3 w-3" />
@@ -95,10 +90,6 @@ export const SettingsView = () => {
 
         <TabsContent value="business">
           <BusinessConfigTab />
-        </TabsContent>
-
-        <TabsContent value="products">
-          <ProductConfigurationTab />
         </TabsContent>
 
         <TabsContent value="units">

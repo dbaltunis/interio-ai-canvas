@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -64,20 +63,28 @@ export const useEmailKPIs = () => {
       
       const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
       const clickRate = totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0;
-      const bounceRate = totalSent > 0 ? Math.round((totalBounced / totalSent) * 100) : 0;
+      const deliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0;
       
       const totalOpenCount = emails?.reduce((sum, e) => sum + (e.open_count || 0), 0) || 0;
+      const totalClickCount = emails?.reduce((sum, e) => sum + (e.click_count || 0), 0) || 0;
       
-      // Return data in the format expected by EmailKPIsDashboard
+      // Calculate average time spent (mock calculation for now)
+      const avgTimeSpent = "2m 30s";
+      
       return {
-        total_sent: totalSent,
-        total_delivered: totalDelivered,
-        total_opened: totalOpenCount,
-        total_clicked: totalClicked,
-        open_rate: openRate,
-        click_rate: clickRate,
-        bounce_rate: bounceRate,
-        issues_count: totalBounced
+        totalSent,
+        delivered: totalDelivered,
+        bounced: totalBounced,
+        openRate,
+        clickRate,
+        deliveryRate,
+        avgTimeSpent,
+        totalOpenCount,
+        totalClickCount,
+        // Keep backward compatibility
+        totalOpened,
+        totalClicked,
+        totalDelivered
       };
     },
   });
