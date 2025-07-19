@@ -3,9 +3,10 @@ import { JobsFilters } from "./JobsFilters";
 import { JobsListView } from "./JobsListView";
 import { EnhancedClientManagement } from "../clients/EnhancedClientManagement";
 import { EmailsTab } from "./EmailsTab";
+import { JobsAnalytics } from "./JobsAnalytics";
 
 interface JobsPageContentProps {
-  activeTab: "jobs" | "clients" | "emails";
+  activeTab: "jobs" | "clients" | "emails" | "analytics";
   showFilters: boolean;
   searchClient: string;
   setSearchClient: (value: string) => void;
@@ -88,8 +89,23 @@ export const JobsPageContent = ({
         />
       ) : activeTab === "clients" ? (
         <EnhancedClientManagement />
-      ) : (
+      ) : activeTab === "emails" ? (
         <EmailsTab />
+      ) : activeTab === "analytics" ? (
+        <JobsAnalytics />
+      ) : (
+        <JobsListView 
+          onNewJob={onNewJob}
+          onJobSelect={onJobSelect}
+          onClientEdit={onClientEdit}
+          onJobCopy={onJobCopy}
+          searchClient={searchClient}
+          searchJobNumber={searchJobNumber}
+          filterStatus={filterStatus}
+          filterDeposit={filterDeposit}
+          filterOwner={filterOwner}
+          filterMaker={filterMaker}
+        />
       )}
     </div>
   );

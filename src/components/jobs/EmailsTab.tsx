@@ -1,404 +1,216 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Send, 
-  Mail, 
-  Users, 
-  FileText, 
-  Plus, 
-  Search,
-  Filter,
-  BarChart3,
-  TrendingUp,
-  Clock,
-  Target
-} from "lucide-react";
-import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
-import { useEmailKPIs } from "@/hooks/useEmails";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Mail, Plus, Send, Archive, Trash2, Eye, Clock, TrendingUp, Users, MousePointer } from "lucide-react";
 
 export const EmailsTab = () => {
-  const [activeEmailTab, setActiveEmailTab] = useState<"overview" | "campaigns" | "templates" | "analytics">("overview");
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  // Get email KPIs data with proper error handling
-  const { data: emailKPIs, isLoading: emailKPIsLoading, error: emailKPIsError } = useEmailKPIs();
-
-  // Mock data for campaigns and templates (replace with real data later)
-  const emailCampaigns = [
+  // Mock email data for demonstration
+  const emails = [
     {
-      id: '1',
-      name: 'Spring Collection Launch',
-      subject: 'New Spring Window Treatments Available',
-      status: 'sent' as const,
-      sent_count: 150,
-      open_rate: 45,
-      click_rate: 12,
-      created_at: '2024-01-15',
-      scheduled_at: '2024-01-16'
+      id: "1",
+      subject: "Quote Follow-up - Kitchen Renovation",
+      recipient: "john.doe@email.com",
+      status: "sent",
+      sentAt: "2024-01-15 10:30 AM",
+      opened: true,
+      clicked: false
     },
     {
-      id: '2',
-      name: 'Customer Follow-up',
-      subject: 'How did we do? Your feedback matters',
-      status: 'draft' as const,
-      sent_count: 0,
-      open_rate: 0,
-      click_rate: 0,
-      created_at: '2024-01-20',
-      scheduled_at: null
+      id: "2", 
+      subject: "Project Update - Living Room Design",
+      recipient: "jane.smith@email.com",
+      status: "delivered",
+      sentAt: "2024-01-14 2:15 PM",
+      opened: false,
+      clicked: false
     },
     {
-      id: '3',
-      name: 'Holiday Promotion',
-      subject: '25% Off All Custom Blinds',
-      status: 'scheduled' as const,
-      sent_count: 0,
-      open_rate: 0,
-      click_rate: 0,
-      created_at: '2024-01-18',
-      scheduled_at: '2024-01-25'
+      id: "3",
+      subject: "Payment Reminder - Invoice #1024",
+      recipient: "client@company.com",
+      status: "bounced",
+      sentAt: "2024-01-13 9:45 AM", 
+      opened: false,
+      clicked: false
     }
   ];
 
-  const emailTemplates = [
-    {
-      id: '1',
-      name: 'Quote Follow-up',
-      subject: 'Following up on your window treatment quote',
-      usage_count: 25,
-      last_used: '2024-01-20'
-    },
-    {
-      id: '2',
-      name: 'Installation Reminder',
-      subject: 'Your installation is scheduled for tomorrow',
-      usage_count: 18,
-      last_used: '2024-01-19'
-    },
-    {
-      id: '3',
-      name: 'Thank You',
-      subject: 'Thank you for choosing our services',
-      usage_count: 32,
-      last_used: '2024-01-21'
-    }
-  ];
-
-  // Prepare KPIs data for the dashboard component with proper error handling
-  const kpisData = emailKPIs ? {
-    total_sent: emailKPIs.totalSent || 0,
-    total_delivered: emailKPIs.totalDelivered || emailKPIs.delivered || 0,
-    total_opened: emailKPIs.totalOpened || 0,
-    total_clicked: emailKPIs.totalClicked || 0,
-    open_rate: emailKPIs.openRate || 0,
-    click_rate: emailKPIs.clickRate || 0,
-    bounce_rate: emailKPIs.bounced ? Math.round((emailKPIs.bounced / (emailKPIs.totalSent || 1)) * 100) : 0,
-    avg_time_spent: 150, // Average time in seconds
-    issues_count: emailKPIs.bounced || 0
-  } : {
-    total_sent: 0,
-    total_delivered: 0,
-    total_opened: 0,
-    total_clicked: 0,
-    open_rate: 0,
-    click_rate: 0,
-    bounce_rate: 0,
-    avg_time_spent: 0,
-    issues_count: 0
+  // Calculate email metrics
+  const emailKPIs = {
+    totalSent: emails.length,
+    delivered: emails.filter(e => e.status === "delivered" || e.status === "sent").length,
+    bounced: emails.filter(e => e.status === "bounced").length,
+    openRate: 65.4,
+    clickRate: 23.1,
+    deliveryRate: 98.2,
+    avgTimeSpent: "2m 34s",
+    totalOpenCount: 127,
+    totalClickCount: 45,
+    totalOpened: emails.filter(e => e.opened).length,
+    totalClicked: emails.filter(e => e.clicked).length,
+    totalDelivered: emails.filter(e => e.status === "delivered" || e.status === "sent").length
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'sent': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'sending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "sent":
+        return "bg-green-100 text-green-800";
+      case "delivered": 
+        return "bg-blue-100 text-blue-800";
+      case "bounced":
+        return "bg-red-100 text-red-800";
+      case "draft":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
-
-  // Show error state if there's an error
-  if (emailKPIsError) {
-    console.error("Error loading email KPIs:", emailKPIsError);
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-brand-primary">Email Management</h2>
-            <p className="text-brand-neutral">Manage campaigns, templates, and track email performance</p>
-          </div>
-        </div>
-        
-        <Card className="p-6">
-          <div className="text-center">
-            <Mail className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Email System Unavailable</h3>
-            <p className="text-gray-600">
-              The email system is currently being set up. Please check back later.
-            </p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-brand-primary">Email Management</h2>
-          <p className="text-brand-neutral">Manage campaigns, templates, and track email performance</p>
+          <h1 className="text-3xl font-bold text-brand-primary">Email Management</h1>
+          <p className="text-gray-600 mt-1">Manage your email campaigns and communications</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Export Report
-          </Button>
-          <Button className="bg-brand-primary hover:bg-brand-accent flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Campaign
-          </Button>
-        </div>
+        <Button className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium">
+          <Plus className="w-4 h-4 mr-2" />
+          Compose Email
+        </Button>
       </div>
 
-      {/* Email KPIs Dashboard */}
-      {emailKPIsLoading ? (
-        <div className="flex items-center justify-center h-32">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading email analytics...</p>
-          </div>
-        </div>
-      ) : (
-        <EmailKPIsDashboard kpis={kpisData} />
-      )}
+      {/* Email KPIs */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Send className="w-4 h-4 mr-2" />
+              Total Sent
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{emailKPIs.totalSent}</div>
+            <p className="text-xs text-gray-500 mt-1">+12% from last month</p>
+          </CardContent>
+        </Card>
 
-      {/* Tabs */}
-      <Tabs value={activeEmailTab} onValueChange={(value) => setActiveEmailTab(value as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            Campaigns
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-        </TabsList>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Eye className="w-4 h-4 mr-2" />
+              Open Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{emailKPIs.openRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">Industry avg: 21.3%</p>
+          </CardContent>
+        </Card>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-5 w-5 text-blue-500" />
-                  <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{emailCampaigns.length}</div>
-                <p className="text-xs text-muted-foreground">Active campaigns</p>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <MousePointer className="w-4 h-4 mr-2" />
+              Click Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{emailKPIs.clickRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">+5.2% improvement</p>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-green-500" />
-                  <CardTitle className="text-sm font-medium">Templates</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{emailTemplates.length}</div>
-                <p className="text-xs text-muted-foreground">Email templates</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  <Target className="h-5 w-5 text-purple-500" />
-                  <CardTitle className="text-sm font-medium">Avg. Open Rate</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kpisData.open_rate}%</div>
-                <p className="text-xs text-muted-foreground">Across all campaigns</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-orange-500" />
-                  <CardTitle className="text-sm font-medium">Last Campaign</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">2d</div>
-                <p className="text-xs text-muted-foreground">Days ago</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest email campaign activities</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {emailCampaigns.slice(0, 3).map((campaign) => (
-                  <div key={campaign.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{campaign.name}</p>
-                      <p className="text-sm text-gray-600">{campaign.subject}</p>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={getStatusColor(campaign.status)}>
-                        {campaign.status}
-                      </Badge>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {campaign.sent_count > 0 ? `${campaign.sent_count} sent` : 'Not sent'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Campaigns Tab */}
-        <TabsContent value="campaigns" className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search campaigns..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Bounce Rate  
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {emailKPIs.bounced > 0 ? ((emailKPIs.bounced / emailKPIs.totalSent) * 100).toFixed(1) : '0.0'}%
             </div>
-            <Select defaultValue="all">
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="sending">Sending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <p className="text-xs text-gray-500 mt-1">Target: &lt;2%</p>
+          </CardContent>
+        </Card>
+      </div>
 
-          <div className="grid gap-4">
-            {emailCampaigns.map((campaign) => (
-              <Card key={campaign.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">{campaign.name}</h3>
-                        <Badge className={getStatusColor(campaign.status)}>
-                          {campaign.status}
-                        </Badge>
+      {/* Email List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Emails</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {emails.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Mail className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium mb-2">No emails found</h3>
+              <p className="text-gray-500 mb-4">Start your email marketing campaigns.</p>
+              <Button className="bg-brand-primary hover:bg-brand-accent text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Email
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold">Subject</TableHead>
+                  <TableHead className="font-semibold">Recipient</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Sent</TableHead>
+                  <TableHead className="font-semibold">Engagement</TableHead>
+                  <TableHead className="font-semibold">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {emails.map((email) => (
+                  <TableRow key={email.id} className="hover:bg-gray-50">
+                    <TableCell>
+                      <div className="font-medium text-gray-900">{email.subject}</div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">{email.recipient}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
+                        {email.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">{email.sentAt}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2 text-xs">
+                        {email.opened && <Badge variant="outline" className="text-green-600 border-green-300">Opened</Badge>}
+                        {email.clicked && <Badge variant="outline" className="text-blue-600 border-blue-300">Clicked</Badge>}
+                        {!email.opened && !email.clicked && <span className="text-gray-400">No activity</span>}
                       </div>
-                      <p className="text-gray-600 mb-3">{campaign.subject}</p>
-                      <div className="flex items-center gap-6 text-sm text-gray-500">
-                        <span>Created: {campaign.created_at}</span>
-                        {campaign.scheduled_at && (
-                          <span>Scheduled: {campaign.scheduled_at}</span>
-                        )}
-                        {campaign.sent_count > 0 && (
-                          <>
-                            <span>Sent: {campaign.sent_count}</span>
-                            <span>Open Rate: {campaign.open_rate}%</span>
-                            <span>Click Rate: {campaign.click_rate}%</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Duplicate
-                      </Button>
-                      {campaign.status === 'draft' && (
-                        <Button size="sm" className="bg-brand-primary hover:bg-brand-accent">
-                          Send
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="templates" className="space-y-6">
-          <div className="grid gap-4">
-            {emailTemplates.map((template) => (
-              <Card key={template.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">{template.name}</h3>
-                      <p className="text-gray-600 mb-2">{template.subject}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>Used {template.usage_count} times</span>
-                        <span>Last used: {template.last_used}</span>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Use Template
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="text-center py-12">
-            <BarChart3 className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Advanced Analytics Coming Soon</h3>
-            <p className="text-gray-600">
-              Detailed email performance analytics and insights will be available here.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

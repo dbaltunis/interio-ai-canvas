@@ -1,4 +1,5 @@
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 interface JobsPageTabsProps {
@@ -16,52 +17,37 @@ export const JobsPageTabs = ({
   clientsCount,
   emailsCount
 }: JobsPageTabsProps) => {
+  const tabs = [
+    { id: "jobs" as const, label: "Jobs", count: jobsCount },
+    { id: "clients" as const, label: "Clients", count: clientsCount },
+    { id: "emails" as const, label: "Emails", count: emailsCount },
+    { id: "analytics" as const, label: "Analytics", count: 0 }
+  ];
+
   return (
-    <div className="flex items-center space-x-0">
-      <Button
-        variant={activeTab === "jobs" ? "default" : "ghost"}
-        className={`rounded-r-none px-6 py-2 ${
-          activeTab === "jobs" 
-            ? "bg-gray-100 text-gray-900 border border-gray-300" 
-            : "bg-white text-gray-600 border border-gray-300"
-        }`}
-        onClick={() => setActiveTab("jobs")}
-      >
-        Jobs ({jobsCount})
-      </Button>
-      <Button
-        variant={activeTab === "clients" ? "default" : "ghost"}
-        className={`rounded-none border-l-0 px-6 py-2 ${
-          activeTab === "clients" 
-            ? "bg-gray-100 text-gray-900 border border-gray-300" 
-            : "bg-white text-gray-600 border border-gray-300"
-        }`}
-        onClick={() => setActiveTab("clients")}
-      >
-        Clients ({clientsCount})
-      </Button>
-      <Button
-        variant={activeTab === "emails" ? "default" : "ghost"}
-        className={`rounded-none border-l-0 px-6 py-2 ${
-          activeTab === "emails" 
-            ? "bg-gray-100 text-gray-900 border border-gray-300" 
-            : "bg-white text-gray-600 border border-gray-300"
-        }`}
-        onClick={() => setActiveTab("emails")}
-      >
-        Emails ({emailsCount})
-      </Button>
-      <Button
-        variant={activeTab === "analytics" ? "default" : "ghost"}
-        className={`rounded-l-none border-l-0 px-6 py-2 ${
-          activeTab === "analytics" 
-            ? "bg-gray-100 text-gray-900 border border-gray-300" 
-            : "bg-white text-gray-600 border border-gray-300"
-        }`}
-        onClick={() => setActiveTab("analytics")}
-      >
-        Analytics
-      </Button>
+    <div className="flex space-x-1 border-b border-gray-200">
+      {tabs.map((tab) => (
+        <Button
+          key={tab.id}
+          variant="ghost"
+          className={`flex items-center space-x-2 px-4 py-2 border-b-2 rounded-none transition-colors ${
+            activeTab === tab.id
+              ? "border-brand-primary text-brand-primary bg-brand-secondary/5"
+              : "border-transparent text-gray-600 hover:text-brand-primary hover:border-gray-300"
+          }`}
+          onClick={() => setActiveTab(tab.id)}
+        >
+          <span className="font-medium">{tab.label}</span>
+          {tab.count > 0 && (
+            <Badge 
+              variant="secondary" 
+              className="ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-1"
+            >
+              {tab.count}
+            </Badge>
+          )}
+        </Button>
+      ))}
     </div>
   );
 };

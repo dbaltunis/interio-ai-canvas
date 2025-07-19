@@ -4,14 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type Client = Tables<"clients">;
-type ClientInsert = TablesInsert<"clients">;
+type Client = Tables<"clients"> & {
+  client_type?: "B2B" | "B2C";
+  contact_person?: string;
+  company_name?: string;
+};
+
+type ClientInsert = TablesInsert<"clients"> & {
+  client_type?: "B2B" | "B2C";
+  contact_person?: string;
+  company_name?: string;
+};
 
 export const useClients = () => {
   return useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
       try {
+        console.log("Fetching clients...");
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           console.log("No user found for clients query");
@@ -27,6 +37,8 @@ export const useClients = () => {
           console.error("Clients query error:", error);
           throw error;
         }
+        
+        console.log("Clients fetched successfully:", data?.length || 0, "clients");
         return data || [];
       } catch (error) {
         console.error("Error in clients query:", error);
@@ -55,13 +67,20 @@ export const useCreateClient = () => {
         throw new Error("You must be logged in to create a client");
       }
 
+      console.log("Creating client:", client);
+
       const { data, error } = await supabase
         .from("clients")
         .insert({ ...client, user_id: user.id })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Create client error:", error);
+        throw error;
+      }
+      
+      console.log("Client created successfully:", data);
       return data;
     },
     onSuccess: () => {
@@ -72,6 +91,7 @@ export const useCreateClient = () => {
       });
     },
     onError: (error: any) => {
+      console.error("Create client failed:", error);
       toast({
         title: "Error",
         description: error.message,
