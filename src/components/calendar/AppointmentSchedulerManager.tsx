@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2, Copy, ExternalLink, Settings } from "lucide-react";
-import { useAppointmentSchedulers, useCreateAppointmentScheduler, useUpdateAppointmentScheduler, useDeleteAppointmentScheduler } from "@/hooks/useAppointmentSchedulers";
+import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AvailabilityEditor } from "./AvailabilityEditor";
@@ -39,9 +38,9 @@ interface FormData {
 
 export const AppointmentSchedulerManager = () => {
   const { data: schedulers, isLoading } = useAppointmentSchedulers();
-  const createScheduler = useCreateAppointmentScheduler();
-  const updateScheduler = useUpdateAppointmentScheduler();
-  const deleteScheduler = useDeleteAppointmentScheduler();
+  const createScheduler = useCreateScheduler();
+  const updateScheduler = useUpdateScheduler();
+  const deleteScheduler = useDeleteScheduler();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<FormData>({

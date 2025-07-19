@@ -183,3 +183,8 @@ export const useUploadSchedulerImage = () => {
     },
   });
 };
+
+// Export aliases for backward compatibility
+export const useCreateAppointmentScheduler = useCreateScheduler;
+export const useUpdateAppointmentScheduler = useUpdateScheduler;
+export const useDeleteAppointmentScheduler = useDeleteScheduler;

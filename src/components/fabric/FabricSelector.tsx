@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,16 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     const fabricItems = inventory.filter(item => 
       item.category?.toLowerCase() === 'fabric' || 
       item.type?.toLowerCase().includes('fabric')
-    );
+    ).map(item => ({
+      ...item,
+      // Map inventory fields to fabric fields for backward compatibility
+      color: item.description?.includes('color:') ? item.description.split('color:')[1]?.split(',')[0]?.trim() : '',
+      pattern: item.description?.includes('pattern:') ? item.description.split('pattern:')[1]?.split(',')[0]?.trim() : '',
+      type: item.category || 'fabric',
+      width: 137, // Default fabric width
+      cost_per_unit: item.unit_price || 0,
+      unit: 'yard'
+    }));
     
     console.log('FabricSelector - Found fabrics:', fabricItems.length);
     return fabricItems;
