@@ -99,7 +99,7 @@ export const EmailsTab = () => {
     total_clicked: emailKPIs.totalClicked || 0,
     open_rate: emailKPIs.openRate || 0,
     click_rate: emailKPIs.clickRate || 0,
-    bounce_rate: emailKPIs.totalSent > 0 ? Math.round((emailKPIs.bounced / emailKPIs.totalSent) * 100) : 0,
+    bounce_rate: emailKPIs.bounceRate || 0,
     avg_time_spent: 150, // Average time in seconds
     issues_count: emailKPIs.bounced || 0
   } : undefined;
