@@ -1,11 +1,25 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-type AppointmentScheduler = Tables<"appointment_schedulers">;
-type AppointmentSchedulerInsert = TablesInsert<"appointment_schedulers">;
-type AppointmentSchedulerUpdate = TablesUpdate<"appointment_schedulers">;
+interface AppointmentScheduler {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  slug: string;
+  duration: number;
+  buffer_time: number;
+  max_advance_booking: number;
+  min_advance_notice: number;
+  image_url?: string;
+  active: boolean;
+  availability: any;
+  locations: any;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useAppointmentSchedulers = () => {
   return useQuery({
@@ -15,9 +29,9 @@ export const useAppointmentSchedulers = () => {
         .from("appointment_schedulers")
         .select("*")
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
-      return data;
+      return data as AppointmentScheduler[];
     },
   });
 };
@@ -32,9 +46,9 @@ export const usePublicScheduler = (slug: string) => {
         .eq("slug", slug)
         .eq("active", true)
         .single();
-      
+
       if (error) throw error;
-      return data;
+      return data as AppointmentScheduler;
     },
     enabled: !!slug,
   });
@@ -45,13 +59,10 @@ export const useCreateScheduler = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (scheduler: Omit<AppointmentSchedulerInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
+    mutationFn: async (scheduler: Omit<AppointmentScheduler, "id" | "user_id" | "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("appointment_schedulers")
-        .insert({ ...scheduler, user_id: user.id })
+        .insert([{ ...scheduler, user_id: (await supabase.auth.getUser()).data.user?.id }])
         .select()
         .single();
 
@@ -66,9 +77,10 @@ export const useCreateScheduler = () => {
       });
     },
     onError: (error) => {
+      console.error("Error creating scheduler:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create scheduler",
         variant: "destructive",
       });
     },
@@ -80,7 +92,7 @@ export const useUpdateScheduler = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...scheduler }: { id: string } & Partial<AppointmentSchedulerUpdate>) => {
+    mutationFn: async ({ id, ...scheduler }: Partial<AppointmentScheduler> & { id: string }) => {
       const { data, error } = await supabase
         .from("appointment_schedulers")
         .update(scheduler)
@@ -99,9 +111,10 @@ export const useUpdateScheduler = () => {
       });
     },
     onError: (error) => {
+      console.error("Error updating scheduler:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update scheduler",
         variant: "destructive",
       });
     },
@@ -129,9 +142,10 @@ export const useDeleteScheduler = () => {
       });
     },
     onError: (error) => {
+      console.error("Error deleting scheduler:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete scheduler",
         variant: "destructive",
       });
     },
@@ -143,30 +157,27 @@ export const useUploadSchedulerImage = () => {
 
   return useMutation({
     mutationFn: async (file: File) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/scheduler-images/${Date.now()}.${fileExt}`;
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `scheduler-images/${fileName}`;
 
-      // Upload file to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('project-images')
-        .upload(fileName, file);
+        .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data } = await supabase.storage
+      const { data } = supabase.storage
         .from('project-images')
-        .getPublicUrl(uploadData.path);
+        .getPublicUrl(filePath);
 
       return data.publicUrl;
     },
     onError: (error) => {
+      console.error("Error uploading image:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to upload image",
         variant: "destructive",
       });
     },

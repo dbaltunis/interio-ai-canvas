@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_schedulers: {
+        Row: {
+          active: boolean | null
+          availability: Json | null
+          buffer_time: number | null
+          created_at: string
+          description: string | null
+          duration: number | null
+          id: string
+          image_url: string | null
+          locations: Json | null
+          max_advance_booking: number | null
+          min_advance_notice: number | null
+          name: string
+          slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          availability?: Json | null
+          buffer_time?: number | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          image_url?: string | null
+          locations?: Json | null
+          max_advance_booking?: number | null
+          min_advance_notice?: number | null
+          name: string
+          slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          availability?: Json | null
+          buffer_time?: number | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          image_url?: string | null
+          locations?: Json | null
+          max_advance_booking?: number | null
+          min_advance_notice?: number | null
+          name?: string
+          slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      appointments_booked: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          appointment_timezone: string | null
+          booking_message: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          customer_timezone: string | null
+          id: string
+          location_type: string | null
+          notes: string | null
+          scheduler_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          appointment_timezone?: string | null
+          booking_message?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          customer_timezone?: string | null
+          id?: string
+          location_type?: string | null
+          notes?: string | null
+          scheduler_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          appointment_timezone?: string | null
+          booking_message?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          customer_timezone?: string | null
+          id?: string
+          location_type?: string | null
+          notes?: string | null
+          scheduler_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_booked_scheduler_id_fkey"
+            columns: ["scheduler_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_schedulers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null

@@ -52,7 +52,7 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
   const availableSlots = selectedDate ? generateAvailableSlots(selectedDate) : [];
   const availableDates = getAvailableDates();
   
-  const locations = scheduler.locations as any;
+  const locations = scheduler.locations as any || {};
   const getLocationBadges = () => {
     const badges = [];
     if (locations?.inPerson?.enabled) {
