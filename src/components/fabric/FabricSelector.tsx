@@ -54,7 +54,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     
     const fabricItems = inventory.filter(item => 
       item.category?.toLowerCase() === 'fabric' || 
-      item.type?.toLowerCase().includes('fabric')
+      item.description?.toLowerCase().includes('fabric')
     ).map(item => ({
       ...item,
       // Map inventory fields to fabric fields for backward compatibility

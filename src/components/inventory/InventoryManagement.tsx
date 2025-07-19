@@ -15,7 +15,7 @@ export const InventoryManagement = () => {
   }
 
   const totalValue = inventory?.reduce((sum, item) => {
-    return sum + ((item.cost_per_unit || 0) * (item.quantity || 0));
+    return sum + ((item.unit_price || 0) * (item.quantity || 0));
   }, 0) || 0;
 
   const formatCurrency = (amount: number) => {
@@ -164,10 +164,10 @@ export const InventoryManagement = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {item.quantity} {item.unit}
+                        {item.quantity} units
                       </TableCell>
                       <TableCell>
-                        {item.cost_per_unit ? formatCurrency(item.cost_per_unit) : "N/A"}
+                        {item.unit_price ? formatCurrency(item.unit_price) : "N/A"}
                       </TableCell>
                       <TableCell>{item.supplier || "N/A"}</TableCell>
                       <TableCell>

@@ -1,28 +1,30 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface ProjectFile {
   id: string;
-  project_id: string;
-  user_id: string;
+  created_at: string;
   file_name: string;
   file_path: string;
   file_size: number;
   file_type: string;
   bucket_name: string;
-  created_at: string;
-  updated_at: string;
+  project_id: string;
+  user_id: string;
 }
 
 export const useProjectFiles = (projectId: string) => {
   return useQuery({
     queryKey: ["project-files", projectId],
     queryFn: async () => {
-      // For now, let's return an empty array as we don't have project_files table
-      // This will prevent the error in DocumentManagement
-      return [] as ProjectFile[];
+      const { data, error } = await supabase
+        .from("project_files")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as ProjectFile[];
     },
     enabled: !!projectId,
   });
@@ -30,16 +32,14 @@ export const useProjectFiles = (projectId: string) => {
 
 export const useUploadFile = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
+  
   return useMutation({
-    mutationFn: async ({ file, projectId, bucketName = 'project-documents' }: { 
-      file: File; 
-      projectId: string; 
-      bucketName?: string;
-    }) => {
+    mutationFn: async ({ file, projectId, bucketName }: { file: File; projectId: string; bucketName: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${projectId}/${Date.now()}-${file.name}`;
+      const fileName = `${projectId}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
@@ -47,31 +47,44 @@ export const useUploadFile = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(fileName);
-
-      return {
-        fileName: file.name,
-        filePath: fileName,
-        publicUrl: data.publicUrl,
-        fileSize: file.size,
-        fileType: file.type
-      };
+      // Store file metadata (this would need a project_files table)
+      console.log('File uploaded successfully:', fileName);
+      
+      return { fileName, bucketName };
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "File uploaded successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ["project-files"] });
     },
-    onError: (error) => {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload file",
-        variant: "destructive",
-      });
+  });
+};
+
+export const useDeleteFile = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (file: any) => {
+      const { error } = await supabase.storage
+        .from(file.bucket_name)
+        .remove([file.file_path]);
+
+      if (error) throw error;
+      
+      return file;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-files"] });
+    },
+  });
+};
+
+export const useGetFileUrl = () => {
+  return useMutation({
+    mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
+      const { data } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+      
+      return data.publicUrl;
     },
   });
 };
