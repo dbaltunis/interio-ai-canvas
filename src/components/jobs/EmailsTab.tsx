@@ -183,6 +183,18 @@ export const EmailsTab = () => {
     return <div className="flex items-center justify-center h-64">Loading email data...</div>;
   }
 
+  const transformedKPIs = emailKPIs ? {
+    total_sent: emailKPIs.totalSent || 0,
+    total_delivered: emailKPIs.delivered || 0,
+    total_opened: emailKPIs.totalOpened || 0,
+    total_clicked: emailKPIs.totalClicked || 0,
+    open_rate: emailKPIs.openRate || 0,
+    click_rate: emailKPIs.clickRate || 0,
+    bounce_rate: (emailKPIs.bounced || 0) / Math.max(emailKPIs.totalSent || 1, 1) * 100,
+    avg_time_spent: emailKPIs.avgTimeSpent || '0s',
+    issues_count: emailKPIs.bounced || 0
+  } : null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -214,7 +226,7 @@ export const EmailsTab = () => {
       </div>
 
       {/* KPIs Dashboard */}
-      <EmailKPIsDashboard kpis={emailKPIs} />
+      <EmailKPIsDashboard kpis={transformedKPIs} />
 
       {/* Integration and Settings Banners */}
       <EmailIntegrationBanners
@@ -283,7 +295,6 @@ export const EmailsTab = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-            {/* Client and Quote Selectors */}
             <div className="flex flex-col sm:flex-row gap-3">
               <ClientSelector 
                 selectedClients={selectedClients}
@@ -296,7 +307,6 @@ export const EmailsTab = () => {
               />
             </div>
 
-            {/* Email Composer with Appointment Scheduler Integration */}
             <EmailComposer
               newEmail={newEmail}
               setNewEmail={setNewEmail}
