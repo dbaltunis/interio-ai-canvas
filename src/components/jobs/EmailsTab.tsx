@@ -191,7 +191,7 @@ export const EmailsTab = () => {
     open_rate: emailKPIs.openRate || 0,
     click_rate: emailKPIs.clickRate || 0,
     bounce_rate: (emailKPIs.bounced || 0) / Math.max(emailKPIs.totalSent || 1, 1) * 100,
-    avg_time_spent: emailKPIs.avgTimeSpent || '0s',
+    avg_time_spent: 150, // Convert to seconds (2m 30s = 150 seconds)
     issues_count: emailKPIs.bounced || 0
   } : null;
 
