@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mail, ExternalLink } from "lucide-react";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface EmailPreviewDialogProps {
   isOpen: boolean;
@@ -12,13 +11,11 @@ interface EmailPreviewDialogProps {
 }
 
 export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialogProps) => {
-  const { data: businessSettings } = useBusinessSettings();
-
   if (!email) return null;
 
-  // Use business settings for company info with fallbacks
-  const companyName = businessSettings?.company_name || "Your Company";
-  const companyLogo = businessSettings?.company_logo_url || null;
+  // Use mock business settings for now
+  const companyName = "Your Company";
+  const companyLogo = null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -42,8 +39,8 @@ export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialo
               <span>Email Preview</span>
             </DialogTitle>
             <div className="flex items-center space-x-2">
-              <Badge className={getStatusColor(email.status)}>
-                {email.status}
+              <Badge className={getStatusColor(email.status || 'draft')}>
+                {email.status || 'draft'}
               </Badge>
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-2" />

@@ -37,10 +37,10 @@ export const useWorkshopData = (project: any) => {
     totalPrice: order.total_price,
     status: order.status as "ordered" | "needed" | "received",
     orderDate: order.order_date,
-    expectedDelivery: order.expected_delivery || null,
-    receivedDate: order.received_date || null,
+    expectedDelivery: order.order_date || null, // Mock value
+    receivedDate: null, // Mock value
     workOrderIds: order.work_order_ids || [],
-    notes: order.notes || ''
+    notes: '' // Mock value
   })) || [];
 
   // Transform team members to match expected interface
@@ -73,7 +73,7 @@ export const useWorkshopData = (project: any) => {
     measurements: '120" × 84"',
     priority: wo.priority,
     status: wo.status,
-    assignedTo: wo.assigned_to || '',
+    assignedTo: wo.user_id || '', // Use user_id as fallback
     dueDate: wo.due_date || new Date().toISOString().split('T')[0],
     supplier: 'General Suppliers',
     fabricCode: 'FB-COT-NAT',

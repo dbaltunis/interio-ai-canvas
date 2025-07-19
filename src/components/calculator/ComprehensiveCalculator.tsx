@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Calculator, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useProductTemplates } from "@/hooks/useProductTemplates";
+import { useProductTemplates, mockTemplates } from "@/hooks/useProductTemplates";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -31,7 +32,7 @@ interface CalculationResult {
 }
 
 export const ComprehensiveCalculator = () => {
-  const { templates, isLoading: templatesLoading } = useProductTemplates();
+  const { data: templates = mockTemplates, isLoading: templatesLoading } = useProductTemplates();
   const { data: headingOptions = [], isLoading: headingsLoading } = useHeadingOptions();
   const { toast } = useToast();
 
