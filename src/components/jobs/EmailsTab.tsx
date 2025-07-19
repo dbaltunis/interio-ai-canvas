@@ -1,380 +1,377 @@
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Filter } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
-import { useEmailCampaigns, useCreateEmailCampaign, useUpdateEmailCampaign } from "@/hooks/useEmailCampaigns";
-import { useEmailTemplates, useCreateEmailTemplate } from "@/hooks/useEmailTemplates";
-import { useSendEmail } from "@/hooks/useSendEmail";
-import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
-import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Send, 
+  Mail, 
+  Users, 
+  FileText, 
+  Plus, 
+  Search,
+  Filter,
+  BarChart3,
+  TrendingUp,
+  Clock,
+  Target
+} from "lucide-react";
 import { EmailKPIsDashboard } from "./email-components/EmailKPIsDashboard";
-import { EmailTabsNavigation } from "./email-components/EmailTabsNavigation";
-import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
-import { EmailHistoryTab } from "./email-components/EmailHistoryTab";
-import { EmailComposeTab } from "./email-components/EmailComposeTab";
-import { EmailTemplatesTab } from "./email-components/EmailTemplatesTab";
-import { EmailCampaignsTab } from "./email-components/EmailCampaignsTab";
-import { EmailSettingsDialog } from "./email-components/EmailSettingsDialog";
-import { CampaignBuilder } from "./email-components/CampaignBuilder";
-import { TemplateVariableEditor } from "./email-components/TemplateVariableEditor";
-import { EmailPreviewDialog } from "./email-components/EmailPreviewDialog";
-import { ClientSelector } from "./email-components/ClientSelector";
-import { QuoteSelector } from "./email-components/QuoteSelector";
-import { EmailComposer } from "./email-components/EmailComposer";
+import { useEmailKPIs } from "@/hooks/useEmails";
 
 export const EmailsTab = () => {
-  const [newEmail, setNewEmail] = useState({
-    recipient_email: "",
-    subject: "",
-    content: "",
-    template_id: ""
-  });
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [emailSettingsOpen, setEmailSettingsOpen] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [campaignBuilderOpen, setCampaignBuilderOpen] = useState(false);
-  const [templateVariableEditorOpen, setTemplateVariableEditorOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<any>(null);
-  const [selectedClients, setSelectedClients] = useState<any[]>([]);
-  const [selectedQuotes, setSelectedQuotes] = useState<any[]>([]);
-  const [newEmailSettings, setNewEmailSettings] = useState({
-    from_email: "",
-    from_name: "",
-    reply_to_email: "",
-    signature: ""
-  });
-  const [activeTabValue, setActiveTabValue] = useState("history");
-  const [composeDialogOpen, setComposeDialogOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [activeEmailTab, setActiveEmailTab] = useState<"overview" | "campaigns" | "templates" | "analytics">("overview");
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Get email KPIs data
+  const { data: emailKPIs, isLoading: emailKPIsLoading, error: emailKPIsError } = useEmailKPIs();
 
-  const { toast } = useToast();
-  const { data: emails, isLoading: emailsLoading } = useEmails();
-  const { data: emailKPIs, isLoading: kpisLoading } = useEmailKPIs();
-  const { data: campaigns } = useEmailCampaigns();
-  const { data: emailTemplates } = useEmailTemplates();
-  const { data: emailSettings } = useEmailSettings();
-  const sendEmailMutation = useSendEmail();
-  const createCampaignMutation = useCreateEmailCampaign();
-  const updateCampaignMutation = useUpdateEmailCampaign();
-  const createTemplateMutation = useCreateEmailTemplate();
-  const updateEmailSettingsMutation = useUpdateEmailSettings();
-  const { hasSendGridIntegration } = useIntegrationStatus();
-
-  useEffect(() => {
-    if (emailSettings) {
-      setNewEmailSettings({
-        from_email: emailSettings.from_email || "",
-        from_name: emailSettings.from_name || "",
-        reply_to_email: emailSettings.reply_to_email || "",
-        signature: emailSettings.signature || ""
-      });
+  // Mock data for campaigns and templates (replace with real data later)
+  const emailCampaigns = [
+    {
+      id: '1',
+      name: 'Spring Collection Launch',
+      subject: 'New Spring Window Treatments Available',
+      status: 'sent' as const,
+      sent_count: 150,
+      open_rate: 45,
+      click_rate: 12,
+      created_at: '2024-01-15',
+      scheduled_at: '2024-01-16'
+    },
+    {
+      id: '2',
+      name: 'Customer Follow-up',
+      subject: 'How did we do? Your feedback matters',
+      status: 'draft' as const,
+      sent_count: 0,
+      open_rate: 0,
+      click_rate: 0,
+      created_at: '2024-01-20',
+      scheduled_at: null
+    },
+    {
+      id: '3',
+      name: 'Holiday Promotion',
+      subject: '25% Off All Custom Blinds',
+      status: 'scheduled' as const,
+      sent_count: 0,
+      open_rate: 0,
+      click_rate: 0,
+      created_at: '2024-01-18',
+      scheduled_at: '2024-01-25'
     }
-  }, [emailSettings]);
+  ];
 
-  const handleSendEmail = async (attachments: File[] = []) => {
-    const allRecipients = [
-      ...selectedClients.filter(client => client.email).map(client => client.email),
-      ...(newEmail.recipient_email ? [newEmail.recipient_email] : [])
-    ].filter(Boolean);
-
-    if (allRecipients.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select clients or enter recipient email addresses",
-        variant: "destructive"
-      });
-      return;
+  const emailTemplates = [
+    {
+      id: '1',
+      name: 'Quote Follow-up',
+      subject: 'Following up on your window treatment quote',
+      usage_count: 25,
+      last_used: '2024-01-20'
+    },
+    {
+      id: '2',
+      name: 'Installation Reminder',
+      subject: 'Your installation is scheduled for tomorrow',
+      usage_count: 18,
+      last_used: '2024-01-19'
+    },
+    {
+      id: '3',
+      name: 'Thank You',
+      subject: 'Thank you for choosing our services',
+      usage_count: 32,
+      last_used: '2024-01-21'
     }
+  ];
 
-    if (!newEmail.subject || !newEmail.content) {
-      toast({
-        title: "Error",
-        description: "Please fill in subject and message content",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    for (const recipient of allRecipients) {
-      try {
-        await sendEmailMutation.mutateAsync({
-          to: recipient,
-          subject: newEmail.subject,
-          content: newEmail.content,
-          template_id: newEmail.template_id || undefined,
-          client_id: selectedClients.find(c => c.email === recipient)?.id,
-          attachments: attachments
-        });
-      } catch (error) {
-        console.error(`Failed to send email to ${recipient}:`, error);
-      }
-    }
-
-    setNewEmail({
-      recipient_email: "",
-      subject: "",
-      content: "",
-      template_id: ""
-    });
-    setSelectedClients([]);
-    setSelectedQuotes([]);
-  };
-
-  const handleCreateCampaign = () => {
-    setEditingCampaign(null);
-    setCampaignBuilderOpen(true);
-  };
-
-  const handleEditCampaign = (campaign: any) => {
-    setEditingCampaign(campaign);
-    setCampaignBuilderOpen(true);
-  };
-
-  const handleSaveCampaign = (campaignData: any) => {
-    if (editingCampaign) {
-      updateCampaignMutation.mutate({ id: editingCampaign.id, ...campaignData });
-    } else {
-      createCampaignMutation.mutate(campaignData);
-    }
-  };
-
-  const handleSaveEmailSettings = () => {
-    updateEmailSettingsMutation.mutate({
-      ...newEmailSettings,
-      active: true
-    });
-    setEmailSettingsOpen(false);
-  };
-
-  const handleResendEmail = async (email: any) => {
-    try {
-      await sendEmailMutation.mutateAsync({
-        to: email.recipient_email,
-        subject: email.subject,
-        content: email.content
-      });
-      toast({
-        title: "Email Resent",
-        description: `Email to ${email.recipient_email} has been resent.`
-      });
-    } catch (error) {
-      console.error("Failed to resend email:", error);
-      toast({
-        title: "Resend Failed",
-        description: "Failed to resend email. Please try again later.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleApplyTemplate = (subject: string, content: string, templateId?: string) => {
-    setNewEmail({
-      ...newEmail,
-      subject,
-      content,
-      template_id: templateId || ""
-    });
-  };
-
-  if (kpisLoading) {
-    return <div className="flex items-center justify-center h-64">Loading email data...</div>;
-  }
-
-  const transformedKPIs = emailKPIs ? {
+  // Prepare KPIs data for the dashboard component
+  const kpisData = emailKPIs ? {
     total_sent: emailKPIs.totalSent || 0,
-    total_delivered: emailKPIs.delivered || 0,
+    total_delivered: emailKPIs.totalDelivered || 0,
     total_opened: emailKPIs.totalOpened || 0,
     total_clicked: emailKPIs.totalClicked || 0,
     open_rate: emailKPIs.openRate || 0,
     click_rate: emailKPIs.clickRate || 0,
-    bounce_rate: (emailKPIs.bounced || 0) / Math.max(emailKPIs.totalSent || 1, 1) * 100,
-    avg_time_spent: 150, // Convert to seconds (2m 30s = 150 seconds)
+    bounce_rate: emailKPIs.bounceRate || 0,
+    avg_time_spent: 150, // Average time in seconds
     issues_count: emailKPIs.bounced || 0
-  } : null;
+  } : undefined;
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'sent': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'sending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (emailKPIsError) {
+    console.error("Error loading email KPIs:", emailKPIsError);
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-brand-primary">Email Management</h1>
-          <p className="text-gray-600 mt-1">Send and track your email communications</p>
+          <h2 className="text-2xl font-bold text-brand-primary">Email Management</h2>
+          <p className="text-brand-neutral">Manage campaigns, templates, and track email performance</p>
         </div>
-        
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="border-gray-300 px-4"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Export Report
           </Button>
-          
-          <Button 
-            onClick={() => setComposeDialogOpen(true)}
-            className="bg-brand-primary hover:bg-brand-accent text-white px-6 py-2 font-medium"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Email
+          <Button className="bg-brand-primary hover:bg-brand-accent flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Campaign
           </Button>
         </div>
       </div>
 
-      {/* KPIs Dashboard */}
-      <EmailKPIsDashboard kpis={transformedKPIs} />
+      {/* Email KPIs Dashboard */}
+      {emailKPIsLoading ? (
+        <div className="flex items-center justify-center h-32">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+            <p className="text-gray-600">Loading email analytics...</p>
+          </div>
+        </div>
+      ) : (
+        <EmailKPIsDashboard kpis={kpisData} />
+      )}
 
-      {/* Integration and Settings Banners */}
-      <EmailIntegrationBanners
-        hasSendGridIntegration={hasSendGridIntegration}
-        hasEmailSettings={!!emailSettings?.from_email}
-        onEmailSettingsClick={() => setEmailSettingsOpen(true)}
-      />
+      {/* Tabs */}
+      <Tabs value={activeEmailTab} onValueChange={(value) => setActiveEmailTab(value as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="campaigns" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            Campaigns
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Templates
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Main Email Interface */}
-      <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
-        <EmailTabsNavigation activeTab={activeTabValue} onTabChange={setActiveTabValue} />
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center space-x-2">
+                  <Mail className="h-5 w-5 text-blue-500" />
+                  <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{emailCampaigns.length}</div>
+                <p className="text-xs text-muted-foreground">Active campaigns</p>
+              </CardContent>
+            </Card>
 
-        {/* Tab Contents */}
-        <TabsContent value="history">
-          <EmailHistoryTab
-            emails={emails}
-            emailsLoading={emailsLoading}
-            onComposeClick={() => setComposeDialogOpen(true)}
-            onResendEmail={handleResendEmail}
-            isResending={sendEmailMutation.isPending}
-          />
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-green-500" />
+                  <CardTitle className="text-sm font-medium">Templates</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{emailTemplates.length}</div>
+                <p className="text-xs text-muted-foreground">Email templates</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center space-x-2">
+                  <Target className="h-5 w-5 text-purple-500" />
+                  <CardTitle className="text-sm font-medium">Avg. Open Rate</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{emailKPIs?.openRate || 0}%</div>
+                <p className="text-xs text-muted-foreground">Across all campaigns</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-orange-500" />
+                  <CardTitle className="text-sm font-medium">Last Campaign</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2d</div>
+                <p className="text-xs text-muted-foreground">Days ago</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest email campaign activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {emailCampaigns.slice(0, 3).map((campaign) => (
+                  <div key={campaign.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{campaign.name}</p>
+                      <p className="text-sm text-gray-600">{campaign.subject}</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge className={getStatusColor(campaign.status)}>
+                        {campaign.status}
+                      </Badge>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {campaign.sent_count > 0 ? `${campaign.sent_count} sent` : 'Not sent'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="compose">
-          <EmailComposeTab
-            selectedClients={selectedClients}
-            setSelectedClients={setSelectedClients}
-            selectedQuotes={selectedQuotes}
-            setSelectedQuotes={setSelectedQuotes}
-            newEmail={newEmail}
-            setNewEmail={setNewEmail}
-            onSendEmail={handleSendEmail}
-            previewDialogOpen={previewDialogOpen}
-            setPreviewDialogOpen={setPreviewDialogOpen}
-            sendEmailMutation={sendEmailMutation}
-            emailSettings={emailSettings}
-          />
-        </TabsContent>
-
-        <TabsContent value="templates">
-          <EmailTemplatesTab
-            templates={emailTemplates}
-            onCreateTemplate={(templateData) => createTemplateMutation.mutate(templateData)}
-            onApplyTemplate={handleApplyTemplate}
-            isCreating={createTemplateMutation.isPending}
-          />
-        </TabsContent>
-
-        <TabsContent value="campaigns">
-          <EmailCampaignsTab
-            campaigns={campaigns}
-            onCreateCampaign={handleCreateCampaign}
-            onEditCampaign={handleEditCampaign}
-            isCreating={createCampaignMutation.isPending}
-          />
-        </TabsContent>
-      </Tabs>
-
-      {/* Compose Email Dialog */}
-      <Dialog open={composeDialogOpen} onOpenChange={setComposeDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Compose New Email</DialogTitle>
-            <DialogDescription>
-              Create and send a new email to your clients with appointment booking links
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <ClientSelector 
-                selectedClients={selectedClients}
-                onSelectionChange={setSelectedClients}
-              />
-              <QuoteSelector 
-                selectedQuotes={selectedQuotes}
-                onSelectionChange={setSelectedQuotes}
-                selectedClients={selectedClients}
+        {/* Campaigns Tab */}
+        <TabsContent value="campaigns" className="space-y-6">
+          {/* Search and Filter */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search campaigns..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
             </div>
-
-            <EmailComposer
-              newEmail={newEmail}
-              setNewEmail={setNewEmail}
-              selectedClients={selectedClients}
-              selectedQuotes={selectedQuotes}
-              onSendEmail={(attachments) => {
-                handleSendEmail(attachments);
-                setComposeDialogOpen(false);
-              }}
-              onPreviewEmail={() => setPreviewDialogOpen(true)}
-              sendEmailMutation={sendEmailMutation}
-              emailSettings={emailSettings}
-            />
+            <Select defaultValue="all">
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="sending">Sending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Other Dialogs */}
-      <EmailSettingsDialog
-        open={emailSettingsOpen}
-        onOpenChange={setEmailSettingsOpen}
-        emailSettings={newEmailSettings}
-        onSave={(settings) => {
-          setNewEmailSettings(settings);
-          handleSaveEmailSettings();
-        }}
-      />
+          {/* Campaigns List */}
+          <div className="grid gap-4">
+            {emailCampaigns.map((campaign) => (
+              <Card key={campaign.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg">{campaign.name}</h3>
+                        <Badge className={getStatusColor(campaign.status)}>
+                          {campaign.status}
+                        </Badge>
+                      </div>
+                      <p className="text-gray-600 mb-3">{campaign.subject}</p>
+                      <div className="flex items-center gap-6 text-sm text-gray-500">
+                        <span>Created: {campaign.created_at}</span>
+                        {campaign.scheduled_at && (
+                          <span>Scheduled: {campaign.scheduled_at}</span>
+                        )}
+                        {campaign.sent_count > 0 && (
+                          <>
+                            <span>Sent: {campaign.sent_count}</span>
+                            <span>Open Rate: {campaign.open_rate}%</span>
+                            <span>Click Rate: {campaign.click_rate}%</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Duplicate
+                      </Button>
+                      {campaign.status === 'draft' && (
+                        <Button size="sm" className="bg-brand-primary hover:bg-brand-accent">
+                          Send
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-      <CampaignBuilder
-        open={campaignBuilderOpen}
-        onOpenChange={setCampaignBuilderOpen}
-        campaign={editingCampaign}
-        onSave={handleSaveCampaign}
-        onLaunch={() => {}}
-      />
+        {/* Templates Tab */}
+        <TabsContent value="templates" className="space-y-6">
+          <div className="grid gap-4">
+            {emailTemplates.map((template) => (
+              <Card key={template.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{template.name}</h3>
+                      <p className="text-gray-600 mb-2">{template.subject}</p>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>Used {template.usage_count} times</span>
+                        <span>Last used: {template.last_used}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Use Template
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-      <TemplateVariableEditor
-        open={templateVariableEditorOpen}
-        onOpenChange={setTemplateVariableEditorOpen}
-        template={selectedTemplate}
-        onApplyTemplate={(template, variables) => {
-          setNewEmail({
-            ...newEmail,
-            subject: template.subject,
-            content: template.content
-          });
-          toast({
-            title: "Template Applied",
-            description: `${template.name} template has been customized and applied.`
-          });
-        }}
-      />
-
-      <EmailPreviewDialog
-        open={previewDialogOpen}
-        onOpenChange={setPreviewDialogOpen}
-        template={{
-          id: 'custom',
-          name: 'Custom Email',
-          subject: newEmail.subject,
-          content: newEmail.content,
-          category: 'Custom',
-          variables: []
-        }}
-        clientData={selectedClients[0]}
-        quoteData={selectedQuotes[0]}
-        senderInfo={emailSettings}
-      />
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="text-center py-12">
+            <BarChart3 className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Advanced Analytics Coming Soon</h3>
+            <p className="text-gray-600">
+              Detailed email performance analytics and insights will be available here.
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
