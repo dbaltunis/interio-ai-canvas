@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,11 +35,11 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       id: email.id,
       type: 'email' as const,
       title: email.subject,
-      description: `Email ${email.status} - ${email.open_count} opens, ${email.click_count} clicks`,
+      description: `Email ${email.status} - ${email.open_count || 0} opens, ${email.click_count || 0} clicks`,
       date: email.created_at,
       status: email.status,
       icon: Mail,
-      priority: (email.open_count > 0 ? 'medium' : 'low') as 'medium' | 'low'
+      priority: ((email.open_count || 0) > 0 ? 'medium' : 'low') as 'medium' | 'low'
     })),
     
     // Quote activities

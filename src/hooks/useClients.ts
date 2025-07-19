@@ -2,51 +2,38 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type Client = Tables<"clients"> & {
-  client_type?: "B2B" | "B2C";
-  contact_person?: string;
+export interface Client {
+  id: string;
+  user_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  notes?: string;
+  client_type?: 'B2B' | 'B2C';
   company_name?: string;
-};
-
-type ClientInsert = TablesInsert<"clients"> & {
-  client_type?: "B2B" | "B2C";
   contact_person?: string;
-  company_name?: string;
-};
+  created_at: string;
+  updated_at: string;
+}
 
 export const useClients = () => {
   return useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      try {
-        console.log("Fetching clients...");
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.log("No user found for clients query");
-          return [];
-        }
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-        const { data, error } = await supabase
-          .from("clients")
-          .select("*")
-          .order("name");
-        
-        if (error) {
-          console.error("Clients query error:", error);
-          throw error;
-        }
-        
-        console.log("Clients fetched successfully:", data?.length || 0, "clients");
-        return data || [];
-      } catch (error) {
-        console.error("Error in clients query:", error);
-        return [];
-      }
+      if (error) throw error;
+      return data as Client[];
     },
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -55,32 +42,17 @@ export const useCreateClient = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (client: Omit<ClientInsert, "user_id">) => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error("Auth error:", userError);
-        throw new Error("Authentication error. Please try logging in again.");
-      }
-      
-      if (!user) {
-        throw new Error("You must be logged in to create a client");
-      }
-
-      console.log("Creating client:", client);
+    mutationFn: async (client: Omit<Client, "id" | "user_id" | "created_at" | "updated_at">) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
         .from("clients")
-        .insert({ ...client, user_id: user.id })
+        .insert([{ ...client, user_id: userData.user.id }])
         .select()
         .single();
 
-      if (error) {
-        console.error("Create client error:", error);
-        throw error;
-      }
-      
-      console.log("Client created successfully:", data);
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
@@ -90,11 +62,11 @@ export const useCreateClient = () => {
         description: "Client created successfully",
       });
     },
-    onError: (error: any) => {
-      console.error("Create client failed:", error);
+    onError: (error) => {
+      console.error("Error creating client:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create client",
         variant: "destructive",
       });
     },
@@ -106,21 +78,10 @@ export const useUpdateClient = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...client }: { id: string } & Omit<ClientInsert, "user_id">) => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error("Auth error:", userError);
-        throw new Error("Authentication error. Please try logging in again.");
-      }
-      
-      if (!user) {
-        throw new Error("You must be logged in to update a client");
-      }
-
+    mutationFn: async ({ id, ...client }: Partial<Client> & { id: string }) => {
       const { data, error } = await supabase
         .from("clients")
-        .update({ ...client, user_id: user.id })
+        .update(client)
         .eq("id", id)
         .select()
         .single();
@@ -135,40 +96,11 @@ export const useUpdateClient = () => {
         description: "Client updated successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      console.error("Error updating client:", error);
       toast({
         title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-};
-
-export const useDeleteClient = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("clients")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast({
-        title: "Success",
-        description: "Client deleted successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete client",
+        description: "Failed to update client",
         variant: "destructive",
       });
     },

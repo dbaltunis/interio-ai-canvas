@@ -7,16 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface EmailRequest {
+interface SendEmailRequest {
   to: string;
   subject: string;
   html: string;
-  emailId?: string;
+  emailId: string;
   attachmentPaths?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("Email function called with method:", req.method);
+  console.log("Send email function called");
   
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,204 +28,127 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get the authorization header
-    const authHeader = req.headers.get("Authorization");
-    console.log("Auth header present:", !!authHeader);
+    const { to, subject, html, emailId, attachmentPaths }: SendEmailRequest = await req.json();
     
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
-
-    // Set the auth context
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
+    // Get SendGrid API key from integration settings
+    const { data: { user } } = await supabase.auth.getUser(
+      req.headers.get("Authorization")?.replace("Bearer ", "") ?? ""
     );
-
-    if (authError || !user) {
-      console.error("Auth error:", authError);
-      throw new Error("Invalid authentication");
+    
+    if (!user) {
+      throw new Error("User not authenticated");
     }
 
-    console.log("User authenticated:", user.id);
+    const { data: integration } = await supabase
+      .from("integration_settings")
+      .select("api_credentials")
+      .eq("user_id", user.id)
+      .eq("integration_type", "sendgrid")
+      .eq("active", true)
+      .single();
 
-    const emailData: EmailRequest = await req.json();
-    console.log("Processing email request:", { 
-      to: emailData.to, 
-      subject: emailData.subject,
-      hasContent: !!emailData.html,
-      attachments: emailData.attachmentPaths?.length || 0
-    });
+    const sendgridApiKey = integration?.api_credentials?.api_key || Deno.env.get("SENDGRID_API_KEY");
+    
+    if (!sendgridApiKey) {
+      throw new Error("SendGrid API key not configured");
+    }
 
-    // Process attachments if any
-    let attachments: any[] = [];
-    if (emailData.attachmentPaths && emailData.attachmentPaths.length > 0) {
-      console.log("Processing attachments:", emailData.attachmentPaths);
+    // Get user's email settings
+    const { data: emailSettings } = await supabase
+      .from("email_settings")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    const fromEmail = emailSettings?.from_email || "noreply@example.com";
+    const fromName = emailSettings?.from_name || "Your Business";
+
+    // Prepare email data
+    const emailData: any = {
+      personalizations: [
+        {
+          to: [{ email: to }],
+          subject: subject,
+        },
+      ],
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
+      content: [
+        {
+          type: "text/html",
+          value: html,
+        },
+      ],
+      custom_args: {
+        email_id: emailId,
+      },
+    };
+
+    // Add attachments if provided
+    if (attachmentPaths && attachmentPaths.length > 0) {
+      emailData.attachments = [];
       
-      for (const path of emailData.attachmentPaths) {
+      for (const path of attachmentPaths) {
         try {
-          // Download file from storage
-          const { data: fileData, error: downloadError } = await supabase.storage
-            .from('email-attachments')  
+          const { data: fileData } = await supabase.storage
+            .from('email-attachments')
             .download(path);
           
-          if (downloadError) {
-            console.error("Failed to download attachment:", downloadError);
-            continue;
+          if (fileData) {
+            const arrayBuffer = await fileData.arrayBuffer();
+            const base64Content = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+            const fileName = path.split('/').pop() || 'attachment';
+            
+            emailData.attachments.push({
+              content: base64Content,
+              filename: fileName,
+              type: fileData.type || 'application/octet-stream',
+              disposition: 'attachment',
+            });
           }
-          
-          // Convert to base64
-          const buffer = await fileData.arrayBuffer();
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-          
-          // Extract filename from path
-          const filename = path.split('/').pop() || 'attachment';
-          
-          attachments.push({
-            content: base64,
-            filename: filename,
-            type: fileData.type || 'application/octet-stream',
-            disposition: 'attachment'
-          });
-          
         } catch (error) {
           console.error("Error processing attachment:", error);
         }
       }
-      
-      console.log("Processed attachments:", attachments.length);
     }
 
-    // Check if SendGrid API key is available
-    const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    if (!sendGridApiKey) {
-      console.error("SendGrid API key not found");
-      throw new Error("SendGrid API key not configured. Please add your SendGrid API key in the project settings.");
-    }
-
-    // Get user's business settings for from email
-    const { data: businessSettings } = await supabase
-      .from('business_settings')
-      .select('business_email, company_name')
-      .eq('user_id', user.id)
-      .single();
-
-    console.log("Business settings:", businessSettings);
-
-    // Use a verified sender email for SendGrid
-    const fromEmail = businessSettings?.business_email || "noreply@yourdomain.com";
-    const fromName = businessSettings?.company_name || "Your Company";
-
-    console.log("Sending via SendGrid with from:", fromEmail, fromName);
-
-    // Clean up HTML content - remove CSS variables and unsupported styles
-    const cleanHtml = emailData.html
-      .replace(/style="[^"]*border-color:\s*hsl\(var\(--border\)\);?[^"]*"/g, '')
-      .replace(/style=""/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    console.log("Cleaned HTML content:", cleanHtml);
+    console.log("Sending email via SendGrid:", { to, subject, from: fromEmail });
 
     // Send email via SendGrid
-    const emailPayload: any = {
-      personalizations: [{
-        to: [{ email: emailData.to }],
-        subject: emailData.subject,
-      }],
-      from: {
-        email: fromEmail,
-        name: fromName
-      },
-      content: [{
-        type: "text/html",
-        value: cleanHtml
-      }],
-      tracking_settings: {
-        click_tracking: { 
-          enable: true,
-          enable_text: true 
-        },
-        open_tracking: { 
-          enable: true,
-          substitution_tag: "%opentrack%"
-        },
-        subscription_tracking: {
-          enable: false
-        }
-      },
-      custom_args: {
-        user_id: user.id,
-        email_id: emailData.emailId || ""
-      }
-    };
-
-    // Add attachments if any
-    if (attachments.length > 0) {
-      emailPayload.attachments = attachments;
-      console.log("Adding attachments to email:", attachments.length);
-    }
-
-    const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    const sendResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${sendGridApiKey}`,
+        "Authorization": `Bearer ${sendgridApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(emailPayload),
+      body: JSON.stringify(emailData),
     });
 
-    console.log("SendGrid response status:", sendGridResponse.status);
-
-    if (!sendGridResponse.ok) {
-      const errorText = await sendGridResponse.text();
-      console.error("SendGrid error response:", errorText);
-      
-      // Provide more helpful error messages
-      let errorMessage = `SendGrid API error: ${sendGridResponse.status}`;
-      if (sendGridResponse.status === 401) {
-        errorMessage = "Invalid SendGrid API key. Please check your API key configuration.";
-      } else if (sendGridResponse.status === 403) {
-        errorMessage = "SendGrid API access forbidden. Please verify your sender email domain.";
-      } else if (errorText) {
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.errors && errorJson.errors.length > 0) {
-            errorMessage = errorJson.errors[0].message;
-          }
-        } catch (e) {
-          errorMessage += ` - ${errorText}`;
-        }
-      }
-      
-      throw new Error(errorMessage);
+    if (!sendResponse.ok) {
+      const errorText = await sendResponse.text();
+      console.error("SendGrid error:", errorText);
+      throw new Error(`SendGrid API error: ${sendResponse.status} - ${errorText}`);
     }
 
-    const messageId = sendGridResponse.headers.get("X-Message-Id");
-    console.log("Email sent successfully, Message ID:", messageId);
+    // Update email status to sent
+    await supabase
+      .from("emails")
+      .update({ 
+        status: "sent", 
+        sent_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", emailId);
 
-    // Update email record in database if emailId is provided
-    if (emailData.emailId) {
-      const { error: updateError } = await supabase
-        .from("emails")
-        .update({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          sendgrid_message_id: messageId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', emailData.emailId);
-
-      if (updateError) {
-        console.error("Failed to update email status:", updateError);
-      }
-    }
+    console.log("Email sent successfully");
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: messageId,
-        message: "Email sent successfully via SendGrid"
+        message: "Email sent successfully",
+        messageId: sendResponse.headers.get("x-message-id")
       }),
       {
         status: 200,
@@ -235,11 +158,9 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error("Error in send-email function:", error);
-    
-    // Return proper error response
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Unknown error occurred",
+        error: error.message,
         success: false 
       }),
       {

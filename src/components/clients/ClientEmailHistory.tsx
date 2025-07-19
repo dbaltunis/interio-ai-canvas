@@ -29,10 +29,10 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
   const emailStats = emails ? {
     total: emails.length,
     sent: emails.filter(e => !['draft', 'queued'].includes(e.status)).length,
-    opened: emails.filter(e => e.open_count > 0).length,
-    clicked: emails.filter(e => e.click_count > 0).length,
-    totalOpens: emails.reduce((sum, e) => sum + e.open_count, 0),
-    totalClicks: emails.reduce((sum, e) => sum + e.click_count, 0)
+    opened: emails.filter(e => (e.open_count || 0) > 0).length,
+    clicked: emails.filter(e => (e.click_count || 0) > 0).length,
+    totalOpens: emails.reduce((sum, e) => sum + (e.open_count || 0), 0),
+    totalClicks: emails.reduce((sum, e) => sum + (e.click_count || 0), 0)
   } : null;
 
   if (isLoading) {
@@ -127,13 +127,13 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
                     </TableCell>
                     <TableCell onClick={() => handleEmailClick(email)}>
                       <div className="flex items-center gap-3">
-                        {email.open_count > 0 && (
+                        {(email.open_count || 0) > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             <Eye className="h-3 w-3 mr-1" />
                             {email.open_count}
                           </Badge>
                         )}
-                        {email.click_count > 0 && (
+                        {(email.click_count || 0) > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             <MousePointer className="h-3 w-3 mr-1" />
                             {email.click_count}

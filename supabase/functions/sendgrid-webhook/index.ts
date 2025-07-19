@@ -7,25 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface SendGridEvent {
-  email: string;
-  timestamp: number;
-  event: string;
-  sg_message_id: string;
-  useragent?: string;
-  ip?: string;
-  url?: string;
-  user_id?: string;
-  template_id?: string;
-  campaign_id?: string;
-  client_id?: string;
-  reason?: string;
-  type?: string;
-  smtp_id?: string;
-  // Custom args passed from send-email function
-  email_id?: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   console.log("SendGrid webhook called with method:", req.method);
   
@@ -39,216 +20,102 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const events: SendGridEvent[] = await req.json();
-    console.log("Received SendGrid webhook events:", events.length);
+    const events = await req.json();
+    console.log("Processing SendGrid webhook events:", events.length);
 
     for (const event of events) {
-      console.log("Processing SendGrid event:", event);
-
-      let emailRecord = null;
-
-      // First try to find by email_id from custom args (most reliable)
-      if (event.email_id) {
-        const { data: directRecord, error: directError } = await supabase
-          .from("emails")
-          .select()
-          .eq("id", event.email_id)
-          .single();
-
-        if (!directError && directRecord) {
-          emailRecord = directRecord;
-          console.log("Found email record by email_id:", event.email_id);
-        }
-      }
-
-      // Also check custom_args field in the event data (SendGrid passes custom args differently)
-      if (!emailRecord) {
-        // Sometimes SendGrid passes custom args in a nested way or flattened
-        const customArgs = event as any;
-        let emailId = customArgs.email_id || 
-                     (customArgs.custom_args && customArgs.custom_args.email_id) ||
-                     customArgs.user_id || // Sometimes sent as user_id
-                     (customArgs.custom_args && customArgs.custom_args.user_id);
-        
-        // Also check if custom_args is a string (sometimes SendGrid sends it as JSON string)
-        if (!emailId && customArgs.custom_args && typeof customArgs.custom_args === 'string') {
-          try {
-            const parsedCustomArgs = JSON.parse(customArgs.custom_args);
-            emailId = parsedCustomArgs.email_id || parsedCustomArgs.user_id;
-          } catch (e) {
-            console.log("Could not parse custom_args as JSON:", customArgs.custom_args);
-          }
-        }
-        
-        if (emailId) {
-          const { data: customRecord, error: customError } = await supabase
-            .from("emails")
-            .select()
-            .eq("id", emailId)
-            .maybeSingle();
-
-          if (!customError && customRecord) {
-            emailRecord = customRecord;
-            console.log("Found email record by custom args email_id:", emailId);
-          }
-        }
-      }
-
-      // Fall back to SendGrid message ID if no direct match
-      if (!emailRecord) {
-        const { data: messageRecord, error: messageError } = await supabase
-          .from("emails")
-          .select()
-          .eq("sendgrid_message_id", event.sg_message_id)
-          .maybeSingle();
-
-        if (!messageError && messageRecord) {
-          emailRecord = messageRecord;
-          console.log("Found email record by message ID:", event.sg_message_id);
-        }
-      }
-
-      // Final fallback: try to find by email address and recent timestamp
-      if (!emailRecord) {
-        console.log("Trying fallback search for email:", event.email);
-        const recentTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // Last 24 hours
-        const { data: fallbackRecord, error: fallbackError } = await supabase
-          .from("emails")
-          .select()
-          .eq("recipient_email", event.email)
-          .gte("sent_at", recentTime)
-          .order("sent_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!fallbackError && fallbackRecord) {
-          emailRecord = fallbackRecord;
-          console.log("Found email record by fallback search:", fallbackRecord.id);
-        }
-      }
-
-      if (!emailRecord) {
-        console.error("Could not find email record for event:", {
-          email: event.email,
-          sg_message_id: event.sg_message_id,
-          event_type: event.event,
-          timestamp: event.timestamp,
-          custom_args: (event as any).custom_args,
-          email_id: event.email_id
-        });
-        
-        // Store orphaned events for debugging
-        const { error: orphanedError } = await supabase
-          .from("email_analytics")
-          .insert({
-            email_id: "00000000-0000-0000-0000-000000000000", // Placeholder for orphaned events
-            event_type: `orphaned_${event.event}`,
-            event_data: {
-              timestamp: event.timestamp,
-              email: event.email,
-              sg_message_id: event.sg_message_id,
-              event: event.event,
-              custom_args: (event as any).custom_args || {},
-              debug_info: {
-                reason: "Could not find matching email record",
-                searched_email_id: event.email_id,
-                searched_sg_message_id: event.sg_message_id,
-                searched_recipient: event.email
-              }
-            },
-            ip_address: event.ip,
-            user_agent: event.useragent,
-          });
-        
-        if (orphanedError) {
-          console.error("Error storing orphaned event:", orphanedError);
-        }
+      const { event: eventType, email_id, timestamp } = event;
+      
+      if (!email_id) {
+        console.log("Skipping event without email_id:", eventType);
         continue;
       }
 
-      // Update email status and tracking data
-      const updates: any = {
+      console.log(`Processing ${eventType} event for email ${email_id}`);
+
+      // Update email status based on event type
+      let updateData: any = {
         updated_at: new Date().toISOString()
       };
-      
-      switch (event.event) {
-        case "delivered":
-          updates.status = "received";
-          updates.delivered_at = new Date(event.timestamp * 1000).toISOString();
+
+      switch (eventType) {
+        case 'delivered':
+          updateData.status = 'delivered';
           break;
-        case "open":
-          // Only update status to opened if it's not already clicked
-          if (emailRecord.status !== "clicked") {
-            updates.status = "opened";
-          }
-          if (!emailRecord.opened_at) {
-            updates.opened_at = new Date(event.timestamp * 1000).toISOString();
-          }
-          updates.open_count = (emailRecord.open_count || 0) + 1;
+        case 'open':
+          await supabase
+            .from('emails')
+            .update({ 
+              open_count: supabase.raw('open_count + 1'),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', email_id);
+          
+          // Record analytics event
+          await supabase
+            .from('email_analytics')
+            .insert({
+              email_id: email_id,
+              event_type: 'open',
+              event_data: event,
+              user_agent: event.useragent,
+              ip_address: event.ip,
+              created_at: new Date(timestamp * 1000).toISOString()
+            });
+          continue;
+          
+        case 'click':
+          await supabase
+            .from('emails')
+            .update({ 
+              click_count: supabase.raw('click_count + 1'),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', email_id);
+          
+          // Record analytics event
+          await supabase
+            .from('email_analytics')
+            .insert({
+              email_id: email_id,
+              event_type: 'click',
+              event_data: event,
+              user_agent: event.useragent,
+              ip_address: event.ip,
+              created_at: new Date(timestamp * 1000).toISOString()
+            });
+          continue;
+          
+        case 'bounce':
+        case 'dropped':
+          updateData.status = 'bounced';
+          updateData.bounce_reason = event.reason || event.sg_event_id;
           break;
-        case "click":
-          updates.status = "clicked";
-          updates.clicked_at = new Date(event.timestamp * 1000).toISOString();
-          updates.click_count = (emailRecord.click_count || 0) + 1;
-          break;
-        case "bounce":
-        case "blocked":
-        case "dropped":
-          updates.status = "bounced";
-          updates.bounce_reason = event.reason || `Email ${event.event}: ${event.type || 'Unknown reason'}`;
-          break;
-        case "unsubscribe":
-          updates.status = "unsubscribed";
-          updates.bounce_reason = event.reason || "Recipient unsubscribed";
-          break;
-        case "spamreport":
-          updates.status = "spam";
-          updates.bounce_reason = event.reason || "Email marked as spam";
-          break;
-        case "deferred":
-          // Deferred is temporary, don't change status to failed
-          updates.bounce_reason = event.reason || "Email temporarily deferred";
+          
+        case 'spam_report':
+        case 'unsubscribe':
+          updateData.status = 'failed';
+          updateData.bounce_reason = eventType;
           break;
       }
 
-      if (Object.keys(updates).length > 1) { // More than just updated_at
-        const { error: updateError } = await supabase
-          .from("emails")
-          .update(updates)
-          .eq("id", emailRecord.id);
+      // Update email record
+      await supabase
+        .from('emails')
+        .update(updateData)
+        .eq('id', email_id);
 
-        if (updateError) {
-          console.error("Error updating email record:", updateError);
-        } else {
-          console.log("Email record updated successfully:", emailRecord.id, "Event:", event.event);
-        }
-      }
-
-      // Store detailed analytics
-      const { error: analyticsError } = await supabase
-        .from("email_analytics")
+      // Record analytics event for all events
+      await supabase
+        .from('email_analytics')
         .insert({
-          email_id: emailRecord.id,
-          event_type: event.event,
-          event_data: {
-            timestamp: event.timestamp,
-            url: event.url,
-            useragent: event.useragent,
-            reason: event.reason,
-            type: event.type,
-            smtp_id: event.smtp_id,
-            sg_message_id: event.sg_message_id,
-            custom_args: (event as any).custom_args || {}
-          },
-          ip_address: event.ip,
+          email_id: email_id,
+          event_type: eventType,
+          event_data: event,
           user_agent: event.useragent,
+          ip_address: event.ip,
+          created_at: new Date(timestamp * 1000).toISOString()
         });
-
-      if (analyticsError) {
-        console.error("Error storing analytics:", analyticsError);
-      } else {
-        console.log("Analytics stored successfully for email:", emailRecord.id);
-      }
     }
 
     return new Response(
@@ -262,7 +129,10 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error("Error in sendgrid-webhook function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false 
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
