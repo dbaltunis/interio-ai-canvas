@@ -55,15 +55,9 @@ export const useMakingCosts = () => {
 
   const createMakingCost = useMutation({
     mutationFn: async (makingCost: MakingCostFormData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const { data, error } = await supabase
         .from('making_costs')
-        .insert({
-          ...makingCost,
-          user_id: user.id
-        })
+        .insert([makingCost])
         .select()
         .single();
 
