@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Card } from "@/components/ui/card";
 import { FabricForm } from "./FabricForm";
 import { BrandForm } from "./BrandForm";
 import { CollectionForm } from "./CollectionForm";
@@ -20,8 +22,8 @@ import { useHardwareInventory } from "@/hooks/useHardwareInventory";
 import { useCollections } from "@/hooks/useCollections";
 import { toast } from "sonner";
 import { CategoryManagementDialog } from "./CategoryManagementDialog";
-import { ShopifyIntegrationDialog } from "./ShopifyIntegrationDialog";
 import { InventoryInsights } from "./InventoryInsights";
+import { Package } from "lucide-react";
 
 export const LibraryPage = () => {
   const { units } = useMeasurementUnits();
@@ -39,13 +41,12 @@ export const LibraryPage = () => {
     type: "fabric" | "hardware" | "vendor";
   }>({ open: false, product: null, type: "fabric" });
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
-  const [showShopifyDialog, setShowShopifyDialog] = useState(false);
 
-  // Fetch real data from database
-  const { data: vendors = [], isLoading: vendorsLoading } = useVendors();
-  const { data: fabrics = [], isLoading: fabricsLoading } = useInventory();
-  const { data: hardware = [], isLoading: hardwareLoading } = useHardwareInventory();
-  const { data: collections = [], isLoading: collectionsLoading } = useCollections();
+  // Fetch real data from database with error handling
+  const { data: vendors = [], isLoading: vendorsLoading, error: vendorsError } = useVendors();
+  const { data: fabrics = [], isLoading: fabricsLoading, error: fabricsError } = useInventory();
+  const { data: hardware = [], isLoading: hardwareLoading, error: hardwareError } = useHardwareInventory();
+  const { data: collections = [], isLoading: collectionsLoading, error: collectionsError } = useCollections();
 
   const productCards = ProductCards({ 
     vendors, 
@@ -172,6 +173,33 @@ export const LibraryPage = () => {
     toast.success("Filters applied successfully");
   }
 
+  // Show error state if there are critical errors
+  if (vendorsError || fabricsError || hardwareError || collectionsError) {
+    const errors = [vendorsError, fabricsError, hardwareError, collectionsError].filter(Boolean);
+    console.error("Library loading errors:", errors);
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-brand-primary">Library</h2>
+            <p className="text-brand-neutral">Your inventory management system</p>
+          </div>
+        </div>
+        
+        <Card className="p-6">
+          <div className="text-center">
+            <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Library System Loading</h3>
+            <p className="text-gray-600">
+              The library system is being initialized. Some features may be temporarily unavailable.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   // Loading state
   if (vendorsLoading || fabricsLoading || hardwareLoading || collectionsLoading) {
     return (
@@ -190,7 +218,7 @@ export const LibraryPage = () => {
         onAddNew={handleAddNew}
         onShowFilter={() => setShowFilterDialog(true)}
         onShowCategories={() => setShowCategoryDialog(true)}
-        onShowShopify={() => setShowShopifyDialog(true)}
+        onShowShopify={() => toast.info("Shopify integration coming soon")}
         onImport={handleImport}
         onExport={handleExport}
         searchTerm={searchTerm}
@@ -337,12 +365,6 @@ export const LibraryPage = () => {
       <CategoryManagementDialog
         open={showCategoryDialog}
         onOpenChange={setShowCategoryDialog}
-      />
-
-      {/* Shopify Integration Dialog */}
-      <ShopifyIntegrationDialog
-        open={showShopifyDialog}
-        onOpenChange={setShowShopifyDialog}
       />
     </div>
   );

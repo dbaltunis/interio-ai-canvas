@@ -27,7 +27,7 @@ export const EmailsTab = () => {
   const [activeEmailTab, setActiveEmailTab] = useState<"overview" | "campaigns" | "templates" | "analytics">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Get email KPIs data
+  // Get email KPIs data with proper error handling
   const { data: emailKPIs, isLoading: emailKPIsLoading, error: emailKPIsError } = useEmailKPIs();
 
   // Mock data for campaigns and templates (replace with real data later)
@@ -91,18 +91,28 @@ export const EmailsTab = () => {
     }
   ];
 
-  // Prepare KPIs data for the dashboard component
+  // Prepare KPIs data for the dashboard component with proper error handling
   const kpisData = emailKPIs ? {
     total_sent: emailKPIs.totalSent || 0,
-    total_delivered: emailKPIs.totalDelivered || 0,
+    total_delivered: emailKPIs.totalDelivered || emailKPIs.delivered || 0,
     total_opened: emailKPIs.totalOpened || 0,
     total_clicked: emailKPIs.totalClicked || 0,
     open_rate: emailKPIs.openRate || 0,
     click_rate: emailKPIs.clickRate || 0,
-    bounce_rate: emailKPIs.bounceRate || 0,
+    bounce_rate: emailKPIs.bounced ? Math.round((emailKPIs.bounced / (emailKPIs.totalSent || 1)) * 100) : 0,
     avg_time_spent: 150, // Average time in seconds
     issues_count: emailKPIs.bounced || 0
-  } : undefined;
+  } : {
+    total_sent: 0,
+    total_delivered: 0,
+    total_opened: 0,
+    total_clicked: 0,
+    open_rate: 0,
+    click_rate: 0,
+    bounce_rate: 0,
+    avg_time_spent: 0,
+    issues_count: 0
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -114,8 +124,29 @@ export const EmailsTab = () => {
     }
   };
 
+  // Show error state if there's an error
   if (emailKPIsError) {
     console.error("Error loading email KPIs:", emailKPIsError);
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-brand-primary">Email Management</h2>
+            <p className="text-brand-neutral">Manage campaigns, templates, and track email performance</p>
+          </div>
+        </div>
+        
+        <Card className="p-6">
+          <div className="text-center">
+            <Mail className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Email System Unavailable</h3>
+            <p className="text-gray-600">
+              The email system is currently being set up. Please check back later.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -208,7 +239,7 @@ export const EmailsTab = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{emailKPIs?.openRate || 0}%</div>
+                <div className="text-2xl font-bold">{kpisData.open_rate}%</div>
                 <p className="text-xs text-muted-foreground">Across all campaigns</p>
               </CardContent>
             </Card>
@@ -258,7 +289,6 @@ export const EmailsTab = () => {
 
         {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="space-y-6">
-          {/* Search and Filter */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -283,7 +313,6 @@ export const EmailsTab = () => {
             </Select>
           </div>
 
-          {/* Campaigns List */}
           <div className="grid gap-4">
             {emailCampaigns.map((campaign) => (
               <Card key={campaign.id}>
@@ -331,7 +360,6 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-6">
           <div className="grid gap-4">
             {emailTemplates.map((template) => (
@@ -361,7 +389,6 @@ export const EmailsTab = () => {
           </div>
         </TabsContent>
 
-        {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
           <div className="text-center py-12">
             <BarChart3 className="h-16 w-16 mx-auto text-gray-400 mb-4" />
