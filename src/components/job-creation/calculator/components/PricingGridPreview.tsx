@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePricingGrid } from '@/hooks/usePricingGrids';
@@ -47,7 +48,8 @@ export const PricingGridPreview = ({
     );
   }
 
-  if (!gridData || !gridData.grid_data) {
+  // Check if we have pricing grid data - it should have grid_data property
+  if (!gridData || !('grid_data' in gridData) || !gridData.grid_data) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -71,7 +73,7 @@ export const PricingGridPreview = ({
     widthColumns, 
     currentWidth, 
     currentDrop,
-    gridName: gridData.name 
+    gridName: ('name' in gridData) ? gridData.name : 'Unknown Grid'
   });
 
   // Generate width column headers - ensure they show as "XXXcm" format
@@ -87,12 +89,14 @@ export const PricingGridPreview = ({
       })
     : (dropRows.length > 0 ? Array.from({ length: dropRows[0].prices.length }, (_, i) => `Width ${i + 1}cm`) : []);
 
+  const displayName = ('name' in gridData) ? gridData.name : (gridName || 'Pricing Grid');
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {gridData.name || 'Pricing Grid'}
+            {displayName}
             {currentWidth && currentDrop && (
               <Badge variant="outline">
                 Current: {currentWidth}cm × {currentDrop}cm
@@ -105,7 +109,7 @@ export const PricingGridPreview = ({
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <h4 className="font-medium text-blue-900 mb-1">Grid Data Source:</h4>
           <p className="text-sm text-blue-800">
-            Grid Name: <span className="font-semibold">{gridData.name}</span>
+            Grid Name: <span className="font-semibold">{displayName}</span>
           </p>
           <p className="text-sm text-blue-800">
             Data Rows: <span className="font-semibold">{dropRows.length}</span> drops
@@ -165,7 +169,7 @@ export const PricingGridPreview = ({
               <p className="text-sm mt-2">
                 This pricing grid appears to be empty or has an incompatible format.
               </p>
-              {gridData.grid_data && (
+              {('grid_data' in gridData) && gridData.grid_data && (
                 <div className="mt-4 p-4 bg-gray-100 rounded text-left text-xs">
                   <p className="font-semibold">Raw data structure from your CSV:</p>
                   <pre className="mt-2 overflow-auto max-h-64">

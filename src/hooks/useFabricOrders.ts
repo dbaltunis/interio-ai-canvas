@@ -1,69 +1,66 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type FabricOrder = Tables<"fabric_orders">;
-type FabricOrderInsert = TablesInsert<"fabric_orders">;
+export interface FabricOrder {
+  id: string;
+  fabric_code: string;
+  fabric_type: string;
+  color: string;
+  pattern?: string;
+  supplier: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total_price: number;
+  work_order_ids: string[];
+  status?: string;
+  order_date?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useFabricOrders = () => {
   return useQuery({
-    queryKey: ["fabric_orders"],
+    queryKey: ["fabric-orders"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
       const { data, error } = await supabase
         .from("fabric_orders")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .select("*");
       
       if (error) throw error;
-      return data;
+      return data as FabricOrder[];
     },
   });
 };
 
 export const useCreateFabricOrder = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
+  
   return useMutation({
-    mutationFn: async (order: Omit<FabricOrderInsert, "user_id">) => {
+    mutationFn: async (fabricOrder: Omit<FabricOrder, "id" | "user_id" | "created_at" | "updated_at">) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+      if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
         .from("fabric_orders")
-        .insert({ ...order, user_id: user.id })
+        .insert([{ ...fabricOrder, user_id: user.id }])
         .select()
         .single();
-
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fabric_orders"] });
-      toast({
-        title: "Success",
-        description: "Fabric order created successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ["fabric-orders"] });
     },
   });
 };
 
 export const useUpdateFabricOrder = () => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<FabricOrder> & { id: string }) => {
       const { data, error } = await supabase
@@ -72,12 +69,12 @@ export const useUpdateFabricOrder = () => {
         .eq("id", id)
         .select()
         .single();
-
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fabric_orders"] });
+      queryClient.invalidateQueries({ queryKey: ["fabric-orders"] });
     },
   });
 };

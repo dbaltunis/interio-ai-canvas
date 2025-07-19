@@ -1,64 +1,40 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-type WorkOrderCheckpoint = Tables<"work_order_checkpoints">;
-type WorkOrderCheckpointInsert = TablesInsert<"work_order_checkpoints">;
+export interface WorkOrderCheckpoint {
+  id: string;
+  work_order_id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  completed_at?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useWorkOrderCheckpoints = (workOrderId?: string) => {
   return useQuery({
-    queryKey: ["work_order_checkpoints", workOrderId],
+    queryKey: ["work-order-checkpoints", workOrderId],
     queryFn: async () => {
-      if (!workOrderId) return [];
+      let query = supabase.from("work_order_checkpoints").select("*");
       
-      const { data, error } = await supabase
-        .from("work_order_checkpoints")
-        .select("*")
-        .eq("work_order_id", workOrderId)
-        .order("order_index");
+      if (workOrderId) {
+        query = query.eq("work_order_id", workOrderId);
+      }
       
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as WorkOrderCheckpoint[];
     },
-  });
-};
-
-export const useCreateWorkOrderCheckpoint = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (checkpoint: Omit<WorkOrderCheckpointInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
-      const { data, error } = await supabase
-        .from("work_order_checkpoints")
-        .insert({ ...checkpoint, user_id: user.id })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["work_order_checkpoints"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    enabled: !!workOrderId,
   });
 };
 
 export const useUpdateWorkOrderCheckpoint = () => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<WorkOrderCheckpoint> & { id: string }) => {
       const { data, error } = await supabase
@@ -67,12 +43,12 @@ export const useUpdateWorkOrderCheckpoint = () => {
         .eq("id", id)
         .select()
         .single();
-
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["work_order_checkpoints"] });
+      queryClient.invalidateQueries({ queryKey: ["work-order-checkpoints"] });
     },
   });
 };
