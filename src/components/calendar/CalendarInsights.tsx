@@ -32,20 +32,23 @@ export const CalendarInsights = () => {
   const { data: clients } = useClients();
   const { data: projects } = useProjects();
 
-  const todayAppointments = appointments?.filter(apt => 
+  // Return empty arrays if no data to prevent errors
+  const safeAppointments = appointments || [];
+
+  const todayAppointments = safeAppointments.filter(apt => 
     isToday(new Date(apt.start_time))
-  ) || [];
+  );
 
-  const tomorrowAppointments = appointments?.filter(apt => 
+  const tomorrowAppointments = safeAppointments.filter(apt => 
     isTomorrow(new Date(apt.start_time))
-  ) || [];
+  );
 
-  const upcomingAppointments = appointments?.filter(apt => {
+  const upcomingAppointments = safeAppointments.filter(apt => {
     const aptDate = new Date(apt.start_time);
     const today = new Date();
     const nextWeek = addDays(today, 7);
     return aptDate >= today && aptDate <= nextWeek;
-  }) || [];
+  });
 
   const getClientName = (clientId: string | null) => {
     if (!clientId) return 'No client assigned';

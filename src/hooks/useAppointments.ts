@@ -2,11 +2,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-type Appointment = Tables<"appointments">;
-type AppointmentInsert = TablesInsert<"appointments">;
-type AppointmentUpdate = TablesUpdate<"appointments">;
+export interface Appointment {
+  id: string;
+  user_id: string;
+  client_id?: string;
+  project_id?: string;
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  appointment_type: 'consultation' | 'measurement' | 'installation' | 'follow-up' | 'meeting' | 'call';
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
 
 export const useAppointments = () => {
   return useQuery({
@@ -16,9 +27,9 @@ export const useAppointments = () => {
         .from("appointments")
         .select("*")
         .order("start_time", { ascending: true });
-      
+
       if (error) throw error;
-      return data;
+      return data as Appointment[];
     },
   });
 };
@@ -28,13 +39,13 @@ export const useCreateAppointment = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (appointment: Omit<AppointmentInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+    mutationFn: async (appointment: Omit<Appointment, "id" | "user_id" | "created_at" | "updated_at">) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
         .from("appointments")
-        .insert({ ...appointment, user_id: user.id })
+        .insert([{ ...appointment, user_id: userData.user.id }])
         .select()
         .single();
 
@@ -49,9 +60,10 @@ export const useCreateAppointment = () => {
       });
     },
     onError: (error) => {
+      console.error("Error creating appointment:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create appointment",
         variant: "destructive",
       });
     },
@@ -63,7 +75,7 @@ export const useUpdateAppointment = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...appointment }: { id: string } & Partial<AppointmentUpdate>) => {
+    mutationFn: async ({ id, ...appointment }: Partial<Appointment> & { id: string }) => {
       const { data, error } = await supabase
         .from("appointments")
         .update(appointment)
@@ -82,9 +94,10 @@ export const useUpdateAppointment = () => {
       });
     },
     onError: (error) => {
+      console.error("Error updating appointment:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update appointment",
         variant: "destructive",
       });
     },
@@ -112,9 +125,10 @@ export const useDeleteAppointment = () => {
       });
     },
     onError: (error) => {
+      console.error("Error deleting appointment:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete appointment",
         variant: "destructive",
       });
     },

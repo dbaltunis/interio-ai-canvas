@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,10 @@ export const GoogleCalendarView = () => {
   const deleteAppointment = useDeleteAppointment();
   const { toast } = useToast();
 
-  const calendarEvents: CalendarEvent[] = appointments?.map(appointment => {
+  // Return empty arrays if no data to prevent errors
+  const safeAppointments = appointments || [];
+
+  const calendarEvents: CalendarEvent[] = safeAppointments.map(appointment => {
     const client = clients?.find(c => c.id === appointment.client_id);
     const project = projects?.find(p => p.id === appointment.project_id);
     
@@ -80,16 +82,16 @@ export const GoogleCalendarView = () => {
       client_id: appointment.client_id,
       project_id: appointment.project_id
     };
-  }) || [];
+  });
 
-  const emailEvents: CalendarEvent[] = emails?.filter(email => email.status === 'scheduled').map(email => ({
+  const emailEvents: CalendarEvent[] = (emails || []).filter(email => email.status === 'scheduled').map(email => ({
     id: `email-${email.id}`,
     title: `Email: ${email.subject}`,
     start_time: email.sent_at || new Date().toISOString(),
     end_time: email.sent_at || new Date().toISOString(),
     type: 'reminder' as const,
     color: 'bg-yellow-500'
-  })) || [];
+  }));
 
   const allEvents = [...calendarEvents, ...emailEvents];
 

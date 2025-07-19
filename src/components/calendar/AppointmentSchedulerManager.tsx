@@ -56,6 +56,7 @@ export const AppointmentSchedulerManager = () => {
     min_advance_notice: 24,
     slug: '',
     image_url: '',
+    active: true,
     availability: DAYS_OF_WEEK.map(day => ({
       day,
       enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
@@ -135,6 +136,7 @@ export const AppointmentSchedulerManager = () => {
       min_advance_notice: 24,
       slug: '',
       image_url: '',
+      active: true,
       availability: DAYS_OF_WEEK.map(day => ({
         day,
         enabled: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(day),
