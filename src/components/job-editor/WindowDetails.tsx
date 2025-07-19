@@ -74,12 +74,9 @@ export const WindowDetails = ({ selectedWindowId }: WindowDetailsProps) => {
               <div>
                 <Label>Notes</Label>
                 <Textarea
-                  value={selectedSurface.notes || ""}
-                  onBlur={(e) => updateSurface.mutate({ 
-                    id: selectedSurface.id, 
-                    notes: e.target.value 
-                  })}
-                  placeholder="Surface notes..."
+                  value=""
+                  placeholder="Surface notes (not yet implemented)..."
+                  disabled
                 />
               </div>
             </div>

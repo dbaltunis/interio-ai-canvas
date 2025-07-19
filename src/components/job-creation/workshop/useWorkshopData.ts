@@ -37,10 +37,10 @@ export const useWorkshopData = (project: any) => {
     totalPrice: order.total_price,
     status: order.status as "ordered" | "needed" | "received",
     orderDate: order.order_date,
-    expectedDelivery: order.expected_delivery,
-    receivedDate: order.received_date,
+    expectedDelivery: order.expected_delivery || null,
+    receivedDate: order.received_date || null,
     workOrderIds: order.work_order_ids || [],
-    notes: order.notes
+    notes: order.notes || ''
   })) || [];
 
   // Transform team members to match expected interface

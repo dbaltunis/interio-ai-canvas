@@ -38,7 +38,7 @@ export const EnhancedTreatmentCalculator = ({
   treatmentType 
 }: EnhancedTreatmentCalculatorProps) => {
   // Use actual product templates from database
-  const { templates, isLoading: templatesLoading } = useProductTemplates();
+  const { data: templates, isLoading: templatesLoading } = useProductTemplates();
   const { data: allHeadingOptions } = useHeadingOptions();
   const { data: hardwareOptions = [] } = useHardwareOptions();
   const { data: serviceOptions = [] } = useServiceOptions();
