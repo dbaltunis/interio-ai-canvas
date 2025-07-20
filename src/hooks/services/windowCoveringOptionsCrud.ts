@@ -1,43 +1,53 @@
 
-import { supabase } from '@/integrations/supabase/client';
+// Mock service for window covering options CRUD operations
+// This replaces Supabase calls until the tables are created
+
 import type { WindowCoveringOption } from '../types/windowCoveringOptionsTypes';
 
+// Mock data store
+let mockOptions: WindowCoveringOption[] = [];
+
 export const createOption = async (option: Omit<WindowCoveringOption, 'id'>) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  // Mock authenticated user
+  const mockUserId = 'mock-user-id';
 
-  const { data, error } = await supabase
-    .from('window_covering_options')
-    .insert([
-      {
-        ...option,
-        user_id: user.id
-      }
-    ])
-    .select()
-    .single();
+  const newOption: WindowCoveringOption = {
+    ...option,
+    id: `mock-${Date.now()}`,
+    user_id: mockUserId,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
 
-  if (error) throw error;
-  return data;
+  mockOptions.push(newOption);
+  return newOption;
 };
 
 export const updateOption = async (id: string, updates: Partial<WindowCoveringOption>) => {
-  const { data, error } = await supabase
-    .from('window_covering_options')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+  const index = mockOptions.findIndex(opt => opt.id === id);
+  if (index === -1) {
+    throw new Error('Option not found');
+  }
 
-  if (error) throw error;
-  return data;
+  const updatedOption = {
+    ...mockOptions[index],
+    ...updates,
+    updated_at: new Date().toISOString()
+  };
+
+  mockOptions[index] = updatedOption;
+  return updatedOption;
 };
 
 export const deleteOption = async (id: string) => {
-  const { error } = await supabase
-    .from('window_covering_options')
-    .delete()
-    .eq('id', id);
+  const index = mockOptions.findIndex(opt => opt.id === id);
+  if (index === -1) {
+    throw new Error('Option not found');
+  }
 
-  if (error) throw error;
+  mockOptions.splice(index, 1);
+};
+
+export const fetchOptions = async (windowCoveringId: string) => {
+  return mockOptions.filter(opt => opt.window_covering_id === windowCoveringId);
 };

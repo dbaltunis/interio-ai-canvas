@@ -1,51 +1,39 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-export interface MakingCost {
+// Mock interface for making costs
+interface MakingCost {
   id: string;
   name: string;
+  description?: string;
   pricing_method: string;
-  include_fabric_selection: boolean;
   measurement_type: string;
+  include_fabric_selection: boolean;
+  active: boolean;
   heading_options: any[];
   hardware_options: any[];
   lining_options: any[];
   drop_ranges: any[];
-  description: string;
-  active: boolean;
   user_id: string;
   created_at: string;
   updated_at: string;
 }
 
-// Mock data since the table doesn't exist yet
-const mockMakingCosts: MakingCost[] = [
+// Mock data store
+let mockMakingCosts: MakingCost[] = [
   {
-    id: '1',
-    name: 'Standard Curtains',
-    pricing_method: 'drop_range',
+    id: 'mc-1',
+    name: 'Standard Curtain Making',
+    description: 'Basic curtain making configuration',
+    pricing_method: 'per-linear-meter',
+    measurement_type: 'fabric-drop-required',
     include_fabric_selection: true,
-    measurement_type: 'standard',
-    heading_options: [
-      { name: 'Pencil Pleat', fullness: 2.5, cost: 0 },
-      { name: 'Eyelet', fullness: 2.0, cost: 10 }
-    ],
-    hardware_options: [
-      { name: 'Standard Track', cost: 25 },
-      { name: 'Curtain Rod', cost: 35 }
-    ],
-    lining_options: [
-      { name: 'No Lining', cost: 0 },
-      { name: 'Standard Lining', cost: 15 }
-    ],
-    drop_ranges: [
-      { min: 0, max: 150, price: 50 },
-      { min: 151, max: 250, price: 75 },
-      { min: 251, max: 350, price: 100 }
-    ],
-    description: 'Standard curtain making service',
     active: true,
+    heading_options: [],
+    hardware_options: [],
+    lining_options: [],
+    drop_ranges: [],
     user_id: 'mock-user',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -53,74 +41,92 @@ const mockMakingCosts: MakingCost[] = [
 ];
 
 export const useMakingCosts = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const { data: makingCosts = [], isLoading, error } = useQuery({
-    queryKey: ["making-costs"],
-    queryFn: async () => {
-      // Return mock data for now
+  const fetchMakingCosts = async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       return mockMakingCosts;
-    },
-  });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch making costs",
+        variant: "destructive"
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const createMakingCost = useMutation({
-    mutationFn: async (makingCostData: Omit<MakingCost, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-      // Mock implementation
+  const createMakingCost = {
+    mutateAsync: async (data: Omit<MakingCost, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const newMakingCost: MakingCost = {
-        ...makingCostData,
-        id: Date.now().toString(),
+        ...data,
+        id: `mc-${Date.now()}`,
         user_id: 'mock-user',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+      
+      mockMakingCosts.push(newMakingCost);
+      
+      toast({
+        title: "Success",
+        description: "Making cost configuration created successfully"
+      });
+      
       return newMakingCost;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["making-costs"] });
-      toast.success("Making cost created successfully");
-    },
-    onError: (error) => {
-      console.error("Error creating making cost:", error);
-      toast.error("Failed to create making cost");
-    },
-  });
+    isPending: isLoading
+  };
 
-  const updateMakingCost = useMutation({
-    mutationFn: async ({ id, ...updateData }: Partial<MakingCost> & { id: string }) => {
-      // Mock implementation
-      return { id, ...updateData };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["making-costs"] });
-      toast.success("Making cost updated successfully");
-    },
-    onError: (error) => {
-      console.error("Error updating making cost:", error);
-      toast.error("Failed to update making cost");
-    },
-  });
+  const updateMakingCost = {
+    mutateAsync: async ({ id, updates }: { id: string; updates: Partial<MakingCost> }) => {
+      const index = mockMakingCosts.findIndex(mc => mc.id === id);
+      if (index === -1) {
+        throw new Error('Making cost not found');
+      }
 
-  const deleteMakingCost = useMutation({
-    mutationFn: async (id: string) => {
-      // Mock implementation
-      console.log('Deleting making cost:', id);
+      mockMakingCosts[index] = {
+        ...mockMakingCosts[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      toast({
+        title: "Success",
+        description: "Making cost configuration updated successfully"
+      });
+
+      return mockMakingCosts[index];
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["making-costs"] });
-      toast.success("Making cost deleted successfully");
+    isPending: isLoading
+  };
+
+  const deleteMakingCost = {
+    mutateAsync: async (id: string) => {
+      const index = mockMakingCosts.findIndex(mc => mc.id === id);
+      if (index !== -1) {
+        mockMakingCosts.splice(index, 1);
+        toast({
+          title: "Success",
+          description: "Making cost configuration deleted successfully"
+        });
+      }
     },
-    onError: (error) => {
-      console.error("Error deleting making cost:", error);
-      toast.error("Failed to delete making cost");
-    },
-  });
+    isPending: isLoading
+  };
 
   return {
-    makingCosts,
+    makingCosts: mockMakingCosts,
     isLoading,
-    error,
-    createMakingCost: createMakingCost.mutate,
-    updateMakingCost: updateMakingCost.mutate,
-    deleteMakingCost: deleteMakingCost.mutate,
+    fetchMakingCosts,
+    createMakingCost,
+    updateMakingCost,
+    deleteMakingCost
   };
 };

@@ -83,9 +83,9 @@ export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFo
 
     try {
       if (initialData?.id) {
-        await updateMakingCost(initialData.id, formData);
+        await updateMakingCost.mutateAsync({ id: initialData.id, updates: formData });
       } else {
-        await createMakingCost(formData);
+        await createMakingCost.mutateAsync(formData);
       }
       onSave();
     } catch (error) {
