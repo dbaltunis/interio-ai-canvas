@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface GoogleCalendarIntegration {
@@ -15,6 +14,9 @@ interface GoogleCalendarIntegration {
   updated_at: string;
 }
 
+// Mock data store
+let mockIntegration: GoogleCalendarIntegration | null = null;
+
 export const useGoogleCalendarIntegration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -22,24 +24,27 @@ export const useGoogleCalendarIntegration = () => {
   const { data: integration, isLoading } = useQuery({
     queryKey: ['google-calendar-integration'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('google_calendar_integrations')
-        .select('*')
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data as GoogleCalendarIntegration | null;
+      // Mock implementation
+      return mockIntegration;
     },
   });
 
   const connect = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('google-oauth-callback', {
-        body: { action: 'connect' }
-      });
+      // Mock implementation
+      mockIntegration = {
+        id: 'integration-1',
+        user_id: 'mock-user',
+        access_token: 'mock-token',
+        refresh_token: 'mock-refresh',
+        calendar_id: 'mock-calendar',
+        sync_enabled: true,
+        token_expires_at: new Date(Date.now() + 3600000).toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      if (error) throw error;
-      return data;
+      return mockIntegration;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
@@ -59,12 +64,8 @@ export const useGoogleCalendarIntegration = () => {
 
   const disconnect = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('google_calendar_integrations')
-        .delete()
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-      
-      if (error) throw error;
+      // Mock implementation
+      mockIntegration = null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
@@ -84,12 +85,11 @@ export const useGoogleCalendarIntegration = () => {
 
   const toggleSync = useMutation({
     mutationFn: async (enabled: boolean) => {
-      const { error } = await supabase
-        .from('google_calendar_integrations')
-        .update({ sync_enabled: enabled })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-      
-      if (error) throw error;
+      // Mock implementation
+      if (mockIntegration) {
+        mockIntegration.sync_enabled = enabled;
+        mockIntegration.updated_at = new Date().toISOString();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
@@ -113,12 +113,9 @@ export const useGoogleCalendarSync = () => {
 
   const syncToGoogle = useMutation({
     mutationFn: async (appointmentId: string) => {
-      const { data, error } = await supabase.functions.invoke('sync-to-google-calendar', {
-        body: { appointmentId }
-      });
-      
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      console.log('Mock sync to Google:', appointmentId);
+      return { success: true };
     },
     onSuccess: () => {
       toast({
@@ -137,10 +134,9 @@ export const useGoogleCalendarSync = () => {
 
   const syncFromGoogle = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('sync-from-google-calendar');
-      
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      console.log('Mock sync from Google');
+      return { success: true };
     },
     onSuccess: () => {
       toast({

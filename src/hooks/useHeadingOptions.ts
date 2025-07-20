@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface HeadingOption {
   id: string;
@@ -16,38 +15,30 @@ export interface HeadingOption {
   updated_at: string;
 }
 
+// Mock data store
+let mockHeadingOptions: HeadingOption[] = [
+  {
+    id: 'heading-1',
+    user_id: 'mock-user',
+    name: 'Pencil Pleat',
+    fullness: 2.5,
+    price: 25.00,
+    type: 'gathered',
+    description: 'Classic pencil pleat heading',
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 export const useHeadingOptions = () => {
   return useQuery({
     queryKey: ['heading-options'],
     queryFn: async () => {
-      console.log('Fetching heading options...');
+      console.log('Mock fetching heading options...');
       
-      try {
-        // Get current user first
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.log('No authenticated user for heading options');
-          return [];
-        }
-
-        const { data, error } = await supabase
-          .from('heading_options')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('active', true)
-          .order('name');
-        
-        if (error) {
-          console.error('Error fetching heading options:', error);
-          throw error;
-        }
-        
-        console.log('Heading options fetched:', data);
-        return data as HeadingOption[];
-      } catch (err) {
-        console.error('Failed to fetch heading options:', err);
-        return [];
-      }
+      // Mock implementation
+      return mockHeadingOptions.filter(option => option.active);
     },
     retry: 2,
     retryDelay: 1000,
@@ -59,30 +50,20 @@ export const useCreateHeadingOption = () => {
   
   return useMutation({
     mutationFn: async (option: Omit<HeadingOption, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      console.log('Creating heading option:', option);
+      console.log('Mock creating heading option:', option);
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      const newOption: HeadingOption = {
+        ...option,
+        id: `heading-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      const { data, error } = await supabase
-        .from('heading_options')
-        .insert([{
-          ...option,
-          user_id: user.id
-        }])
-        .select()
-        .single();
+      mockHeadingOptions.push(newOption);
       
-      if (error) {
-        console.error('Error creating heading option:', error);
-        throw error;
-      }
-      
-      console.log('Heading option created:', data);
-      return data;
+      console.log('Mock heading option created:', newOption);
+      return newOption;
     },
     onSuccess: () => {
       console.log('Heading option created successfully, invalidating queries...');
@@ -99,18 +80,16 @@ export const useUpdateHeadingOption = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<HeadingOption> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('heading_options')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating heading option:', error);
-        throw error;
+      const index = mockHeadingOptions.findIndex(option => option.id === id);
+      if (index !== -1) {
+        mockHeadingOptions[index] = {
+          ...mockHeadingOptions[index],
+          ...updates,
+          updated_at: new Date().toISOString()
+        };
+        return mockHeadingOptions[index];
       }
-      return data;
+      throw new Error('Option not found');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['heading-options'] });
@@ -123,14 +102,9 @@ export const useDeleteHeadingOption = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('heading_options')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error deleting heading option:', error);
-        throw error;
+      const index = mockHeadingOptions.findIndex(option => option.id === id);
+      if (index !== -1) {
+        mockHeadingOptions.splice(index, 1);
       }
     },
     onSuccess: () => {

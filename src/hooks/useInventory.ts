@@ -13,6 +13,7 @@ interface InventoryItem {
   unit?: string;
   cost_price?: number;
   selling_price?: number;
+  unit_price?: number; // Added this property
   supplier?: string;
   location?: string;
   width?: number;
@@ -35,6 +36,7 @@ let mockInventoryItems: InventoryItem[] = [
     unit: "pieces",
     cost_price: 2.50,
     selling_price: 5.00,
+    unit_price: 5.00,
     supplier: "Hardware Supplies",
     location: "Storage Room",
     reorder_point: 10,
@@ -65,6 +67,7 @@ export const useCreateInventoryItem = () => {
         ...item,
         id: `inv-${Date.now()}`,
         user_id: 'mock-user',
+        unit_price: item.selling_price || item.cost_price || 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
