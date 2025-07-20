@@ -4,35 +4,48 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export interface CalculationFormula {
   id: string;
   name: string;
-  category: string;
-  formula_expression: string;
   description?: string;
-  variables: any[];
+  formula: string;
+  variables: string[];
+  category: string;
   active: boolean;
+  user_id: string;
   created_at: string;
   updated_at: string;
-  user_id: string;
-  applies_to?: string[];
-  conditions?: Record<string, any>;
 }
 
 // Mock data store
-let mockFormulas: CalculationFormula[] = [];
+let mockFormulas: CalculationFormula[] = [
+  {
+    id: 'formula-1',
+    name: 'Basic Fabric Calculation',
+    description: 'Standard fabric calculation for curtains',
+    formula: 'width * fullness * (drop + allowances)',
+    variables: ['width', 'fullness', 'drop', 'allowances'],
+    category: 'fabric',
+    active: true,
+    user_id: 'mock-user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 export const useCalculationFormulas = () => {
-  const queryClient = useQueryClient();
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['calculation-formulas'],
+  return useQuery({
+    queryKey: ["calculation-formulas"],
     queryFn: async () => {
       // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 100));
       return mockFormulas;
-    }
+    },
   });
+};
 
-  const createFormula = useMutation({
-    mutationFn: async (formula: Omit<CalculationFormula, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-      // Mock implementation
+export const useCreateCalculationFormula = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formula: Omit<CalculationFormula, "id" | "user_id" | "created_at" | "updated_at">) => {
       const newFormula: CalculationFormula = {
         ...formula,
         id: `formula-${Date.now()}`,
@@ -45,44 +58,47 @@ export const useCalculationFormulas = () => {
       return newFormula;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calculation-formulas'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["calculation-formulas"] });
+    },
   });
+};
 
-  const updateFormula = useMutation({
-    mutationFn: async (formula: Partial<CalculationFormula> & { id: string }) => {
-      // Mock implementation
-      const index = mockFormulas.findIndex(f => f.id === formula.id);
-      if (index !== -1) {
-        mockFormulas[index] = { ...mockFormulas[index], ...formula, updated_at: new Date().toISOString() };
-        return mockFormulas[index];
+export const useUpdateCalculationFormula = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<CalculationFormula> & { id: string }) => {
+      const index = mockFormulas.findIndex(f => f.id === id);
+      if (index === -1) {
+        throw new Error('Formula not found');
       }
-      throw new Error('Formula not found');
+
+      mockFormulas[index] = {
+        ...mockFormulas[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      return mockFormulas[index];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calculation-formulas'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["calculation-formulas"] });
+    },
   });
+};
 
-  const deleteFormula = useMutation({
+export const useDeleteCalculationFormula = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (id: string) => {
-      // Mock implementation
       const index = mockFormulas.findIndex(f => f.id === id);
       if (index !== -1) {
         mockFormulas.splice(index, 1);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calculation-formulas'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["calculation-formulas"] });
+    },
   });
-
-  return {
-    data,
-    isLoading,
-    error,
-    createFormula,
-    updateFormula,
-    deleteFormula
-  };
 };

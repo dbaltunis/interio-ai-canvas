@@ -1,18 +1,14 @@
 
 // Mock service for window covering options CRUD operations
-// This replaces Supabase calls until the tables are created
-
 import type { WindowCoveringOption } from '../types/windowCoveringOptionsTypes';
 
 // Mock data store
 let mockOptions: WindowCoveringOption[] = [];
 
-export const createOption = async (option: Omit<WindowCoveringOption, 'id' | 'created_at' | 'updated_at'>) => {
+export const createOption = async (option: Omit<WindowCoveringOption, 'id'>) => {
   const newOption: WindowCoveringOption = {
     ...option,
-    id: `mock-${Date.now()}`,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    id: `mock-${Date.now()}`
   };
 
   mockOptions.push(newOption);
@@ -27,8 +23,7 @@ export const updateOption = async (id: string, updates: Partial<WindowCoveringOp
 
   const updatedOption = {
     ...mockOptions[index],
-    ...updates,
-    updated_at: new Date().toISOString()
+    ...updates
   };
 
   mockOptions[index] = updatedOption;
