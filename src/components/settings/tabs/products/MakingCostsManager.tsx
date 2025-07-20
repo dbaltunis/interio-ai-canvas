@@ -23,6 +23,10 @@ export const MakingCostsManager = () => {
     setEditingCost(null);
   };
 
+  const handleDelete = async (id: string) => {
+    await deleteMakingCost.mutateAsync(id);
+  };
+
   if (managingOptionsId) {
     const makingCost = makingCosts.find(mc => mc.id === managingOptionsId);
     return (
@@ -144,7 +148,7 @@ export const MakingCostsManager = () => {
                      <Button
                        variant="ghost"
                        size="sm"
-                       onClick={() => deleteMakingCost(cost.id)}
+                       onClick={() => handleDelete(cost.id)}
                        className="text-red-600 hover:text-red-700"
                      >
                        <Trash2 className="h-4 w-4" />

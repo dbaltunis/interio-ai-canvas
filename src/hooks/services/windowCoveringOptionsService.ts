@@ -26,8 +26,7 @@ const mockHierarchicalOptions: HierarchicalOption[] = [
         description: 'Classic gathered heading',
         base_price: 25,
         pricing_method: 'per-meter',
-        fullness_ratio: 2.5,
-        calculation_method: 'per-meter',
+        image_url: undefined,
         sub_subcategories: []
       }
     ]
@@ -41,7 +40,6 @@ export const fetchTraditionalOptions = async (windowCoveringId: string): Promise
   return [
     {
       id: 'opt-1',
-      user_id: 'mock-user',
       window_covering_id: windowCoveringId,
       name: 'Standard Lining',
       description: 'Basic lining option',

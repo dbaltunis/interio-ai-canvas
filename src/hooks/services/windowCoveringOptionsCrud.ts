@@ -7,14 +7,10 @@ import type { WindowCoveringOption } from '../types/windowCoveringOptionsTypes';
 // Mock data store
 let mockOptions: WindowCoveringOption[] = [];
 
-export const createOption = async (option: Omit<WindowCoveringOption, 'id'>) => {
-  // Mock authenticated user
-  const mockUserId = 'mock-user-id';
-
+export const createOption = async (option: Omit<WindowCoveringOption, 'id' | 'created_at' | 'updated_at'>) => {
   const newOption: WindowCoveringOption = {
     ...option,
     id: `mock-${Date.now()}`,
-    user_id: mockUserId,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

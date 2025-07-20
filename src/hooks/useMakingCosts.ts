@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock interface for making costs
-interface MakingCost {
+export interface MakingCost {
   id: string;
   name: string;
   description?: string;
