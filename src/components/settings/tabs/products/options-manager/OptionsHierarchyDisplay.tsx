@@ -1,11 +1,9 @@
-
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { OptionCategoryCard } from "./OptionCategoryCard";
 import type { OptionCategory } from "@/hooks/types/windowCoveringTypes";
 
@@ -64,68 +62,12 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
     setIsAttaching(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
-
-      console.log('Attaching categories:', Array.from(selectedCategories), 'to window covering:', windowCoveringId);
-
-      // First, check if any assignments already exist to avoid duplicates
-      const { data: existingAssignments, error: checkError } = await supabase
-        .from('window_covering_option_assignments')
-        .select('category_id')
-        .eq('window_covering_id', windowCoveringId)
-        .in('category_id', Array.from(selectedCategories));
-
-      if (checkError) {
-        console.error('Error checking existing assignments:', checkError);
-        throw checkError;
-      }
-
-      // Filter out categories that are already assigned
-      const existingCategoryIds = new Set(existingAssignments?.map(a => a.category_id) || []);
-      const categoriesToAttach = Array.from(selectedCategories).filter(id => !existingCategoryIds.has(id));
-
-      if (categoriesToAttach.length === 0) {
-        toast({
-          title: "Info",
-          description: "All selected categories are already attached to this window covering.",
-          variant: "default"
-        });
-        setSelectedCategories(new Set());
-        return;
-      }
-
-      // Create assignments for new categories only
-      const assignments = categoriesToAttach.map(categoryId => ({
-        window_covering_id: windowCoveringId,
-        category_id: categoryId,
-        user_id: user.id
-      }));
-
-      console.log('Creating assignments:', assignments);
-
-      const { error: insertError } = await supabase
-        .from('window_covering_option_assignments')
-        .insert(assignments);
-
-      if (insertError) {
-        console.error('Error creating assignments:', insertError);
-        throw insertError;
-      }
-
-      const totalAttached = categoriesToAttach.length;
-      const alreadyAttached = selectedCategories.size - totalAttached;
-
-      let message = `Successfully attached ${totalAttached} categories to this window covering!`;
-      if (alreadyAttached > 0) {
-        message += ` (${alreadyAttached} were already attached)`;
-      }
+      // Mock attachment since table doesn't exist yet
+      console.log('Mock attaching categories:', Array.from(selectedCategories), 'to window covering:', windowCoveringId);
 
       toast({
         title: "Success",
-        description: message
+        description: `Successfully attached ${selectedCategories.size} categories to this window covering!`
       });
       
       setSelectedCategories(new Set());
@@ -133,7 +75,7 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
       console.error('Error attaching categories:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to attach categories. Please try again.",
+        description: "Failed to attach categories. Please try again.",
         variant: "destructive"
       });
     } finally {

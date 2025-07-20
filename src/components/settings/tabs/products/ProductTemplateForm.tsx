@@ -54,17 +54,17 @@ export const ProductTemplateForm: React.FC<ProductTemplateFormProps> = ({
         product_category: template.product_category || "",
         calculation_method: template.calculation_method || "",
         active: template.active ?? true,
-        components: template.components || {
-          headings: {},
-          lining: {},
-          hardware: {}
+        components: {
+          headings: template.components?.headings || {},
+          lining: template.components?.lining || {},
+          hardware: template.components?.hardware || {}
         },
-        calculation_rules: template.calculation_rules || {
-          labor_rate: 0,
-          markup_percentage: 0,
-          baseMakingCost: 0,
-          baseHeightLimit: 0,
-          heightSurcharge1: 0
+        calculation_rules: {
+          labor_rate: template.calculation_rules?.labor_rate || 0,
+          markup_percentage: template.calculation_rules?.markup_percentage || 0,
+          baseMakingCost: template.calculation_rules?.baseMakingCost || 0,
+          baseHeightLimit: template.calculation_rules?.baseHeightLimit || 0,
+          heightSurcharge1: template.calculation_rules?.heightSurcharge1 || 0
         }
       });
     }

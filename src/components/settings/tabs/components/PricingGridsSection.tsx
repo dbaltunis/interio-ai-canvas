@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Download, Upload, FileSpreadsheet, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { usePricingGrids, useCreatePricingGrid, useDeletePricingGrid } from "@/hooks/usePricingGrids";
+import type { PricingGrid } from "@/types/database";
 
 interface GridDataStructure {
   widthColumns?: string[];
@@ -20,7 +20,7 @@ interface GridDataStructure {
 export const PricingGridsSection = () => {
   const [gridName, setGridName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showPreview, setShowPreview] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState<PricingGrid | null>(null);
 
   const { data: pricingGrids = [], isLoading } = usePricingGrids();
   const createPricingGrid = useCreatePricingGrid();
@@ -154,7 +154,7 @@ export const PricingGridsSection = () => {
     }
   };
 
-  const handlePreview = (grid: any) => {
+  const handlePreview = (grid: PricingGrid) => {
     setShowPreview(grid);
   };
 
@@ -294,36 +294,37 @@ export const PricingGridsSection = () => {
           ) : (
             <div className="space-y-3">
               {pricingGrids.map((grid) => {
-                const typedGridData = grid.grid_data as GridDataStructure;
+                const typedGrid = grid as PricingGrid;
+                const typedGridData = typedGrid.grid_data as GridDataStructure;
                 return (
-                  <div key={grid.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={typedGrid.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <FileSpreadsheet className="h-5 w-5 text-blue-500" />
                       <div>
-                        <h5 className="font-medium">{grid.name}</h5>
+                        <h5 className="font-medium">{typedGrid.name}</h5>
                         <p className="text-xs text-gray-500">
                           {typedGridData?.dropRows?.length || 0} drop ranges × {typedGridData?.widthColumns?.length || 0} width ranges
                         </p>
                         <p className="text-xs text-gray-400">
-                          Created {new Date(grid.created_at).toLocaleDateString()}
+                          Created {new Date(typedGrid.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={grid.active ? "default" : "secondary"}>
-                        {grid.active ? "Active" : "Inactive"}
+                      <Badge variant={typedGrid.active ? "default" : "secondary"}>
+                        {typedGrid.active ? "Active" : "Inactive"}
                       </Badge>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handlePreview(grid)}
+                        onClick={() => handlePreview(typedGrid)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(grid.id, grid.name)}
+                        onClick={() => handleDelete(typedGrid.id, typedGrid.name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
