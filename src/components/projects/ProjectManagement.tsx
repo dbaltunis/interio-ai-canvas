@@ -94,7 +94,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(projects?.reduce((sum, project) => sum + (project.total_amount || 0), 0) || 0)}
+              {formatCurrency(projects?.reduce((sum, project) => sum + ((project as any).total_amount || 0), 0) || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               All projects
@@ -195,7 +195,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                       {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
                     </TableCell>
                     <TableCell>
-                      {project.total_amount ? formatCurrency(project.total_amount) : 'TBD'}
+                      {(project as any).total_amount ? formatCurrency((project as any).total_amount) : 'TBD'}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">

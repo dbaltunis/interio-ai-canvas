@@ -3,12 +3,15 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { ShopifyIntegration } from "@/hooks/useShopifyIntegration";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
 
-export const ShopifyStatusTab = () => {
-  const { data: integration, isLoading } = useShopifyIntegration();
+interface ShopifyStatusTabProps {
+  integration?: ShopifyIntegration | null;
+}
+
+export const ShopifyStatusTab = ({ integration }: ShopifyStatusTabProps) => {
   const { toast } = useToast();
 
   const handleManualSync = () => {
@@ -41,10 +44,6 @@ export const ShopifyStatusTab = () => {
         return <Badge variant="default">Ready</Badge>;
     }
   };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="space-y-6">

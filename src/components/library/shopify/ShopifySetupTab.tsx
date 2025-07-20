@@ -5,12 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { useShopifyIntegration, useUpdateShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { useShopifyIntegration, useUpdateShopifyIntegration, ShopifyIntegration } from "@/hooks/useShopifyIntegration";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-export const ShopifySetupTab = () => {
-  const { data: integration, isLoading } = useShopifyIntegration();
+interface ShopifySetupTabProps {
+  integration?: ShopifyIntegration | null;
+  onSuccess?: () => void;
+}
+
+export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps) => {
   const updateIntegration = useUpdateShopifyIntegration();
   const { toast } = useToast();
   
@@ -35,6 +39,8 @@ export const ShopifySetupTab = () => {
       active: true,
       sync_status: 'idle' as const
     });
+
+    onSuccess?.();
   };
 
   const handleTest = async () => {
@@ -51,14 +57,6 @@ export const ShopifySetupTab = () => {
       });
     }, 2000);
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

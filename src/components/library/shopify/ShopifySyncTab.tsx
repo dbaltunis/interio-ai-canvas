@@ -1,106 +1,95 @@
+
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ShoppingBag } from "lucide-react";
-import { ShopifyIntegration, useUpdateShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useUpdateShopifyIntegration, ShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { RefreshCw } from "lucide-react";
 
 interface ShopifySyncTabProps {
-  integration: ShopifyIntegration | null;
-  formData: {
-    shop_domain: string;
-    auto_sync_enabled: boolean;
-    sync_inventory: boolean;
-    sync_prices: boolean;
-    sync_images: boolean;
-  };
-  setFormData: (data: any) => void;
+  integration?: ShopifyIntegration | null;
+  formData?: any;
+  setFormData?: (data: any) => void;
 }
 
-export const ShopifySyncTab = ({ integration, formData, setFormData }: ShopifySyncTabProps) => {
+export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
   const updateIntegration = useUpdateShopifyIntegration();
 
-  const handleSaveSettings = async () => {
-    if (!integration) return;
-    
-    await updateIntegration.mutateAsync({ 
-      id: integration.id, 
-      ...formData 
-    });
+  const handleSyncSettingChange = (setting: string, value: boolean) => {
+    updateIntegration.mutate({ [setting]: value });
   };
 
-  if (!integration) {
-    return (
+  return (
+    <div className="space-y-6">
       <Card>
-        <CardContent className="p-8 text-center">
-          <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Shopify Integration</h3>
-          <p className="text-gray-500">Connect your Shopify store first to configure sync settings</p>
+        <CardHeader>
+          <CardTitle>Sync Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="auto-sync">Enable Auto Sync</Label>
+            <Switch
+              id="auto-sync"
+              checked={integration?.auto_sync_enabled || false}
+              onCheckedChange={(checked) => handleSyncSettingChange("auto_sync_enabled", checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="sync-inventory">Sync Inventory</Label>
+            <Switch
+              id="sync-inventory"
+              checked={integration?.sync_inventory || false}
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_inventory", checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="sync-prices">Sync Prices</Label>
+            <Switch
+              id="sync-prices"
+              checked={integration?.sync_prices || false}
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_prices", checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="sync-images">Sync Images</Label>
+            <Switch
+              id="sync-images"
+              checked={integration?.sync_images || false}
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_images", checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="sync-products">Sync Products</Label>
+            <Switch
+              id="sync-products"
+              checked={integration?.sync_products || false}
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_products", checked)}
+            />
+          </div>
         </CardContent>
       </Card>
-    );
-  }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-brand-primary">Sync Configuration</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label>Auto Sync</Label>
-            <p className="text-sm text-muted-foreground">Automatically sync changes in real-time</p>
-          </div>
-          <Switch
-            checked={formData.auto_sync_enabled}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, auto_sync_enabled: checked }))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label>Sync Inventory Levels</Label>
-            <p className="text-sm text-muted-foreground">Keep stock quantities synchronized</p>
-          </div>
-          <Switch
-            checked={formData.sync_inventory}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sync_inventory: checked }))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label>Sync Prices</Label>
-            <p className="text-sm text-muted-foreground">Keep pricing synchronized</p>
-          </div>
-          <Switch
-            checked={formData.sync_prices}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sync_prices: checked }))}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label>Sync Product Images</Label>
-            <p className="text-sm text-muted-foreground">Download and sync product images</p>
-          </div>
-          <Switch
-            checked={formData.sync_images}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sync_images: checked }))}
-          />
-        </div>
-
-        <div className="flex justify-end">
-          <Button 
-            onClick={handleSaveSettings} 
-            disabled={updateIntegration.isPending} 
-            className="bg-brand-primary hover:bg-brand-primary/90"
-          >
-            Save Settings
+      <Card>
+        <CardHeader>
+          <CardTitle>Manual Sync</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full" disabled={!integration?.active}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Run Full Sync
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+          {!integration?.active && (
+            <p className="text-sm text-gray-500 mt-2">
+              Connect your Shopify store first to enable sync functionality
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
