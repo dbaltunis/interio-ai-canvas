@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface PricingRule {
   id: string;
@@ -17,58 +16,52 @@ export interface PricingRule {
   user_id: string;
 }
 
+// Mock data store
+let mockPricingRules: PricingRule[] = [
+  {
+    id: "pr-1",
+    name: "Bulk Discount",
+    category: "discount",
+    rule_type: "percentage",
+    value: 10,
+    conditions: { min_quantity: 5 },
+    active: true,
+    priority: 1,
+    formula: "base_price * 0.9",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    user_id: "mock-user"
+  }
+];
+
 export const usePricingRules = () => {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['pricing-rules'],
     queryFn: async () => {
-      console.log("Fetching pricing rules from database...");
-      const { data, error } = await supabase
-        .from('pricing_rules')
-        .select('*')
-        .order('priority', { ascending: false })
-        .order('created_at', { ascending: false });
-      
-      console.log("Database response:", { data, error });
-      
-      if (error) {
-        console.error("Database error:", error);
-        throw error;
-      }
-      
-      console.log("Pricing rules fetched:", data);
-      return data as PricingRule[];
+      console.log("Mock fetching pricing rules...");
+      // Mock implementation
+      return mockPricingRules.filter(rule => rule.active);
     }
   });
 
   const createPricingRule = useMutation({
     mutationFn: async (rule: Omit<PricingRule, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-      console.log("Creating pricing rule:", rule);
+      console.log("Mock creating pricing rule:", rule);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("User not authenticated");
-        throw new Error('User not authenticated');
-      }
+      const newRule: PricingRule = {
+        ...rule,
+        id: `pr-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      mockPricingRules.push(newRule);
       
-      console.log("User authenticated:", user.id);
-      
-      const { data, error } = await supabase
-        .from('pricing_rules')
-        .insert([{ ...rule, user_id: user.id }])
-        .select()
-        .single();
-      
-      console.log("Insert response:", { data, error });
-      
-      if (error) {
-        console.error("Insert error:", error);
-        throw error;
-      }
-      
-      console.log("Rule created successfully:", data);
-      return data;
+      console.log("Mock rule created successfully:", newRule);
+      return newRule;
     },
     onSuccess: () => {
       console.log("Invalidating pricing rules query");
@@ -78,23 +71,18 @@ export const usePricingRules = () => {
 
   const updatePricingRule = useMutation({
     mutationFn: async (rule: Partial<PricingRule> & { id: string }) => {
-      console.log("Updating pricing rule:", rule);
+      console.log("Mock updating pricing rule:", rule);
       
-      const { data, error } = await supabase
-        .from('pricing_rules')
-        .update(rule)
-        .eq('id', rule.id)
-        .select()
-        .single();
-      
-      console.log("Update response:", { data, error });
-      
-      if (error) {
-        console.error("Update error:", error);
-        throw error;
+      const index = mockPricingRules.findIndex(r => r.id === rule.id);
+      if (index !== -1) {
+        mockPricingRules[index] = {
+          ...mockPricingRules[index],
+          ...rule,
+          updated_at: new Date().toISOString()
+        };
+        return mockPricingRules[index];
       }
-      
-      return data;
+      throw new Error("Rule not found");
     },
     onSuccess: () => {
       console.log("Invalidating pricing rules query after update");
@@ -104,18 +92,11 @@ export const usePricingRules = () => {
 
   const deletePricingRule = useMutation({
     mutationFn: async (id: string) => {
-      console.log("Deleting pricing rule:", id);
+      console.log("Mock deleting pricing rule:", id);
       
-      const { error } = await supabase
-        .from('pricing_rules')
-        .delete()
-        .eq('id', id);
-      
-      console.log("Delete response:", { error });
-      
-      if (error) {
-        console.error("Delete error:", error);
-        throw error;
+      const index = mockPricingRules.findIndex(r => r.id === id);
+      if (index !== -1) {
+        mockPricingRules.splice(index, 1);
       }
     },
     onSuccess: () => {

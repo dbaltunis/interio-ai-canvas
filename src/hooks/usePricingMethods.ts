@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface PricingMethod {
@@ -19,33 +18,47 @@ export interface PricingMethod {
   updated_at: string;
 }
 
+// Mock data store
+let mockPricingMethods: PricingMethod[] = [
+  {
+    id: "pm-1",
+    user_id: "mock-user",
+    name: "Linear Meter Pricing",
+    description: "Price per linear meter",
+    method_type: "linear_meter",
+    base_price: 25.00,
+    height_tiers: [],
+    width_tiers: [],
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 export const usePricingMethods = () => {
   const queryClient = useQueryClient();
 
   const { data: pricingMethods, isLoading, error } = useQuery({
     queryKey: ['pricing-methods'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pricing_methods')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data as PricingMethod[];
+      // Mock implementation
+      return mockPricingMethods.filter(method => method.active);
     }
   });
 
   const createPricingMethod = useMutation({
     mutationFn: async (pricingMethod: Omit<PricingMethod, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('pricing_methods')
-        .insert([{ ...pricingMethod, user_id: (await supabase.auth.getUser()).data.user?.id! }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      const newMethod: PricingMethod = {
+        ...pricingMethod,
+        id: `pm-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      mockPricingMethods.push(newMethod);
+      return newMethod;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-methods'] });
@@ -59,15 +72,17 @@ export const usePricingMethods = () => {
 
   const updatePricingMethod = useMutation({
     mutationFn: async (pricingMethod: Partial<PricingMethod> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('pricing_methods')
-        .update(pricingMethod)
-        .eq('id', pricingMethod.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      const index = mockPricingMethods.findIndex(method => method.id === pricingMethod.id);
+      if (index !== -1) {
+        mockPricingMethods[index] = {
+          ...mockPricingMethods[index],
+          ...pricingMethod,
+          updated_at: new Date().toISOString()
+        };
+        return mockPricingMethods[index];
+      }
+      throw new Error("Method not found");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-methods'] });
@@ -81,12 +96,12 @@ export const usePricingMethods = () => {
 
   const deletePricingMethod = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('pricing_methods')
-        .update({ active: false })
-        .eq('id', id);
-      
-      if (error) throw error;
+      // Mock implementation
+      const index = mockPricingMethods.findIndex(method => method.id === id);
+      if (index !== -1) {
+        mockPricingMethods[index].active = false;
+        mockPricingMethods[index].updated_at = new Date().toISOString();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-methods'] });
