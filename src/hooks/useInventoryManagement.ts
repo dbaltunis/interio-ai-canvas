@@ -1,25 +1,56 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { toast } from "sonner";
 
-type Inventory = Tables<"inventory">;
-type InventoryInsert = TablesInsert<"inventory">;
-type InventoryUpdate = TablesUpdate<"inventory">;
+interface Inventory {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  category?: string;
+  quantity: number;
+  unit?: string;
+  cost_price?: number;
+  selling_price?: number;
+  supplier?: string;
+  location?: string;
+  width?: number;
+  reorder_point?: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Mock data store
+let mockInventory: Inventory[] = [
+  {
+    id: "inv-1",
+    user_id: "mock-user",
+    name: "Curtain Rails - White",
+    description: "Premium white curtain rails",
+    sku: "CR-WHT-001",
+    category: "Hardware",
+    quantity: 25,
+    unit: "pieces",
+    cost_price: 15.50,
+    selling_price: 25.00,
+    supplier: "Hardware Plus",
+    location: "Warehouse A",
+    width: 200,
+    reorder_point: 5,
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 export const useInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("inventory")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      
-      // Enhance the data with mock vendor and collection info until tables are synced
-      return data.map(item => ({
+      // Mock implementation with enhanced data
+      return mockInventory.map(item => ({
         ...item,
         vendor: item.supplier ? { 
           name: item.supplier, 
@@ -46,18 +77,20 @@ export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (item: Omit<InventoryInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+    mutationFn: async (item: Omit<Inventory, "id" | "user_id" | "created_at" | "updated_at">) => {
+      // Mock implementation
+      const newItem: Inventory = {
+        ...item,
+        id: `inv-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      const { data, error } = await supabase
-        .from("inventory")
-        .insert({ ...item, user_id: user.id })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      mockInventory.push(newItem);
+      
+      toast.success("Inventory item created successfully");
+      return newItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
@@ -69,16 +102,20 @@ export const useUpdateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...item }: InventoryUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from("inventory")
-        .update(item)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+    mutationFn: async ({ id, ...item }: Partial<Inventory> & { id: string }) => {
+      // Mock implementation
+      const index = mockInventory.findIndex(inv => inv.id === id);
+      if (index !== -1) {
+        mockInventory[index] = {
+          ...mockInventory[index],
+          ...item,
+          updated_at: new Date().toISOString()
+        };
+        
+        toast.success("Inventory item updated successfully");
+        return mockInventory[index];
+      }
+      throw new Error("Item not found");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
@@ -91,12 +128,12 @@ export const useDeleteInventoryItem = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("inventory")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      // Mock implementation
+      const index = mockInventory.findIndex(inv => inv.id === id);
+      if (index !== -1) {
+        mockInventory.splice(index, 1);
+        toast.success("Inventory item deleted successfully");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });

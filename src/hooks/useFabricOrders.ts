@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface FabricOrder {
   id: string;
@@ -21,16 +21,34 @@ export interface FabricOrder {
   updated_at: string;
 }
 
+// Mock data store
+let mockFabricOrders: FabricOrder[] = [
+  {
+    id: "fo-1",
+    fabric_code: "FB001",
+    fabric_type: "Cotton",
+    color: "Cream",
+    pattern: "Solid",
+    supplier: "Fabric Warehouse",
+    quantity: 20,
+    unit: "meters",
+    unit_price: 15.50,
+    total_price: 310.00,
+    work_order_ids: [],
+    status: "pending",
+    order_date: new Date().toISOString(),
+    user_id: "mock-user",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 export const useFabricOrders = () => {
   return useQuery({
     queryKey: ["fabric-orders"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fabric_orders")
-        .select("*");
-      
-      if (error) throw error;
-      return data as FabricOrder[];
+      // Mock implementation
+      return mockFabricOrders;
     },
   });
 };
@@ -40,17 +58,19 @@ export const useCreateFabricOrder = () => {
   
   return useMutation({
     mutationFn: async (fabricOrder: Omit<FabricOrder, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // Mock implementation
+      const newOrder: FabricOrder = {
+        ...fabricOrder,
+        id: `fo-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      const { data, error } = await supabase
-        .from("fabric_orders")
-        .insert([{ ...fabricOrder, user_id: user.id }])
-        .select()
-        .single();
+      mockFabricOrders.push(newOrder);
       
-      if (error) throw error;
-      return data;
+      toast.success("Fabric order created successfully");
+      return newOrder;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fabric-orders"] });
@@ -63,15 +83,19 @@ export const useUpdateFabricOrder = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<FabricOrder> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("fabric_orders")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      // Mock implementation
+      const index = mockFabricOrders.findIndex(order => order.id === id);
+      if (index !== -1) {
+        mockFabricOrders[index] = {
+          ...mockFabricOrders[index],
+          ...updates,
+          updated_at: new Date().toISOString()
+        };
+        
+        toast.success("Fabric order updated successfully");
+        return mockFabricOrders[index];
+      }
+      throw new Error("Order not found");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fabric-orders"] });
