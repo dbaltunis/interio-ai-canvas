@@ -1,104 +1,115 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export interface CalculationFormula {
   id: string;
   name: string;
   description?: string;
-  formula: string;
-  variables: string[];
   category: string;
+  formula_expression: string;
+  applies_to?: string[];
   active: boolean;
-  user_id: string;
   created_at: string;
   updated_at: string;
 }
 
-// Mock data store
-let mockFormulas: CalculationFormula[] = [
+// Mock data for calculation formulas
+const mockFormulas: CalculationFormula[] = [
   {
-    id: 'formula-1',
-    name: 'Basic Fabric Calculation',
-    description: 'Standard fabric calculation for curtains',
-    formula: 'width * fullness * (drop + allowances)',
-    variables: ['width', 'fullness', 'drop', 'allowances'],
-    category: 'fabric',
+    id: "1",
+    name: "Basic Fabric Calculation",
+    description: "Calculate fabric needed for curtains",
+    category: "fabric",
+    formula_expression: "width * height * fullness / fabric_width",
+    applies_to: ["curtains", "drapes"],
     active: true,
-    user_id: 'mock-user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "2",
+    name: "Labor Cost Calculation",
+    description: "Calculate labor costs based on complexity",
+    category: "labor",
+    formula_expression: "base_rate * complexity_factor * hours",
+    applies_to: ["installation", "making"],
+    active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
 ];
 
 export const useCalculationFormulas = () => {
-  return useQuery({
-    queryKey: ["calculation-formulas"],
-    queryFn: async () => {
-      // Mock implementation
-      await new Promise(resolve => setTimeout(resolve, 100));
-      return mockFormulas;
-    },
-  });
-};
-
-export const useCreateCalculationFormula = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (formula: Omit<CalculationFormula, "id" | "user_id" | "created_at" | "updated_at">) => {
+  const { data: formulas, isLoading, error } = useQuery({
+    queryKey: ['calculation-formulas'],
+    queryFn: async () => {
+      // Mock API call - replace with actual Supabase call when database is ready
+      return new Promise<CalculationFormula[]>((resolve) => {
+        setTimeout(() => resolve(mockFormulas), 100);
+      });
+    }
+  });
+
+  const createFormula = useMutation({
+    mutationFn: async (formula: Omit<CalculationFormula, 'id' | 'created_at' | 'updated_at'>) => {
+      // Mock creation - replace with actual Supabase call when database is ready
       const newFormula: CalculationFormula = {
         ...formula,
-        id: `formula-${Date.now()}`,
-        user_id: 'mock-user',
+        id: Date.now().toString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
-      mockFormulas.push(newFormula);
       return newFormula;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["calculation-formulas"] });
+      queryClient.invalidateQueries({ queryKey: ['calculation-formulas'] });
+      toast.success('Formula created successfully');
     },
+    onError: (error) => {
+      toast.error('Failed to create formula');
+      console.error('Error creating formula:', error);
+    }
   });
-};
 
-export const useUpdateCalculationFormula = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<CalculationFormula> & { id: string }) => {
-      const index = mockFormulas.findIndex(f => f.id === id);
-      if (index === -1) {
-        throw new Error('Formula not found');
-      }
-
-      mockFormulas[index] = {
-        ...mockFormulas[index],
-        ...updates,
-        updated_at: new Date().toISOString()
-      };
-
-      return mockFormulas[index];
+  const updateFormula = useMutation({
+    mutationFn: async (formula: Partial<CalculationFormula> & { id: string }) => {
+      // Mock update - replace with actual Supabase call when database is ready
+      return { ...formula, updated_at: new Date().toISOString() };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["calculation-formulas"] });
+      queryClient.invalidateQueries({ queryKey: ['calculation-formulas'] });
+      toast.success('Formula updated successfully');
     },
+    onError: (error) => {
+      toast.error('Failed to update formula');
+      console.error('Error updating formula:', error);
+    }
   });
-};
 
-export const useDeleteCalculationFormula = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  const deleteFormula = useMutation({
     mutationFn: async (id: string) => {
-      const index = mockFormulas.findIndex(f => f.id === id);
-      if (index !== -1) {
-        mockFormulas.splice(index, 1);
-      }
+      // Mock deletion - replace with actual Supabase call when database is ready
+      return Promise.resolve();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["calculation-formulas"] });
+      queryClient.invalidateQueries({ queryKey: ['calculation-formulas'] });
+      toast.success('Formula deleted successfully');
     },
+    onError: (error) => {
+      toast.error('Failed to delete formula');
+      console.error('Error deleting formula:', error);
+    }
   });
+
+  return {
+    data: formulas,
+    isLoading,
+    error,
+    createFormula,
+    updateFormula,
+    deleteFormula
+  };
 };

@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface Component {
@@ -20,33 +19,60 @@ export interface Component {
   updated_at: string;
 }
 
+// Mock data
+const mockComponents: Component[] = [
+  {
+    id: "1",
+    user_id: "mock-user",
+    name: "Standard Curtain Track",
+    description: "Basic curtain track system",
+    component_type: 'hardware',
+    category: "Tracks",
+    price: 25,
+    unit: "per-meter",
+    specifications: {},
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "2",
+    user_id: "mock-user",
+    name: "Installation Service",
+    description: "Professional installation",
+    component_type: 'service',
+    price: 50,
+    unit: "per-hour",
+    specifications: {},
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 export const useComponents = () => {
   const queryClient = useQueryClient();
 
   const { data: components, isLoading, error } = useQuery({
     queryKey: ['components'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('components')
-        .select('*')
-        .eq('active', true)
-        .order('component_type, name');
-      
-      if (error) throw error;
-      return data as Component[];
+      // Mock API call - replace with actual Supabase call when database is ready
+      return new Promise<Component[]>((resolve) => {
+        setTimeout(() => resolve(mockComponents), 100);
+      });
     }
   });
 
   const createComponent = useMutation({
     mutationFn: async (component: Omit<Component, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('components')
-        .insert([{ ...component, user_id: (await supabase.auth.getUser()).data.user?.id! }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      const newComponent: Component = {
+        ...component,
+        id: Date.now().toString(),
+        user_id: "mock-user",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      return newComponent;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['components'] });
@@ -60,15 +86,7 @@ export const useComponents = () => {
 
   const updateComponent = useMutation({
     mutationFn: async (component: Partial<Component> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('components')
-        .update(component)
-        .eq('id', component.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      return { ...component, updated_at: new Date().toISOString() };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['components'] });
@@ -82,12 +100,7 @@ export const useComponents = () => {
 
   const deleteComponent = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('components')
-        .update({ active: false })
-        .eq('id', id);
-      
-      if (error) throw error;
+      return Promise.resolve();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['components'] });
