@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings, defaultMeasurementUnits, type MeasurementUnits } from "@/hooks/useBusinessSettings";
+import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings, type MeasurementUnits, defaultMeasurementUnits } from "@/hooks/useBusinessSettings";
 import { toast } from "sonner";
 
 export const useMeasurementUnitsForm = () => {
@@ -13,7 +13,9 @@ export const useMeasurementUnitsForm = () => {
   useEffect(() => {
     if (businessSettings?.measurement_units) {
       try {
-        const parsedUnits = JSON.parse(businessSettings.measurement_units);
+        const parsedUnits = typeof businessSettings.measurement_units === 'string' 
+          ? JSON.parse(businessSettings.measurement_units) 
+          : businessSettings.measurement_units;
         setUnits({ ...defaultMeasurementUnits, ...parsedUnits });
       } catch (error) {
         console.error("Failed to parse measurement units:", error);
