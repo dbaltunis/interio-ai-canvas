@@ -8,7 +8,9 @@ let mockOptions: WindowCoveringOption[] = [];
 export const createOption = async (option: Omit<WindowCoveringOption, 'id'>) => {
   const newOption: WindowCoveringOption = {
     ...option,
-    id: `mock-${Date.now()}`
+    id: `mock-${Date.now()}`,
+    base_cost: option.base_price, // Ensure compatibility
+    sort_order: option.sort_order || 0
   };
 
   mockOptions.push(newOption);

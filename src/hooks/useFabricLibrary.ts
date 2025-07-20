@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface FabricItem {
   id: string;
@@ -23,48 +22,6 @@ export interface FabricItem {
   created_at: string;
   updated_at: string;
 }
-
-export const useFabricLibrary = () => {
-  return useQuery({
-    queryKey: ["fabric-library"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fabric_library")
-        .select(`
-          *,
-          vendor:vendor_id(*),
-          collection:collection_id(*)
-        `)
-        .order("name");
-      
-      if (error) throw error;
-      return data as FabricItem[];
-    },
-  });
-};
-
-export const useCreateFabricItem = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (item: Omit<FabricItem, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("fabric_library")
-        .insert([{ ...item, user_id: user.id }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fabric-library"] });
-    },
-  });
-};
 
 // Mock data for development
 export const mockFabricItems: FabricItem[] = [
@@ -107,3 +64,37 @@ export const mockFabricItems: FabricItem[] = [
     updated_at: new Date().toISOString(),
   }
 ];
+
+export const useFabricLibrary = () => {
+  return useQuery({
+    queryKey: ["fabric-library"],
+    queryFn: async () => {
+      // Mock implementation
+      console.log('useFabricLibrary - Mock implementation');
+      return mockFabricItems;
+    },
+  });
+};
+
+export const useCreateFabricItem = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (item: Omit<FabricItem, "id" | "user_id" | "created_at" | "updated_at">) => {
+      // Mock implementation
+      const newItem: FabricItem = {
+        ...item,
+        id: `fabric-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      mockFabricItems.push(newItem);
+      return newItem;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fabric-library"] });
+    },
+  });
+};

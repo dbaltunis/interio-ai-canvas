@@ -1,6 +1,5 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export interface EmailTemplateScheduler {
@@ -15,24 +14,35 @@ export interface EmailTemplateScheduler {
   updated_at: string;
 }
 
+// Mock data
+const mockTemplates: EmailTemplateScheduler[] = [
+  {
+    id: 'template-1',
+    user_id: 'mock-user',
+    scheduler_id: 'scheduler-1',
+    template_type: 'booking_confirmation',
+    subject: 'Booking Confirmation',
+    content: 'Your appointment has been confirmed.',
+    active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 export const useEmailTemplates = (schedulerId?: string) => {
   return useQuery({
     queryKey: ['email-templates-scheduler', schedulerId],
     queryFn: async () => {
-      let query = supabase
-        .from('email_templates_scheduler')
-        .select('*')
-        .eq('active', true)
-        .order('template_type');
-
-      if (schedulerId) {
-        query = query.eq('scheduler_id', schedulerId);
+      // Mock implementation
+      console.log('useEmailTemplates - Mock implementation for scheduler:', schedulerId);
+      
+      if (!schedulerId) {
+        return [];
       }
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data as EmailTemplateScheduler[];
+      return mockTemplates.filter(template => 
+        template.scheduler_id === schedulerId && template.active
+      );
     },
     enabled: !!schedulerId,
   });
@@ -44,17 +54,17 @@ export const useCreateEmailTemplate = () => {
 
   return useMutation({
     mutationFn: async (templateData: Omit<EmailTemplateScheduler, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      // Mock implementation
+      const newTemplate: EmailTemplateScheduler = {
+        ...templateData,
+        id: `template-${Date.now()}`,
+        user_id: 'mock-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      const { data, error } = await supabase
-        .from('email_templates_scheduler')
-        .insert([{ ...templateData, user_id: user.id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      mockTemplates.push(newTemplate);
+      return newTemplate;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['email-templates-scheduler', data.scheduler_id] });
@@ -79,15 +89,20 @@ export const useUpdateEmailTemplate = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<EmailTemplateScheduler> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('email_templates_scheduler')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      // Mock implementation
+      const index = mockTemplates.findIndex(t => t.id === id);
+      if (index === -1) {
+        throw new Error('Template not found');
+      }
 
-      if (error) throw error;
-      return data;
+      const updatedTemplate = {
+        ...mockTemplates[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      mockTemplates[index] = updatedTemplate;
+      return updatedTemplate;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['email-templates-scheduler', data.scheduler_id] });

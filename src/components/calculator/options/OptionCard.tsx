@@ -1,18 +1,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
 
 interface OptionCardProps {
-  option: {
-    id: string;
-    name: string;
-    description?: string;
-    base_cost: number;
-    cost_type: string;
-    is_required: boolean;
-    is_default: boolean;
-    image_url?: string;
-  };
+  option: WindowCoveringOption;
   isSelected: boolean;
   onToggle: () => void;
 }

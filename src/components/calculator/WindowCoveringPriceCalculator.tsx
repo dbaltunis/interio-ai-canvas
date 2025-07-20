@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calculator, Info } from "lucide-react";
+import { WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
 
 interface PriceCalculationResult {
   requiredFabricWidth: number;
@@ -29,18 +29,7 @@ interface WindowCovering {
 interface CalculatorProps {
   windowCovering: WindowCovering;
   selectedOptions?: string[];
-  availableOptions?: Option[];
-}
-
-interface Option {
-  id: string;
-  option_type: string;
-  name: string;
-  cost_type: string;
-  base_cost: number;
-  is_required: boolean;
-  is_default: boolean;
-  pricing_method?: string;
+  availableOptions?: WindowCoveringOption[];
 }
 
 export const WindowCoveringPriceCalculator = ({ 
@@ -56,7 +45,7 @@ export const WindowCoveringPriceCalculator = ({
   const [linearMeasurement, setLinearMeasurement] = useState<number>(0);
   const [calculation, setCalculation] = useState<PriceCalculationResult | null>(null);
 
-  const calculateOptionCost = (option: Option) => {
+  const calculateOptionCost = (option: WindowCoveringOption) => {
     const baseCost = option.base_cost;
     const method = option.pricing_method || option.cost_type;
     

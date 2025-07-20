@@ -32,7 +32,14 @@ export const HierarchicalOptionsSection = ({
               {subcategory.sub_subcategories?.map((subSub) => (
                 <div key={subSub.id} className="ml-4 space-y-2">
                   <HierarchicalOptionCard
-                    option={subSub}
+                    option={{
+                      id: subSub.id,
+                      name: subSub.name,
+                      description: subSub.description,
+                      base_price: subSub.base_price,
+                      pricing_method: subSub.pricing_method,
+                      image_url: subSub.image_url
+                    }}
                     isSelected={selectedOptions.includes(subSub.id)}
                     onToggle={() => onOptionToggle(subSub.id)}
                   />
@@ -47,7 +54,15 @@ export const HierarchicalOptionsSection = ({
                     return (
                       <ExtraOptionCard
                         key={extra.id}
-                        extra={extra}
+                        extra={{
+                          id: extra.id,
+                          name: extra.name,
+                          description: extra.description,
+                          base_price: extra.base_price,
+                          image_url: extra.image_url,
+                          is_required: extra.is_required || false,
+                          is_default: extra.is_default
+                        }}
                         isSelected={selectedOptions.includes(extra.id)}
                         onToggle={() => onOptionToggle(extra.id)}
                       />
