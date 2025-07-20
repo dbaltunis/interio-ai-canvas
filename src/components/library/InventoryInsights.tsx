@@ -1,114 +1,118 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useFabricLibrary } from "@/hooks/useFabricLibrary";
-import { TrendingDown, TrendingUp, AlertTriangle, Package } from "lucide-react";
+import { useFabricLibrary, mockFabricItems } from "@/hooks/useFabricLibrary";
+import { TrendingUp, TrendingDown, AlertTriangle, Package } from "lucide-react";
 
 export const InventoryInsights = () => {
-  const { data: fabrics = [], isLoading } = useFabricLibrary();
+  const { data: fabricItems = mockFabricItems, isLoading } = useFabricLibrary();
 
   if (isLoading) {
-    return <div>Loading inventory insights...</div>;
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 bg-muted rounded w-24"></div>
+              <div className="h-4 w-4 bg-muted rounded"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-muted rounded w-16 mb-1"></div>
+              <div className="h-3 bg-muted rounded w-32"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
-  // Mock calculations since database properties don't match
-  const lowStockItems = fabrics.filter(() => Math.random() > 0.8); // Mock filter
-  const totalValue = fabrics.reduce((sum) => sum + (Math.random() * 100), 0); // Mock calculation
-  const needReorder = fabrics.filter(() => Math.random() > 0.9); // Mock filter
+  // Calculate insights from fabric items
+  const totalValue = fabricItems.reduce((sum, item) => sum + (item.cost_per_unit * item.quantity_in_stock), 0);
+  const lowStockItems = fabricItems.filter(item => item.quantity_in_stock <= item.reorder_point);
+  const totalItems = fabricItems.length;
+  const averageValue = totalItems > 0 ? totalValue / totalItems : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{fabrics.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Active inventory items
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(0)}</div>
-            <p className="text-xs text-muted-foreground">
-              Inventory value
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Items need attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reorder Needed</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{needReorder.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Critical stock levels
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Inventory Items */}
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Inventory Status</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Inventory Value</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {fabrics.slice(0, 10).map((fabric) => (
-              <div key={fabric.id} className="flex items-center justify-between p-3 border rounded">
-                <div className="flex items-center gap-3">
-                  {fabric.images?.[0] && (
-                    <img
-                      src={fabric.images[0]}
-                      alt={fabric.name}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  )}
-                  <div>
-                    <h4 className="font-medium">{fabric.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Code: {fabric.product_code}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    Stock: {Math.floor(Math.random() * 100)}
-                  </Badge>
-                  <Badge variant={Math.random() > 0.5 ? "default" : "destructive"}>
-                    {Math.random() > 0.5 ? "In Stock" : "Low Stock"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
+          <p className="text-xs text-muted-foreground">
+            Across {totalItems} items
+          </p>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+          <AlertTriangle className="h-4 w-4 text-orange-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
+          <p className="text-xs text-muted-foreground">
+            Need reordering
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Average Item Value</CardTitle>
+          <TrendingUp className="h-4 w-4 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">${averageValue.toFixed(2)}</div>
+          <p className="text-xs text-muted-foreground">
+            Per fabric item
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+          <Package className="h-4 w-4 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalItems}</div>
+          <p className="text-xs text-muted-foreground">
+            In inventory
+          </p>
+        </CardContent>
+      </Card>
+
+      {lowStockItems.length > 0 && (
+        <Card className="md:col-span-2 lg:col-span-4">
+          <CardHeader>
+            <CardTitle className="text-base">Items Requiring Attention</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {lowStockItems.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-2 bg-orange-50 rounded">
+                  <div>
+                    <span className="font-medium">{item.name}</span>
+                    <Badge variant="outline" className="ml-2">{item.fabric_type}</Badge>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-orange-600">
+                      {item.quantity_in_stock} remaining
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Reorder at {item.reorder_point}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

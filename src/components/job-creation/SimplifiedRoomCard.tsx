@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,20 +9,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SimplifiedRoomCardProps {
   room: any;
-  surfaces: any[];
   treatments: any[];
-  onEdit: (roomId: string) => void;
-  onDelete: (roomId: string) => void;
-  onCopy: (roomId: string) => void;
-  onCreateTreatment: (roomId: string, treatmentType: string) => void;
+  onAddTreatment: (roomId: string, treatmentType: string) => void;
+  onCopyRoom: (room: any) => void;
   projectId: string;
 }
 
-export const SimplifiedRoomCard = ({ room, surfaces, treatments, onEdit, onDelete, onCopy, onCreateTreatment, projectId }: SimplifiedRoomCardProps) => {
+export const SimplifiedRoomCard = ({ room, treatments, onAddTreatment, onCopyRoom, projectId }: SimplifiedRoomCardProps) => {
   const [showTreatmentTypes, setShowTreatmentTypes] = useState(false);
   const { data: templates = mockTemplates } = useProductTemplates();
 
-  const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
   const roomTreatments = treatments.filter(t => t.room_id === room.id);
 
   return (
@@ -32,21 +29,13 @@ export const SimplifiedRoomCard = ({ room, surfaces, treatments, onEdit, onDelet
       </CardHeader>
       <CardContent>
         <div className="text-sm text-muted-foreground">
-          {roomSurfaces.length} surfaces, {roomTreatments.length} treatments
+          {roomTreatments.length} treatments
         </div>
 
         <div className="flex justify-between mt-4">
-          <Button variant="outline" size="sm" onClick={() => onEdit(room.id)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onCopy(room.id)}>
+          <Button variant="outline" size="sm" onClick={() => onCopyRoom(room)}>
             <Copy className="h-4 w-4 mr-2" />
             Copy
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => onDelete(room.id)}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
           </Button>
         </div>
 
@@ -65,7 +54,7 @@ export const SimplifiedRoomCard = ({ room, surfaces, treatments, onEdit, onDelet
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
-                    onClick={() => onCreateTreatment(room.id, template.name)}
+                    onClick={() => onAddTreatment(room.id, template.name)}
                   >
                     {template.name}
                   </Button>

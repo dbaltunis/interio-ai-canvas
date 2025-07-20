@@ -60,8 +60,8 @@ export const EmailComposeTab = ({
 
       {/* Email Preview Dialog */}
       <EmailPreviewDialog
-        open={previewDialogOpen}
-        onOpenChange={setPreviewDialogOpen}
+        isOpen={previewDialogOpen}
+        onClose={() => setPreviewDialogOpen(false)}
         template={{
           id: 'custom',
           name: 'Custom Email',

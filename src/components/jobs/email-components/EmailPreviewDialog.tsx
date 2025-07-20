@@ -7,15 +7,32 @@ import { Mail, ExternalLink } from "lucide-react";
 interface EmailPreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  email: any;
+  email?: any;
+  template?: any;
+  clientData?: any;
+  quoteData?: any;
+  senderInfo?: any;
 }
 
-export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialogProps) => {
-  if (!email) return null;
+export const EmailPreviewDialog = ({ 
+  isOpen, 
+  onClose, 
+  email, 
+  template, 
+  clientData, 
+  quoteData, 
+  senderInfo 
+}: EmailPreviewDialogProps) => {
+  const emailData = email || {
+    subject: template?.subject || "Email Preview",
+    content: template?.content || "Email content preview",
+    recipient_email: clientData?.email || "client@example.com",
+    status: "draft"
+  };
 
   // Use mock business settings for now
-  const companyName = "Your Company";
-  const companyLogo = null;
+  const companyName = senderInfo?.company_name || "Your Company";
+  const companyLogo = senderInfo?.company_logo_url || null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -39,8 +56,8 @@ export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialo
               <span>Email Preview</span>
             </DialogTitle>
             <div className="flex items-center space-x-2">
-              <Badge className={getStatusColor(email.status || 'draft')}>
-                {email.status || 'draft'}
+              <Badge className={getStatusColor(emailData.status)}>
+                {emailData.status}
               </Badge>
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -55,16 +72,16 @@ export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialo
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium">To:</span> {email.recipient_email}
+                <span className="font-medium">To:</span> {emailData.recipient_email}
               </div>
               <div>
                 <span className="font-medium">From:</span> {companyName}
               </div>
               <div>
-                <span className="font-medium">Subject:</span> {email.subject}
+                <span className="font-medium">Subject:</span> {emailData.subject}
               </div>
               <div>
-                <span className="font-medium">Sent:</span> {email.sent_at ? new Date(email.sent_at).toLocaleString() : 'Not sent'}
+                <span className="font-medium">Sent:</span> {emailData.sent_at ? new Date(emailData.sent_at).toLocaleString() : 'Not sent'}
               </div>
             </div>
           </div>
@@ -80,7 +97,7 @@ export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialo
               
               <div 
                 className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: email.content }}
+                dangerouslySetInnerHTML={{ __html: emailData.content }}
               />
               
               <div className="mt-8 pt-4 border-t text-sm text-gray-600">
@@ -93,15 +110,15 @@ export const EmailPreviewDialog = ({ isOpen, onClose, email }: EmailPreviewDialo
           {/* Email Stats */}
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="bg-blue-50 p-3 rounded">
-              <div className="text-2xl font-bold text-blue-600">{email.open_count || 0}</div>
+              <div className="text-2xl font-bold text-blue-600">{emailData.open_count || 0}</div>
               <div className="text-sm text-blue-600">Opens</div>
             </div>
             <div className="bg-green-50 p-3 rounded">
-              <div className="text-2xl font-bold text-green-600">{email.click_count || 0}</div>
+              <div className="text-2xl font-bold text-green-600">{emailData.click_count || 0}</div>
               <div className="text-sm text-green-600">Clicks</div>
             </div>
             <div className="bg-purple-50 p-3 rounded">
-              <div className="text-2xl font-bold text-purple-600">{email.time_spent_seconds || 0}s</div>
+              <div className="text-2xl font-bold text-purple-600">{emailData.time_spent_seconds || 0}s</div>
               <div className="text-sm text-purple-600">Time Spent</div>
             </div>
           </div>
