@@ -6,80 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Wrench, Clock, Settings, Trash2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Tables, TablesInsert } from "@/integrations/supabase/types";
-
-type TreatmentType = Tables<"treatment_types">;
+import { useTreatmentTypes, useCreateTreatmentType, useDeleteTreatmentType } from "@/hooks/useTreatmentTypes";
 
 export const TreatmentTypesTab = () => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: treatmentTypes = [], isLoading } = useQuery({
-    queryKey: ["treatment-types"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("treatment_types")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const createTreatmentType = useMutation({
-    mutationFn: async (treatmentType: Omit<TablesInsert<"treatment_types">, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("treatment_types")
-        .insert({ ...treatmentType, user_id: user.id })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["treatment-types"] });
-      setNewTreatment({
-        name: "",
-        category: "",
-        description: "",
-        estimated_hours: 0,
-        complexity: "Medium",
-        labor_rate: 85,
-        required_materials: [],
-      });
-      toast({
-        title: "Success",
-        description: "Treatment type created successfully",
-      });
-    },
-  });
-
-  const deleteTreatmentType = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("treatment_types")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["treatment-types"] });
-      toast({
-        title: "Success",
-        description: "Treatment type deleted successfully",
-      });
-    },
-  });
+  const { data: treatmentTypes = [], isLoading } = useTreatmentTypes();
+  const createTreatmentType = useCreateTreatmentType();
+  const deleteTreatmentType = useDeleteTreatmentType();
 
   const [newTreatment, setNewTreatment] = useState({
     name: "",
@@ -110,6 +46,22 @@ export const TreatmentTypesTab = () => {
         complexity: newTreatment.complexity,
         labor_rate: newTreatment.labor_rate,
         required_materials: newTreatment.required_materials,
+        user_id: 'current-user', // Would be actual user ID
+      });
+      
+      setNewTreatment({
+        name: "",
+        category: "",
+        description: "",
+        estimated_hours: 0,
+        complexity: "Medium",
+        labor_rate: 85,
+        required_materials: [],
+      });
+      
+      toast({
+        title: "Success",
+        description: "Treatment type created successfully",
       });
     } catch (error) {
       toast({

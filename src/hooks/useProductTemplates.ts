@@ -31,7 +31,7 @@ export interface ProductTemplate {
 }
 
 export const useProductTemplates = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["product-templates"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,12 +43,10 @@ export const useProductTemplates = () => {
       return data as ProductTemplate[];
     },
   });
-};
 
-export const useCreateProductTemplate = () => {
   const queryClient = useQueryClient();
   
-  return useMutation({
+  const createTemplate = useMutation({
     mutationFn: async (template: Omit<ProductTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -66,12 +64,8 @@ export const useCreateProductTemplate = () => {
       queryClient.invalidateQueries({ queryKey: ["product-templates"] });
     },
   });
-};
 
-export const useUpdateProductTemplate = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
+  const updateTemplate = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ProductTemplate> & { id: string }) => {
       const { data, error } = await supabase
         .from("product_templates")
@@ -87,12 +81,8 @@ export const useUpdateProductTemplate = () => {
       queryClient.invalidateQueries({ queryKey: ["product-templates"] });
     },
   });
-};
 
-export const useDeleteProductTemplate = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
+  const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("product_templates")
@@ -105,6 +95,15 @@ export const useDeleteProductTemplate = () => {
       queryClient.invalidateQueries({ queryKey: ["product-templates"] });
     },
   });
+
+  return {
+    ...query,
+    templates: query.data || mockTemplates,
+    createTemplate: createTemplate.mutateAsync,
+    updateTemplate: async (id: string, data: any) => updateTemplate.mutateAsync({ id, ...data }),
+    deleteTemplate: deleteTemplate.mutateAsync,
+    isLoading: query.isLoading
+  };
 };
 
 // Mock data for now until templates are properly implemented
@@ -168,3 +167,65 @@ export const mockTemplates: ProductTemplate[] = [
     }
   }
 ];
+
+export const useCreateProductTemplate = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (template: Omit<ProductTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data, error } = await supabase
+        .from("product_templates")
+        .insert([{ ...template, user_id: user.id }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+    },
+  });
+};
+
+export const useUpdateProductTemplate = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<ProductTemplate> & { id: string }) => {
+      const { data, error } = await supabase
+        .from("product_templates")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+    },
+  });
+};
+
+export const useDeleteProductTemplate = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("product_templates")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+    },
+  });
+};

@@ -1,10 +1,26 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-type BusinessSettings = Tables<"business_settings">;
-type BusinessSettingsInsert = TablesInsert<"business_settings">;
-type BusinessSettingsUpdate = TablesUpdate<"business_settings">;
+// Define the business settings interface directly since types are out of sync
+export interface BusinessSettings {
+  id: string;
+  user_id: string;
+  company_name?: string;
+  abn?: string;
+  business_email?: string;
+  business_phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  website?: string;
+  company_logo_url?: string;
+  measurement_units?: MeasurementUnits;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface MeasurementUnits {
   system: 'metric' | 'imperial';
@@ -32,7 +48,7 @@ export const useBusinessSettings = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as BusinessSettings | null;
     },
   });
 };
@@ -41,7 +57,7 @@ export const useCreateBusinessSettings = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (settings: Omit<BusinessSettingsInsert, "user_id">) => {
+    mutationFn: async (settings: Omit<BusinessSettings, "id" | "user_id" | "created_at" | "updated_at">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
@@ -52,7 +68,7 @@ export const useCreateBusinessSettings = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as BusinessSettings;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
@@ -64,7 +80,7 @@ export const useUpdateBusinessSettings = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...settings }: BusinessSettingsUpdate & { id: string }) => {
+    mutationFn: async ({ id, ...settings }: Partial<BusinessSettings> & { id: string }) => {
       const { data, error } = await supabase
         .from("business_settings")
         .update(settings)
@@ -73,7 +89,7 @@ export const useUpdateBusinessSettings = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as BusinessSettings;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
