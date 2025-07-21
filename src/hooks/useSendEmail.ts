@@ -26,6 +26,17 @@ export const useSendEmail = () => {
       
       const user = session.user;
 
+      // Check if user has email settings configured
+      const { data: emailSettings } = await supabase
+        .from('email_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!emailSettings || !emailSettings.from_email) {
+        throw new Error('Please configure your email settings first. Go to Settings > Email Settings to set up your sender email address.');
+      }
+
       // First, create the email record with "queued" status
       const { data: emailRecord, error: createError } = await supabase
         .from('emails')
@@ -62,6 +73,7 @@ export const useSendEmail = () => {
           
           for (const file of emailData.attachments) {
             const fileExt = file.name.split('.').pop();
+            // Fix the path structure to match RLS policy: user_id/filename
             const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             
             const { data: uploadData, error: uploadError } = await supabase.storage
