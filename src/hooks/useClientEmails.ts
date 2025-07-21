@@ -1,7 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Email } from "./useEmails";
 
 export const useClientEmails = (clientId: string) => {
   return useQuery({
@@ -14,7 +13,7 @@ export const useClientEmails = (clientId: string) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Email[];
+      return data || [];
     },
     enabled: !!clientId,
   });

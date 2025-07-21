@@ -1,236 +1,105 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { Mail, AlertCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useSendEmail } from "@/hooks/useSendEmail";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, Mail, Eye, MousePointer, Clock } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
-import { EmailTimeline } from "./EmailTimeline";
-import { EmailStats } from "./EmailStats";
-import { EmailActions } from "./EmailActions";
-import { FollowUpComposer } from "./FollowUpComposer";
-
-interface Email {
-  id: string;
-  subject: string;
-  content: string;
-  recipient_email: string;
-  recipient_name?: string;
-  status: string;
-  sent_at?: string;
-  delivered_at?: string;
-  opened_at?: string;
-  clicked_at?: string;
-  open_count: number;
-  click_count: number;
-  time_spent_seconds: number;
-  bounce_reason?: string;
-}
+import type { Email } from "@/hooks/useEmails";
 
 interface EmailDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   email: Email | null;
-  onResendEmail?: (email: Email) => void;
-  isResending?: boolean;
 }
 
-export const EmailDetailDialog = ({ 
-  open, 
-  onOpenChange, 
-  email, 
-  onResendEmail, 
-  isResending = false 
-}: EmailDetailDialogProps) => {
-  const [showFollowUp, setShowFollowUp] = useState(false);
-  const { toast } = useToast();
-  const sendEmailMutation = useSendEmail();
-
+export const EmailDetailDialog = ({ open, onOpenChange, email }: EmailDetailDialogProps) => {
   if (!email) return null;
-
-  const handleStartFollowUp = () => {
-    setShowFollowUp(true);
-  };
-
-  const handleSendFollowUp = async (followUpEmail: { subject: string; content: string }) => {
-    if (!followUpEmail.subject.trim() || !followUpEmail.content.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in both subject and content for the follow-up email.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await sendEmailMutation.mutateAsync({
-        to: email.recipient_email,
-        subject: followUpEmail.subject,
-        content: followUpEmail.content
-      });
-      
-      toast({
-        title: "Follow-up Sent Successfully",
-        description: `Follow-up email has been sent to ${email.recipient_email}`,
-      });
-      
-      setShowFollowUp(false);
-    } catch (error) {
-      console.error("Failed to send follow-up email:", error);
-      toast({
-        title: "Send Failed",
-        description: "Failed to send follow-up email. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleResend = async () => {
-    if (!email) return;
-    
-    if (onResendEmail) {
-      onResendEmail(email);
-    } else {
-      // Fallback to direct resend
-      try {
-        await sendEmailMutation.mutateAsync({
-          to: email.recipient_email,
-          subject: email.subject,
-          content: email.content
-        });
-        
-        toast({
-          title: "Email Resent Successfully",
-          description: `Email has been resent to ${email.recipient_email}`,
-        });
-        
-        onOpenChange(false);
-      } catch (error) {
-        console.error("Failed to resend email:", error);
-        toast({
-          title: "Resend Failed",
-          description: "Failed to resend email. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  // Function to render HTML content safely
-  const renderEmailContent = (htmlContent: string) => {
-    // Simple HTML to text conversion for display
-    const textContent = htmlContent
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n')
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<div[^>]*>/gi, '')
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
-    
-    return textContent;
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-3">
+          <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            <div className="flex-1">
-              <DialogTitle className="text-left">{email.subject}</DialogTitle>
-              <DialogDescription className="text-left">
-                To: {email.recipient_name || email.recipient_email}
-              </DialogDescription>
-            </div>
-            <EmailStatusBadge status={email.status} openCount={email.open_count} clickCount={email.click_count} />
-          </div>
+            Email Details
+          </DialogTitle>
         </DialogHeader>
-
+        
         <div className="space-y-6">
-          {/* Dynamic Email Stats */}
-          <EmailStats email={email} />
+          {/* Email Header */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{email.subject}</CardTitle>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  <span>To: {email.recipient_email}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{new Date(email.created_at).toLocaleString()}</span>
+                </div>
+                <EmailStatusBadge status={email.status} />
+              </div>
+            </CardHeader>
+          </Card>
 
-          {/* Enhanced Email Timeline */}
-          <EmailTimeline email={email} />
+          {/* Email Analytics */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Eye className="h-4 w-4 text-purple-600" />
+                  <span className="text-2xl font-bold text-purple-600">{email.open_count || 0}</span>
+                </div>
+                <div className="text-sm text-muted-foreground">Opens</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <MousePointer className="h-4 w-4 text-orange-600" />
+                  <span className="text-2xl font-bold text-orange-600">{email.click_count || 0}</span>
+                </div>
+                <div className="text-sm text-muted-foreground">Clicks</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span className="text-2xl font-bold text-blue-600">{email.time_spent_seconds || 0}s</span>
+                </div>
+                <div className="text-sm text-muted-foreground">Time Spent</div>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Bounce/Error Info */}
+          {/* Email Content */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Content</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: email.content || 'No content available' }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Bounce Reason (if applicable) */}
           {email.bounce_reason && (
-            <div className={`p-4 rounded-lg border ${
-              email.bounce_reason.includes('temporarily deferred') 
-                ? 'bg-yellow-50 border-yellow-200' 
-                : 'bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className={`h-4 w-4 ${
-                  email.bounce_reason.includes('temporarily deferred')
-                    ? 'text-yellow-600'
-                    : 'text-red-600'
-                }`} />
-                <span className={`font-medium ${
-                  email.bounce_reason.includes('temporarily deferred')
-                    ? 'text-yellow-800'
-                    : 'text-red-800'
-                }`}>
-                  {email.bounce_reason.includes('temporarily deferred') 
-                    ? 'Delivery Delayed' 
-                    : 'Delivery Issue'}
-                </span>
-              </div>
-              <p className={`text-sm ${
-                email.bounce_reason.includes('temporarily deferred')
-                  ? 'text-yellow-700'
-                  : 'text-red-700'
-              }`}>
-                {email.bounce_reason}
-                {email.bounce_reason.includes('temporarily deferred') && (
-                  <span className="block mt-1 text-xs">
-                    This is temporary - the email will be retried automatically.
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
-          
-          {/* Time Spent Disclaimer */}
-          <div className="text-xs text-gray-500 mt-2">
-            *Time spent tracking is not available with current email provider
-          </div>
-
-          <Separator />
-
-          {/* Email Content Preview */}
-          <div>
-            <h4 className="font-semibold mb-3">Email Content</h4>
-            <div className="p-4 bg-gray-50 rounded-lg max-h-60 overflow-y-auto">
-              <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                {renderEmailContent(email.content)}
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <EmailActions
-            email={email}
-            onResend={handleResend}
-            onStartFollowUp={handleStartFollowUp}
-            isResending={isResending || sendEmailMutation.isPending}
-            showFollowUp={showFollowUp}
-          />
-
-          {/* Follow-up Email Composer */}
-          {showFollowUp && (
-            <FollowUpComposer
-              email={email}
-              onSend={handleSendFollowUp}
-              onCancel={() => setShowFollowUp(false)}
-              isSending={sendEmailMutation.isPending}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-600">Bounce Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-red-600">{email.bounce_reason}</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </DialogContent>
