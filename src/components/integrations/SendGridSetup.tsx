@@ -6,155 +6,330 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, CheckCircle, AlertCircle, Copy } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Mail, Key, CheckCircle, XCircle, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSendEmail } from "@/hooks/useSendEmail";
+import { supabase } from "@/integrations/supabase/client";
+import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const SendGridSetup = () => {
-  const [testEmail, setTestEmail] = useState("");
-  const [isConnected, setIsConnected] = useState(true); // Since API key is configured
+  const [apiKey, setApiKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
-  const sendEmailMutation = useSendEmail();
+  const { hasSendGridIntegration, integrationData } = useIntegrationStatus();
+  const queryClient = useQueryClient();
 
-  const webhookUrl = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/sendgrid-webhook`;
+  const testSendGridConnection = async (testApiKey: string) => {
+    setIsTestingConnection(true);
+    try {
+      const response = await fetch("https://api.sendgrid.com/v3/user/profile", {
+        headers: {
+          "Authorization": `Bearer ${testApiKey}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-  const handleTestEmail = () => {
-    if (!testEmail) {
+      if (response.ok) {
+        const profile = await response.json();
+        toast({
+          title: "Connection Successful",
+          description: `Connected to SendGrid account: ${profile.email}`,
+        });
+        return true;
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: "Invalid SendGrid API key or insufficient permissions",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
       toast({
-        title: "Error",
-        description: "Please enter a test email address",
-        variant: "destructive"
+        title: "Connection Error",
+        description: "Unable to connect to SendGrid. Please check your internet connection.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
+  const setupSendGridIntegration = async () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your SendGrid API key",
+        variant: "destructive",
       });
       return;
     }
 
-    sendEmailMutation.mutate({
-      to: testEmail,
-      subject: "SendGrid Integration Test",
-      content: `
-        <h2>SendGrid Integration Test</h2>
-        <p>This is a test email to verify your SendGrid integration is working correctly.</p>
-        <p>If you received this email, your SendGrid configuration is successful!</p>
-        <hr>
-        <p><small>Sent from InterioApp</small></p>
-      `
-    });
+    setIsLoading(true);
+    try {
+      // First test the connection
+      const isValid = await testSendGridConnection(apiKey);
+      if (!isValid) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Setup webhook via edge function
+      const { data, error } = await supabase.functions.invoke('setup-sendgrid-webhook', {
+        body: { sendgrid_api_key: apiKey }
+      });
+
+      if (error) {
+        console.error("Setup error:", error);
+        throw new Error(error.message || "Failed to setup SendGrid integration");
+      }
+
+      if (data?.success) {
+        toast({
+          title: "SendGrid Integration Configured",
+          description: "Webhook configured successfully. Email tracking is now active.",
+        });
+        
+        // Refresh integration status
+        queryClient.invalidateQueries({ queryKey: ['integration-status'] });
+        setApiKey("");
+      } else {
+        throw new Error(data?.error || "Setup failed");
+      }
+    } catch (error) {
+      console.error("Integration setup error:", error);
+      toast({
+        title: "Setup Failed",
+        description: error instanceof Error ? error.message : "Failed to setup SendGrid integration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const copyWebhookUrl = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    toast({
-      title: "Copied",
-      description: "Webhook URL copied to clipboard"
-    });
+  const disconnectIntegration = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('integration_settings')
+        .update({ active: false })
+        .eq('user_id', user.id)
+        .eq('integration_type', 'sendgrid');
+
+      if (error) throw error;
+
+      toast({
+        title: "Integration Disconnected",
+        description: "SendGrid integration has been disabled",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['integration-status'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to disconnect integration",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Mail className="h-6 w-6 text-blue-600" />
-            <div>
-              <CardTitle>SendGrid Email Integration</CardTitle>
-              <CardDescription>Configure email delivery and tracking</CardDescription>
-            </div>
-            <Badge className="ml-auto bg-green-100 text-green-800">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Connected
-            </Badge>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Mail className="h-5 w-5 text-blue-600" />
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Connection Status */}
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              SendGrid API key is configured and ready for use. You can now send emails through the system.
-            </AlertDescription>
-          </Alert>
-
-          {/* Test Email Section */}
-          <div className="space-y-3">
-            <h4 className="font-medium">Test Email Delivery</h4>
-            <div className="flex gap-3">
-              <Input
-                placeholder="Enter test email address"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                type="email"
-              />
-              <Button 
-                onClick={handleTestEmail}
-                disabled={sendEmailMutation.isPending}
-              >
-                {sendEmailMutation.isPending ? "Sending..." : "Send Test"}
-              </Button>
-            </div>
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              SendGrid Email Service
+              {hasSendGridIntegration && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Configure SendGrid for email delivery and tracking
+            </CardDescription>
           </div>
-
-          {/* Webhook Configuration */}
-          <div className="space-y-3">
-            <h4 className="font-medium">Webhook Configuration</h4>
-            <p className="text-sm text-gray-600">
-              Configure this webhook URL in SendGrid to receive email events (opens, clicks, bounces):
-            </p>
-            <div className="flex gap-2">
-              <Input 
-                value={webhookUrl} 
-                readOnly 
-                className="font-mono text-xs"
-              />
-              <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!hasSendGridIntegration ? (
+          <>
+            {/* Setup Instructions */}
             <Alert>
-              <AlertCircle className="h-4 w-4" />
+              <Key className="h-4 w-4" />
               <AlertDescription>
-                <strong>Next Steps:</strong>
-                <ol className="list-decimal list-inside mt-2 space-y-1">
-                  <li>Go to SendGrid Dashboard → Settings → Mail Settings → Event Webhook</li>
-                  <li>Add the webhook URL above</li>
-                  <li>Enable events: Delivered, Opens, Clicks, Bounces, Drops</li>
-                  <li>Set HTTP POST method and save</li>
-                </ol>
+                You'll need a SendGrid API key with "Mail Send" permissions. 
+                <a 
+                  href="https://app.sendgrid.com/settings/api_keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 ml-1"
+                >
+                  Get your API key here
+                  <ExternalLink className="h-3 w-3" />
+                </a>
               </AlertDescription>
             </Alert>
-          </div>
 
-          {/* Email Features */}
-          <div className="space-y-3">
-            <h4 className="font-medium">Available Features</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Email Delivery</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Open Tracking</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Click Tracking</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Bounce Handling</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Analytics Dashboard</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Campaign Management</span>
+            {/* API Key Input */}
+            <div className="space-y-2">
+              <Label htmlFor="sendgrid-api-key">SendGrid API Key</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="sendgrid-api-key"
+                  type="password"
+                  placeholder="SG.xxxxxxxxxx"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => testSendGridConnection(apiKey)}
+                  disabled={!apiKey.trim() || isTestingConnection}
+                >
+                  {isTestingConnection ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Test"
+                  )}
+                </Button>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+
+            {/* Setup Button */}
+            <Button 
+              onClick={setupSendGridIntegration}
+              disabled={!apiKey.trim() || isLoading}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Setting up integration...
+                </>
+              ) : (
+                <>
+                  <Key className="h-4 w-4 mr-2" />
+                  Setup SendGrid Integration
+                </>
+              )}
+            </Button>
+
+            {/* What This Does */}
+            <div className="space-y-3">
+              <Separator />
+              <div>
+                <h4 className="font-medium mb-2">What this integration provides:</h4>
+                <ul className="space-y-1 text-sm text-gray-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Email delivery through SendGrid's infrastructure
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Real-time delivery tracking and analytics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Open and click tracking for emails
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Bounce and spam report handling
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    Webhook integration for real-time updates
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Integration Status */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-800">SendGrid Connected</p>
+                    <p className="text-sm text-green-700">
+                      Email service is configured and ready to send emails
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Integration Details */}
+              {integrationData?.configuration && (
+                <div className="space-y-2 text-sm bg-gray-50 p-3 rounded-lg">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Webhook Status:</span>
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      {integrationData.configuration.webhook_configured ? 'Configured' : 'Not Configured'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Last Updated:</span>
+                    <span>
+                      {integrationData.last_sync 
+                        ? new Date(integrationData.last_sync).toLocaleDateString() 
+                        : 'Never'
+                      }
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => testSendGridConnection(integrationData?.api_credentials?.api_key || "")}
+                  disabled={isTestingConnection}
+                  className="flex-1"
+                >
+                  {isTestingConnection ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Test Connection
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={disconnectIntegration}
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Disconnect
+                </Button>
+              </div>
+
+              {/* Warning */}
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Disconnecting will disable email sending and tracking. You can reconnect anytime.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 };
