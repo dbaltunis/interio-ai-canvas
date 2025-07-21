@@ -6,7 +6,7 @@ import { BrandHeader } from "@/components/layout/BrandHeader";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import JobsPage from "@/components/jobs/JobsPage";
-import { CalendarView } from "@/components/calendar/CalendarView";
+// import { CalendarView } from "@/components/calendar/CalendarView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -51,8 +51,15 @@ const Index = () => {
         return <JobsPage />;
       case "library":
         return <LibraryPage />;
-      case "calendar":
-        return <CalendarView />;
+      case 'calendar':
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Calendar</h1>
+            <div className="text-center text-muted-foreground">
+              Calendar functionality coming soon...
+            </div>
+          </div>
+        );
       default:
         return <JobsPage />;
     }

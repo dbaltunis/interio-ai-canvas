@@ -1,10 +1,10 @@
 
+/* Import custom theme first */
+@import './styles/theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import custom theme */
-@import './styles/theme.css';
 
 @layer base {
   :root {
