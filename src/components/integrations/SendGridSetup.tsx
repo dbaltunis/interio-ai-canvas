@@ -21,6 +21,22 @@ export const SendGridSetup = () => {
   const { hasSendGridIntegration, integrationData } = useIntegrationStatus();
   const queryClient = useQueryClient();
 
+  // Type guard for configuration properties
+  const getConfigurationValue = (config: any, key: string): any => {
+    if (config && typeof config === 'object' && !Array.isArray(config)) {
+      return config[key];
+    }
+    return undefined;
+  };
+
+  // Type guard for integration data properties
+  const getIntegrationProperty = (data: any, property: string): any => {
+    if (data && typeof data === 'object') {
+      return data[property];
+    }
+    return undefined;
+  };
+
   const testSendGridConnection = async (testApiKey: string) => {
     setIsTestingConnection(true);
     try {
@@ -279,14 +295,14 @@ export const SendGridSetup = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Webhook Status:</span>
                     <Badge variant="default" className="bg-green-100 text-green-800">
-                      {integrationData.configuration.webhook_configured ? 'Configured' : 'Not Configured'}
+                      {getConfigurationValue(integrationData.configuration, 'webhook_configured') ? 'Configured' : 'Not Configured'}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Last Updated:</span>
                     <span>
-                      {integrationData.last_sync 
-                        ? new Date(integrationData.last_sync).toLocaleDateString() 
+                      {getIntegrationProperty(integrationData, 'last_sync')
+                        ? new Date(getIntegrationProperty(integrationData, 'last_sync')).toLocaleDateString() 
                         : 'Never'
                       }
                     </span>
@@ -298,7 +314,11 @@ export const SendGridSetup = () => {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => testSendGridConnection(integrationData?.api_credentials?.api_key || "")}
+                  onClick={() => {
+                    const apiCredentials = getIntegrationProperty(integrationData, 'api_credentials');
+                    const apiKey = apiCredentials && typeof apiCredentials === 'object' ? apiCredentials.api_key : "";
+                    testSendGridConnection(apiKey || "");
+                  }}
                   disabled={isTestingConnection}
                   className="flex-1"
                 >
