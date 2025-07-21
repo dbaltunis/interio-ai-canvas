@@ -7,33 +7,51 @@ import { useClients } from "@/hooks/useClients";
 import { useEmails } from "@/hooks/useEmails";
 import { ClientManagement } from "./ClientManagement";
 import { EmailManagement } from "./EmailManagement";
-import { EnhancedJobsManagement } from "./EnhancedJobsManagement";
+import { JobsTableView } from "./JobsTableView";
 
 const JobsPage = () => {
-  const [activeTab, setActiveTab] = useState<"clients" | "emails" | "jobs">("jobs");
-  const { data: clients = [], isLoading: clientsLoading } = useClients();
-  const { data: emails = [], isLoading: emailsLoading } = useEmails();
+  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "analytics">("jobs");
+  const [showNewJobPage, setShowNewJobPage] = useState(false);
+  const { data: clients = [] } = useClients();
+  const { data: emails = [] } = useEmails();
 
   const handleTabChange = (value: string) => {
-    if (value === "clients" || value === "emails" || value === "jobs") {
+    if (value === "clients" || value === "emails" || value === "jobs" || value === "analytics") {
       setActiveTab(value);
     }
   };
 
+  const handleNewJob = () => {
+    setShowNewJobPage(true);
+  };
+
+  const handleBackFromNewJob = () => {
+    setShowNewJobPage(false);
+  };
+
+  if (showNewJobPage) {
+    // Import and show the new job page here
+    const { NewJobPageSimplified } = require("../job-creation/NewJobPageSimplified");
+    return <NewJobPageSimplified onBack={handleBackFromNewJob} />;
+  }
+
   return (
     <div className="min-h-screen bg-white w-full">
-      <div className="w-full px-6 py-4 space-y-6">
+      <div className="w-full px-6 py-6 space-y-6">
         {/* Header Section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-brand-primary">
               Jobs Management
             </h1>
             <p className="text-gray-600 text-sm mt-1">
               Manage your projects, clients, and communications
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button 
+            onClick={handleNewJob}
+            className="bg-brand-primary hover:bg-brand-accent text-white"
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Job
           </Button>
@@ -46,25 +64,25 @@ const JobsPage = () => {
               <TabsList className="bg-transparent p-0 h-auto">
                 <TabsTrigger 
                   value="jobs" 
-                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
                 >
-                  Jobs (3)
+                  Jobs (4)
                 </TabsTrigger>
                 <TabsTrigger 
                   value="clients" 
-                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
                 >
                   Clients ({clients.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="emails" 
-                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
                 >
                   Emails ({emails.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="analytics" 
-                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none"
+                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
                 >
                   Analytics
                 </TabsTrigger>
@@ -73,7 +91,7 @@ const JobsPage = () => {
 
             <div className="p-6">
               <TabsContent value="jobs" className="mt-0 space-y-0">
-                <EnhancedJobsManagement />
+                <JobsTableView />
               </TabsContent>
 
               <TabsContent value="clients" className="mt-0 space-y-0">
