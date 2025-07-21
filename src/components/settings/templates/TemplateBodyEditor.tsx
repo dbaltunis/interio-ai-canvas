@@ -38,6 +38,21 @@ export const TemplateBodyEditor = ({ data, onChange }: TemplateBodyEditorProps) 
     onChange({ ...data, columns: newColumns });
   };
 
+  const placeholders = [
+    '{{quote_number}}',
+    '{{quote_date}}',
+    '{{room_name}}',
+    '{{treatment_name}}',
+    '{{quantity}}',
+    '{{unit_price}}',
+    '{{total}}',
+    '{{subtotal}}',
+    '{{tax_amount}}',
+    '{{total_amount}}',
+    '{{job_number}}',
+    '{{description}}'
+  ];
+
   return (
     <div className="space-y-6">
       {/* Layout Selection */}
@@ -106,13 +121,13 @@ export const TemplateBodyEditor = ({ data, onChange }: TemplateBodyEditorProps) 
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="room">{{room_name}}</SelectItem>
-                        <SelectItem value="treatment">{{treatment_name}}</SelectItem>
-                        <SelectItem value="quantity">{{quantity}}</SelectItem>
-                        <SelectItem value="unitPrice">{{unit_price}}</SelectItem>
-                        <SelectItem value="total">{{total}}</SelectItem>
-                        <SelectItem value="description">{{description}}</SelectItem>
-                        <SelectItem value="sku">{{sku}}</SelectItem>
+                        <SelectItem value="room">{'{{room_name}}'}</SelectItem>
+                        <SelectItem value="treatment">{'{{treatment_name}}'}</SelectItem>
+                        <SelectItem value="quantity">{'{{quantity}}'}</SelectItem>
+                        <SelectItem value="unitPrice">{'{{unit_price}}'}</SelectItem>
+                        <SelectItem value="total">{'{{total}}'}</SelectItem>
+                        <SelectItem value="description">{'{{description}}'}</SelectItem>
+                        <SelectItem value="sku">{'{{sku}}'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -178,20 +193,7 @@ export const TemplateBodyEditor = ({ data, onChange }: TemplateBodyEditorProps) 
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-2 text-sm">
-            {[
-              '{{quote_number}}',
-              '{{quote_date}}',
-              '{{room_name}}',
-              '{{treatment_name}}',
-              '{{quantity}}',
-              '{{unit_price}}',
-              '{{total}}',
-              '{{subtotal}}',
-              '{{tax_amount}}',
-              '{{total_amount}}',
-              '{{job_number}}',
-              '{{description}}'
-            ].map((placeholder) => (
+            {placeholders.map((placeholder) => (
               <div key={placeholder} className="p-2 bg-muted rounded text-center">
                 {placeholder}
               </div>

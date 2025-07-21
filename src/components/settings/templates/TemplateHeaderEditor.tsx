@@ -74,7 +74,7 @@ export const TemplateHeaderEditor = ({ data, onChange }: TemplateHeaderEditorPro
                     Upload Logo
                   </Button>
                   <span className="text-sm text-muted-foreground">
-                    Use {{company_logo}} placeholder
+                    Use {'{{company_logo}}'} placeholder
                   </span>
                 </div>
               </div>
