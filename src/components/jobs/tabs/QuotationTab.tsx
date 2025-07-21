@@ -9,7 +9,7 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Plus, Trash2, Copy, Edit } from "lucide-react";
+import { Percent, FileText, Mail, Eye, EyeOff } from "lucide-react";
 
 interface QuotationTabProps {
   projectId: string;
@@ -17,6 +17,7 @@ interface QuotationTabProps {
 
 export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { toast } = useToast();
+  const [showDetails, setShowDetails] = useState(false);
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
@@ -84,7 +85,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     }).format(amount);
   };
 
-  // Group treatments by room
+  // Group treatments by room and surface
   const roomTreatments = rooms?.map(room => {
     const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
     const surfacesWithTreatments = roomSurfaces.map(surface => {
@@ -116,156 +117,163 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Total and Actions */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold">
-            Total: {formatCurrency(total)} <span className="text-sm font-normal text-muted-foreground">(before tax)</span>
-          </h2>
+        <div>
+          <h1 className="text-3xl font-bold">{project.name}</h1>
+          <p className="text-muted-foreground">Quotation</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Add room</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowDetails(!showDetails)}
+            className="flex items-center space-x-2"
+          >
+            {showDetails ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <span>{showDetails ? 'Simple View' : 'Detailed View'}</span>
           </Button>
           <ThreeDotMenu items={actionMenuItems} />
         </div>
       </div>
 
-      {/* Room Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {roomTreatments.map((room) => (
-          <Card key={room.id} className="border border-gray-200">
-            <CardHeader className="bg-gray-50 border-b">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">{room.name}</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="secondary" className="text-lg font-semibold">
-                    {formatCurrency(room.total)}
-                  </Badge>
-                  <div className="flex items-center space-x-1">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
+      {/* Total Amount Card */}
+      <Card className="border-l-4 border-l-primary">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Total Project Cost</h2>
+              <p className="text-muted-foreground">Including markup and tax</p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-primary">{formatCurrency(total)}</div>
+              {showDetails && (
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>Subtotal: {formatCurrency(treatmentTotal)}</div>
+                  <div>Markup (25%): {formatCurrency(subtotal - treatmentTotal)}</div>
+                  <div>Tax (8%): {formatCurrency(taxAmount)}</div>
                 </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quote Content */}
+      <div className="space-y-6">
+        {roomTreatments.map((room) => (
+          <Card key={room.id} className="overflow-hidden">
+            <CardHeader className="bg-muted/50">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">{room.name}</CardTitle>
+                <Badge variant="secondary" className="text-lg px-4 py-1">
+                  {formatCurrency(room.total)}
+                </Badge>
               </div>
-              <Button variant="outline" size="sm" className="w-full mt-2">
-                Select product
-              </Button>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              {room.surfaces.map((surface) => (
-                <Card key={surface.id} className="border border-gray-100">
-                  <CardHeader className="pb-2">
+            <CardContent className="p-0">
+              {room.surfaces.map((surface, surfaceIndex) => (
+                <div key={surface.id} className={surfaceIndex > 0 ? "border-t" : ""}>
+                  {/* Window Header */}
+                  <div className="bg-gray-50 px-6 py-4 border-b">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-medium">{surface.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-lg">{surface.name}</h3>
+                      <div className="flex items-center space-x-4">
+                        {showDetails && (
+                          <span className="text-sm text-muted-foreground">
+                            {surface.width}cm × {surface.height}cm
+                          </span>
+                        )}
                         <Badge variant="outline">
                           {formatCurrency(surface.treatments.reduce((sum, t) => sum + (t.total_price || 0), 0))}
                         </Badge>
-                        <div className="flex items-center space-x-1">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Select product
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="pt-0">
+                  </div>
+
+                  {/* Treatments */}
+                  <div className="divide-y">
                     {surface.treatments.map((treatment) => (
-                      <div key={treatment.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-gray-50">
-                        {/* Treatment Icon/Image Placeholder */}
-                        <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center">
-                          <span className="text-xs text-gray-500">IMG</span>
-                        </div>
-                        
-                        {/* Treatment Details */}
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">{treatment.treatment_type}</h4>
-                            <Button variant="ghost" size="sm" className="text-blue-600 text-xs p-0">
-                              Full details ▼
-                            </Button>
+                      <div key={treatment.id} className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-lg mb-2">{treatment.treatment_type}</h4>
+                            
+                            {showDetails ? (
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Dimensions:</span>
+                                    <span>{surface.width}cm × {surface.height}cm</span>
+                                  </div>
+                                  {treatment.fabric_type && (
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">Fabric:</span>
+                                      <span>{treatment.fabric_type}</span>
+                                    </div>
+                                  )}
+                                  {treatment.color && (
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">Color:</span>
+                                      <span>{treatment.color}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="space-y-2">
+                                  {treatment.material_cost && (
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">Material:</span>
+                                      <span>{formatCurrency(treatment.material_cost)}</span>
+                                    </div>
+                                  )}
+                                  {treatment.labor_cost && (
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">Labor:</span>
+                                      <span>{formatCurrency(treatment.labor_cost)}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between font-medium">
+                                    <span>Total:</span>
+                                    <span>{formatCurrency(treatment.total_price || 0)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm text-muted-foreground">
+                                  {surface.width}cm × {surface.height}cm
+                                  {treatment.fabric_type && ` • ${treatment.fabric_type}`}
+                                  {treatment.color && ` • ${treatment.color}`}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
-                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                            {treatment.fabric_type && (
-                              <>
-                                <span>Mechanism width</span>
-                                <span className="text-right">{treatment.width || 'N/A'} cm</span>
-                              </>
-                            )}
-                            {treatment.height && (
-                              <>
-                                <span>Height</span>
-                                <span className="text-right">{treatment.height} cm</span>
-                              </>
-                            )}
-                            {treatment.fabric_type && (
-                              <>
-                                <span>Fabric article</span>
-                                <span className="text-right">{treatment.fabric_type}</span>
-                              </>
-                            )}
-                            {treatment.material_cost && (
-                              <>
-                                <span>Material price</span>
-                                <span className="text-right">{formatCurrency(treatment.material_cost)}</span>
-                              </>
-                            )}
-                            {treatment.labor_cost && (
-                              <>
-                                <span>Labor price</span>
-                                <span className="text-right">{formatCurrency(treatment.labor_cost)}</span>
-                              </>
-                            )}
-                            <span className="font-medium">Total price</span>
-                            <span className="text-right font-medium">{formatCurrency(treatment.total_price || 0)}</span>
+                          <div className="ml-6 text-right">
+                            <div className="text-xl font-semibold">
+                              {formatCurrency(treatment.total_price || 0)}
+                            </div>
                           </div>
-                        </div>
-                        
-                        {/* Action Icons */}
-                        <div className="flex flex-col space-y-1">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <Copy className="h-3 w-3" />
-                          </Button>
                         </div>
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </CardContent>
           </Card>
         ))}
         
-        {/* Empty state or Add Room card */}
+        {/* Empty state */}
         {roomTreatments.length === 0 && (
-          <Card className="border-2 border-dashed border-gray-300 bg-gray-50">
+          <Card className="border-2 border-dashed border-gray-300">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Plus className="h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-500 text-center mb-4">
-                No rooms with treatments yet
+                No treatments found for this project
               </p>
-              <Button variant="outline">
-                Add your first room
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Add rooms and treatments to generate a quote
+              </p>
             </CardContent>
           </Card>
         )}
