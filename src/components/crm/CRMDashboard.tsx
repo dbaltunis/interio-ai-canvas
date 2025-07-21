@@ -21,7 +21,7 @@ import {
   FolderOpen
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useClientStats } from "@/hooks/useClientStats";
+import { useClientStats } from "@/hooks/useClientJobs";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { ClientImportExport } from "../clients/ClientImportExport";
 import { useToast } from "@/hooks/use-toast";
