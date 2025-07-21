@@ -22,7 +22,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     status: project.status || "planning",
     priority: project.priority || "medium",
     job_number: project.job_number || "",
-    client_id: project.client_id || "",
+    client_id: project.client_id || "no_client",
     start_date: project.start_date || "",
     due_date: project.due_date || "",
   });
@@ -34,7 +34,13 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const handleSave = async () => {
     try {
-      await onUpdate({ id: project.id, ...formData, description: formData.note });
+      const updateData = { 
+        id: project.id, 
+        ...formData, 
+        description: formData.note,
+        client_id: formData.client_id === "no_client" ? null : formData.client_id
+      };
+      await onUpdate(updateData);
       setIsEditing(false);
       toast({
         title: "Success",
@@ -56,7 +62,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       status: project.status || "planning",
       priority: project.priority || "medium",
       job_number: project.job_number || "",
-      client_id: project.client_id || "",
+      client_id: project.client_id || "no_client",
       start_date: project.start_date || "",
       due_date: project.due_date || "",
     });
@@ -206,7 +212,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No client assigned</SelectItem>
+                    <SelectItem value="no_client">No client assigned</SelectItem>
                     {clients?.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name} {client.company_name && `(${client.company_name})`}

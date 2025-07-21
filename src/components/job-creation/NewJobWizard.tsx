@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +92,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
       .select("*", { count: 'exact', head: true })
       .eq("user_id", userId);
     
-    return String(count + 1).padStart(3, '0');
+    return String((count || 0) + 1).padStart(3, '0');
   };
 
   const handleCreateJob = async () => {
@@ -110,7 +109,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
         sum + (item.quantity * item.price), 0
       );
 
-      // Create project
+      // Create project without total_amount field
       const newProject = await createProject.mutateAsync({
         name: `Job #${jobNumber}`,
         description: formData.note || null,
@@ -119,8 +118,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
         client_id: formData.client_id,
         job_number: jobNumber,
         start_date: formData.start_date || null,
-        due_date: formData.due_date || null,
-        total_amount: totalAmount
+        due_date: formData.due_date || null
       });
       
       // Create initial quote if there are items
