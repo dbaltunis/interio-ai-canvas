@@ -5,7 +5,7 @@ import { UserProfile } from "@/components/layout/UserProfile";
 import { BrandHeader } from "@/components/layout/BrandHeader";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { JobsPage } from "@/components/jobs/JobsPage";
+import JobsPage from "@/components/jobs/JobsPage";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { LibraryPage } from "@/components/library/LibraryPage";
 import { Button } from "@/components/ui/button";
