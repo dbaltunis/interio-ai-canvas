@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,6 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
-import { useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { Percent, FileText, Mail, Eye, EyeOff } from "lucide-react";
@@ -23,12 +22,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
-  const createQuote = useCreateQuote();
 
   const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
-  const [showPreview, setShowPreview] = useState(true);
 
-  // Mock template data - in real app this would come from settings/templates
+  // Mock template data - this should come from user's saved quote template
   const [templateBlocks] = useState([
     {
       id: 'header-1',
@@ -70,7 +67,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       type: 'products',
       content: {
         title: 'Quote Items',
-        tableStyle: 'simple' as const,
+        tableStyle: viewMode as 'simple' | 'detailed',
         columns: ['product', 'description', 'qty', 'unit_price', 'total'],
         showTax: true,
         taxLabel: 'Tax',
@@ -100,7 +97,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   const project = projects?.find(p => p.id === projectId);
 
-  // Calculate quote totals from treatments
+  // Calculate totals
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
@@ -110,6 +107,18 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const subtotal = treatmentTotal * (1 + markupPercentage / 100);
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
+
+  // Calculate room totals
+  const getRoomTotal = (roomId: string) => {
+    const roomTreatments = treatments?.filter(t => t.room_id === roomId) || [];
+    return roomTreatments.reduce((sum, treatment) => sum + (treatment.total_price || 0), 0);
+  };
+
+  // Calculate window totals
+  const getWindowTotal = (windowId: string) => {
+    const windowTreatments = treatments?.filter(t => t.window_id === windowId) || [];
+    return windowTreatments.reduce((sum, treatment) => sum + (treatment.total_price || 0), 0);
+  };
 
   const handleEmailQuote = () => {
     toast({
@@ -166,9 +175,9 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       {/* Header with Actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Quote Preview</h2>
+          <h2 className="text-xl font-semibold">Project Quote</h2>
           <p className="text-muted-foreground">
-            Live preview of your customized quote template
+            Review and customize your project quotation
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -190,66 +199,105 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         </div>
       </div>
 
-      {/* Quote Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-brand-primary">{rooms?.length || 0}</div>
-            <p className="text-sm text-muted-foreground">Rooms</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-brand-accent">{treatments?.length || 0}</div>
-            <p className="text-sm text-muted-foreground">Treatments</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">${treatmentTotal.toFixed(2)}</div>
-            <p className="text-sm text-muted-foreground">Base Cost</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-purple-600">${total.toFixed(2)}</div>
-            <p className="text-sm text-muted-foreground">Quote Total</p>
-          </CardContent>
-        </Card>
+      {/* Project Total */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-brand-primary mb-2">
+              ${total.toFixed(2)}
+            </div>
+            <p className="text-lg text-muted-foreground">Total Project Cost</p>
+            <div className="flex justify-center space-x-4 mt-4 text-sm">
+              <span>Base: ${treatmentTotal.toFixed(2)}</span>
+              <span>Markup: ${(subtotal - treatmentTotal).toFixed(2)}</span>
+              <span>Tax: ${taxAmount.toFixed(2)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Rooms and Windows Breakdown */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Rooms & Windows</h3>
+        {rooms?.map((room) => {
+          const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
+          const roomTotal = getRoomTotal(room.id);
+          
+          return (
+            <Card key={room.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>{room.name}</span>
+                  <Badge variant="secondary" className="text-lg font-semibold">
+                    ${roomTotal.toFixed(2)}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {roomSurfaces.map((surface) => {
+                    const windowTotal = getWindowTotal(surface.id);
+                    const windowTreatments = treatments?.filter(t => t.window_id === surface.id) || [];
+                    
+                    return (
+                      <div key={surface.id} className="border-l-4 border-brand-primary/20 pl-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{surface.name}</h4>
+                          <Badge variant="outline">
+                            ${windowTotal.toFixed(2)}
+                          </Badge>
+                        </div>
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                          {windowTreatments.map((treatment) => (
+                            <div key={treatment.id} className="flex justify-between">
+                              <span>
+                                {treatment.treatment_type} 
+                                {treatment.product_name && ` - ${treatment.product_name}`}
+                              </span>
+                              <span>${(treatment.total_price || 0).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Live Quote Preview */}
-      {showPreview && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Quote Document</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LivePreview
-              blocks={templateBlocks.map(block => ({
-                ...block,
-                content: {
-                  ...block.content,
-                  // Update products block to use the correct view mode
-                  ...(block.type === 'products' ? { tableStyle: viewMode } : {})
-                }
-              }))}
-              projectData={{
-                project,
-                treatments: treatments || [],
-                rooms: rooms || [],
-                surfaces: surfaces || [],
-                subtotal,
-                taxRate,
-                taxAmount,
-                total,
-                markupPercentage
-              }}
-              isEditable={true}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quote Document</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LivePreview
+            blocks={templateBlocks.map(block => ({
+              ...block,
+              content: {
+                ...block.content,
+                // Update products block to use the correct view mode
+                ...(block.type === 'products' ? { tableStyle: viewMode } : {})
+              }
+            }))}
+            projectData={{
+              project,
+              treatments: treatments || [],
+              rooms: rooms || [],
+              surfaces: surfaces || [],
+              subtotal,
+              taxRate,
+              taxAmount,
+              total,
+              markupPercentage
+            }}
+            isEditable={true}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };
