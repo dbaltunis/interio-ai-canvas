@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { useEmails } from "@/hooks/useEmails";
 import { ClientManagement } from "./ClientManagement";
 import { EmailManagement } from "./EmailManagement";
 import { JobsTableView } from "./JobsTableView";
+import { NewJobPageSimplified } from "../job-creation/NewJobPageSimplified";
 
 const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "analytics">("jobs");
@@ -30,8 +30,6 @@ const JobsPage = () => {
   };
 
   if (showNewJobPage) {
-    // Import and show the new job page here
-    const { NewJobPageSimplified } = require("../job-creation/NewJobPageSimplified");
     return <NewJobPageSimplified onBack={handleBackFromNewJob} />;
   }
 
