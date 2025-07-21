@@ -15,7 +15,13 @@ interface ClientSelectionStepProps {
 
 export const ClientSelectionStep = ({ formData, updateFormData }: ClientSelectionStepProps) => {
   const [showNewClientForm, setShowNewClientForm] = useState(false);
-  const [newClientData, setNewClientData] = useState({
+  const [newClientData, setNewClientData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    company_name: string;
+    client_type: "B2B" | "B2C";
+  }>({
     name: "",
     email: "",
     phone: "",
@@ -131,7 +137,7 @@ export const ClientSelectionStep = ({ formData, updateFormData }: ClientSelectio
                 <Label htmlFor="client_type">Client Type</Label>
                 <Select 
                   value={newClientData.client_type} 
-                  onValueChange={(value) => setNewClientData(prev => ({ ...prev, client_type: value as "B2B" | "B2C" }))}
+                  onValueChange={(value: "B2B" | "B2C") => setNewClientData(prev => ({ ...prev, client_type: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
