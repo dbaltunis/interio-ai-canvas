@@ -16,6 +16,11 @@ export const EmailManagement = () => {
   const [showComposer, setShowComposer] = useState(false);
   const { hasSendGridIntegration } = useIntegrationStatus();
 
+  const handleConfigureIntegration = () => {
+    // Open the settings page in a new tab, directly to the integrations section
+    window.open('/settings?tab=integrations', '_blank');
+  };
+
   if (!hasSendGridIntegration) {
     return (
       <div className="min-h-screen bg-white w-full">
@@ -27,7 +32,7 @@ export const EmailManagement = () => {
               <p className="text-gray-500 mb-4">
                 Please configure your email integration to start sending emails.
               </p>
-              <Button>
+              <Button onClick={handleConfigureIntegration}>
                 <Settings className="h-4 w-4 mr-2" />
                 Configure Email Integration
               </Button>
