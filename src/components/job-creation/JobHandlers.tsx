@@ -1,3 +1,4 @@
+
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
@@ -179,6 +180,7 @@ export const useJobHandlers = (project: any) => {
       const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
       for (const treatment of roomTreatments) {
         await createTreatment.mutateAsync({
+          project_id: projectId,
           room_id: newRoom.id,
           window_id: treatment.window_id,
           treatment_type: treatment.treatment_type,
