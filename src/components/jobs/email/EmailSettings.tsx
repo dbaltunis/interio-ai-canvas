@@ -45,6 +45,16 @@ export const EmailSettings = () => {
     }
   };
 
+  // Type guard to check if configuration has the expected structure
+  const getConfigurationValue = (key: string): string | null => {
+    if (!integrationData?.configuration || typeof integrationData.configuration !== 'object') {
+      return null;
+    }
+    
+    const config = integrationData.configuration as Record<string, any>;
+    return config[key] || null;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -105,11 +115,16 @@ export const EmailSettings = () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Webhook URL:</span>
-                <span className="font-mono text-xs">{integrationData.configuration.webhook_url}</span>
+                <span className="font-mono text-xs">{getConfigurationValue('webhook_url') || 'Not configured'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Last Sync:</span>
-                <span>{integrationData.configuration.configured_at ? new Date(integrationData.configuration.configured_at).toLocaleDateString() : 'Never'}</span>
+                <span>
+                  {getConfigurationValue('configured_at') 
+                    ? new Date(getConfigurationValue('configured_at')!).toLocaleDateString() 
+                    : 'Never'
+                  }
+                </span>
               </div>
             </div>
           )}
