@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { useActiveQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { Percent, FileText, Mail, Eye, EyeOff } from "lucide-react";
@@ -22,80 +25,22 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
+  const { data: activeTemplates, isLoading: templatesLoading } = useActiveQuoteTemplates();
 
   const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
-
-  // Mock template data - this should come from user's saved quote template
-  const [templateBlocks] = useState([
-    {
-      id: 'header-1',
-      type: 'header',
-      content: {
-        companyName: '{{company_name}}',
-        address: '{{company_address}}',
-        phone: '{{company_phone}}',
-        email: '{{company_email}}',
-        logoPosition: 'left' as const,
-        quoteTitle: 'QUOTE',
-        quoteNumber: 'QT-{{quote_number}}',
-        date: '{{date}}',
-        validUntil: '{{valid_until}}'
-      },
-      styles: {
-        backgroundColor: '#f8fafc',
-        textColor: '#1e293b',
-        fontSize: 'base'
-      }
-    },
-    {
-      id: 'client-1',
-      type: 'client',
-      content: {
-        title: 'Bill To:',
-        showCompany: true,
-        showAddress: true,
-        showContact: true
-      },
-      styles: {
-        backgroundColor: '#ffffff',
-        textColor: '#374151',
-        fontSize: 'sm'
-      }
-    },
-    {
-      id: 'products-1',
-      type: 'products',
-      content: {
-        title: 'Quote Items',
-        tableStyle: viewMode as 'simple' | 'detailed',
-        columns: ['product', 'description', 'qty', 'unit_price', 'total'],
-        showTax: true,
-        taxLabel: 'Tax',
-        showSubtotal: true
-      },
-      styles: {
-        backgroundColor: '#ffffff',
-        textColor: '#374151',
-        fontSize: 'sm'
-      }
-    },
-    {
-      id: 'footer-1',
-      type: 'footer',
-      content: {
-        text: 'Thank you for your business!',
-        showTerms: true,
-        companyInfo: 'Contact us at {{company_phone}} or {{company_email}}'
-      },
-      styles: {
-        backgroundColor: '#f8fafc',
-        textColor: '#6b7280',
-        fontSize: 'xs'
-      }
-    }
-  ]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
   const project = projects?.find(p => p.id === projectId);
+
+  // Set default template when templates load
+  useState(() => {
+    if (activeTemplates && activeTemplates.length > 0 && !selectedTemplateId) {
+      setSelectedTemplateId(activeTemplates[0].id);
+    }
+  });
+
+  // Get selected template
+  const selectedTemplate = activeTemplates?.find(t => t.id === selectedTemplateId);
 
   // Calculate totals
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
@@ -158,6 +103,37 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     );
   }
 
+  if (templatesLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Loading templates...</div>
+      </div>
+    );
+  }
+
+  if (!activeTemplates || activeTemplates.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="text-muted-foreground mb-4">No active quote templates found</div>
+          <p className="text-sm text-muted-foreground">
+            Please create and activate quote templates in Settings → Document Templates
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get template blocks and update view mode for products block
+  const templateBlocks = selectedTemplate ? selectedTemplate.blocks.map(block => ({
+    ...block,
+    content: {
+      ...block.content,
+      // Update products block to use the correct view mode
+      ...(block.type === 'products' ? { tableStyle: viewMode } : {})
+    }
+  })) : [];
+
   return (
     <div className="space-y-6">
       {/* Header with Actions */}
@@ -187,36 +163,72 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         </div>
       </div>
 
-      {/* Live Quote Preview */}
+      {/* Template Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Quote Document</CardTitle>
+          <CardTitle>Quote Template</CardTitle>
         </CardHeader>
         <CardContent>
-          <LivePreview
-            blocks={templateBlocks.map(block => ({
-              ...block,
-              content: {
-                ...block.content,
-                // Update products block to use the correct view mode
-                ...(block.type === 'products' ? { tableStyle: viewMode } : {})
-              }
-            }))}
-            projectData={{
-              project,
-              treatments: treatments || [],
-              rooms: rooms || [],
-              surfaces: surfaces || [],
-              subtotal,
-              taxRate,
-              taxAmount,
-              total,
-              markupPercentage
-            }}
-            isEditable={true}
-          />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="template-select">Select Template</Label>
+                <Select
+                  value={selectedTemplateId}
+                  onValueChange={setSelectedTemplateId}
+                >
+                  <SelectTrigger id="template-select">
+                    <SelectValue placeholder="Choose a quote template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button variant="outline" className="w-full">
+                  Customize Template
+                </Button>
+              </div>
+            </div>
+            {selectedTemplate && (
+              <div className="text-sm text-muted-foreground">
+                Using template: <strong>{selectedTemplate.name}</strong>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Live Quote Preview */}
+      {selectedTemplate && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Quote Document</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LivePreview
+              blocks={templateBlocks}
+              projectData={{
+                project,
+                treatments: treatments || [],
+                rooms: rooms || [],
+                surfaces: surfaces || [],
+                subtotal,
+                taxRate,
+                taxAmount,
+                total,
+                markupPercentage
+              }}
+              isEditable={true}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
