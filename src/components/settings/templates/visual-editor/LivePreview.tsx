@@ -1,569 +1,399 @@
+
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CreditCard, DollarSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { useClients } from "@/hooks/useClients";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface LivePreviewProps {
   blocks: any[];
-  templateName: string;
+  projectData?: {
+    project: any;
+    treatments: any[];
+    rooms: any[];
+    surfaces: any[];
+    subtotal: number;
+    taxRate: number;
+    taxAmount: number;
+    total: number;
+    markupPercentage: number;
+  };
+  isEditable?: boolean;
 }
 
-export const LivePreview = ({ blocks, templateName }: LivePreviewProps) => {
-  const mockData = {
-    company_name: "Window Treatments Pro",
-    company_address: "123 Main Street, City, State 12345",
-    company_phone: "(555) 123-4567",
-    company_email: "info@windowtreatmentspro.com",
-    client_name: "John Smith",
-    client_email: "john@example.com",
-    client_address: "456 Oak Avenue, City, State 67890",
-    quote_number: "QT-0001",
-    quote_date: new Date().toLocaleDateString(),
-    job_number: "JOB-001"
+export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePreviewProps) => {
+  const { data: clients } = useClients();
+  const { data: businessSettings } = useBusinessSettings();
+  const [editableContent, setEditableContent] = useState<Record<string, any>>({});
+
+  // Get client data if project data is available
+  const client = projectData?.project?.client_id 
+    ? clients?.find(c => c.id === projectData.project.client_id) 
+    : null;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
-  const renderContent = (content: string) => {
-    let rendered = content;
-    Object.entries(mockData).forEach(([key, value]) => {
-      const placeholder = `{{${key}}}`;
-      rendered = rendered.replace(new RegExp(placeholder, 'g'), String(value));
+  const replaceTokens = (text: string, data: any = {}) => {
+    if (!text) return '';
+    
+    const tokens = {
+      company_name: businessSettings?.company_name || data.companyName || 'Your Company Name',
+      company_address: businessSettings?.address || 'Your Company Address',
+      company_phone: businessSettings?.business_phone || '(555) 123-4567',
+      company_email: businessSettings?.business_email || 'info@company.com',
+      quote_number: data.quoteNumber || `QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+      date: new Date().toLocaleDateString(),
+      valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      ...data
+    };
+
+    return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+      return tokens[key] || match;
     });
-    return rendered;
   };
 
-  const renderBlock = (block: any) => {
-    const primaryColor = block.content.style?.primaryColor || '#415e6b';
-    const textColor = block.content.style?.textColor || '#575656';
+  const handleContentEdit = (blockId: string, field: string, value: string) => {
+    if (!isEditable) return;
+    
+    setEditableContent(prev => ({
+      ...prev,
+      [blockId]: {
+        ...prev[blockId],
+        [field]: value
+      }
+    }));
+  };
 
-    switch (block.type) {
-      case 'header':
-        return (
-          <div className={`mb-8 ${
-            block.content.logoPosition === 'center' ? 'text-center' : 
-            block.content.logoPosition === 'right' ? 'text-right' : 'text-left'
-          }`}>
-            <div className={`flex items-start gap-6 ${
-              block.content.logoPosition === 'center' ? 'flex-col items-center' : 
-              block.content.logoPosition === 'right' ? 'flex-row-reverse' : 'flex-row'
-            }`}>
-              {block.content.showLogo && (
-                <div className="w-20 h-20 bg-blue-100 flex items-center justify-center rounded flex-shrink-0">
-                  <span className="text-xs text-blue-600 font-medium">LOGO</span>
-                </div>
-              )}
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold mb-2" style={{ color: primaryColor }}>
-                  {renderContent(block.content.companyName)}
-                </h1>
-                <div className="text-sm space-y-1" style={{ color: textColor }}>
-                  <div>{renderContent(block.content.companyAddress)}</div>
-                  <div>{renderContent(block.content.companyPhone)}</div>
-                  <div>{renderContent(block.content.companyEmail)}</div>
-                  {(block.content.customFields || []).map((field: any) => (
-                    <div key={field.id}>{renderContent(field.value)}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-between items-center mt-6">
-              <h2 className="text-xl font-bold" style={{ color: primaryColor }}>
-                QUOTE #{mockData.quote_number}
-              </h2>
-              <div className="text-right">
-                <div className="text-sm mt-1" style={{ color: textColor }}>
-                  <div>Date: {mockData.quote_date}</div>
-                  <div>Job: {mockData.job_number}</div>
-                </div>
-              </div>
-            </div>
+  const getEditableValue = (blockId: string, field: string, defaultValue: string) => {
+    return editableContent[blockId]?.[field] ?? defaultValue;
+  };
+
+  const renderHeader = (block: any) => {
+    const content = block.content;
+    const styles = block.styles;
+    
+    return (
+      <div 
+        className={`flex items-start justify-between mb-8 p-6 rounded-lg`}
+        style={{ 
+          backgroundColor: styles?.backgroundColor || '#f8fafc',
+          color: styles?.textColor || '#1e293b'
+        }}
+      >
+        <div className={content.logoPosition === 'right' ? 'order-2' : ''}>
+          {isEditable ? (
+            <Input
+              value={getEditableValue(block.id, 'companyName', replaceTokens(content.companyName))}
+              onChange={(e) => handleContentEdit(block.id, 'companyName', e.target.value)}
+              className="text-3xl font-bold mb-2 border-none bg-transparent p-0"
+            />
+          ) : (
+            <h1 className="text-3xl font-bold mb-2">
+              {replaceTokens(content.companyName)}
+            </h1>
+          )}
+          <div className="space-y-1 opacity-90 text-sm">
+            <p>{replaceTokens(content.address)}</p>
+            <p>{replaceTokens(content.phone)}</p>
+            <p>{replaceTokens(content.email)}</p>
           </div>
-        );
-
-      case 'client-info':
-        return (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold mb-3" style={{ color: primaryColor }}>
-              {block.content.title}
-            </h3>
-            <div className="text-sm space-y-1">
-              {block.content.showClientName && <div>{mockData.client_name}</div>}
-              {block.content.showClientEmail && <div>{mockData.client_email}</div>}
-              {block.content.showClientAddress && <div>{mockData.client_address}</div>}
-            </div>
+        </div>
+        <div className={`text-right ${content.logoPosition === 'right' ? 'order-1' : ''}`}>
+          <h2 className="text-2xl font-semibold mb-2">{content.quoteTitle}</h2>
+          <div className="text-sm space-y-1">
+            <p>Quote #: {replaceTokens(content.quoteNumber)}</p>
+            <p>Date: {replaceTokens(content.date)}</p>
+            <p>Valid Until: {replaceTokens(content.validUntil)}</p>
           </div>
-        );
+        </div>
+      </div>
+    );
+  };
 
-      case 'text':
-        return (
-          <div 
-            className={`mb-6 ${
-              block.content.style === 'intro' ? 'text-lg' : 
-              block.content.style === 'terms' ? 'text-sm text-gray-600' : 
-              'text-base'
-            }`}
-            style={{ 
-              color: block.content.style?.textColor || textColor,
-              fontSize: block.content.style?.fontSize === 'small' ? '0.875rem' : 
-                       block.content.style?.fontSize === 'large' ? '1.125rem' : undefined
-            }}
-          >
-            {renderContent(block.content.text)}
+  const renderClient = (block: any) => {
+    const content = block.content;
+    
+    return (
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-brand-primary">{content.title}</h3>
+        {client ? (
+          <div className="space-y-1">
+            <p className="font-medium">{client.name}</p>
+            {content.showCompany && client.company_name && (
+              <p className="text-gray-600">{client.company_name}</p>
+            )}
+            {content.showContact && (
+              <>
+                {client.email && <p className="text-gray-600">{client.email}</p>}
+                {client.phone && <p className="text-gray-600">{client.phone}</p>}
+              </>
+            )}
+            {content.showAddress && client.address && (
+              <p className="text-gray-600">
+                {client.address}
+                {client.city && `, ${client.city}`}
+                {client.state && `, ${client.state}`}
+                {client.zip_code && ` ${client.zip_code}`}
+              </p>
+            )}
           </div>
-        );
+        ) : (
+          <p className="text-gray-500 italic">No client assigned</p>
+        )}
+      </div>
+    );
+  };
 
-      case 'image':
-        if (block.content.src) {
-          return (
-            <div className={`mb-6 ${
-              block.content.alignment === 'left' ? 'text-left' :
-              block.content.alignment === 'right' ? 'text-right' :
-              'text-center'
-            }`}>
-              <img
-                src={block.content.src}
-                alt={block.content.alt || 'Uploaded image'}
-                className="max-w-full h-auto rounded"
-                style={{ width: block.content.width || 'auto' }}
-              />
-            </div>
-          );
-        } else {
-          return (
-            <div className="mb-6 text-center">
-              <div className="w-full h-40 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center rounded">
-                <span className="text-gray-400">Image Placeholder</span>
-              </div>
-            </div>
-          );
-        }
+  const renderProducts = (block: any) => {
+    const content = block.content;
+    const treatments = projectData?.treatments || [];
+    const rooms = projectData?.rooms || [];
+    const surfaces = projectData?.surfaces || [];
+    
+    if (!projectData) {
+      return (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
+          <div className="text-center py-8 text-gray-500">
+            No product data available
+          </div>
+        </div>
+      );
+    }
 
-      case 'products':
-        const isSimpleView = block.content.layout === 'simple';
-        const isItemizedView = block.content.layout === 'itemized';
+    return (
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
         
-        if (isSimpleView) {
-          return (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-4" style={{ color: primaryColor }}>Quote Items</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <span className="font-medium">Blackout Curtains - Living Room</span>
-                  <span className="font-semibold">$300.00</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <span className="font-medium">Roman Shades - Bedroom</span>
-                  <span className="font-semibold">$360.00</span>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        if (isItemizedView) {
-          return (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-4" style={{ color: primaryColor }}>Quote Items</h3>
+        {content.tableStyle === 'detailed' ? (
+          // Detailed breakdown view
+          <div className="space-y-6">
+            {treatments.map((treatment, index) => {
+              const room = rooms.find(r => r.id === treatment.room_id);
+              const surface = surfaces.find(s => s.id === treatment.window_id);
               
-              {/* Room Section 1 */}
-              <div className="border-b pb-4 mb-6">
-                <h4 className="font-semibold mb-3" style={{ color: primaryColor }}>Dining Room</h4>
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>#</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Product/Service</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Description</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Quantity</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Price rate</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Total without GST</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="p-2 text-sm font-medium">1</td>
-                      <td className="p-2 text-sm font-medium">Roman Blinds</td>
-                      <td className="p-2 text-sm">Above Kitchen Sink</td>
-                      <td className="p-2 text-sm">2</td>
-                      <td className="p-2 text-sm">£484.54</td>
-                      <td className="p-2 text-sm font-medium">£969.08</td>
-                    </tr>
-                    <tr className="border-b bg-gray-50">
-                      <td className="p-2 text-sm"></td>
-                      <td className="p-2 text-sm">Fabric</td>
-                      <td className="p-2 text-sm">OSL/01 Pepper | 1.44 m</td>
-                      <td className="p-2 text-sm">7.88 m</td>
-                      <td className="p-2 text-sm">£91.00</td>
-                      <td className="p-2 text-sm">£717.08</td>
-                    </tr>
-                    <tr className="border-b bg-gray-50">
-                      <td className="p-2 text-sm"></td>
-                      <td className="p-2 text-sm">Manufacturing price</td>
-                      <td className="p-2 text-sm">-</td>
-                      <td className="p-2 text-sm">2</td>
-                      <td className="p-2 text-sm">£90.00</td>
-                      <td className="p-2 text-sm">£180.00</td>
-                    </tr>
-                    <tr className="border-b bg-gray-50">
-                      <td className="p-2 text-sm"></td>
-                      <td className="p-2 text-sm">Lining</td>
-                      <td className="p-2 text-sm">Blackout</td>
-                      <td className="p-2 text-sm">7.88 m</td>
-                      <td className="p-2 text-sm">£10.00</td>
-                      <td className="p-2 text-sm">£72.00</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              // Create breakdown items
+              const breakdownItems = [
+                {
+                  description: `${treatment.treatment_type} - ${treatment.product_name || 'Custom Treatment'}`,
+                  category: 'Product',
+                  quantity: treatment.quantity || 1,
+                  unit_price: treatment.unit_price || 0,
+                  total: treatment.total_price || 0
+                },
+                ...(treatment.fabric_type ? [{
+                  description: `Fabric: ${treatment.fabric_type}`,
+                  category: 'Materials',
+                  quantity: treatment.quantity || 1,
+                  unit_price: ((treatment.material_cost || 0) * 0.7),
+                  total: ((treatment.material_cost || 0) * 0.7) * (treatment.quantity || 1)
+                }] : []),
+                ...(treatment.labor_cost && treatment.labor_cost > 0 ? [{
+                  description: 'Installation & Labor',
+                  category: 'Labor',
+                  quantity: 1,
+                  unit_price: treatment.labor_cost,
+                  total: treatment.labor_cost
+                }] : []),
+                ...(treatment.hardware ? [{
+                  description: `Hardware: ${treatment.hardware}`,
+                  category: 'Hardware',
+                  quantity: treatment.quantity || 1,
+                  unit_price: ((treatment.material_cost || 0) * 0.3),
+                  total: ((treatment.material_cost || 0) * 0.3) * (treatment.quantity || 1)
+                }] : [])
+              ];
 
-              {/* Room Section 2 */}
-              <div className="border-b pb-4">
-                <h4 className="font-semibold mb-3" style={{ color: primaryColor }}>Bobby's Bedroom Window</h4>
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>#</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Product/Service</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Description</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Quantity</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Price rate</th>
-                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Total without GST</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="p-2 text-sm font-medium">1</td>
-                      <td className="p-2 text-sm font-medium">Curtains</td>
-                      <td className="p-2 text-sm">Curtains</td>
-                      <td className="p-2 text-sm">1</td>
-                      <td className="p-2 text-sm">£891.67</td>
-                      <td className="p-2 text-sm font-medium">£891.67</td>
-                    </tr>
-                    <tr className="border-b bg-gray-50">
-                      <td className="p-2 text-sm"></td>
-                      <td className="p-2 text-sm">Fabric</td>
-                      <td className="p-2 text-sm">Sky Gray 01 | 3 m</td>
-                      <td className="p-2 text-sm">4.1 m</td>
-                      <td className="p-2 text-sm">£18.70</td>
-                      <td className="p-2 text-sm">£76.67</td>
-                    </tr>
-                    <tr className="border-b bg-gray-50">
-                      <td className="p-2 text-sm"></td>
-                      <td className="p-2 text-sm">Manufacturing price</td>
-                      <td className="p-2 text-sm">-</td>
-                      <td className="p-2 text-sm">1</td>
-                      <td className="p-2 text-sm">£774.00</td>
-                      <td className="p-2 text-sm">£774.00</td>
-                    </tr>
-                    <tr className="border-b bg-gray-50">
-                      <td className="p-2 text-sm"></td>
-                      <td className="p-2 text-sm">Lining</td>
-                      <td className="p-2 text-sm">Blackout</td>
-                      <td className="p-2 text-sm">4.1 m</td>
-                      <td className="p-2 text-sm">£10.00</td>
-                      <td className="p-2 text-sm">£41.00</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        }
-
-        return (
-          <div className="mb-6">
-            <h3 className="font-semibold mb-4" style={{ color: primaryColor }}>Quote Items</h3>
-            <table className={`w-full border-collapse ${
-              block.content.tableStyle === 'minimal' ? '' : 
-              block.content.tableStyle === 'striped' ? '' : 'border border-gray-300'
-            }`}>
-              <thead>
-                <tr className={`${
-                  block.content.tableStyle === 'striped' ? 'bg-gray-50' : 
-                  block.content.tableStyle === 'minimal' ? 'border-b' : 'bg-gray-50'
-                }`}>
-                  {(block.content.showProduct !== false) && (
-                    <th className={`p-3 text-left font-semibold ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`} style={{ color: primaryColor }}>
-                      Product/Service
-                    </th>
+              return (
+                <div key={index} className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-2 border-b">
+                    <h4 className="font-medium text-brand-primary">
+                      {room?.name || 'Room'} - {surface?.name || 'Window'}
+                    </h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700">Item</th>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700">Category</th>
+                          <th className="text-center p-3 text-sm font-medium text-gray-700">Qty</th>
+                          <th className="text-right p-3 text-sm font-medium text-gray-700">Unit Price</th>
+                          <th className="text-right p-3 text-sm font-medium text-gray-700">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {breakdownItems.map((item, bIndex) => (
+                          <tr key={bIndex} className="border-t">
+                            <td className="p-3">{item.description}</td>
+                            <td className="p-3">
+                              <Badge variant="outline" className="text-xs">
+                                {item.category}
+                              </Badge>
+                            </td>
+                            <td className="p-3 text-center">{item.quantity}</td>
+                            <td className="p-3 text-right">{formatCurrency(item.unit_price)}</td>
+                            <td className="p-3 text-right font-medium">{formatCurrency(item.total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          // Simple table view
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  {content.columns?.includes('product') && (
+                    <th className="text-left p-4 font-medium text-gray-700">Product/Service</th>
                   )}
-                  {block.content.showDescription && (
-                    <th className={`p-3 text-left font-semibold ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`} style={{ color: primaryColor }}>
-                      Description
-                    </th>
+                  {content.columns?.includes('description') && (
+                    <th className="text-left p-4 font-medium text-gray-700">Description</th>
                   )}
-                  {(block.content.showQuantity !== false) && (
-                    <th className={`p-3 text-left font-semibold ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`} style={{ color: primaryColor }}>
-                      Qty
-                    </th>
+                  {content.columns?.includes('qty') && (
+                    <th className="text-center p-4 font-medium text-gray-700">Qty</th>
                   )}
-                  {(block.content.showUnitPrice !== false) && (
-                    <th className={`p-3 text-left font-semibold ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`} style={{ color: primaryColor }}>
-                      Unit Price
-                    </th>
+                  {content.columns?.includes('unit_price') && (
+                    <th className="text-right p-4 font-medium text-gray-700">Unit Price</th>
                   )}
-                  {block.content.showTax && (
-                    <th className={`p-3 text-left font-semibold ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`} style={{ color: primaryColor }}>
-                      Tax/VAT
-                    </th>
-                  )}
-                  {(block.content.showTotal !== false) && (
-                    <th className={`p-3 text-left font-semibold ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`} style={{ color: primaryColor }}>
-                      Total
-                    </th>
+                  {content.columns?.includes('total') && (
+                    <th className="text-right p-4 font-medium text-gray-700">Total</th>
                   )}
                 </tr>
               </thead>
               <tbody>
-                <tr className={block.content.tableStyle === 'striped' ? 'even:bg-gray-50' : ''}>
-                  {(block.content.showProduct !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      Blackout Curtains
-                    </td>
-                  )}
-                  {block.content.showDescription && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      High-quality blackout curtains for living room
-                    </td>
-                  )}
-                  {(block.content.showQuantity !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      2
-                    </td>
-                  )}
-                  {(block.content.showUnitPrice !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      $150.00
-                    </td>
-                  )}
-                  {block.content.showTax && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      $24.00
-                    </td>
-                  )}
-                  {(block.content.showTotal !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      $300.00
-                    </td>
-                  )}
-                </tr>
-                <tr className={block.content.tableStyle === 'striped' ? 'even:bg-gray-50' : ''}>
-                  {(block.content.showProduct !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      Roman Shades
-                    </td>
-                  )}
-                  {block.content.showDescription && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      Custom roman shades for bedroom windows
-                    </td>
-                  )}
-                  {(block.content.showQuantity !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      3
-                    </td>
-                  )}
-                  {(block.content.showUnitPrice !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      $120.00
-                    </td>
-                  )}
-                  {block.content.showTax && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      $28.80
-                    </td>
-                  )}
-                  {(block.content.showTotal !== false) && (
-                    <td className={`p-3 ${
-                      block.content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
-                    }`}>
-                      $360.00
-                    </td>
-                  )}
-                </tr>
+                {treatments.map((treatment, index) => {
+                  const room = rooms.find(r => r.id === treatment.room_id);
+                  const surface = surfaces.find(s => s.id === treatment.window_id);
+                  return (
+                    <tr key={treatment.id || index} className="border-t">
+                      {content.columns?.includes('product') && (
+                        <td className="p-4 font-medium">
+                          {treatment.treatment_type} - {treatment.product_name || 'Custom Treatment'}
+                        </td>
+                      )}
+                      {content.columns?.includes('description') && (
+                        <td className="p-4">
+                          <div className="text-sm text-gray-600">
+                            {room?.name} • {surface?.name}
+                            {treatment.fabric_type && ` • ${treatment.fabric_type}`}
+                          </div>
+                        </td>
+                      )}
+                      {content.columns?.includes('qty') && (
+                        <td className="p-4 text-center">{treatment.quantity || 1}</td>
+                      )}
+                      {content.columns?.includes('unit_price') && (
+                        <td className="p-4 text-right">{formatCurrency(treatment.unit_price || 0)}</td>
+                      )}
+                      {content.columns?.includes('total') && (
+                        <td className="p-4 text-right font-medium">{formatCurrency(treatment.total_price || 0)}</td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        );
+        )}
 
-      case 'totals':
-        return (
-          <div className="flex justify-end mb-6">
-            <div className="w-64 space-y-2">
-              {block.content.showSubtotal && (
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>$660.00</span>
-                </div>
-              )}
-              {block.content.showTax && (
-                <div className="flex justify-between">
-                  <span>Tax/VAT:</span>
-                  <span>$52.80</span>
-                </div>
-              )}
-              {block.content.showTotal && (
-                <div className="flex justify-between font-bold text-lg border-t pt-2">
-                  <span>Total:</span>
-                  <span>$712.80</span>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      case 'footer':
-        return (
-          <div className="border-t pt-6 mt-8 mb-6">
-            <div className="text-sm text-gray-600 mb-4">
-              {renderContent(block.content.text)}
-            </div>
-            {block.content.includeTerms && (
-              <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
-                <strong>Terms & Conditions:</strong> Payment terms: Net 30 days. Quote valid for 30 days. 
-                Additional terms and conditions from settings will appear here.
+        {/* Totals */}
+        <div className="flex justify-end mt-6">
+          <div className="w-80 space-y-2">
+            {content.showSubtotal && (
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="font-medium">{formatCurrency(projectData.subtotal)}</span>
               </div>
             )}
-          </div>
-        );
-
-      case 'signature':
-        if (block.content.enableDigitalSignature && block.content.signatureData) {
-          return (
-            <div className="mb-6 border-t pt-8">
-              <div className="mb-4">
-                <img 
-                  src={block.content.signatureData} 
-                  alt="Digital signature" 
-                  className="max-w-xs border rounded"
-                />
-                <div className="text-sm font-medium mt-2">{block.content.signatureLabel}</div>
+            {content.showTax && (
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">{content.taxLabel} ({(projectData.taxRate * 100).toFixed(1)}%):</span>
+                <span className="font-medium">{formatCurrency(projectData.taxAmount)}</span>
               </div>
-              {block.content.showDate && (
-                <div className="text-sm">
-                  <span className="font-medium">{block.content.dateLabel}:</span> {new Date().toLocaleDateString()}
-                </div>
+            )}
+            <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-3">
+              <span>Total:</span>
+              <span className="text-brand-primary">{formatCurrency(projectData.total)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFooter = (block: any) => {
+    const content = block.content;
+    const styles = block.styles;
+    
+    return (
+      <div 
+        className="border-t pt-6 mt-8"
+        style={{ 
+          backgroundColor: styles?.backgroundColor || '#f8fafc',
+          color: styles?.textColor || '#6b7280'
+        }}
+      >
+        <div className="text-center space-y-2">
+          {isEditable ? (
+            <Input
+              value={getEditableValue(block.id, 'text', content.text)}
+              onChange={(e) => handleContentEdit(block.id, 'text', e.target.value)}
+              className="font-medium text-center border-none bg-transparent"
+            />
+          ) : (
+            <p className="font-medium">{content.text}</p>
+          )}
+          
+          {content.showTerms && (
+            <div className="text-sm">
+              <p>Payment terms: Net 30 days. Quote valid for 30 days.</p>
+              {businessSettings && (
+                <p className="mt-2">
+                  Terms and Conditions apply. Please review our full terms on our website.
+                </p>
               )}
             </div>
-          );
-        }
-
-        return (
-          <div className="grid grid-cols-2 gap-8 pt-8 border-t mb-6">
-            {block.content.showSignature && (
-              <div>
-                <div className="border-b border-gray-400 mb-2 h-10"></div>
-                <div className="text-sm font-medium">{block.content.signatureLabel}</div>
-              </div>
-            )}
-            {block.content.showDate && (
-              <div>
-                <div className="border-b border-gray-400 mb-2 h-10"></div>
-                <div className="text-sm font-medium">{block.content.dateLabel}</div>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'payment':
-        return (
-          <div className="mb-6">
-            <Card className="p-6 bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    <CreditCard className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-900">
-                      {block.content.buttonText || "Pay Now"}
-                    </h3>
-                    <p className="text-sm text-blue-700">
-                      {block.content.description || "Secure payment processing"}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-900">
-                    {block.content.currency || "$"}{block.content.amount || "712.80"}
-                  </div>
-                  <div className="text-sm text-blue-700">
-                    {block.content.paymentType === 'full' ? 'Full Payment' : 
-                     block.content.paymentType === 'deposit' ? `${block.content.depositPercentage || 50}% Deposit` : 
-                     'Custom Amount'}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 flex gap-3">
-                <Button className="bg-blue-600 hover:bg-blue-700 flex-1">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {block.content.buttonText || "Pay Now"}
-                </Button>
-                {block.content.showInstallments && (
-                  <Button variant="outline" className="border-blue-300 text-blue-700">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Payment Plan
-                  </Button>
-                )}
-              </div>
-              
-              <div className="mt-3 text-xs text-blue-600 text-center">
-                {block.content.securityText || "🔒 Secure SSL encrypted payment"}
-              </div>
-            </Card>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+          )}
+          
+          <p className="text-sm">
+            {replaceTokens(content.companyInfo)}
+          </p>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="shadow-lg">
-        <div className="p-8 bg-white">
-          {blocks.map((block) => (
-            <div key={block.id}>
-              {renderBlock(block)}
-            </div>
-          ))}
-        </div>
-      </Card>
+    <div className="bg-white border rounded-lg shadow-sm max-w-4xl mx-auto">
+      <div className="p-8">
+        {blocks.map((block) => {
+          switch (block.type) {
+            case 'header':
+              return <div key={block.id}>{renderHeader(block)}</div>;
+            case 'client':
+              return <div key={block.id}>{renderClient(block)}</div>;
+            case 'products':
+              return <div key={block.id}>{renderProducts(block)}</div>;
+            case 'footer':
+              return <div key={block.id}>{renderFooter(block)}</div>;
+            default:
+              return null;
+          }
+        })}
+      </div>
     </div>
   );
 };
