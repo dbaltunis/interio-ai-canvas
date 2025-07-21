@@ -8,8 +8,7 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useToast } from "@/hooks/use-toast";
-import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Copy, Edit, ChevronDown, ChevronUp } from "lucide-react";
 
 interface QuotationTabProps {
   projectId: string;
@@ -17,7 +16,7 @@ interface QuotationTabProps {
 
 export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { toast } = useToast();
-  const [showDetails, setShowDetails] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
@@ -30,59 +29,18 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
-  const markupPercentage = 25;
-  const taxRate = 0.08;
-  const subtotal = treatmentTotal * (1 + markupPercentage / 100);
-  const taxAmount = subtotal * taxRate;
-  const total = subtotal + taxAmount;
-
-  const handleEmailQuote = () => {
-    toast({
-      title: "Email Quote",
-      description: "Quote email functionality would be implemented here",
-    });
-  };
-
-  const handleAddDiscount = () => {
-    toast({
-      title: "Add Discount",
-      description: "Discount functionality would be implemented here",
-    });
-  };
-
-  const handleAddTerms = () => {
-    toast({
-      title: "Add Terms & Conditions",
-      description: "Terms & Conditions functionality would be implemented here",
-    });
-  };
-
-  const actionMenuItems = [
-    {
-      label: "Add Discount",
-      icon: <Percent className="h-4 w-4" />,
-      onClick: handleAddDiscount,
-      variant: 'default' as const
-    },
-    {
-      label: "Add T&C / Payment Terms",
-      icon: <FileText className="h-4 w-4" />,
-      onClick: handleAddTerms,
-      variant: 'default' as const
-    },
-    {
-      label: "Email Quote",
-      icon: <Mail className="h-4 w-4" />,
-      onClick: handleEmailQuote,
-      variant: 'info' as const
-    }
-  ];
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  const toggleExpanded = (itemId: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
   };
 
   // Group treatments by room and surface
@@ -116,148 +74,137 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Header with Total and Add Room Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{project.name}</h1>
-          <p className="text-muted-foreground">Quotation</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Total: {formatCurrency(treatmentTotal)} (before tax)
+          </h1>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setShowDetails(!showDetails)}
-            className="flex items-center space-x-2"
-          >
-            {showDetails ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            <span>{showDetails ? 'Simple View' : 'Detailed View'}</span>
-          </Button>
-          <ThreeDotMenu items={actionMenuItems} />
-        </div>
+        <Button className="bg-slate-600 hover:bg-slate-700 text-white">
+          <Plus className="h-4 w-4 mr-2" />
+          Add room
+        </Button>
       </div>
 
-      {/* Total Amount Card */}
-      <Card className="border-l-4 border-l-primary">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Total Project Cost</h2>
-              <p className="text-muted-foreground">Including markup and tax</p>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-primary">{formatCurrency(total)}</div>
-              {showDetails && (
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <div>Subtotal: {formatCurrency(treatmentTotal)}</div>
-                  <div>Markup (25%): {formatCurrency(subtotal - treatmentTotal)}</div>
-                  <div>Tax (8%): {formatCurrency(taxAmount)}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quote Content */}
-      <div className="space-y-6">
+      {/* Room Cards Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {roomTreatments.map((room) => (
-          <Card key={room.id} className="overflow-hidden">
-            <CardHeader className="bg-muted/50">
+          <Card key={room.id} className="bg-gray-50 border border-gray-200">
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{room.name}</CardTitle>
-                <Badge variant="secondary" className="text-lg px-4 py-1">
-                  {formatCurrency(room.total)}
-                </Badge>
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  {room.name}
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+              <div className="text-xl font-bold text-gray-900">
+                {formatCurrency(room.total)}
+              </div>
+              <Button variant="outline" size="sm" className="w-full mt-2">
+                Select product
+              </Button>
             </CardHeader>
-            <CardContent className="p-0">
-              {room.surfaces.map((surface, surfaceIndex) => (
-                <div key={surface.id} className={surfaceIndex > 0 ? "border-t" : ""}>
-                  {/* Window Header */}
-                  <div className="bg-gray-50 px-6 py-4 border-b">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-lg">{surface.name}</h3>
-                      <div className="flex items-center space-x-4">
-                        {showDetails && (
-                          <span className="text-sm text-muted-foreground">
-                            {surface.width}cm × {surface.height}cm
-                          </span>
-                        )}
-                        <Badge variant="outline">
-                          {formatCurrency(surface.treatments.reduce((sum, t) => sum + (t.total_price || 0), 0))}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Treatments */}
-                  <div className="divide-y">
-                    {surface.treatments.map((treatment) => (
-                      <div key={treatment.id} className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-lg mb-2">{treatment.treatment_type}</h4>
-                            
-                            {showDetails ? (
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-2">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Dimensions:</span>
-                                    <span>{surface.width}cm × {surface.height}cm</span>
-                                  </div>
-                                  {treatment.fabric_type && (
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Fabric:</span>
-                                      <span>{treatment.fabric_type}</span>
-                                    </div>
-                                  )}
-                                  {treatment.color && (
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Color:</span>
-                                      <span>{treatment.color}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="space-y-2">
-                                  {treatment.material_cost && (
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Material:</span>
-                                      <span>{formatCurrency(treatment.material_cost)}</span>
-                                    </div>
-                                  )}
-                                  {treatment.labor_cost && (
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Labor:</span>
-                                      <span>{formatCurrency(treatment.labor_cost)}</span>
-                                    </div>
-                                  )}
-                                  <div className="flex justify-between font-medium">
-                                    <span>Total:</span>
-                                    <span>{formatCurrency(treatment.total_price || 0)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-between">
-                                <div className="text-sm text-muted-foreground">
-                                  {surface.width}cm × {surface.height}cm
-                                  {treatment.fabric_type && ` • ${treatment.fabric_type}`}
-                                  {treatment.color && ` • ${treatment.color}`}
-                                </div>
-                              </div>
-                            )}
+            <CardContent className="space-y-4">
+              {room.surfaces.map((surface) => (
+                <div key={surface.id} className="space-y-3">
+                  {surface.treatments.map((treatment) => (
+                    <div key={treatment.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                      {/* Treatment Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          {/* Treatment Icon/Image Placeholder */}
+                          <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center">
+                            <div className="w-12 h-12 bg-gray-400 rounded"></div>
                           </div>
-                          
-                          <div className="ml-6 text-right">
-                            <div className="text-xl font-semibold">
-                              {formatCurrency(treatment.total_price || 0)}
-                            </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              {treatment.treatment_type || 'Treatment'}
+                            </h4>
+                            <p className="text-sm text-gray-600">{surface.name}</p>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => toggleExpanded(treatment.id)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {expandedItems[treatment.id] ? 'Hide details' : 'Full details'}
+                            {expandedItems[treatment.id] ? 
+                              <ChevronUp className="h-4 w-4 ml-1" /> : 
+                              <ChevronDown className="h-4 w-4 ml-1" />
+                            }
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+
+                      {/* Treatment Details */}
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Mechanism width</span>
+                          <span className="font-medium">{surface.width} cm</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Curtain drop</span>
+                          <span className="font-medium">{surface.height} cm</span>
+                        </div>
+                        
+                        {expandedItems[treatment.id] && (
+                          <>
+                            {treatment.fabric_type && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Heading name</span>
+                                <span className="font-medium">{treatment.fabric_type}</span>
+                              </div>
+                            )}
+                            {treatment.color && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Fabric article</span>
+                                <span className="font-medium">{treatment.color}</span>
+                              </div>
+                            )}
+                            {treatment.material_cost && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Fabric price</span>
+                                <span className="font-medium">{formatCurrency(treatment.material_cost)}</span>
+                              </div>
+                            )}
+                            {treatment.labor_cost && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Manufacturing price</span>
+                                <span className="font-medium">{formatCurrency(treatment.labor_cost)}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        
+                        <div className="flex justify-between font-semibold text-base pt-2 border-t">
+                          <span className="text-gray-900">Total price</span>
+                          <span className="text-gray-900">{formatCurrency(treatment.total_price || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </CardContent>
@@ -266,16 +213,18 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         
         {/* Empty state */}
         {roomTreatments.length === 0 && (
-          <Card className="border-2 border-dashed border-gray-300">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-gray-500 text-center mb-4">
-                No treatments found for this project
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Add rooms and treatments to generate a quote
-              </p>
-            </CardContent>
-          </Card>
+          <div className="col-span-full">
+            <Card className="border-2 border-dashed border-gray-300">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <p className="text-gray-500 text-center mb-4">
+                  No treatments found for this project
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Add rooms and treatments to generate a quote
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>
