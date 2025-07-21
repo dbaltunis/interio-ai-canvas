@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,6 +136,9 @@ export const ProjectEmailComposer = ({
     }
   };
 
+  // Filter clients to only show those with valid email addresses
+  const validClients = clients.filter(client => client.email && client.email.trim() !== '');
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="pb-4">
@@ -184,8 +186,8 @@ export const ProjectEmailComposer = ({
                   <SelectValue placeholder="Select from clients or enter email" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.email || ""}>
+                  {validClients.map((client) => (
+                    <SelectItem key={client.id} value={client.email}>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         {client.name} - {client.email}
