@@ -6,22 +6,32 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Search, Filter, Eye, Archive, Trash2, Download } from "lucide-react";
+import { Mail, Search, Filter, Eye, Archive, Download } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
+import { useSendEmail } from "@/hooks/useSendEmail";
 import { format } from "date-fns";
+import { EmailDetailDialog } from "../email-components/EmailDetailDialog";
+import { EmailRowActions } from "../email-components/EmailRowActions";
+import { FollowUpComposer } from "../email-components/FollowUpComposer";
+import { useToast } from "@/hooks/use-toast";
 
 export const EmailDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
+  const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [showEmailDetail, setShowEmailDetail] = useState(false);
+  const [followUpEmailId, setFollowUpEmailId] = useState<string | null>(null);
 
   const { data: emails = [] } = useEmails();
   const { data: kpis } = useEmailKPIs();
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
+  const sendEmailMutation = useSendEmail();
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -49,6 +59,67 @@ export const EmailDashboard = () => {
     return matchesSearch && matchesStatus && matchesClient && matchesProject;
   });
 
+  const handleViewEmail = (email: any) => {
+    setSelectedEmail(email);
+    setShowEmailDetail(true);
+  };
+
+  const handleStartFollowUp = (emailId: string) => {
+    setFollowUpEmailId(emailId);
+  };
+
+  const handleSendFollowUp = async (emailId: string, followUpData: { subject: string; content: string }) => {
+    const originalEmail = emails.find(e => e.id === emailId);
+    if (!originalEmail) return;
+
+    try {
+      await sendEmailMutation.mutateAsync({
+        to: originalEmail.recipient_email,
+        subject: followUpData.subject,
+        content: followUpData.content,
+        client_id: originalEmail.client_id,
+      });
+      
+      setFollowUpEmailId(null);
+      toast({
+        title: "Follow-up Sent",
+        description: "Your follow-up email has been sent successfully",
+      });
+    } catch (error) {
+      console.error("Failed to send follow-up:", error);
+    }
+  };
+
+  const handleResendEmail = async (email: any) => {
+    try {
+      await sendEmailMutation.mutateAsync({
+        to: email.recipient_email,
+        subject: email.subject,
+        content: email.content,
+        client_id: email.client_id,
+      });
+      
+      toast({
+        title: "Email Resent",
+        description: "The email has been resent successfully",
+      });
+    } catch (error) {
+      console.error("Failed to resend email:", error);
+    }
+  };
+
+  // Calculate improved KPIs including bounced/failed
+  const totalEmails = emails.length;
+  const deliveredEmails = emails.filter(e => e.status === 'delivered').length;
+  const bouncedEmails = emails.filter(e => ['bounced', 'failed'].includes(e.status)).length;
+  const openedEmails = emails.filter(e => e.open_count > 0).length;
+  const clickedEmails = emails.filter(e => e.click_count > 0).length;
+
+  const deliveryRate = totalEmails > 0 ? Math.round((deliveredEmails / totalEmails) * 100) : 0;
+  const bounceRate = totalEmails > 0 ? Math.round((bouncedEmails / totalEmails) * 100) : 0;
+  const openRate = deliveredEmails > 0 ? Math.round((openedEmails / deliveredEmails) * 100) : 0;
+  const clickRate = deliveredEmails > 0 ? Math.round((clickedEmails / deliveredEmails) * 100) : 0;
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -61,8 +132,8 @@ export const EmailDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{kpis?.totalSent || 0}</div>
-            <p className="text-xs text-gray-500 mt-1">All time</p>
+            <div className="text-2xl font-bold text-blue-600">{totalEmails}</div>
+            <p className="text-xs text-gray-500 mt-1">All emails</p>
           </CardContent>
         </Card>
 
@@ -74,8 +145,8 @@ export const EmailDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{kpis?.openRate || 0}%</div>
-            <p className="text-xs text-gray-500 mt-1">Average</p>
+            <div className="text-2xl font-bold text-green-600">{openRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">{openedEmails} of {deliveredEmails} delivered</p>
           </CardContent>
         </Card>
 
@@ -87,8 +158,8 @@ export const EmailDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{kpis?.clickRate || 0}%</div>
-            <p className="text-xs text-gray-500 mt-1">Average</p>
+            <div className="text-2xl font-bold text-purple-600">{clickRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">{clickedEmails} clicks</p>
           </CardContent>
         </Card>
 
@@ -96,12 +167,12 @@ export const EmailDashboard = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center">
               <Archive className="w-4 h-4 mr-2" />
-              Delivery Rate
+              Bounce Rate
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{kpis?.deliveryRate || 0}%</div>
-            <p className="text-xs text-gray-500 mt-1">Success rate</p>
+            <div className="text-2xl font-bold text-red-600">{bounceRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">{bouncedEmails} bounced/failed</p>
           </CardContent>
         </Card>
       </div>
@@ -191,24 +262,32 @@ export const EmailDashboard = () => {
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="font-semibold">Sent</TableHead>
                   <TableHead className="font-semibold">Engagement</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
+                  <TableHead className="font-semibold w-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredEmails.map((email) => (
                   <TableRow key={email.id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div className="font-medium text-gray-900">{email.subject}</div>
+                      <button
+                        onClick={() => handleViewEmail(email)}
+                        className="font-medium text-gray-900 hover:text-blue-600 text-left"
+                      >
+                        {email.subject}
+                      </button>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {email.recipient_email}
+                      <button
+                        onClick={() => handleViewEmail(email)}
+                        className="text-sm hover:text-blue-600 text-left"
+                      >
+                        <div>{email.recipient_email}</div>
                         {email.client_id && (
                           <div className="text-xs text-gray-500">
                             {clients.find(c => c.id === email.client_id)?.name}
                           </div>
                         )}
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
@@ -238,17 +317,13 @@ export const EmailDashboard = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <EmailRowActions
+                        email={email}
+                        onView={() => handleViewEmail(email)}
+                        onFollowUp={() => handleStartFollowUp(email.id)}
+                        onResend={() => handleResendEmail(email)}
+                        isResending={sendEmailMutation.isPending}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -257,6 +332,29 @@ export const EmailDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Follow-up Composer */}
+      {followUpEmailId && (
+        <Card>
+          <CardContent className="p-4">
+            <FollowUpComposer
+              email={emails.find(e => e.id === followUpEmailId)!}
+              onSend={(followUpData) => handleSendFollowUp(followUpEmailId, followUpData)}
+              onCancel={() => setFollowUpEmailId(null)}
+              isSending={sendEmailMutation.isPending}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Email Detail Dialog */}
+      <EmailDetailDialog
+        open={showEmailDetail}
+        onOpenChange={setShowEmailDetail}
+        email={selectedEmail}
+        onResendEmail={handleResendEmail}
+        isResending={sendEmailMutation.isPending}
+      />
     </div>
   );
 };

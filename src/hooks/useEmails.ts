@@ -34,9 +34,12 @@ export const useEmailKPIs = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return {
         totalSent: 0,
+        totalDelivered: 0,
+        totalBounced: 0,
         openRate: 0,
         clickRate: 0,
         deliveryRate: 0,
+        bounceRate: 0,
         avgTimeSpent: "0m 0s"
       };
 
@@ -50,21 +53,27 @@ export const useEmailKPIs = () => {
       if (!emails || emails.length === 0) {
         return {
           totalSent: 0,
+          totalDelivered: 0,
+          totalBounced: 0,
           openRate: 0,
           clickRate: 0,
           deliveryRate: 0,
+          bounceRate: 0,
           avgTimeSpent: "0m 0s"
         };
       }
 
-      const totalSent = emails.filter(email => email.status === 'sent' || email.status === 'delivered').length;
+      const totalEmails = emails.length;
+      const totalSent = emails.filter(email => ['sent', 'delivered'].includes(email.status)).length;
+      const totalDelivered = emails.filter(email => email.status === 'delivered').length;
+      const totalBounced = emails.filter(email => ['bounced', 'failed'].includes(email.status)).length;
       const totalOpened = emails.filter(email => email.open_count > 0).length;
       const totalClicked = emails.filter(email => email.click_count > 0).length;
-      const totalDelivered = emails.filter(email => email.status === 'delivered').length;
       
-      const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
-      const clickRate = totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0;
-      const deliveryRate = emails.length > 0 ? Math.round((totalDelivered / emails.length) * 100) : 0;
+      const openRate = totalDelivered > 0 ? Math.round((totalOpened / totalDelivered) * 100) : 0;
+      const clickRate = totalDelivered > 0 ? Math.round((totalClicked / totalDelivered) * 100) : 0;
+      const deliveryRate = totalEmails > 0 ? Math.round((totalDelivered / totalEmails) * 100) : 0;
+      const bounceRate = totalEmails > 0 ? Math.round((totalBounced / totalEmails) * 100) : 0;
       
       const avgTimeSpentSeconds = emails.reduce((sum, email) => sum + (email.time_spent_seconds || 0), 0) / emails.length;
       const minutes = Math.floor(avgTimeSpentSeconds / 60);
@@ -73,9 +82,12 @@ export const useEmailKPIs = () => {
 
       return {
         totalSent,
+        totalDelivered,
+        totalBounced,
         openRate,
         clickRate,
         deliveryRate,
+        bounceRate,
         avgTimeSpent
       };
     },
