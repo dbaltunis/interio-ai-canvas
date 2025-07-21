@@ -1,23 +1,33 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useEmails } from "@/hooks/useEmails";
+import { useQuotes } from "@/hooks/useQuotes";
 import { ClientManagement } from "./ClientManagement";
 import { EmailManagement } from "./EmailManagement";
 import { JobsTableView } from "./JobsTableView";
+import { QuotesListView } from "../quotes/QuotesListView";
+import { QuoteManagement } from "../quotes/QuoteManagement";
 import { NewJobPageSimplified } from "../job-creation/NewJobPageSimplified";
 
 const JobsPage = () => {
-  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "analytics">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "quotes" | "analytics">("jobs");
   const [showNewJobPage, setShowNewJobPage] = useState(false);
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  
   const { data: clients = [] } = useClients();
   const { data: emails = [] } = useEmails();
+  const { data: quotes = [] } = useQuotes();
+
+  const selectedQuote = selectedQuoteId ? quotes.find(q => q.id === selectedQuoteId) : null;
 
   const handleTabChange = (value: string) => {
-    if (value === "clients" || value === "emails" || value === "jobs" || value === "analytics") {
+    if (value === "clients" || value === "emails" || value === "jobs" || value === "quotes" || value === "analytics") {
       setActiveTab(value);
+      setSelectedQuoteId(null); // Reset quote selection when changing tabs
     }
   };
 
@@ -29,8 +39,22 @@ const JobsPage = () => {
     setShowNewJobPage(false);
   };
 
+  const handleQuoteSelect = (quoteId: string) => {
+    setSelectedQuoteId(quoteId);
+  };
+
+  const handleBackFromQuote = () => {
+    setSelectedQuoteId(null);
+  };
+
+  // If showing new job page
   if (showNewJobPage) {
     return <NewJobPageSimplified onBack={handleBackFromNewJob} />;
+  }
+
+  // If showing quote management
+  if (selectedQuote) {
+    return <QuoteManagement quote={selectedQuote} onBack={handleBackFromQuote} />;
   }
 
   return (
@@ -43,7 +67,7 @@ const JobsPage = () => {
               Jobs Management
             </h1>
             <p className="text-gray-600 text-sm mt-1">
-              Manage your projects, clients, and communications
+              Manage your projects, clients, quotes, and communications
             </p>
           </div>
           <Button 
@@ -65,6 +89,12 @@ const JobsPage = () => {
                   className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
                 >
                   Jobs (4)
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="quotes" 
+                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
+                >
+                  Quotes ({quotes.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="clients" 
@@ -90,6 +120,14 @@ const JobsPage = () => {
             <div className="p-6">
               <TabsContent value="jobs" className="mt-0 space-y-0">
                 <JobsTableView />
+              </TabsContent>
+
+              <TabsContent value="quotes" className="mt-0 space-y-0">
+                <QuotesListView 
+                  onNewQuote={() => console.log("Create new quote")}
+                  onQuoteSelect={handleQuoteSelect}
+                  onQuoteEdit={handleQuoteSelect}
+                />
               </TabsContent>
 
               <TabsContent value="clients" className="mt-0 space-y-0">
