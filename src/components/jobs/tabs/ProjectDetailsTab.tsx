@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Plus } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Plus, Package, ShoppingCart } from "lucide-react";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 
 interface ProjectDetailsTabProps {
@@ -34,6 +34,43 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { toast } = useToast();
   
   const selectedClient = clients?.find(c => c.id === formData.client_id);
+
+  // Mock data for products to order - this would come from project items/treatments
+  const productsToOrder = [
+    {
+      id: "1",
+      type: "fabric",
+      name: "Silk Dupioni - Gold",
+      quantity: 15,
+      unit: "meters",
+      supplier: "Luxury Textiles Co",
+      estimatedCost: 1335.00,
+      status: "pending",
+      urgency: "high"
+    },
+    {
+      id: "2", 
+      type: "hardware",
+      name: "Chrome Curtain Brackets",
+      quantity: 8,
+      unit: "pieces",
+      supplier: "Hardware Plus",
+      estimatedCost: 200.00,
+      status: "ordered",
+      urgency: "medium"
+    },
+    {
+      id: "3",
+      type: "fabric",
+      name: "Cotton Canvas - Natural",
+      quantity: 25,
+      unit: "meters",
+      supplier: "Premium Fabrics Ltd",
+      estimatedCost: 637.50,
+      status: "pending",
+      urgency: "low"
+    }
+  ];
 
   const handleSave = async () => {
     try {
@@ -91,6 +128,32 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case "high":
+        return "bg-red-100 text-red-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "low":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getProductStatusColor = (status: string) => {
+    switch (status) {
+      case "ordered":
+        return "bg-blue-100 text-blue-800";
+      case "received":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
       case "high":
         return "bg-red-100 text-red-800";
       case "medium":
@@ -300,6 +363,67 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Products to Order Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Products to Order from Suppliers
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {productsToOrder.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500">No products need to be ordered</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {productsToOrder.map((product) => (
+                <div key={product.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-blue-100 p-2 rounded-full">
+                        <Package className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">{product.name}</h4>
+                        <p className="text-sm text-gray-500">
+                          {product.quantity} {product.unit} from {product.supplier}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="font-medium text-gray-900">${product.estimatedCost.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">Est. cost</p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Badge className={getProductStatusColor(product.status)}>
+                          {product.status.toUpperCase()}
+                        </Badge>
+                        <Badge className={getUrgencyColor(product.urgency)}>
+                          {product.urgency.toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-medium text-gray-900">Total Estimated Cost:</span>
+                  <span className="text-xl font-bold text-green-600">
+                    ${productsToOrder.reduce((total, product) => total + product.estimatedCost, 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
