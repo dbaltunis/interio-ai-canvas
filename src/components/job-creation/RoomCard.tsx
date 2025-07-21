@@ -1,9 +1,12 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Window, Square } from "lucide-react";
 import { useRoomCardLogic } from "./RoomCardLogic";
-// import { RoomCardContent } from "./RoomCardContent";
-// import { RoomTreatmentDialogs } from "./RoomTreatmentDialogs";
+import { RoomHeader } from "./RoomHeader";
+import { SurfaceList } from "./SurfaceList";
 
 interface RoomCardProps {
   room: any;
@@ -53,7 +56,6 @@ export const RoomCard = ({
     handleAddTreatment
   } = useRoomCardLogic(room, projectId);
 
-  // Use the parent's surface creation handler and track loading state locally
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
   const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
@@ -67,14 +69,19 @@ export const RoomCard = ({
     }
   };
 
-  const handlePricingFormSave = (treatmentData: any) => {
-    onCreateTreatment(room.id, currentFormData.surfaceId, currentFormData.treatmentType, treatmentData);
-    setPricingFormOpen(false);
+  const handleStartEditing = () => {
+    setEditingRoomId(room.id);
+    setEditingRoomName(room.name);
   };
 
-  const handleCalculatorSave = (treatmentData: any) => {
-    onCreateTreatment(room.id, currentFormData.surfaceId, currentFormData.treatmentType, treatmentData);
-    setCalculatorDialogOpen(false);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onRenameRoom(room.id, editingRoomName);
+      setEditingRoomId(null);
+    } else if (e.key === 'Escape') {
+      setEditingRoomId(null);
+      setEditingRoomName(room.name);
+    }
   };
 
   if (surfacesLoading) {
@@ -88,16 +95,75 @@ export const RoomCard = ({
   }
 
   return (
-    <>
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{room.name}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          {room.description || "No description"}
-        </p>
-        <div className="text-center text-muted-foreground">
-          Room details coming soon...
+    <Card className="bg-white border-brand-secondary/20 shadow-sm hover:shadow-md transition-shadow">
+      <RoomHeader
+        room={room}
+        roomTotal={roomTotal}
+        editingRoomId={editingRoomId}
+        editingRoomName={editingRoomName}
+        setEditingRoomName={setEditingRoomName}
+        onStartEditing={handleStartEditing}
+        onKeyPress={handleKeyPress}
+        onRenameRoom={onRenameRoom}
+        onCopyRoom={onCopyRoom}
+        onDeleteRoom={onDeleteRoom}
+        onChangeRoomType={onChangeRoomType}
+      />
+
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          {/* Room Type Badge */}
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary" className="capitalize">
+              {room.room_type?.replace('_', ' ') || 'Living Room'}
+            </Badge>
+            <div className="text-sm text-muted-foreground">
+              {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+
+          {/* Surfaces List */}
+          {roomSurfaces.length > 0 ? (
+            <SurfaceList
+              surfaces={roomSurfaces}
+              treatments={roomTreatments}
+              onAddTreatment={handleAddTreatment}
+              onUpdateSurface={onUpdateSurface}
+              onDeleteSurface={onDeleteSurface}
+            />
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+              <div className="text-4xl mb-2">🪟</div>
+              <h4 className="font-medium text-gray-900 mb-1">No surfaces added</h4>
+              <p className="text-sm text-gray-500 mb-4">Add windows or walls to get started with treatments</p>
+            </div>
+          )}
+
+          {/* Add Surface Buttons */}
+          <div className="flex gap-2 pt-4 border-t border-gray-100">
+            <Button
+              onClick={() => handleSurfaceCreation('window')}
+              disabled={isCreatingSurface}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <Window className="h-4 w-4 mr-2" />
+              Add Window
+            </Button>
+            <Button
+              onClick={() => handleSurfaceCreation('wall')}
+              disabled={isCreatingSurface}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <Square className="h-4 w-4 mr-2" />
+              Add Wall
+            </Button>
+          </div>
         </div>
       </CardContent>
-    </>
+    </Card>
   );
 };

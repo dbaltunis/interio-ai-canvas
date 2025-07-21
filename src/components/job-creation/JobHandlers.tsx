@@ -1,52 +1,62 @@
+
+import { useState } from "react";
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment } from "@/hooks/useTreatments";
+import { useToast } from "@/hooks/use-toast";
 
 export const useJobHandlers = (project: any) => {
-  // Handle case where project might be a quote object with project_id
-  const actualProjectId = project.project_id || project.id;
-  console.log("JobHandlers - project object:", project);
-  console.log("JobHandlers - using project ID:", actualProjectId);
-
-  const { data: rooms, isLoading: roomsLoading } = useRooms(actualProjectId);
-  const { data: allSurfaces } = useSurfaces(actualProjectId);
-  const { data: allTreatments } = useTreatments(actualProjectId);
+  const { toast } = useToast();
+  const projectId = project?.id;
+  
+  // Room management
+  const { data: rooms, isLoading: roomsLoading } = useRooms(projectId);
   const createRoom = useCreateRoom();
   const updateRoom = useUpdateRoom();
   const deleteRoom = useDeleteRoom();
+  
+  // Surface management
+  const { data: allSurfaces } = useSurfaces(projectId);
   const createSurface = useCreateSurface();
   const updateSurface = useUpdateSurface();
   const deleteSurface = useDeleteSurface();
+  
+  // Treatment management
+  const { data: allTreatments } = useTreatments(projectId);
   const createTreatment = useCreateTreatment();
 
   const handleCreateRoom = async () => {
+    if (!projectId) return;
+    
     try {
-      const roomNumber = (rooms?.length || 0) + 1;
-      console.log("Creating room with project_id:", actualProjectId);
-      const newRoom = await createRoom.mutateAsync({
-        project_id: actualProjectId,
-        name: `Room ${roomNumber}`,
-        room_type: "living_room"
+      const roomCount = rooms?.length || 0;
+      await createRoom.mutateAsync({
+        project_id: projectId,
+        name: `Room ${roomCount + 1}`,
+        room_type: 'living_room'
       });
-      console.log("Room created successfully:", newRoom);
     } catch (error) {
       console.error("Failed to create room:", error);
     }
   };
 
   const handleRenameRoom = async (roomId: string, newName: string) => {
-    if (newName.trim()) {
-      try {
-        await updateRoom.mutateAsync({ id: roomId, name: newName.trim() });
-      } catch (error) {
-        console.error("Failed to rename room:", error);
-      }
+    try {
+      await updateRoom.mutateAsync({
+        id: roomId,
+        name: newName
+      });
+    } catch (error) {
+      console.error("Failed to rename room:", error);
     }
   };
 
   const handleChangeRoomType = async (roomId: string, roomType: string) => {
     try {
-      await updateRoom.mutateAsync({ id: roomId, room_type: roomType });
+      await updateRoom.mutateAsync({
+        id: roomId,
+        room_type: roomType
+      });
     } catch (error) {
       console.error("Failed to change room type:", error);
     }
@@ -54,316 +64,108 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateSurface = async (roomId: string, surfaceType: string) => {
     try {
-      const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-      const surfaceNumber = roomSurfaces.length + 1;
-      const surfaceName = surfaceType === 'wall' ? `Wall ${surfaceNumber}` : `Window ${surfaceNumber}`;
-      
-      const surfaceData = {
+      const surfaceCount = allSurfaces?.filter(s => s.room_id === roomId)?.length || 0;
+      await createSurface.mutateAsync({
+        project_id: projectId,
         room_id: roomId,
-        project_id: actualProjectId,
-        name: surfaceName,
-        surface_type: surfaceType,
-        width: surfaceType === 'wall' ? 120 : 60,
-        height: surfaceType === 'wall' ? 96 : 48,
-        surface_width: surfaceType === 'wall' ? 120 : 60,
-        surface_height: surfaceType === 'wall' ? 96 : 48
-      };
-
-      console.log("Creating surface with data:", surfaceData);
-      const result = await createSurface.mutateAsync(surfaceData);
-      console.log("Surface created successfully:", result);
+        name: `${surfaceType} ${surfaceCount + 1}`,
+        surface_type: surfaceType
+      });
     } catch (error) {
       console.error("Failed to create surface:", error);
+      throw error;
     }
   };
 
   const handleUpdateSurface = async (surfaceId: string, updates: any) => {
     try {
-      console.log("Updating surface:", surfaceId, "with:", updates);
-      await updateSurface.mutateAsync({ id: surfaceId, ...updates });
-      console.log("Surface updated successfully");
+      await updateSurface.mutateAsync({
+        id: surfaceId,
+        ...updates
+      });
     } catch (error) {
       console.error("Failed to update surface:", error);
     }
   };
 
   const handleDeleteSurface = async (surfaceId: string) => {
-    if (confirm("Delete this surface and all its treatments?")) {
-      try {
-        await deleteSurface.mutateAsync(surfaceId);
-        console.log("Surface deleted successfully");
-      } catch (error) {
-        console.error("Failed to delete surface:", error);
-      }
+    try {
+      await deleteSurface.mutateAsync(surfaceId);
+    } catch (error) {
+      console.error("Failed to delete surface:", error);
     }
   };
 
   const handleCopyRoom = async (room: any) => {
     try {
-      const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
-      const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
-      
-      // Create a copy of the room
-      const roomNumber = (rooms?.length || 0) + 1;
       const newRoom = await createRoom.mutateAsync({
-        project_id: actualProjectId,
+        project_id: projectId,
         name: `${room.name} (Copy)`,
-        room_type: room.room_type
+        room_type: room.room_type,
+        description: room.description,
+        notes: room.notes
       });
 
-      // Copy all surfaces
+      // Copy surfaces from original room
+      const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
       for (const surface of roomSurfaces) {
-        const newSurface = await createSurface.mutateAsync({
+        await createSurface.mutateAsync({
+          project_id: projectId,
           room_id: newRoom.id,
-          project_id: actualProjectId,
           name: surface.name,
           surface_type: surface.surface_type,
           width: surface.width,
-          height: surface.height,
-          surface_width: surface.surface_width,
-          surface_height: surface.surface_height
+          height: surface.height
         });
-
-        // Copy treatments for this surface
-        const surfaceTreatments = roomTreatments.filter(t => t.window_id === surface.id);
-        for (const treatment of surfaceTreatments) {
-          await createTreatment.mutateAsync({
-            window_id: newSurface.id,
-            room_id: newRoom.id,
-            project_id: actualProjectId,
-            treatment_type: treatment.treatment_type,
-            product_name: treatment.product_name,
-            material_cost: treatment.material_cost,
-            labor_cost: treatment.labor_cost,
-            total_price: treatment.total_price,
-            status: treatment.status
-          });
-        }
       }
-      
-      console.log("Room copied successfully:", newRoom);
+
+      toast({
+        title: "Room copied successfully",
+        description: `Created ${newRoom.name} with all surfaces`,
+      });
     } catch (error) {
       console.error("Failed to copy room:", error);
-    }
-  };
-
-  const handlePasteRoom = async (copiedRoom: any) => {
-    if (!copiedRoom) return;
-
-    try {
-      const roomNumber = (rooms?.length || 0) + 1;
-      const newRoom = await createRoom.mutateAsync({
-        project_id: actualProjectId,
-        name: `${copiedRoom.room.name} (Copy ${roomNumber})`,
-        room_type: copiedRoom.room.room_type
+      toast({
+        title: "Error",
+        description: "Failed to copy room",
+        variant: "destructive",
       });
-
-      for (const surface of copiedRoom.surfaces) {
-        const newSurface = await createSurface.mutateAsync({
-          room_id: newRoom.id,
-          project_id: actualProjectId,
-          name: surface.name,
-          surface_type: surface.surface_type,
-          width: surface.width,
-          height: surface.height,
-          surface_width: surface.surface_width,
-          surface_height: surface.surface_height
-        });
-
-        const surfaceTreatments = copiedRoom.treatments.filter((t: any) => t.window_id === surface.id);
-        for (const treatment of surfaceTreatments) {
-          await createTreatment.mutateAsync({
-            window_id: newSurface.id,
-            room_id: newRoom.id,
-            project_id: actualProjectId,
-            treatment_type: treatment.treatment_type,
-            product_name: treatment.product_name,
-            material_cost: treatment.material_cost,
-            labor_cost: treatment.labor_cost,
-            total_price: treatment.total_price,
-            status: treatment.status
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to paste room:", error);
     }
   };
 
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     try {
-      console.log("Creating treatment with data:", {
-        roomId,
-        surfaceId,
-        treatmentType,
-        treatmentData,
-        actualProjectId
-      });
-
-      let finalSurfaceId = surfaceId;
+      const windowId = surfaceId; // In our schema, window_id maps to surface_id
       
-      // If no surfaceId provided or invalid, create a default window surface
-      if (!surfaceId || surfaceId === "") {
-        console.log("No surface provided, creating default window for treatment");
-        
-        const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-        const surfaceNumber = roomSurfaces.length + 1;
-        
-        const defaultSurface = await createSurface.mutateAsync({
-          room_id: roomId,
-          project_id: actualProjectId,
-          name: `Window ${surfaceNumber}`,
-          surface_type: 'window',
-          width: 60,
-          height: 48,
-          surface_width: 60,
-          surface_height: 48
-        });
-        
-        finalSurfaceId = defaultSurface.id;
-        console.log("Created default surface:", defaultSurface);
-      }
-
-      const treatmentPayload = {
-        window_id: finalSurfaceId,
+      await createTreatment.mutateAsync({
+        project_id: projectId,
         room_id: roomId,
-        project_id: actualProjectId,
+        window_id: windowId,
         treatment_type: treatmentType,
-        status: "planned",
         product_name: treatmentData?.product_name || treatmentType,
+        measurements: treatmentData?.measurements || {},
+        fabric_details: treatmentData?.fabric_details || {},
+        treatment_details: treatmentData?.treatment_details || {},
+        calculation_details: treatmentData?.calculation_details || {},
+        total_price: treatmentData?.total_price || 0,
         material_cost: treatmentData?.material_cost || 0,
         labor_cost: treatmentData?.labor_cost || 0,
-        total_price: treatmentData?.total_price || 0,
         unit_price: treatmentData?.unit_price || 0,
         quantity: treatmentData?.quantity || 1,
-        fabric_type: treatmentData?.fabric_details?.fabricName,
-        color: treatmentData?.color,
-        pattern: treatmentData?.pattern,
-        hardware: treatmentData?.hardware,
-        mounting_type: treatmentData?.treatment_details?.mounting,
-        notes: treatmentData?.notes,
-        // Store additional structured data as JSON objects (not strings)
-        ...(treatmentData?.measurements && {
-          measurements: treatmentData.measurements
-        }),
-        ...(treatmentData?.fabric_details && {
-          fabric_details: treatmentData.fabric_details
-        }),
-        ...(treatmentData?.treatment_details && {
-          treatment_details: treatmentData.treatment_details
-        }),
-        ...(treatmentData?.calculation_details && {
-          calculation_details: treatmentData.calculation_details
-        })
-      };
+        status: 'planned'
+      });
 
-      console.log("Final treatment payload:", treatmentPayload);
-      
-      // Validate required fields
-      if (!finalSurfaceId) {
-        throw new Error("Surface ID is required for treatment creation");
-      }
-      if (!roomId) {
-        throw new Error("Room ID is required for treatment creation");
-      }
-      if (!actualProjectId) {
-        throw new Error("Project ID is required for treatment creation");
-      }
-      
-      const result = await createTreatment.mutateAsync(treatmentPayload);
-      console.log("Treatment created successfully:", result);
-      
-      return result;
+      toast({
+        title: "Treatment added successfully",
+        description: `Added ${treatmentType} treatment`,
+      });
     } catch (error) {
       console.error("Failed to create treatment:", error);
-      console.error("Error details:", {
-        message: error.message,
-        stack: error.stack,
-        roomId,
-        surfaceId,
-        actualProjectId
+      toast({
+        title: "Error",
+        description: "Failed to add treatment",
+        variant: "destructive",
       });
-      throw error;
-    }
-  };
-
-  const handleQuickCreateTreatment = async (formData: any) => {
-    try {
-      console.log("=== QUICK CREATE TREATMENT ===");
-      console.log("Treatment data:", formData);
-      
-      // First, ensure we have a room
-      let roomId = null;
-      const existingRoom = rooms?.find(r => r.name === formData.roomName);
-      
-      if (existingRoom) {
-        roomId = existingRoom.id;
-      } else {
-        // Create new room
-        console.log("Creating new room:", formData.roomName);
-        const newRoom = await createRoom.mutateAsync({
-          project_id: actualProjectId,
-          name: formData.roomName,
-          room_type: 'living_room'
-        });
-        roomId = newRoom.id;
-        console.log("New room created:", newRoom);
-      }
-
-      // Then, ensure we have a surface/window
-      let surfaceId = null;
-      const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-      const existingSurface = roomSurfaces.find(s => s.name === formData.windowName);
-      
-      if (existingSurface) {
-        surfaceId = existingSurface.id;
-      } else {
-        // Create new surface
-        console.log("Creating new surface:", formData.windowName);
-        const newSurface = await createSurface.mutateAsync({
-          room_id: roomId,
-          project_id: actualProjectId,
-          name: formData.windowName,
-          surface_type: 'window',
-          width: formData.width,
-          height: formData.height,
-          surface_width: formData.width,
-          surface_height: formData.height
-        });
-        surfaceId = newSurface.id;
-        console.log("New surface created:", newSurface);
-      }
-
-      // Finally, create the treatment with safe data handling
-      const treatmentPayload = {
-        window_id: surfaceId,
-        room_id: roomId,
-        project_id: actualProjectId,
-        treatment_type: formData.type || 'curtains',
-        status: "planned",
-        product_name: formData.name,
-        material_cost: (formData.unitPrice * formData.quantity) * 0.6,
-        labor_cost: (formData.unitPrice * formData.quantity) * 0.4,
-        total_price: formData.unitPrice * formData.quantity,
-        unit_price: formData.unitPrice,
-        quantity: formData.quantity,
-        notes: `Quick created: ${formData.name}`,
-        measurements: {
-          width: formData.width,
-          height: formData.height,
-          quantity: formData.quantity
-        }
-      };
-
-      console.log("Creating treatment with payload:", treatmentPayload);
-      
-      const result = await createTreatment.mutateAsync(treatmentPayload);
-      console.log("Treatment created successfully:", result);
-      
-      return result;
-    } catch (error) {
-      console.error("Failed to quick create treatment:", error);
-      throw error;
     }
   };
 
@@ -372,268 +174,16 @@ export const useJobHandlers = (project: any) => {
     roomsLoading,
     allSurfaces,
     allTreatments,
+    handleCreateRoom,
+    handleRenameRoom,
+    handleChangeRoomType,
+    handleCreateSurface,
+    handleUpdateSurface,
+    handleDeleteSurface,
+    handleCopyRoom,
+    handleCreateTreatment,
     createRoom,
     updateRoom,
-    deleteRoom,
-    handleCreateRoom: async () => {
-      try {
-        const roomNumber = (rooms?.length || 0) + 1;
-        console.log("Creating room with project_id:", actualProjectId);
-        const newRoom = await createRoom.mutateAsync({
-          project_id: actualProjectId,
-          name: `Room ${roomNumber}`,
-          room_type: "living_room"
-        });
-        console.log("Room created successfully:", newRoom);
-      } catch (error) {
-        console.error("Failed to create room:", error);
-      }
-    },
-    handleRenameRoom: async (roomId: string, newName: string) => {
-      if (newName.trim()) {
-        try {
-          await updateRoom.mutateAsync({ id: roomId, name: newName.trim() });
-        } catch (error) {
-          console.error("Failed to rename room:", error);
-        }
-      }
-    },
-    handleChangeRoomType: async (roomId: string, roomType: string) => {
-      try {
-        await updateRoom.mutateAsync({ id: roomId, room_type: roomType });
-      } catch (error) {
-        console.error("Failed to change room type:", error);
-      }
-    },
-    handleCreateSurface: async (roomId: string, surfaceType: string) => {
-      try {
-        const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-        const surfaceNumber = roomSurfaces.length + 1;
-        const surfaceName = surfaceType === 'wall' ? `Wall ${surfaceNumber}` : `Window ${surfaceNumber}`;
-        
-        const surfaceData = {
-          room_id: roomId,
-          project_id: actualProjectId,
-          name: surfaceName,
-          surface_type: surfaceType,
-          width: surfaceType === 'wall' ? 120 : 60,
-          height: surfaceType === 'wall' ? 96 : 48,
-          surface_width: surfaceType === 'wall' ? 120 : 60,
-          surface_height: surfaceType === 'wall' ? 96 : 48
-        };
-
-        console.log("Creating surface with data:", surfaceData);
-        const result = await createSurface.mutateAsync(surfaceData);
-        console.log("Surface created successfully:", result);
-      } catch (error) {
-        console.error("Failed to create surface:", error);
-      }
-    },
-    handleUpdateSurface: async (surfaceId: string, updates: any) => {
-      try {
-        console.log("Updating surface:", surfaceId, "with:", updates);
-        await updateSurface.mutateAsync({ id: surfaceId, ...updates });
-        console.log("Surface updated successfully");
-      } catch (error) {
-        console.error("Failed to update surface:", error);
-      }
-    },
-    handleDeleteSurface: async (surfaceId: string) => {
-      if (confirm("Delete this surface and all its treatments?")) {
-        try {
-          await deleteSurface.mutateAsync(surfaceId);
-          console.log("Surface deleted successfully");
-        } catch (error) {
-          console.error("Failed to delete surface:", error);
-        }
-      }
-    },
-    handleCopyRoom: async (room: any) => {
-      try {
-        const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
-        const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
-        
-        // Create a copy of the room
-        const roomNumber = (rooms?.length || 0) + 1;
-        const newRoom = await createRoom.mutateAsync({
-          project_id: actualProjectId,
-          name: `${room.name} (Copy)`,
-          room_type: room.room_type
-        });
-
-        // Copy all surfaces
-        for (const surface of roomSurfaces) {
-          const newSurface = await createSurface.mutateAsync({
-            room_id: newRoom.id,
-            project_id: actualProjectId,
-            name: surface.name,
-            surface_type: surface.surface_type,
-            width: surface.width,
-            height: surface.height,
-            surface_width: surface.surface_width,
-            surface_height: surface.surface_height
-          });
-
-          // Copy treatments for this surface
-          const surfaceTreatments = roomTreatments.filter(t => t.window_id === surface.id);
-          for (const treatment of surfaceTreatments) {
-            await createTreatment.mutateAsync({
-              window_id: newSurface.id,
-              room_id: newRoom.id,
-              project_id: actualProjectId,
-              treatment_type: treatment.treatment_type,
-              product_name: treatment.product_name,
-              material_cost: treatment.material_cost,
-              labor_cost: treatment.labor_cost,
-              total_price: treatment.total_price,
-              status: treatment.status
-            });
-          }
-        }
-        
-        console.log("Room copied successfully:", newRoom);
-      } catch (error) {
-        console.error("Failed to copy room:", error);
-      }
-    },
-    handlePasteRoom: async (copiedRoom: any) => {
-      if (!copiedRoom) return;
-
-      try {
-        const roomNumber = (rooms?.length || 0) + 1;
-        const newRoom = await createRoom.mutateAsync({
-          project_id: actualProjectId,
-          name: `${copiedRoom.room.name} (Copy ${roomNumber})`,
-          room_type: copiedRoom.room.room_type
-        });
-
-        for (const surface of copiedRoom.surfaces) {
-          const newSurface = await createSurface.mutateAsync({
-            room_id: newRoom.id,
-            project_id: actualProjectId,
-            name: surface.name,
-            surface_type: surface.surface_type,
-            width: surface.width,
-            height: surface.height,
-            surface_width: surface.surface_width,
-            surface_height: surface.surface_height
-          });
-
-          const surfaceTreatments = copiedRoom.treatments.filter((t: any) => t.window_id === surface.id);
-          for (const treatment of surfaceTreatments) {
-            await createTreatment.mutateAsync({
-              window_id: newSurface.id,
-              room_id: newRoom.id,
-              project_id: actualProjectId,
-              treatment_type: treatment.treatment_type,
-              product_name: treatment.product_name,
-              material_cost: treatment.material_cost,
-              labor_cost: treatment.labor_cost,
-              total_price: treatment.total_price,
-              status: treatment.status
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to paste room:", error);
-      }
-    },
-    handleCreateTreatment: async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
-      try {
-        console.log("Creating treatment with data:", {
-          roomId,
-          surfaceId,
-          treatmentType,
-          treatmentData,
-          actualProjectId
-        });
-
-        let finalSurfaceId = surfaceId;
-        
-        // If no surfaceId provided or invalid, create a default window surface
-        if (!surfaceId || surfaceId === "") {
-          console.log("No surface provided, creating default window for treatment");
-          
-          const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
-          const surfaceNumber = roomSurfaces.length + 1;
-          
-          const defaultSurface = await createSurface.mutateAsync({
-            room_id: roomId,
-            project_id: actualProjectId,
-            name: `Window ${surfaceNumber}`,
-            surface_type: 'window',
-            width: 60,
-            height: 48,
-            surface_width: 60,
-            surface_height: 48
-          });
-          
-          finalSurfaceId = defaultSurface.id;
-          console.log("Created default surface:", defaultSurface);
-        }
-
-        const treatmentPayload = {
-          window_id: finalSurfaceId,
-          room_id: roomId,
-          project_id: actualProjectId,
-          treatment_type: treatmentType,
-          status: "planned",
-          product_name: treatmentData?.product_name || treatmentType,
-          material_cost: treatmentData?.material_cost || 0,
-          labor_cost: treatmentData?.labor_cost || 0,
-          total_price: treatmentData?.total_price || 0,
-          unit_price: treatmentData?.unit_price || 0,
-          quantity: treatmentData?.quantity || 1,
-          fabric_type: treatmentData?.fabric_details?.fabricName,
-          color: treatmentData?.color,
-          pattern: treatmentData?.pattern,
-          hardware: treatmentData?.hardware,
-          mounting_type: treatmentData?.treatment_details?.mounting,
-          notes: treatmentData?.notes,
-          // Store additional structured data as JSON objects (not strings)
-          ...(treatmentData?.measurements && {
-            measurements: treatmentData.measurements
-          }),
-          ...(treatmentData?.fabric_details && {
-            fabric_details: treatmentData.fabric_details
-          }),
-          ...(treatmentData?.treatment_details && {
-            treatment_details: treatmentData.treatment_details
-          }),
-          ...(treatmentData?.calculation_details && {
-            calculation_details: treatmentData.calculation_details
-          })
-        };
-
-        console.log("Final treatment payload:", treatmentPayload);
-        
-        // Validate required fields
-        if (!finalSurfaceId) {
-          throw new Error("Surface ID is required for treatment creation");
-        }
-        if (!roomId) {
-          throw new Error("Room ID is required for treatment creation");
-        }
-        if (!actualProjectId) {
-          throw new Error("Project ID is required for treatment creation");
-        }
-        
-        const result = await createTreatment.mutateAsync(treatmentPayload);
-        console.log("Treatment created successfully:", result);
-        
-        return result;
-      } catch (error) {
-        console.error("Failed to create treatment:", error);
-        console.error("Error details:", {
-          message: error.message,
-          stack: error.stack,
-          roomId,
-          surfaceId,
-          actualProjectId
-        });
-        throw error;
-      }
-    },
-    handleQuickCreateTreatment
+    deleteRoom
   };
 };
