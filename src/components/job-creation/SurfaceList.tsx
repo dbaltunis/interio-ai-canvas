@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Window, Square, Plus, Edit2, Trash2, Check, X } from "lucide-react";
+import { RectangleHorizontal, Square, Plus, Edit2, Trash2, Check, X } from "lucide-react";
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -60,7 +60,7 @@ export const SurfaceList = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 {surface.surface_type === 'window' ? (
-                  <Window className="h-5 w-5 text-brand-primary" />
+                  <RectangleHorizontal className="h-5 w-5 text-brand-primary" />
                 ) : (
                   <Square className="h-5 w-5 text-brand-primary" />
                 )}

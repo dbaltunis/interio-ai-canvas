@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Window, Square } from "lucide-react";
+import { Plus, RectangleHorizontal, Square } from "lucide-react";
 import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceList } from "./SurfaceList";
@@ -148,7 +147,7 @@ export const RoomCard = ({
               size="sm"
               className="flex-1"
             >
-              <Window className="h-4 w-4 mr-2" />
+              <RectangleHorizontal className="h-4 w-4 mr-2" />
               Add Window
             </Button>
             <Button
