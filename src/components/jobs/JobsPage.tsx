@@ -6,20 +6,22 @@ import { Plus } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useEmails } from "@/hooks/useEmails";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useCreateProject } from "@/hooks/useProjects";
+import { useToast } from "@/hooks/use-toast";
 import { ClientManagement } from "./ClientManagement";
 import { EmailManagement } from "./EmailManagement";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
-import { NewJobPageSimplified } from "../job-creation/NewJobPageSimplified";
 
 const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "analytics">("jobs");
-  const [showNewJobPage, setShowNewJobPage] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   
   const { data: clients = [] } = useClients();
   const { data: emails = [] } = useEmails();
   const { data: quotes = [] } = useQuotes();
+  const createProject = useCreateProject();
+  const { toast } = useToast();
 
   const handleTabChange = (value: string) => {
     if (value === "clients" || value === "emails" || value === "jobs" || value === "analytics") {
@@ -28,12 +30,36 @@ const JobsPage = () => {
     }
   };
 
-  const handleNewJob = () => {
-    setShowNewJobPage(true);
-  };
+  const handleNewJob = async () => {
+    try {
+      const newProject = await createProject.mutateAsync({
+        name: `New Job ${new Date().toLocaleDateString()}`,
+        description: "",
+        status: "draft",
+        budget: 0,
+        start_date: null,
+        end_date: null,
+        client_name: "",
+        client_email: "",
+        client_phone: "",
+        address_line1: "",
+        address_line2: "",
+        city: "",
+        state: "",
+        zip_code: "",
+        country: ""
+      });
 
-  const handleBackFromNewJob = () => {
-    setShowNewJobPage(false);
+      // Navigate to the job detail page
+      setSelectedJobId(newProject.id);
+    } catch (error) {
+      console.error("Failed to create new job:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create new job. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleJobSelect = (jobId: string) => {
@@ -43,11 +69,6 @@ const JobsPage = () => {
   const handleBackFromJob = () => {
     setSelectedJobId(null);
   };
-
-  // If showing new job page
-  if (showNewJobPage) {
-    return <NewJobPageSimplified onBack={handleBackFromNewJob} />;
-  }
 
   // If showing job detail page (the main workspace)
   if (selectedJobId) {
@@ -69,10 +90,11 @@ const JobsPage = () => {
           </div>
           <Button 
             onClick={handleNewJob}
+            disabled={createProject.isPending}
             className="bg-brand-primary hover:bg-brand-accent text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Job
+            {createProject.isPending ? "Creating..." : "New Job"}
           </Button>
         </div>
 
