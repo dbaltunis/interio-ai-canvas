@@ -8,7 +8,9 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Copy, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
+import { Percent, FileText, Mail, Eye, EyeOff } from "lucide-react";
+import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 
 interface QuotationTabProps {
   projectId: string;
@@ -16,11 +18,82 @@ interface QuotationTabProps {
 
 export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { toast } = useToast();
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
+
+  const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
+
+  // Mock template data - this should come from user's saved quote template
+  const [templateBlocks] = useState([
+    {
+      id: 'header-1',
+      type: 'header',
+      content: {
+        companyName: '{{company_name}}',
+        address: '{{company_address}}',
+        phone: '{{company_phone}}',
+        email: '{{company_email}}',
+        logoPosition: 'left' as const,
+        quoteTitle: 'QUOTE',
+        quoteNumber: 'QT-{{quote_number}}',
+        date: '{{date}}',
+        validUntil: '{{valid_until}}'
+      },
+      styles: {
+        backgroundColor: '#f8fafc',
+        textColor: '#1e293b',
+        fontSize: 'base'
+      }
+    },
+    {
+      id: 'client-1',
+      type: 'client',
+      content: {
+        title: 'Bill To:',
+        showCompany: true,
+        showAddress: true,
+        showContact: true
+      },
+      styles: {
+        backgroundColor: '#ffffff',
+        textColor: '#374151',
+        fontSize: 'sm'
+      }
+    },
+    {
+      id: 'products-1',
+      type: 'products',
+      content: {
+        title: 'Quote Items',
+        tableStyle: viewMode as 'simple' | 'detailed',
+        columns: ['product', 'description', 'qty', 'unit_price', 'total'],
+        showTax: true,
+        taxLabel: 'Tax',
+        showSubtotal: true
+      },
+      styles: {
+        backgroundColor: '#ffffff',
+        textColor: '#374151',
+        fontSize: 'sm'
+      }
+    },
+    {
+      id: 'footer-1',
+      type: 'footer',
+      content: {
+        text: 'Thank you for your business!',
+        showTerms: true,
+        companyInfo: 'Contact us at {{company_phone}} or {{company_email}}'
+      },
+      styles: {
+        backgroundColor: '#f8fafc',
+        textColor: '#6b7280',
+        fontSize: 'xs'
+      }
+    }
+  ]);
 
   const project = projects?.find(p => p.id === projectId);
 
@@ -29,41 +102,53 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+  const markupPercentage = 25;
+  const taxRate = 0.08;
+  const subtotal = treatmentTotal * (1 + markupPercentage / 100);
+  const taxAmount = subtotal * taxRate;
+  const total = subtotal + taxAmount;
+
+  const handleEmailQuote = () => {
+    toast({
+      title: "Email Quote",
+      description: "Quote email functionality would be implemented here",
+    });
   };
 
-  const toggleExpanded = (itemId: string) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
+  const handleAddDiscount = () => {
+    toast({
+      title: "Add Discount",
+      description: "Discount functionality would be implemented here",
+    });
   };
 
-  // Group treatments by room and surface
-  const roomTreatments = rooms?.map(room => {
-    const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
-    const surfacesWithTreatments = roomSurfaces.map(surface => {
-      const surfaceTreatments = treatments?.filter(t => t.window_id === surface.id) || [];
-      return {
-        ...surface,
-        treatments: surfaceTreatments
-      };
-    }).filter(surface => surface.treatments.length > 0);
-    
-    const roomTotal = surfacesWithTreatments.reduce((sum, surface) => 
-      sum + surface.treatments.reduce((tSum, t) => tSum + (t.total_price || 0), 0), 0
-    );
+  const handleAddTerms = () => {
+    toast({
+      title: "Add Terms & Conditions",
+      description: "Terms & Conditions functionality would be implemented here",
+    });
+  };
 
-    return {
-      ...room,
-      surfaces: surfacesWithTreatments,
-      total: roomTotal
-    };
-  }).filter(room => room.surfaces.length > 0) || [];
+  const actionMenuItems = [
+    {
+      label: "Add Discount",
+      icon: <Percent className="h-4 w-4" />,
+      onClick: handleAddDiscount,
+      variant: 'default' as const
+    },
+    {
+      label: "Add T&C / Payment Terms",
+      icon: <FileText className="h-4 w-4" />,
+      onClick: handleAddTerms,
+      variant: 'default' as const
+    },
+    {
+      label: "Email Quote",
+      icon: <Mail className="h-4 w-4" />,
+      onClick: handleEmailQuote,
+      variant: 'info' as const
+    }
+  ];
 
   if (!project) {
     return (
@@ -74,159 +159,64 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header with Total and Add Room Button */}
+    <div className="space-y-6">
+      {/* Header with Actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Total: {formatCurrency(treatmentTotal)} (before tax)
-          </h1>
+          <h2 className="text-xl font-semibold">Project Quote</h2>
+          <p className="text-muted-foreground">
+            Review and customize your project quotation
+          </p>
         </div>
-        <Button className="bg-slate-600 hover:bg-slate-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Add room
-        </Button>
-      </div>
-
-      {/* Room Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {roomTreatments.map((room) => (
-          <Card key={room.id} className="bg-gray-50 border border-gray-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  {room.name}
-                </CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="text-xl font-bold text-gray-900">
-                {formatCurrency(room.total)}
-              </div>
-              <Button variant="outline" size="sm" className="w-full mt-2">
-                Select product
-              </Button>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {room.surfaces.map((surface) => (
-                <div key={surface.id} className="space-y-3">
-                  {surface.treatments.map((treatment) => (
-                    <div key={treatment.id} className="bg-white rounded-lg border border-gray-200 p-4">
-                      {/* Treatment Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          {/* Treatment Icon/Image Placeholder */}
-                          <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center">
-                            <div className="w-12 h-12 bg-gray-400 rounded"></div>
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">
-                              {treatment.treatment_type || 'Treatment'}
-                            </h4>
-                            <p className="text-sm text-gray-600">{surface.name}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => toggleExpanded(treatment.id)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            {expandedItems[treatment.id] ? 'Hide details' : 'Full details'}
-                            {expandedItems[treatment.id] ? 
-                              <ChevronUp className="h-4 w-4 ml-1" /> : 
-                              <ChevronDown className="h-4 w-4 ml-1" />
-                            }
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Treatment Details */}
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Mechanism width</span>
-                          <span className="font-medium">{surface.width} cm</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Curtain drop</span>
-                          <span className="font-medium">{surface.height} cm</span>
-                        </div>
-                        
-                        {expandedItems[treatment.id] && (
-                          <>
-                            {treatment.fabric_type && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Heading name</span>
-                                <span className="font-medium">{treatment.fabric_type}</span>
-                              </div>
-                            )}
-                            {treatment.color && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Fabric article</span>
-                                <span className="font-medium">{treatment.color}</span>
-                              </div>
-                            )}
-                            {treatment.material_cost && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Fabric price</span>
-                                <span className="font-medium">{formatCurrency(treatment.material_cost)}</span>
-                              </div>
-                            )}
-                            {treatment.labor_cost && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Manufacturing price</span>
-                                <span className="font-medium">{formatCurrency(treatment.labor_cost)}</span>
-                              </div>
-                            )}
-                          </>
-                        )}
-                        
-                        <div className="flex justify-between font-semibold text-base pt-2 border-t">
-                          <span className="text-gray-900">Total price</span>
-                          <span className="text-gray-900">{formatCurrency(treatment.total_price || 0)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-        
-        {/* Empty state */}
-        {roomTreatments.length === 0 && (
-          <div className="col-span-full">
-            <Card className="border-2 border-dashed border-gray-300">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <p className="text-gray-500 text-center mb-4">
-                  No treatments found for this project
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Add rooms and treatments to generate a quote
-                </p>
-              </CardContent>
-            </Card>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <Badge variant={viewMode === 'simple' ? 'default' : 'outline'}>
+              {viewMode === 'simple' ? 'Simple View' : 'Detailed View'}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode(viewMode === 'simple' ? 'detailed' : 'simple')}
+              className="flex items-center space-x-2"
+            >
+              {viewMode === 'simple' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              <span>{viewMode === 'simple' ? 'Show Details' : 'Show Simple'}</span>
+            </Button>
           </div>
-        )}
+          <ThreeDotMenu items={actionMenuItems} />
+        </div>
       </div>
+
+      {/* Live Quote Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quote Document</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LivePreview
+            blocks={templateBlocks.map(block => ({
+              ...block,
+              content: {
+                ...block.content,
+                // Update products block to use the correct view mode
+                ...(block.type === 'products' ? { tableStyle: viewMode } : {})
+              }
+            }))}
+            projectData={{
+              project,
+              treatments: treatments || [],
+              rooms: rooms || [],
+              surfaces: surfaces || [],
+              subtotal,
+              taxRate,
+              taxAmount,
+              total,
+              markupPercentage
+            }}
+            isEditable={true}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };
