@@ -17,6 +17,18 @@ export const CalendarIntegrationCard = () => {
     isDisconnecting
   } = useGoogleCalendarIntegration();
 
+  const handleConnect = () => {
+    connect();
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+  };
+
+  const handleToggleSync = () => {
+    toggleSync(!integration?.sync_enabled);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -57,14 +69,14 @@ export const CalendarIntegrationCard = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => toggleSync(!integration?.sync_enabled)}
+                    onClick={handleToggleSync}
                   >
                     {integration?.sync_enabled ? "Disable Sync" : "Enable Sync"}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={disconnect}
+                    onClick={handleDisconnect}
                     disabled={isDisconnecting}
                   >
                     {isDisconnecting ? "Disconnecting..." : "Disconnect"}
@@ -103,7 +115,7 @@ export const CalendarIntegrationCard = () => {
                   for better scheduling and notifications.
                 </p>
                 <Button
-                  onClick={connect}
+                  onClick={handleConnect}
                   disabled={isConnecting}
                   className="flex items-center gap-2"
                 >
