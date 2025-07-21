@@ -69,7 +69,8 @@ export const useCreateReminderNotification = () => {
           appointment_type: 'follow-up',
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
-          client_id: data.clientId
+          client_id: data.clientId,
+          status: 'scheduled'
         });
       }
 

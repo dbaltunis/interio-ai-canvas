@@ -1,6 +1,5 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from '@/hooks/use-toast';
 
 export interface ProductTemplate {
   id: string;
@@ -30,84 +29,8 @@ export interface ProductTemplate {
   };
 }
 
-export const useProductTemplates = () => {
-  const query = useQuery({
-    queryKey: ["product-templates"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_templates")
-        .select("*")
-        .order("name");
-      
-      if (error) throw error;
-      return data as ProductTemplate[];
-    },
-  });
-
-  const queryClient = useQueryClient();
-  
-  const createTemplate = useMutation({
-    mutationFn: async (template: Omit<ProductTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("product_templates")
-        .insert([{ ...template, user_id: user.id }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
-    },
-  });
-
-  const updateTemplate = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<ProductTemplate> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("product_templates")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
-    },
-  });
-
-  const deleteTemplate = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("product_templates")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
-    },
-  });
-
-  return {
-    ...query,
-    templates: query.data || mockTemplates,
-    createTemplate: createTemplate.mutateAsync,
-    updateTemplate: async (id: string, data: any) => updateTemplate.mutateAsync({ id, ...data }),
-    deleteTemplate: deleteTemplate.mutateAsync,
-    isLoading: query.isLoading
-  };
-};
-
-// Mock data for now until templates are properly implemented
-export const mockTemplates: ProductTemplate[] = [
+// Mock data store
+export let mockTemplates: ProductTemplate[] = [
   {
     id: "1",
     name: "Curtains",
@@ -117,7 +40,7 @@ export const mockTemplates: ProductTemplate[] = [
     product_category: "soft-furnishing",
     calculation_method: "fabric-based",
     active: true,
-    user_id: "mock",
+    user_id: "user-1",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     components: {
@@ -141,7 +64,7 @@ export const mockTemplates: ProductTemplate[] = [
     product_category: "hard-furnishing",
     calculation_method: "per-sqm",
     active: true,
-    user_id: "mock",
+    user_id: "user-1",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     calculation_rules: {
@@ -158,7 +81,7 @@ export const mockTemplates: ProductTemplate[] = [
     product_category: "hard-furnishing",
     calculation_method: "per-sqm",
     active: true,
-    user_id: "mock",
+    user_id: "user-1",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     calculation_rules: {
@@ -168,64 +91,155 @@ export const mockTemplates: ProductTemplate[] = [
   }
 ];
 
-export const useCreateProductTemplate = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (template: Omit<ProductTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+export const useProductTemplates = () => {
+  const query = useQuery({
+    queryKey: ["product-templates"],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return mockTemplates.sort((a, b) => a.name.localeCompare(b.name));
+    },
+  });
 
-      const { data, error } = await supabase
-        .from("product_templates")
-        .insert([{ ...template, user_id: user.id }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  const createTemplate = useMutation({
+    mutationFn: async (template: Omit<ProductTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const newTemplate: ProductTemplate = {
+        ...template,
+        id: Date.now().toString(),
+        user_id: "user-1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockTemplates.push(newTemplate);
+      return newTemplate;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+      toast({ title: 'Product template created successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error creating product template', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const updateTemplate = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<ProductTemplate> & { id: string }) => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const index = mockTemplates.findIndex(t => t.id === id);
+      if (index !== -1) {
+        mockTemplates[index] = { ...mockTemplates[index], ...updates, updated_at: new Date().toISOString() };
+        return mockTemplates[index];
+      }
+      throw new Error('Template not found');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+      toast({ title: 'Product template updated successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error updating product template', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteTemplate = useMutation({
+    mutationFn: async (id: string) => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const index = mockTemplates.findIndex(t => t.id === id);
+      if (index !== -1) {
+        mockTemplates.splice(index, 1);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+      toast({ title: 'Product template deleted successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error deleting product template', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  return {
+    ...query,
+    templates: query.data || [],
+    createTemplate: createTemplate.mutateAsync,
+    updateTemplate: async (id: string, data: any) => updateTemplate.mutateAsync({ id, ...data }),
+    deleteTemplate: deleteTemplate.mutateAsync,
+    isLoading: query.isLoading
+  };
+};
+
+export const useCreateProductTemplate = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (template: Omit<ProductTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const newTemplate: ProductTemplate = {
+        ...template,
+        id: Date.now().toString(),
+        user_id: "user-1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockTemplates.push(newTemplate);
+      return newTemplate;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+      toast({ title: 'Product template created successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error creating product template', description: error.message, variant: 'destructive' });
     },
   });
 };
 
 export const useUpdateProductTemplate = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ProductTemplate> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("product_templates")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const index = mockTemplates.findIndex(t => t.id === id);
+      if (index !== -1) {
+        mockTemplates[index] = { ...mockTemplates[index], ...updates, updated_at: new Date().toISOString() };
+        return mockTemplates[index];
+      }
+      throw new Error('Template not found');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+      toast({ title: 'Product template updated successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error updating product template', description: error.message, variant: 'destructive' });
     },
   });
 };
 
 export const useDeleteProductTemplate = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("product_templates")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const index = mockTemplates.findIndex(t => t.id === id);
+      if (index !== -1) {
+        mockTemplates.splice(index, 1);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-templates"] });
+      toast({ title: 'Product template deleted successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error deleting product template', description: error.message, variant: 'destructive' });
     },
   });
 };
