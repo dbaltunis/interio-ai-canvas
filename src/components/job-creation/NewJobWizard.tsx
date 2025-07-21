@@ -8,7 +8,8 @@ import { useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { JobDetailsStep } from "./steps/JobDetailsStep";
-import { ClientSelectionStep } from "./steps/ClientSelectionStep";
+import { ClientSearchStep } from "./steps/ClientSearchStep";
+import { ProjectItemsStep } from "./steps/ProjectItemsStep";
 import { ReviewStep } from "./steps/ReviewStep";
 
 interface NewJobWizardProps {
@@ -21,13 +22,13 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
-    title: "",
     status: "draft",
     priority: "medium",
     client_id: null,
-    description: "",
+    note: "",
     start_date: "",
-    due_date: ""
+    due_date: "",
+    project_items: []
   });
 
   const createProject = useCreateProject();
@@ -38,19 +39,25 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
     { 
       id: 1, 
       title: "Job Details", 
-      description: "Basic information",
+      description: "Set status, priority, and dates",
       component: JobDetailsStep
     },
     { 
       id: 2, 
-      title: "Client Assignment", 
-      description: "Select or create client",
-      component: ClientSelectionStep
+      title: "Client", 
+      description: "Search or create client",
+      component: ClientSearchStep
     },
     { 
       id: 3, 
+      title: "Project Items", 
+      description: "Add fabrics, products, services",
+      component: ProjectItemsStep
+    },
+    { 
+      id: 4, 
       title: "Review & Create", 
-      description: "Confirm details",
+      description: "Confirm and create job",
       component: ReviewStep
     }
   ];
@@ -63,7 +70,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
 
   const canProceed = () => {
     if (currentStep === 1) {
-      return formData.title && formData.title.trim().length > 0;
+      return true; // No required fields in step 1
     }
     return true;
   };
@@ -80,57 +87,59 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
     }
   };
 
-  const handleCreateJob = async () => {
-    if (!formData.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Job title is required",
-        variant: "destructive"
-      });
-      return;
-    }
+  const generateJobNumber = async (userId: string) => {
+    const { count } = await supabase
+      .from("projects")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", userId);
+    
+    return String(count + 1).padStart(3, '0');
+  };
 
+  const handleCreateJob = async () => {
     setIsCreating(true);
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Generate job number
-      const { count } = await supabase
-        .from("projects")
-        .select("*", { count: 'exact', head: true })
-        .eq("user_id", user.id);
+      const jobNumber = await generateJobNumber(user.id);
       
-      const jobNumber = String(1000 + (count || 0) + 1);
-      
+      // Calculate total from project items
+      const totalAmount = formData.project_items.reduce((sum: number, item: any) => 
+        sum + (item.quantity * item.price), 0
+      );
+
       // Create project
       const newProject = await createProject.mutateAsync({
-        name: formData.title,
-        description: formData.description || null,
+        name: `Job #${jobNumber}`,
+        description: formData.note || null,
         status: formData.status as any,
         priority: formData.priority as any,
         client_id: formData.client_id,
         job_number: jobNumber,
         start_date: formData.start_date || null,
-        due_date: formData.due_date || null
+        due_date: formData.due_date || null,
+        total_amount: totalAmount
       });
       
-      // Create initial quote
-      await createQuote.mutateAsync({
-        project_id: newProject.id,
-        client_id: formData.client_id,
-        status: "draft",
-        subtotal: 0,
-        tax_rate: 0,
-        tax_amount: 0,
-        total_amount: 0,
-        notes: "Initial quote for new job"
-      });
+      // Create initial quote if there are items
+      if (formData.project_items.length > 0) {
+        await createQuote.mutateAsync({
+          project_id: newProject.id,
+          client_id: formData.client_id,
+          status: "draft",
+          subtotal: totalAmount,
+          tax_rate: 0,
+          tax_amount: 0,
+          total_amount: totalAmount,
+          notes: `Initial quote for Job #${jobNumber} with ${formData.project_items.length} items`
+        });
+      }
       
       toast({
         title: "Success!",
-        description: `Job #${jobNumber} "${formData.title}" created successfully`,
+        description: `Job #${jobNumber} created successfully`,
       });
       
       onBack();

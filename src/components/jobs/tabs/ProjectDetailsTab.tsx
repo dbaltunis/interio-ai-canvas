@@ -18,7 +18,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: project.name || "",
-    description: project.description || "",
+    note: project.description || "",
     status: project.status || "planning",
     priority: project.priority || "medium",
     job_number: project.job_number || "",
@@ -34,7 +34,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const handleSave = async () => {
     try {
-      await onUpdate({ id: project.id, ...formData });
+      await onUpdate({ id: project.id, ...formData, description: formData.note });
       setIsEditing(false);
       toast({
         title: "Success",
@@ -52,7 +52,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const handleCancel = () => {
     setFormData({
       name: project.name || "",
-      description: project.description || "",
+      note: project.description || "",
       status: project.status || "planning",
       priority: project.priority || "medium",
       job_number: project.job_number || "",
@@ -97,29 +97,21 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               <Input
                 id="job_number"
                 value={formData.job_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, job_number: e.target.value }))}
-                disabled={!isEditing}
+                disabled={true}
+                className="bg-gray-50"
               />
+              <p className="text-xs text-gray-500 mt-1">Auto-generated</p>
             </div>
 
             <div>
-              <Label htmlFor="name">Project Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="note">Note</Label>
               <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                id="note"
+                value={formData.note}
+                onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
                 disabled={!isEditing}
                 rows={3}
+                placeholder="Add notes about this job..."
               />
             </div>
           </CardContent>
@@ -131,44 +123,46 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             <CardTitle>Status & Timeline</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-                disabled={!isEditing}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="planning">Planning</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on_hold">On Hold</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="planning">Planning</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="priority">Priority</Label>
-              <Select 
-                value={formData.priority} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
-                disabled={!isEditing}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select 
+                  value={formData.priority} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
@@ -212,6 +206,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">No client assigned</SelectItem>
                     {clients?.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name} {client.company_name && `(${client.company_name})`}

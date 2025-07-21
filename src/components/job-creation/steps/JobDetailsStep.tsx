@@ -12,19 +12,6 @@ interface JobDetailsStepProps {
 export const JobDetailsStep = ({ formData, updateFormData }: JobDetailsStepProps) => {
   return (
     <div className="space-y-6">
-      <div>
-        <Label htmlFor="title" className="text-sm font-medium text-gray-900">
-          Job Title *
-        </Label>
-        <Input
-          id="title"
-          value={formData.title || ""}
-          onChange={(e) => updateFormData("title", e.target.value)}
-          placeholder="Enter job title"
-          className="mt-1"
-        />
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="status" className="text-sm font-medium text-gray-900">
@@ -95,16 +82,16 @@ export const JobDetailsStep = ({ formData, updateFormData }: JobDetailsStepProps
       </div>
 
       <div>
-        <Label htmlFor="description" className="text-sm font-medium text-gray-900">
-          Project Description
+        <Label htmlFor="note" className="text-sm font-medium text-gray-900">
+          Note
         </Label>
         <Textarea
-          id="description"
-          value={formData.description || ""}
-          onChange={(e) => updateFormData("description", e.target.value)}
-          placeholder="Describe the project requirements, scope, and any special considerations..."
+          id="note"
+          value={formData.note || ""}
+          onChange={(e) => updateFormData("note", e.target.value)}
+          placeholder="Add notes about this job..."
           className="mt-1"
-          rows={4}
+          rows={3}
         />
       </div>
     </div>

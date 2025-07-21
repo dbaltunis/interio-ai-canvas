@@ -1,153 +1,174 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Calendar, User, FileText } from "lucide-react";
+import { User, Building, Package, Scissors, Wrench, Calendar, Flag } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 
 interface ReviewStepProps {
   formData: any;
+  updateFormData: (field: string, value: any) => void;
 }
 
 export const ReviewStep = ({ formData }: ReviewStepProps) => {
   const { data: clients } = useClients();
-  const selectedClient = formData.client_id ? clients?.find(c => c.id === formData.client_id) : null;
+  const selectedClient = clients?.find(c => c.id === formData.client_id);
 
-  const getStatusColor = (status: string) => {
-    const colors = {
-      draft: "bg-gray-100 text-gray-800",
-      planning: "bg-blue-100 text-blue-800",
-      active: "bg-green-100 text-green-800",
-      completed: "bg-purple-100 text-purple-800"
-    };
-    return colors[status as keyof typeof colors] || colors.draft;
+  const getItemIcon = (type: string) => {
+    switch (type) {
+      case "fabric": return <Scissors className="h-4 w-4" />;
+      case "product": return <Package className="h-4 w-4" />;
+      case "service": return <Wrench className="h-4 w-4" />;
+      default: return <Package className="h-4 w-4" />;
+    }
   };
 
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      low: "bg-gray-100 text-gray-800",
-      medium: "bg-yellow-100 text-yellow-800",
-      high: "bg-orange-100 text-orange-800",
-      urgent: "bg-red-100 text-red-800"
-    };
-    return colors[priority as keyof typeof colors] || colors.medium;
+  const getTotalValue = () => {
+    return formData.project_items?.reduce((total: number, item: any) => 
+      total + (item.quantity * item.price), 0
+    ) || 0;
   };
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900">Review Job Details</h3>
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Review Job Details</h3>
         <p className="text-sm text-gray-500">
-          Please review the information below before creating your job
+          Please review all information before creating the job.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Job Information */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Job Information</span>
-            </CardTitle>
+            <CardTitle className="text-base">Job Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <span className="text-sm font-medium text-gray-600">Title:</span>
-              <p className="text-sm text-gray-900">{formData.title || "Untitled Job"}</p>
+            <div className="flex items-center gap-2">
+              <Flag className="h-4 w-4 text-gray-400" />
+              <span className="text-sm">Status:</span>
+              <Badge variant="outline" className="capitalize">
+                {formData.status}
+              </Badge>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div>
-                <span className="text-sm font-medium text-gray-600">Status:</span>
-                <Badge className={`ml-2 ${getStatusColor(formData.status || "draft")}`}>
-                  {(formData.status || "draft").charAt(0).toUpperCase() + (formData.status || "draft").slice(1)}
-                </Badge>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-600">Priority:</span>
-                <Badge className={`ml-2 ${getPriorityColor(formData.priority || "medium")}`}>
-                  {(formData.priority || "medium").charAt(0).toUpperCase() + (formData.priority || "medium").slice(1)}
-                </Badge>
-              </div>
+            <div className="flex items-center gap-2">
+              <Flag className="h-4 w-4 text-gray-400" />
+              <span className="text-sm">Priority:</span>
+              <Badge variant="outline" className="capitalize">
+                {formData.priority}
+              </Badge>
             </div>
-
-            {formData.description && (
+            {formData.start_date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-sm">Start Date:</span>
+                <span className="text-sm font-medium">
+                  {new Date(formData.start_date).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+            {formData.due_date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-sm">Due Date:</span>
+                <span className="text-sm font-medium">
+                  {new Date(formData.due_date).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+            {formData.note && (
               <div>
-                <span className="text-sm font-medium text-gray-600">Description:</span>
-                <p className="text-sm text-gray-900 mt-1">{formData.description}</p>
+                <span className="text-sm text-gray-500">Note:</span>
+                <p className="text-sm mt-1 p-2 bg-gray-50 rounded">
+                  {formData.note}
+                </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Client & Timeline */}
+        {/* Client Information */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="h-5 w-5" />
-              <span>Client & Timeline</span>
-            </CardTitle>
+            <CardTitle className="text-base">Client Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <span className="text-sm font-medium text-gray-600">Client:</span>
-              <p className="text-sm text-gray-900">
-                {selectedClient ? (
-                  <span className="flex items-center space-x-2">
-                    <span>{selectedClient.name}</span>
+          <CardContent>
+            {selectedClient ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  {selectedClient.client_type === "B2B" ? (
+                    <Building className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-400" />
+                  )}
+                  <div>
+                    <p className="font-medium">{selectedClient.name}</p>
                     {selectedClient.company_name && (
-                      <span className="text-xs text-gray-500">({selectedClient.company_name})</span>
+                      <p className="text-sm text-gray-500">{selectedClient.company_name}</p>
                     )}
-                  </span>
-                ) : (
-                  <span className="text-gray-500 italic">No client assigned</span>
-                )}
-              </p>
-            </div>
-
-            {(formData.start_date || formData.due_date) && (
-              <div className="space-y-2">
-                {formData.start_date && (
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Start:</span>
-                    <span className="text-sm text-gray-900">
-                      {new Date(formData.start_date).toLocaleDateString()}
-                    </span>
                   </div>
+                </div>
+                {selectedClient.email && (
+                  <p className="text-sm text-gray-600">{selectedClient.email}</p>
                 )}
-                {formData.due_date && (
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Due:</span>
-                    <span className="text-sm text-gray-900">
-                      {new Date(formData.due_date).toLocaleDateString()}
-                    </span>
-                  </div>
+                {selectedClient.phone && (
+                  <p className="text-sm text-gray-600">{selectedClient.phone}</p>
+                )}
+                {selectedClient.address && (
+                  <p className="text-sm text-gray-600">
+                    {selectedClient.address}
+                    {selectedClient.city && `, ${selectedClient.city}`}
+                    {selectedClient.state && `, ${selectedClient.state}`}
+                    {selectedClient.zip_code && ` ${selectedClient.zip_code}`}
+                  </p>
                 )}
               </div>
+            ) : (
+              <p className="text-gray-500 italic">No client assigned</p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-4">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+      {/* Project Items */}
+      {formData.project_items && formData.project_items.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Project Items</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {formData.project_items.map((item: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div className="flex items-center gap-3">
+                    {getItemIcon(item.type)}
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.quantity} {item.unit}
+                        {item.supplier && ` • ${item.supplier}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">${(item.quantity * item.price).toFixed(2)}</p>
+                    <p className="text-sm text-gray-500">${item.price.toFixed(2)} per {item.unit}</p>
+                  </div>
+                </div>
+              ))}
+              
+              <div className="border-t pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Project Value:</span>
+                  <span className="text-lg font-bold text-green-600">
+                    ${getTotalValue().toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <h4 className="text-sm font-medium text-blue-900">What happens next?</h4>
-              <p className="text-sm text-blue-700 mt-1">
-                After creating this job, you'll be able to add rooms, treatments, create quotes, 
-                and manage the project through completion. You can also assign or change the client at any time.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
