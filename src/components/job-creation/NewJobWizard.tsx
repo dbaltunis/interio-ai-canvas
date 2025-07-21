@@ -1,17 +1,15 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
-import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { JobDetailsStep } from "./steps/JobDetailsStep";
+import { ClientSelectionStep } from "./steps/ClientSelectionStep";
+import { ReviewStep } from "./steps/ReviewStep";
 
 interface NewJobWizardProps {
   onBack: () => void;
@@ -25,21 +23,36 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
   const [formData, setFormData] = useState({
     title: "",
     status: "draft",
+    priority: "medium",
     client_id: null,
     description: "",
     start_date: "",
     due_date: ""
   });
 
-  const { data: clients } = useClients();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const { toast } = useToast();
 
   const steps = [
-    { id: 1, title: "Job Details", description: "Basic job information" },
-    { id: 2, title: "Client", description: "Select or create client" },
-    { id: 3, title: "Review", description: "Review and create job" }
+    { 
+      id: 1, 
+      title: "Job Details", 
+      description: "Basic information",
+      component: JobDetailsStep
+    },
+    { 
+      id: 2, 
+      title: "Client Assignment", 
+      description: "Select or create client",
+      component: ClientSelectionStep
+    },
+    { 
+      id: 3, 
+      title: "Review & Create", 
+      description: "Confirm details",
+      component: ReviewStep
+    }
   ];
 
   const updateFormData = (field: string, value: any) => {
@@ -48,8 +61,15 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
     onDataChange(newData);
   };
 
+  const canProceed = () => {
+    if (currentStep === 1) {
+      return formData.title && formData.title.trim().length > 0;
+    }
+    return true;
+  };
+
   const handleNext = () => {
-    if (currentStep < steps.length) {
+    if (currentStep < steps.length && canProceed()) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -76,7 +96,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get next job number
+      // Generate job number
       const { count } = await supabase
         .from("projects")
         .select("*", { count: 'exact', head: true })
@@ -87,16 +107,16 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
       // Create project
       const newProject = await createProject.mutateAsync({
         name: formData.title,
-        description: formData.description,
+        description: formData.description || null,
         status: formData.status as any,
-        priority: "medium",
+        priority: formData.priority as any,
         client_id: formData.client_id,
         job_number: jobNumber,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null
       });
       
-      // Create quote
+      // Create initial quote
       await createQuote.mutateAsync({
         project_id: newProject.id,
         client_id: formData.client_id,
@@ -105,12 +125,12 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
         tax_rate: 0,
         tax_amount: 0,
         total_amount: 0,
-        notes: "New job created"
+        notes: "Initial quote for new job"
       });
       
       toast({
-        title: "Success",
-        description: `Job #${jobNumber} created successfully`,
+        title: "Success!",
+        description: `Job #${jobNumber} "${formData.title}" created successfully`,
       });
       
       onBack();
@@ -126,16 +146,19 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
     }
   };
 
+  const currentStepData = steps.find(s => s.id === currentStep);
+  const StepComponent = currentStepData?.component;
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Progress Steps */}
       <div className="flex items-center justify-center mb-8">
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
               currentStep >= step.id 
                 ? 'bg-brand-primary border-brand-primary text-white' 
-                : 'border-gray-300 text-gray-500'
+                : 'border-gray-300 text-gray-500 bg-white'
             }`}>
               {currentStep > step.id ? (
                 <CheckCircle className="w-6 h-6" />
@@ -144,7 +167,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
               )}
             </div>
             <div className="ml-3 text-left">
-              <div className={`text-sm font-medium ${
+              <div className={`text-sm font-medium transition-colors duration-200 ${
                 currentStep >= step.id ? 'text-brand-primary' : 'text-gray-500'
               }`}>
                 {step.title}
@@ -152,7 +175,7 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
               <div className="text-xs text-gray-500">{step.description}</div>
             </div>
             {index < steps.length - 1 && (
-              <div className={`w-16 h-0.5 mx-4 ${
+              <div className={`w-16 h-0.5 mx-4 transition-colors duration-200 ${
                 currentStep > step.id ? 'bg-brand-primary' : 'bg-gray-300'
               }`} />
             )}
@@ -161,140 +184,56 @@ export const NewJobWizard = ({ onBack, initialData, onDataChange }: NewJobWizard
       </div>
 
       {/* Step Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {steps.find(s => s.id === currentStep)?.title}
+      <Card className="mb-6">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl text-gray-900">
+            {currentStepData?.title}
           </CardTitle>
+          <p className="text-sm text-gray-600">{currentStepData?.description}</p>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {currentStep === 1 && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Job Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => updateFormData("title", e.target.value)}
-                  placeholder="Enter job title"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => updateFormData("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => updateFormData("start_date", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="due_date">Due Date</Label>
-                  <Input
-                    id="due_date"
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => updateFormData("due_date", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => updateFormData("description", e.target.value)}
-                  placeholder="Job description (optional)"
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="client">Client (Optional)</Label>
-                <Select 
-                  value={formData.client_id || ""} 
-                  onValueChange={(value) => updateFormData("client_id", value || null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a client or leave empty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No client</SelectItem>
-                    {clients?.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="text-sm text-gray-600">
-                You can create jobs without a client and assign one later.
-              </div>
-            </div>
-          )}
-
-          {currentStep === 3 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Review Job Details</h3>
-              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <div><strong>Title:</strong> {formData.title}</div>
-                <div><strong>Status:</strong> {formData.status}</div>
-                <div><strong>Client:</strong> {
-                  formData.client_id 
-                    ? clients?.find(c => c.id === formData.client_id)?.name 
-                    : "No client assigned"
-                }</div>
-                {formData.start_date && <div><strong>Start Date:</strong> {formData.start_date}</div>}
-                {formData.due_date && <div><strong>Due Date:</strong> {formData.due_date}</div>}
-                {formData.description && <div><strong>Description:</strong> {formData.description}</div>}
-              </div>
-            </div>
+        <CardContent>
+          {StepComponent && (
+            <StepComponent 
+              formData={formData} 
+              updateFormData={updateFormData}
+            />
           )}
         </CardContent>
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-between">
         <Button 
           variant="outline" 
           onClick={currentStep === 1 ? onBack : handlePrevious}
           disabled={isCreating}
+          className="flex items-center space-x-2"
         >
-          {currentStep === 1 ? "Cancel" : "Previous"}
+          <ArrowLeft className="h-4 w-4" />
+          <span>{currentStep === 1 ? "Cancel" : "Previous"}</span>
         </Button>
         
         <Button 
           onClick={currentStep === steps.length ? handleCreateJob : handleNext}
-          disabled={isCreating || (currentStep === 1 && !formData.title.trim())}
-          className="bg-brand-primary hover:bg-brand-accent text-white"
+          disabled={isCreating || !canProceed()}
+          className="bg-brand-primary hover:bg-brand-accent text-white flex items-center space-x-2"
         >
-          {isCreating ? "Creating..." : currentStep === steps.length ? "Create Job" : "Next"}
+          {isCreating ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span>Creating Job...</span>
+            </>
+          ) : currentStep === steps.length ? (
+            <>
+              <CheckCircle className="h-4 w-4" />
+              <span>Create Job</span>
+            </>
+          ) : (
+            <>
+              <span>Next</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </div>
     </div>
