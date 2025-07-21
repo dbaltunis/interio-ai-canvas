@@ -7,3 +7,5 @@ export const EmailManagement = () => {
     </div>
   );
 };
+
+export default EmailManagement;
