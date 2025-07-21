@@ -557,6 +557,65 @@ export type Database = {
         }
         Relationships: []
       }
+      product_orders: {
+        Row: {
+          actual_order_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          order_status: string
+          planned_order_date: string | null
+          product_name: string
+          product_type: string
+          project_id: string
+          quantity: number
+          unit_price: number
+          updated_at: string
+          user_id: string
+          vendor_id: string | null
+        }
+        Insert: {
+          actual_order_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_status?: string
+          planned_order_date?: string | null
+          product_name: string
+          product_type: string
+          project_id: string
+          quantity?: number
+          unit_price?: number
+          updated_at?: string
+          user_id: string
+          vendor_id?: string | null
+        }
+        Update: {
+          actual_order_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_status?: string
+          planned_order_date?: string | null
+          product_name?: string
+          product_type?: string
+          project_id?: string
+          quantity?: number
+          unit_price?: number
+          updated_at?: string
+          user_id?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_product_orders_vendor"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           client_id: string | null
@@ -841,6 +900,72 @@ export type Database = {
           updated_at?: string
           user_id?: string
           window_id?: string
+        }
+        Relationships: []
+      }
+      vendors: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          city: string | null
+          company_type: string | null
+          contact_person: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          lead_time_days: number | null
+          minimum_order_amount: number | null
+          name: string
+          payment_terms: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          city?: string | null
+          company_type?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_time_days?: number | null
+          minimum_order_amount?: number | null
+          name: string
+          payment_terms?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          city?: string | null
+          company_type?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_time_days?: number | null
+          minimum_order_amount?: number | null
+          name?: string
+          payment_terms?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }

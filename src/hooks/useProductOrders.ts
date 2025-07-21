@@ -4,43 +4,52 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-type Vendor = Tables<"vendors">;
-type VendorInsert = TablesInsert<"vendors">;
-type VendorUpdate = TablesUpdate<"vendors">;
+type ProductOrder = Tables<"product_orders">;
+type ProductOrderInsert = TablesInsert<"product_orders">;
+type ProductOrderUpdate = TablesUpdate<"product_orders">;
 
-export const useVendors = () => {
+export const useProductOrders = (projectId?: string) => {
   return useQuery({
-    queryKey: ["vendors"],
+    queryKey: ["product-orders", projectId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!user || !projectId) return [];
 
       const { data, error } = await supabase
-        .from("vendors")
-        .select("*")
+        .from("product_orders")
+        .select(`
+          *,
+          vendors (
+            id,
+            name,
+            email,
+            lead_time_days
+          )
+        `)
         .eq("user_id", user.id)
-        .eq("active", true)
-        .order("name");
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!projectId,
   });
 };
 
-export const useCreateVendor = () => {
+export const useCreateProductOrder = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (vendor: Omit<VendorInsert, "user_id">) => {
+    mutationFn: async (productOrder: Omit<ProductOrderInsert, "user_id">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
-        .from("vendors")
+        .from("product_orders")
         .insert({
-          ...vendor,
+          ...productOrder,
           user_id: user.id
         })
         .select()
@@ -50,23 +59,23 @@ export const useCreateVendor = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      queryClient.invalidateQueries({ queryKey: ["product-orders"] });
       toast({
         title: "Success",
-        description: "Vendor created successfully",
+        description: "Product order created successfully",
       });
     },
   });
 };
 
-export const useUpdateVendor = () => {
+export const useUpdateProductOrder = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<VendorUpdate>) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<ProductOrderUpdate>) => {
       const { data, error } = await supabase
-        .from("vendors")
+        .from("product_orders")
         .update(updates)
         .eq("id", id)
         .select()
@@ -76,23 +85,23 @@ export const useUpdateVendor = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      queryClient.invalidateQueries({ queryKey: ["product-orders"] });
       toast({
         title: "Success",
-        description: "Vendor updated successfully",
+        description: "Product order updated successfully",
       });
     },
   });
 };
 
-export const useDeleteVendor = () => {
+export const useDeleteProductOrder = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
-        .from("vendors")
+        .from("product_orders")
         .delete()
         .eq("id", id)
         .select()
@@ -102,10 +111,10 @@ export const useDeleteVendor = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      queryClient.invalidateQueries({ queryKey: ["product-orders"] });
       toast({
         title: "Success",
-        description: "Vendor deleted successfully",
+        description: "Product order deleted successfully",
       });
     },
   });
