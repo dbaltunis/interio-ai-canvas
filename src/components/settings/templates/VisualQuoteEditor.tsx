@@ -274,7 +274,7 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
             </>
           ) : (
             <div className="flex-1 overflow-auto p-6 bg-gray-50">
-              <LivePreview blocks={blocks} templateName={templateName} />
+              <LivePreview blocks={blocks} />
             </div>
           )}
         </div>
