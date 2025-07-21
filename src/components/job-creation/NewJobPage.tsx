@@ -6,10 +6,6 @@ import { useClients } from "@/hooks/useClients";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
-import { ProjectHeader } from "./ProjectHeader";
-import { ProjectNavigation } from "./ProjectNavigation";
-import { ProjectLoadingState } from "./ProjectLoadingState";
-import { ProjectTabContent } from "./ProjectTabContent";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,7 +14,7 @@ interface NewJobPageProps {
 }
 
 export const NewJobPage = ({ onBack }: NewJobPageProps) => {
-  const [activeTab, setActiveTab] = useState("client");
+  const [activeTab, setActiveTab] = useState("jobs");
   const [currentProject, setCurrentProject] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [hasAttemptedCreation, setHasAttemptedCreation] = useState(false);
@@ -91,7 +87,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
           .select("*", { count: 'exact', head: true })
           .eq("user_id", user.id);
         
-        const jobNumber = String(1000 + (count || 0) + 1);
+        const jobNumber = String(10030 + (count || 0) + 1);
         
         const newProject = await createProject.mutateAsync({
           name: "New Project",
@@ -126,7 +122,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         
         toast({
           title: "New Job Created",
-          description: `Job #${jobNumber} created successfully. You can assign a client from the Client tab.`,
+          description: `Job #${jobNumber} created successfully.`,
         });
       } catch (error) {
         console.error("Failed to create default project:", error);
@@ -143,11 +139,6 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
 
     createDefaultProjectAndQuote();
   }, [currentProject, createProject, createQuote, isCreating, hasAttemptedCreation, onBack, toast, isAuthenticated, isCheckingAuth]);
-
-  const handleProjectUpdate = (updatedProject: any) => {
-    console.log("Project update received in NewJobPage:", updatedProject);
-    setCurrentProject(updatedProject);
-  };
 
   const addRoom = () => {
     const newRoom = {
@@ -169,7 +160,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
   // Show minimal loading state
   if (isCheckingAuth || isCreating || !currentProject) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-600">
@@ -182,14 +173,14 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
 
   const navItems = [
     { id: "client", label: "Client", icon: "👤" },
-    { id: "jobs", label: "Jobs", icon: "💼" },
+    { id: "jobs", label: "Jobs", icon: "📋" },
     { id: "quote", label: "Quote", icon: "📄" },
     { id: "workshop", label: "Workshop", icon: "🔧" },
   ];
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
+    <div className="min-h-screen bg-white w-full">
+      {/* Header with Back button and Project info */}
       <div className="border-b bg-white px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -200,68 +191,33 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
               className="flex items-center space-x-2 hover:bg-gray-100"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
+              <span>Back to Jobs</span>
             </Button>
             <div className="h-6 w-px bg-gray-300" />
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">I</span>
-              </div>
-              <span className="font-semibold text-gray-900">InterioApp</span>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">New Project</h1>
+              <p className="text-sm text-gray-500">#{currentProject?.job_number || '10030'}</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-              🏠 Home
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-              💼 Jobs
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-              📅 Calendar
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-              📚 Library
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-              🔔
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-              👤
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b bg-gray-50 px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex space-x-0">
-            {navItems.map((item) => (
-              <Button
-                key={item.id}
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab(item.id)}
-                className={`px-6 py-3 rounded-none border-b-2 ${
-                  activeTab === item.id
-                    ? "border-blue-600 bg-white text-blue-700 font-medium"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                <span className="mr-2">{item.icon}</span>
-                {item.label}
-                {item.id === "client" && (
-                  <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </Button>
-            ))}
-          </div>
-          
-          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Status:</span>
+              <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md font-medium">DRAFT</span>
+            </div>
+            
+            <Select defaultValue="draft">
+              <SelectTrigger className="w-24 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+              </SelectContent>
+            </Select>
+            
             <Select defaultValue="payment">
-              <SelectTrigger className="w-32 h-9">
+              <SelectTrigger className="w-24 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -270,28 +226,46 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
               </SelectContent>
             </Select>
             
-            <Select defaultValue="quote">
-              <SelectTrigger className="w-32 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="quote">Quote</SelectItem>
-                <SelectItem value="estimate">Estimate</SelectItem>
-                <SelectItem value="invoice">Invoice</SelectItem>
-              </SelectContent>
-            </Select>
-            
             <Button variant="ghost" size="sm" className="text-gray-600">
               📅
+            </Button>
+            
+            <Button variant="ghost" size="sm" className="text-gray-600">
+              👤
             </Button>
           </div>
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="border-b bg-gray-50 px-6">
+        <div className="flex space-x-0">
+          {navItems.map((item) => (
+            <Button
+              key={item.id}
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTab(item.id)}
+              className={`px-6 py-3 rounded-none border-b-2 ${
+                activeTab === item.id
+                  ? "border-blue-600 bg-white text-blue-700 font-medium"
+                  : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+            >
+              <span className="mr-2">{item.icon}</span>
+              {item.label}
+              {item.id === "client" && (
+                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* Content Area */}
-      <div className="p-6">
+      <div className="w-full">
         {activeTab === "client" && (
-          <div className="space-y-6">
+          <div className="p-6">
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
                 <span className="text-2xl">👤</span>
@@ -313,43 +287,60 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         )}
 
         {activeTab === "jobs" && (
-          <div className="space-y-6">
-            {/* Total and Add Room */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Total: £{totalPrice.toFixed(2)}</h2>
-              <Button 
-                onClick={addRoom}
-                className="bg-slate-600 hover:bg-slate-700 text-white"
-              >
-                ➕ Add room
-              </Button>
+          <div className="w-full">
+            {/* Job Configuration Header */}
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Job Configuration</h2>
+                  <p className="text-gray-600 text-sm">Add rooms and configure window treatments</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <span className="text-sm text-gray-600">Project Total</span>
+                    <div className="text-2xl font-bold text-gray-900">${totalPrice.toFixed(2)}</div>
+                  </div>
+                  <Button 
+                    onClick={addRoom}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    ➕ Add Room
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {/* Rooms */}
-            <div className="space-y-4">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {rooms.map((room) => (
-                <div key={room.id} className="bg-gray-100 rounded-lg p-6">
+                <div key={room.id} className="bg-gray-50 border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium text-gray-900">{room.name}</h3>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm" className="text-gray-400">
+                      <Button variant="ghost" size="sm" className="text-gray-400 p-1">
                         📋
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400">
+                      <Button variant="ghost" size="sm" className="text-gray-400 p-1">
                         ✏️
                       </Button>
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">£{room.price.toFixed(2)}</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-600"
-                    >
-                      Select product
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="h-32 bg-gray-200 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">Room layout placeholder</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-900">${room.price.toFixed(2)}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs"
+                      >
+                        Select product
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -358,26 +349,30 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         )}
 
         {activeTab === "quote" && (
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-              <span className="text-2xl">📄</span>
+          <div className="p-6">
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+                <span className="text-2xl">📄</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quote Section</h3>
+              <p className="text-gray-600 text-sm max-w-sm mx-auto">
+                Generate and manage quotes for this project.
+              </p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Quote Section</h3>
-            <p className="text-gray-600 text-sm max-w-sm mx-auto">
-              Generate and manage quotes for this project.
-            </p>
           </div>
         )}
 
         {activeTab === "workshop" && (
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 mb-4">
-              <span className="text-2xl">🔧</span>
+          <div className="p-6">
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 mb-4">
+                <span className="text-2xl">🔧</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Workshop</h3>
+              <p className="text-gray-600 text-sm max-w-sm mx-auto">
+                Manage workshop tasks and production for this project.
+              </p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Workshop</h3>
-            <p className="text-gray-600 text-sm max-w-sm mx-auto">
-              Manage workshop tasks and production for this project.
-            </p>
           </div>
         )}
       </div>
