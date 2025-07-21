@@ -13,20 +13,20 @@ export interface Appointment {
   start_time: string;
   end_time: string;
   location?: string;
-  appointment_type: 'consultation' | 'measurement' | 'installation' | 'follow-up' | 'meeting' | 'call';
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  appointment_type?: 'consultation' | 'measurement' | 'installation' | 'follow-up' | 'reminder' | 'meeting' | 'call';
+  status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
 }
 
 export const useAppointments = () => {
   return useQuery({
-    queryKey: ["appointments"],
+    queryKey: ['appointments'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments")
-        .select("*")
-        .order("start_time", { ascending: true });
+        .from('appointments')
+        .select('*')
+        .order('start_time', { ascending: true });
 
       if (error) throw error;
       return data as Appointment[];
@@ -39,13 +39,16 @@ export const useCreateAppointment = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (appointment: Omit<Appointment, "id" | "user_id" | "created_at" | "updated_at">) => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("User not authenticated");
+    mutationFn: async (appointmentData: Omit<Appointment, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
 
       const { data, error } = await supabase
-        .from("appointments")
-        .insert([{ ...appointment, user_id: userData.user.id }])
+        .from('appointments')
+        .insert({
+          ...appointmentData,
+          user_id: user.id,
+        })
         .select()
         .single();
 
@@ -53,14 +56,13 @@ export const useCreateAppointment = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Appointment created successfully",
       });
     },
     onError: (error) => {
-      console.error("Error creating appointment:", error);
       toast({
         title: "Error",
         description: "Failed to create appointment",
@@ -75,11 +77,11 @@ export const useUpdateAppointment = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...appointment }: Partial<Appointment> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<Appointment> & { id: string }) => {
       const { data, error } = await supabase
-        .from("appointments")
-        .update(appointment)
-        .eq("id", id)
+        .from('appointments')
+        .update(updates)
+        .eq('id', id)
         .select()
         .single();
 
@@ -87,14 +89,13 @@ export const useUpdateAppointment = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Appointment updated successfully",
       });
     },
     onError: (error) => {
-      console.error("Error updating appointment:", error);
       toast({
         title: "Error",
         description: "Failed to update appointment",
@@ -111,21 +112,20 @@ export const useDeleteAppointment = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("appointments")
+        .from('appointments')
         .delete()
-        .eq("id", id);
+        .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Appointment deleted successfully",
       });
     },
     onError: (error) => {
-      console.error("Error deleting appointment:", error);
       toast({
         title: "Error",
         description: "Failed to delete appointment",

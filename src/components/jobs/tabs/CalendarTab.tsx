@@ -1,7 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar, Plus } from "lucide-react";
+import { AppointmentScheduler } from "../calendar/AppointmentScheduler";
+import { AppointmentsList } from "../calendar/AppointmentsList";
+import { CalendarIntegrationCard } from "../calendar/CalendarIntegrationCard";
 
 interface CalendarTabProps {
   projectId: string;
@@ -11,31 +12,24 @@ export const CalendarTab = ({ projectId }: CalendarTabProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Project Calendar</h2>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Schedule Appointment
-        </Button>
+        <h2 className="text-lg font-semibold">Project Calendar & Appointments</h2>
       </div>
 
+      {/* Google Calendar Integration Status */}
+      <CalendarIntegrationCard />
+
+      {/* Appointment Scheduler */}
       <Card>
         <CardHeader>
-          <CardTitle>Project Appointments</CardTitle>
+          <CardTitle>Schedule New Appointment</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📅</div>
-            <h3 className="text-lg font-medium mb-2">No appointments scheduled</h3>
-            <p className="text-gray-500 mb-4">
-              Schedule consultations, measurements, and installation appointments for this project.
-            </p>
-            <Button>
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule First Appointment
-            </Button>
-          </div>
+          <AppointmentScheduler projectId={projectId} />
         </CardContent>
       </Card>
+
+      {/* Appointments List */}
+      <AppointmentsList projectId={projectId} />
     </div>
   );
 };
