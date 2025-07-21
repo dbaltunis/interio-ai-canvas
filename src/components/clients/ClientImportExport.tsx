@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, Upload, Users, Mail, FileText } from "lucide-react";
 import { useClients, useCreateClient } from "@/hooks/useClients";
-import { useCreateEmailCampaign } from "@/hooks/useEmailCampaigns";
 import { useToast } from "@/hooks/use-toast";
 
 interface ClientImportExportProps {
@@ -17,7 +16,6 @@ interface ClientImportExportProps {
 export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
   const { data: clients } = useClients();
   const createClient = useCreateClient();
-  const createEmailCampaign = useCreateEmailCampaign();
   const { toast } = useToast();
   const [importing, setImporting] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -67,6 +65,11 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
     a.download = 'client_import_sample.csv';
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Sample Downloaded",
+      description: "Check your downloads folder for the sample CSV file",
+    });
   };
 
   const exportClientsCSV = () => {
@@ -147,7 +150,6 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
             }
           });
 
-          // Validate required fields
           if (!clientData.name && !clientData.company_name) {
             errorCount++;
             continue;
@@ -178,60 +180,12 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
     }
   };
 
-  const createEmailCampaignFromClients = async () => {
-    if (!clients || clients.length === 0) {
-      toast({
-        title: "No Clients",
-        description: "No clients available for email campaign",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const clientsWithEmail = clients.filter(client => client.email);
-    
-    if (clientsWithEmail.length === 0) {
-      toast({
-        title: "No Email Addresses",
-        description: "No clients have email addresses for the campaign",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await createEmailCampaign.mutateAsync({
-        name: `Client Campaign - ${new Date().toLocaleDateString()}`,
-        subject: "Important Update from Our Team",
-        content: `
-          <h2>Hello {{client_name}},</h2>
-          <p>We hope this message finds you well.</p>
-          <p>We wanted to reach out to all our valued clients with an important update.</p>
-          <p>Best regards,<br>Your Team</p>
-        `,
-        status: 'draft',
-        recipient_count: clientsWithEmail.length,
-      });
-
-      toast({
-        title: "Campaign Created",
-        description: `Email campaign created with ${clientsWithEmail.length} recipients`,
-      });
-    } catch (error) {
-      toast({
-        title: "Campaign Failed",
-        description: "Failed to create email campaign",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Clients
+          Back to CRM
         </Button>
         <div>
           <h2 className="text-2xl font-bold">Import & Export Clients</h2>
@@ -283,11 +237,11 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
 
             <div>
               <p className="text-sm text-muted-foreground mb-2">
-                Don't have a CSV file? Download our sample template:
+                Need a template? Download our sample CSV file:
               </p>
-              <Button variant="outline" size="sm" onClick={downloadSampleCSV}>
+              <Button variant="outline" size="sm" onClick={downloadSampleCSV} className="w-full">
                 <FileText className="mr-2 h-4 w-4" />
-                Download Sample CSV
+                Download Sample CSV Template
               </Button>
             </div>
           </CardContent>
@@ -314,24 +268,19 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
 
             <Button onClick={exportClientsCSV} className="w-full">
               <Download className="mr-2 h-4 w-4" />
-              Export All Clients
+              Export All Clients to CSV
             </Button>
 
             <Separator />
 
-            <div>
-              <p className="text-sm font-medium mb-2">Email Campaign Integration</p>
-              <p className="text-sm text-muted-foreground mb-3">
-                Create an email campaign targeting all clients with email addresses
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={createEmailCampaignFromClients}
-                className="w-full"
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                Create Email Campaign
-              </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Export includes all client data including:</p>
+              <ul className="text-xs mt-2 space-y-1">
+                <li>• Contact information</li>
+                <li>• Address details</li>
+                <li>• Client type & notes</li>
+                <li>• Company information (B2B)</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
@@ -368,6 +317,7 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
                 <li>• <code>client_type</code> should be either "B2B" or "B2C"</li>
                 <li>• Email addresses should be valid for email campaigns</li>
                 <li>• All text values should be enclosed in quotes if they contain commas</li>
+                <li>• Download the sample template to see the exact format</li>
               </ul>
             </div>
           </div>
