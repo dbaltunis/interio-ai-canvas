@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCalculationFormulas } from "@/hooks/useCalculationFormulas";
 import { CalculationFormulaForm } from "./CalculationFormulaForm";
 import { CalculationFormulasList } from "./CalculationFormulasList";
-import { DefaultFormulasLoader } from "./DefaultFormulasLoader";
+// import { DefaultFormulasLoader } from "./DefaultFormulasLoader";
 import { FormulaCalculator } from "./FormulaCalculator";
 
 export const CalculationFormulasManager = () => {
@@ -82,8 +82,8 @@ export const CalculationFormulasManager = () => {
 
               {/* Default Formulas Loader */}
               {!isCreating && !editingFormula && (
-                <div className="mb-6">
-                  <DefaultFormulasLoader />
+                <div className="mb-6 text-center text-muted-foreground p-4">
+                  Default formulas loader coming soon...
                 </div>
               )}
 

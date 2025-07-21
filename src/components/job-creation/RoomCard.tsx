@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRoomCardLogic } from "./RoomCardLogic";
-import { RoomCardContent } from "./RoomCardContent";
-import { RoomTreatmentDialogs } from "./RoomTreatmentDialogs";
+// import { RoomCardContent } from "./RoomCardContent";
+// import { RoomTreatmentDialogs } from "./RoomTreatmentDialogs";
 
 interface RoomCardProps {
   room: any;
@@ -89,36 +89,15 @@ export const RoomCard = ({
 
   return (
     <>
-      <RoomCardContent
-        room={room}
-        roomTotal={roomTotal}
-        roomSurfaces={roomSurfaces}
-        roomTreatments={roomTreatments}
-        editingRoomId={editingRoomId}
-        setEditingRoomId={setEditingRoomId}
-        editingRoomName={editingRoomName}
-        setEditingRoomName={setEditingRoomName}
-        onRenameRoom={onRenameRoom}
-        onCopyRoom={onCopyRoom}
-        onDeleteRoom={onDeleteRoom}
-        onChangeRoomType={onChangeRoomType}
-        onCreateSurface={handleSurfaceCreation}
-        onAddTreatment={handleAddTreatment}
-        onDeleteSurface={onDeleteSurface}
-        onUpdateSurface={onUpdateSurface}
-        isCreatingSurface={isCreatingSurface}
-      />
-
-      <RoomTreatmentDialogs
-        projectId={projectId}
-        pricingFormOpen={pricingFormOpen}
-        calculatorDialogOpen={calculatorDialogOpen}
-        currentFormData={currentFormData}
-        onClosePricingForm={() => setPricingFormOpen(false)}
-        onCloseCalculatorDialog={() => setCalculatorDialogOpen(false)}
-        onPricingFormSave={handlePricingFormSave}
-        onCalculatorSave={handleCalculatorSave}
-      />
+      <CardContent className="p-4">
+        <h3 className="font-semibold text-lg mb-2">{room.name}</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          {room.description || "No description"}
+        </p>
+        <div className="text-center text-muted-foreground">
+          Room details coming soon...
+        </div>
+      </CardContent>
     </>
   );
 };

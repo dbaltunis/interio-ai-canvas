@@ -1,4 +1,4 @@
-import { SimplifiedProjectJobsTab } from "./SimplifiedProjectJobsTab";
+// import { SimplifiedProjectJobsTab } from "./SimplifiedProjectJobsTab";
 
 interface ProjectJobsTabProps {
   project: any;
@@ -6,6 +6,12 @@ interface ProjectJobsTabProps {
 }
 
 export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps) => {
-  // Use the new simplified interface
-  return <SimplifiedProjectJobsTab project={project} onProjectUpdate={onProjectUpdate} />;
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-semibold mb-4">Project Jobs - {project?.name}</h2>
+      <div className="text-center text-muted-foreground">
+        Project jobs management coming soon...
+      </div>
+    </div>
+  );
 };
