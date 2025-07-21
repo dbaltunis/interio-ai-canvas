@@ -9,8 +9,7 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff } from "lucide-react";
-import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
+import { Percent, FileText, Mail, Plus, Trash2, Copy, Edit } from "lucide-react";
 
 interface QuotationTabProps {
   projectId: string;
@@ -22,78 +21,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
-
-  const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
-
-  // Mock template data - this should come from user's saved quote template
-  const [templateBlocks] = useState([
-    {
-      id: 'header-1',
-      type: 'header',
-      content: {
-        companyName: '{{company_name}}',
-        address: '{{company_address}}',
-        phone: '{{company_phone}}',
-        email: '{{company_email}}',
-        logoPosition: 'left' as const,
-        quoteTitle: 'QUOTE',
-        quoteNumber: 'QT-{{quote_number}}',
-        date: '{{date}}',
-        validUntil: '{{valid_until}}'
-      },
-      styles: {
-        backgroundColor: '#f8fafc',
-        textColor: '#1e293b',
-        fontSize: 'base'
-      }
-    },
-    {
-      id: 'client-1',
-      type: 'client',
-      content: {
-        title: 'Bill To:',
-        showCompany: true,
-        showAddress: true,
-        showContact: true
-      },
-      styles: {
-        backgroundColor: '#ffffff',
-        textColor: '#374151',
-        fontSize: 'sm'
-      }
-    },
-    {
-      id: 'products-1',
-      type: 'products',
-      content: {
-        title: 'Quote Items',
-        tableStyle: viewMode as 'simple' | 'detailed',
-        columns: ['product', 'description', 'qty', 'unit_price', 'total'],
-        showTax: true,
-        taxLabel: 'Tax',
-        showSubtotal: true
-      },
-      styles: {
-        backgroundColor: '#ffffff',
-        textColor: '#374151',
-        fontSize: 'sm'
-      }
-    },
-    {
-      id: 'footer-1',
-      type: 'footer',
-      content: {
-        text: 'Thank you for your business!',
-        showTerms: true,
-        companyInfo: 'Contact us at {{company_phone}} or {{company_email}}'
-      },
-      styles: {
-        backgroundColor: '#f8fafc',
-        textColor: '#6b7280',
-        fontSize: 'xs'
-      }
-    }
-  ]);
 
   const project = projects?.find(p => p.id === projectId);
 
@@ -150,6 +77,35 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     }
   ];
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  // Group treatments by room
+  const roomTreatments = rooms?.map(room => {
+    const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
+    const surfacesWithTreatments = roomSurfaces.map(surface => {
+      const surfaceTreatments = treatments?.filter(t => t.window_id === surface.id) || [];
+      return {
+        ...surface,
+        treatments: surfaceTreatments
+      };
+    }).filter(surface => surface.treatments.length > 0);
+    
+    const roomTotal = surfacesWithTreatments.reduce((sum, surface) => 
+      sum + surface.treatments.reduce((tSum, t) => tSum + (t.total_price || 0), 0), 0
+    );
+
+    return {
+      ...room,
+      surfaces: surfacesWithTreatments,
+      total: roomTotal
+    };
+  }).filter(room => room.surfaces.length > 0) || [];
+
   if (!project) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -160,63 +116,160 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Actions */}
+      {/* Header with Total and Actions */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Project Quote</h2>
-          <p className="text-muted-foreground">
-            Review and customize your project quotation
-          </p>
+        <div className="flex items-center space-x-4">
+          <h2 className="text-2xl font-bold">
+            Total: {formatCurrency(total)} <span className="text-sm font-normal text-muted-foreground">(before tax)</span>
+          </h2>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <Badge variant={viewMode === 'simple' ? 'default' : 'outline'}>
-              {viewMode === 'simple' ? 'Simple View' : 'Detailed View'}
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode(viewMode === 'simple' ? 'detailed' : 'simple')}
-              className="flex items-center space-x-2"
-            >
-              {viewMode === 'simple' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              <span>{viewMode === 'simple' ? 'Show Details' : 'Show Simple'}</span>
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>Add room</span>
+          </Button>
           <ThreeDotMenu items={actionMenuItems} />
         </div>
       </div>
 
-      {/* Live Quote Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quote Document</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LivePreview
-            blocks={templateBlocks.map(block => ({
-              ...block,
-              content: {
-                ...block.content,
-                // Update products block to use the correct view mode
-                ...(block.type === 'products' ? { tableStyle: viewMode } : {})
-              }
-            }))}
-            projectData={{
-              project,
-              treatments: treatments || [],
-              rooms: rooms || [],
-              surfaces: surfaces || [],
-              subtotal,
-              taxRate,
-              taxAmount,
-              total,
-              markupPercentage
-            }}
-            isEditable={true}
-          />
-        </CardContent>
-      </Card>
+      {/* Room Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {roomTreatments.map((room) => (
+          <Card key={room.id} className="border border-gray-200">
+            <CardHeader className="bg-gray-50 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold">{room.name}</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="text-lg font-semibold">
+                    {formatCurrency(room.total)}
+                  </Badge>
+                  <div className="flex items-center space-x-1">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="w-full mt-2">
+                Select product
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {room.surfaces.map((surface) => (
+                <Card key={surface.id} className="border border-gray-100">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-medium">{surface.name}</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline">
+                          {formatCurrency(surface.treatments.reduce((sum, t) => sum + (t.total_price || 0), 0))}
+                        </Badge>
+                        <div className="flex items-center space-x-1">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Select product
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {surface.treatments.map((treatment) => (
+                      <div key={treatment.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-gray-50">
+                        {/* Treatment Icon/Image Placeholder */}
+                        <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center">
+                          <span className="text-xs text-gray-500">IMG</span>
+                        </div>
+                        
+                        {/* Treatment Details */}
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm">{treatment.treatment_type}</h4>
+                            <Button variant="ghost" size="sm" className="text-blue-600 text-xs p-0">
+                              Full details ▼
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            {treatment.fabric_type && (
+                              <>
+                                <span>Mechanism width</span>
+                                <span className="text-right">{treatment.width || 'N/A'} cm</span>
+                              </>
+                            )}
+                            {treatment.height && (
+                              <>
+                                <span>Height</span>
+                                <span className="text-right">{treatment.height} cm</span>
+                              </>
+                            )}
+                            {treatment.fabric_type && (
+                              <>
+                                <span>Fabric article</span>
+                                <span className="text-right">{treatment.fabric_type}</span>
+                              </>
+                            )}
+                            {treatment.material_cost && (
+                              <>
+                                <span>Material price</span>
+                                <span className="text-right">{formatCurrency(treatment.material_cost)}</span>
+                              </>
+                            )}
+                            {treatment.labor_cost && (
+                              <>
+                                <span>Labor price</span>
+                                <span className="text-right">{formatCurrency(treatment.labor_cost)}</span>
+                              </>
+                            )}
+                            <span className="font-medium">Total price</span>
+                            <span className="text-right font-medium">{formatCurrency(treatment.total_price || 0)}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Action Icons */}
+                        <div className="flex flex-col space-y-1">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+        
+        {/* Empty state or Add Room card */}
+        {roomTreatments.length === 0 && (
+          <Card className="border-2 border-dashed border-gray-300 bg-gray-50">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Plus className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-center mb-4">
+                No rooms with treatments yet
+              </p>
+              <Button variant="outline">
+                Add your first room
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
