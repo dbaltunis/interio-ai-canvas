@@ -7,13 +7,17 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import JobsPage from "@/components/jobs/JobsPage";
 import { LibraryPage } from "@/components/library/LibraryPage";
+import { ClientManagement } from "@/components/jobs/ClientManagement";
+import { EmailManagement } from "@/components/jobs/EmailManagement";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   LayoutDashboard, 
   FolderOpen, 
   Calendar,
-  Package
+  Package,
+  Users,
+  Mail
 } from "lucide-react";
 
 const Index = () => {
@@ -26,6 +30,8 @@ const Index = () => {
   const navItems = [
     { id: "dashboard", label: "Home", icon: LayoutDashboard },
     { id: "jobs", label: "Jobs", icon: FolderOpen },
+    { id: "crm", label: "CRM", icon: Users },
+    { id: "emails", label: "Emails", icon: Mail },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "library", label: "Library", icon: Package },
   ];
@@ -48,6 +54,10 @@ const Index = () => {
         return <Dashboard />;
       case "jobs":
         return <JobsPage />;
+      case "crm":
+        return <ClientManagement />;
+      case "emails":
+        return <EmailManagement />;
       case "library":
         return <LibraryPage />;
       case 'calendar':

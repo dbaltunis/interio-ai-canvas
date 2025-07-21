@@ -3,28 +3,22 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useClients } from "@/hooks/useClients";
-import { useEmails } from "@/hooks/useEmails";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
-import { ClientManagement } from "./ClientManagement";
-import { EmailManagement } from "./EmailManagement";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
 
 const JobsPage = () => {
-  const [activeTab, setActiveTab] = useState<"jobs" | "clients" | "emails" | "analytics">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "analytics">("jobs");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   
-  const { data: clients = [] } = useClients();
-  const { data: emails = [] } = useEmails();
   const { data: quotes = [] } = useQuotes();
   const createProject = useCreateProject();
   const { toast } = useToast();
 
   const handleTabChange = (value: string) => {
-    if (value === "clients" || value === "emails" || value === "jobs" || value === "analytics") {
+    if (value === "jobs" || value === "analytics") {
       setActiveTab(value);
       setSelectedJobId(null); // Reset job selection when changing tabs
     }
@@ -73,7 +67,7 @@ const JobsPage = () => {
               Jobs Management
             </h1>
             <p className="text-gray-600 text-sm mt-1">
-              Manage your projects, clients, and communications
+              Manage your projects and track their progress
             </p>
           </div>
           <Button 
@@ -98,18 +92,6 @@ const JobsPage = () => {
                   Jobs
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="clients" 
-                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
-                >
-                  Clients ({clients.length})
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="emails" 
-                  className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
-                >
-                  Emails ({emails.length})
-                </TabsTrigger>
-                <TabsTrigger 
                   value="analytics" 
                   className="px-4 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary rounded-none"
                 >
@@ -121,14 +103,6 @@ const JobsPage = () => {
             <div className="p-6">
               <TabsContent value="jobs" className="mt-0 space-y-0">
                 <JobsTableView onJobSelect={handleJobSelect} />
-              </TabsContent>
-
-              <TabsContent value="clients" className="mt-0 space-y-0">
-                <ClientManagement />
-              </TabsContent>
-
-              <TabsContent value="emails" className="mt-0 space-y-0">
-                <EmailManagement />
               </TabsContent>
 
               <TabsContent value="analytics" className="mt-0 space-y-0">
