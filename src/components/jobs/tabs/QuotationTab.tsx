@@ -3,16 +3,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Calculator, Send, Download } from "lucide-react";
+import { FileText, Calculator, Send, Download, Eye, EyeOff } from "lucide-react";
 import { QuotePreview } from "../quotation/QuotePreview";
 import { QuotationSummary } from "../quotation/QuotationSummary";
 import { TreatmentLineItems } from "../quotation/TreatmentLineItems";
+import { TemplateQuotePreview } from "../quotation/TemplateQuotePreview";
 
 interface QuotationTabProps {
   projectId: string;
@@ -29,6 +31,16 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const [markupPercentage, setMarkupPercentage] = useState(25);
   const [taxRate, setTaxRate] = useState(0.08);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
+  const [useTemplate, setUseTemplate] = useState(false);
+
+  // Mock templates - in real app this would come from a templates hook
+  const templates = [
+    { id: "default", name: "Default Template" },
+    { id: "standard", name: "Standard Quote" },
+    { id: "premium", name: "Premium Quote" },
+    { id: "detailed", name: "Detailed Breakdown" }
+  ];
 
   const project = projects?.find(p => p.id === projectId);
 
@@ -60,7 +72,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         tax_amount: taxAmount,
         total_amount: total,
         valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `Quote generated from project: ${project.name}`
+        notes: `Quote generated from project: ${project.name} using ${useTemplate ? selectedTemplate : 'default'} template`
       });
 
       toast({
@@ -96,12 +108,35 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium">Template:</label>
+            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setUseTemplate(!useTemplate)}
+            className={`flex items-center space-x-2 ${useTemplate ? 'bg-blue-50 border-blue-200' : ''}`}
+          >
+            <FileText className="h-4 w-4" />
+            <span>{useTemplate ? 'Using Template' : 'Use Template'}</span>
+          </Button>
           <Button
             variant="outline"
             onClick={() => setShowPreview(!showPreview)}
             className="flex items-center space-x-2"
           >
-            <FileText className="h-4 w-4" />
+            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             <span>{showPreview ? 'Hide Preview' : 'Show Preview'}</span>
           </Button>
           <Button
@@ -171,17 +206,34 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
       {/* Quote Preview */}
       {showPreview && (
-        <QuotePreview
-          project={project}
-          treatments={treatments || []}
-          rooms={rooms || []}
-          surfaces={surfaces || []}
-          subtotal={subtotal}
-          taxRate={taxRate}
-          taxAmount={taxAmount}
-          total={total}
-          markupPercentage={markupPercentage}
-        />
+        <>
+          {useTemplate ? (
+            <TemplateQuotePreview
+              project={project}
+              treatments={treatments || []}
+              rooms={rooms || []}
+              surfaces={surfaces || []}
+              subtotal={subtotal}
+              taxRate={taxRate}
+              taxAmount={taxAmount}
+              total={total}
+              markupPercentage={markupPercentage}
+              templateId={selectedTemplate}
+            />
+          ) : (
+            <QuotePreview
+              project={project}
+              treatments={treatments || []}
+              rooms={rooms || []}
+              surfaces={surfaces || []}
+              subtotal={subtotal}
+              taxRate={taxRate}
+              taxAmount={taxAmount}
+              total={total}
+              markupPercentage={markupPercentage}
+            />
+          )}
+        </>
       )}
     </div>
   );
