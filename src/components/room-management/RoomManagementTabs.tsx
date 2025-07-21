@@ -1,10 +1,5 @@
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { RoomsGrid } from "../job-creation/RoomsGrid";
-import { RoomAnalytics } from "./RoomAnalytics";
-import { RoomTemplates } from "./RoomTemplates";
-import { BarChart3, Home, Layout, Settings } from "lucide-react";
 
 interface RoomManagementTabsProps {
   rooms: any[];
@@ -51,80 +46,27 @@ export const RoomManagementTabs = ({
   onChangeRoomType,
   onCreateFromTemplate
 }: RoomManagementTabsProps) => {
-  const [activeTab, setActiveTab] = useState("rooms");
-
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="rooms" className="flex items-center space-x-2">
-            <Home className="h-4 w-4" />
-            <span>Rooms</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Analytics</span>
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center space-x-2">
-            <Layout className="h-4 w-4" />
-            <span>Templates</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Settings</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="rooms" className="space-y-6">
-          <RoomsGrid
-            rooms={rooms}
-            projectId={projectId}
-            onUpdateRoom={onUpdateRoom}
-            onDeleteRoom={onDeleteRoom}
-            onCreateTreatment={onCreateTreatment}
-            onCreateSurface={onCreateSurface}
-            onUpdateSurface={onUpdateSurface}
-            onDeleteSurface={onDeleteSurface}
-            onCopyRoom={onCopyRoom}
-            editingRoomId={editingRoomId}
-            setEditingRoomId={setEditingRoomId}
-            editingRoomName={editingRoomName}
-            setEditingRoomName={setEditingRoomName}
-            onRenameRoom={onRenameRoom}
-            onCreateRoom={onCreateRoom}
-            isCreatingRoom={isCreatingRoom}
-            onChangeRoomType={onChangeRoomType}
-          />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          <RoomAnalytics
-            rooms={rooms}
-            surfaces={surfaces}
-            treatments={treatments}
-          />
-        </TabsContent>
-
-        <TabsContent value="templates" className="space-y-6">
-          <RoomTemplates
-            onCreateFromTemplate={onCreateFromTemplate || (() => {})}
-          />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center py-12">
-                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Room Settings</h3>
-                <p className="text-muted-foreground">
-                  Room configuration options coming soon
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <RoomsGrid
+        rooms={rooms}
+        projectId={projectId}
+        onUpdateRoom={onUpdateRoom}
+        onDeleteRoom={onDeleteRoom}
+        onCreateTreatment={onCreateTreatment}
+        onCreateSurface={onCreateSurface}
+        onUpdateSurface={onUpdateSurface}
+        onDeleteSurface={onDeleteSurface}
+        onCopyRoom={onCopyRoom}
+        editingRoomId={editingRoomId}
+        setEditingRoomId={setEditingRoomId}
+        editingRoomName={editingRoomName}
+        setEditingRoomName={setEditingRoomName}
+        onRenameRoom={onRenameRoom}
+        onCreateRoom={onCreateRoom}
+        isCreatingRoom={isCreatingRoom}
+        onChangeRoomType={onChangeRoomType}
+      />
     </div>
   );
 };
