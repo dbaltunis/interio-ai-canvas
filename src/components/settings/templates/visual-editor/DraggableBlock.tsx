@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GripVertical, X, Image, Type, FileText, PenTool, CreditCard, Upload } from "lucide-react";
+import { GripVertical, X, Image, Type, FileText, PenTool, CreditCard, Upload, Plus, Minus } from "lucide-react";
 import { useState } from 'react';
 import { ImageUploadBlock } from './ImageUploadBlock';
 import { SignatureCanvas } from './SignatureCanvas';
@@ -64,6 +64,8 @@ export const DraggableBlock = ({
         return <SignatureBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'payment':
         return <PaymentBlock content={block.content} onUpdate={onUpdateContent} />;
+      case 'footer':
+        return <FooterBlock content={block.content} onUpdate={onUpdateContent} />;
       default:
         return <div>Unknown block type: {block.type}</div>;
     }
@@ -81,6 +83,8 @@ export const DraggableBlock = ({
         return <PenTool className="h-4 w-4" />;
       case 'payment':
         return <CreditCard className="h-4 w-4" />;
+      case 'footer':
+        return <FileText className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;
     }
@@ -132,29 +136,194 @@ export const DraggableBlock = ({
 };
 
 // Individual Block Components
-const HeaderBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
-  <div className="space-y-4">
-    <div className="flex items-start justify-between">
-      <div className="flex items-center gap-4">
+const HeaderBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => {
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  const updateField = (field: string, value: string) => {
+    onUpdate({ ...content, [field]: value });
+    setEditingField(null);
+  };
+
+  const addCustomField = () => {
+    const customFields = content.customFields || [];
+    const newField = { 
+      id: `custom_${Date.now()}`, 
+      label: 'New Field', 
+      value: '{{new_field}}' 
+    };
+    onUpdate({ 
+      ...content, 
+      customFields: [...customFields, newField] 
+    });
+  };
+
+  const removeCustomField = (id: string) => {
+    const customFields = content.customFields || [];
+    onUpdate({
+      ...content,
+      customFields: customFields.filter((field: any) => field.id !== id)
+    });
+  };
+
+  const updateCustomField = (id: string, key: string, value: string) => {
+    const customFields = content.customFields || [];
+    onUpdate({
+      ...content,
+      customFields: customFields.map((field: any) => 
+        field.id === id ? { ...field, [key]: value } : field
+      )
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Label>Logo Position:</Label>
+        <Select 
+          value={content.logoPosition || 'left'} 
+          onValueChange={(value) => onUpdate({ ...content, logoPosition: value })}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="left">Left</SelectItem>
+            <SelectItem value="center">Center</SelectItem>
+            <SelectItem value="right">Right</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center space-x-2 ml-4">
+          <Switch
+            checked={content.showLogo}
+            onCheckedChange={(checked) => onUpdate({ ...content, showLogo: checked })}
+          />
+          <Label>Show Logo</Label>
+        </div>
+      </div>
+
+      <div className={`flex items-start gap-4 ${
+        content.logoPosition === 'center' ? 'flex-col items-center' : 
+        content.logoPosition === 'right' ? 'flex-row-reverse' : 'flex-row'
+      }`}>
         {content.showLogo && (
-          <div className="w-16 h-16 bg-gray-200 border-2 border-dashed flex items-center justify-center rounded">
+          <div className="w-16 h-16 bg-gray-200 border-2 border-dashed flex items-center justify-center rounded flex-shrink-0">
             <Image className="h-6 w-6 text-gray-400" />
           </div>
         )}
-        <div>
-          <h2 className="text-xl font-bold text-brand-primary">
-            {content.companyName || "{{company_name}}"}
-          </h2>
+        <div className="flex-1 space-y-2">
+          {/* Company Name */}
+          <div>
+            {editingField === 'companyName' ? (
+              <Input
+                value={content.companyName || ''}
+                onChange={(e) => updateField('companyName', e.target.value)}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                autoFocus
+                className="text-xl font-bold"
+              />
+            ) : (
+              <h2 
+                className="text-xl font-bold text-brand-primary cursor-pointer hover:bg-gray-50 p-1 rounded"
+                onClick={() => setEditingField('companyName')}
+              >
+                {content.companyName || "{{company_name}}"}
+              </h2>
+            )}
+          </div>
+
+          {/* Company Info Fields */}
           <div className="text-sm text-gray-600 space-y-1">
-            <div>{content.companyAddress || "{{company_address}}"}</div>
-            <div>{content.companyPhone || "{{company_phone}}"}</div>
-            <div>{content.companyEmail || "{{company_email}}"}</div>
+            {/* Address */}
+            {editingField === 'companyAddress' ? (
+              <Input
+                value={content.companyAddress || ''}
+                onChange={(e) => updateField('companyAddress', e.target.value)}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                autoFocus
+              />
+            ) : (
+              <div 
+                className="cursor-pointer hover:bg-gray-50 p-1 rounded"
+                onClick={() => setEditingField('companyAddress')}
+              >
+                {content.companyAddress || "{{company_address}}"}
+              </div>
+            )}
+
+            {/* Phone */}
+            {editingField === 'companyPhone' ? (
+              <Input
+                value={content.companyPhone || ''}
+                onChange={(e) => updateField('companyPhone', e.target.value)}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                autoFocus
+              />
+            ) : (
+              <div 
+                className="cursor-pointer hover:bg-gray-50 p-1 rounded"
+                onClick={() => setEditingField('companyPhone')}
+              >
+                {content.companyPhone || "{{company_phone}}"}
+              </div>
+            )}
+
+            {/* Email */}
+            {editingField === 'companyEmail' ? (
+              <Input
+                value={content.companyEmail || ''}
+                onChange={(e) => updateField('companyEmail', e.target.value)}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                autoFocus
+              />
+            ) : (
+              <div 
+                className="cursor-pointer hover:bg-gray-50 p-1 rounded"
+                onClick={() => setEditingField('companyEmail')}
+              >
+                {content.companyEmail || "{{company_email}}"}
+              </div>
+            )}
+
+            {/* Custom Fields */}
+            {(content.customFields || []).map((field: any) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <Input
+                  value={field.value}
+                  onChange={(e) => updateCustomField(field.id, 'value', e.target.value)}
+                  className="flex-1"
+                  placeholder="Field value"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeCustomField(field.id)}
+                  className="h-8 w-8 p-0 text-red-500"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            {/* Add Custom Field Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={addCustomField}
+              className="text-xs text-blue-600 hover:text-blue-800"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add Field
+            </Button>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ClientInfoBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
   <div className="bg-gray-50 p-4 rounded">
@@ -214,6 +383,7 @@ const TextBlock = ({
 
 const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => {
   const isSimpleView = content.layout === 'simple';
+  const isItemizedView = content.layout === 'itemized';
   
   return (
     <div className="space-y-4">
@@ -231,6 +401,7 @@ const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content
             <SelectContent>
               <SelectItem value="simple">Simple</SelectItem>
               <SelectItem value="detailed">Detailed</SelectItem>
+              <SelectItem value="itemized">Itemized</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -248,8 +419,121 @@ const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content
             <span className="font-semibold">$360.00</span>
           </div>
         </div>
+      ) : isItemizedView ? (
+        // Itemized View (like the example image)
+        <div className="space-y-6">
+          {/* Room Section 1 */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold text-brand-primary mb-3">Dining Room</h4>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-2 text-left text-sm font-medium">#</th>
+                  <th className="p-2 text-left text-sm font-medium">Product/Service</th>
+                  <th className="p-2 text-left text-sm font-medium">Description</th>
+                  <th className="p-2 text-left text-sm font-medium">Quantity</th>
+                  <th className="p-2 text-left text-sm font-medium">Price rate</th>
+                  <th className="p-2 text-left text-sm font-medium">Total without GST</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b">
+                  <td className="p-2 text-sm font-medium">1</td>
+                  <td className="p-2 text-sm font-medium">Roman Blinds</td>
+                  <td className="p-2 text-sm">Above Kitchen Sink</td>
+                  <td className="p-2 text-sm">2</td>
+                  <td className="p-2 text-sm">£484.54</td>
+                  <td className="p-2 text-sm font-medium">£969.08</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Fabric</td>
+                  <td className="p-2 text-sm">OSL/01 Pepper | 1.44 m</td>
+                  <td className="p-2 text-sm">7.88 m</td>
+                  <td className="p-2 text-sm">£91.00</td>
+                  <td className="p-2 text-sm">£717.08</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Manufacturing price</td>
+                  <td className="p-2 text-sm">-</td>
+                  <td className="p-2 text-sm">2</td>
+                  <td className="p-2 text-sm">£90.00</td>
+                  <td className="p-2 text-sm">£180.00</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Lining</td>
+                  <td className="p-2 text-sm">Blackout</td>
+                  <td className="p-2 text-sm">7.88 m</td>
+                  <td className="p-2 text-sm">£10.00</td>
+                  <td className="p-2 text-sm">£72.00</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Heading</td>
+                  <td className="p-2 text-sm">Regular Headrail</td>
+                  <td className="p-2 text-sm">410 cm</td>
+                  <td className="p-2 text-sm">£0.00</td>
+                  <td className="p-2 text-sm">£0.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Room Section 2 */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold text-brand-primary mb-3">Bobby's Bedroom Window</h4>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-2 text-left text-sm font-medium">#</th>
+                  <th className="p-2 text-left text-sm font-medium">Product/Service</th>
+                  <th className="p-2 text-left text-sm font-medium">Description</th>
+                  <th className="p-2 text-left text-sm font-medium">Quantity</th>
+                  <th className="p-2 text-left text-sm font-medium">Price rate</th>
+                  <th className="p-2 text-left text-sm font-medium">Total without GST</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b">
+                  <td className="p-2 text-sm font-medium">1</td>
+                  <td className="p-2 text-sm font-medium">Curtains</td>
+                  <td className="p-2 text-sm">Curtains</td>
+                  <td className="p-2 text-sm">1</td>
+                  <td className="p-2 text-sm">£891.67</td>
+                  <td className="p-2 text-sm font-medium">£891.67</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Fabric</td>
+                  <td className="p-2 text-sm">Sky Gray 01 | 3 m</td>
+                  <td className="p-2 text-sm">4.1 m</td>
+                  <td className="p-2 text-sm">£18.70</td>
+                  <td className="p-2 text-sm">£76.67</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Manufacturing price</td>
+                  <td className="p-2 text-sm">-</td>
+                  <td className="p-2 text-sm">1</td>
+                  <td className="p-2 text-sm">£774.00</td>
+                  <td className="p-2 text-sm">£774.00</td>
+                </tr>
+                <tr className="border-b bg-gray-50">
+                  <td className="p-2 text-sm"></td>
+                  <td className="p-2 text-sm">Lining</td>
+                  <td className="p-2 text-sm">Blackout</td>
+                  <td className="p-2 text-sm">4.1 m</td>
+                  <td className="p-2 text-sm">£10.00</td>
+                  <td className="p-2 text-sm">£41.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
-        // Detailed/Itemized View
+        // Detailed/Standard View
         <table className={`w-full border-collapse ${
           content.tableStyle === 'minimal' ? '' : 
           content.tableStyle === 'striped' ? '' : 'border border-gray-300'
@@ -454,3 +738,46 @@ const SignatureBlock = ({ content, onUpdate }: { content: any; onUpdate: (conten
     </div>
   </div>
 );
+
+const FooterBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div className="space-y-4 border-t pt-4">
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium text-brand-primary">Footer Content</h4>
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={content.includeTerms || false}
+            onCheckedChange={(checked) => onUpdate({ ...content, includeTerms: checked })}
+          />
+          <Label>Include T&C from Settings</Label>
+        </div>
+      </div>
+      
+      {isEditing ? (
+        <Textarea
+          value={content.text || ''}
+          onChange={(e) => onUpdate({ ...content, text: e.target.value })}
+          onBlur={() => setIsEditing(false)}
+          autoFocus
+          placeholder="Add footer content..."
+          className="min-h-20"
+        />
+      ) : (
+        <div 
+          onClick={() => setIsEditing(true)}
+          className="cursor-text hover:bg-gray-50 p-2 rounded text-sm text-gray-600 min-h-20 border-2 border-dashed border-gray-200"
+        >
+          {content.text || "Click to add footer content..."}
+        </div>
+      )}
+
+      {content.includeTerms && (
+        <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+          💡 Terms & Conditions from Settings will be automatically included
+        </div>
+      )}
+    </div>
+  );
+};

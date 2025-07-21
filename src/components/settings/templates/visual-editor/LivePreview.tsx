@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CreditCard, DollarSign } from "lucide-react";
@@ -38,14 +37,20 @@ export const LivePreview = ({ blocks, templateName }: LivePreviewProps) => {
     switch (block.type) {
       case 'header':
         return (
-          <div className="flex items-start justify-between mb-8">
-            <div className="flex items-center gap-6">
+          <div className={`mb-8 ${
+            block.content.logoPosition === 'center' ? 'text-center' : 
+            block.content.logoPosition === 'right' ? 'text-right' : 'text-left'
+          }`}>
+            <div className={`flex items-start gap-6 ${
+              block.content.logoPosition === 'center' ? 'flex-col items-center' : 
+              block.content.logoPosition === 'right' ? 'flex-row-reverse' : 'flex-row'
+            }`}>
               {block.content.showLogo && (
-                <div className="w-20 h-20 bg-blue-100 flex items-center justify-center rounded">
+                <div className="w-20 h-20 bg-blue-100 flex items-center justify-center rounded flex-shrink-0">
                   <span className="text-xs text-blue-600 font-medium">LOGO</span>
                 </div>
               )}
-              <div>
+              <div className="flex-1">
                 <h1 className="text-2xl font-bold mb-2" style={{ color: primaryColor }}>
                   {renderContent(block.content.companyName)}
                 </h1>
@@ -53,16 +58,21 @@ export const LivePreview = ({ blocks, templateName }: LivePreviewProps) => {
                   <div>{renderContent(block.content.companyAddress)}</div>
                   <div>{renderContent(block.content.companyPhone)}</div>
                   <div>{renderContent(block.content.companyEmail)}</div>
+                  {(block.content.customFields || []).map((field: any) => (
+                    <div key={field.id}>{renderContent(field.value)}</div>
+                  ))}
                 </div>
               </div>
             </div>
-            <div className="text-right">
+            <div className="flex justify-between items-center mt-6">
               <h2 className="text-xl font-bold" style={{ color: primaryColor }}>
                 QUOTE #{mockData.quote_number}
               </h2>
-              <div className="text-sm mt-1" style={{ color: textColor }}>
-                <div>Date: {mockData.quote_date}</div>
-                <div>Job: {mockData.job_number}</div>
+              <div className="text-right">
+                <div className="text-sm mt-1" style={{ color: textColor }}>
+                  <div>Date: {mockData.quote_date}</div>
+                  <div>Job: {mockData.job_number}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -128,6 +138,7 @@ export const LivePreview = ({ blocks, templateName }: LivePreviewProps) => {
 
       case 'products':
         const isSimpleView = block.content.layout === 'simple';
+        const isItemizedView = block.content.layout === 'itemized';
         
         if (isSimpleView) {
           return (
@@ -142,6 +153,116 @@ export const LivePreview = ({ blocks, templateName }: LivePreviewProps) => {
                   <span className="font-medium">Roman Shades - Bedroom</span>
                   <span className="font-semibold">$360.00</span>
                 </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (isItemizedView) {
+          return (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-4" style={{ color: primaryColor }}>Quote Items</h3>
+              
+              {/* Room Section 1 */}
+              <div className="border-b pb-4 mb-6">
+                <h4 className="font-semibold mb-3" style={{ color: primaryColor }}>Dining Room</h4>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>#</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Product/Service</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Description</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Quantity</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Price rate</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Total without GST</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-2 text-sm font-medium">1</td>
+                      <td className="p-2 text-sm font-medium">Roman Blinds</td>
+                      <td className="p-2 text-sm">Above Kitchen Sink</td>
+                      <td className="p-2 text-sm">2</td>
+                      <td className="p-2 text-sm">£484.54</td>
+                      <td className="p-2 text-sm font-medium">£969.08</td>
+                    </tr>
+                    <tr className="border-b bg-gray-50">
+                      <td className="p-2 text-sm"></td>
+                      <td className="p-2 text-sm">Fabric</td>
+                      <td className="p-2 text-sm">OSL/01 Pepper | 1.44 m</td>
+                      <td className="p-2 text-sm">7.88 m</td>
+                      <td className="p-2 text-sm">£91.00</td>
+                      <td className="p-2 text-sm">£717.08</td>
+                    </tr>
+                    <tr className="border-b bg-gray-50">
+                      <td className="p-2 text-sm"></td>
+                      <td className="p-2 text-sm">Manufacturing price</td>
+                      <td className="p-2 text-sm">-</td>
+                      <td className="p-2 text-sm">2</td>
+                      <td className="p-2 text-sm">£90.00</td>
+                      <td className="p-2 text-sm">£180.00</td>
+                    </tr>
+                    <tr className="border-b bg-gray-50">
+                      <td className="p-2 text-sm"></td>
+                      <td className="p-2 text-sm">Lining</td>
+                      <td className="p-2 text-sm">Blackout</td>
+                      <td className="p-2 text-sm">7.88 m</td>
+                      <td className="p-2 text-sm">£10.00</td>
+                      <td className="p-2 text-sm">£72.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Room Section 2 */}
+              <div className="border-b pb-4">
+                <h4 className="font-semibold mb-3" style={{ color: primaryColor }}>Bobby's Bedroom Window</h4>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>#</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Product/Service</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Description</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Quantity</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Price rate</th>
+                      <th className="p-2 text-left text-sm font-medium" style={{ color: primaryColor }}>Total without GST</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-2 text-sm font-medium">1</td>
+                      <td className="p-2 text-sm font-medium">Curtains</td>
+                      <td className="p-2 text-sm">Curtains</td>
+                      <td className="p-2 text-sm">1</td>
+                      <td className="p-2 text-sm">£891.67</td>
+                      <td className="p-2 text-sm font-medium">£891.67</td>
+                    </tr>
+                    <tr className="border-b bg-gray-50">
+                      <td className="p-2 text-sm"></td>
+                      <td className="p-2 text-sm">Fabric</td>
+                      <td className="p-2 text-sm">Sky Gray 01 | 3 m</td>
+                      <td className="p-2 text-sm">4.1 m</td>
+                      <td className="p-2 text-sm">£18.70</td>
+                      <td className="p-2 text-sm">£76.67</td>
+                    </tr>
+                    <tr className="border-b bg-gray-50">
+                      <td className="p-2 text-sm"></td>
+                      <td className="p-2 text-sm">Manufacturing price</td>
+                      <td className="p-2 text-sm">-</td>
+                      <td className="p-2 text-sm">1</td>
+                      <td className="p-2 text-sm">£774.00</td>
+                      <td className="p-2 text-sm">£774.00</td>
+                    </tr>
+                    <tr className="border-b bg-gray-50">
+                      <td className="p-2 text-sm"></td>
+                      <td className="p-2 text-sm">Lining</td>
+                      <td className="p-2 text-sm">Blackout</td>
+                      <td className="p-2 text-sm">4.1 m</td>
+                      <td className="p-2 text-sm">£10.00</td>
+                      <td className="p-2 text-sm">£41.00</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           );
@@ -320,6 +441,21 @@ export const LivePreview = ({ blocks, templateName }: LivePreviewProps) => {
                 </div>
               )}
             </div>
+          </div>
+        );
+
+      case 'footer':
+        return (
+          <div className="border-t pt-6 mt-8 mb-6">
+            <div className="text-sm text-gray-600 mb-4">
+              {renderContent(block.content.text)}
+            </div>
+            {block.content.includeTerms && (
+              <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+                <strong>Terms & Conditions:</strong> Payment terms: Net 30 days. Quote valid for 30 days. 
+                Additional terms and conditions from settings will appear here.
+              </div>
+            )}
           </div>
         );
 

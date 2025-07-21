@@ -37,7 +37,8 @@ export const BlockStyleControls = ({ block, onUpdate }: BlockStyleControlsProps)
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="simple">Simple View</SelectItem>
-                <SelectItem value="detailed">Detailed/Itemized</SelectItem>
+                <SelectItem value="detailed">Detailed/Standard</SelectItem>
+                <SelectItem value="itemized">Itemized/Breakdown</SelectItem>
               </SelectContent>
             </Select>
           </div>

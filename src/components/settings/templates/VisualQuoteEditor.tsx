@@ -30,6 +30,7 @@ const defaultBlocks = [
       companyAddress: '{{company_address}}',
       companyPhone: '{{company_phone}}',
       companyEmail: '{{company_email}}',
+      customFields: [],
       style: { primaryColor: '#415e6b', textColor: '#575656' }
     },
     editable: true
@@ -86,6 +87,15 @@ const defaultBlocks = [
     content: {
       text: 'Payment terms: Net 30 days. Quote valid for 30 days.',
       style: 'terms'
+    },
+    editable: true
+  },
+  {
+    id: 'footer',
+    type: 'footer',
+    content: {
+      text: 'Thank you for your business!',
+      includeTerms: true
     },
     editable: true
   },
@@ -307,6 +317,11 @@ function getDefaultContentForType(type: string) {
         description: 'Secure payment processing',
         showInstallments: false,
         securityText: '🔒 Secure SSL encrypted payment'
+      };
+    case 'footer':
+      return {
+        text: 'Thank you for your business!',
+        includeTerms: true
       };
     default:
       return {};

@@ -38,6 +38,12 @@ export const BlockToolbar = ({ onAddBlock }: BlockToolbarProps) => {
       label: 'Pay Now Button',
       icon: CreditCard,
       description: 'Add payment button with options'
+    },
+    {
+      type: 'footer',
+      label: 'Footer',
+      icon: FileText,
+      description: 'Add footer with T&C from settings'
     }
   ];
 
