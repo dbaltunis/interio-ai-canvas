@@ -35,19 +35,7 @@ const JobsPage = () => {
       const newProject = await createProject.mutateAsync({
         name: `New Job ${new Date().toLocaleDateString()}`,
         description: "",
-        status: "draft",
-        budget: 0,
-        start_date: null,
-        end_date: null,
-        client_name: "",
-        client_email: "",
-        client_phone: "",
-        address_line1: "",
-        address_line2: "",
-        city: "",
-        state: "",
-        zip_code: "",
-        country: ""
+        status: "draft"
       });
 
       // Navigate to the job detail page
