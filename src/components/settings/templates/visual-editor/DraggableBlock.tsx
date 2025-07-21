@@ -153,10 +153,10 @@ const ClientInfoBlock = ({ content, onUpdate }: { content: any; onUpdate: (conte
   <div className="bg-gray-50 p-4 rounded">
     <h3 className="font-semibold mb-2 text-blue-600">{content.title}</h3>
     <div className="text-sm space-y-1">
-      {content.showClientName && <div>{{client_name}}</div>}
-      {content.showClientEmail && <div>{{client_email}}</div>}
-      {content.showClientAddress && <div>{{client_address}}</div>}
-      {content.showClientPhone && <div>{{client_phone}}</div>}
+      {content.showClientName && <div>{'{{client_name}}'}</div>}
+      {content.showClientEmail && <div>{'{{client_email}}'}</div>}
+      {content.showClientAddress && <div>{'{{client_address}}'}</div>}
+      {content.showClientPhone && <div>{'{{client_phone}}'}</div>}
     </div>
   </div>
 );
