@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +7,7 @@ type Client = Tables<"clients">;
 type ClientInsert = TablesInsert<"clients">;
 type ClientUpdate = TablesUpdate<"clients">;
 
-export const useClients = () => {
+export const useClients = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -24,6 +23,8 @@ export const useClients = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -144,7 +145,7 @@ export const useDeleteClient = () => {
       console.error("Failed to delete client:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete client. Please try again.",
+        description: "Failed to delete client. Please try again.",
         variant: "destructive"
       });
     },
