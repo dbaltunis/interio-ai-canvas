@@ -7,14 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Search, Filter, Download, MoreHorizontal, Eye, Edit, Copy } from "lucide-react";
-import { useQuotes } from "@/hooks/useQuotes";
+import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 
-export const JobsTableView = () => {
+interface JobsTableViewProps {
+  onJobSelect?: (jobId: string) => void;
+}
+
+export const JobsTableView = ({ onJobSelect }: JobsTableViewProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
-  const { data: quotes, isLoading } = useQuotes();
+  const { data: projects, isLoading } = useProjects();
   const { data: clients } = useClients();
 
   // Create client lookup
@@ -23,20 +27,20 @@ export const JobsTableView = () => {
     return acc;
   }, {} as Record<string, any>) || {};
 
-  // Process jobs data
-  const jobs = quotes?.map(quote => {
-    const client = quote.client_id ? clientsMap[quote.client_id] : null;
-    const project = quote.projects;
+  // Process jobs data from projects
+  const jobs = projects?.map(project => {
+    const client = project.client_id ? clientsMap[project.client_id] : null;
     
     return {
-      id: quote.id,
-      jobNumber: project?.job_number || `QUOTE-${quote.id?.slice(0, 8)}`,
+      id: project.id,
+      jobNumber: project.job_number || `JOB-${project.id?.slice(0, 8)}`,
+      name: project.name,
       clientName: client?.name || 'No client',
-      value: quote.total_amount || 0,
-      dateCreated: quote.created_at,
-      status: project?.status || quote.status || 'draft',
-      user: 'System User',
-      quote,
+      value: 0, // Will be calculated from treatments/quotes later
+      dateCreated: project.created_at,
+      status: project.status || 'planning',
+      priority: project.priority || 'medium',
+      description: project.description,
       client,
       project
     };
@@ -46,6 +50,7 @@ export const JobsTableView = () => {
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = !searchTerm || 
       job.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.clientName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
@@ -55,16 +60,17 @@ export const JobsTableView = () => {
 
   const getStatusBadge = (status: string) => {
     const statusColors = {
-      draft: "bg-gray-100 text-gray-800",
-      active: "bg-brand-secondary text-white",
       planning: "bg-blue-100 text-blue-800",
+      active: "bg-brand-secondary text-white",
+      in_progress: "bg-yellow-100 text-yellow-800",
       completed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800"
+      cancelled: "bg-red-100 text-red-800",
+      on_hold: "bg-gray-100 text-gray-800"
     };
     
     return (
       <Badge className={statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
       </Badge>
     );
   };
@@ -75,6 +81,12 @@ export const JobsTableView = () => {
       currency: 'USD',
       minimumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const handleJobSelect = (jobId: string) => {
+    if (onJobSelect) {
+      onJobSelect(jobId);
+    }
   };
 
   if (isLoading) {
@@ -109,10 +121,11 @@ export const JobsTableView = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
               <SelectItem value="planning">Planning</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="on_hold">On Hold</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
@@ -136,11 +149,11 @@ export const JobsTableView = () => {
           <TableHeader>
             <TableRow className="bg-gray-50">
               <TableHead className="font-semibold text-gray-900">Job Number</TableHead>
+              <TableHead className="font-semibold text-gray-900">Job Name</TableHead>
               <TableHead className="font-semibold text-gray-900">Client Name</TableHead>
-              <TableHead className="font-semibold text-gray-900">Value</TableHead>
-              <TableHead className="font-semibold text-gray-900">Date Created</TableHead>
               <TableHead className="font-semibold text-gray-900">Status</TableHead>
-              <TableHead className="font-semibold text-gray-900">User</TableHead>
+              <TableHead className="font-semibold text-gray-900">Priority</TableHead>
+              <TableHead className="font-semibold text-gray-900">Date Created</TableHead>
               <TableHead className="font-semibold text-gray-900 text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -155,42 +168,55 @@ export const JobsTableView = () => {
               </TableRow>
             ) : (
               filteredJobs.map((job) => (
-                <TableRow key={job.id} className="hover:bg-gray-50">
+                <TableRow key={job.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleJobSelect(job.id)}>
                   <TableCell className="font-medium text-brand-primary">
                     {job.jobNumber}
                   </TableCell>
                   <TableCell className="text-gray-900">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{job.name}</span>
+                      {job.description && (
+                        <span className="text-xs text-gray-500 truncate max-w-xs">
+                          {job.description}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-900">
                     {job.clientName}
-                  </TableCell>
-                  <TableCell className="font-medium text-gray-900">
-                    {formatCurrency(job.value)}
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {job.dateCreated ? new Date(job.dateCreated).toLocaleDateString() : 'No date'}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(job.status)}
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={
+                      job.priority === 'high' ? 'border-red-200 text-red-800' :
+                      job.priority === 'medium' ? 'border-yellow-200 text-yellow-800' :
+                      'border-green-200 text-green-800'
+                    }>
+                      {job.priority.charAt(0).toUpperCase() + job.priority.slice(1)}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-gray-600">
-                    {job.user}
+                    {job.dateCreated ? new Date(job.dateCreated).toLocaleDateString() : 'No date'}
                   </TableCell>
                   <TableCell className="text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleJobSelect(job.id); }}>
                           <Eye className="mr-2 h-4 w-4" />
                           View Job
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleJobSelect(job.id); }}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Job
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                           <Copy className="mr-2 h-4 w-4" />
                           Copy Job
                         </DropdownMenuItem>

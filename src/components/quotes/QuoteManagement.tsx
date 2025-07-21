@@ -49,10 +49,8 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
   const total = subtotal + taxAmount;
 
   useEffect(() => {
-    // Load existing line items if available
-    if (quote.line_items) {
-      setLineItems(quote.line_items);
-    }
+    // Initialize with empty line items for now
+    setLineItems([]);
   }, [quote]);
 
   const handleSave = async () => {
@@ -63,8 +61,7 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
         subtotal,
         tax_rate: taxRate,
         tax_amount: taxAmount,
-        total_amount: total,
-        line_items: lineItems
+        total_amount: total
       });
       
       toast({
@@ -90,8 +87,7 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
         subtotal,
         tax_rate: taxRate,
         tax_amount: taxAmount,
-        total_amount: total,
-        line_items: lineItems
+        total_amount: total
       });
       
       toast({
