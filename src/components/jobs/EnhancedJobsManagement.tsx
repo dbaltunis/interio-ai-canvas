@@ -21,12 +21,14 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { ProjectCard } from "./ProjectCard";
 import { JobsOverview } from "./JobsOverview";
+import { NewJobPage } from "../job-creation/NewJobPage";
 import { useToast } from "@/hooks/use-toast";
 
 export const EnhancedJobsManagement = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [showNewJobPage, setShowNewJobPage] = useState(false);
 
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: clients = [] } = useClients();
@@ -41,7 +43,11 @@ export const EnhancedJobsManagement = () => {
   const totalClients = clients.length;
 
   const handleCreateProject = () => {
-    setCreateProjectDialogOpen(true);
+    setShowNewJobPage(true);
+  };
+
+  const handleBackFromNewJob = () => {
+    setShowNewJobPage(false);
   };
 
   const handleProjectCreated = (project: any) => {
@@ -74,6 +80,11 @@ export const EnhancedJobsManagement = () => {
         <div className="text-lg">Loading projects...</div>
       </div>
     );
+  }
+
+  // Show NewJobPage when creating a new job
+  if (showNewJobPage) {
+    return <NewJobPage onBack={handleBackFromNewJob} />;
   }
 
   return (
