@@ -2,12 +2,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, BarChart3, FileText, Calendar, Settings, TrendingUp } from "lucide-react";
-import { JobsList } from "./JobsList";
+import { Plus, BarChart3, FileText, Calendar, TrendingUp } from "lucide-react";
 import { JobsDashboard } from "./JobsDashboard";
 import { JobsAnalytics } from "./JobsAnalytics";
 import { JobsPerformanceMetrics } from "./JobsPerformanceMetrics";
 import { JobDetailPage } from "./JobDetailPage";
+import { JobsTableView } from "./JobsTableView";
 
 interface JobsMainProps {
   onCreateJob: () => void;
@@ -70,7 +70,7 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
         </TabsContent>
 
         <TabsContent value="jobs">
-          <JobsList onSelectJob={setSelectedJobId} onCreateJob={onCreateJob} />
+          <JobsTableView onJobSelect={setSelectedJobId} />
         </TabsContent>
 
         <TabsContent value="analytics">
