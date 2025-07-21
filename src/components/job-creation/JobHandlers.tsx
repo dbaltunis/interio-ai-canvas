@@ -205,6 +205,7 @@ export const useJobHandlers = (project: any) => {
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     try {
       await createTreatment.mutateAsync({
+        project_id: projectId,
         room_id: roomId,
         window_id: surfaceId,
         treatment_type: treatmentType,

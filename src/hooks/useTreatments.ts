@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -304,6 +303,49 @@ export const useUpdateTreatment = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to update treatment",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteTreatment = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (treatmentId: string) => {
+      console.log("=== DELETING TREATMENT ===");
+      console.log("Treatment ID:", treatmentId);
+      
+      const { error } = await supabase
+        .from("treatments")
+        .delete()
+        .eq("id", treatmentId);
+
+      if (error) {
+        console.error("Delete treatment database error:", error);
+        throw error;
+      }
+      
+      console.log("Treatment deleted successfully");
+      return treatmentId;
+    },
+    onSuccess: () => {
+      console.log("Delete treatment success, invalidating queries");
+      // Invalidate all treatment queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.refetchQueries({ queryKey: ["treatments"] });
+      toast({
+        title: "Success",
+        description: "Treatment deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Delete treatment mutation error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete treatment",
         variant: "destructive",
       });
     },
