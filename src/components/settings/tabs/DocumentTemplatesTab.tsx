@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { FileText, Eye, Edit, Copy, Download, Upload, Plus } from "lucide-react";
 import { useState } from "react";
-import { QuoteTemplateEditorModal } from "../templates/QuoteTemplateEditorModal";
+import { VisualQuoteEditor } from "../templates/VisualQuoteEditor";
 
 export const DocumentTemplatesTab = () => {
   const [templates, setTemplates] = useState([
@@ -64,7 +63,7 @@ export const DocumentTemplatesTab = () => {
             Document Templates
           </CardTitle>
           <CardDescription>
-            Manage templates for quotes, invoices, work orders, and instructions
+            Create beautiful quote templates with our visual drag-and-drop editor
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -88,16 +87,17 @@ export const DocumentTemplatesTab = () => {
                 <Upload className="h-4 w-4 mr-2" />
                 Import
               </Button>
-              <Button size="sm" onClick={handleCreateTemplate}>
+              <Button size="sm" onClick={handleCreateTemplate} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Template
               </Button>
             </div>
           </div>
-          
+
+          {/* Template Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.map((template) => (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
+              <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer group">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -113,7 +113,7 @@ export const DocumentTemplatesTab = () => {
                     Modified: {template.lastModified}
                   </div>
                   
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="sm" title="Preview">
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -139,92 +139,40 @@ export const DocumentTemplatesTab = () => {
         </CardContent>
       </Card>
 
-      {/* Document Styling */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Document Styling</CardTitle>
-            <CardDescription>
-              Configure the visual appearance of your documents
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Primary Color</Label>
-              <div className="flex gap-2 items-center">
-                <div className="w-8 h-8 bg-blue-600 rounded border" />
-                <Input value="#3B82F6" className="flex-1" />
+      {/* Quick Start Guide */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-blue-800">Getting Started</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+              <div>
+                <h4 className="font-medium text-blue-800">Create Template</h4>
+                <p className="text-blue-700">Use our visual editor to design your quote layout</p>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label>Font Family</Label>
-              <Select defaultValue="inter">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="inter">Inter</SelectItem>
-                  <SelectItem value="roboto">Roboto</SelectItem>
-                  <SelectItem value="arial">Arial</SelectItem>
-                  <SelectItem value="times">Times New Roman</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+              <div>
+                <h4 className="font-medium text-blue-800">Drag & Drop</h4>
+                <p className="text-blue-700">Add text, images, tables, and signature blocks</p>
+              </div>
             </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+              <div>
+                <h4 className="font-medium text-blue-800">Generate Quotes</h4>
+                <p className="text-blue-700">Use your templates to create professional quotes</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="space-y-2">
-              <Label>Logo Position</Label>
-              <Select defaultValue="top-left">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="top-left">Top Left</SelectItem>
-                  <SelectItem value="top-center">Top Center</SelectItem>
-                  <SelectItem value="top-right">Top Right</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Default Content</CardTitle>
-            <CardDescription>
-              Set default text for different document sections
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Quote Terms & Conditions</Label>
-              <Textarea 
-                placeholder="Enter default terms and conditions for quotes..."
-                className="min-h-20"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Installation Instructions Footer</Label>
-              <Textarea 
-                placeholder="Enter default footer text for installation instructions..."
-                className="min-h-20"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Payment Terms</Label>
-              <Textarea 
-                placeholder="Enter default payment terms..."
-                className="min-h-20"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Template Editor Modal */}
-      <QuoteTemplateEditorModal
+      {/* Visual Template Editor Modal */}
+      <VisualQuoteEditor
         isOpen={showTemplateEditor}
         onClose={() => setShowTemplateEditor(false)}
         template={editingTemplate}
