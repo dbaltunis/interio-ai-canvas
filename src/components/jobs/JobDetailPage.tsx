@@ -39,6 +39,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     );
   }
 
+  const handleUpdateProject = async (projectData: any) => {
+    await updateProject.mutateAsync(projectData);
+  };
+
   const tabs = [
     { id: "details", label: "Project Details", icon: Home },
     { id: "rooms", label: "Rooms & Treatments", icon: Package },
@@ -104,7 +108,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
           <div className="p-6">
             <TabsContent value="details" className="mt-0">
-              <ProjectDetailsTab project={project} onUpdate={updateProject.mutateAsync} />
+              <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
             </TabsContent>
 
             <TabsContent value="rooms" className="mt-0">
