@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, RectangleHorizontal, Square } from "lucide-react";
+import { Plus, RectangleHorizontal } from "lucide-react";
 import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceList } from "./SurfaceList";
@@ -57,10 +58,10 @@ export const RoomCard = ({
 
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
-  const handleSurfaceCreation = async (surfaceType: 'window' | 'wall') => {
+  const handleSurfaceCreation = async () => {
     setIsCreatingSurface(true);
     try {
-      await onCreateSurface(room.id, surfaceType);
+      await onCreateSurface(room.id, 'window');
     } catch (error) {
       console.error("Surface creation failed:", error);
     } finally {
@@ -117,7 +118,7 @@ export const RoomCard = ({
               {room.room_type?.replace('_', ' ') || 'Living Room'}
             </Badge>
             <div className="text-sm text-muted-foreground">
-              {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
+              {roomSurfaces.length} window{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
             </div>
           </div>
 
@@ -133,15 +134,15 @@ export const RoomCard = ({
           ) : (
             <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
               <div className="text-4xl mb-2">🪟</div>
-              <h4 className="font-medium text-gray-900 mb-1">No surfaces added</h4>
-              <p className="text-sm text-gray-500 mb-4">Add windows or walls to get started with treatments</p>
+              <h4 className="font-medium text-gray-900 mb-1">No windows added</h4>
+              <p className="text-sm text-gray-500 mb-4">Add windows to get started with treatments</p>
             </div>
           )}
 
-          {/* Add Surface Buttons */}
+          {/* Add Window Button */}
           <div className="flex gap-2 pt-4 border-t border-gray-100">
             <Button
-              onClick={() => handleSurfaceCreation('window')}
+              onClick={handleSurfaceCreation}
               disabled={isCreatingSurface}
               variant="outline"
               size="sm"
@@ -149,16 +150,6 @@ export const RoomCard = ({
             >
               <RectangleHorizontal className="h-4 w-4 mr-2" />
               Add Window
-            </Button>
-            <Button
-              onClick={() => handleSurfaceCreation('wall')}
-              disabled={isCreatingSurface}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
-              <Square className="h-4 w-4 mr-2" />
-              Add Wall
             </Button>
           </div>
         </div>

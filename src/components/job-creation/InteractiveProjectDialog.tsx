@@ -157,7 +157,7 @@ export const InteractiveProjectDialog = ({
 
   const handleCreateSurface = () => {
     if (selectedRoom) {
-      onCreateSurface?.(selectedRoom, surfaceType);
+      onCreateSurface?.(selectedRoom, 'window');
       setSelectedRoom("");
     }
   };
@@ -307,7 +307,7 @@ export const InteractiveProjectDialog = ({
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Add Windows & Walls</CardTitle>
+                    <CardTitle className="text-lg">Add Windows</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -326,22 +326,9 @@ export const InteractiveProjectDialog = ({
                       </Select>
                     </div>
 
-                    <div>
-                      <Label>Surface Type</Label>
-                      <Select value={surfaceType} onValueChange={(value) => setSurfaceType(value as 'window' | 'wall')}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="window">Window</SelectItem>
-                          <SelectItem value="wall">Wall</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <Button onClick={handleCreateSurface} disabled={!selectedRoom}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add {surfaceType === 'window' ? 'Window' : 'Wall'}
+                      Add Window
                     </Button>
                   </CardContent>
                 </Card>
@@ -349,7 +336,7 @@ export const InteractiveProjectDialog = ({
                 {surfaces.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Existing Surfaces ({surfaces.length})</CardTitle>
+                      <CardTitle className="text-lg">Existing Windows ({surfaces.length})</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
@@ -363,8 +350,8 @@ export const InteractiveProjectDialog = ({
                                   {room?.name || 'Unknown Room'}
                                 </Badge>
                               </div>
-                              <Badge variant={surface.surface_type === 'window' ? 'default' : 'secondary'}>
-                                {surface.surface_type}
+                              <Badge variant="default">
+                                Window
                               </Badge>
                             </div>
                           );
