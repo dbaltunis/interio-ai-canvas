@@ -2,7 +2,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Mail, Eye, MousePointer, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import type { Email } from "@/hooks/useEmails";
 
@@ -10,9 +11,11 @@ interface EmailDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   email: Email | null;
+  onResendEmail?: (email: Email) => void;
+  isResending?: boolean;
 }
 
-export const EmailDetailDialog = ({ open, onOpenChange, email }: EmailDetailDialogProps) => {
+export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, isResending }: EmailDetailDialogProps) => {
   if (!email) return null;
 
   return (
@@ -39,7 +42,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email }: EmailDetailDial
                   <Calendar className="h-4 w-4" />
                   <span>{new Date(email.created_at).toLocaleString()}</span>
                 </div>
-                <EmailStatusBadge status={email.status} />
+                <EmailStatusBadge status={email.status || 'queued'} />
               </div>
             </CardHeader>
           </Card>
@@ -100,6 +103,20 @@ export const EmailDetailDialog = ({ open, onOpenChange, email }: EmailDetailDial
                 <p className="text-red-600">{email.bounce_reason}</p>
               </CardContent>
             </Card>
+          )}
+
+          {/* Actions */}
+          {onResendEmail && email.status !== 'sent' && email.status !== 'delivered' && (
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => onResendEmail(email)}
+                disabled={isResending}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
+                {isResending ? 'Resending...' : 'Resend Email'}
+              </Button>
+            </div>
           )}
         </div>
       </DialogContent>

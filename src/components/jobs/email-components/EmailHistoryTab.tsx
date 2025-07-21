@@ -11,23 +11,7 @@ import { Mail, RefreshCw, Loader2, Plus, Search, Filter, X } from "lucide-react"
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import { EmailDetailDialog } from "./EmailDetailDialog";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface Email {
-  id: string;
-  subject: string;
-  content: string;
-  recipient_email: string;
-  recipient_name?: string;
-  status: string;
-  sent_at?: string;
-  delivered_at?: string;
-  opened_at?: string;
-  clicked_at?: string;
-  open_count: number;
-  click_count: number;
-  time_spent_seconds: number;
-  bounce_reason?: string;
-}
+import type { Email } from "@/hooks/useEmails";
 
 interface EmailHistoryTabProps {
   emails: Email[] | undefined;
@@ -93,8 +77,7 @@ export const EmailHistoryTab = ({
   const filteredEmails = emails?.filter(email => {
     const matchesSearch = !searchQuery || 
       email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.recipient_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (email.recipient_name && email.recipient_name.toLowerCase().includes(searchQuery.toLowerCase()));
+      email.recipient_email.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || email.status === statusFilter;
     
@@ -258,7 +241,7 @@ export const EmailHistoryTab = ({
                         <div className="text-sm text-muted-foreground">{email.recipient_email}</div>
                       </TableCell>
                       <TableCell>
-                        <EmailStatusBadge status={email.status} />
+                        <EmailStatusBadge status={email.status || 'queued'} />
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
