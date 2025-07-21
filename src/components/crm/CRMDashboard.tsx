@@ -18,19 +18,24 @@ import {
   Mail,
   Calendar,
   DollarSign,
-  FolderOpen
+  FolderOpen,
+  Eye
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useClientStats } from "@/hooks/useClientJobs";
+import { useDeleteClient } from "@/hooks/useClients";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { ClientImportExport } from "../clients/ClientImportExport";
+import { ClientProfilePage } from "../clients/ClientProfilePage";
 import { useToast } from "@/hooks/use-toast";
 
 export const CRMDashboard = () => {
   const { data: clients, isLoading } = useClientStats();
+  const { mutate: deleteClient } = useDeleteClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  const [viewingClientId, setViewingClientId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
@@ -55,17 +60,36 @@ export const CRMDashboard = () => {
   };
 
   const handleDeleteClient = (clientId: string) => {
-    // Implementation would go here
-    toast({
-      title: "Delete Client",
-      description: "Client deletion functionality to be implemented",
-    });
+    if (window.confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+      deleteClient(clientId);
+    }
   };
+
+  const handleClientClick = (clientId: string) => {
+    setViewingClientId(clientId);
+  };
+
+  if (viewingClientId) {
+    return (
+      <ClientProfilePage 
+        clientId={viewingClientId}
+        onBack={() => setViewingClientId(null)}
+        onEdit={() => {
+          setEditingClientId(viewingClientId);
+          setViewingClientId(null);
+          setShowCreateForm(true);
+        }}
+      />
+    );
+  }
 
   if (showCreateForm) {
     return (
       <ClientCreateForm 
-        onBack={() => setShowCreateForm(false)}
+        onBack={() => {
+          setShowCreateForm(false);
+          setEditingClientId(null);
+        }}
         clientId={editingClientId || undefined}
       />
     );
@@ -213,7 +237,11 @@ export const CRMDashboard = () => {
               </TableHeader>
               <TableBody>
                 {filteredClients.map((client) => (
-                  <TableRow key={client.id} className="hover:bg-gray-50">
+                  <TableRow 
+                    key={client.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleClientClick(client.id)}
+                  >
                     <TableCell>
                       <div>
                         <div className="font-medium text-gray-900">
@@ -273,7 +301,7 @@ export const CRMDashboard = () => {
                         {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -281,6 +309,12 @@ export const CRMDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem 
+                            onClick={() => handleClientClick(client.id)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Profile
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => {
                               setEditingClientId(client.id);
