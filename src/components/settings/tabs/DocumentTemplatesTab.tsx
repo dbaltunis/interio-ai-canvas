@@ -6,17 +6,53 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Eye, Edit, Copy, Download, Upload } from "lucide-react";
+import { FileText, Eye, Edit, Copy, Download, Upload, Plus } from "lucide-react";
 import { useState } from "react";
+import { QuoteTemplateEditorModal } from "../templates/QuoteTemplateEditorModal";
 
 export const DocumentTemplatesTab = () => {
-  const [templates] = useState([
+  const [templates, setTemplates] = useState([
     { id: 1, name: "Standard Quote", type: "Quote", status: "Active", lastModified: "2024-01-15" },
     { id: 2, name: "Premium Quote", type: "Quote", status: "Active", lastModified: "2024-01-10" },
     { id: 3, name: "Installation Invoice", type: "Invoice", status: "Active", lastModified: "2024-01-08" },
     { id: 4, name: "Work Order - Curtains", type: "Work Order", status: "Draft", lastModified: "2024-01-05" },
     { id: 5, name: "Fitting Instructions", type: "Instructions", status: "Active", lastModified: "2024-01-03" },
   ]);
+
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+
+  const handleCreateTemplate = () => {
+    setEditingTemplate(null);
+    setShowTemplateEditor(true);
+  };
+
+  const handleEditTemplate = (template: any) => {
+    setEditingTemplate(template);
+    setShowTemplateEditor(true);
+  };
+
+  const handleSaveTemplate = (templateData: any) => {
+    if (editingTemplate) {
+      // Update existing template
+      setTemplates(prev => prev.map(t => 
+        t.id === editingTemplate.id 
+          ? { ...t, ...templateData, lastModified: new Date().toISOString().split('T')[0] }
+          : t
+      ));
+    } else {
+      // Create new template
+      const newTemplate = {
+        id: templates.length + 1,
+        name: templateData.name,
+        type: "Quote",
+        status: "Active",
+        lastModified: new Date().toISOString().split('T')[0],
+        ...templateData
+      };
+      setTemplates(prev => [...prev, newTemplate]);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -52,9 +88,9 @@ export const DocumentTemplatesTab = () => {
                 <Upload className="h-4 w-4 mr-2" />
                 Import
               </Button>
-              <Button size="sm">
-                <FileText className="h-4 w-4 mr-2" />
-                New Template
+              <Button size="sm" onClick={handleCreateTemplate}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Template
               </Button>
             </div>
           </div>
@@ -81,7 +117,12 @@ export const DocumentTemplatesTab = () => {
                     <Button variant="ghost" size="sm" title="Preview">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" title="Edit">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      title="Edit"
+                      onClick={() => handleEditTemplate(template)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm" title="Duplicate">
@@ -181,6 +222,14 @@ export const DocumentTemplatesTab = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Template Editor Modal */}
+      <QuoteTemplateEditorModal
+        isOpen={showTemplateEditor}
+        onClose={() => setShowTemplateEditor(false)}
+        template={editingTemplate}
+        onSave={handleSaveTemplate}
+      />
     </div>
   );
 };
