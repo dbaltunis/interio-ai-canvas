@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Type, Image, FileText, PenTool, Calculator, User } from "lucide-react";
+import { Plus, Type, Image, FileText, PenTool, Calculator, User, CreditCard, Upload } from "lucide-react";
 
 interface BlockToolbarProps {
   onAddBlock: (type: string) => void;
@@ -17,9 +17,9 @@ export const BlockToolbar = ({ onAddBlock }: BlockToolbarProps) => {
     },
     {
       type: 'image',
-      label: 'Image',
-      icon: Image,
-      description: 'Add images, photos, or graphics'
+      label: 'Image Upload',
+      icon: Upload,
+      description: 'Upload and position images'
     },
     {
       type: 'products',
@@ -32,6 +32,12 @@ export const BlockToolbar = ({ onAddBlock }: BlockToolbarProps) => {
       label: 'Signature',
       icon: PenTool,
       description: 'Add signature and date fields'
+    },
+    {
+      type: 'payment',
+      label: 'Pay Now Button',
+      icon: CreditCard,
+      description: 'Add payment button with options'
     }
   ];
 

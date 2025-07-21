@@ -8,8 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GripVertical, X, Image, Type, FileText, PenTool } from "lucide-react";
+import { GripVertical, X, Image, Type, FileText, PenTool, CreditCard, Upload } from "lucide-react";
 import { useState } from 'react';
+import { ImageUploadBlock } from './ImageUploadBlock';
+import { SignatureCanvas } from './SignatureCanvas';
+import { PaymentBlock } from './PaymentBlock';
 
 interface DraggableBlockProps {
   block: any;
@@ -52,13 +55,15 @@ export const DraggableBlock = ({
       case 'text':
         return <TextBlock content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
       case 'image':
-        return <ImageBlock content={block.content} onUpdate={onUpdateContent} />;
+        return <ImageUploadBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'products':
         return <ProductsBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'totals':
         return <TotalsBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'signature':
         return <SignatureBlock content={block.content} onUpdate={onUpdateContent} />;
+      case 'payment':
+        return <PaymentBlock content={block.content} onUpdate={onUpdateContent} />;
       default:
         return <div>Unknown block type: {block.type}</div>;
     }
@@ -69,11 +74,13 @@ export const DraggableBlock = ({
       case 'text':
         return <Type className="h-4 w-4" />;
       case 'image':
-        return <Image className="h-4 w-4" />;
+        return <Upload className="h-4 w-4" />;
       case 'products':
         return <FileText className="h-4 w-4" />;
       case 'signature':
         return <PenTool className="h-4 w-4" />;
+      case 'payment':
+        return <CreditCard className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;
     }
@@ -83,7 +90,7 @@ export const DraggableBlock = ({
     <div ref={setNodeRef} style={style}>
       <Card 
         className={`relative group hover:shadow-md transition-all duration-200 ${
-          isSelected ? 'ring-2 ring-blue-500' : ''
+          isSelected ? 'ring-2 ring-brand-primary' : ''
         }`}
         onClick={onSelect}
       >
@@ -135,7 +142,7 @@ const HeaderBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: 
           </div>
         )}
         <div>
-          <h2 className="text-xl font-bold text-blue-600">
+          <h2 className="text-xl font-bold text-brand-primary">
             {content.companyName || "{{company_name}}"}
           </h2>
           <div className="text-sm text-gray-600 space-y-1">
@@ -151,7 +158,7 @@ const HeaderBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: 
 
 const ClientInfoBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
   <div className="bg-gray-50 p-4 rounded">
-    <h3 className="font-semibold mb-2 text-blue-600">{content.title}</h3>
+    <h3 className="font-semibold mb-2 text-brand-primary">{content.title}</h3>
     <div className="text-sm space-y-1">
       {content.showClientName && <div>{'{{client_name}}'}</div>}
       {content.showClientEmail && <div>{'{{client_email}}'}</div>}
@@ -194,55 +201,203 @@ const TextBlock = ({
         content.style === 'terms' ? 'text-sm text-gray-600' : 
         'text-base'
       }`}
+      style={{ 
+        color: content.style?.textColor || 'inherit',
+        fontSize: content.style?.fontSize === 'small' ? '0.875rem' : 
+                 content.style?.fontSize === 'large' ? '1.125rem' : '1rem'
+      }}
     >
       {content.text || "Click to edit text..."}
     </div>
   );
 };
 
-const ImageBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
-  <div className="text-center">
-    <div className="w-full h-32 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center rounded">
-      <div className="text-center">
-        <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-        <p className="text-sm text-gray-500">Click to add image</p>
+const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => {
+  const isSimpleView = content.layout === 'simple';
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-brand-primary">Quote Items</h3>
+        <div className="flex items-center gap-2">
+          <Label className="text-sm">View:</Label>
+          <Select 
+            value={content.layout || 'detailed'} 
+            onValueChange={(value) => onUpdate({ ...content, layout: value })}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="simple">Simple</SelectItem>
+              <SelectItem value="detailed">Detailed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-    </div>
-  </div>
-);
 
-const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
-  <div className="space-y-4">
-    <h3 className="font-semibold text-blue-600">Quote Items</h3>
-    <table className="w-full border-collapse border border-gray-300">
-      <thead>
-        <tr className="bg-gray-50">
-          {content.showRoom && <th className="border border-gray-300 p-2 text-left">Room</th>}
-          {content.showTreatment && <th className="border border-gray-300 p-2 text-left">Treatment</th>}
-          {content.showQuantity && <th className="border border-gray-300 p-2 text-left">Qty</th>}
-          {content.showUnitPrice && <th className="border border-gray-300 p-2 text-left">Unit Price</th>}
-          {content.showTotal && <th className="border border-gray-300 p-2 text-left">Total</th>}
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          {content.showRoom && <td className="border border-gray-300 p-2">Living Room</td>}
-          {content.showTreatment && <td className="border border-gray-300 p-2">Blackout Curtains</td>}
-          {content.showQuantity && <td className="border border-gray-300 p-2">2</td>}
-          {content.showUnitPrice && <td className="border border-gray-300 p-2">$150.00</td>}
-          {content.showTotal && <td className="border border-gray-300 p-2">$300.00</td>}
-        </tr>
-        <tr>
-          {content.showRoom && <td className="border border-gray-300 p-2">Bedroom</td>}
-          {content.showTreatment && <td className="border border-gray-300 p-2">Roman Shades</td>}
-          {content.showQuantity && <td className="border border-gray-300 p-2">3</td>}
-          {content.showUnitPrice && <td className="border border-gray-300 p-2">$120.00</td>}
-          {content.showTotal && <td className="border border-gray-300 p-2">$360.00</td>}
-        </tr>
-      </tbody>
-    </table>
-  </div>
-);
+      {isSimpleView ? (
+        // Simple View
+        <div className="space-y-2">
+          <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+            <span className="font-medium">Blackout Curtains - Living Room</span>
+            <span className="font-semibold">$300.00</span>
+          </div>
+          <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
+            <span className="font-medium">Roman Shades - Bedroom</span>
+            <span className="font-semibold">$360.00</span>
+          </div>
+        </div>
+      ) : (
+        // Detailed/Itemized View
+        <table className={`w-full border-collapse ${
+          content.tableStyle === 'minimal' ? '' : 
+          content.tableStyle === 'striped' ? '' : 'border border-gray-300'
+        }`}>
+          <thead>
+            <tr className={`${
+              content.tableStyle === 'striped' ? 'bg-gray-50' : 
+              content.tableStyle === 'minimal' ? 'border-b' : 'bg-gray-50'
+            }`}>
+              {(content.showProduct !== false) && (
+                <th className={`p-2 text-left font-semibold text-brand-primary ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Product/Service
+                </th>
+              )}
+              {content.showDescription && (
+                <th className={`p-2 text-left font-semibold text-brand-primary ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Description
+                </th>
+              )}
+              {(content.showQuantity !== false) && (
+                <th className={`p-2 text-left font-semibold text-brand-primary ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Qty
+                </th>
+              )}
+              {(content.showUnitPrice !== false) && (
+                <th className={`p-2 text-left font-semibold text-brand-primary ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Unit Price
+                </th>
+              )}
+              {content.showTax && (
+                <th className={`p-2 text-left font-semibold text-brand-primary ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Tax/VAT
+                </th>
+              )}
+              {(content.showTotal !== false) && (
+                <th className={`p-2 text-left font-semibold text-brand-primary ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Total
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            <tr className={content.tableStyle === 'striped' ? 'even:bg-gray-50' : ''}>
+              {(content.showProduct !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Blackout Curtains
+                </td>
+              )}
+              {content.showDescription && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  High-quality blackout curtains for living room
+                </td>
+              )}
+              {(content.showQuantity !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  2
+                </td>
+              )}
+              {(content.showUnitPrice !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  $150.00
+                </td>
+              )}
+              {content.showTax && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  $24.00
+                </td>
+              )}
+              {(content.showTotal !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  $300.00
+                </td>
+              )}
+            </tr>
+            <tr className={content.tableStyle === 'striped' ? 'even:bg-gray-50' : ''}>
+              {(content.showProduct !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Roman Shades
+                </td>
+              )}
+              {content.showDescription && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  Custom roman shades for bedroom windows
+                </td>
+              )}
+              {(content.showQuantity !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  3
+                </td>
+              )}
+              {(content.showUnitPrice !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  $120.00
+                </td>
+              )}
+              {content.showTax && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  $28.80
+                </td>
+              )}
+              {(content.showTotal !== false) && (
+                <td className={`p-2 ${
+                  content.tableStyle === 'minimal' ? 'border-b' : 'border border-gray-300'
+                }`}>
+                  $360.00
+                </td>
+              )}
+            </tr>
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
 
 const TotalsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
   <div className="flex justify-end">
@@ -255,7 +410,7 @@ const TotalsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: 
       )}
       {content.showTax && (
         <div className="flex justify-between">
-          <span>Tax:</span>
+          <span>Tax/VAT:</span>
           <span>$52.80</span>
         </div>
       )}
@@ -270,18 +425,32 @@ const TotalsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: 
 );
 
 const SignatureBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
-  <div className="grid grid-cols-2 gap-8 pt-8">
-    {content.showSignature && (
-      <div>
-        <div className="border-b border-gray-400 mb-2 h-8"></div>
-        <div className="text-sm">{content.signatureLabel}</div>
+  <div className="space-y-4">
+    {content.enableDigitalSignature ? (
+      <SignatureCanvas onSignatureSave={(dataUrl) => onUpdate({ ...content, signatureData: dataUrl })} />
+    ) : (
+      <div className="grid grid-cols-2 gap-8 pt-8">
+        {content.showSignature && (
+          <div>
+            <div className="border-b border-gray-400 mb-2 h-8"></div>
+            <div className="text-sm">{content.signatureLabel}</div>
+          </div>
+        )}
+        {content.showDate && (
+          <div>
+            <div className="border-b border-gray-400 mb-2 h-8"></div>
+            <div className="text-sm">{content.dateLabel}</div>
+          </div>
+        )}
       </div>
     )}
-    {content.showDate && (
-      <div>
-        <div className="border-b border-gray-400 mb-2 h-8"></div>
-        <div className="text-sm">{content.dateLabel}</div>
-      </div>
-    )}
+    
+    <div className="flex items-center space-x-2">
+      <Switch
+        checked={content.enableDigitalSignature || false}
+        onCheckedChange={(checked) => onUpdate({ ...content, enableDigitalSignature: checked })}
+      />
+      <Label>Enable digital signature canvas</Label>
+    </div>
   </div>
 );

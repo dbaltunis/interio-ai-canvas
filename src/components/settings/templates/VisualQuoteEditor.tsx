@@ -6,10 +6,11 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, Eye, EyeOff } from "lucide-react";
+import { Save, Plus, Eye, EyeOff, Palette } from "lucide-react";
 import { DraggableBlock } from "./visual-editor/DraggableBlock";
 import { BlockToolbar } from "./visual-editor/BlockToolbar";
 import { LivePreview } from "./visual-editor/LivePreview";
+import { BlockStyleControls } from "./visual-editor/BlockStyleControls";
 
 interface VisualQuoteEditorProps {
   isOpen: boolean;
@@ -28,7 +29,8 @@ const defaultBlocks = [
       companyName: '{{company_name}}',
       companyAddress: '{{company_address}}',
       companyPhone: '{{company_phone}}',
-      companyEmail: '{{company_email}}'
+      companyEmail: '{{company_email}}',
+      style: { primaryColor: '#415e6b', textColor: '#575656' }
     },
     editable: true
   },
@@ -57,13 +59,14 @@ const defaultBlocks = [
     id: 'products-table',
     type: 'products',
     content: {
-      layout: 'table',
-      showRoom: true,
-      showTreatment: true,
+      layout: 'detailed',
+      showProduct: true,
+      showDescription: false,
       showQuantity: true,
       showUnitPrice: true,
       showTotal: true,
-      style: 'detailed'
+      showTax: false,
+      tableStyle: 'bordered'
     },
     editable: true
   },
@@ -93,7 +96,8 @@ const defaultBlocks = [
       showSignature: true,
       signatureLabel: 'Authorized Signature',
       showDate: true,
-      dateLabel: 'Date'
+      dateLabel: 'Date',
+      enableDigitalSignature: false
     },
     editable: true
   }
@@ -104,6 +108,7 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
   const [blocks, setBlocks] = useState(template?.blocks || defaultBlocks);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showStyling, setShowStyling] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -161,6 +166,8 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
     onClose();
   }, [template, templateName, blocks, onSave, onClose]);
 
+  const selectedBlock = blocks.find(block => block.id === selectedBlockId);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl h-[95vh] overflow-hidden">
@@ -170,6 +177,14 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               Visual Quote Editor
             </DialogTitle>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowStyling(!showStyling)}
+                className="flex items-center gap-2"
+              >
+                <Palette className="h-4 w-4" />
+                Style
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowPreview(!showPreview)}
@@ -233,11 +248,16 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               </div>
 
               {/* Right Sidebar for Block Settings */}
-              {selectedBlockId && (
+              {(selectedBlockId && showStyling) && (
                 <div className="w-80 border-l bg-white overflow-auto">
                   <div className="p-4">
                     <h3 className="font-medium mb-4">Block Settings</h3>
-                    {/* Block-specific settings will be rendered here */}
+                    {selectedBlock && (
+                      <BlockStyleControls
+                        block={selectedBlock}
+                        onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -261,20 +281,32 @@ function getDefaultContentForType(type: string) {
       return { src: '', alt: '', width: '100%', alignment: 'center' };
     case 'products':
       return {
-        layout: 'table',
-        showRoom: true,
-        showTreatment: true,
+        layout: 'detailed',
+        showProduct: true,
+        showDescription: false,
         showQuantity: true,
         showUnitPrice: true,
         showTotal: true,
-        style: 'detailed'
+        showTax: false,
+        tableStyle: 'bordered'
       };
     case 'signature':
       return {
         showSignature: true,
         signatureLabel: 'Authorized Signature',
         showDate: true,
-        dateLabel: 'Date'
+        dateLabel: 'Date',
+        enableDigitalSignature: false
+      };
+    case 'payment':
+      return {
+        paymentType: 'full',
+        currency: '$',
+        amount: '0.00',
+        buttonText: 'Pay Now',
+        description: 'Secure payment processing',
+        showInstallments: false,
+        securityText: '🔒 Secure SSL encrypted payment'
       };
     default:
       return {};
