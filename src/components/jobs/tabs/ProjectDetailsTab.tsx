@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +51,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         due_date: formData.due_date || null,
       };
 
+      console.log("Sending update with data:", updateData);
       const updatedProject = await updateProject.mutateAsync(updateData);
 
       console.log("Project updated successfully:", updatedProject);
@@ -60,7 +60,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       await refetchClients();
       
       // Update the project object directly to reflect changes immediately
-      Object.assign(project, formData);
+      Object.assign(project, {
+        ...formData,
+        updated_at: new Date().toISOString()
+      });
       
       setIsEditing(false);
       
@@ -104,6 +107,34 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const updateFormData = (field: string, value: any) => {
     console.log("Updating form field:", field, "with value:", value);
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleClientSelection = (clientId: string) => {
+    console.log("Client selected from search:", clientId);
+    updateFormData("client_id", clientId);
+    setShowClientSearch(false);
+    
+    // Immediately save the client selection
+    const updateData = {
+      id: project.id,
+      client_id: clientId,
+    };
+    
+    updateProject.mutateAsync(updateData).then(() => {
+      // Update the project object immediately
+      project.client_id = clientId;
+      toast({
+        title: "Success",
+        description: "Client assigned to project",
+      });
+    }).catch((error) => {
+      console.error("Failed to assign client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to assign client. Please try again.",
+        variant: "destructive",
+      });
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -257,39 +288,48 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                       )}
                     </div>
                   </div>
-                  {isEditing && (
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setShowClientSearch(true)}
-                      >
-                        <Search className="h-4 w-4 mr-2" />
-                        Change
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => updateFormData("client_id", null)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowClientSearch(true)}
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Change
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        updateFormData("client_id", null);
+                        // Immediately save the removal
+                        updateProject.mutateAsync({
+                          id: project.id,
+                          client_id: null,
+                        }).then(() => {
+                          project.client_id = null;
+                          toast({
+                            title: "Success",
+                            description: "Client removed from project",
+                          });
+                        });
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
                   <User className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-gray-500 mb-3">No client assigned</p>
-                  {isEditing && (
-                    <Button 
-                      onClick={() => setShowClientSearch(true)}
-                      className="bg-brand-primary hover:bg-brand-accent text-white"
-                    >
-                      <Search className="h-4 w-4 mr-2" />
-                      Search or Create Client
-                    </Button>
-                  )}
+                  <Button 
+                    onClick={() => setShowClientSearch(true)}
+                    className="bg-brand-primary hover:bg-brand-accent text-white"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Search or Create Client
+                  </Button>
                 </div>
               )}
             </div>
@@ -372,11 +412,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             </div>
             <ClientSearchStep 
               formData={{ client_id: formData.client_id }}
-              updateFormData={(field, value) => {
-                console.log("Client selected from search:", field, value);
-                updateFormData(field, value);
-                setShowClientSearch(false);
-              }}
+              updateFormData={handleClientSelection}
             />
           </div>
         </div>

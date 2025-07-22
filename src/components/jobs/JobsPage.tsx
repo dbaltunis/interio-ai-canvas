@@ -30,11 +30,15 @@ const JobsPage = () => {
     try {
       console.log("Creating new job...");
       
+      // Generate a unique job number
+      const jobNumber = `JOB-${Date.now()}`;
+      
       // First create the project
       const newProject = await createProject.mutateAsync({
         name: `New Job ${new Date().toLocaleDateString()}`,
         description: "",
-        status: "planning"
+        status: "planning",
+        job_number: jobNumber
       });
 
       console.log("Project created:", newProject);
@@ -48,7 +52,8 @@ const JobsPage = () => {
         tax_rate: 0,
         tax_amount: 0,
         total_amount: 0,
-        notes: "New job created"
+        notes: "New job created",
+        quote_number: jobNumber
       });
 
       console.log("Quote created:", newQuote);
