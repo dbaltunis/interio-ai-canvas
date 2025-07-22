@@ -54,45 +54,69 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
     return searchString.includes(searchTerm.toLowerCase());
   });
 
-  const toggleJobLock = (quote: any) => {
-    // TODO: Implement job lock/unlock functionality
-    console.log('Toggle lock for job:', quote.id);
+  const toggleJobLock = async (quote: any, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    try {
+      // TODO: Implement job lock/unlock functionality
+      console.log('Toggle lock for job:', quote.id);
+      // This would update the database with the new lock status
+    } catch (error) {
+      console.error('Error toggling job lock:', error);
+    }
+  };
+
+  const handleMenuAction = (action: () => void, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Use setTimeout to prevent UI freezing
+    setTimeout(() => {
+      try {
+        action();
+      } catch (error) {
+        console.error('Error executing menu action:', error);
+      }
+    }, 0);
   };
 
   const getMenuItems = (quote: any, project: any): MenuItem[] => [
     {
       label: "View Job",
       icon: <Eye className="h-4 w-4" />,
-      onClick: () => onJobSelect(quote.id)
+      onClick: () => handleMenuAction(() => onJobSelect(quote.id))
     },
     {
       label: "Add Note",
       icon: <StickyNote className="h-4 w-4" />,
-      onClick: () => {
+      onClick: () => handleMenuAction(() => {
         setSelectedJobForNotes({ quote, project });
         setShowNotesDialog(true);
-      }
+      })
     },
     {
       label: "Invite Team Member",
       icon: <UserPlus className="h-4 w-4" />,
-      onClick: () => {
+      onClick: () => handleMenuAction(() => {
         setSelectedJobForInvite({ quote, project });
         setShowInviteDialog(true);
-      }
+      })
     },
     {
       label: quote.is_locked ? "Unlock Job" : "Lock Job",
       icon: quote.is_locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />,
-      onClick: () => toggleJobLock(quote)
+      onClick: () => handleMenuAction(() => toggleJobLock(quote))
     },
     {
       label: "Copy Job",
-      onClick: () => console.log('Copy job:', quote.id)
+      onClick: () => handleMenuAction(() => console.log('Copy job:', quote.id))
     },
     {
       label: "Delete Job",
-      onClick: () => console.log('Delete job:', quote.id),
+      onClick: () => handleMenuAction(() => console.log('Delete job:', quote.id)),
       variant: "destructive"
     }
   ];
@@ -101,11 +125,20 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
     onJobSelect(quoteId);
   };
 
+  // Get currency symbol from settings (defaulting to USD for now)
+  const getCurrencySymbol = () => {
+    // TODO: Get this from business settings
+    // For now, defaulting to USD
+    return '$';
+  };
+
   const formatCurrency = (amount: number) => {
+    const currencySymbol = getCurrencySymbol();
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount).replace(/^/, currencySymbol);
   };
 
   const getInitials = (name: string) => {
@@ -183,7 +216,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
                   return (
                     <TableRow 
                       key={quote.id} 
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-gray-50 cursor-pointer transition-colors"
                       onClick={() => handleRowClick(quote.id)}
                     >
                       <TableCell>
