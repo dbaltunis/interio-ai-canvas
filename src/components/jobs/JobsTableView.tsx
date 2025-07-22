@@ -191,7 +191,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
                           <div className="font-medium flex items-center space-x-2">
                             <span>{quote.quote_number}</span>
                             {quote.is_locked && (
-                              <Lock className="h-4 w-4 text-amber-500" title="Job is locked" />
+                              <Lock className="h-4 w-4 text-amber-500" />
                             )}
                           </div>
                           {project && (
