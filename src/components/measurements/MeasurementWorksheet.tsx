@@ -38,8 +38,8 @@ export const MeasurementWorksheet = ({
   readOnly = false
 }: MeasurementWorksheetProps) => {
   const [windowType, setWindowType] = useState(existingMeasurement?.measurement_type || "standard");
-  const [selectedRoom, setSelectedRoom] = useState(existingMeasurement?.room_id || "");
-  const [selectedWindowCovering, setSelectedWindowCovering] = useState(existingMeasurement?.window_covering_id || "");
+  const [selectedRoom, setSelectedRoom] = useState(existingMeasurement?.room_id || "no_room");
+  const [selectedWindowCovering, setSelectedWindowCovering] = useState(existingMeasurement?.window_covering_id || "no_covering");
   const [measurements, setMeasurements] = useState(existingMeasurement?.measurements || {});
   const [notes, setNotes] = useState(existingMeasurement?.notes || "");
   const [measuredBy, setMeasuredBy] = useState(existingMeasurement?.measured_by || "");
@@ -64,8 +64,8 @@ export const MeasurementWorksheet = ({
     const measurementData = {
       client_id: clientId,
       project_id: projectId,
-      room_id: selectedRoom || null,
-      window_covering_id: selectedWindowCovering || null,
+      room_id: selectedRoom === "no_room" ? null : selectedRoom,
+      window_covering_id: selectedWindowCovering === "no_covering" ? null : selectedWindowCovering,
       measurement_type: windowType,
       measurements,
       photos,
@@ -87,11 +87,13 @@ export const MeasurementWorksheet = ({
   };
 
   const getRoomName = () => {
+    if (selectedRoom === "no_room") return null;
     const room = rooms.find(r => r.id === selectedRoom);
     return room?.name;
   };
 
   const getWindowCoveringName = () => {
+    if (selectedWindowCovering === "no_covering") return null;
     const covering = windowCoverings.find(c => c.id === selectedWindowCovering);
     return covering?.name;
   };
@@ -131,7 +133,7 @@ export const MeasurementWorksheet = ({
                     <SelectValue placeholder="Select room" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Room Selected</SelectItem>
+                    <SelectItem value="no_room">No Room Selected</SelectItem>
                     {rooms.map((room) => (
                       <SelectItem key={room.id} value={room.id}>
                         {room.name}
@@ -149,7 +151,7 @@ export const MeasurementWorksheet = ({
                   <SelectValue placeholder="Select window covering" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Not Selected</SelectItem>
+                  <SelectItem value="no_covering">Not Selected</SelectItem>
                   {windowCoverings.map((covering) => (
                     <SelectItem key={covering.id} value={covering.id}>
                       {covering.name}

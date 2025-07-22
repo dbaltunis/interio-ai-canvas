@@ -26,12 +26,14 @@ export const MeasurementsList = ({
   const { data: windowCoverings = [] } = useWindowCoverings();
   const updateMeasurement = useUpdateClientMeasurement();
 
-  const getRoomName = (roomId: string) => {
+  const getRoomName = (roomId: string | null) => {
+    if (!roomId || roomId === "no_room") return "Unassigned Room";
     const room = rooms.find(r => r.id === roomId);
     return room?.name || "Unassigned Room";
   };
 
-  const getWindowCoveringName = (coveringId: string) => {
+  const getWindowCoveringName = (coveringId: string | null) => {
+    if (!coveringId || coveringId === "no_covering") return "Not Selected";
     const covering = windowCoverings.find(c => c.id === coveringId);
     return covering?.name || "Not Selected";
   };
@@ -65,13 +67,13 @@ export const MeasurementsList = ({
                   <Badge variant="outline">
                     {measurement.measurement_type.replace('_', ' ')}
                   </Badge>
-                  {measurement.room_id && (
+                  {measurement.room_id && measurement.room_id !== "no_room" && (
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <MapPin className="h-3 w-3" />
                       {getRoomName(measurement.room_id)}
                     </div>
                   )}
-                  {measurement.window_covering_id && (
+                  {measurement.window_covering_id && measurement.window_covering_id !== "no_covering" && (
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Layers className="h-3 w-3" />
                       {getWindowCoveringName(measurement.window_covering_id)}
