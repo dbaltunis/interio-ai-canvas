@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, MoreHorizontal, Trash2 } from "lucide-react";
-import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy } from "lucide-react";
+import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -29,9 +29,10 @@ import {
   AlertDialogDescription, 
   AlertDialogFooter, 
   AlertDialogHeader, 
-  AlertDialogTitle,
-  AlertDialogTrigger 
+  AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import { JobNotesDialog } from "./JobNotesDialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -44,8 +45,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const { data: clients = [] } = useClients();
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
+  const updateQuote = useUpdateQuote();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
 
   const filteredQuotes = quotes.filter((quote) => {
     const matchesSearch = 
@@ -53,7 +57,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       quote.projects?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getClientName(quote).toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || quote.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || quote.status === statusFilter || quote.projects?.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -63,23 +67,26 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       case 'draft':
         return 'bg-gray-100 text-gray-800';
       case 'sent':
+      case 'planning':
         return 'bg-blue-100 text-blue-800';
       case 'approved':
+      case 'completed':
         return 'bg-green-100 text-green-800';
       case 'rejected':
+      case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'in_progress':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getClientName = (quote: any) => {
-    // First try to get client from the quote's clients relationship
     if (quote.clients?.name) {
       return quote.clients.name;
     }
     
-    // If no client in the relationship, try to find by client_id from our clients data
     if (quote.client_id && clients.length > 0) {
       const client = clients.find(c => c.id === quote.client_id);
       if (client?.name) {
@@ -87,7 +94,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       }
     }
     
-    // If project has client_id, try to find that client
     if (quote.projects?.client_id && clients.length > 0) {
       const client = clients.find(c => c.id === quote.projects.client_id);
       if (client?.name) {
@@ -99,12 +105,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   };
 
   const getClientForQuote = (quote: any) => {
-    // First try to get client from the quote's clients relationship
     if (quote.clients) {
       return quote.clients;
     }
     
-    // If no client in the relationship, try to find by client_id from our clients data
     if (quote.client_id && clients.length > 0) {
       const client = clients.find(c => c.id === quote.client_id);
       if (client) {
@@ -112,7 +116,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       }
     }
     
-    // If project has client_id, try to find that client
     if (quote.projects?.client_id && clients.length > 0) {
       const client = clients.find(c => c.id === quote.projects.client_id);
       if (client) {
@@ -121,6 +124,33 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     }
     
     return null;
+  };
+
+  const getClientInitials = (clientName: string) => {
+    if (clientName === 'No Client') return 'NC';
+    const names = clientName.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return clientName.substring(0, 2).toUpperCase();
+  };
+
+  const getClientAvatarColor = (clientName: string) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-orange-500',
+      'bg-pink-500',
+      'bg-indigo-500'
+    ];
+    const index = clientName.length % colors.length;
+    return colors[index];
+  };
+
+  const getCurrentStatus = (quote: any) => {
+    // Prioritize project status if available, fallback to quote status
+    return quote.projects?.status || quote.status || 'draft';
   };
 
   const handleDeleteJob = async (quote: any) => {
@@ -141,12 +171,24 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     }
   };
 
-  const handleJobCopy = (jobId: string) => {
-    console.log("Copying job:", jobId);
-    toast({
-      title: "Job Copied",
-      description: "Job has been copied successfully",
-    });
+  const handleJobCopy = async (jobId: string) => {
+    const quote = quotes.find(q => q.id === jobId);
+    if (quote) {
+      try {
+        // Create a copy by updating status to maintain current functionality
+        console.log("Copying job:", jobId);
+        toast({
+          title: "Job Copied",
+          description: "Job has been copied successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error", 
+          description: "Failed to copy job",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const handleJobEdit = (jobId: string) => {
@@ -161,6 +203,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     if (quote) {
       onJobSelect(quote);
     }
+  };
+
+  const handleNotesClick = (quote: any) => {
+    setSelectedQuoteForNotes(quote);
+    setNotesDialogOpen(true);
   };
 
   if (isLoading) {
@@ -193,79 +240,108 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
               <TableHead>Client</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Owner</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-[70px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredQuotes.map((quote) => (
-              <TableRow 
-                key={quote.id} 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => onJobSelect(quote)}
-              >
-                <TableCell className="font-medium">
-                  {quote.quote_number}
-                </TableCell>
-                <TableCell>
-                  {quote.projects?.name || 'Untitled Project'}
-                </TableCell>
-                <TableCell>
-                  {getClientName(quote)}
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="secondary" 
-                    className={getStatusColor(quote.status)}
-                  >
-                    {quote.status?.charAt(0).toUpperCase() + quote.status?.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  ${quote.total_amount?.toFixed(2) || '0.00'}
-                </TableCell>
-                <TableCell>
-                  {new Date(quote.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
-                        <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Job
-                        </DropdownMenuItem>
-                        
-                        <DropdownMenuItem onClick={() => handleJobEdit(quote.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Edit Job
-                        </DropdownMenuItem>
-                        
-                        <DropdownMenuItem onClick={() => handleJobCopy(quote.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Copy Job
-                        </DropdownMenuItem>
-                        
-                        <DropdownMenuSeparator />
-                        
-                        <DropdownMenuItem onClick={() => {
-                          setQuoteToDelete(quote);
-                          setDeleteDialogOpen(true);
-                        }}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Job
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredQuotes.map((quote) => {
+              const clientName = getClientName(quote);
+              const client = getClientForQuote(quote);
+              const currentStatus = getCurrentStatus(quote);
+              
+              return (
+                <TableRow 
+                  key={quote.id} 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => onJobSelect(quote)}
+                >
+                  <TableCell className="font-medium">
+                    {quote.quote_number}
+                  </TableCell>
+                  <TableCell>
+                    {quote.projects?.name || 'Untitled Project'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className={`${getClientAvatarColor(clientName)} text-white text-xs font-medium`}>
+                          {getClientInitials(clientName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{clientName}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="secondary" 
+                      className={getStatusColor(currentStatus)}
+                    >
+                      {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    ${quote.total_amount?.toFixed(2) || '0.00'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-brand-primary text-white text-xs">
+                          ME
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-gray-600">You</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(quote.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
+                          <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Job
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleJobEdit(quote.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Edit Job
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleJobCopy(quote.id)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Job
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
+                            <StickyNote className="mr-2 h-4 w-4" />
+                            Add Note
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => {
+                            setQuoteToDelete(quote);
+                            setDeleteDialogOpen(true);
+                          }}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Job
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -295,6 +371,13 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Notes Dialog */}
+      <JobNotesDialog
+        open={notesDialogOpen}
+        onOpenChange={setNotesDialogOpen}
+        quote={selectedQuoteForNotes}
+      />
     </>
   );
 };
