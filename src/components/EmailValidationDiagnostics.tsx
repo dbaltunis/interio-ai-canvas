@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,11 +67,19 @@ export const EmailValidationDiagnostics = () => {
       });
 
       // Check 4: SendGrid API Key Test
-      if (integration?.api_credentials?.api_key) {
+      let sendgridApiKey: string | null = null;
+      
+      // Safely extract API key from JSON field
+      if (integration?.api_credentials && typeof integration.api_credentials === 'object' && integration.api_credentials !== null) {
+        const credentials = integration.api_credentials as Record<string, any>;
+        sendgridApiKey = credentials.api_key || null;
+      }
+
+      if (sendgridApiKey) {
         try {
           const response = await fetch("https://api.sendgrid.com/v3/user/profile", {
             headers: {
-              "Authorization": `Bearer ${integration.api_credentials.api_key}`,
+              "Authorization": `Bearer ${sendgridApiKey}`,
             },
           });
           
