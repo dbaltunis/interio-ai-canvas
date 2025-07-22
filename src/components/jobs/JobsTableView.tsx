@@ -9,6 +9,7 @@ import { MoreHorizontal, Trash2, Eye, Search, Calendar, User, FileText } from "l
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
 import { useDeleteProject } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -22,6 +23,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
   const [statusFilter, setStatusFilter] = useState("all");
   
   const { data: quotes = [], isLoading } = useQuotes();
+  const { data: clients = [] } = useClients();
   const deleteQuote = useDeleteQuote();
   const deleteProject = useDeleteProject();
   const { toast } = useToast();
@@ -104,14 +106,38 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
     return quote.status?.replace('_', ' ').toUpperCase() || 'DRAFT';
   };
 
-  const getClientDisplayName = (client: any) => {
-    if (!client) return 'No Client';
-    
-    if (client.client_type === 'B2B' && client.company_name) {
-      return client.company_name;
+  const getClientDisplayName = (quote: any) => {
+    // First try to get client from the quote's clients relationship
+    if (quote.clients) {
+      if (quote.clients.client_type === 'B2B' && quote.clients.company_name) {
+        return quote.clients.company_name;
+      }
+      return quote.clients.name || 'Unknown Client';
     }
     
-    return client.name || 'Unknown Client';
+    // If no client in the relationship, try to find by client_id from our clients data
+    if (quote.client_id && clients.length > 0) {
+      const client = clients.find(c => c.id === quote.client_id);
+      if (client) {
+        if (client.client_type === 'B2B' && client.company_name) {
+          return client.company_name;
+        }
+        return client.name || 'Unknown Client';
+      }
+    }
+    
+    // If project has client_id, try to find that client
+    if (quote.projects?.client_id && clients.length > 0) {
+      const client = clients.find(c => c.id === quote.projects.client_id);
+      if (client) {
+        if (client.client_type === 'B2B' && client.company_name) {
+          return client.company_name;
+        }
+        return client.name || 'Unknown Client';
+      }
+    }
+    
+    return 'No Client';
   };
 
   if (isLoading) {
@@ -211,7 +237,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-400" />
-                      {getClientDisplayName(quote.clients)}
+                      {getClientDisplayName(quote)}
                     </div>
                   </TableCell>
                   <TableCell>

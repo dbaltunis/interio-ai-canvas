@@ -17,7 +17,12 @@ import {
   User, 
   BarChart3,
   Edit,
-  Eye
+  Eye,
+  Share,
+  Download,
+  Mail,
+  Calendar,
+  Phone
 } from "lucide-react";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { JobTeamDialog } from "./JobTeamDialog";
@@ -95,6 +100,45 @@ export const JobActionsMenu = ({
     }
   };
 
+  const handleSendEmail = () => {
+    toast({
+      title: "Email",
+      description: "Email functionality coming soon",
+    });
+  };
+
+  const handleScheduleAppointment = () => {
+    toast({
+      title: "Calendar",
+      description: "Appointment scheduling coming soon",
+    });
+  };
+
+  const handleCallClient = () => {
+    if (client?.phone) {
+      window.open(`tel:${client.phone}`, '_self');
+    } else {
+      toast({
+        title: "No Phone Number",
+        description: "Client phone number not available",
+      });
+    }
+  };
+
+  const handleShareJob = () => {
+    toast({
+      title: "Share",
+      description: "Share functionality coming soon",
+    });
+  };
+
+  const handleDownloadJob = () => {
+    toast({
+      title: "Download",
+      description: "Download functionality coming soon",
+    });
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -123,28 +167,57 @@ export const JobActionsMenu = ({
             Copy Job
           </DropdownMenuItem>
           
+          <DropdownMenuItem onClick={handleShareJob}>
+            <Share className="mr-2 h-4 w-4" />
+            Share Job
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleDownloadJob}>
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
+          
           <DropdownMenuItem onClick={() => setShowNotes(true)}>
             <StickyNote className="mr-2 h-4 w-4" />
             Job Notes
           </DropdownMenuItem>
           
+          <DropdownMenuItem onClick={() => setShowProgress(true)}>
+            <BarChart3 className="mr-2 h-4 w-4" />
+            View Progress
+          </DropdownMenuItem>
+          
           <DropdownMenuSeparator />
+          
+          {client && (
+            <>
+              <DropdownMenuItem onClick={() => setShowClientDetails(true)}>
+                <User className="mr-2 h-4 w-4" />
+                Client Details
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={handleSendEmail}>
+                <Mail className="mr-2 h-4 w-4" />
+                Send Email
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={handleCallClient}>
+                <Phone className="mr-2 h-4 w-4" />
+                Call Client
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={handleScheduleAppointment}>
+                <Calendar className="mr-2 h-4 w-4" />
+                Schedule Appointment
+              </DropdownMenuItem>
+            </>
+          )}
           
           <DropdownMenuItem onClick={() => setShowTeam(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Invite Team
-          </DropdownMenuItem>
-          
-          {client && (
-            <DropdownMenuItem onClick={() => setShowClientDetails(true)}>
-              <User className="mr-2 h-4 w-4" />
-              Client Details
-            </DropdownMenuItem>
-          )}
-          
-          <DropdownMenuItem onClick={() => setShowProgress(true)}>
-            <BarChart3 className="mr-2 h-4 w-4" />
-            View Progress
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
