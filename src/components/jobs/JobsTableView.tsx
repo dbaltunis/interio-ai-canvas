@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -54,10 +53,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
     return searchString.includes(searchTerm.toLowerCase());
   });
 
-  const toggleJobLock = async (quote: any, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
+  const toggleJobLock = async (quote: any) => {
     try {
       // TODO: Implement job lock/unlock functionality
       console.log('Toggle lock for job:', quote.id);
