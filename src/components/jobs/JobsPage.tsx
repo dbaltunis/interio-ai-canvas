@@ -56,7 +56,8 @@ const JobsPage = () => {
       // Refresh the quotes list to show the new job
       await refetchQuotes();
 
-      setSelectedJobId(newQuote.id);
+      // Navigate to the project detail page using the PROJECT ID, not quote ID
+      setSelectedJobId(newProject.id);
 
       toast({
         title: "Success",
@@ -72,8 +73,21 @@ const JobsPage = () => {
     }
   };
 
-  const handleJobSelect = (jobId: string) => {
-    setSelectedJobId(jobId);
+  const handleJobSelect = (quote: any) => {
+    console.log("Job selected:", quote);
+    // Use the project_id from the quote to navigate to the correct job detail
+    if (quote.project_id) {
+      setSelectedJobId(quote.project_id);
+    } else if (quote.projects?.id) {
+      setSelectedJobId(quote.projects.id);
+    } else {
+      console.error("No project ID found for quote:", quote);
+      toast({
+        title: "Error",
+        description: "Unable to open job details. Project not found.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBackFromJob = () => {
