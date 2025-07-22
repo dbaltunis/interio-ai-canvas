@@ -22,13 +22,14 @@ const PageLoader = () => (
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
-    return searchParams.get('tab') || "jobs";
+    // Default to "projects" (Jobs page) instead of "jobs"
+    return searchParams.get('tab') || "projects";
   });
   const { signOut } = useAuth();
 
   // Update URL when active tab changes, but only if it's different from current URL
   useEffect(() => {
-    const currentTab = searchParams.get('tab') || "jobs";
+    const currentTab = searchParams.get('tab') || "projects";
     if (activeTab !== currentTab) {
       setSearchParams({ tab: activeTab }, { replace: true });
     }
