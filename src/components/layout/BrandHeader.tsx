@@ -15,9 +15,9 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
   };
 
   const sloganSizeClasses = {
-    sm: "text-xs",
-    md: "text-sm",
-    lg: "text-base"
+    sm: "text-xs lg:text-sm",
+    md: "text-xs lg:text-sm xl:text-base",
+    lg: "text-sm lg:text-base xl:text-lg"
   };
 
   return (
@@ -29,13 +29,13 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
       />
       {showTagline && (
         <>
-          <div className="mx-3 h-6 w-px bg-brand-neutral/30" />
-          <div className="hidden md:block">
+          <div className="mx-3 h-6 w-px bg-brand-neutral/30 hidden sm:block" />
+          <div className="hidden sm:block lg:block">
             <div className="flex flex-col">
-              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} lg:${sloganSizeClasses[size]} md:text-xs font-medium leading-tight`}>
+              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
                 The future of window décor
               </p>
-              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} lg:${sloganSizeClasses[size]} md:text-xs font-medium leading-tight`}>
+              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
                 is online and bespoke
               </p>
             </div>
