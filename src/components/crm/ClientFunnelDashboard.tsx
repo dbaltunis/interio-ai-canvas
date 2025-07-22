@@ -1,22 +1,19 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { 
   Users, 
   Mail, 
   Calendar, 
   FileText, 
   CheckCircle, 
-  Settings, 
-  Search,
+  Settings,
   Plus,
-  Ruler,
   TrendingUp,
   Clock,
-  Eye,
-  Edit
+  Eye
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
@@ -25,6 +22,8 @@ import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { ClientProfilePage } from "../clients/ClientProfilePage";
 import { ClientStatusChanger } from "../clients/ClientStatusChanger";
 import { QuickMeasurementAccess } from "../clients/QuickMeasurementAccess";
+import { ViewToggle } from "./ViewToggle";
+import { ClientListView } from "./ClientListView";
 
 const FUNNEL_STAGES = [
   { key: "lead", label: "Leads", icon: Users, color: "bg-gray-100 text-gray-800" },
@@ -41,6 +40,7 @@ export const ClientFunnelDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showClientProfile, setShowClientProfile] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<'kanban' | 'list'>('kanban');
 
   const { data: clientStats, isLoading } = useClientStats();
   const { data: clients } = useClients();
@@ -102,33 +102,6 @@ export const ClientFunnelDashboard = () => {
           <h1 className="text-3xl font-bold text-brand-primary">Client Funnel</h1>
           <p className="text-gray-600 mt-1">Track your clients through the sales process</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search clients..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-          
-          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-            <DialogTrigger asChild>
-              <Button className="bg-brand-primary hover:bg-brand-accent text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                New Client
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Client</DialogTitle>
-              </DialogHeader>
-              <ClientCreateForm onBack={() => setShowCreateForm(false)} />
-            </DialogContent>
-          </Dialog>
-        </div>
       </div>
 
       {/* KPI Cards */}
@@ -184,91 +157,120 @@ export const ClientFunnelDashboard = () => {
         </Card>
       </div>
 
-      {/* Funnel Stages */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-        {FUNNEL_STAGES.map((stage) => {
-          const stageClients = clientsByStage[stage.key] || [];
-          const StageIcon = stage.icon;
-          
-          return (
-            <Card key={stage.key} className="min-h-[500px]">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <StageIcon className="h-4 w-4" />
-                    {stage.label}
-                  </div>
-                  <Badge variant="secondary" className={stage.color}>
-                    {stageClients.length}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {stageClients.map((client) => (
-                  <div key={client.id} className="space-y-2">
-                    <Card 
-                      className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-2 border-l-transparent hover:border-l-brand-primary"
-                      onClick={() => handleClientClick(client)}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-sm">
-                            {client.client_type === 'B2B' ? client.company_name : client.name}
+      {/* View Toggle and Controls */}
+      <ViewToggle
+        currentView={currentView}
+        onViewChange={setCurrentView}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onNewClient={() => setShowCreateForm(true)}
+      />
+
+      {/* Content based on current view */}
+      {currentView === 'list' ? (
+        <ClientListView
+          clients={filteredClients}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onClientClick={handleClientClick}
+        />
+      ) : (
+        /* Kanban View */
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+          {FUNNEL_STAGES.map((stage) => {
+            const stageClients = clientsByStage[stage.key] || [];
+            const StageIcon = stage.icon;
+            
+            return (
+              <Card key={stage.key} className="min-h-[500px]">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <StageIcon className="h-4 w-4" />
+                      {stage.label}
+                    </div>
+                    <Badge variant="secondary" className={stage.color}>
+                      {stageClients.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {stageClients.map((client) => (
+                    <div key={client.id} className="space-y-2">
+                      <Card 
+                        className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-2 border-l-transparent hover:border-l-brand-primary group"
+                        onClick={() => handleClientClick(client)}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">
+                              {client.client_type === 'B2B' ? client.company_name : client.name}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs px-2 py-1 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClientClick(client);
+                              }}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs px-2 py-1 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleClientClick(client);
-                            }}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
+                          
+                          {client.email && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {client.email}
+                            </div>
+                          )}
+                          {client.last_contact_date && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(client.last_contact_date).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
-                        
-                        {client.email && (
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {client.email}
-                          </div>
-                        )}
-                        {client.last_contact_date && (
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(client.last_contact_date).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                    
-                    {/* Status Changer */}
-                    <ClientStatusChanger
-                      clientId={client.id}
-                      currentStatus={client.funnel_stage || 'lead'}
-                      clientName={client.client_type === 'B2B' ? client.company_name : client.name}
-                    />
-                    
-                    {/* Quick Measurement Access */}
-                    <QuickMeasurementAccess
-                      clientId={client.id}
-                      clientName={client.client_type === 'B2B' ? client.company_name : client.name}
-                    />
-                  </div>
-                ))}
-                
-                {stageClients.length === 0 && (
-                  <div className="text-center py-8 text-gray-400">
-                    <StageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No clients</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                      </Card>
+                      
+                      {/* Status Changer */}
+                      <ClientStatusChanger
+                        clientId={client.id}
+                        currentStatus={client.funnel_stage || 'lead'}
+                        clientName={client.client_type === 'B2B' ? client.company_name : client.name}
+                      />
+                      
+                      {/* Quick Measurement Access */}
+                      <QuickMeasurementAccess
+                        clientId={client.id}
+                        clientName={client.client_type === 'B2B' ? client.company_name : client.name}
+                      />
+                    </div>
+                  ))}
+                  
+                  {stageClients.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      <StageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No clients</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* New Client Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+          </DialogHeader>
+          <ClientCreateForm onBack={() => setShowCreateForm(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
