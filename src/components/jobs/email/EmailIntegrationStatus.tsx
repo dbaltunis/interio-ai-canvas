@@ -81,7 +81,7 @@ export const EmailIntegrationStatus = () => {
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Configure your email settings to personalize outgoing emails with your name and signature.
+              Email settings are required for sending emails. Please configure your verified sender email address in Settings → Email Settings.
             </AlertDescription>
           </Alert>
         )}

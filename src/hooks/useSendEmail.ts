@@ -46,9 +46,9 @@ export const useSendEmail = () => {
         .eq('user_id', user.id)
         .single();
 
-      // If no email settings but SendGrid is configured, we can still proceed with defaults
-      if (!emailSettings) {
-        console.log("No email settings found, but SendGrid is configured. Using defaults.");
+      // Email settings are required for verified sender identity
+      if (!emailSettings || !emailSettings.from_email) {
+        throw new Error('Email settings are required. Please configure your sender email address in Settings > Email Settings. Make sure to use an email address that is verified in your SendGrid account.');
       }
 
       // First, create the email record with "queued" status
@@ -175,7 +175,11 @@ export const useSendEmail = () => {
       // Check for specific error types and provide helpful messages
       let errorMessage = error.message || "Failed to send email";
       
-      if (error.message?.includes('SendGrid')) {
+      if (error.message?.includes('verified Sender Identity')) {
+        errorMessage = "Email address not verified in SendGrid. Please verify your sender email in your SendGrid account or update your email settings.";
+      } else if (error.message?.includes('Email settings are required')) {
+        errorMessage = "Please configure your email settings in Settings > Email Settings with a verified sender address.";
+      } else if (error.message?.includes('SendGrid')) {
         errorMessage = "Please configure your SendGrid integration in Settings > Integrations first.";
       }
       
