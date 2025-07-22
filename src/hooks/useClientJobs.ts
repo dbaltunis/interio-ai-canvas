@@ -54,3 +54,47 @@ export const useClientStats = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
+
+export const useClientJobs = (clientId: string) => {
+  return useQuery({
+    queryKey: ["client-jobs", clientId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: projects, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return projects || [];
+    },
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useClientEmails = (clientId: string) => {
+  return useQuery({
+    queryKey: ["client-emails", clientId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: emails, error } = await supabase
+        .from("emails")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return emails || [];
+    },
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};

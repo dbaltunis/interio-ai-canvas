@@ -15,12 +15,14 @@ import {
   Plus,
   Ruler,
   TrendingUp,
-  Clock
+  Clock,
+  Eye
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
+import { ClientProfilePage } from "../clients/ClientProfilePage";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 
 const FUNNEL_STAGES = [
@@ -37,6 +39,7 @@ export const ClientFunnelDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showClientProfile, setShowClientProfile] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
   const { data: clientStats, isLoading } = useClientStats();
@@ -59,7 +62,14 @@ export const ClientFunnelDashboard = () => {
   const totalClients = clients?.length || 0;
   const conversionRate = totalClients > 0 ? (clientsByStage.approved?.length || 0) / totalClients * 100 : 0;
 
-  const handleClientAction = (action: string, client: any) => {
+  const handleClientClick = (client: any) => {
+    setSelectedClient(client);
+    setShowClientProfile(true);
+  };
+
+  const handleClientAction = (action: string, client: any, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the client click
+    
     switch (action) {
       case "measure":
         setSelectedClient(client);
@@ -75,6 +85,23 @@ export const ClientFunnelDashboard = () => {
         break;
     }
   };
+
+  // Show client profile if selected
+  if (showClientProfile && selectedClient) {
+    return (
+      <ClientProfilePage
+        clientId={selectedClient.id}
+        onBack={() => {
+          setShowClientProfile(false);
+          setSelectedClient(null);
+        }}
+        onEdit={() => {
+          // Handle edit - could open edit form
+          console.log("Edit client:", selectedClient);
+        }}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -198,11 +225,29 @@ export const ClientFunnelDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {stageClients.map((client) => (
-                  <Card key={client.id} className="p-3 hover:shadow-md transition-shadow cursor-pointer">
+                  <Card 
+                    key={client.id} 
+                    className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-2 border-l-transparent hover:border-l-brand-primary"
+                    onClick={() => handleClientClick(client)}
+                  >
                     <div className="space-y-2">
-                      <div className="font-medium text-sm">
-                        {client.client_type === 'B2B' ? client.company_name : client.name}
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-sm">
+                          {client.client_type === 'B2B' ? client.company_name : client.name}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs px-2 py-1 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClientClick(client);
+                          }}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
                       </div>
+                      
                       {client.email && (
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <Mail className="h-3 w-3" />
@@ -223,7 +268,7 @@ export const ClientFunnelDashboard = () => {
                             size="sm" 
                             variant="outline" 
                             className="text-xs px-2 py-1 h-6"
-                            onClick={() => handleClientAction("measure", client)}
+                            onClick={(e) => handleClientAction("measure", client, e)}
                           >
                             <Ruler className="h-3 w-3 mr-1" />
                             Measure
@@ -234,7 +279,7 @@ export const ClientFunnelDashboard = () => {
                             size="sm" 
                             variant="outline" 
                             className="text-xs px-2 py-1 h-6"
-                            onClick={() => handleClientAction("quote", client)}
+                            onClick={(e) => handleClientAction("quote", client, e)}
                           >
                             <FileText className="h-3 w-3 mr-1" />
                             Quote
@@ -244,7 +289,7 @@ export const ClientFunnelDashboard = () => {
                           size="sm" 
                           variant="outline" 
                           className="text-xs px-2 py-1 h-6"
-                          onClick={() => handleClientAction("email", client)}
+                          onClick={(e) => handleClientAction("email", client, e)}
                         >
                           <Mail className="h-3 w-3 mr-1" />
                           Email
