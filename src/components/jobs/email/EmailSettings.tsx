@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Mail, Key, Bell, Shield, Check, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Settings, Mail, Key, Bell, Shield, Check, X, AlertTriangle } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
@@ -25,6 +25,8 @@ export const EmailSettings = () => {
     active: true
   });
 
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
+
   useEffect(() => {
     if (emailSettings) {
       setFormData({
@@ -37,9 +39,40 @@ export const EmailSettings = () => {
     }
   }, [emailSettings]);
 
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.from_email.trim()) {
+      errors.from_email = "From email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.from_email)) {
+      errors.from_email = "Please enter a valid email address";
+    }
+    
+    if (!formData.from_name.trim()) {
+      errors.from_name = "From name is required";
+    }
+    
+    if (formData.reply_to_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.reply_to_email)) {
+      errors.reply_to_email = "Please enter a valid reply-to email address";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-      await updateEmailSettings.mutateAsync(formData);
+      await updateEmailSettings.mutateAsync({
+        from_email: formData.from_email.trim(),
+        from_name: formData.from_name.trim(),
+        reply_to_email: formData.reply_to_email.trim() || undefined,
+        signature: formData.signature.trim() || undefined,
+        active: formData.active
+      });
     } catch (error) {
       console.error("Failed to update email settings:", error);
     }
@@ -58,11 +91,19 @@ export const EmailSettings = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-xl font-semibold">Email Settings</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Configure your email preferences and integrations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Email Settings</h2>
+          <p className="text-gray-600 text-sm mt-1">
+            Configure your email preferences and integrations
+          </p>
+        </div>
+        <Alert className="max-w-md">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Note:</strong> For full email configuration, go to Settings → Email tab where all email setup is centralized.
+          </AlertDescription>
+        </Alert>
       </div>
 
       {/* Integration Status */}
@@ -104,7 +145,10 @@ export const EmailSettings = () => {
                 )}
               </Badge>
               {!hasSendGridIntegration && (
-                <Button size="sm">
+                <Button 
+                  size="sm"
+                  onClick={() => window.location.href = '/settings?tab=integrations'}
+                >
                   Configure
                 </Button>
               )}
@@ -142,23 +186,41 @@ export const EmailSettings = () => {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="from_name">From Name</Label>
+              <Label htmlFor="from_name">From Name *</Label>
               <Input
                 id="from_name"
                 value={formData.from_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, from_name: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, from_name: e.target.value }));
+                  if (formErrors.from_name) {
+                    setFormErrors(prev => ({ ...prev, from_name: '' }));
+                  }
+                }}
                 placeholder="Your Business Name"
+                className={formErrors.from_name ? "border-red-500" : ""}
               />
+              {formErrors.from_name && (
+                <p className="text-sm text-red-500">{formErrors.from_name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="from_email">From Email</Label>
+              <Label htmlFor="from_email">From Email *</Label>
               <Input
                 id="from_email"
                 type="email"
                 value={formData.from_email}
-                onChange={(e) => setFormData(prev => ({ ...prev, from_email: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, from_email: e.target.value }));
+                  if (formErrors.from_email) {
+                    setFormErrors(prev => ({ ...prev, from_email: '' }));
+                  }
+                }}
                 placeholder="noreply@yourbusiness.com"
+                className={formErrors.from_email ? "border-red-500" : ""}
               />
+              {formErrors.from_email && (
+                <p className="text-sm text-red-500">{formErrors.from_email}</p>
+              )}
             </div>
           </div>
 
@@ -168,9 +230,18 @@ export const EmailSettings = () => {
               id="reply_to_email"
               type="email"
               value={formData.reply_to_email}
-              onChange={(e) => setFormData(prev => ({ ...prev, reply_to_email: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, reply_to_email: e.target.value }));
+                if (formErrors.reply_to_email) {
+                  setFormErrors(prev => ({ ...prev, reply_to_email: '' }));
+                }
+              }}
               placeholder="contact@yourbusiness.com"
+              className={formErrors.reply_to_email ? "border-red-500" : ""}
             />
+            {formErrors.reply_to_email && (
+              <p className="text-sm text-red-500">{formErrors.reply_to_email}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -193,13 +264,22 @@ export const EmailSettings = () => {
             <Label htmlFor="active">Active email settings</Label>
           </div>
 
-          <Button 
-            onClick={handleSave}
-            disabled={updateEmailSettings.isPending}
-            className="w-full md:w-auto"
-          >
-            {updateEmailSettings.isPending ? "Saving..." : "Save Settings"}
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleSave}
+              disabled={updateEmailSettings.isPending}
+              className="w-full md:w-auto"
+            >
+              {updateEmailSettings.isPending ? "Saving..." : "Save Settings"}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = '/settings?tab=email'}
+              className="w-full md:w-auto"
+            >
+              Go to Full Email Settings
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
