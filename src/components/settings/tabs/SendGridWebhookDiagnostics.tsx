@@ -144,8 +144,20 @@ export const SendGridWebhookDiagnostics = () => {
 
   const renderActionableRecommendations = (recommendations: string[]) => {
     return recommendations.map((rec, index) => {
+      // Skip positive recommendations (starting with ✅) as they don't need action
+      if (rec.startsWith("✅")) {
+        return (
+          <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-green-800">{rec.replace("✅ ", "")}</span>
+            </div>
+          </div>
+        );
+      }
+
       // Parse the recommendation to provide actionable steps
-      if (rec.includes("No SendGrid API key found")) {
+      if (rec.includes("No SendGrid API key found") || rec.includes("no_key")) {
         return (
           <div key={index} className="p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -169,7 +181,7 @@ export const SendGridWebhookDiagnostics = () => {
         );
       }
 
-      if (rec.includes("Webhook is not configured")) {
+      if (rec.includes("Webhook is not configured") || rec.includes("not_configured")) {
         return (
           <div key={index} className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -191,7 +203,7 @@ export const SendGridWebhookDiagnostics = () => {
         );
       }
 
-      if (rec.includes("SendGrid webhook is disabled")) {
+      if (rec.includes("SendGrid webhook is disabled") || rec.includes("disabled")) {
         return (
           <div key={index} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -235,7 +247,7 @@ export const SendGridWebhookDiagnostics = () => {
         );
       }
 
-      if (rec.includes("No emails show any opens")) {
+      if (rec.includes("No emails show any opens") || rec.includes("no opens")) {
         return (
           <div key={index} className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -263,13 +275,34 @@ export const SendGridWebhookDiagnostics = () => {
         );
       }
 
-      // Default rendering for other recommendations
-      return (
-        <div key={index} className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <p className="text-sm">{rec}</p>
-        </div>
-      );
-    });
+      if (rec.includes("invalid_key") || rec.includes("Invalid")) {
+        return (
+          <div key={index} className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-red-800 mb-2">Invalid SendGrid API Key</h4>
+                <p className="text-sm text-red-700 mb-3">Your SendGrid API key is invalid or has insufficient permissions.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-red-600" />
+                    <span>Check your API key in SendGrid dashboard</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <ArrowRight className="h-3 w-3 text-red-600" />
+                    <span>Ensure it has "Mail Send" permissions</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Skip rendering unrecognized recommendations instead of showing generic gray box
+      console.log("Unrecognized recommendation pattern:", rec);
+      return null;
+    }).filter(Boolean); // Remove null entries
   };
 
   return (
@@ -382,12 +415,14 @@ export const SendGridWebhookDiagnostics = () => {
               </div>
 
               {/* Actionable Recommendations */}
-              <div className="space-y-3">
-                <h4 className="font-medium">What You Need To Do</h4>
+              {diagnostic.recommendations && diagnostic.recommendations.length > 0 && (
                 <div className="space-y-3">
-                  {renderActionableRecommendations(diagnostic.recommendations)}
+                  <h4 className="font-medium">What You Need To Do</h4>
+                  <div className="space-y-3">
+                    {renderActionableRecommendations(diagnostic.recommendations)}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Helpful Links */}
               <div className="space-y-2">
