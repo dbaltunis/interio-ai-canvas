@@ -11,6 +11,7 @@ import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientActivityTimeline } from "./ClientActivityTimeline";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { ClientQuotesList } from "./ClientQuotesList";
+import { QuickMeasurementAccess } from "./QuickMeasurementAccess";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -55,6 +56,8 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
     return type === "B2B" ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />;
   };
 
+  const clientDisplayName = client.client_type === 'B2B' ? client.company_name : client.name;
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -70,7 +73,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-brand-primary">
-              {client.client_type === 'B2B' ? client.company_name : client.name}
+              {clientDisplayName}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge className={`${getTypeColor(client.client_type || 'B2C')} border flex items-center space-x-1`} variant="secondary">
@@ -141,63 +144,76 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
         </Card>
       </div>
 
-      {/* Client Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Client Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{client.email || 'Not provided'}</p>
+      {/* Client Details and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Client Information */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{client.email || 'Not provided'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium">{client.phone || 'Not provided'}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{client.phone || 'Not provided'}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-gray-400 mt-1" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Address</p>
-                  <div className="font-medium">
-                    {client.address && (
-                      <p>{client.address}</p>
-                    )}
-                    {(client.city || client.state) && (
-                      <p>{client.city && client.state ? `${client.city}, ${client.state}` : client.city || client.state}</p>
-                    )}
-                    {client.zip_code && (
-                      <p>{client.zip_code}</p>
-                    )}
-                    {!client.address && !client.city && !client.state && !client.zip_code && (
-                      <p>Not provided</p>
-                    )}
+                
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-gray-400 mt-1" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Address</p>
+                      <div className="font-medium">
+                        {client.address && (
+                          <p>{client.address}</p>
+                        )}
+                        {(client.city || client.state) && (
+                          <p>{client.city && client.state ? `${client.city}, ${client.state}` : client.city || client.state}</p>
+                        )}
+                        {client.zip_code && (
+                          <p>{client.zip_code}</p>
+                        )}
+                        {!client.address && !client.city && !client.state && !client.zip_code && (
+                          <p>Not provided</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          {client.notes && (
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Notes</p>
-              <p className="text-gray-700">{client.notes}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              
+              {client.notes && (
+                <div className="mt-6 pt-6 border-t">
+                  <p className="text-sm text-muted-foreground mb-2">Notes</p>
+                  <p className="text-gray-700">{client.notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Measurement Access */}
+        <div>
+          <QuickMeasurementAccess 
+            clientId={clientId} 
+            clientName={clientDisplayName || 'Unknown Client'} 
+          />
+        </div>
+      </div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="activity" className="space-y-4">
