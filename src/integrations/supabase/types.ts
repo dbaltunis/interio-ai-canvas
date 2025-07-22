@@ -193,6 +193,66 @@ export type Database = {
           },
         ]
       }
+      client_measurements: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: string
+          measured_at: string | null
+          measured_by: string | null
+          measurement_type: string
+          measurements: Json
+          notes: string | null
+          photos: Json | null
+          project_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: string
+          measured_at?: string | null
+          measured_by?: string | null
+          measurement_type?: string
+          measurements?: Json
+          notes?: string | null
+          photos?: Json | null
+          project_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          measured_at?: string | null
+          measured_by?: string | null
+          measurement_type?: string
+          measurements?: Json
+          notes?: string | null
+          photos?: Json | null
+          project_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_measurements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_measurements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -203,10 +263,13 @@ export type Database = {
           country: string | null
           created_at: string
           email: string | null
+          funnel_stage: string | null
           id: string
+          last_contact_date: string | null
           name: string
           notes: string | null
           phone: string | null
+          stage_changed_at: string | null
           state: string | null
           updated_at: string
           user_id: string
@@ -221,10 +284,13 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string | null
+          funnel_stage?: string | null
           id?: string
+          last_contact_date?: string | null
           name: string
           notes?: string | null
           phone?: string | null
+          stage_changed_at?: string | null
           state?: string | null
           updated_at?: string
           user_id: string
@@ -239,10 +305,13 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string | null
+          funnel_stage?: string | null
           id?: string
+          last_contact_date?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
+          stage_changed_at?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string
@@ -623,6 +692,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          funnel_stage: string | null
           id: string
           job_number: string | null
           name: string
@@ -638,6 +708,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          funnel_stage?: string | null
           id?: string
           job_number?: string | null
           name: string
@@ -653,6 +724,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          funnel_stage?: string | null
           id?: string
           job_number?: string | null
           name?: string
