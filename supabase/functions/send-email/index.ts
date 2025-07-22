@@ -53,15 +53,18 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("SendGrid API key not configured");
     }
 
-    // Get user's email settings
+    // Get user's email settings (optional - use defaults if not configured)
     const { data: emailSettings } = await supabase
       .from("email_settings")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    const fromEmail = emailSettings?.from_email || "noreply@example.com";
+    // Use email settings if available, otherwise use sensible defaults
+    const fromEmail = emailSettings?.from_email || "noreply@yourdomain.com";
     const fromName = emailSettings?.from_name || "Your Business";
+
+    console.log(`Using sender: ${fromName} <${fromEmail}>`);
 
     // Prepare email data
     const emailData: any = {
@@ -85,6 +88,14 @@ const handler = async (req: Request): Promise<Response> => {
         email_id: emailId,
       },
     };
+
+    // Add reply-to if configured
+    if (emailSettings?.reply_to_email) {
+      emailData.reply_to = {
+        email: emailSettings.reply_to_email,
+        name: fromName,
+      };
+    }
 
     // Add attachments if provided
     if (attachmentPaths && attachmentPaths.length > 0) {

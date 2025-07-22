@@ -26,18 +26,7 @@ export const useSendEmail = () => {
       
       const user = session.user;
 
-      // Check if user has email settings configured
-      const { data: emailSettings } = await supabase
-        .from('email_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!emailSettings || !emailSettings.from_email) {
-        throw new Error('Please configure your email settings first. Go to Settings > Email Settings to set up your sender email address.');
-      }
-
-      // Check SendGrid integration
+      // Check SendGrid integration first
       const { data: integration } = await supabase
         .from('integration_settings')
         .select('*')
@@ -48,6 +37,18 @@ export const useSendEmail = () => {
 
       if (!integration) {
         throw new Error('Please configure your SendGrid integration first. Go to Settings > Integrations to set up email sending.');
+      }
+
+      // Check if user has email settings configured (optional but recommended)
+      const { data: emailSettings } = await supabase
+        .from('email_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // If no email settings but SendGrid is configured, we can still proceed with defaults
+      if (!emailSettings) {
+        console.log("No email settings found, but SendGrid is configured. Using defaults.");
       }
 
       // First, create the email record with "queued" status
@@ -174,9 +175,7 @@ export const useSendEmail = () => {
       // Check for specific error types and provide helpful messages
       let errorMessage = error.message || "Failed to send email";
       
-      if (error.message?.includes('email settings')) {
-        errorMessage = "Please configure your email settings in Settings > Email Settings first.";
-      } else if (error.message?.includes('SendGrid')) {
+      if (error.message?.includes('SendGrid')) {
         errorMessage = "Please configure your SendGrid integration in Settings > Integrations first.";
       }
       
