@@ -78,10 +78,20 @@ export const EmailIntegrationStatus = () => {
         )}
 
         {!emailSettings && hasSendGridIntegration && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Email settings are required for sending emails. Please configure your verified sender email address in Settings → Email Settings.
+          <Alert className="border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <div className="space-y-2">
+                <p className="font-medium">Email Settings Required!</p>
+                <p>You have SendGrid configured but need to set your verified sender email. This is required by SendGrid for all outgoing emails.</p>
+                <Button 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.href = '/settings'}
+                >
+                  Configure Email Settings Now
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}
