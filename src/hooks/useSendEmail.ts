@@ -48,7 +48,7 @@ export const useSendEmail = () => {
 
       // Email settings are required for verified sender identity
       if (!emailSettings || !emailSettings.from_email) {
-        throw new Error('Email settings are required. Please configure your sender email address in Settings > Email Settings. Make sure to use an email address that is verified in your SendGrid account.');
+        throw new Error('Email settings required: Please configure your verified sender email address in Settings → Email Settings. Your sender email must be verified in SendGrid.');
       }
 
       // First, create the email record with "queued" status
@@ -177,10 +177,10 @@ export const useSendEmail = () => {
       
       if (error.message?.includes('verified Sender Identity')) {
         errorMessage = "Email address not verified in SendGrid. Please verify your sender email in your SendGrid account or update your email settings.";
-      } else if (error.message?.includes('Email settings are required')) {
-        errorMessage = "Please configure your email settings in Settings > Email Settings with a verified sender address.";
+      } else if (error.message?.includes('Email settings required')) {
+        errorMessage = "Please configure your email settings in Settings → Email Settings with a verified sender address.";
       } else if (error.message?.includes('SendGrid')) {
-        errorMessage = "Please configure your SendGrid integration in Settings > Integrations first.";
+        errorMessage = "Please configure your SendGrid integration in Settings → Integrations first.";
       }
       
       toast({

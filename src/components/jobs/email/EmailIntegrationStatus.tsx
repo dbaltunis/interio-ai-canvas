@@ -88,12 +88,19 @@ export const EmailIntegrationStatus = () => {
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => window.location.href = '/?tab=settings&subtab=email'}
+          >
             <Settings className="h-4 w-4" />
             Email Settings
           </Button>
           {!hasSendGridIntegration && (
-            <Button className="flex items-center gap-2">
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => window.location.href = '/?tab=settings&subtab=integrations'}
+            >
               <Mail className="h-4 w-4" />
               Configure SendGrid
             </Button>

@@ -53,18 +53,22 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("SendGrid API key not configured");
     }
 
-    // Get user's email settings (optional - use defaults if not configured)
+    // Get user's email settings - REQUIRED for verified sender
     const { data: emailSettings } = await supabase
       .from("email_settings")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // Use email settings if available, otherwise use sensible defaults
-    const fromEmail = emailSettings?.from_email || "noreply@yourdomain.com";
-    const fromName = emailSettings?.from_name || "Your Business";
+    if (!emailSettings || !emailSettings.from_email) {
+      console.error("No email settings configured for user:", user.id);
+      throw new Error("Email settings are required. Please configure your verified sender email address in Settings > Email Settings.");
+    }
 
-    console.log(`Using sender: ${fromName} <${fromEmail}>`);
+    const fromEmail = emailSettings.from_email;
+    const fromName = emailSettings.from_name;
+    
+    console.log(`Using verified sender: ${fromName} <${fromEmail}>`);
 
     // Prepare email data
     const emailData: any = {
