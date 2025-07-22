@@ -14,6 +14,7 @@ interface MeasurementWorksheetProps {
   projectId?: string;
   existingMeasurement?: any;
   onSave?: () => void;
+  readOnly?: boolean;
 }
 
 const WINDOW_TYPES = [
@@ -29,7 +30,8 @@ export const MeasurementWorksheet = ({
   clientId, 
   projectId, 
   existingMeasurement, 
-  onSave 
+  onSave,
+  readOnly = false
 }: MeasurementWorksheetProps) => {
   const [windowType, setWindowType] = useState(existingMeasurement?.measurement_type || "standard");
   const [measurements, setMeasurements] = useState(existingMeasurement?.measurements || {});
@@ -41,6 +43,7 @@ export const MeasurementWorksheet = ({
   const updateMeasurement = useUpdateClientMeasurement();
 
   const handleMeasurementChange = (field: string, value: string) => {
+    if (readOnly) return;
     setMeasurements(prev => ({
       ...prev,
       [field]: parseFloat(value) || 0
@@ -48,6 +51,8 @@ export const MeasurementWorksheet = ({
   };
 
   const handleSave = async () => {
+    if (readOnly) return;
+    
     const measurementData = {
       client_id: clientId,
       project_id: projectId,
@@ -85,6 +90,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.width || ""}
                 onChange={(e) => handleMeasurementChange("width", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -96,6 +102,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.height || ""}
                 onChange={(e) => handleMeasurementChange("height", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -107,6 +114,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.depth || ""}
                 onChange={(e) => handleMeasurementChange("depth", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -118,6 +126,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.ceiling_height || ""}
                 onChange={(e) => handleMeasurementChange("ceiling_height", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -136,6 +145,7 @@ export const MeasurementWorksheet = ({
                   value={measurements.left_width || ""}
                   onChange={(e) => handleMeasurementChange("left_width", e.target.value)}
                   placeholder="0.00"
+                  readOnly={readOnly}
                 />
               </div>
               <div>
@@ -147,6 +157,7 @@ export const MeasurementWorksheet = ({
                   value={measurements.center_width || ""}
                   onChange={(e) => handleMeasurementChange("center_width", e.target.value)}
                   placeholder="0.00"
+                  readOnly={readOnly}
                 />
               </div>
               <div>
@@ -158,6 +169,7 @@ export const MeasurementWorksheet = ({
                   value={measurements.right_width || ""}
                   onChange={(e) => handleMeasurementChange("right_width", e.target.value)}
                   placeholder="0.00"
+                  readOnly={readOnly}
                 />
               </div>
             </div>
@@ -171,6 +183,7 @@ export const MeasurementWorksheet = ({
                   value={measurements.height || ""}
                   onChange={(e) => handleMeasurementChange("height", e.target.value)}
                   placeholder="0.00"
+                  readOnly={readOnly}
                 />
               </div>
               <div>
@@ -182,6 +195,7 @@ export const MeasurementWorksheet = ({
                   value={measurements.projection || ""}
                   onChange={(e) => handleMeasurementChange("projection", e.target.value)}
                   placeholder="0.00"
+                  readOnly={readOnly}
                 />
               </div>
             </div>
@@ -200,6 +214,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.door_width || ""}
                 onChange={(e) => handleMeasurementChange("door_width", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -211,6 +226,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.door_height || ""}
                 onChange={(e) => handleMeasurementChange("door_height", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -222,6 +238,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.frame_width || ""}
                 onChange={(e) => handleMeasurementChange("frame_width", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -233,6 +250,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.clearance || ""}
                 onChange={(e) => handleMeasurementChange("clearance", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -250,6 +268,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.width || ""}
                 onChange={(e) => handleMeasurementChange("width", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
             <div>
@@ -261,6 +280,7 @@ export const MeasurementWorksheet = ({
                 value={measurements.height || ""}
                 onChange={(e) => handleMeasurementChange("height", e.target.value)}
                 placeholder="0.00"
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -273,14 +293,14 @@ export const MeasurementWorksheet = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="h-5 w-5" />
-          Measurement Worksheet
+          {readOnly ? "View Measurement" : "Measurement Worksheet"}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="windowType">Window Type</Label>
-            <Select value={windowType} onValueChange={setWindowType}>
+            <Select value={windowType} onValueChange={setWindowType} disabled={readOnly}>
               <SelectTrigger>
                 <SelectValue placeholder="Select window type" />
               </SelectTrigger>
@@ -300,6 +320,7 @@ export const MeasurementWorksheet = ({
               value={measuredBy}
               onChange={(e) => setMeasuredBy(e.target.value)}
               placeholder="Enter name"
+              readOnly={readOnly}
             />
           </div>
         </div>
@@ -317,24 +338,27 @@ export const MeasurementWorksheet = ({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add any additional notes about the measurements..."
             rows={3}
+            readOnly={readOnly}
           />
         </div>
 
-        <div className="flex justify-between items-center pt-4">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Add Photos
-          </Button>
-          
-          <Button 
-            onClick={handleSave}
-            disabled={createMeasurement.isPending || updateMeasurement.isPending}
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {existingMeasurement ? "Update" : "Save"} Measurements
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex justify-between items-center pt-4">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Add Photos
+            </Button>
+            
+            <Button 
+              onClick={handleSave}
+              disabled={createMeasurement.isPending || updateMeasurement.isPending}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {existingMeasurement ? "Update" : "Save"} Measurements
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
