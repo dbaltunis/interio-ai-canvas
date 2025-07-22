@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -6,14 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface SendEmailRequest {
-  to: string;
-  subject: string;
-  html: string;
-  emailId: string;
-  attachmentPaths?: string[];
-}
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("=== SEND EMAIL FUNCTION CALLED ===");
@@ -24,64 +15,68 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const requestBody = await req.json();
+    console.log("Request body:", requestBody);
 
-    console.log("Supabase client created successfully");
+    const { to, subject, content, client_id } = requestBody;
 
-    const requestBody = await req.text();
-    console.log("Raw request body:", requestBody);
-
-    let emailRequest: SendEmailRequest;
-    try {
-      emailRequest = JSON.parse(requestBody);
-      console.log("Parsed email request:", emailRequest);
-    } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
-      throw new Error("Invalid JSON in request body");
-    }
-
-    const { to, subject, html, emailId, attachmentPaths } = emailRequest;
-    
     // Validate required fields
-    if (!to || !subject || !html || !emailId) {
-      console.error("Missing required fields:", { to: !!to, subject: !!subject, html: !!html, emailId: !!emailId });
-      throw new Error("Missing required fields: to, subject, html, emailId");
+    if (!to || !subject || !content) {
+      console.error("Missing required fields:", { to: !!to, subject: !!subject, content: !!content });
+      throw new Error("Missing required fields: to, subject, and content are required");
     }
 
-    // Get user from authorization header
+    // Get the authorization header and extract the user
     const authHeader = req.headers.get("Authorization");
-    console.log("Auth header present:", !!authHeader);
-    
     if (!authHeader) {
-      throw new Error("No authorization header provided");
+      console.error("No authorization header found");
+      throw new Error("Authorization header is required");
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Create Supabase client with the user's session
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase configuration");
+      throw new Error("Server configuration error");
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+
+    // Get user from the authorization header
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      console.error("User authentication failed:", userError);
-      throw new Error("User not authenticated");
+      console.error("Failed to get user:", userError);
+      throw new Error("Authentication failed");
     }
 
     console.log("User authenticated:", user.id);
 
-    // Get SendGrid API key from integration settings
-    console.log("Fetching SendGrid integration settings...");
+    // Check for SendGrid integration
+    console.log("Checking for SendGrid integration...");
     const { data: integration, error: integrationError } = await supabase
       .from("integration_settings")
-      .select("api_credentials")
+      .select("*")
       .eq("user_id", user.id)
       .eq("integration_type", "sendgrid")
       .eq("active", true)
       .maybeSingle();
 
     if (integrationError) {
-      console.error("Integration query error:", integrationError);
-      throw new Error("Failed to fetch integration settings");
+      console.error("Error fetching integration:", integrationError);
+      throw new Error("Failed to check SendGrid integration");
+    }
+
+    if (!integration) {
+      console.error("No active SendGrid integration found");
+      throw new Error("SendGrid integration required. Please configure SendGrid in Settings → Integrations.");
     }
 
     console.log("Integration data:", integration);
@@ -99,29 +94,28 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (!sendgridApiKey) {
       console.error("No SendGrid API key found");
-      throw new Error("SendGrid API key not configured. Please set up your SendGrid integration first.");
+      throw new Error("SendGrid API key not configured");
     }
 
-    console.log("SendGrid API key found, length:", sendgridApiKey.length);
+    console.log("SendGrid API key found");
 
-    // Get user's email settings - REQUIRED for verified sender
-    console.log("Fetching user email settings...");
+    // Get email settings
+    console.log("Fetching email settings...");
     const { data: emailSettings, error: settingsError } = await supabase
       .from("email_settings")
       .select("*")
       .eq("user_id", user.id)
+      .eq("active", true)
       .maybeSingle();
 
     if (settingsError) {
-      console.error("Email settings query error:", settingsError);
+      console.error("Error fetching email settings:", settingsError);
       throw new Error("Failed to fetch email settings");
     }
 
-    console.log("Email settings:", emailSettings);
-
-    if (!emailSettings || !emailSettings.from_email) {
-      console.error("No email settings configured for user:", user.id);
-      throw new Error("Email settings are required. Please configure your verified sender email address in Settings > Email Settings.");
+    if (!emailSettings) {
+      console.error("No email settings found");
+      throw new Error("Email settings required. Please configure your sender email in Settings → Email Settings.");
     }
 
     const fromEmail = emailSettings.from_email;
@@ -159,83 +153,95 @@ const handler = async (req: Request): Promise<Response> => {
       // Don't fail the entire operation, just log the warning
     }
 
+    // Create email record first to get the ID for tracking
+    console.log("Creating email record...");
+    const { data: emailRecord, error: emailError } = await supabase
+      .from("emails")
+      .insert({
+        user_id: user.id,
+        client_id: client_id || null,
+        recipient_email: to,
+        subject: subject,
+        content: content,
+        status: "queued"
+      })
+      .select()
+      .single();
+
+    if (emailError || !emailRecord) {
+      console.error("Error creating email record:", emailError);
+      throw new Error("Failed to create email record");
+    }
+
+    console.log("Email record created with ID:", emailRecord.id);
+
+    // Add tracking to the email content
+    const trackingPixelUrl = `${supabaseUrl}/functions/v1/track-email-open?id=${emailRecord.id}`;
+    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`;
+    
+    // Function to wrap links with click tracking
+    const addClickTracking = (htmlContent: string): string => {
+      return htmlContent.replace(
+        /<a\s+([^>]*href=["']([^"']+)["'][^>]*)>/gi,
+        (match, attributes, url) => {
+          const trackingUrl = `${supabaseUrl}/functions/v1/track-email-click?id=${emailRecord.id}&url=${encodeURIComponent(url)}`;
+          return `<a ${attributes.replace(/href=["'][^"']*["']/, `href="${trackingUrl}"`)} data-original-url="${url}">`;
+        }
+      );
+    };
+
+    // Process content for tracking
+    let processedContent = content;
+    if (content.includes('<html') || content.includes('<body')) {
+      // HTML email - add tracking pixel before closing body tag
+      processedContent = addClickTracking(content);
+      if (processedContent.includes('</body>')) {
+        processedContent = processedContent.replace('</body>', `${trackingPixel}</body>`);
+      } else {
+        processedContent += trackingPixel;
+      }
+    } else {
+      // Plain text email - convert to HTML and add tracking
+      processedContent = `<html><body>${content.replace(/\n/g, '<br>')}</body></html>`;
+      processedContent = addClickTracking(processedContent);
+      processedContent = processedContent.replace('</body>', `${trackingPixel}</body>`);
+    }
+
     // Prepare email data
     const emailData: any = {
       personalizations: [
         {
           to: [{ email: to }],
-          subject: subject,
         },
       ],
       from: {
         email: fromEmail,
         name: fromName,
       },
+      subject: subject,
       content: [
         {
           type: "text/html",
-          value: html,
+          value: processedContent,
         },
       ],
       custom_args: {
-        email_id: emailId,
+        email_id: emailRecord.id,
+        user_id: user.id,
       },
     };
 
     // Add reply-to if configured
-    if (emailSettings?.reply_to_email) {
+    if (emailSettings.reply_to_email) {
       emailData.reply_to = {
         email: emailSettings.reply_to_email,
-        name: fromName,
       };
     }
 
-    // Add attachments if provided
-    if (attachmentPaths && attachmentPaths.length > 0) {
-      console.log("Processing attachments:", attachmentPaths.length);
-      emailData.attachments = [];
-      
-      for (const path of attachmentPaths) {
-        try {
-          const { data: fileData, error: fileError } = await supabase.storage
-            .from('email-attachments')
-            .download(path);
-          
-          if (fileError) {
-            console.error("Error downloading attachment:", fileError);
-            continue;
-          }
-          
-          if (fileData) {
-            const arrayBuffer = await fileData.arrayBuffer();
-            const base64Content = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-            const fileName = path.split('/').pop() || 'attachment';
-            
-            emailData.attachments.push({
-              content: base64Content,
-              filename: fileName,
-              type: fileData.type || 'application/octet-stream',
-              disposition: 'attachment',
-            });
-            
-            console.log("Attachment processed:", fileName);
-          }
-        } catch (error) {
-          console.error("Error processing attachment:", error);
-        }
-      }
-    }
-
     console.log("Sending email via SendGrid...");
-    console.log("Email data:", { 
-      to, 
-      subject, 
-      from: fromEmail,
-      attachments: emailData.attachments?.length || 0 
-    });
 
     // Send email via SendGrid
-    const sendResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${sendgridApiKey}`,
@@ -244,19 +250,15 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify(emailData),
     });
 
-    console.log("SendGrid response status:", sendResponse.status);
+    console.log("SendGrid response status:", response.status);
 
-    if (!sendResponse.ok) {
-      const errorText = await sendResponse.text();
-      console.error("SendGrid error details:", {
-        status: sendResponse.status,
-        statusText: sendResponse.statusText,
-        error: errorText
-      });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("SendGrid error response:", errorText);
       
-      // Parse SendGrid error for better user feedback
-      let errorMessage = `SendGrid API error: ${sendResponse.status}`;
+      let errorMessage = `SendGrid API error (${response.status})`;
       
+      // Try to parse SendGrid error response
       try {
         const errorData = JSON.parse(errorText);
         if (errorData.errors && errorData.errors.length > 0) {
@@ -272,74 +274,74 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (parseError) {
         console.error("Failed to parse SendGrid error:", parseError);
+        errorMessage = `SendGrid error: ${errorText}`;
       }
       
-      // Update email status to failed with detailed reason
+      // Update email status to failed
       await supabase
         .from("emails")
-        .update({ 
-          status: "failed", 
+        .update({
+          status: "failed",
           bounce_reason: errorMessage,
-          updated_at: new Date().toISOString()
         })
-        .eq("id", emailId);
-      
-      return new Response(
-        JSON.stringify({ 
-          error: errorMessage,
-          success: false 
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+        .eq("id", emailRecord.id);
 
-    // Update email status to sent
-    const { error: updateError } = await supabase
-      .from("emails")
-      .update({ 
-        status: "sent", 
-        sent_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", emailId);
-
-    if (updateError) {
-      console.error("Failed to update email status:", updateError);
+      throw new Error(errorMessage);
     }
 
     console.log("Email sent successfully");
 
-    const messageId = sendResponse.headers.get("x-message-id");
-    
+    // Update email status to sent
+    const { error: updateError } = await supabase
+      .from("emails")
+      .update({
+        status: "sent",
+        sent_at: new Date().toISOString(),
+      })
+      .eq("id", emailRecord.id);
+
+    if (updateError) {
+      console.error("Error updating email status:", updateError);
+    }
+
+    // Insert analytics record for sent event
+    await supabase
+      .from("email_analytics")
+      .insert({
+        email_id: emailRecord.id,
+        event_type: "sent",
+        event_data: {
+          recipient: to,
+          subject: subject,
+        },
+      });
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
+        email_id: emailRecord.id,
         message: "Email sent successfully",
-        messageId: messageId
       }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
       }
     );
-
-  } catch (error) {
-    console.error("=== ERROR IN SEND-EMAIL FUNCTION ===");
-    console.error("Error type:", error.constructor.name);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
-    
+  } catch (error: any) {
+    console.error("Error in send-email function:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error occurred",
-        success: false 
+      JSON.stringify({
+        error: error.message || "Failed to send email",
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
       }
     );
   }

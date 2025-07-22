@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useIntegrationStatus = () => {
-  const { data: integrationStatus } = useQuery({
+  const { data: integrationStatus, isLoading } = useQuery({
     queryKey: ['integration-status'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,6 +29,7 @@ export const useIntegrationStatus = () => {
 
   return {
     hasSendGridIntegration: !!integrationStatus,
-    integrationData: integrationStatus
+    integrationData: integrationStatus,
+    isLoading
   };
 };

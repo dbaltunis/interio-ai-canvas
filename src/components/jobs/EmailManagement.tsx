@@ -9,35 +9,28 @@ import { EmailComposer } from "./email/EmailComposer";
 import { EmailCampaigns } from "./email/EmailCampaigns";
 import { EmailAnalytics } from "./email/EmailAnalytics";
 import { EmailSettings } from "./email/EmailSettings";
+import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
+import { useEmailSettings } from "@/hooks/useEmailSettings";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showComposer, setShowComposer] = useState(false);
-  const { hasSendGridIntegration } = useIntegrationStatus();
+  const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
+  const { data: emailSettings } = useEmailSettings();
 
-  const handleConfigureIntegration = () => {
-    // Open the settings page in a new tab, directly to the integrations section
-    window.open('/settings?tab=integrations', '_blank');
+  const handleEmailSettingsClick = () => {
+    setActiveTab("settings");
   };
 
-  if (!hasSendGridIntegration) {
+  // Show loading while checking integration status
+  if (integrationLoading) {
     return (
       <div className="min-h-screen bg-white w-full">
         <div className="w-full px-6 py-6">
-          <Card>
-            <CardContent className="text-center py-12">
-              <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Email Integration Required</h3>
-              <p className="text-gray-500 mb-4">
-                Please configure your email integration to start sending emails.
-              </p>
-              <Button onClick={handleConfigureIntegration}>
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Email Integration
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-brand-neutral">Loading email management...</div>
+          </div>
         </div>
       </div>
     );
@@ -69,11 +62,19 @@ export const EmailManagement = () => {
           <Button 
             onClick={() => setShowComposer(true)}
             className="bg-brand-primary hover:bg-brand-accent text-white"
+            disabled={!hasSendGridIntegration || !emailSettings}
           >
             <Plus className="h-4 w-4 mr-2" />
             Compose Email
           </Button>
         </div>
+
+        {/* Integration Status Banners */}
+        <EmailIntegrationBanners
+          hasSendGridIntegration={hasSendGridIntegration}
+          hasEmailSettings={!!emailSettings}
+          onEmailSettingsClick={handleEmailSettingsClick}
+        />
 
         {/* Email Management Tabs */}
         <div className="bg-white border border-gray-200 rounded-lg w-full">
