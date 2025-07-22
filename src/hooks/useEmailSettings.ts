@@ -43,26 +43,63 @@ export const useUpdateEmailSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Attempting to save email settings:', settings);
+
       // Ensure required fields are present
       if (!settings.from_email || !settings.from_name) {
         throw new Error('from_email and from_name are required');
       }
 
-      const { data, error } = await supabase
+      // Check if settings already exist
+      const { data: existingSettings } = await supabase
         .from('email_settings')
-        .upsert({
-          user_id: user.id,
-          from_email: settings.from_email,
-          from_name: settings.from_name,
-          reply_to_email: settings.reply_to_email,
-          signature: settings.signature,
-          active: settings.active ?? true
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      let result;
+      
+      if (existingSettings) {
+        // Update existing settings
+        console.log('Updating existing email settings');
+        const { data, error } = await supabase
+          .from('email_settings')
+          .update({
+            from_email: settings.from_email,
+            from_name: settings.from_name,
+            reply_to_email: settings.reply_to_email || null,
+            signature: settings.signature || null,
+            active: settings.active ?? true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        result = data;
+      } else {
+        // Create new settings
+        console.log('Creating new email settings');
+        const { data, error } = await supabase
+          .from('email_settings')
+          .insert({
+            user_id: user.id,
+            from_email: settings.from_email,
+            from_name: settings.from_name,
+            reply_to_email: settings.reply_to_email || null,
+            signature: settings.signature || null,
+            active: settings.active ?? true
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        result = data;
+      }
+
+      console.log('Email settings saved successfully:', result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-settings'] });
@@ -72,9 +109,10 @@ export const useUpdateEmailSettings = () => {
       });
     },
     onError: (error) => {
+      console.error('Email settings update error:', error);
       toast({
         title: "Error",
-        description: "Failed to update email settings",
+        description: error instanceof Error ? error.message : "Failed to update email settings",
         variant: "destructive",
       });
     },

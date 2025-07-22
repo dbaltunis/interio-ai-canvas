@@ -19,39 +19,68 @@ export const useSendEmail = () => {
 
   return useMutation({
     mutationFn: async (emailData: SendEmailRequest) => {
-      console.log("Starting email send process...", emailData);
+      console.log("=== STARTING EMAIL SEND PROCESS ===");
+      console.log("Email data:", emailData);
       
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('User not authenticated');
+      if (!session?.user) {
+        console.error("No authenticated user found");
+        throw new Error('User not authenticated');
+      }
       
       const user = session.user;
+      console.log("Authenticated user:", user.id);
+
+      // Pre-flight validations
+      console.log("Running pre-flight validations...");
 
       // Check SendGrid integration first
-      const { data: integration } = await supabase
+      const { data: integration, error: integrationError } = await supabase
         .from('integration_settings')
         .select('*')
         .eq('user_id', user.id)
         .eq('integration_type', 'sendgrid')
         .eq('active', true)
-        .single();
+        .maybeSingle();
+
+      if (integrationError) {
+        console.error("Integration check failed:", integrationError);
+        throw new Error('Failed to check SendGrid integration');
+      }
 
       if (!integration) {
+        console.error("No active SendGrid integration found");
         throw new Error('Please configure your SendGrid integration first. Go to Settings > Integrations to set up email sending.');
       }
 
-      // Check if user has email settings configured (optional but recommended)
-      const { data: emailSettings } = await supabase
+      console.log("SendGrid integration verified");
+
+      // Check if user has email settings configured
+      const { data: emailSettings, error: settingsError } = await supabase
         .from('email_settings')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      // Email settings are required for verified sender identity
+      if (settingsError) {
+        console.error("Email settings check failed:", settingsError);
+        throw new Error('Failed to check email settings');
+      }
+
       if (!emailSettings || !emailSettings.from_email) {
+        console.error("No email settings found");
         throw new Error('Email settings required: Please configure your verified sender email address in Settings → Email Settings. Your sender email must be verified in SendGrid.');
       }
 
-      // First, create the email record with "queued" status
+      console.log("Email settings verified:", emailSettings.from_email);
+
+      // Validate email content
+      if (!emailData.to || !emailData.subject || !emailData.content) {
+        throw new Error('Missing required email fields: recipient, subject, or content');
+      }
+
+      // Create the email record with "queued" status
+      console.log("Creating email record...");
       const { data: emailRecord, error: createError } = await supabase
         .from('emails')
         .insert({
@@ -70,10 +99,10 @@ export const useSendEmail = () => {
 
       if (createError) {
         console.error("Failed to create email record:", createError);
-        throw createError;
+        throw new Error(`Failed to create email record: ${createError.message}`);
       }
 
-      console.log("Email record created:", emailRecord);
+      console.log("Email record created:", emailRecord.id);
 
       // Invalidate queries to show the "queued" status
       await queryClient.invalidateQueries({ queryKey: ['emails'] });
@@ -105,6 +134,7 @@ export const useSendEmail = () => {
         }
 
         // Send the email via the edge function
+        console.log("Calling send-email edge function...");
         const { data: sendResponse, error: sendError } = await supabase.functions.invoke('send-email', {
           body: {
             to: emailData.to,
@@ -162,7 +192,7 @@ export const useSendEmail = () => {
       }
     },
     onSuccess: () => {
-      console.log("Email send mutation completed successfully");
+      console.log("=== EMAIL SEND MUTATION COMPLETED SUCCESSFULLY ===");
       
       toast({
         title: "Email Sent",
@@ -170,7 +200,8 @@ export const useSendEmail = () => {
       });
     },
     onError: (error: any) => {
-      console.error("Send email mutation error:", error);
+      console.error("=== SEND EMAIL MUTATION ERROR ===");
+      console.error("Error details:", error);
       
       // Check for specific error types and provide helpful messages
       let errorMessage = error.message || "Failed to send email";
