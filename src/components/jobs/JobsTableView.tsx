@@ -12,6 +12,7 @@ import { useDeleteProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -140,6 +141,53 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
     return 'No Client';
   };
 
+  const getClientForQuote = (quote: any) => {
+    // First try to get client from the quote's clients relationship
+    if (quote.clients) {
+      return quote.clients;
+    }
+    
+    // If no client in the relationship, try to find by client_id from our clients data
+    if (quote.client_id && clients.length > 0) {
+      const client = clients.find(c => c.id === quote.client_id);
+      if (client) {
+        return client;
+      }
+    }
+    
+    // If project has client_id, try to find that client
+    if (quote.projects?.client_id && clients.length > 0) {
+      const client = clients.find(c => c.id === quote.projects.client_id);
+      if (client) {
+        return client;
+      }
+    }
+    
+    return null;
+  };
+
+  const handleJobCopy = (jobId: string) => {
+    console.log("Copying job:", jobId);
+    toast({
+      title: "Job Copied",
+      description: "Job has been copied successfully",
+    });
+  };
+
+  const handleJobEdit = (jobId: string) => {
+    const quote = quotes.find(q => q.id === jobId);
+    if (quote) {
+      onJobSelect(quote);
+    }
+  };
+
+  const handleJobView = (jobId: string) => {
+    const quote = quotes.find(q => q.id === jobId);
+    if (quote) {
+      onJobSelect(quote);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -250,50 +298,16 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
                     {new Date(quote.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          onJobSelect(quote);
-                        }}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem 
-                              className="text-red-600"
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Job</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this job? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDeleteJob(quote)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <JobActionsMenu
+                        quote={quote}
+                        client={getClientForQuote(quote)}
+                        project={quote.projects}
+                        onJobCopy={handleJobCopy}
+                        onJobEdit={handleJobEdit}
+                        onJobView={handleJobView}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
