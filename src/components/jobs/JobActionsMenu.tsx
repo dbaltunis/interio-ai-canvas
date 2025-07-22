@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -15,7 +16,8 @@ import {
   UserPlus, 
   User, 
   BarChart3,
-  Users
+  Edit,
+  Eye
 } from "lucide-react";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { JobTeamDialog } from "./JobTeamDialog";
@@ -39,9 +41,18 @@ interface JobActionsMenuProps {
   client?: any;
   project?: any;
   onJobCopy?: (jobId: string) => void;
+  onJobEdit?: (jobId: string) => void;
+  onJobView?: (jobId: string) => void;
 }
 
-export const JobActionsMenu = ({ quote, client, project, onJobCopy }: JobActionsMenuProps) => {
+export const JobActionsMenu = ({ 
+  quote, 
+  client, 
+  project, 
+  onJobCopy, 
+  onJobEdit, 
+  onJobView 
+}: JobActionsMenuProps) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
@@ -55,8 +66,16 @@ export const JobActionsMenu = ({ quote, client, project, onJobCopy }: JobActions
     onJobCopy?.(quote.id);
     toast({
       title: "Job Copied",
-      description: `Job ${quote.quote_number} has been copied to your clipboard`,
+      description: `Job ${quote.quote_number || quote.job_number} has been copied`,
     });
+  };
+
+  const handleEditJob = () => {
+    onJobEdit?.(quote.id);
+  };
+
+  const handleViewJob = () => {
+    onJobView?.(quote.id);
   };
 
   const handleDeleteJob = async () => {
@@ -84,7 +103,21 @@ export const JobActionsMenu = ({ quote, client, project, onJobCopy }: JobActions
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
+          {onJobView && (
+            <DropdownMenuItem onClick={handleViewJob}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Job
+            </DropdownMenuItem>
+          )}
+          
+          {onJobEdit && (
+            <DropdownMenuItem onClick={handleEditJob}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Job
+            </DropdownMenuItem>
+          )}
+          
           <DropdownMenuItem onClick={handleCopyJob}>
             <Copy className="mr-2 h-4 w-4" />
             Copy Job

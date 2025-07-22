@@ -1,9 +1,8 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Edit, Copy, Calendar, User, DollarSign } from "lucide-react";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobListViewProps {
   jobs: any[];
@@ -156,29 +155,14 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
               </TableCell>
               
               <TableCell className="text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => onJobView(job.id)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View Job
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onJobEdit(job.id)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Job
-                    </DropdownMenuItem>
-                    {onJobCopy && (
-                      <DropdownMenuItem onClick={() => onJobCopy(job.id)}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Duplicate Job
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <JobActionsMenu 
+                    quote={job}
+                    client={job.client}
+                    project={job.project}
+                    onJobCopy={onJobCopy}
+                  />
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -1,12 +1,11 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
-import { FileText, MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FileText } from "lucide-react";
+import { JobActionsMenu } from "./JobActionsMenu";
 
 interface JobsTableProps {
   searchClient: string;
@@ -92,7 +91,7 @@ export const JobsTable = ({
         <div>Mobile</div>
         <div>Calendar</div>
         <div>Status</div>
-        <div>Team</div>
+        <div>Actions</div>
       </div>
 
       {/* Table Rows */}
@@ -136,18 +135,14 @@ export const JobsTable = ({
                   </div>
                   <span>InterioApp Admin</span>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white">
-                    <DropdownMenuItem>View Job</DropdownMenuItem>
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <JobActionsMenu 
+                    quote={quote}
+                    client={client}
+                    project={project}
+                    onJobCopy={(jobId) => console.log('Copy job:', jobId)}
+                  />
+                </div>
               </div>
             </div>
           )
