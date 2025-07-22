@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Search } from "lucide-react";
+import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
+import type { MenuItem } from "@/components/ui/three-dot-menu";
 
 interface JobsTableViewProps {
   onJobSelect: (jobId: string) => void;
@@ -26,6 +28,23 @@ export const JobsTableView = ({ onJobSelect }: JobsTableViewProps) => {
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getMenuItems = (projectId: string): MenuItem[] => [
+    {
+      label: "View Job",
+      icon: <Eye className="h-4 w-4" />,
+      onClick: () => onJobSelect(projectId)
+    },
+    {
+      label: "Copy Job",
+      onClick: () => console.log('Copy job:', projectId)
+    },
+    {
+      label: "Delete Job",
+      onClick: () => console.log('Delete job:', projectId),
+      variant: "destructive"
+    }
+  ];
 
   if (isLoading) {
     return (
@@ -69,7 +88,7 @@ export const JobsTableView = ({ onJobSelect }: JobsTableViewProps) => {
               <TableHead>Job Name</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="w-20 text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,16 +125,8 @@ export const JobsTableView = ({ onJobSelect }: JobsTableViewProps) => {
                   <TableCell className="text-sm text-gray-500">
                     {new Date(project.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onJobSelect(project.id)}
-                      className="flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Open
-                    </Button>
+                  <TableCell className="text-center">
+                    <ThreeDotMenu items={getMenuItems(project.id)} />
                   </TableCell>
                 </TableRow>
               ))
