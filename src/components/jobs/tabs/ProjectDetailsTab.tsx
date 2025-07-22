@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,13 +42,17 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     try {
       console.log("Saving project details...", formData);
       
-      // Use the updateProject mutation directly
-      const updatedProject = await updateProject.mutateAsync({
+      const updateData = {
         id: project.id,
-        ...formData,
+        description: formData.description,
+        status: formData.status,
+        priority: formData.priority,
+        client_id: formData.client_id,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
-      });
+      };
+
+      const updatedProject = await updateProject.mutateAsync(updateData);
 
       console.log("Project updated successfully:", updatedProject);
       
@@ -111,6 +116,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         return "bg-yellow-100 text-yellow-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "planning":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -127,6 +134,16 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getClientDisplayName = (client: any) => {
+    if (!client) return null;
+    
+    if (client.client_type === 'B2B' && client.company_name) {
+      return client.company_name;
+    }
+    
+    return client.name;
   };
 
   return (
@@ -229,12 +246,14 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                       <User className="h-4 w-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-green-900">{selectedClient.name}</p>
+                      <p className="font-medium text-green-900">
+                        {getClientDisplayName(selectedClient)}
+                      </p>
                       {selectedClient.email && (
                         <p className="text-sm text-green-700">{selectedClient.email}</p>
                       )}
-                      {selectedClient.company_name && (
-                        <p className="text-sm text-green-600">({selectedClient.company_name})</p>
+                      {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
+                        <p className="text-sm text-green-600">Contact: {selectedClient.name}</p>
                       )}
                     </div>
                   </div>
@@ -338,7 +357,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       <ProductsToOrderSection 
         projectId={project.id}
         jobNumber={formData.job_number}
-        clientName={selectedClient?.name}
+        clientName={getClientDisplayName(selectedClient)}
       />
 
       {/* Client Search Modal */}

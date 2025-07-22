@@ -29,7 +29,8 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          quote.projects?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         quote.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                         quote.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         quote.clients?.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
     
@@ -67,18 +68,50 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case "sent":
         return "bg-blue-100 text-blue-800";
       case "accepted":
         return "bg-green-100 text-green-800";
+      case "approved":
+        return "bg-green-100 text-green-800";
       case "rejected":
+        return "bg-red-100 text-red-800";
+      case "cancelled":
         return "bg-red-100 text-red-800";
       case "expired":
         return "bg-gray-100 text-gray-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "in_progress":
+        return "bg-blue-100 text-blue-800";
+      case "planning":
+        return "bg-yellow-100 text-yellow-800";
+      case "on_hold":
+        return "bg-orange-100 text-orange-800";
+      case "draft":
       default:
         return "bg-yellow-100 text-yellow-800";
     }
+  };
+
+  const getDisplayStatus = (quote: any) => {
+    // First check the project status if available
+    if (quote.projects?.status) {
+      return quote.projects.status.replace('_', ' ').toUpperCase();
+    }
+    // Fall back to quote status
+    return quote.status?.replace('_', ' ').toUpperCase() || 'DRAFT';
+  };
+
+  const getClientDisplayName = (client: any) => {
+    if (!client) return 'No Client';
+    
+    if (client.client_type === 'B2B' && client.company_name) {
+      return client.company_name;
+    }
+    
+    return client.name || 'Unknown Client';
   };
 
   if (isLoading) {
@@ -120,6 +153,11 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
               >
                 <option value="all">All Status</option>
                 <option value="draft">Draft</option>
+                <option value="planning">Planning</option>
+                <option value="in_progress">In Progress</option>
+                <option value="on_hold">On Hold</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
                 <option value="sent">Sent</option>
                 <option value="accepted">Accepted</option>
                 <option value="rejected">Rejected</option>
@@ -162,7 +200,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
                   onClick={() => onJobSelect(quote)}
                 >
                   <TableCell className="font-medium">
-                    #{quote.quote_number || 'N/A'}
+                    #{quote.projects?.job_number || quote.quote_number || 'N/A'}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -173,12 +211,12 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-400" />
-                      {quote.clients?.name || 'No Client'}
+                      {getClientDisplayName(quote.clients)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(quote.status)}>
-                      {quote.status?.toUpperCase() || 'DRAFT'}
+                    <Badge className={getStatusColor(quote.projects?.status || quote.status)}>
+                      {getDisplayStatus(quote)}
                     </Badge>
                   </TableCell>
                   <TableCell>${quote.total_amount?.toFixed(2) || '0.00'}</TableCell>

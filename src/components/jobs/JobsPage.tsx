@@ -34,7 +34,7 @@ const JobsPage = () => {
       const newProject = await createProject.mutateAsync({
         name: `New Job ${new Date().toLocaleDateString()}`,
         description: "",
-        status: "draft"
+        status: "planning"
       });
 
       console.log("Project created:", newProject);
@@ -56,7 +56,7 @@ const JobsPage = () => {
       // Refresh the quotes list to show the new job
       await refetchQuotes();
 
-      // Navigate to the project detail page using the PROJECT ID, not quote ID
+      // Navigate to the project detail page using the PROJECT ID
       setSelectedJobId(newProject.id);
 
       toast({
