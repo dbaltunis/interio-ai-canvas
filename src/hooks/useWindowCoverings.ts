@@ -3,22 +3,34 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export interface WindowCovering {
+  id: string;
+  name: string;
+  category: string;
+  description?: string;
+  base_price?: number;
+  user_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useWindowCoverings = () => {
   return useQuery({
     queryKey: ["window-coverings"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      // For now, return mock data since we don't have the window_coverings table yet
-      // This should be replaced with actual Supabase query when the table exists
+      // For now, return static data until we have a proper window_coverings table
+      // This can be expanded to fetch from database later
       return [
-        { id: "1", name: "Curtains", description: "Classic fabric curtains" },
-        { id: "2", name: "Blinds", description: "Horizontal or vertical blinds" },
-        { id: "3", name: "Shutters", description: "Interior window shutters" },
-        { id: "4", name: "Drapes", description: "Heavy fabric drapes" },
-        { id: "5", name: "Roman Shades", description: "Fabric roman shades" }
+        { id: "curtains", name: "Curtains", category: "fabric" },
+        { id: "drapes", name: "Drapes", category: "fabric" },
+        { id: "blinds", name: "Blinds", category: "hard" },
+        { id: "shutters", name: "Shutters", category: "hard" },
+        { id: "valances", name: "Valances", category: "fabric" },
+        { id: "roman_shades", name: "Roman Shades", category: "fabric" },
+        { id: "roller_shades", name: "Roller Shades", category: "hard" },
+        { id: "cellular_shades", name: "Cellular Shades", category: "hard" }
       ];
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };

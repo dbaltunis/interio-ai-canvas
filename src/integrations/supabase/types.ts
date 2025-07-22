@@ -205,8 +205,10 @@ export type Database = {
           notes: string | null
           photos: Json | null
           project_id: string | null
+          room_id: string | null
           updated_at: string | null
           user_id: string
+          window_covering_id: string | null
         }
         Insert: {
           client_id: string
@@ -219,8 +221,10 @@ export type Database = {
           notes?: string | null
           photos?: Json | null
           project_id?: string | null
+          room_id?: string | null
           updated_at?: string | null
           user_id: string
+          window_covering_id?: string | null
         }
         Update: {
           client_id?: string
@@ -233,8 +237,10 @@ export type Database = {
           notes?: string | null
           photos?: Json | null
           project_id?: string | null
+          room_id?: string | null
           updated_at?: string | null
           user_id?: string
+          window_covering_id?: string | null
         }
         Relationships: [
           {
@@ -249,6 +255,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_measurements_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
         ]

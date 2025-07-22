@@ -11,6 +11,7 @@ import { useCreateClientMeasurement, useUpdateClientMeasurement } from "@/hooks/
 import { useRooms } from "@/hooks/useRooms";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
+import { MeasurementSummary } from "./MeasurementSummary";
 
 interface MeasurementWorksheetProps {
   clientId: string;
@@ -85,6 +86,16 @@ export const MeasurementWorksheet = ({
     onSave?.();
   };
 
+  const getRoomName = () => {
+    const room = rooms.find(r => r.id === selectedRoom);
+    return room?.name;
+  };
+
+  const getWindowCoveringName = () => {
+    const covering = windowCoverings.find(c => c.id === selectedWindowCovering);
+    return covering?.name;
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <Card>
@@ -120,6 +131,7 @@ export const MeasurementWorksheet = ({
                     <SelectValue placeholder="Select room" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">No Room Selected</SelectItem>
                     {rooms.map((room) => (
                       <SelectItem key={room.id} value={room.id}>
                         {room.name}
@@ -137,6 +149,7 @@ export const MeasurementWorksheet = ({
                   <SelectValue placeholder="Select window covering" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Not Selected</SelectItem>
                   {windowCoverings.map((covering) => (
                     <SelectItem key={covering.id} value={covering.id}>
                       {covering.name}
@@ -189,6 +202,19 @@ export const MeasurementWorksheet = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Show summary if in read-only mode */}
+      {readOnly && (
+        <MeasurementSummary
+          measurements={measurements}
+          measurementType={windowType}
+          roomName={getRoomName()}
+          windowCoveringName={getWindowCoveringName()}
+          measuredBy={measuredBy}
+          measuredAt={existingMeasurement?.measured_at}
+          notes={notes}
+        />
+      )}
 
       {/* Visual Measurement Sheet */}
       <VisualMeasurementSheet
