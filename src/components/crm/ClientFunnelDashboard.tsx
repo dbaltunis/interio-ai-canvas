@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,14 +15,16 @@ import {
   Ruler,
   TrendingUp,
   Clock,
-  Eye
+  Eye,
+  Edit
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { ClientProfilePage } from "../clients/ClientProfilePage";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
+import { ClientStatusChanger } from "../clients/ClientStatusChanger";
+import { QuickMeasurementAccess } from "../clients/QuickMeasurementAccess";
 
 const FUNNEL_STAGES = [
   { key: "lead", label: "Leads", icon: Users, color: "bg-gray-100 text-gray-800" },
@@ -38,7 +39,6 @@ const FUNNEL_STAGES = [
 export const ClientFunnelDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showMeasurements, setShowMeasurements] = useState(false);
   const [showClientProfile, setShowClientProfile] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
@@ -67,25 +67,6 @@ export const ClientFunnelDashboard = () => {
     setShowClientProfile(true);
   };
 
-  const handleClientAction = (action: string, client: any, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent triggering the client click
-    
-    switch (action) {
-      case "measure":
-        setSelectedClient(client);
-        setShowMeasurements(true);
-        break;
-      case "quote":
-        // Handle quote creation
-        break;
-      case "email":
-        // Handle email sending
-        break;
-      default:
-        break;
-    }
-  };
-
   // Show client profile if selected
   if (showClientProfile && selectedClient) {
     return (
@@ -96,7 +77,6 @@ export const ClientFunnelDashboard = () => {
           setSelectedClient(null);
         }}
         onEdit={() => {
-          // Handle edit - could open edit form
           console.log("Edit client:", selectedClient);
         }}
       />
@@ -211,7 +191,7 @@ export const ClientFunnelDashboard = () => {
           const StageIcon = stage.icon;
           
           return (
-            <Card key={stage.key} className="min-h-[400px]">
+            <Card key={stage.key} className="min-h-[500px]">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
@@ -225,78 +205,57 @@ export const ClientFunnelDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {stageClients.map((client) => (
-                  <Card 
-                    key={client.id} 
-                    className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-2 border-l-transparent hover:border-l-brand-primary"
-                    onClick={() => handleClientClick(client)}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-sm">
-                          {client.client_type === 'B2B' ? client.company_name : client.name}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-xs px-2 py-1 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleClientClick(client);
-                          }}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      
-                      {client.email && (
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {client.email}
-                        </div>
-                      )}
-                      {client.last_contact_date && (
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(client.last_contact_date).toLocaleDateString()}
-                        </div>
-                      )}
-                      
-                      {/* Quick Actions */}
-                      <div className="flex gap-1 mt-2">
-                        {stage.key === "contacted" && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs px-2 py-1 h-6"
-                            onClick={(e) => handleClientAction("measure", client, e)}
+                  <div key={client.id} className="space-y-2">
+                    <Card 
+                      className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-2 border-l-transparent hover:border-l-brand-primary"
+                      onClick={() => handleClientClick(client)}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-sm">
+                            {client.client_type === 'B2B' ? client.company_name : client.name}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs px-2 py-1 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClientClick(client);
+                            }}
                           >
-                            <Ruler className="h-3 w-3 mr-1" />
-                            Measure
+                            <Eye className="h-3 w-3" />
                           </Button>
+                        </div>
+                        
+                        {client.email && (
+                          <div className="text-xs text-gray-500 flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {client.email}
+                          </div>
                         )}
-                        {stage.key === "measuring_scheduled" && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs px-2 py-1 h-6"
-                            onClick={(e) => handleClientAction("quote", client, e)}
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            Quote
-                          </Button>
+                        {client.last_contact_date && (
+                          <div className="text-xs text-gray-500 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(client.last_contact_date).toLocaleDateString()}
+                          </div>
                         )}
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-xs px-2 py-1 h-6"
-                          onClick={(e) => handleClientAction("email", client, e)}
-                        >
-                          <Mail className="h-3 w-3 mr-1" />
-                          Email
-                        </Button>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
+                    
+                    {/* Status Changer */}
+                    <ClientStatusChanger
+                      clientId={client.id}
+                      currentStatus={client.funnel_stage || 'lead'}
+                      clientName={client.client_type === 'B2B' ? client.company_name : client.name}
+                    />
+                    
+                    {/* Quick Measurement Access */}
+                    <QuickMeasurementAccess
+                      clientId={client.id}
+                      clientName={client.client_type === 'B2B' ? client.company_name : client.name}
+                    />
+                  </div>
                 ))}
                 
                 {stageClients.length === 0 && (
@@ -310,23 +269,6 @@ export const ClientFunnelDashboard = () => {
           );
         })}
       </div>
-
-      {/* Measurement Dialog */}
-      <Dialog open={showMeasurements} onOpenChange={setShowMeasurements}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Measurements for {selectedClient?.name || selectedClient?.company_name}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedClient && (
-            <MeasurementWorksheet
-              clientId={selectedClient.id}
-              onSave={() => setShowMeasurements(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

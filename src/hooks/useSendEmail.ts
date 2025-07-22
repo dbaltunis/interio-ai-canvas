@@ -37,6 +37,19 @@ export const useSendEmail = () => {
         throw new Error('Please configure your email settings first. Go to Settings > Email Settings to set up your sender email address.');
       }
 
+      // Check SendGrid integration
+      const { data: integration } = await supabase
+        .from('integration_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('integration_type', 'sendgrid')
+        .eq('active', true)
+        .single();
+
+      if (!integration) {
+        throw new Error('Please configure your SendGrid integration first. Go to Settings > Integrations to set up email sending.');
+      }
+
       // First, create the email record with "queued" status
       const { data: emailRecord, error: createError } = await supabase
         .from('emails')
@@ -73,7 +86,6 @@ export const useSendEmail = () => {
           
           for (const file of emailData.attachments) {
             const fileExt = file.name.split('.').pop();
-            // Fix the path structure to match RLS policy: user_id/filename
             const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -159,9 +171,18 @@ export const useSendEmail = () => {
     onError: (error: any) => {
       console.error("Send email mutation error:", error);
       
+      // Check for specific error types and provide helpful messages
+      let errorMessage = error.message || "Failed to send email";
+      
+      if (error.message?.includes('email settings')) {
+        errorMessage = "Please configure your email settings in Settings > Email Settings first.";
+      } else if (error.message?.includes('SendGrid')) {
+        errorMessage = "Please configure your SendGrid integration in Settings > Integrations first.";
+      }
+      
       toast({
         title: "Email Failed",
-        description: error.message || "Failed to send email",
+        description: errorMessage,
         variant: "destructive",
       });
     },
