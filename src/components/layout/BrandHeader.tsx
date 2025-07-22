@@ -9,15 +9,15 @@ interface BrandHeaderProps {
 
 export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-12 md:h-16", 
-    md: "h-16 md:h-20",  
-    lg: "h-20 md:h-24"  
+    sm: "h-8 sm:h-10 md:h-12", 
+    md: "h-12 sm:h-14 md:h-16",  
+    lg: "h-16 sm:h-18 md:h-20"  
   };
 
   const sloganSizeClasses = {
-    sm: "text-xs md:text-sm",
-    md: "text-xs md:text-sm lg:text-base",
-    lg: "text-xs md:text-base lg:text-lg"
+    sm: "text-xs sm:text-sm",
+    md: "text-sm sm:text-base",
+    lg: "text-base sm:text-lg"
   };
 
   return (
@@ -29,13 +29,13 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
       />
       {showTagline && (
         <>
-          <div className="mx-2 md:mx-3 h-4 md:h-6 w-px bg-brand-neutral/30 hidden sm:block" />
+          <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden sm:block" />
           <div className="hidden sm:block">
             <div className="flex flex-col">
-              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
+              <p className={`text-brand-neutral/80 ${sloganSizeClasses[size]} font-medium leading-tight`}>
                 The future of window décor
               </p>
-              <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
+              <p className={`text-brand-neutral/80 ${sloganSizeClasses[size]} font-medium leading-tight`}>
                 is online and bespoke
               </p>
             </div>

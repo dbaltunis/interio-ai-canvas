@@ -9,10 +9,7 @@ import {
   Users, 
   FolderOpen, 
   Package, 
-  Wrench,
   Calendar,
-  Settings,
-  Calculator,
   Menu,
   X
 } from 'lucide-react';
@@ -59,7 +56,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                     className={cn(
                       "px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       activeTab === item.id
-                        ? "bg-brand-primary text-white"
+                        ? "bg-brand-primary text-white hover:bg-brand-primary/90"
                         : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
                     )}
                   >
@@ -78,7 +75,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden"
+                className="md:hidden text-brand-neutral hover:text-brand-primary"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
