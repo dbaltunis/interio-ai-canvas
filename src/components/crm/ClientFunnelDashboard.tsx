@@ -20,10 +20,9 @@ import { useClientStats } from "@/hooks/useClientJobs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ClientCreateForm } from "../clients/ClientCreateForm";
 import { ClientProfilePage } from "../clients/ClientProfilePage";
-import { ClientStatusChanger } from "../clients/ClientStatusChanger";
-import { QuickMeasurementAccess } from "../clients/QuickMeasurementAccess";
 import { ViewToggle } from "./ViewToggle";
 import { ClientListView } from "./ClientListView";
+import { KanbanClientCard } from "./KanbanClientCard";
 
 const FUNNEL_STAGES = [
   { key: "lead", label: "Leads", icon: Users, color: "bg-gray-100 text-gray-800" },
@@ -196,57 +195,11 @@ export const ClientFunnelDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {stageClients.map((client) => (
-                    <div key={client.id} className="space-y-2">
-                      <Card 
-                        className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-2 border-l-transparent hover:border-l-brand-primary group"
-                        onClick={() => handleClientClick(client)}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="font-medium text-sm">
-                              {client.client_type === 'B2B' ? client.company_name : client.name}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-xs px-2 py-1 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleClientClick(client);
-                              }}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          
-                          {client.email && (
-                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {client.email}
-                            </div>
-                          )}
-                          {client.last_contact_date && (
-                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(client.last_contact_date).toLocaleDateString()}
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                      
-                      {/* Status Changer */}
-                      <ClientStatusChanger
-                        clientId={client.id}
-                        currentStatus={client.funnel_stage || 'lead'}
-                        clientName={client.client_type === 'B2B' ? client.company_name : client.name}
-                      />
-                      
-                      {/* Quick Measurement Access */}
-                      <QuickMeasurementAccess
-                        clientId={client.id}
-                        clientName={client.client_type === 'B2B' ? client.company_name : client.name}
-                      />
-                    </div>
+                    <KanbanClientCard
+                      key={client.id}
+                      client={client}
+                      onClientClick={handleClientClick}
+                    />
                   ))}
                   
                   {stageClients.length === 0 && (

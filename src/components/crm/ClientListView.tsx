@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,6 +10,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Mail, 
   Calendar, 
@@ -23,8 +29,7 @@ import {
   Building2,
   User
 } from "lucide-react";
-import { ClientStatusChanger } from "../clients/ClientStatusChanger";
-import { QuickMeasurementAccess } from "../clients/QuickMeasurementAccess";
+import { useUpdateClientStage } from "@/hooks/useClients";
 
 const FUNNEL_STAGES = [
   { key: "lead", label: "Lead", icon: User, color: "bg-gray-100 text-gray-800" },
@@ -51,9 +56,17 @@ export const ClientListView = ({
 }: ClientListViewProps) => {
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const updateClientStage = useUpdateClientStage();
 
   const getStageConfig = (stage: string) => {
     return FUNNEL_STAGES.find(s => s.key === stage) || FUNNEL_STAGES[0];
+  };
+
+  const handleStatusChange = (clientId: string, newStage: string) => {
+    updateClientStage.mutate({
+      clientId,
+      stage: newStage
+    });
   };
 
   const sortedClients = [...clients].sort((a, b) => {
@@ -125,7 +138,6 @@ export const ClientListView = ({
                   )}
                 </div>
               </TableHead>
-              <TableHead>Quick Actions</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -174,10 +186,32 @@ export const ClientListView = ({
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="secondary" className={stageConfig.color}>
-                      <StageIcon className="w-3 h-3 mr-1" />
-                      {stageConfig.label}
-                    </Badge>
+                    <Select
+                      value={client.funnel_stage || 'lead'}
+                      onValueChange={(value) => handleStatusChange(client.id, value)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue>
+                          <div className="flex items-center gap-2">
+                            <StageIcon className="w-3 h-3" />
+                            {stageConfig.label}
+                          </div>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FUNNEL_STAGES.map((stage) => {
+                          const Icon = stage.icon;
+                          return (
+                            <SelectItem key={stage.key} value={stage.key}>
+                              <div className="flex items-center gap-2">
+                                <Icon className="w-3 h-3" />
+                                {stage.label}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
 
                   <TableCell>
@@ -189,20 +223,6 @@ export const ClientListView = ({
                     ) : (
                       <span className="text-sm text-muted-foreground">Never</span>
                     )}
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="flex flex-col gap-2">
-                      <ClientStatusChanger
-                        clientId={client.id}
-                        currentStatus={client.funnel_stage || 'lead'}
-                        clientName={client.client_type === 'B2B' ? client.company_name : client.name}
-                      />
-                      <QuickMeasurementAccess
-                        clientId={client.id}
-                        clientName={client.client_type === 'B2B' ? client.company_name : client.name}
-                      />
-                    </div>
                   </TableCell>
 
                   <TableCell>
