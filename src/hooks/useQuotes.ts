@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -37,7 +36,8 @@ export const useQuotes = () => {
             name,
             company_name,
             email,
-            phone
+            phone,
+            client_type
           )
         `)
         .order("created_at", { ascending: false });
@@ -45,7 +45,13 @@ export const useQuotes = () => {
       if (error) throw error;
       
       console.log("Quotes fetched:", data?.length, "quotes");
-      return data || [];
+      // Add is_locked field as mock data for now since it's not in the database yet
+      const quotesWithLock = data?.map(quote => ({
+        ...quote,
+        is_locked: false // Default to unlocked, this would come from database
+      })) || [];
+      
+      return quotesWithLock;
     },
     staleTime: 30 * 1000, // 30 seconds - much shorter cache
     gcTime: 5 * 60 * 1000, // 5 minutes cache time  
@@ -101,6 +107,7 @@ export const useCreateQuote = () => {
         quote_number: newQuote.quote_number || `QT-TEMP`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        is_locked: false,
       };
       
       queryClient.setQueryData(["quotes"], (old: any) => 
