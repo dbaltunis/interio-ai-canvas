@@ -35,7 +35,7 @@ const navItems = [
 
 export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   return (
-    <nav className="w-64 bg-white border-r min-h-screen">
+    <nav className="w-64 bg-white border-r border-brand-secondary/20 min-h-screen hidden lg:block">
       <div className="p-6">
         <div className="space-y-2">
           {navItems.map((item) => {
@@ -43,10 +43,12 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
             return (
               <Button
                 key={item.id}
-                variant={activeTab === item.id ? "default" : "ghost"}
+                variant="ghost"
                 className={cn(
-                  "w-full justify-start",
-                  activeTab === item.id && "bg-primary text-primary-foreground"
+                  "w-full justify-start transition-colors",
+                  activeTab === item.id 
+                    ? "bg-brand-primary text-white hover:bg-brand-primary/90" 
+                    : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
                 )}
                 onClick={() => onTabChange(item.id)}
               >

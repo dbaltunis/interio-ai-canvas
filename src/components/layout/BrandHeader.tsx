@@ -9,15 +9,15 @@ interface BrandHeaderProps {
 
 export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-16", // increased from h-12
-    md: "h-20", // increased from h-16  
-    lg: "h-24"  // increased from h-20
+    sm: "h-12 md:h-16", 
+    md: "h-16 md:h-20",  
+    lg: "h-20 md:h-24"  
   };
 
   const sloganSizeClasses = {
-    sm: "text-xs lg:text-sm",
-    md: "text-xs lg:text-sm xl:text-base",
-    lg: "text-sm lg:text-base xl:text-lg"
+    sm: "text-xs md:text-sm",
+    md: "text-xs md:text-sm lg:text-base",
+    lg: "text-xs md:text-base lg:text-lg"
   };
 
   return (
@@ -29,8 +29,8 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
       />
       {showTagline && (
         <>
-          <div className="mx-3 h-6 w-px bg-brand-neutral/30 hidden sm:block" />
-          <div className="hidden sm:block lg:block">
+          <div className="mx-2 md:mx-3 h-4 md:h-6 w-px bg-brand-neutral/30 hidden sm:block" />
+          <div className="hidden sm:block">
             <div className="flex flex-col">
               <p className={`text-brand-neutral/70 ${sloganSizeClasses[size]} font-medium leading-tight`}>
                 The future of window décor
