@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter } from "lucide-react";
-import { useQuotes } from "@/hooks/useQuotes";
+import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { JobsTableView } from "./JobsTableView";
@@ -13,8 +14,9 @@ const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   
-  const { data: quotes = [] } = useQuotes();
+  const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const createProject = useCreateProject();
+  const createQuote = useCreateQuote();
   const { toast } = useToast();
 
   const handleTabChange = (value: string) => {
@@ -26,13 +28,40 @@ const JobsPage = () => {
 
   const handleNewJob = async () => {
     try {
+      console.log("Creating new job...");
+      
+      // First create the project
       const newProject = await createProject.mutateAsync({
         name: `New Job ${new Date().toLocaleDateString()}`,
         description: "",
         status: "draft"
       });
 
-      setSelectedJobId(newProject.id);
+      console.log("Project created:", newProject);
+
+      // Then create a quote for this project
+      const newQuote = await createQuote.mutateAsync({
+        project_id: newProject.id,
+        client_id: null,
+        status: "draft",
+        subtotal: 0,
+        tax_rate: 0,
+        tax_amount: 0,
+        total_amount: 0,
+        notes: "New job created"
+      });
+
+      console.log("Quote created:", newQuote);
+
+      // Refresh the quotes list to show the new job
+      await refetchQuotes();
+
+      setSelectedJobId(newQuote.id);
+
+      toast({
+        title: "Success",
+        description: "New job created successfully",
+      });
     } catch (error) {
       console.error("Failed to create new job:", error);
       toast({
@@ -49,6 +78,8 @@ const JobsPage = () => {
 
   const handleBackFromJob = () => {
     setSelectedJobId(null);
+    // Refresh the quotes when coming back to ensure we see any updates
+    refetchQuotes();
   };
 
   if (selectedJobId) {
@@ -79,11 +110,11 @@ const JobsPage = () => {
             </Button>
             <Button 
               onClick={handleNewJob}
-              disabled={createProject.isPending}
+              disabled={createProject.isPending || createQuote.isPending}
               className="bg-brand-primary hover:bg-brand-accent text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
-              {createProject.isPending ? "Creating..." : "New Job"}
+              {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Job"}
             </Button>
           </div>
         </div>

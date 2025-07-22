@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
+import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, User, Edit, Save, X, Search } from "lucide-react";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
@@ -14,7 +15,7 @@ import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection
 
 interface ProjectDetailsTabProps {
   project: any;
-  onUpdate: (projectData: any) => Promise<void>;
+  onUpdate?: (projectData: any) => Promise<void>;
 }
 
 export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps) => {
@@ -31,23 +32,24 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   });
 
   const { data: clients, refetch: refetchClients } = useClients();
+  const updateProject = useUpdateProject();
   const { toast } = useToast();
   
   const selectedClient = clients?.find(c => c.id === formData.client_id);
 
   const handleSave = async () => {
     try {
-      // Prepare the update data, converting empty strings to null for date fields
-      const updateData = { 
-        id: project.id, 
+      console.log("Saving project details...", formData);
+      
+      // Use the updateProject mutation directly
+      const updatedProject = await updateProject.mutateAsync({
+        id: project.id,
         ...formData,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
-      };
-      
-      console.log("Saving project data:", updateData);
-      
-      await onUpdate(updateData);
+      });
+
+      console.log("Project updated successfully:", updatedProject);
       
       // Force refresh of clients data to ensure we have the latest
       await refetchClients();
@@ -61,11 +63,21 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         title: "Success",
         description: "Project updated successfully",
       });
+
+      // Call the optional onUpdate callback if provided
+      if (onUpdate) {
+        try {
+          await onUpdate(updatedProject);
+        } catch (error) {
+          console.log("Optional onUpdate callback failed:", error);
+          // Don't throw here since the main update succeeded
+        }
+      }
     } catch (error) {
       console.error("Error updating project:", error);
       toast({
         title: "Error",
-        description: "Failed to update project",
+        description: "Failed to update project. Please try again.",
         variant: "destructive",
       });
     }
@@ -136,9 +148,13 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSave}>
+              <Button 
+                size="sm" 
+                onClick={handleSave}
+                disabled={updateProject.isPending}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Save
+                {updateProject.isPending ? "Saving..." : "Save"}
               </Button>
             </div>
           )}
@@ -348,32 +364,4 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       )}
     </div>
   );
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 text-green-800";
-    case "in_progress":
-      return "bg-blue-100 text-blue-800";
-    case "on_hold":
-      return "bg-yellow-100 text-yellow-800";
-    case "cancelled":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case "high":
-      return "bg-red-100 text-red-800";
-    case "medium":
-      return "bg-yellow-100 text-yellow-800";
-    case "low":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
 };

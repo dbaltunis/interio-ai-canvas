@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -18,7 +19,8 @@ import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import type { MenuItem } from "@/components/ui/three-dot-menu";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { JobTeamInviteDialog } from "./JobTeamInviteDialog";
-import { useQuotes } from "@/hooks/useQuotes";
+import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
+import { useToast } from "@/hooks/use-toast";
 
 interface JobsTableViewProps {
   onJobSelect: (jobId: string) => void;
@@ -32,8 +34,10 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
   const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const { data: projects = [], isLoading } = useProjects();
-  const { data: quotes = [] } = useQuotes();
+  const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const { data: clients = [] } = useClients();
+  const deleteQuote = useDeleteQuote();
+  const { toast } = useToast();
 
   // Create lookup maps for better performance
   const clientsMap = clients.reduce((acc, client) => {
@@ -60,6 +64,28 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
       // This would update the database with the new lock status
     } catch (error) {
       console.error('Error toggling job lock:', error);
+    }
+  };
+
+  const handleDeleteJob = async (quote: any) => {
+    if (!confirm(`Are you sure you want to delete job ${quote.quote_number}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteQuote.mutateAsync(quote.id);
+      await refetchQuotes();
+      toast({
+        title: "Success",
+        description: "Job deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -112,7 +138,7 @@ export const JobsTableView = ({ onJobSelect, showFilters = false }: JobsTableVie
     },
     {
       label: "Delete Job",
-      onClick: () => handleMenuAction(() => console.log('Delete job:', quote.id)),
+      onClick: () => handleMenuAction(() => handleDeleteJob(quote)),
       variant: "destructive"
     }
   ];
