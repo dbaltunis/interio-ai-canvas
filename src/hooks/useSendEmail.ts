@@ -206,11 +206,11 @@ export const useSendEmail = () => {
       // Check for specific error types and provide helpful messages
       let errorMessage = error.message || "Failed to send email";
       
-      if (error.message?.includes('verified Sender Identity')) {
-        errorMessage = "Email address not verified in SendGrid. Please verify your sender email in your SendGrid account or update your email settings.";
+      if (error.message?.includes('verified Sender Identity') || error.message?.includes('verified in SendGrid')) {
+        errorMessage = "Your sender email address is not verified in SendGrid. Please verify your email address in your SendGrid account before sending emails.";
       } else if (error.message?.includes('Email settings required')) {
         errorMessage = "Please configure your email settings in Settings → Email Settings with a verified sender address.";
-      } else if (error.message?.includes('SendGrid')) {
+      } else if (error.message?.includes('SendGrid integration')) {
         errorMessage = "Please configure your SendGrid integration in Settings → Integrations first.";
       }
       

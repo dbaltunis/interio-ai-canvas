@@ -18,7 +18,6 @@ interface SendEmailRequest {
 const handler = async (req: Request): Promise<Response> => {
   console.log("=== SEND EMAIL FUNCTION CALLED ===");
   console.log("Request method:", req.method);
-  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
   
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -87,7 +86,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Integration data:", integration);
 
-    const sendgridApiKey = integration?.api_credentials?.api_key || Deno.env.get("SENDGRID_API_KEY");
+    let sendgridApiKey: string | null = null;
+    
+    if (integration?.api_credentials && typeof integration.api_credentials === 'object' && integration.api_credentials !== null) {
+      const credentials = integration.api_credentials as Record<string, any>;
+      sendgridApiKey = credentials.api_key || null;
+    }
+    
+    if (!sendgridApiKey) {
+      sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
+    }
     
     if (!sendgridApiKey) {
       console.error("No SendGrid API key found");
@@ -119,7 +127,37 @@ const handler = async (req: Request): Promise<Response> => {
     const fromEmail = emailSettings.from_email;
     const fromName = emailSettings.from_name;
     
-    console.log(`Using verified sender: ${fromName} <${fromEmail}>`);
+    console.log(`Using sender: ${fromName} <${fromEmail}>`);
+
+    // Validate sender identity with SendGrid first
+    console.log("Validating sender identity with SendGrid...");
+    try {
+      const verifyResponse = await fetch("https://api.sendgrid.com/v3/verified_senders", {
+        headers: {
+          "Authorization": `Bearer ${sendgridApiKey}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (verifyResponse.ok) {
+        const verifiedSenders = await verifyResponse.json();
+        const isVerified = verifiedSenders.results?.some((sender: any) => 
+          sender.from_email === fromEmail && sender.verified
+        );
+        
+        if (!isVerified) {
+          console.error("Sender email not verified:", fromEmail);
+          throw new Error(`The email address "${fromEmail}" is not verified in SendGrid. Please verify this email as a Sender Identity in your SendGrid account before sending emails.`);
+        }
+        
+        console.log("Sender email verified successfully");
+      } else {
+        console.warn("Could not verify sender identity, proceeding anyway");
+      }
+    } catch (verifyError) {
+      console.warn("Sender verification check failed:", verifyError);
+      // Don't fail the entire operation, just log the warning
+    }
 
     // Prepare email data
     const emailData: any = {
@@ -222,7 +260,15 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         const errorData = JSON.parse(errorText);
         if (errorData.errors && errorData.errors.length > 0) {
-          errorMessage = errorData.errors[0].message;
+          const firstError = errorData.errors[0];
+          errorMessage = firstError.message;
+          
+          // Provide more helpful error messages for common issues
+          if (errorMessage.includes("verified Sender Identity")) {
+            errorMessage = `Email address "${fromEmail}" is not verified in SendGrid. Please verify this email as a Sender Identity in your SendGrid account. Visit https://app.sendgrid.com/settings/sender_auth to verify your email.`;
+          } else if (errorMessage.includes("The from address does not match")) {
+            errorMessage = `The sender email "${fromEmail}" must be verified in SendGrid before sending emails. Please verify this email address in your SendGrid account.`;
+          }
         }
       } catch (parseError) {
         console.error("Failed to parse SendGrid error:", parseError);
