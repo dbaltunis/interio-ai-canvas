@@ -70,7 +70,11 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
         </TabsContent>
 
         <TabsContent value="jobs">
-          <JobsTableView onJobSelect={setSelectedJobId} />
+          <JobsTableView 
+            onJobSelect={setSelectedJobId} 
+            searchTerm=""
+            statusFilter="all"
+          />
         </TabsContent>
 
         <TabsContent value="analytics">

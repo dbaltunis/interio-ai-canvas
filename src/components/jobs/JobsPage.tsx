@@ -13,6 +13,8 @@ const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "analytics">("jobs");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   
   const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const createProject = useCreateProject();
@@ -162,7 +164,8 @@ const JobsPage = () => {
               <TabsContent value="jobs" className="mt-0 space-y-0">
                 <JobsTableView 
                   onJobSelect={handleJobSelect} 
-                  showFilters={showFilters}
+                  searchTerm={searchTerm}
+                  statusFilter={statusFilter}
                 />
               </TabsContent>
 
