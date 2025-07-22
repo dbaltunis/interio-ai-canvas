@@ -61,11 +61,14 @@ export const EmailSettings = () => {
   };
 
   const handleSave = async () => {
-    if (!validateForm()) {
+    // Basic validation - only check required fields
+    if (!formData.from_email.trim() || !formData.from_name.trim()) {
+      console.error("From email and from name are required");
       return;
     }
 
     try {
+      console.log("Saving email settings:", formData);
       await updateEmailSettings.mutateAsync({
         from_email: formData.from_email.trim(),
         from_name: formData.from_name.trim(),
@@ -73,6 +76,7 @@ export const EmailSettings = () => {
         signature: formData.signature.trim() || undefined,
         active: formData.active
       });
+      console.log("Email settings saved successfully");
     } catch (error) {
       console.error("Failed to update email settings:", error);
     }
