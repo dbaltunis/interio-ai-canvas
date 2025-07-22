@@ -143,8 +143,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!sendResponse.ok) {
       const errorText = await sendResponse.text();
-      console.error("SendGrid error:", errorText);
-      throw new Error(`SendGrid API error: ${sendResponse.status} - ${errorText}`);
+      console.error("SendGrid error details:", {
+        status: sendResponse.status,
+        statusText: sendResponse.statusText,
+        error: errorText
+      });
+      
+      // Update email status to failed with detailed reason
+      const failureReason = errorText.includes('verified Sender Identity') 
+        ? `Email address '${fromEmail}' is not verified in SendGrid. Please verify this sender identity in your SendGrid account.`
+        : `SendGrid API error: ${sendResponse.status} - ${errorText}`;
+        
+      await supabase
+        .from("emails")
+        .update({ 
+          status: "failed", 
+          bounce_reason: failureReason,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", emailId);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: failureReason,
+          success: false 
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     // Update email status to sent
