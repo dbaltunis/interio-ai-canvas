@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Filter } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +11,7 @@ import { JobDetailPage } from "./JobDetailPage";
 const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "analytics">("jobs");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   
   const { data: quotes = [] } = useQuotes();
   const createProject = useCreateProject();
@@ -20,7 +20,7 @@ const JobsPage = () => {
   const handleTabChange = (value: string) => {
     if (value === "jobs" || value === "analytics") {
       setActiveTab(value);
-      setSelectedJobId(null); // Reset job selection when changing tabs
+      setSelectedJobId(null);
     }
   };
 
@@ -32,7 +32,6 @@ const JobsPage = () => {
         status: "draft"
       });
 
-      // Navigate to the job detail page
       setSelectedJobId(newProject.id);
     } catch (error) {
       console.error("Failed to create new job:", error);
@@ -52,7 +51,6 @@ const JobsPage = () => {
     setSelectedJobId(null);
   };
 
-  // If showing job detail page (the main workspace)
   if (selectedJobId) {
     return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
   }
@@ -70,14 +68,24 @@ const JobsPage = () => {
               Manage your projects and track their progress
             </p>
           </div>
-          <Button 
-            onClick={handleNewJob}
-            disabled={createProject.isPending}
-            className="bg-brand-primary hover:bg-brand-accent text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {createProject.isPending ? "Creating..." : "New Job"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+            </Button>
+            <Button 
+              onClick={handleNewJob}
+              disabled={createProject.isPending}
+              className="bg-brand-primary hover:bg-brand-accent text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {createProject.isPending ? "Creating..." : "New Job"}
+            </Button>
+          </div>
         </div>
 
         {/* Tabs Section */}
@@ -102,7 +110,10 @@ const JobsPage = () => {
 
             <div className="p-6">
               <TabsContent value="jobs" className="mt-0 space-y-0">
-                <JobsTableView onJobSelect={handleJobSelect} />
+                <JobsTableView 
+                  onJobSelect={handleJobSelect} 
+                  showFilters={showFilters}
+                />
               </TabsContent>
 
               <TabsContent value="analytics" className="mt-0 space-y-0">
