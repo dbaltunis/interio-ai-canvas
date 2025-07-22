@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     due_date: project.due_date || "",
   });
 
-  const { data: clients } = useClients();
+  const { data: clients, refetch: refetchClients } = useClients();
   const { toast } = useToast();
   
   const selectedClient = clients?.find(c => c.id === formData.client_id);
@@ -42,13 +41,25 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         id: project.id, 
         ...formData,
       };
+      
+      console.log("Saving project data:", updateData);
+      
       await onUpdate(updateData);
+      
+      // Force refresh of clients data to ensure we have the latest
+      await refetchClients();
+      
+      // Update the project object directly to reflect changes immediately
+      Object.assign(project, formData);
+      
       setIsEditing(false);
+      
       toast({
         title: "Success",
         description: "Project updated successfully",
       });
     } catch (error) {
+      console.error("Error updating project:", error);
       toast({
         title: "Error",
         description: "Failed to update project",
@@ -71,6 +82,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   const updateFormData = (field: string, value: any) => {
+    console.log("Updating form field:", field, "with value:", value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -323,6 +335,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             <ClientSearchStep 
               formData={{ client_id: formData.client_id }}
               updateFormData={(field, value) => {
+                console.log("Client selected from search:", field, value);
                 updateFormData(field, value);
                 setShowClientSearch(false);
               }}
