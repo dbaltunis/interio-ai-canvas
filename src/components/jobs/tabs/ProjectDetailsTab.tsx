@@ -22,7 +22,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [formData, setFormData] = useState({
-    note: project.description || "",
+    description: project.description || "",
     status: project.status || "planning",
     priority: project.priority || "medium",
     job_number: project.job_number || "",
@@ -40,8 +40,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     try {
       const updateData = { 
         id: project.id, 
-        ...formData, 
-        description: formData.note,
+        ...formData,
       };
       await onUpdate(updateData);
       setIsEditing(false);
@@ -60,7 +59,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const handleCancel = () => {
     setFormData({
-      note: project.description || "",
+      description: project.description || "",
       status: project.status || "planning",
       priority: project.priority || "medium",
       job_number: project.job_number || "",
@@ -283,21 +282,21 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             </div>
           </div>
 
-          {/* Note Section */}
+          {/* Description Section */}
           <div>
-            <Label htmlFor="note" className="text-sm font-medium text-gray-700">Note</Label>
+            <Label htmlFor="description" className="text-sm font-medium text-gray-700">Description</Label>
             {isEditing ? (
               <Textarea
-                id="note"
-                value={formData.note}
-                onChange={(e) => updateFormData("note", e.target.value)}
-                placeholder="Add project notes..."
+                id="description"
+                value={formData.description}
+                onChange={(e) => updateFormData("description", e.target.value)}
+                placeholder="Add project description..."
                 className="mt-1"
                 rows={3}
               />
             ) : (
               <div className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md min-h-[80px]">
-                {formData.note || "No notes added"}
+                {formData.description || "No description added"}
               </div>
             )}
           </div>
