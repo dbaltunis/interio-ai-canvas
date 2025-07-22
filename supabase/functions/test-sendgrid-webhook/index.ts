@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -41,6 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
       .select("*")
       .eq("user_id", user.id)
       .eq("integration_type", "sendgrid")
+      .eq("active", true)
       .maybeSingle();
 
     if (integrationError) {
@@ -52,10 +54,15 @@ const handler = async (req: Request): Promise<Response> => {
     let webhookUrl = "";
     let sendgridApiKey = "";
 
-    if (integrationData) {
-      webhookStatus = integrationData.configuration?.webhook_configured ? "configured" : "not_configured";
+    // First check database configuration
+    if (integrationData && integrationData.configuration?.webhook_configured) {
+      webhookStatus = "configured";
       webhookUrl = integrationData.configuration?.webhook_url || "";
       sendgridApiKey = integrationData.api_credentials?.api_key || "";
+      console.log("Webhook marked as configured in database");
+    } else if (integrationData) {
+      sendgridApiKey = integrationData.api_credentials?.api_key || "";
+      console.log("Integration exists but webhook not marked as configured");
     }
 
     // Test SendGrid API connection if we have the key
@@ -75,6 +82,14 @@ const handler = async (req: Request): Promise<Response> => {
         if (sendgridResponse.ok) {
           webhookSettings = await sendgridResponse.json();
           sendgridApiStatus = "connected";
+          
+          // Double-check webhook status from SendGrid API if database says it's configured
+          if (webhookStatus === "configured" && webhookSettings) {
+            if (!webhookSettings.enabled || !webhookSettings.url) {
+              console.log("Database shows configured but SendGrid API shows disabled/no URL");
+              webhookStatus = "needs_attention";
+            }
+          }
         } else {
           sendgridApiStatus = "invalid_key";
         }
@@ -154,8 +169,10 @@ function generateRecommendations(webhookStatus: string, apiStatus: string, webho
 
   if (webhookStatus === "not_configured") {
     recommendations.push("❌ Webhook is not configured. Run the webhook setup function.");
-  } else {
-    recommendations.push("✅ Webhook is marked as configured in database.");
+  } else if (webhookStatus === "needs_attention") {
+    recommendations.push("⚠️ Webhook configured in database but needs attention in SendGrid dashboard.");
+  } else if (webhookStatus === "configured") {
+    recommendations.push("✅ Webhook is configured in database.");
   }
 
   if (webhookSettings) {
