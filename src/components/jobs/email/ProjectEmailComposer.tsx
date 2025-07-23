@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,17 +15,23 @@ interface ProjectEmailComposerProps {
   projectId: string;
   projectName: string;
   onClose?: () => void;
+  initialRecipient?: string;
+  initialSubject?: string;
+  initialContent?: string;
 }
 
 export const ProjectEmailComposer = ({ 
   projectId, 
   projectName, 
-  onClose 
+  onClose,
+  initialRecipient,
+  initialSubject,
+  initialContent
 }: ProjectEmailComposerProps) => {
   const [emailData, setEmailData] = useState({
     recipients: [] as string[],
-    subject: `Update: ${projectName}`,
-    content: "",
+    subject: initialSubject || `Update: ${projectName}`,
+    content: initialContent || "",
     template: ""
   });
   
@@ -35,6 +41,16 @@ export const ProjectEmailComposer = ({
   const { data: clients = [] } = useClients();
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
+
+  // Set initial recipient if provided
+  useEffect(() => {
+    if (initialRecipient) {
+      setEmailData(prev => ({
+        ...prev,
+        recipients: [initialRecipient]
+      }));
+    }
+  }, [initialRecipient]);
 
   const emailTemplates = [
     {
@@ -140,35 +156,35 @@ export const ProjectEmailComposer = ({
   const validClients = clients.filter(client => client.email && client.email.trim() !== '');
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader className="pb-4">
+    <Card className="w-full max-w-4xl mx-auto bg-brand-light border-brand-secondary/20 shadow-lg">
+      <CardHeader className="pb-4 bg-gradient-to-r from-brand-secondary/10 to-brand-primary/5">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-brand-primary">
             <Send className="h-5 w-5" />
             Compose Project Email
           </CardTitle>
           {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-brand-neutral hover:text-brand-primary">
               <X className="h-4 w-4" />
             </Button>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Sending email for project: <span className="font-medium">{projectName}</span>
+        <p className="text-sm text-brand-neutral">
+          Sending email for project: <span className="font-medium text-brand-primary">{projectName}</span>
         </p>
       </CardHeader>
 
       <CardContent className="space-y-6">
         {/* Email Template Selection */}
         <div className="space-y-2">
-          <Label>Email Template</Label>
+          <Label className="text-brand-primary">Email Template</Label>
           <Select onValueChange={handleTemplateSelect}>
-            <SelectTrigger>
+            <SelectTrigger className="border-brand-secondary/30 focus:border-brand-primary">
               <SelectValue placeholder="Choose a template (optional)" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-brand-light border-brand-secondary/20">
               {emailTemplates.map((template) => (
-                <SelectItem key={template.id} value={template.id}>
+                <SelectItem key={template.id} value={template.id} className="text-brand-primary">
                   {template.name}
                 </SelectItem>
               ))}
@@ -178,16 +194,16 @@ export const ProjectEmailComposer = ({
 
         {/* Recipients */}
         <div className="space-y-3">
-          <Label>Recipients</Label>
+          <Label className="text-brand-primary">Recipients</Label>
           <div className="flex gap-2">
             <div className="flex-1">
               <Select onValueChange={setNewRecipient} value={newRecipient}>
-                <SelectTrigger>
+                <SelectTrigger className="border-brand-secondary/30 focus:border-brand-primary">
                   <SelectValue placeholder="Select from clients or enter email" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-brand-light border-brand-secondary/20">
                   {validClients.map((client) => (
-                    <SelectItem key={client.id} value={client.email}>
+                    <SelectItem key={client.id} value={client.email} className="text-brand-primary">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         {client.name} - {client.email}
@@ -201,9 +217,13 @@ export const ProjectEmailComposer = ({
               placeholder="Or enter email directly"
               value={newRecipient}
               onChange={(e) => setNewRecipient(e.target.value)}
-              className="flex-1"
+              className="flex-1 border-brand-secondary/30 focus:border-brand-primary"
             />
-            <Button onClick={handleAddRecipient} size="sm">
+            <Button 
+              onClick={handleAddRecipient} 
+              size="sm"
+              className="bg-brand-primary hover:bg-brand-accent text-brand-light"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -211,11 +231,11 @@ export const ProjectEmailComposer = ({
           {emailData.recipients.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {emailData.recipients.map((email) => (
-                <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                <Badge key={email} variant="secondary" className="flex items-center gap-1 bg-brand-secondary/20 text-brand-primary">
                   {email}
                   <button
                     onClick={() => handleRemoveRecipient(email)}
-                    className="ml-1 hover:text-red-600"
+                    className="ml-1 hover:text-brand-accent"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -227,31 +247,32 @@ export const ProjectEmailComposer = ({
 
         {/* Subject */}
         <div className="space-y-2">
-          <Label htmlFor="subject">Subject</Label>
+          <Label htmlFor="subject" className="text-brand-primary">Subject</Label>
           <Input
             id="subject"
             value={emailData.subject}
             onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
             placeholder="Enter email subject"
+            className="border-brand-secondary/30 focus:border-brand-primary"
           />
         </div>
 
         {/* Content */}
         <div className="space-y-2">
-          <Label htmlFor="content">Message</Label>
+          <Label htmlFor="content" className="text-brand-primary">Message</Label>
           <Textarea
             id="content"
             value={emailData.content}
             onChange={(e) => setEmailData(prev => ({ ...prev, content: e.target.value }))}
             placeholder="Enter your message"
             rows={10}
-            className="min-h-[200px]"
+            className="min-h-[200px] border-brand-secondary/30 focus:border-brand-primary"
           />
         </div>
 
         {/* Attachments */}
         <div className="space-y-3">
-          <Label>Attachments</Label>
+          <Label className="text-brand-primary">Attachments</Label>
           <div className="flex items-center gap-2">
             <Input
               type="file"
@@ -264,7 +285,7 @@ export const ProjectEmailComposer = ({
               type="button"
               variant="outline"
               onClick={() => document.getElementById('file-upload')?.click()}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-brand-secondary text-brand-primary hover:bg-brand-secondary/10"
             >
               <Paperclip className="h-4 w-4" />
               Add Files
@@ -274,12 +295,13 @@ export const ProjectEmailComposer = ({
           {attachments.length > 0 && (
             <div className="space-y-2">
               {attachments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                  <span className="text-sm">{file.name}</span>
+                <div key={index} className="flex items-center justify-between p-2 bg-brand-secondary/10 rounded-md">
+                  <span className="text-sm text-brand-primary">{file.name}</span>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => handleRemoveAttachment(index)}
+                    className="text-brand-neutral hover:text-brand-accent"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -290,16 +312,20 @@ export const ProjectEmailComposer = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end gap-2 pt-4 border-t border-brand-secondary/20">
           {onClose && (
-            <Button variant="outline" onClick={onClose}>
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+              className="border-brand-secondary text-brand-primary hover:bg-brand-secondary/10"
+            >
               Cancel
             </Button>
           )}
           <Button
             onClick={handleSendEmail}
             disabled={sendEmailMutation.isPending}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-brand-primary hover:bg-brand-accent text-brand-light"
           >
             <Send className="h-4 w-4" />
             {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
