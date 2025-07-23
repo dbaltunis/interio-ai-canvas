@@ -64,14 +64,16 @@ export const VisualMeasurementSheet = ({
         <CardTitle className="text-center text-xl font-bold">Window Measurement Worksheet</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col xl:flex-row gap-6">
-          {/* Visual Diagram */}
-          <div className="flex-1 space-y-4">
-            <MeasurementDiagram
-              measurements={measurements}
-              windowType={windowType}
-              visibleMeasurements={visibleMeasurements}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Visual Diagram - Full width on mobile, 2/3 on desktop */}
+          <div className="lg:col-span-2 order-1 lg:order-1">
+            <div className="mb-4">
+              <MeasurementDiagram
+                measurements={measurements}
+                windowType={windowType}
+                visibleMeasurements={visibleMeasurements}
+              />
+            </div>
 
             {/* Measurement Guide */}
             <div className="p-4 bg-gray-50 rounded-lg border">
@@ -89,8 +91,8 @@ export const VisualMeasurementSheet = ({
             </div>
           </div>
 
-          {/* Controls and Configuration */}
-          <div className="xl:w-80 space-y-6">
+          {/* Controls - Full width on mobile, 1/3 on desktop */}
+          <div className="order-2 lg:order-2 space-y-4">
             {/* Measurement Controls */}
             <MeasurementControls
               measurements={measurements}

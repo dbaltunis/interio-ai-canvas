@@ -55,7 +55,7 @@ export const MeasurementControls = ({
   );
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Layers className="h-4 w-4" />

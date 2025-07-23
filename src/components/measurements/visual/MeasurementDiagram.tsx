@@ -24,9 +24,9 @@ export const MeasurementDiagram = ({
 
   return (
     <Card className="p-6 bg-gradient-to-b from-blue-50 to-gray-50 border-2 border-gray-200 shadow-inner">
-      <div className="relative w-full h-96 overflow-hidden">
-        {/* Ceiling Line */}
-        <div className="absolute top-4 left-8 right-8 border-t-2 border-gray-800">
+      <div className="relative w-full h-[500px] overflow-hidden">
+        {/* Ceiling Line - Moved higher to avoid cutoff */}
+        <div className="absolute top-2 left-8 right-8 border-t-2 border-gray-800">
           <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-white px-2 rounded">
             Ceiling
           </span>
