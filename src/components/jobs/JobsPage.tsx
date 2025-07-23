@@ -2,17 +2,17 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
+import { JobsFilter } from "./JobsFilter";
 
 const JobsPage = () => {
   const [activeTab, setActiveTab] = useState<"jobs" | "analytics">("jobs");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -103,6 +103,11 @@ const JobsPage = () => {
     refetchQuotes();
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+  };
+
   if (selectedJobId) {
     return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
   }
@@ -114,21 +119,20 @@ const JobsPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-brand-primary">
-              Jobs Management
+              Jobs Management ({quotes.length})
             </h1>
             <p className="text-gray-600 text-sm mt-1">
               Manage your projects and track their progress
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
+            <JobsFilter
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              onClearFilters={handleClearFilters}
+            />
             <Button 
               onClick={handleNewJob}
               disabled={createProject.isPending || createQuote.isPending}

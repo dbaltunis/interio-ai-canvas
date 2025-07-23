@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EmailStatusDisplay } from "./EmailStatusDisplay";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -153,6 +153,16 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     return quote.projects?.status || quote.status || 'draft';
   };
 
+  const getEmailStatus = (quote: any) => {
+    // This is mock data - replace with actual email tracking data
+    const mockEmailData = {
+      hasEmails: Math.random() > 0.3, // 70% chance of having emails
+      totalSent: Math.floor(Math.random() * 5) + 1,
+      lastStatus: ['sent', 'opened', 'sent'][Math.floor(Math.random() * 3)]
+    };
+    return mockEmailData;
+  };
+
   const handleDeleteJob = async (quote: any) => {
     try {
       await deleteQuote.mutateAsync(quote.id);
@@ -236,7 +246,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
           <TableHeader>
             <TableRow>
               <TableHead>Job Number</TableHead>
-              <TableHead>Project Name</TableHead>
+              <TableHead>Emails</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Total</TableHead>
@@ -250,6 +260,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
               const clientName = getClientName(quote);
               const client = getClientForQuote(quote);
               const currentStatus = getCurrentStatus(quote);
+              const emailStatus = getEmailStatus(quote);
               
               return (
                 <TableRow 
@@ -261,7 +272,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     {quote.quote_number}
                   </TableCell>
                   <TableCell>
-                    {quote.projects?.name || 'Untitled Project'}
+                    <EmailStatusDisplay 
+                      hasEmails={emailStatus.hasEmails}
+                      totalSent={emailStatus.totalSent}
+                      lastStatus={emailStatus.lastStatus}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
