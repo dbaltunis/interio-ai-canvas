@@ -78,28 +78,34 @@ export const VisualMeasurementSheet = ({
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className="absolute top-20 left-8 w-6 bottom-12 bg-gradient-to-r from-blue-400 to-blue-600 opacity-80 rounded shadow-lg">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-30"></div>
-                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-800 opacity-50"></div>
-                    <span className="absolute -left-8 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-blue-800">
+                  <div className="absolute top-20 left-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
+                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-900 opacity-60"></div>
+                    <div className="absolute top-6 bottom-6 left-2 right-2 border-l border-blue-800 opacity-40"></div>
+                    <div className="absolute top-8 bottom-8 left-3 right-3 border-l border-blue-700 opacity-30"></div>
+                    <span className="absolute -left-10 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-blue-800">
                       Left Panel
                     </span>
                   </div>
                   {/* Right Panel */}
-                  <div className="absolute top-20 right-8 w-6 bottom-12 bg-gradient-to-r from-blue-400 to-blue-600 opacity-80 rounded shadow-lg">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-30"></div>
-                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-800 opacity-50"></div>
-                    <span className="absolute -right-8 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-blue-800">
+                  <div className="absolute top-20 right-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
+                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-900 opacity-60"></div>
+                    <div className="absolute top-6 bottom-6 left-2 right-2 border-l border-blue-800 opacity-40"></div>
+                    <div className="absolute top-8 bottom-8 left-3 right-3 border-l border-blue-700 opacity-30"></div>
+                    <span className="absolute -right-10 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-blue-800">
                       Right Panel
                     </span>
                   </div>
                 </>
               ) : (
                 /* Single Panel */
-                <div className={`absolute top-20 ${curtainSide === "left" ? "left-8" : "right-8"} w-12 bottom-12 bg-gradient-to-r from-blue-400 to-blue-600 opacity-80 rounded shadow-lg`}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-30"></div>
-                  <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-blue-800 opacity-50"></div>
-                  <div className="absolute top-4 bottom-4 left-4 right-4 border-l border-blue-700 opacity-30"></div>
+                <div className={`absolute top-20 ${curtainSide === "left" ? "left-8" : "right-8"} w-16 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg`}>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
+                  <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-blue-900 opacity-60"></div>
+                  <div className="absolute top-6 bottom-6 left-3 right-3 border-l border-blue-800 opacity-40"></div>
+                  <div className="absolute top-8 bottom-8 left-4 right-4 border-l border-blue-700 opacity-30"></div>
+                  <div className="absolute top-10 bottom-10 left-5 right-5 border-l border-blue-600 opacity-25"></div>
                   <span className={`absolute ${curtainSide === "left" ? "-left-12" : "-right-12"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-blue-800`}>
                     Single Panel
                   </span>
@@ -188,85 +194,121 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Basic Measurements */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="measurement_a">A - Window Width (inches)</Label>
-                <Input
-                  id="measurement_a"
-                  type="number"
-                  step="0.25"
-                  value={measurements.measurement_a || ""}
-                  onChange={(e) => handleInputChange("measurement_a", e.target.value)}
-                  placeholder="0.00"
-                  readOnly={readOnly}
-                />
-              </div>
-              <div>
-                <Label htmlFor="measurement_b">B - Window Height (inches)</Label>
-                <Input
-                  id="measurement_b"
-                  type="number"
-                  step="0.25"
-                  value={measurements.measurement_b || ""}
-                  onChange={(e) => handleInputChange("measurement_b", e.target.value)}
-                  placeholder="0.00"
-                  readOnly={readOnly}
-                />
-              </div>
-              <div>
-                <Label htmlFor="measurement_c">C - Rod to Ceiling (inches)</Label>
-                <Input
-                  id="measurement_c"
-                  type="number"
-                  step="0.25"
-                  value={measurements.measurement_c || ""}
-                  onChange={(e) => handleInputChange("measurement_c", e.target.value)}
-                  placeholder="0.00"
-                  readOnly={readOnly}
-                />
-              </div>
-              <div>
-                <Label htmlFor="measurement_d">D - Window to Floor (inches)</Label>
-                <Input
-                  id="measurement_d"
-                  type="number"
-                  step="0.25"
-                  value={measurements.measurement_d || ""}
-                  onChange={(e) => handleInputChange("measurement_d", e.target.value)}
-                  placeholder="0.00"
-                  readOnly={readOnly}
-                />
-              </div>
-              <div>
-                <Label htmlFor="measurement_e">E - Total Height (inches)</Label>
-                <Input
-                  id="measurement_e"
-                  type="number"
-                  step="0.25"
-                  value={measurements.measurement_e || ""}
-                  onChange={(e) => handleInputChange("measurement_e", e.target.value)}
-                  placeholder="0.00"
-                  readOnly={readOnly}
-                />
-              </div>
-              <div>
-                <Label htmlFor="measurement_f">F - Total Width (inches)</Label>
-                <Input
-                  id="measurement_f"
-                  type="number"
-                  step="0.25"
-                  value={measurements.measurement_f || ""}
-                  onChange={(e) => handleInputChange("measurement_f", e.target.value)}
-                  placeholder="0.00"
-                  readOnly={readOnly}
-                />
+            {/* Main Measurements - Rail Width and Drop */}
+            <div className="border rounded-lg p-4 bg-green-50">
+              <h4 className="font-medium mb-3 text-green-800">Main Measurements (for Calculator)</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="rail_width">Rail Width (inches)</Label>
+                  <Input
+                    id="rail_width"
+                    type="number"
+                    step="0.25"
+                    value={measurements.rail_width || ""}
+                    onChange={(e) => handleInputChange("rail_width", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                    className="font-semibold"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="drop">Curtain Drop (inches)</Label>
+                  <Input
+                    id="drop"
+                    type="number"
+                    step="0.25"
+                    value={measurements.drop || ""}
+                    onChange={(e) => handleInputChange("drop", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                    className="font-semibold"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Additional Measurements */}
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-3">Additional Measurements</h4>
+            {/* Detailed Window Measurements */}
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-3">Detailed Window Measurements</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="measurement_a">A - Window Width (inches)</Label>
+                  <Input
+                    id="measurement_a"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_a || ""}
+                    onChange={(e) => handleInputChange("measurement_a", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_b">B - Window Height (inches)</Label>
+                  <Input
+                    id="measurement_b"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_b || ""}
+                    onChange={(e) => handleInputChange("measurement_b", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_c">C - Rod to Ceiling (inches)</Label>
+                  <Input
+                    id="measurement_c"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_c || ""}
+                    onChange={(e) => handleInputChange("measurement_c", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_d">D - Window to Floor (inches)</Label>
+                  <Input
+                    id="measurement_d"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_d || ""}
+                    onChange={(e) => handleInputChange("measurement_d", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_e">E - Total Height (inches)</Label>
+                  <Input
+                    id="measurement_e"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_e || ""}
+                    onChange={(e) => handleInputChange("measurement_e", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_f">F - Total Width (inches)</Label>
+                  <Input
+                    id="measurement_f"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_f || ""}
+                    onChange={(e) => handleInputChange("measurement_f", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Measurements for Curtain Makers */}
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-3">Additional Measurements (for Curtain Makers)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="rod_extension_left">Rod Extension Left (inches)</Label>
