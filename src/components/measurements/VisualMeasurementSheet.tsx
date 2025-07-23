@@ -74,39 +74,59 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Dynamic Curtain Panels */}
+              {/* Dynamic Curtain Panels - Attached to Rod */}
               {curtainType === "pair" ? (
                 <>
-                  {/* Left Panel */}
-                  <div className="absolute top-20 left-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                  {/* Left Panel - Attached to Rod */}
+                  <div className="absolute top-18 left-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                    {/* Curtain Ring/Hook Connection */}
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
                     <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-900 opacity-60"></div>
                     <div className="absolute top-6 bottom-6 left-2 right-2 border-l border-blue-800 opacity-40"></div>
                     <div className="absolute top-8 bottom-8 left-3 right-3 border-l border-blue-700 opacity-30"></div>
-                    <span className="absolute -left-10 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-blue-800">
+                    {/* Pleats effect */}
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-blue-900 opacity-50"></div>
+                    <div className="absolute top-2 bottom-2 left-2.5 w-0.5 bg-blue-800 opacity-40"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-blue-700 opacity-30"></div>
+                    <span className="absolute -left-12 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-blue-800">
                       Left Panel
                     </span>
                   </div>
-                  {/* Right Panel */}
-                  <div className="absolute top-20 right-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                  {/* Right Panel - Attached to Rod */}
+                  <div className="absolute top-18 right-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                    {/* Curtain Ring/Hook Connection */}
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
                     <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-900 opacity-60"></div>
                     <div className="absolute top-6 bottom-6 left-2 right-2 border-l border-blue-800 opacity-40"></div>
                     <div className="absolute top-8 bottom-8 left-3 right-3 border-l border-blue-700 opacity-30"></div>
-                    <span className="absolute -right-10 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-blue-800">
+                    {/* Pleats effect */}
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-blue-900 opacity-50"></div>
+                    <div className="absolute top-2 bottom-2 left-2.5 w-0.5 bg-blue-800 opacity-40"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-blue-700 opacity-30"></div>
+                    <span className="absolute -right-12 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-blue-800">
                       Right Panel
                     </span>
                   </div>
                 </>
               ) : (
-                /* Single Panel */
-                <div className={`absolute top-20 ${curtainSide === "left" ? "left-8" : "right-8"} w-16 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg`}>
+                /* Single Panel - Attached to Rod */
+                <div className={`absolute top-18 ${curtainSide === "left" ? "left-8" : "right-8"} w-16 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg`}>
+                  {/* Curtain Ring/Hook Connection */}
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
                   <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-blue-900 opacity-60"></div>
                   <div className="absolute top-6 bottom-6 left-3 right-3 border-l border-blue-800 opacity-40"></div>
                   <div className="absolute top-8 bottom-8 left-4 right-4 border-l border-blue-700 opacity-30"></div>
                   <div className="absolute top-10 bottom-10 left-5 right-5 border-l border-blue-600 opacity-25"></div>
-                  <span className={`absolute ${curtainSide === "left" ? "-left-12" : "-right-12"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-blue-800`}>
+                  {/* More pleats for single panel */}
+                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-blue-900 opacity-50"></div>
+                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-blue-800 opacity-40"></div>
+                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-blue-700 opacity-30"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-blue-600 opacity-25"></div>
+                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-blue-500 opacity-20"></div>
+                  <span className={`absolute ${curtainSide === "left" ? "-left-14" : "-right-14"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-blue-800`}>
                     Single Panel
                   </span>
                 </div>
