@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -26,9 +25,11 @@ export const VisualMeasurementSheet = ({
 
   const curtainType = measurements.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
+  const hardwareType = measurements.hardware_type || "rod";
 
   console.log("Current curtain type:", curtainType);
   console.log("Current curtain side:", curtainSide);
+  console.log("Current hardware type:", hardwareType);
 
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {
@@ -58,15 +59,25 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Drapery Rod */}
+              {/* Hardware - Track or Rod */}
               <div className="absolute top-16 left-12 right-12 flex items-center">
-                <div className="w-full h-2 bg-gray-600 rounded-full relative">
-                  <div className="absolute -left-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
-                  <div className="absolute -right-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
-                  <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs">
-                    Drapery Rod
-                  </span>
-                </div>
+                {hardwareType === "track" ? (
+                  <div className="w-full h-3 bg-gray-500 relative">
+                    <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-gray-600"></div>
+                    <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-gray-600"></div>
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                      Curtain Track
+                    </span>
+                  </div>
+                ) : (
+                  <div className="w-full h-2 bg-gray-600 rounded-full relative">
+                    <div className="absolute -left-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
+                    <div className="absolute -right-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                      Curtain Rod
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Window Frame */}
@@ -121,82 +132,67 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Rail Width measurement with arrows - only if has value */}
+              {/* Rail Width measurement - positioned near the rail */}
               {hasValue(measurements.rail_width) && (
-                <div className="absolute top-0 left-12 right-12 flex items-center">
-                  {/* Left arrow */}
+                <div className="absolute top-12 left-12 right-12 flex items-center">
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
-                  {/* Line */}
                   <div className="flex-1 border-t-2 border-blue-600 relative">
                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
-                  {/* Right arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
                 </div>
               )}
 
-              {/* Window Width Measurement (A) with arrows - only if has value */}
+              {/* Window Width Measurement (A) */}
               {hasValue(measurements.measurement_a) && (
                 <div className="absolute top-20 left-16 right-16 flex items-center">
-                  {/* Left arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
-                  {/* Line */}
                   <div className="flex-1 border-t-2 border-green-600 relative">
                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold">
                       A: {displayValue(measurements.measurement_a)}
                     </span>
                   </div>
-                  {/* Right arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-green-600"></div>
                 </div>
               )}
 
-              {/* Curtain Drop measurement with arrows - only if has value */}
+              {/* Curtain Drop measurement - shows the actual curtain panel length */}
               {hasValue(measurements.drop) && (
                 <div className="absolute top-16 left-4 flex flex-col items-center">
-                  {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-purple-600"></div>
-                  {/* Line */}
-                  <div className="h-32 border-l-2 border-purple-600 relative">
-                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                  <div className="h-64 border-l-2 border-purple-600 relative">
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
-                  {/* Bottom arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-purple-600"></div>
                 </div>
               )}
 
-              {/* Window Height Measurement (B) with arrows - only if has value */}
+              {/* Window Height Measurement (B) */}
               {hasValue(measurements.measurement_b) && (
                 <div className="absolute top-24 left-8 bottom-16 flex flex-col items-center">
-                  {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
-                  {/* Line */}
                   <div className="flex-1 border-l-2 border-orange-600 relative">
                     <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       B: {displayValue(measurements.measurement_b)}
                     </span>
                   </div>
-                  {/* Bottom arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-orange-600"></div>
                 </div>
               )}
 
-              {/* Rod to Ceiling measurement (C) with arrows - only if has value */}
+              {/* Rod to Ceiling measurement (C) */}
               {hasValue(measurements.measurement_c) && (
                 <div className="absolute top-4 right-4 flex flex-col items-center">
-                  {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-red-600"></div>
-                  {/* Line */}
                   <div className="h-12 border-l-2 border-red-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       C: {displayValue(measurements.measurement_c)}
                     </span>
                   </div>
-                  {/* Bottom arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-red-600"></div>
                 </div>
               )}
@@ -208,50 +204,41 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Window to Floor measurement (D) with arrows - only if has value */}
+              {/* Window to Floor measurement (D) */}
               {hasValue(measurements.measurement_d) && (
                 <div className="absolute bottom-4 right-8 flex flex-col items-center">
-                  {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-indigo-600"></div>
-                  {/* Line */}
                   <div className="h-12 border-l-2 border-indigo-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       D: {displayValue(measurements.measurement_d)}
                     </span>
                   </div>
-                  {/* Bottom arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-indigo-600"></div>
                 </div>
               )}
 
-              {/* Total Height measurement (E) with arrows - only if has value */}
+              {/* Total Height measurement (E) */}
               {hasValue(measurements.measurement_e) && (
                 <div className="absolute top-16 right-0 bottom-4 flex flex-col items-center">
-                  {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-pink-600"></div>
-                  {/* Line */}
                   <div className="flex-1 border-l-2 border-pink-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-pink-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       E: {displayValue(measurements.measurement_e)}
                     </span>
                   </div>
-                  {/* Bottom arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-pink-600"></div>
                 </div>
               )}
 
-              {/* Total Width measurement (F) with arrows - only if has value */}
+              {/* Total Width measurement (F) */}
               {hasValue(measurements.measurement_f) && (
                 <div className="absolute bottom-0 left-8 right-8 flex items-center">
-                  {/* Left arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-teal-600"></div>
-                  {/* Line */}
                   <div className="flex-1 border-t-2 border-teal-600 relative">
                     <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-teal-600 text-white px-2 py-1 rounded text-xs font-bold">
                       F: {displayValue(measurements.measurement_f)}
                     </span>
                   </div>
-                  {/* Right arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-teal-600"></div>
                 </div>
               )}
@@ -261,15 +248,35 @@ export const VisualMeasurementSheet = ({
             <div className="mt-4 text-sm text-gray-600 space-y-1">
               <p><strong>A:</strong> Window Width (inside frame to inside frame)</p>
               <p><strong>B:</strong> Window Height (inside frame top to bottom)</p>
-              <p><strong>C:</strong> Distance from Rod to Ceiling</p>
+              <p><strong>C:</strong> Distance from {hardwareType === "track" ? "Track" : "Rod"} to Ceiling</p>
               <p><strong>D:</strong> Distance from Window Bottom to Floor</p>
-              <p><strong>E:</strong> Total Height from Rod to Floor</p>
-              <p><strong>F:</strong> Total Width including Rod Extensions</p>
+              <p><strong>E:</strong> Total Height from {hardwareType === "track" ? "Track" : "Rod"} to Floor</p>
+              <p><strong>F:</strong> Total Width including {hardwareType === "track" ? "Track" : "Rod"} Extensions</p>
             </div>
           </div>
 
           {/* Measurement Inputs */}
           <div className="flex-1 space-y-4">
+            {/* Hardware Type */}
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <h4 className="font-medium mb-3 text-gray-800">Hardware Type</h4>
+              <RadioGroup 
+                value={hardwareType} 
+                onValueChange={(value) => handleInputChange("hardware_type", value)}
+                disabled={readOnly}
+                className="flex flex-row space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="rod" id="rod" />
+                  <Label htmlFor="rod">Rod</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="track" id="track" />
+                  <Label htmlFor="track">Track</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             {/* Curtain Configuration */}
             <div className="border rounded-lg p-4 bg-blue-50">
               <h4 className="font-medium mb-3 text-blue-800">Curtain Configuration</h4>
@@ -277,43 +284,47 @@ export const VisualMeasurementSheet = ({
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Curtain Type</Label>
-                  <Select 
+                  <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
                       console.log("Curtain type changed to:", value);
                       handleInputChange("curtain_type", value);
                     }}
                     disabled={readOnly}
+                    className="flex flex-row space-x-4"
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select curtain type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pair">Pair (Two panels)</SelectItem>
-                      <SelectItem value="single">Single (One panel)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="pair" id="pair" />
+                      <Label htmlFor="pair">Pair (Two panels)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="single" />
+                      <Label htmlFor="single">Single (One panel)</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 {curtainType === "single" && (
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Panel Position</Label>
-                    <Select 
+                    <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
                         console.log("Panel side changed to:", value);
                         handleInputChange("curtain_side", value);
                       }}
                       disabled={readOnly}
+                      className="flex flex-row space-x-4"
                     >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select panel position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="left">Left side</SelectItem>
-                        <SelectItem value="right">Right side</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="left" id="left" />
+                        <Label htmlFor="left">Left side</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="right" id="right" />
+                        <Label htmlFor="right">Right side</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                 )}
               </div>
@@ -324,8 +335,8 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3 text-green-800">Main Measurements (for Calculator)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rail_width" className="text-sm font-medium">Rail Width</Label>
-                  <p className="text-xs text-gray-600 mb-1">Total width of the curtain rail/rod</p>
+                  <Label htmlFor="rail_width" className="text-sm font-medium">{hardwareType === "track" ? "Track" : "Rail"} Width</Label>
+                  <p className="text-xs text-gray-600 mb-1">Total width of the curtain {hardwareType === "track" ? "track" : "rail/rod"}</p>
                   <Input
                     id="rail_width"
                     type="number"
@@ -339,7 +350,7 @@ export const VisualMeasurementSheet = ({
                 </div>
                 <div>
                   <Label htmlFor="drop" className="text-sm font-medium">Curtain Drop</Label>
-                  <p className="text-xs text-gray-600 mb-1">Length from rod to where curtain ends</p>
+                  <p className="text-xs text-gray-600 mb-1">Length of curtain panel from {hardwareType === "track" ? "track" : "rod"} to bottom</p>
                   <Input
                     id="drop"
                     type="number"
@@ -385,8 +396,8 @@ export const VisualMeasurementSheet = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling</Label>
-                  <p className="text-xs text-gray-600 mb-1">Distance from rod to ceiling</p>
+                  <Label htmlFor="measurement_c" className="text-sm font-medium">C - {hardwareType === "track" ? "Track" : "Rod"} to Ceiling</Label>
+                  <p className="text-xs text-gray-600 mb-1">Distance from {hardwareType === "track" ? "track" : "rod"} to ceiling</p>
                   <Input
                     id="measurement_c"
                     type="number"
@@ -412,7 +423,7 @@ export const VisualMeasurementSheet = ({
                 </div>
                 <div>
                   <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height</Label>
-                  <p className="text-xs text-gray-600 mb-1">Rod to floor total height</p>
+                  <p className="text-xs text-gray-600 mb-1">{hardwareType === "track" ? "Track" : "Rod"} to floor total height</p>
                   <Input
                     id="measurement_e"
                     type="number"
@@ -444,8 +455,8 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3">Additional Measurements (for Curtain Makers)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rod_extension_left" className="text-sm font-medium">Rod Extension Left</Label>
-                  <p className="text-xs text-gray-600 mb-1">How far rod extends beyond window left</p>
+                  <Label htmlFor="rod_extension_left" className="text-sm font-medium">{hardwareType === "track" ? "Track" : "Rod"} Extension Left</Label>
+                  <p className="text-xs text-gray-600 mb-1">How far {hardwareType === "track" ? "track" : "rod"} extends beyond window left</p>
                   <Input
                     id="rod_extension_left"
                     type="number"
@@ -457,8 +468,8 @@ export const VisualMeasurementSheet = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rod_extension_right" className="text-sm font-medium">Rod Extension Right</Label>
-                  <p className="text-xs text-gray-600 mb-1">How far rod extends beyond window right</p>
+                  <Label htmlFor="rod_extension_right" className="text-sm font-medium">{hardwareType === "track" ? "Track" : "Rod"} Extension Right</Label>
+                  <p className="text-xs text-gray-600 mb-1">How far {hardwareType === "track" ? "track" : "rod"} extends beyond window right</p>
                   <Input
                     id="rod_extension_right"
                     type="number"
