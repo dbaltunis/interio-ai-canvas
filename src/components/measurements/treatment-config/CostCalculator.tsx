@@ -2,29 +2,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface CostCalculatorProps {
   measurements: any;
-  treatmentConfig: any;
-  currency: string;
+  treatment: any;
+  rodTrack: any;
+  motorization: any;
+  fabric: any;
 }
 
 export const CostCalculator = ({
   measurements,
-  treatmentConfig,
-  currency
+  treatment,
+  rodTrack,
+  motorization,
+  fabric
 }: CostCalculatorProps) => {
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
-  };
+  const { formatCurrency } = useMeasurementUnits();
 
   const calculateCosts = () => {
     let fabricCost = 0;
@@ -33,18 +28,18 @@ export const CostCalculator = ({
     let laborCost = 0;
     
     // Fabric cost
-    if (treatmentConfig.fabric && treatmentConfig.fabric.usage) {
-      fabricCost = treatmentConfig.fabric.usage.cost;
+    if (fabric && fabric.usage) {
+      fabricCost = fabric.usage.cost;
     }
     
     // Hardware cost
-    if (treatmentConfig.rodTrack) {
-      hardwareCost = treatmentConfig.rodTrack.price || 0;
+    if (rodTrack) {
+      hardwareCost = rodTrack.price || 0;
     }
     
     // Motorization cost
-    if (treatmentConfig.motorization && treatmentConfig.motorization.id !== "none") {
-      motorizationCost = treatmentConfig.motorization.price || 0;
+    if (motorization && motorization.id !== "none") {
+      motorizationCost = motorization.price || 0;
     }
     
     // Labor cost (base calculation)
@@ -82,9 +77,9 @@ export const CostCalculator = ({
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span>Fabric</span>
-                {treatmentConfig.fabric && (
+                {fabric && (
                   <Badge variant="outline" className="text-xs">
-                    {treatmentConfig.fabric.usage?.yards} yards
+                    {fabric.usage?.yards} yards
                   </Badge>
                 )}
               </div>
@@ -132,13 +127,13 @@ export const CostCalculator = ({
         </div>
         
         {/* Fabric Usage Details */}
-        {treatmentConfig.fabric && treatmentConfig.fabric.usage && (
+        {fabric && fabric.usage && (
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <h4 className="font-medium text-sm mb-2">Fabric Calculation</h4>
             <div className="text-xs space-y-1">
-              <div>Fabric required: {treatmentConfig.fabric.usage.yards} yards</div>
-              <div>Widths needed: {treatmentConfig.fabric.usage.widthsNeeded}</div>
-              <div>Cost per yard: {formatCurrency(treatmentConfig.fabric.pricePerYard)}</div>
+              <div>Fabric required: {fabric.usage.yards} yards</div>
+              <div>Widths needed: {fabric.usage.widthsNeeded}</div>
+              <div>Cost per yard: {formatCurrency(fabric.pricePerYard)}</div>
             </div>
           </div>
         )}

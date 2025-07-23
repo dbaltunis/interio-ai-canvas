@@ -4,14 +4,16 @@ import { Badge } from "@/components/ui/badge";
 
 interface VisualPreviewProps {
   measurements: any;
-  treatmentConfig: any;
-  photos: string[];
+  treatment: any;
+  rodTrack: any;
+  fabric: any;
 }
 
 export const VisualPreview = ({
   measurements,
-  treatmentConfig,
-  photos
+  treatment,
+  rodTrack,
+  fabric
 }: VisualPreviewProps) => {
   const windowWidth = parseFloat(measurements.width) || 100;
   const windowHeight = parseFloat(measurements.height) || 150;
@@ -21,6 +23,14 @@ export const VisualPreview = ({
   const previewWidth = windowWidth * scale;
   const previewHeight = windowHeight * scale;
 
+  // Create treatmentConfig object for compatibility
+  const treatmentConfig = {
+    treatmentType: treatment?.id,
+    rodTrack: rodTrack,
+    fabric: fabric,
+    motorization: { id: "none" } // Default for now
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -29,14 +39,6 @@ export const VisualPreview = ({
         </CardHeader>
         <CardContent>
           <div className="relative">
-            {/* Background - Client Photo if available */}
-            {photos.length > 0 && (
-              <div 
-                className="absolute inset-0 bg-cover bg-center opacity-30 rounded"
-                style={{ backgroundImage: `url(${photos[0]})` }}
-              />
-            )}
-            
             {/* Window Frame */}
             <div 
               className="relative border-4 border-gray-600 bg-sky-100 mx-auto"
