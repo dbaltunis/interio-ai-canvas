@@ -1,18 +1,20 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, Download } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";
 import { ClientListView } from "../crm/ClientListView";
 import { ClientFilters } from "./ClientFilters";
+import { ClientImportExport } from "./ClientImportExport";
 
 export const ClientManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showClientProfile, setShowClientProfile] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -42,6 +44,15 @@ export const ClientManagementPage = () => {
     setSelectedProjects([]);
     setClientType("all");
   };
+
+  // Show import/export if selected
+  if (showImportExport) {
+    return (
+      <ClientImportExport
+        onBack={() => setShowImportExport(false)}
+      />
+    );
+  }
 
   // Show client profile if selected
   if (showClientProfile && selectedClient) {
@@ -89,6 +100,15 @@ export const ClientManagementPage = () => {
           >
             <Filter className="h-4 w-4" />
             Filter
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => setShowImportExport(true)}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Import/Export
           </Button>
           
           <Button 
