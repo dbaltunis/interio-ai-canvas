@@ -2,14 +2,19 @@
 import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement, formatCurrency as formatCurrencyUtil } from "./useBusinessSettings";
 
 export const useMeasurementUnits = () => {
-  const { data: businessSettings } = useBusinessSettings();
+  const { data: businessSettings, isLoading } = useBusinessSettings();
   
   const units: MeasurementUnits = (() => {
+    if (!businessSettings?.measurement_units) {
+      return defaultMeasurementUnits;
+    }
+    
     try {
-      return businessSettings?.measurement_units ? 
-        JSON.parse(businessSettings.measurement_units) : defaultMeasurementUnits;
+      return typeof businessSettings.measurement_units === 'string' 
+        ? JSON.parse(businessSettings.measurement_units) 
+        : businessSettings.measurement_units;
     } catch (error) {
-      console.warn('Failed to parse measurement units, using defaults:', error);
+      console.warn('Failed to parse measurement units from settings, using defaults:', error);
       return defaultMeasurementUnits;
     }
   })();
@@ -57,6 +62,7 @@ export const useMeasurementUnits = () => {
 
   return {
     units,
+    isLoading,
     convertToUserUnit,
     formatLength,
     formatArea, 

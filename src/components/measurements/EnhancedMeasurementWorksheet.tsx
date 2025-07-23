@@ -3,200 +3,191 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { Badge } from "@/components/ui/badge";
+import { Calculator, Ruler, Settings, Palette, Eye, DollarSign } from "lucide-react";
 import { MeasurementDiagram } from "./MeasurementDiagram";
-import { PhotoUpload } from "./PhotoUpload";
 import { TreatmentTypeSelector } from "./treatment-config/TreatmentTypeSelector";
 import { RodTrackSelector } from "./treatment-config/RodTrackSelector";
-import { FabricSelector } from "./treatment-config/FabricSelector";
 import { MotorizationSelector } from "./treatment-config/MotorizationSelector";
-import { MeasurementInputs } from "./MeasurementInputs";
+import { FabricSelector } from "./treatment-config/FabricSelector";
 import { VisualPreview } from "./treatment-config/VisualPreview";
 import { CostCalculator } from "./treatment-config/CostCalculator";
-import { useCreateClientMeasurement } from "@/hooks/useClientMeasurements";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface EnhancedMeasurementWorksheetProps {
-  clientId: string;
-  projectId: string;
-  roomId: string;
-  surfaceId: string;
-  surfaceName: string;
-  existingMeasurement?: any;
-  onSave: () => void;
+  surface: any;
+  room: any;
+  onSave: (data: any) => void;
+  onCancel: () => void;
 }
 
 export const EnhancedMeasurementWorksheet = ({
-  clientId,
-  projectId,
-  roomId,
-  surfaceId,
-  surfaceName,
-  existingMeasurement,
-  onSave
+  surface,
+  room,
+  onSave,
+  onCancel
 }: EnhancedMeasurementWorksheetProps) => {
-  const [measurements, setMeasurements] = useState({
-    width: existingMeasurement?.measurements?.width || "",
-    height: existingMeasurement?.measurements?.height || "",
-    depth: existingMeasurement?.measurements?.depth || "",
-    notes: existingMeasurement?.notes || ""
-  });
+  const { formatCurrency, isLoading: unitsLoading } = useMeasurementUnits();
   
-  const [photos, setPhotos] = useState<string[]>(existingMeasurement?.photos || []);
-  const [treatmentConfig, setTreatmentConfig] = useState({
-    treatmentType: "",
-    rodTrack: null,
-    fabric: null,
-    motorization: null,
-    finials: null,
-    brackets: null,
-    bending: 0,
-    fullness: 2.5,
-    heading: ""
+  const [measurements, setMeasurements] = useState({
+    width: surface.width?.toString() || "",
+    height: surface.height?.toString() || "",
+    depth: "",
+    notes: ""
   });
 
-  const { toast } = useToast();
-  const { units, formatLength, formatCurrency } = useMeasurementUnits();
-  const createMeasurement = useCreateClientMeasurement();
+  const [selectedTreatment, setSelectedTreatment] = useState<any>(null);
+  const [selectedRodTrack, setSelectedRodTrack] = useState<any>(null);
+  const [selectedMotorization, setSelectedMotorization] = useState<any>(null);
+  const [selectedFabric, setSelectedFabric] = useState<any>(null);
 
   const handleMeasurementChange = (field: string, value: string) => {
     setMeasurements(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleTreatmentConfigChange = (field: string, value: any) => {
-    setTreatmentConfig(prev => ({ ...prev, [field]: value }));
+  const calculateTotalCost = () => {
+    let total = 0;
+    
+    if (selectedTreatment) total += selectedTreatment.basePrice || 0;
+    if (selectedRodTrack) total += selectedRodTrack.price || 0;
+    if (selectedMotorization) total += selectedMotorization.price || 0;
+    if (selectedFabric?.usage) total += selectedFabric.usage.cost || 0;
+    
+    return total;
   };
 
-  const handleSave = async () => {
-    try {
-      const measurementData = {
-        client_id: clientId,
-        project_id: projectId,
-        measurement_type: "window_treatment",
-        measurements: {
-          ...measurements,
-          room_id: roomId,
-          surface_id: surfaceId,
-          surface_name: surfaceName,
-          treatment_config: treatmentConfig
-        },
-        photos,
-        notes: measurements.notes,
-        measured_by: "User",
-        measured_at: new Date().toISOString()
-      };
-
-      await createMeasurement.mutateAsync(measurementData);
-      onSave();
-    } catch (error) {
-      console.error("Failed to save measurement:", error);
-    }
+  const handleSave = () => {
+    const treatmentData = {
+      measurements,
+      treatment: selectedTreatment,
+      rodTrack: selectedRodTrack,
+      motorization: selectedMotorization,
+      fabric: selectedFabric,
+      totalCost: calculateTotalCost()
+    };
+    onSave(treatmentData);
   };
+
+  if (unitsLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-lg">Loading measurement settings...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Treatment Configuration</h2>
-        <p className="text-muted-foreground">{surfaceName} - Complete measurement and product selection</p>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Treatment Configuration</h2>
+          <p className="text-muted-foreground">
+            {surface.name} in {room.name}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-lg px-3 py-1">
+            Total: {formatCurrency(calculateTotalCost())}
+          </Badge>
+        </div>
       </div>
 
-      <Tabs defaultValue="measurements" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="measurements">Measurements</TabsTrigger>
-          <TabsTrigger value="treatment">Treatment</TabsTrigger>
-          <TabsTrigger value="hardware">Hardware</TabsTrigger>
-          <TabsTrigger value="fabric">Fabric</TabsTrigger>
-          <TabsTrigger value="preview">Preview & Cost</TabsTrigger>
+      <Tabs defaultValue="measurements" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="measurements" className="flex items-center gap-2">
+            <Ruler className="h-4 w-4" />
+            Measurements
+          </TabsTrigger>
+          <TabsTrigger value="treatment" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Treatment
+          </TabsTrigger>
+          <TabsTrigger value="hardware" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Hardware
+          </TabsTrigger>
+          <TabsTrigger value="fabric" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Fabric
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Preview
+          </TabsTrigger>
+          <TabsTrigger value="cost" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Cost
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="measurements" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Window Diagram</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MeasurementDiagram 
-                  measurements={measurements}
-                  onMeasurementChange={handleMeasurementChange}
-                />
-              </CardContent>
-            </Card>
-            
-            <div className="space-y-4">
-              <MeasurementInputs 
-                measurements={measurements}
-                onMeasurementChange={handleMeasurementChange}
-              />
-              
-              <PhotoUpload 
-                photos={photos}
-                onPhotosChange={setPhotos}
-                maxPhotos={5}
-              />
-            </div>
-          </div>
+        <TabsContent value="measurements">
+          <MeasurementDiagram
+            measurements={measurements}
+            onMeasurementChange={handleMeasurementChange}
+          />
         </TabsContent>
 
-        <TabsContent value="treatment" className="space-y-4">
+        <TabsContent value="treatment">
           <TreatmentTypeSelector
-            selectedType={treatmentConfig.treatmentType}
-            onTypeChange={(type) => handleTreatmentConfigChange("treatmentType", type)}
+            selectedType={selectedTreatment?.id || ""}
+            onTypeChange={(type) => {
+              // Find treatment details from the list
+              setSelectedTreatment({ id: type, basePrice: 45 });
+            }}
             measurements={measurements}
           />
         </TabsContent>
 
-        <TabsContent value="hardware" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="hardware">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <RodTrackSelector
-              selectedRodTrack={treatmentConfig.rodTrack}
-              onSelectionChange={(rodTrack) => handleTreatmentConfigChange("rodTrack", rodTrack)}
+              selectedRodTrack={selectedRodTrack}
+              onSelectionChange={setSelectedRodTrack}
               measurements={measurements}
             />
-            
             <MotorizationSelector
-              selectedMotorization={treatmentConfig.motorization}
-              onSelectionChange={(motorization) => handleTreatmentConfigChange("motorization", motorization)}
-              treatmentType={treatmentConfig.treatmentType}
+              selectedMotorization={selectedMotorization}
+              onSelectionChange={setSelectedMotorization}
+              treatmentType={selectedTreatment?.id || ""}
             />
           </div>
         </TabsContent>
 
-        <TabsContent value="fabric" className="space-y-4">
+        <TabsContent value="fabric">
           <FabricSelector
-            selectedFabric={treatmentConfig.fabric}
-            onSelectionChange={(fabric) => handleTreatmentConfigChange("fabric", fabric)}
-            treatmentType={treatmentConfig.treatmentType}
+            selectedFabric={selectedFabric}
+            onSelectionChange={setSelectedFabric}
+            treatmentType={selectedTreatment?.id || ""}
             measurements={measurements}
           />
         </TabsContent>
 
-        <TabsContent value="preview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <VisualPreview
-              measurements={measurements}
-              treatmentConfig={treatmentConfig}
-              photos={photos}
-            />
-            
-            <CostCalculator
-              measurements={measurements}
-              treatmentConfig={treatmentConfig}
-              currency={units.currency}
-            />
-          </div>
+        <TabsContent value="preview">
+          <VisualPreview
+            measurements={measurements}
+            treatment={selectedTreatment}
+            rodTrack={selectedRodTrack}
+            fabric={selectedFabric}
+          />
+        </TabsContent>
+
+        <TabsContent value="cost">
+          <CostCalculator
+            treatment={selectedTreatment}
+            rodTrack={selectedRodTrack}
+            motorization={selectedMotorization}
+            fabric={selectedFabric}
+            measurements={measurements}
+          />
         </TabsContent>
       </Tabs>
 
       <div className="flex justify-end gap-4 pt-6 border-t">
-        <Button variant="outline" onClick={onSave}>
+        <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button 
-          onClick={handleSave}
-          disabled={createMeasurement.isPending}
-        >
-          {createMeasurement.isPending ? "Saving..." : "Save Configuration"}
+        <Button onClick={handleSave} className="bg-primary">
+          Save Treatment Configuration
         </Button>
       </div>
     </div>
