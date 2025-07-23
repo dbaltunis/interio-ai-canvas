@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -30,9 +30,14 @@ export const VisualMeasurementSheet = ({
   console.log("Current curtain type:", curtainType);
   console.log("Current curtain side:", curtainSide);
 
+  // Helper function to check if measurement has value
+  const hasValue = (value: any) => {
+    return value && value !== "" && value !== "0" && parseFloat(value) > 0;
+  };
+
   // Helper function to display measurement values
   const displayValue = (value: any) => {
-    if (!value || value === "" || value === "0") return "";
+    if (!hasValue(value)) return "";
     return `${value}"`;
   };
 
@@ -80,47 +85,50 @@ export const VisualMeasurementSheet = ({
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className="absolute top-16 left-20 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  <div className="absolute top-16 left-14 w-8 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
-                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
-                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
+                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
+                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
                   </div>
                   
                   {/* Right Panel */}
-                  <div className="absolute top-16 right-20 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  <div className="absolute top-16 right-14 w-8 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
-                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
-                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
+                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
+                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
                   </div>
                 </>
               ) : (
                 /* Single Panel */
-                <div className={`absolute top-16 ${curtainSide === "left" ? "left-20" : "right-20"} w-16 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                <div className={`absolute top-16 ${curtainSide === "left" ? "left-14" : "right-14"} w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
-                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
-                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
-                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
-                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
-                  <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
-                  <div className="absolute top-2 bottom-2 left-14 w-0.5 bg-red-200 opacity-10"></div>
+                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
+                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
+                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
+                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
+                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
+                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
+                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-red-200 opacity-10"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-100 opacity-5"></div>
                 </div>
               )}
 
-              {/* Rail Width measurement with arrows */}
-              {measurements.rail_width && (
+              {/* Rail Width measurement with arrows - only if has value */}
+              {hasValue(measurements.rail_width) && (
                 <div className="absolute top-0 left-12 right-12 flex items-center">
                   {/* Left arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   {/* Line */}
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-800">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -129,14 +137,14 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Window Width Measurement (A) with arrows */}
-              {measurements.measurement_a && (
+              {/* Window Width Measurement (A) with arrows - only if has value */}
+              {hasValue(measurements.measurement_a) && (
                 <div className="absolute top-20 left-16 right-16 flex items-center">
                   {/* Left arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
                   {/* Line */}
                   <div className="flex-1 border-t-2 border-green-600 relative">
-                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-green-100 px-2 py-1 rounded text-xs font-bold text-green-800">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold">
                       A: {displayValue(measurements.measurement_a)}
                     </span>
                   </div>
@@ -145,14 +153,14 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Curtain Drop measurement with arrows */}
-              {measurements.drop && (
-                <div className="absolute top-16 left-6 flex flex-col items-center">
+              {/* Curtain Drop measurement with arrows - only if has value */}
+              {hasValue(measurements.drop) && (
+                <div className="absolute top-16 left-4 flex flex-col items-center">
                   {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-purple-600"></div>
                   {/* Line */}
                   <div className="h-32 border-l-2 border-purple-600 relative">
-                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-purple-100 px-2 py-1 rounded text-xs font-bold text-purple-800 whitespace-nowrap">
+                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
@@ -161,14 +169,14 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Window Height Measurement (B) with arrows */}
-              {measurements.measurement_b && (
-                <div className="absolute top-24 left-12 bottom-16 flex flex-col items-center">
+              {/* Window Height Measurement (B) with arrows - only if has value */}
+              {hasValue(measurements.measurement_b) && (
+                <div className="absolute top-24 left-8 bottom-16 flex flex-col items-center">
                   {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
                   {/* Line */}
                   <div className="flex-1 border-l-2 border-orange-600 relative">
-                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-orange-100 px-2 py-1 rounded text-xs font-bold text-orange-800 whitespace-nowrap">
+                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       B: {displayValue(measurements.measurement_b)}
                     </span>
                   </div>
@@ -177,14 +185,14 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Rod to Ceiling measurement (C) with arrows */}
-              {measurements.measurement_c && (
-                <div className="absolute top-4 right-6 flex flex-col items-center">
+              {/* Rod to Ceiling measurement (C) with arrows - only if has value */}
+              {hasValue(measurements.measurement_c) && (
+                <div className="absolute top-4 right-4 flex flex-col items-center">
                   {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-red-600"></div>
                   {/* Line */}
                   <div className="h-12 border-l-2 border-red-600 relative">
-                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-red-100 px-2 py-1 rounded text-xs font-bold text-red-800 whitespace-nowrap">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       C: {displayValue(measurements.measurement_c)}
                     </span>
                   </div>
@@ -200,14 +208,14 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Window to Floor measurement (D) with arrows */}
-              {measurements.measurement_d && (
-                <div className="absolute bottom-4 right-12 flex flex-col items-center">
+              {/* Window to Floor measurement (D) with arrows - only if has value */}
+              {hasValue(measurements.measurement_d) && (
+                <div className="absolute bottom-4 right-8 flex flex-col items-center">
                   {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-indigo-600"></div>
                   {/* Line */}
                   <div className="h-12 border-l-2 border-indigo-600 relative">
-                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-indigo-100 px-2 py-1 rounded text-xs font-bold text-indigo-800 whitespace-nowrap">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       D: {displayValue(measurements.measurement_d)}
                     </span>
                   </div>
@@ -216,14 +224,14 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Total Height measurement (E) with arrows */}
-              {measurements.measurement_e && (
-                <div className="absolute top-16 right-2 bottom-4 flex flex-col items-center">
+              {/* Total Height measurement (E) with arrows - only if has value */}
+              {hasValue(measurements.measurement_e) && (
+                <div className="absolute top-16 right-0 bottom-4 flex flex-col items-center">
                   {/* Top arrow */}
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-pink-600"></div>
                   {/* Line */}
                   <div className="flex-1 border-l-2 border-pink-600 relative">
-                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-pink-100 px-2 py-1 rounded text-xs font-bold text-pink-800 whitespace-nowrap">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-pink-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       E: {displayValue(measurements.measurement_e)}
                     </span>
                   </div>
@@ -232,14 +240,14 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Total Width measurement (F) with arrows */}
-              {measurements.measurement_f && (
+              {/* Total Width measurement (F) with arrows - only if has value */}
+              {hasValue(measurements.measurement_f) && (
                 <div className="absolute bottom-0 left-8 right-8 flex items-center">
                   {/* Left arrow */}
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-teal-600"></div>
                   {/* Line */}
                   <div className="flex-1 border-t-2 border-teal-600 relative">
-                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-teal-100 px-2 py-1 rounded text-xs font-bold text-teal-800">
+                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-teal-600 text-white px-2 py-1 rounded text-xs font-bold">
                       F: {displayValue(measurements.measurement_f)}
                     </span>
                   </div>
@@ -251,12 +259,12 @@ export const VisualMeasurementSheet = ({
 
             {/* Measurement Guide */}
             <div className="mt-4 text-sm text-gray-600 space-y-1">
-              <p><strong>A:</strong> Window Width (inside frame)</p>
-              <p><strong>B:</strong> Window Height (inside frame)</p>
-              <p><strong>C:</strong> Rod to Ceiling</p>
-              <p><strong>D:</strong> Window to Floor</p>
-              <p><strong>E:</strong> Total Height (Rod to Floor)</p>
-              <p><strong>F:</strong> Total Width (including extensions)</p>
+              <p><strong>A:</strong> Window Width (inside frame to inside frame)</p>
+              <p><strong>B:</strong> Window Height (inside frame top to bottom)</p>
+              <p><strong>C:</strong> Distance from Rod to Ceiling</p>
+              <p><strong>D:</strong> Distance from Window Bottom to Floor</p>
+              <p><strong>E:</strong> Total Height from Rod to Floor</p>
+              <p><strong>F:</strong> Total Width including Rod Extensions</p>
             </div>
           </div>
 
@@ -269,45 +277,43 @@ export const VisualMeasurementSheet = ({
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Curtain Type</Label>
-                  <RadioGroup 
+                  <Select 
                     value={curtainType} 
                     onValueChange={(value) => {
                       console.log("Curtain type changed to:", value);
                       handleInputChange("curtain_type", value);
                     }}
-                    className="space-y-2"
+                    disabled={readOnly}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="pair" id="pair" />
-                      <Label htmlFor="pair" className="text-sm cursor-pointer">Pair (Two panels)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="single" id="single" />
-                      <Label htmlFor="single" className="text-sm cursor-pointer">Single (One panel)</Label>
-                    </div>
-                  </RadioGroup>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select curtain type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pair">Pair (Two panels)</SelectItem>
+                      <SelectItem value="single">Single (One panel)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {curtainType === "single" && (
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Panel Position</Label>
-                    <RadioGroup 
+                    <Select 
                       value={curtainSide} 
                       onValueChange={(value) => {
                         console.log("Panel side changed to:", value);
                         handleInputChange("curtain_side", value);
                       }}
-                      className="space-y-2"
+                      disabled={readOnly}
                     >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="left" id="left" />
-                        <Label htmlFor="left" className="text-sm cursor-pointer">Left side</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="right" id="right" />
-                        <Label htmlFor="right" className="text-sm cursor-pointer">Right side</Label>
-                      </div>
-                    </RadioGroup>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select panel position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left side</SelectItem>
+                        <SelectItem value="right">Right side</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>
@@ -318,7 +324,8 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3 text-green-800">Main Measurements (for Calculator)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rail_width" className="text-sm font-medium">Rail Width (inches)</Label>
+                  <Label htmlFor="rail_width" className="text-sm font-medium">Rail Width</Label>
+                  <p className="text-xs text-gray-600 mb-1">Total width of the curtain rail/rod</p>
                   <Input
                     id="rail_width"
                     type="number"
@@ -327,11 +334,12 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("rail_width", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="font-semibold mt-1"
+                    className="font-semibold"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="drop" className="text-sm font-medium">Curtain Drop (inches)</Label>
+                  <Label htmlFor="drop" className="text-sm font-medium">Curtain Drop</Label>
+                  <p className="text-xs text-gray-600 mb-1">Length from rod to where curtain ends</p>
                   <Input
                     id="drop"
                     type="number"
@@ -340,7 +348,7 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("drop", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="font-semibold mt-1"
+                    className="font-semibold"
                   />
                 </div>
               </div>
@@ -351,7 +359,8 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3">Detailed Window Measurements</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="measurement_a" className="text-sm font-medium">A - Window Width (inches)</Label>
+                  <Label htmlFor="measurement_a" className="text-sm font-medium">A - Window Width</Label>
+                  <p className="text-xs text-gray-600 mb-1">Inside frame width</p>
                   <Input
                     id="measurement_a"
                     type="number"
@@ -360,11 +369,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_a", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_b" className="text-sm font-medium">B - Window Height (inches)</Label>
+                  <Label htmlFor="measurement_b" className="text-sm font-medium">B - Window Height</Label>
+                  <p className="text-xs text-gray-600 mb-1">Inside frame height</p>
                   <Input
                     id="measurement_b"
                     type="number"
@@ -373,11 +382,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_b", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling (inches)</Label>
+                  <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling</Label>
+                  <p className="text-xs text-gray-600 mb-1">Distance from rod to ceiling</p>
                   <Input
                     id="measurement_c"
                     type="number"
@@ -386,11 +395,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_c", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_d" className="text-sm font-medium">D - Window to Floor (inches)</Label>
+                  <Label htmlFor="measurement_d" className="text-sm font-medium">D - Window to Floor</Label>
+                  <p className="text-xs text-gray-600 mb-1">Distance from window bottom to floor</p>
                   <Input
                     id="measurement_d"
                     type="number"
@@ -399,11 +408,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_d", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height (inches)</Label>
+                  <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height</Label>
+                  <p className="text-xs text-gray-600 mb-1">Rod to floor total height</p>
                   <Input
                     id="measurement_e"
                     type="number"
@@ -412,11 +421,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_e", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_f" className="text-sm font-medium">F - Total Width (inches)</Label>
+                  <Label htmlFor="measurement_f" className="text-sm font-medium">F - Total Width</Label>
+                  <p className="text-xs text-gray-600 mb-1">Total width including extensions</p>
                   <Input
                     id="measurement_f"
                     type="number"
@@ -425,7 +434,6 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_f", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
               </div>
@@ -436,7 +444,8 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3">Additional Measurements (for Curtain Makers)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rod_extension_left" className="text-sm font-medium">Rod Extension Left (inches)</Label>
+                  <Label htmlFor="rod_extension_left" className="text-sm font-medium">Rod Extension Left</Label>
+                  <p className="text-xs text-gray-600 mb-1">How far rod extends beyond window left</p>
                   <Input
                     id="rod_extension_left"
                     type="number"
@@ -445,11 +454,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("rod_extension_left", e.target.value)}
                     placeholder="8-10"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rod_extension_right" className="text-sm font-medium">Rod Extension Right (inches)</Label>
+                  <Label htmlFor="rod_extension_right" className="text-sm font-medium">Rod Extension Right</Label>
+                  <p className="text-xs text-gray-600 mb-1">How far rod extends beyond window right</p>
                   <Input
                     id="rod_extension_right"
                     type="number"
@@ -458,11 +467,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("rod_extension_right", e.target.value)}
                     placeholder="8-10"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="panel_overlap" className="text-sm font-medium">Panel Overlap (inches)</Label>
+                  <Label htmlFor="panel_overlap" className="text-sm font-medium">Panel Overlap</Label>
+                  <p className="text-xs text-gray-600 mb-1">How much panels overlap in center</p>
                   <Input
                     id="panel_overlap"
                     type="number"
@@ -471,11 +480,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("panel_overlap", e.target.value)}
                     placeholder="2-3"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="floor_clearance" className="text-sm font-medium">Floor Clearance (inches)</Label>
+                  <Label htmlFor="floor_clearance" className="text-sm font-medium">Floor Clearance</Label>
+                  <p className="text-xs text-gray-600 mb-1">Gap between curtain and floor</p>
                   <Input
                     id="floor_clearance"
                     type="number"
@@ -484,7 +493,6 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("floor_clearance", e.target.value)}
                     placeholder="0.5"
                     readOnly={readOnly}
-                    className="mt-1"
                   />
                 </div>
               </div>
