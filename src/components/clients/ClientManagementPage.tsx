@@ -9,6 +9,7 @@ import { ClientProfilePage } from "./ClientProfilePage";
 import { ClientListView } from "../crm/ClientListView";
 import { ClientFilters } from "./ClientFilters";
 import { ClientImportExport } from "./ClientImportExport";
+import { JobsPagination } from "../jobs/JobsPagination";
 
 export const ClientManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,6 +21,8 @@ export const ClientManagementPage = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [clientType, setClientType] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const { data: clients, isLoading } = useClients();
 
@@ -33,6 +36,12 @@ export const ClientManagementPage = () => {
     return matchesSearch && matchesType;
   }) || [];
 
+  // Pagination logic
+  const totalItems = filteredClients.length;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClients = filteredClients.slice(startIndex, endIndex);
+
   const handleClientClick = (client: any) => {
     setSelectedClient(client);
     setShowClientProfile(true);
@@ -43,6 +52,17 @@ export const ClientManagementPage = () => {
     setSelectedStatuses([]);
     setSelectedProjects([]);
     setClientType("all");
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to first page when filters change
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
   };
 
   // Show import/export if selected
@@ -88,7 +108,7 @@ export const ClientManagementPage = () => {
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-brand-primary">Clients</h1>
           <div className="bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full text-sm font-medium">
-            {clients?.length || 0} clients
+            {totalItems} clients
           </div>
         </div>
         
@@ -126,7 +146,7 @@ export const ClientManagementPage = () => {
         <div className="bg-gray-50 p-4 rounded-lg border">
           <ClientFilters
             searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
+            setSearchTerm={handleSearchChange}
             selectedStatuses={selectedStatuses}
             setSelectedStatuses={setSelectedStatuses}
             selectedProjects={selectedProjects}
@@ -140,10 +160,18 @@ export const ClientManagementPage = () => {
 
       {/* Client List */}
       <ClientListView
-        clients={filteredClients}
+        clients={paginatedClients}
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        onSearchChange={handleSearchChange}
         onClientClick={handleClientClick}
+      />
+
+      {/* Pagination */}
+      <JobsPagination
+        currentPage={currentPage}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
       />
 
       {/* New Client Dialog */}
