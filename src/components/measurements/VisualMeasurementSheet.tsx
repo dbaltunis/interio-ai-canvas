@@ -27,10 +27,14 @@ export const VisualMeasurementSheet = ({
   const curtainType = measurements.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
   const hardwareType = measurements.hardware_type || "rod";
+  const poolingOption = measurements.pooling_option || "above_floor";
+  const poolingAmount = measurements.pooling_amount || "";
 
   console.log("Current curtain type:", curtainType);
   console.log("Current curtain side:", curtainSide);
   console.log("Current hardware type:", hardwareType);
+  console.log("Current pooling option:", poolingOption);
+  console.log("Current pooling amount:", poolingAmount);
 
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {
@@ -41,6 +45,17 @@ export const VisualMeasurementSheet = ({
   const displayValue = (value: any) => {
     if (!hasValue(value)) return "";
     return `${value}"`;
+  };
+
+  // Calculate curtain bottom position based on pooling
+  const getCurtainBottomPosition = () => {
+    if (poolingOption === "touching_floor") {
+      return "bottom-4"; // Touching floor
+    } else if (poolingOption === "below_floor" && hasValue(poolingAmount)) {
+      return "bottom-0"; // Below floor level
+    } else {
+      return "bottom-12"; // Above floor (default)
+    }
   };
 
   return (
@@ -93,11 +108,11 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Curtain Panels - Dynamic based on curtain type and hardware type */}
+              {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
@@ -105,10 +120,15 @@ export const VisualMeasurementSheet = ({
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
                     <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
+                    
+                    {/* Pooling visual effect */}
+                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-red-500 opacity-60 rounded-b-lg"></div>
+                    )}
                   </div>
                   
                   {/* Right Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
@@ -116,11 +136,16 @@ export const VisualMeasurementSheet = ({
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
                     <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
+                    
+                    {/* Pooling visual effect */}
+                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-red-500 opacity-60 rounded-b-lg"></div>
+                    )}
                   </div>
                 </>
               ) : (
                 /* Single Panel */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
@@ -130,6 +155,11 @@ export const VisualMeasurementSheet = ({
                   <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
                   <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-red-200 opacity-10"></div>
                   <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-100 opacity-5"></div>
+                  
+                  {/* Pooling visual effect */}
+                  {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-red-500 opacity-60 rounded-b-lg"></div>
+                  )}
                 </div>
               )}
 
@@ -204,6 +234,19 @@ export const VisualMeasurementSheet = ({
                   Floor
                 </span>
               </div>
+
+              {/* Pooling measurement indicator */}
+              {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                <div className="absolute bottom-0 left-6 flex flex-col items-center">
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-amber-600"></div>
+                  <div className="h-4 border-l-2 border-amber-600 relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-amber-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                      Pooling: {displayValue(poolingAmount)}
+                    </span>
+                  </div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-amber-600"></div>
+                </div>
+              )}
 
               {/* Window to Floor measurement (D) */}
               {hasValue(measurements.measurement_d) && (
@@ -328,6 +371,56 @@ export const VisualMeasurementSheet = ({
                         <Label htmlFor="right">Right side</Label>
                       </div>
                     </RadioGroup>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pooling Configuration */}
+            <div className="border rounded-lg p-4 bg-amber-50">
+              <h4 className="font-medium mb-3 text-amber-800">Pooling Configuration</h4>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Pooling Position</Label>
+                  <RadioGroup 
+                    value={poolingOption} 
+                    onValueChange={(value) => {
+                      console.log("Pooling option changed to:", value);
+                      handleInputChange("pooling_option", value);
+                    }}
+                    disabled={readOnly}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="above_floor" id="above_floor" />
+                      <Label htmlFor="above_floor">Above floor (hanging)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="touching_floor" id="touching_floor" />
+                      <Label htmlFor="touching_floor">Touching floor</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="below_floor" id="below_floor" />
+                      <Label htmlFor="below_floor">Below floor (pooling)</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {poolingOption === "below_floor" && (
+                  <div>
+                    <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
+                    <p className="text-xs text-gray-600 mb-1">How much fabric pools on the floor</p>
+                    <Input
+                      id="pooling_amount"
+                      type="number"
+                      step="0.25"
+                      value={poolingAmount}
+                      onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
+                      placeholder="2.00"
+                      readOnly={readOnly}
+                      className="font-semibold"
+                    />
                   </div>
                 )}
               </div>

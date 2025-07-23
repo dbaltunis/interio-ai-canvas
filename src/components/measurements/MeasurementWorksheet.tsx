@@ -50,7 +50,7 @@ export const MeasurementWorksheet = ({
   const { data: windowCoverings = [] } = useWindowCoverings();
 
   // Define which fields are string-based (not numeric)
-  const stringFields = ['curtain_type', 'curtain_side', 'hardware_type'];
+  const stringFields = ['curtain_type', 'curtain_side', 'hardware_type', 'pooling_option'];
 
   const handleMeasurementChange = (field: string, value: string) => {
     if (readOnly) return;
