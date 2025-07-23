@@ -26,8 +26,8 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
     return (
       <div className="bg-white rounded-xl shadow-sm border-0 p-8">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto">
-            <Mail className="h-8 w-8 text-blue-600" />
+          <div className="w-16 h-16 bg-brand-secondary/20 rounded-full flex items-center justify-center mx-auto">
+            <Mail className="h-8 w-8 text-brand-primary" />
           </div>
           <h3 className="text-lg font-medium text-gray-900">Oops! Project not found</h3>
           <p className="text-gray-500">We couldn't find this project.</p>
@@ -40,8 +40,8 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
     return (
       <div className="bg-white rounded-xl shadow-sm border-0 p-8">
         <div className="text-center space-y-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto">
-            <Settings className="h-10 w-10 text-orange-600" />
+          <div className="w-20 h-20 bg-brand-accent/20 rounded-full flex items-center justify-center mx-auto">
+            <Settings className="h-10 w-10 text-brand-accent" />
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-gray-900">Connect Your Email</h3>
@@ -49,7 +49,7 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
               Ready to start sending emails? Let's get you connected!
             </p>
           </div>
-          <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 rounded-lg shadow-md">
+          <Button className="bg-brand-accent hover:bg-brand-accent/90 text-white px-6 py-2 rounded-lg shadow-md">
             <Sparkles className="h-4 w-4 mr-2" />
             Set Up Email
           </Button>
@@ -71,22 +71,22 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-sm border-0">
+      <div className="bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 rounded-xl p-6 shadow-sm border-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center">
               <MessageCircle className="h-6 w-6 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
               <p className="text-gray-600">
-                for <span className="font-medium text-blue-600">{project.name}</span>
+                for <span className="font-medium text-brand-primary">{project.name}</span>
               </p>
             </div>
           </div>
           <Button 
             onClick={() => setShowComposer(true)}
-            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg shadow-md"
+            className="bg-brand-secondary hover:bg-brand-secondary/90 text-white px-4 py-2 rounded-lg shadow-md"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Message
@@ -101,14 +101,14 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
             <TabsList className="bg-white rounded-lg p-1 shadow-sm">
               <TabsTrigger 
                 value="history" 
-                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-brand-primary data-[state=active]:text-white data-[state=active]:shadow-sm"
               >
                 <Clock className="h-4 w-4" />
                 <span className="hidden sm:inline">Recent</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="templates" 
-                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-brand-accent data-[state=active]:text-white data-[state=active]:shadow-sm"
               >
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Templates</span>
@@ -123,8 +123,8 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
 
             <TabsContent value="templates" className="mt-0">
               <div className="text-center py-16 space-y-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto">
-                  <Sparkles className="h-10 w-10 text-purple-600" />
+                <div className="w-20 h-20 bg-brand-accent/20 rounded-full flex items-center justify-center mx-auto">
+                  <Sparkles className="h-10 w-10 text-brand-accent" />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-semibold text-gray-900">Message Templates</h3>
@@ -132,7 +132,7 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
                     Save time with reusable message templates for common communications.
                   </p>
                 </div>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg shadow-md">
+                <Button className="bg-brand-accent hover:bg-brand-accent/90 text-white px-6 py-2 rounded-lg shadow-md">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Template
                 </Button>
