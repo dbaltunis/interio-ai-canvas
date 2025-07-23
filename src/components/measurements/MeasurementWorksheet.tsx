@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,12 +49,28 @@ export const MeasurementWorksheet = ({
   const { data: rooms = [] } = useRooms(projectId);
   const { data: windowCoverings = [] } = useWindowCoverings();
 
+  // Define which fields are string-based (not numeric)
+  const stringFields = ['curtain_type', 'curtain_side', 'hardware_type'];
+
   const handleMeasurementChange = (field: string, value: string) => {
     if (readOnly) return;
-    setMeasurements(prev => ({
-      ...prev,
-      [field]: parseFloat(value) || 0
-    }));
+    
+    console.log(`Changing ${field} to:`, value);
+    
+    setMeasurements(prev => {
+      const newMeasurements = { ...prev };
+      
+      // For string fields, keep as string
+      if (stringFields.includes(field)) {
+        newMeasurements[field] = value;
+      } else {
+        // For numeric fields, convert to number
+        newMeasurements[field] = parseFloat(value) || 0;
+      }
+      
+      console.log(`New measurements:`, newMeasurements);
+      return newMeasurements;
+    });
   };
 
   const handleSave = async () => {
