@@ -57,14 +57,17 @@ export const VisualMeasurementSheet = ({
                   <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs">
                     Drapery Rod
                   </span>
-                  {/* Rail width measurement */}
-                  {measurements.rail_width && (
-                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-red-600">
-                      {displayValue(measurements.rail_width)}
-                    </span>
-                  )}
                 </div>
               </div>
+
+              {/* Rail Width measurement - above the rod */}
+              {measurements.rail_width && (
+                <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-xs">
+                  <span className="bg-white px-2 border rounded font-semibold text-red-600">
+                    Rail: {displayValue(measurements.rail_width)}
+                  </span>
+                </div>
+              )}
 
               {/* Rod to Ceiling measurement (C) */}
               {measurements.measurement_c && (
@@ -109,9 +112,9 @@ export const VisualMeasurementSheet = ({
               {/* Curtain Panels */}
               {curtainType === "pair" ? (
                 <>
-                  {/* Left Panel */}
-                  <div className="absolute top-18 left-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
+                  {/* Left Panel - attached to rod */}
+                  <div className="absolute top-16 left-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
@@ -120,9 +123,9 @@ export const VisualMeasurementSheet = ({
                     </span>
                   </div>
                   
-                  {/* Right Panel */}
-                  <div className="absolute top-18 right-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
+                  {/* Right Panel - attached to rod */}
+                  <div className="absolute top-16 right-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
@@ -132,9 +135,9 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </>
               ) : (
-                /* Single Panel */
-                <div className={`absolute top-18 ${curtainSide === "left" ? "left-4" : "right-4"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
-                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
+                /* Single Panel - attached to rod */
+                <div className={`absolute top-16 ${curtainSide === "left" ? "left-4" : "right-4"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                   <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                   <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
@@ -147,12 +150,12 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Curtain Drop measurement */}
+              {/* Curtain Drop measurement - on the right side */}
               {measurements.drop && (
-                <div className="absolute top-18 right-2 text-xs">
-                  <div className="flex items-center gap-1">
+                <div className="absolute top-16 right-2 text-xs">
+                  <div className="flex flex-col items-center gap-1">
                     <div className="w-px h-48 bg-red-600"></div>
-                    <span className="font-semibold text-red-600 transform rotate-90 whitespace-nowrap">
+                    <span className="font-semibold text-red-600 -rotate-90 whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
