@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
+import { EnhancedMeasurementWorksheet } from "../measurements/EnhancedMeasurementWorksheet";
 import { WindowVisualization } from "./WindowVisualization";
 import { TreatmentSelector } from "./TreatmentSelector";
 
@@ -198,24 +197,29 @@ export const VisualRoomCard = ({
         </CardContent>
       </Card>
 
-      {/* Measurement Dialog */}
+      {/* Enhanced Measurement Dialog */}
       <Dialog open={showMeasurement} onOpenChange={setShowMeasurement}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>
-              Measure {selectedWindow?.name} - {room.name}
+              Configure Treatment - {selectedWindow?.name}
             </DialogTitle>
           </DialogHeader>
-          {selectedWindow && (
-            <MeasurementWorksheet
-              clientId={clientId || ""}
-              projectId={room.project_id}
-              existingMeasurement={clientMeasurements.find(m => 
-                m.room_id === room.id
-              )}
-              onSave={() => setShowMeasurement(false)}
-            />
-          )}
+          <div className="overflow-y-auto max-h-[85vh]">
+            {selectedWindow && (
+              <EnhancedMeasurementWorksheet
+                clientId={clientId || ""}
+                projectId={room.project_id}
+                roomId={room.id}
+                surfaceId={selectedWindow.id}
+                surfaceName={selectedWindow.name}
+                existingMeasurement={clientMeasurements.find(m => 
+                  m.room_id === room.id && m.measurements?.surface_id === selectedWindow.id
+                )}
+                onSave={() => setShowMeasurement(false)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
