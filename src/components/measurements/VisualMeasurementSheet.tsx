@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -21,6 +22,9 @@ export const VisualMeasurementSheet = ({
       onMeasurementChange(field, value);
     }
   };
+
+  const curtainType = measurements.curtain_type || "pair";
+  const curtainSide = measurements.curtain_side || "left";
 
   return (
     <Card className="w-full">
@@ -70,17 +74,37 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Curtain Panels */}
-              <div className="absolute top-20 left-8 w-6 bottom-12 bg-gradient-to-r from-blue-200 to-blue-300 opacity-70 rounded">
-                <span className="absolute -left-8 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs">
-                  Left Panel
-                </span>
-              </div>
-              <div className="absolute top-20 right-8 w-6 bottom-12 bg-gradient-to-r from-blue-200 to-blue-300 opacity-70 rounded">
-                <span className="absolute -right-8 top-1/2 transform -translate-y-1/2 rotate-90 text-xs">
-                  Right Panel
-                </span>
-              </div>
+              {/* Dynamic Curtain Panels */}
+              {curtainType === "pair" ? (
+                <>
+                  {/* Left Panel */}
+                  <div className="absolute top-20 left-8 w-6 bottom-12 bg-gradient-to-r from-blue-400 to-blue-600 opacity-80 rounded shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-30"></div>
+                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-800 opacity-50"></div>
+                    <span className="absolute -left-8 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-blue-800">
+                      Left Panel
+                    </span>
+                  </div>
+                  {/* Right Panel */}
+                  <div className="absolute top-20 right-8 w-6 bottom-12 bg-gradient-to-r from-blue-400 to-blue-600 opacity-80 rounded shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-30"></div>
+                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-800 opacity-50"></div>
+                    <span className="absolute -right-8 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-blue-800">
+                      Right Panel
+                    </span>
+                  </div>
+                </>
+              ) : (
+                /* Single Panel */
+                <div className={`absolute top-20 ${curtainSide === "left" ? "left-8" : "right-8"} w-12 bottom-12 bg-gradient-to-r from-blue-400 to-blue-600 opacity-80 rounded shadow-lg`}>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-30"></div>
+                  <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-blue-800 opacity-50"></div>
+                  <div className="absolute top-4 bottom-4 left-4 right-4 border-l border-blue-700 opacity-30"></div>
+                  <span className={`absolute ${curtainSide === "left" ? "-left-12" : "-right-12"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-blue-800`}>
+                    Single Panel
+                  </span>
+                </div>
+              )}
 
               {/* Floor Line */}
               <div className="absolute bottom-4 left-8 right-8 border-t-2 border-gray-800">
@@ -117,6 +141,54 @@ export const VisualMeasurementSheet = ({
 
           {/* Measurement Inputs */}
           <div className="flex-1 space-y-4">
+            {/* Curtain Configuration */}
+            <div className="border rounded-lg p-4 bg-blue-50">
+              <h4 className="font-medium mb-3 text-blue-800">Curtain Configuration</h4>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Curtain Type</Label>
+                  <RadioGroup 
+                    value={curtainType} 
+                    onValueChange={(value) => handleInputChange("curtain_type", value)}
+                    className="mt-2"
+                    disabled={readOnly}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="pair" id="pair" />
+                      <Label htmlFor="pair" className="text-sm">Pair (Two panels)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="single" />
+                      <Label htmlFor="single" className="text-sm">Single (One panel)</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {curtainType === "single" && (
+                  <div>
+                    <Label className="text-sm font-medium">Panel Position</Label>
+                    <RadioGroup 
+                      value={curtainSide} 
+                      onValueChange={(value) => handleInputChange("curtain_side", value)}
+                      className="mt-2"
+                      disabled={readOnly}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="left" id="left" />
+                        <Label htmlFor="left" className="text-sm">Left side</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="right" id="right" />
+                        <Label htmlFor="right" className="text-sm">Right side</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Basic Measurements */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="measurement_a">A - Window Width (inches)</Label>
