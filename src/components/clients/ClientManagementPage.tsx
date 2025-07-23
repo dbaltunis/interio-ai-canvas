@@ -1,0 +1,140 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus, Filter } from "lucide-react";
+import { useClients } from "@/hooks/useClients";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ClientCreateForm } from "./ClientCreateForm";
+import { ClientProfilePage } from "./ClientProfilePage";
+import { ClientListView } from "../crm/ClientListView";
+import { ClientFilters } from "./ClientFilters";
+
+export const ClientManagementPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showClientProfile, setShowClientProfile] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [clientType, setClientType] = useState("all");
+
+  const { data: clients, isLoading } = useClients();
+
+  const filteredClients = clients?.filter(client => {
+    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = clientType === 'all' || client.client_type === clientType;
+    
+    return matchesSearch && matchesType;
+  }) || [];
+
+  const handleClientClick = (client: any) => {
+    setSelectedClient(client);
+    setShowClientProfile(true);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedStatuses([]);
+    setSelectedProjects([]);
+    setClientType("all");
+  };
+
+  // Show client profile if selected
+  if (showClientProfile && selectedClient) {
+    return (
+      <ClientProfilePage
+        clientId={selectedClient.id}
+        onBack={() => {
+          setShowClientProfile(false);
+          setSelectedClient(null);
+        }}
+        onEdit={() => {
+          console.log("Edit client:", selectedClient);
+        }}
+      />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+          <p className="text-gray-600">Loading clients...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-brand-primary">Clients</h1>
+          <div className="bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full text-sm font-medium">
+            {clients?.length || 0} clients
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+          
+          <Button 
+            onClick={() => setShowCreateForm(true)}
+            className="bg-brand-primary hover:bg-brand-accent text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Client
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      {showFilters && (
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <ClientFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedStatuses={selectedStatuses}
+            setSelectedStatuses={setSelectedStatuses}
+            selectedProjects={selectedProjects}
+            setSelectedProjects={setSelectedProjects}
+            clientType={clientType}
+            setClientType={setClientType}
+            onClearFilters={clearFilters}
+          />
+        </div>
+      )}
+
+      {/* Client List */}
+      <ClientListView
+        clients={filteredClients}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onClientClick={handleClientClick}
+      />
+
+      {/* New Client Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+          </DialogHeader>
+          <ClientCreateForm onBack={() => setShowCreateForm(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};

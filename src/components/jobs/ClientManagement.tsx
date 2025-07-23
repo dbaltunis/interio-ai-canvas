@@ -1,8 +1,8 @@
 
-import { CRMDashboard } from "../crm/CRMDashboard";
+import { ClientManagementPage } from "../clients/ClientManagementPage";
 
 export const ClientManagement = () => {
-  return <CRMDashboard />;
+  return <ClientManagementPage />;
 };
 
 export default ClientManagement;

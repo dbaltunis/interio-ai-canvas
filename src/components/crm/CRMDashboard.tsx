@@ -1,6 +1,6 @@
 
-import { ClientFunnelDashboard } from "./ClientFunnelDashboard";
+import { ClientManagementPage } from "../clients/ClientManagementPage";
 
 export const CRMDashboard = () => {
-  return <ClientFunnelDashboard />;
+  return <ClientManagementPage />;
 };
