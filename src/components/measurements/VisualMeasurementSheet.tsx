@@ -19,12 +19,16 @@ export const VisualMeasurementSheet = ({
 }: VisualMeasurementSheetProps) => {
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
+      console.log(`Changing ${field} to:`, value);
       onMeasurementChange(field, value);
     }
   };
 
   const curtainType = measurements.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
+
+  console.log("Current curtain type:", curtainType);
+  console.log("Current curtain side:", curtainSide);
 
   // Helper function to display measurement values
   const displayValue = (value: any) => {
@@ -60,11 +64,11 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Rail Width measurement - above the rod */}
+              {/* Rail Width measurement - positioned above the rod */}
               {measurements.rail_width && (
-                <div className="absolute top-6 left-1/2 transform -translate-x-1/2 text-xs">
-                  <span className="bg-white px-2 border rounded font-semibold text-red-600">
-                    Rail: {displayValue(measurements.rail_width)}
+                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs">
+                  <span className="bg-yellow-200 px-2 py-1 border rounded font-semibold text-black">
+                    Rail Width: {displayValue(measurements.rail_width)}
                   </span>
                 </div>
               )}
@@ -109,34 +113,40 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Curtain Panels - Dynamic based on curtain type and positioned more inside */}
+              {/* Curtain Panels - Dynamic based on curtain type */}
               {curtainType === "pair" ? (
                 <>
-                  {/* Left Panel - moved more inside */}
-                  <div className="absolute top-16 left-8 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  {/* Left Panel */}
+                  <div className="absolute top-16 left-20 w-16 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
-                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-red-800">
+                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
+                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
+                    <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-red-800">
                       Left Panel
                     </span>
                   </div>
                   
-                  {/* Right Panel - moved more inside */}
-                  <div className="absolute top-16 right-8 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  {/* Right Panel */}
+                  <div className="absolute top-16 right-20 w-16 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
-                    <span className="absolute -right-16 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-red-800">
+                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
+                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
+                    <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
+                    <span className="absolute -right-20 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-red-800">
                       Right Panel
                     </span>
                   </div>
                 </>
               ) : (
-                /* Single Panel - moved more inside */
-                <div className={`absolute top-16 ${curtainSide === "left" ? "left-8" : "right-8"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                /* Single Panel */
+                <div className={`absolute top-16 ${curtainSide === "left" ? "left-20" : "right-20"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                   <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
@@ -144,18 +154,20 @@ export const VisualMeasurementSheet = ({
                   <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
                   <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
                   <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
-                  <span className={`absolute ${curtainSide === "left" ? "-left-18" : "-right-18"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-red-800`}>
+                  <div className="absolute top-2 bottom-2 left-14 w-0.5 bg-red-200 opacity-10"></div>
+                  <div className="absolute top-2 bottom-2 left-16 w-0.5 bg-red-100 opacity-8"></div>
+                  <span className={`absolute ${curtainSide === "left" ? "-left-24" : "-right-24"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-red-800`}>
                     Single Panel
                   </span>
                 </div>
               )}
 
-              {/* Curtain Drop measurement - repositioned to avoid panel overlap */}
+              {/* Curtain Drop measurement - positioned to avoid panel overlap */}
               {measurements.drop && (
-                <div className="absolute top-16 right-32 text-xs">
+                <div className="absolute top-16 left-4 text-xs">
                   <div className="flex flex-col items-center gap-1">
-                    <div className="w-px h-48 bg-red-600"></div>
-                    <span className="font-semibold text-red-600 -rotate-90 whitespace-nowrap">
+                    <div className="w-px h-48 bg-blue-600"></div>
+                    <span className="font-semibold text-blue-600 -rotate-90 whitespace-nowrap bg-blue-100 px-2 py-1 rounded">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
@@ -218,15 +230,14 @@ export const VisualMeasurementSheet = ({
               
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Curtain Type</Label>
+                  <Label className="text-sm font-medium mb-2 block">Curtain Type</Label>
                   <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
-                      console.log("Curtain type changed to:", value);
+                      console.log("RadioGroup onValueChange triggered with value:", value);
                       handleInputChange("curtain_type", value);
                     }}
-                    className="mt-2"
-                    disabled={readOnly}
+                    className="space-y-2"
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="pair" id="pair" />
@@ -241,15 +252,14 @@ export const VisualMeasurementSheet = ({
 
                 {curtainType === "single" && (
                   <div>
-                    <Label className="text-sm font-medium">Panel Position</Label>
+                    <Label className="text-sm font-medium mb-2 block">Panel Position</Label>
                     <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
-                        console.log("Curtain side changed to:", value);
+                        console.log("Panel side RadioGroup onValueChange triggered with value:", value);
                         handleInputChange("curtain_side", value);
                       }}
-                      className="mt-2"
-                      disabled={readOnly}
+                      className="space-y-2"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="left" id="left" />
@@ -270,7 +280,7 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3 text-green-800">Main Measurements (for Calculator)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rail_width">Rail Width (inches)</Label>
+                  <Label htmlFor="rail_width" className="text-sm font-medium">Rail Width (inches)</Label>
                   <Input
                     id="rail_width"
                     type="number"
@@ -279,11 +289,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("rail_width", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="font-semibold"
+                    className="font-semibold mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="drop">Curtain Drop (inches)</Label>
+                  <Label htmlFor="drop" className="text-sm font-medium">Curtain Drop (inches)</Label>
                   <Input
                     id="drop"
                     type="number"
@@ -292,7 +302,7 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("drop", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
-                    className="font-semibold"
+                    className="font-semibold mt-1"
                   />
                 </div>
               </div>
@@ -303,7 +313,7 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3">Detailed Window Measurements</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="measurement_a">A - Window Width (inches)</Label>
+                  <Label htmlFor="measurement_a" className="text-sm font-medium">A - Window Width (inches)</Label>
                   <Input
                     id="measurement_a"
                     type="number"
@@ -312,10 +322,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_a", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_b">B - Window Height (inches)</Label>
+                  <Label htmlFor="measurement_b" className="text-sm font-medium">B - Window Height (inches)</Label>
                   <Input
                     id="measurement_b"
                     type="number"
@@ -324,10 +335,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_b", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_c">C - Rod to Ceiling (inches)</Label>
+                  <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling (inches)</Label>
                   <Input
                     id="measurement_c"
                     type="number"
@@ -336,10 +348,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_c", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_d">D - Window to Floor (inches)</Label>
+                  <Label htmlFor="measurement_d" className="text-sm font-medium">D - Window to Floor (inches)</Label>
                   <Input
                     id="measurement_d"
                     type="number"
@@ -348,10 +361,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_d", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_e">E - Total Height (inches)</Label>
+                  <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height (inches)</Label>
                   <Input
                     id="measurement_e"
                     type="number"
@@ -360,10 +374,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_e", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="measurement_f">F - Total Width (inches)</Label>
+                  <Label htmlFor="measurement_f" className="text-sm font-medium">F - Total Width (inches)</Label>
                   <Input
                     id="measurement_f"
                     type="number"
@@ -372,6 +387,7 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("measurement_f", e.target.value)}
                     placeholder="0.00"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
               </div>
@@ -382,7 +398,7 @@ export const VisualMeasurementSheet = ({
               <h4 className="font-medium mb-3">Additional Measurements (for Curtain Makers)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="rod_extension_left">Rod Extension Left (inches)</Label>
+                  <Label htmlFor="rod_extension_left" className="text-sm font-medium">Rod Extension Left (inches)</Label>
                   <Input
                     id="rod_extension_left"
                     type="number"
@@ -391,10 +407,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("rod_extension_left", e.target.value)}
                     placeholder="8-10"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="rod_extension_right">Rod Extension Right (inches)</Label>
+                  <Label htmlFor="rod_extension_right" className="text-sm font-medium">Rod Extension Right (inches)</Label>
                   <Input
                     id="rod_extension_right"
                     type="number"
@@ -403,10 +420,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("rod_extension_right", e.target.value)}
                     placeholder="8-10"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="panel_overlap">Panel Overlap (inches)</Label>
+                  <Label htmlFor="panel_overlap" className="text-sm font-medium">Panel Overlap (inches)</Label>
                   <Input
                     id="panel_overlap"
                     type="number"
@@ -415,10 +433,11 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("panel_overlap", e.target.value)}
                     placeholder="2-3"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="floor_clearance">Floor Clearance (inches)</Label>
+                  <Label htmlFor="floor_clearance" className="text-sm font-medium">Floor Clearance (inches)</Label>
                   <Input
                     id="floor_clearance"
                     type="number"
@@ -427,6 +446,7 @@ export const VisualMeasurementSheet = ({
                     onChange={(e) => handleInputChange("floor_clearance", e.target.value)}
                     placeholder="0.5"
                     readOnly={readOnly}
+                    className="mt-1"
                   />
                 </div>
               </div>
