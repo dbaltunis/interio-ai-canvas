@@ -9,9 +9,10 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useActiveQuoteTemplates } from "@/hooks/useDocumentTemplates";
+import { useQuotes } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff, Settings } from "lucide-react";
+import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 
 interface QuotationTabProps {
@@ -25,11 +26,15 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
   const { data: activeTemplates, isLoading: templatesLoading } = useActiveQuoteTemplates();
+  const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
 
   const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
   const project = projects?.find(p => p.id === projectId);
+  
+  // Filter quotes for this specific project
+  const projectQuotes = quotes.filter(quote => quote.project_id === projectId);
 
   // Set default template when templates load
   useEffect(() => {
@@ -73,6 +78,13 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     });
   };
 
+  const handleCreateNewQuote = () => {
+    toast({
+      title: "Create New Quote",
+      description: "New quote creation functionality would be implemented here",
+    });
+  };
+
   const actionMenuItems = [
     {
       label: "Add Discount",
@@ -102,10 +114,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     );
   }
 
-  if (templatesLoading) {
+  if (templatesLoading || quotesLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Loading templates...</div>
+        <div className="text-muted-foreground">Loading templates and quotes...</div>
       </div>
     );
   }
@@ -138,9 +150,9 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       {/* Modern Compact Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Project Quote</h2>
+          <h2 className="text-xl font-semibold">Project Quotation</h2>
           <p className="text-muted-foreground text-sm">
-            Generate professional quotes using your templates
+            Manage quotes and generate professional documents
           </p>
         </div>
         
@@ -162,6 +174,17 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Create New Quote Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCreateNewQuote}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Quote</span>
+          </Button>
 
           {/* Template Settings Button */}
           <Button
@@ -194,12 +217,65 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         </div>
       </div>
 
+      {/* Active Quotes Display */}
+      {projectQuotes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Active Quotes for this Project</span>
+              <Badge variant="secondary">{projectQuotes.length} quote{projectQuotes.length > 1 ? 's' : ''}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projectQuotes.map((quote) => (
+                <Card key={quote.id} className="border-2 hover:border-brand-primary/20 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium">{quote.quote_number}</h3>
+                      <Badge 
+                        variant="outline" 
+                        className={`
+                          ${quote.status === 'draft' ? 'bg-gray-100 text-gray-800' : ''}
+                          ${quote.status === 'sent' ? 'bg-blue-100 text-blue-800' : ''}
+                          ${quote.status === 'approved' ? 'bg-green-100 text-green-800' : ''}
+                          ${quote.status === 'rejected' ? 'bg-red-100 text-red-800' : ''}
+                        `}
+                      >
+                        {quote.status}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>Total: ${quote.total_amount?.toFixed(2) || '0.00'}</p>
+                      <p>Created: {new Date(quote.created_at).toLocaleDateString()}</p>
+                      {quote.valid_until && (
+                        <p>Valid until: {new Date(quote.valid_until).toLocaleDateString()}</p>
+                      )}
+                    </div>
+                    <div className="mt-3 flex space-x-2">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Mail className="h-3 w-3 mr-1" />
+                        Send
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quote Document Preview */}
       {selectedTemplate && (
         <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Quote Document</CardTitle>
+              <CardTitle className="text-lg">Quote Document Preview</CardTitle>
               <div className="text-sm text-muted-foreground">
                 Using: <strong>{selectedTemplate.name}</strong>
               </div>
