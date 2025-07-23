@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,7 +61,7 @@ export const VisualMeasurementSheet = ({
 
               {/* Rail Width measurement - above the rod */}
               {measurements.rail_width && (
-                <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-xs">
+                <div className="absolute top-6 left-1/2 transform -translate-x-1/2 text-xs">
                   <span className="bg-white px-2 border rounded font-semibold text-red-600">
                     Rail: {displayValue(measurements.rail_width)}
                   </span>
@@ -109,10 +108,10 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Curtain Panels */}
+              {/* Curtain Panels - Dynamic based on curtain type */}
               {curtainType === "pair" ? (
                 <>
-                  {/* Left Panel - attached to rod */}
+                  {/* Left Panel */}
                   <div className="absolute top-16 left-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
@@ -123,7 +122,7 @@ export const VisualMeasurementSheet = ({
                     </span>
                   </div>
                   
-                  {/* Right Panel - attached to rod */}
+                  {/* Right Panel */}
                   <div className="absolute top-16 right-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
@@ -135,7 +134,7 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </>
               ) : (
-                /* Single Panel - attached to rod */
+                /* Single Panel */
                 <div className={`absolute top-16 ${curtainSide === "left" ? "left-4" : "right-4"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
@@ -150,7 +149,7 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Curtain Drop measurement - on the right side */}
+              {/* Curtain Drop measurement */}
               {measurements.drop && (
                 <div className="absolute top-16 right-2 text-xs">
                   <div className="flex flex-col items-center gap-1">
