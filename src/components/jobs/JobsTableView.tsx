@@ -33,12 +33,15 @@ import {
 import { JobNotesDialog } from "./JobNotesDialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmailStatusDisplay } from "./EmailStatusDisplay";
+import { JobsPagination } from "./JobsPagination";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
   searchTerm: string;
   statusFilter: string;
 }
+
+const ITEMS_PER_PAGE = 20;
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
   const { data: quotes = [], isLoading } = useQuotes();
@@ -50,6 +53,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredQuotes = quotes.filter((quote) => {
     const matchesSearch = 
@@ -61,6 +65,22 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination logic
+  const totalItems = filteredQuotes.length;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedQuotes = filteredQuotes.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Reset page when search or filter changes
+  useState(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -149,14 +169,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   };
 
   const getCurrentStatus = (quote: any) => {
-    // Prioritize project status if available, fallback to quote status
     return quote.projects?.status || quote.status || 'draft';
   };
 
   const getEmailStatus = (quote: any) => {
-    // This is mock data - replace with actual email tracking data
     const mockEmailData = {
-      hasEmails: Math.random() > 0.3, // 70% chance of having emails
+      hasEmails: Math.random() > 0.3,
       totalSent: Math.floor(Math.random() * 5) + 1,
       lastStatus: ['sent', 'opened', 'sent'][Math.floor(Math.random() * 3)]
     };
@@ -185,7 +203,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     const quote = quotes.find(q => q.id === jobId);
     if (quote) {
       try {
-        // Create a copy by updating status to maintain current functionality
         console.log("Copying job:", jobId);
         toast({
           title: "Job Copied",
@@ -256,7 +273,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredQuotes.map((quote) => {
+            {paginatedQuotes.map((quote) => {
               const clientName = getClientName(quote);
               const client = getClientForQuote(quote);
               const currentStatus = getCurrentStatus(quote);
@@ -359,6 +376,13 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
             })}
           </TableBody>
         </Table>
+
+        <JobsPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={handlePageChange}
+        />
       </div>
 
       {/* Delete Confirmation Dialog */}
