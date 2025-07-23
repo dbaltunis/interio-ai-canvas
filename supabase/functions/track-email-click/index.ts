@@ -27,12 +27,33 @@ serve(async (req: Request) => {
 
     console.log("Tracking email click for ID:", emailId, "URL:", targetUrl);
 
-    // Update email click count
+    // Update email click count and status
+    const { data: emailData, error: fetchError } = await supabase
+      .from("emails")
+      .select("click_count, status")
+      .eq("id", emailId)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching email:", fetchError);
+      // Still redirect even if tracking fails
+      return new Response(null, {
+        status: 302,
+        headers: {
+          "Location": targetUrl,
+          ...corsHeaders,
+        },
+      });
+    }
+
+    const newClickCount = (emailData.click_count || 0) + 1;
+    const newStatus = ['sent', 'opened'].includes(emailData.status) ? 'clicked' : emailData.status;
+
     const { error: updateError } = await supabase
       .from("emails")
       .update({
-        click_count: supabase.raw("click_count + 1"),
-        status: "clicked"
+        click_count: newClickCount,
+        status: newStatus
       })
       .eq("id", emailId);
 
@@ -46,9 +67,13 @@ serve(async (req: Request) => {
       .insert({
         email_id: emailId,
         event_type: "clicked",
-        ip_address: req.headers.get("x-forwarded-for") || "unknown",
+        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
         user_agent: req.headers.get("user-agent") || "unknown",
-        event_data: { target_url: targetUrl }
+        event_data: { 
+          target_url: targetUrl,
+          timestamp: new Date().toISOString(),
+          click_count: newClickCount
+        }
       });
 
     if (analyticsError) {
@@ -65,6 +90,19 @@ serve(async (req: Request) => {
     });
   } catch (error) {
     console.error("Error in track-email-click:", error);
+    
+    // Still redirect even if tracking fails
+    const targetUrl = new URL(req.url).searchParams.get("url");
+    if (targetUrl) {
+      return new Response(null, {
+        status: 302,
+        headers: {
+          "Location": targetUrl,
+          ...corsHeaders,
+        },
+      });
+    }
+    
     return new Response("Error", { status: 500, headers: corsHeaders });
   }
 });

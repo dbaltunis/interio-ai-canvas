@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Mail, RefreshCw, Loader2, Plus, Search, Filter, X } from "lucide-react";
+import { Mail, RefreshCw, Loader2, Plus, Search, Filter, X, Eye, MousePointer } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import { EmailDetailDialog } from "./EmailDetailDialog";
 import { useQueryClient } from "@tanstack/react-query";
@@ -249,7 +248,15 @@ export const EmailHistoryTab = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm font-medium">{email.open_count || 0}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium">{email.open_count || 0}</div>
+                          {email.open_count > 0 && (
+                            <Eye className="h-3 w-3 text-purple-600" />
+                          )}
+                          {email.click_count > 0 && (
+                            <MousePointer className="h-3 w-3 text-orange-600" />
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

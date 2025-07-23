@@ -26,12 +26,26 @@ serve(async (req: Request) => {
 
     console.log("Tracking email open for ID:", emailId);
 
-    // Update email open count and timestamp
+    // Update email open count and status
+    const { data: emailData, error: fetchError } = await supabase
+      .from("emails")
+      .select("open_count, status")
+      .eq("id", emailId)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching email:", fetchError);
+      return new Response("Email not found", { status: 404 });
+    }
+
+    const newOpenCount = (emailData.open_count || 0) + 1;
+    const newStatus = emailData.status === 'sent' ? 'opened' : emailData.status;
+
     const { error: updateError } = await supabase
       .from("emails")
       .update({
-        open_count: supabase.raw("open_count + 1"),
-        status: "opened"
+        open_count: newOpenCount,
+        status: newStatus
       })
       .eq("id", emailId);
 
@@ -45,9 +59,12 @@ serve(async (req: Request) => {
       .insert({
         email_id: emailId,
         event_type: "opened",
-        ip_address: req.headers.get("x-forwarded-for") || "unknown",
+        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
         user_agent: req.headers.get("user-agent") || "unknown",
-        event_data: {}
+        event_data: {
+          timestamp: new Date().toISOString(),
+          open_count: newOpenCount
+        }
       });
 
     if (analyticsError) {
@@ -65,11 +82,27 @@ serve(async (req: Request) => {
       headers: {
         "Content-Type": "image/gif",
         "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
         ...corsHeaders,
       },
     });
   } catch (error) {
     console.error("Error in track-email-open:", error);
-    return new Response("Error", { status: 500, headers: corsHeaders });
+    
+    // Still return a pixel even if tracking fails
+    const pixelData = new Uint8Array([
+      0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0xff, 0xff, 0xff,
+      0x00, 0x00, 0x00, 0x21, 0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00,
+      0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x04, 0x01, 0x00, 0x3b
+    ]);
+
+    return new Response(pixelData, {
+      headers: {
+        "Content-Type": "image/gif",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        ...corsHeaders,
+      },
+    });
   }
 });

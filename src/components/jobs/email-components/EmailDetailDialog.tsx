@@ -3,8 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw } from "lucide-react";
+import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
+import { useClients } from "@/hooks/useClients";
+import { useProjects } from "@/hooks/useProjects";
+import { useNavigate } from "react-router-dom";
 import type { Email } from "@/hooks/useEmails";
 
 interface EmailDetailDialogProps {
@@ -16,15 +19,35 @@ interface EmailDetailDialogProps {
 }
 
 export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, isResending }: EmailDetailDialogProps) => {
+  const { data: clients = [] } = useClients();
+  const { data: projects = [] } = useProjects();
+  const navigate = useNavigate();
+
   if (!email) return null;
+
+  const client = email.client_id ? clients.find(c => c.id === email.client_id) : null;
+  const clientProjects = client ? projects.filter(p => p.client_id === client.id) : [];
+  const activeProjects = clientProjects.filter(p => !['completed', 'cancelled'].includes(p.status));
+
+  const handleViewClient = () => {
+    if (client) {
+      navigate(`/clients/${client.id}`);
+      onOpenChange(false);
+    }
+  };
+
+  const handleViewProject = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Email Details
+            Email Communication Details
           </DialogTitle>
         </DialogHeader>
         
@@ -40,12 +63,103 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(email.created_at).toLocaleString()}</span>
+                  <span>Sent: {email.sent_at ? new Date(email.sent_at).toLocaleString() : 'Not sent'}</span>
                 </div>
                 <EmailStatusBadge status={email.status || 'queued'} />
               </div>
             </CardHeader>
           </Card>
+
+          {/* Client Information */}
+          {client && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Client Information
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleViewClient}>
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    View Client
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold text-lg">{client.name}</h4>
+                    {client.company_name && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Building className="h-4 w-4" />
+                        {client.company_name}
+                      </div>
+                    )}
+                    {client.phone && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        {client.phone}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {client.address && (
+                      <div className="flex items-start gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 mt-0.5" />
+                        <div>
+                          <div>{client.address}</div>
+                          <div>{client.city}, {client.state} {client.zip_code}</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <Badge variant="outline">{client.funnel_stage}</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Projects Information */}
+          {clientProjects.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Projects ({clientProjects.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {clientProjects.map((project) => (
+                    <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{project.name}</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Badge variant="outline" className="text-xs">
+                            {project.status}
+                          </Badge>
+                          <span>•</span>
+                          <span>{project.funnel_stage}</span>
+                          {project.due_date && (
+                            <>
+                              <span>•</span>
+                              <span>Due: {new Date(project.due_date).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => handleViewProject(project.id)}>
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        View Project
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Email Analytics */}
           <div className="grid grid-cols-3 gap-4">
@@ -56,6 +170,9 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <span className="text-2xl font-bold text-purple-600">{email.open_count || 0}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">Opens</div>
+                {email.open_count > 0 && (
+                  <div className="text-xs text-green-600 mt-1">Email was opened</div>
+                )}
               </CardContent>
             </Card>
             
@@ -66,6 +183,9 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <span className="text-2xl font-bold text-orange-600">{email.click_count || 0}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">Clicks</div>
+                {email.click_count > 0 && (
+                  <div className="text-xs text-green-600 mt-1">Links were clicked</div>
+                )}
               </CardContent>
             </Card>
             
@@ -80,6 +200,96 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             </Card>
           </div>
 
+          {/* Email Activity Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Activity Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div>
+                    <div className="font-medium">Email Created</div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(email.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                
+                {email.sent_at && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium">Email Sent</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(email.sent_at).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {email.status === 'delivered' && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium">Email Delivered</div>
+                      <div className="text-sm text-muted-foreground">Successfully delivered to recipient</div>
+                    </div>
+                  </div>
+                )}
+
+                {email.open_count > 0 && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium">Email Opened</div>
+                      <div className="text-sm text-muted-foreground">
+                        Opened {email.open_count} time{email.open_count > 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {email.click_count > 0 && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium">Links Clicked</div>
+                      <div className="text-sm text-muted-foreground">
+                        Clicked {email.click_count} time{email.click_count > 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {email.status === 'bounced' && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium">Email Bounced</div>
+                      <div className="text-sm text-muted-foreground">
+                        {email.bounce_reason || 'Email bounced'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {email.status === 'failed' && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div>
+                      <div className="font-medium">Email Failed</div>
+                      <div className="text-sm text-muted-foreground">
+                        {email.bounce_reason || 'Email failed to send'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Email Content */}
           <Card>
             <CardHeader>
@@ -93,21 +303,24 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             </CardContent>
           </Card>
 
-          {/* Bounce Reason (if applicable) */}
-          {email.bounce_reason && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Bounce Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-red-600">{email.bounce_reason}</p>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Actions */}
-          {onResendEmail && email.status !== 'sent' && email.status !== 'delivered' && (
-            <div className="flex justify-end">
+          <div className="flex justify-between">
+            <div className="flex gap-2">
+              {client && (
+                <Button variant="outline" onClick={handleViewClient}>
+                  <User className="h-4 w-4 mr-2" />
+                  View Client Profile
+                </Button>
+              )}
+              {activeProjects.length > 0 && (
+                <Button variant="outline" onClick={() => handleViewProject(activeProjects[0].id)}>
+                  <Building className="h-4 w-4 mr-2" />
+                  View Active Project
+                </Button>
+              )}
+            </div>
+            
+            {onResendEmail && email.status !== 'sent' && email.status !== 'delivered' && (
               <Button 
                 onClick={() => onResendEmail(email)}
                 disabled={isResending}
@@ -116,8 +329,8 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                 <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
                 {isResending ? 'Resending...' : 'Resend Email'}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
