@@ -16,164 +16,129 @@ interface EmailRequest {
   subject: string;
   content: string;
   client_id?: string;
-  from_email?: string;
-  from_name?: string;
+  user_id: string;
 }
 
-const wrapLinksForTracking = (content: string, emailId: string, baseUrl: string): string => {
-  // Find all links in the content
-  const linkRegex = /<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
-  
-  return content.replace(linkRegex, (match, url, text) => {
-    const trackingUrl = `${baseUrl}/functions/v1/track-email-click?id=${emailId}&url=${encodeURIComponent(url)}`;
-    return match.replace(url, trackingUrl);
-  });
-};
-
-const addTrackingPixel = (content: string, emailId: string, baseUrl: string): string => {
-  const trackingPixelUrl = `${baseUrl}/functions/v1/track-email-open?id=${emailId}`;
-  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:none;">`;
-  
-  // Add tracking pixel before closing body tag, or at the end if no body tag
-  if (content.includes('</body>')) {
-    return content.replace('</body>', `${trackingPixel}</body>`);
-  } else {
-    return content + trackingPixel;
-  }
-};
-
-serve(async (req: Request) => {
+const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { to, subject, content, client_id, from_email, from_name }: EmailRequest = await req.json();
+    const { to, subject, content, client_id, user_id }: EmailRequest = await req.json();
 
-    console.log("Sending email to:", to);
+    console.log("Processing email send request:", { to, subject, client_id, user_id });
 
-    // Get user's email settings
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-
-    const { data: emailSettings } = await supabase
-      .from("email_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    // Get SendGrid API key
-    const { data: integration } = await supabase
-      .from("integration_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("integration_type", "sendgrid")
-      .single();
-
-    if (!integration?.api_credentials) {
-      throw new Error("SendGrid integration not configured");
-    }
-
-    const sendGridApiKey = (integration.api_credentials as any)?.api_key;
-    if (!sendGridApiKey) {
-      throw new Error("SendGrid API key not found");
-    }
-
-    // Create email record first
-    const { data: emailRecord, error: emailError } = await supabase
+    // First, save the email to database
+    const { data: emailData, error: insertError } = await supabase
       .from("emails")
       .insert({
-        user_id: user.id,
-        client_id: client_id || null,
+        user_id,
+        client_id,
         recipient_email: to,
         subject,
         content,
-        status: "queued"
+        status: 'queued'
       })
       .select()
       .single();
 
-    if (emailError) {
-      console.error("Error creating email record:", emailError);
-      throw new Error("Failed to create email record");
+    if (insertError) {
+      console.error("Error saving email to database:", insertError);
+      throw new Error("Failed to save email to database");
     }
 
-    // Wrap links for tracking and add tracking pixel
-    const baseUrl = supabaseUrl.replace('/rest/v1', '');
-    const contentWithTracking = wrapLinksForTracking(content, emailRecord.id, baseUrl);
-    const contentWithPixel = addTrackingPixel(contentWithTracking, emailRecord.id, baseUrl);
+    console.log("Email saved to database with ID:", emailData.id);
 
-    // Prepare email data
-    const emailData = {
-      personalizations: [
-        {
-          to: [{ email: to }],
-          subject: subject,
-        },
-      ],
-      from: {
-        email: from_email || emailSettings?.from_email || "noreply@example.com",
-        name: from_name || emailSettings?.from_name || "Email System",
-      },
-      content: [
-        {
-          type: "text/html",
-          value: contentWithPixel,
-        },
-      ],
-    };
+    // Add tracking pixel and wrap links
+    const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${emailData.id}" width="1" height="1" style="display: none;" />`;
+    
+    // Wrap links with tracking
+    const contentWithTracking = content.replace(
+      /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>/gi,
+      (match, url) => {
+        const trackingUrl = `${supabaseUrl}/functions/v1/track-email-click?id=${emailData.id}&url=${encodeURIComponent(url)}`;
+        return match.replace(url, trackingUrl);
+      }
+    );
 
-    // Add reply-to if configured
-    if (emailSettings?.reply_to_email) {
-      emailData.reply_to = {
-        email: emailSettings.reply_to_email,
-      };
+    const finalContent = contentWithTracking + trackingPixel;
+
+    // Get SendGrid API key
+    const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
+    if (!sendGridApiKey) {
+      throw new Error("SENDGRID_API_KEY is not configured");
     }
 
-    // Send email via SendGrid
+    console.log("Sending email via SendGrid...");
+
+    // Send email using SendGrid API
     const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${sendGridApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(emailData),
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: to }],
+            subject: subject,
+          },
+        ],
+        from: {
+          email: "darius@curtainscalculator.com",
+          name: "Darius from Curtains Calculator",
+        },
+        content: [
+          {
+            type: "text/html",
+            value: finalContent,
+          },
+        ],
+      }),
     });
+
+    console.log("SendGrid response status:", sendGridResponse.status);
 
     if (!sendGridResponse.ok) {
       const errorText = await sendGridResponse.text();
-      console.error("SendGrid error:", errorText);
+      console.error("SendGrid error response:", errorText);
       
       // Update email status to failed
       await supabase
         .from("emails")
-        .update({ 
-          status: "failed",
-          bounce_reason: errorText
+        .update({
+          status: 'failed',
+          bounce_reason: errorText,
+          updated_at: new Date().toISOString()
         })
-        .eq("id", emailRecord.id);
+        .eq("id", emailData.id);
 
-      throw new Error(`SendGrid error: ${errorText}`);
+      throw new Error(`SendGrid API error: ${sendGridResponse.status} - ${errorText}`);
     }
 
-    // Update email status to sent
-    await supabase
-      .from("emails")
-      .update({ 
-        status: "sent",
-        sent_at: new Date().toISOString()
-      })
-      .eq("id", emailRecord.id);
+    console.log("Email sent successfully via SendGrid");
 
-    console.log("Email sent successfully");
+    // Update email status to sent
+    const { error: updateError } = await supabase
+      .from("emails")
+      .update({
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", emailData.id);
+
+    if (updateError) {
+      console.error("Error updating email status:", updateError);
+    }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: "Email sent successfully",
-        email_id: emailRecord.id
+        email_id: emailData.id,
       }),
       {
         status: 200,
@@ -183,14 +148,13 @@ serve(async (req: Request) => {
         },
       }
     );
-
   } catch (error: any) {
     console.error("Error in send-email function:", error);
     
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
+        success: false,
         error: error.message || "Failed to send email",
-        details: error.toString()
       }),
       {
         status: 500,
@@ -201,4 +165,6 @@ serve(async (req: Request) => {
       }
     );
   }
-});
+};
+
+serve(handler);

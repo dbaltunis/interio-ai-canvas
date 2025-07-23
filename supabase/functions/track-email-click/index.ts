@@ -22,12 +22,13 @@ serve(async (req: Request) => {
     const targetUrl = url.searchParams.get("url");
 
     if (!emailId || !targetUrl) {
+      console.error("Missing parameters - emailId:", emailId, "targetUrl:", targetUrl);
       return new Response("Missing parameters", { status: 400 });
     }
 
     console.log("Tracking email click for ID:", emailId, "URL:", targetUrl);
 
-    // Update email click count and status
+    // Get current email data
     const { data: emailData, error: fetchError } = await supabase
       .from("emails")
       .select("click_count, status")
@@ -36,29 +37,37 @@ serve(async (req: Request) => {
 
     if (fetchError) {
       console.error("Error fetching email:", fetchError);
-      // Still redirect even if tracking fails
-      return new Response(null, {
-        status: 302,
-        headers: {
-          "Location": targetUrl,
-          ...corsHeaders,
-        },
-      });
+      // Still redirect to avoid broken user experience
+      return redirectToUrl(targetUrl);
     }
 
-    const newClickCount = (emailData.click_count || 0) + 1;
-    const newStatus = ['sent', 'opened'].includes(emailData.status) ? 'clicked' : emailData.status;
+    console.log("Current email data:", emailData);
 
+    // Increment click count
+    const newClickCount = (emailData.click_count || 0) + 1;
+    let newStatus = emailData.status;
+
+    // Update status to 'clicked' if it was 'sent', 'delivered', or 'opened'
+    if (['sent', 'delivered', 'opened'].includes(emailData.status)) {
+      newStatus = 'clicked';
+    }
+
+    console.log("Updating email with click count:", newClickCount, "status:", newStatus);
+
+    // Update email with new click count and status
     const { error: updateError } = await supabase
       .from("emails")
       .update({
         click_count: newClickCount,
-        status: newStatus
+        status: newStatus,
+        updated_at: new Date().toISOString()
       })
       .eq("id", emailId);
 
     if (updateError) {
-      console.error("Error updating email click:", updateError);
+      console.error("Error updating email click count:", updateError);
+    } else {
+      console.log("Successfully updated email click count to:", newClickCount);
     }
 
     // Insert analytics record
@@ -78,31 +87,30 @@ serve(async (req: Request) => {
 
     if (analyticsError) {
       console.error("Error inserting analytics:", analyticsError);
+    } else {
+      console.log("Successfully inserted analytics record");
     }
 
-    // Redirect to the target URL
-    return new Response(null, {
-      status: 302,
-      headers: {
-        "Location": targetUrl,
-        ...corsHeaders,
-      },
-    });
+    return redirectToUrl(targetUrl);
   } catch (error) {
     console.error("Error in track-email-click:", error);
     
-    // Still redirect even if tracking fails
+    // Still try to redirect
     const targetUrl = new URL(req.url).searchParams.get("url");
     if (targetUrl) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          "Location": targetUrl,
-          ...corsHeaders,
-        },
-      });
+      return redirectToUrl(targetUrl);
     }
     
     return new Response("Error", { status: 500, headers: corsHeaders });
   }
 });
+
+function redirectToUrl(targetUrl: string) {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      "Location": targetUrl,
+      ...corsHeaders,
+    },
+  });
+}
