@@ -64,25 +64,6 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Rail Width measurement - positioned above the rod */}
-              {measurements.rail_width && (
-                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs">
-                  <span className="bg-yellow-200 px-2 py-1 border rounded font-semibold text-black">
-                    Rail Width: {displayValue(measurements.rail_width)}
-                  </span>
-                </div>
-              )}
-
-              {/* Rod to Ceiling measurement (C) */}
-              {measurements.measurement_c && (
-                <div className="absolute top-4 left-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="font-semibold">C: {displayValue(measurements.measurement_c)}</span>
-                    <div className="w-px h-12 bg-gray-600"></div>
-                  </div>
-                </div>
-              )}
-
               {/* Window Frame */}
               <div className="absolute top-24 left-16 right-16 bottom-16">
                 <div className="w-full h-full border-4 border-gray-400 bg-white relative">
@@ -92,24 +73,6 @@ export const VisualMeasurementSheet = ({
                       <div key={i} className="bg-gray-100 border border-gray-300"></div>
                     ))}
                   </div>
-                  
-                  {/* Window Width Measurement (A) */}
-                  {measurements.measurement_a && (
-                    <div className="absolute -top-8 left-0 right-0 flex justify-center">
-                      <span className="text-xs bg-white px-2 border rounded font-semibold">
-                        A: {displayValue(measurements.measurement_a)}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Window Height Measurement (B) */}
-                  {measurements.measurement_b && (
-                    <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 -rotate-90">
-                      <span className="text-xs bg-white px-2 border rounded font-semibold">
-                        B: {displayValue(measurements.measurement_b)}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -117,36 +80,28 @@ export const VisualMeasurementSheet = ({
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className="absolute top-16 left-20 w-16 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  <div className="absolute top-16 left-20 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
                     <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
                     <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
-                    <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-red-800">
-                      Left Panel
-                    </span>
                   </div>
                   
                   {/* Right Panel */}
-                  <div className="absolute top-16 right-20 w-16 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  <div className="absolute top-16 right-20 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-600 opacity-30"></div>
                     <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-500 opacity-25"></div>
                     <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
-                    <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
-                    <span className="absolute -right-20 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-red-800">
-                      Right Panel
-                    </span>
                   </div>
                 </>
               ) : (
                 /* Single Panel */
-                <div className={`absolute top-16 ${curtainSide === "left" ? "left-20" : "right-20"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                <div className={`absolute top-16 ${curtainSide === "left" ? "left-20" : "right-20"} w-16 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                   <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
@@ -155,32 +110,86 @@ export const VisualMeasurementSheet = ({
                   <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-400 opacity-20"></div>
                   <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-300 opacity-15"></div>
                   <div className="absolute top-2 bottom-2 left-14 w-0.5 bg-red-200 opacity-10"></div>
-                  <div className="absolute top-2 bottom-2 left-16 w-0.5 bg-red-100 opacity-8"></div>
-                  <span className={`absolute ${curtainSide === "left" ? "-left-24" : "-right-24"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-red-800`}>
-                    Single Panel
-                  </span>
                 </div>
               )}
 
-              {/* Curtain Drop measurement - positioned to avoid panel overlap */}
+              {/* Rail Width measurement with arrows */}
+              {measurements.rail_width && (
+                <div className="absolute top-0 left-12 right-12 flex items-center">
+                  {/* Left arrow */}
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
+                  {/* Line */}
+                  <div className="flex-1 border-t-2 border-blue-600 relative">
+                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-800">
+                      Rail Width: {displayValue(measurements.rail_width)}
+                    </span>
+                  </div>
+                  {/* Right arrow */}
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
+                </div>
+              )}
+
+              {/* Window Width Measurement (A) with arrows */}
+              {measurements.measurement_a && (
+                <div className="absolute top-20 left-16 right-16 flex items-center">
+                  {/* Left arrow */}
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
+                  {/* Line */}
+                  <div className="flex-1 border-t-2 border-green-600 relative">
+                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-green-100 px-2 py-1 rounded text-xs font-bold text-green-800">
+                      A: {displayValue(measurements.measurement_a)}
+                    </span>
+                  </div>
+                  {/* Right arrow */}
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-green-600"></div>
+                </div>
+              )}
+
+              {/* Curtain Drop measurement with arrows */}
               {measurements.drop && (
-                <div className="absolute top-16 left-4 text-xs">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-px h-48 bg-blue-600"></div>
-                    <span className="font-semibold text-blue-600 -rotate-90 whitespace-nowrap bg-blue-100 px-2 py-1 rounded">
+                <div className="absolute top-16 left-6 flex flex-col items-center">
+                  {/* Top arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-purple-600"></div>
+                  {/* Line */}
+                  <div className="h-32 border-l-2 border-purple-600 relative">
+                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-purple-100 px-2 py-1 rounded text-xs font-bold text-purple-800 whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
+                  {/* Bottom arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-purple-600"></div>
                 </div>
               )}
 
-              {/* Total Height measurement (E) */}
-              {measurements.measurement_e && (
-                <div className="absolute top-1/2 left-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="font-semibold">E: {displayValue(measurements.measurement_e)}</span>
-                    <div className="w-px h-24 bg-gray-600"></div>
+              {/* Window Height Measurement (B) with arrows */}
+              {measurements.measurement_b && (
+                <div className="absolute top-24 left-12 bottom-16 flex flex-col items-center">
+                  {/* Top arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
+                  {/* Line */}
+                  <div className="flex-1 border-l-2 border-orange-600 relative">
+                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-orange-100 px-2 py-1 rounded text-xs font-bold text-orange-800 whitespace-nowrap">
+                      B: {displayValue(measurements.measurement_b)}
+                    </span>
                   </div>
+                  {/* Bottom arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-orange-600"></div>
+                </div>
+              )}
+
+              {/* Rod to Ceiling measurement (C) with arrows */}
+              {measurements.measurement_c && (
+                <div className="absolute top-4 right-6 flex flex-col items-center">
+                  {/* Top arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-red-600"></div>
+                  {/* Line */}
+                  <div className="h-12 border-l-2 border-red-600 relative">
+                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-red-100 px-2 py-1 rounded text-xs font-bold text-red-800 whitespace-nowrap">
+                      C: {displayValue(measurements.measurement_c)}
+                    </span>
+                  </div>
+                  {/* Bottom arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-red-600"></div>
                 </div>
               )}
 
@@ -191,22 +200,51 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Window to Floor measurement (D) */}
+              {/* Window to Floor measurement (D) with arrows */}
               {measurements.measurement_d && (
-                <div className="absolute bottom-4 left-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="font-semibold">D: {displayValue(measurements.measurement_d)}</span>
-                    <div className="w-px h-12 bg-gray-600"></div>
+                <div className="absolute bottom-4 right-12 flex flex-col items-center">
+                  {/* Top arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-indigo-600"></div>
+                  {/* Line */}
+                  <div className="h-12 border-l-2 border-indigo-600 relative">
+                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-indigo-100 px-2 py-1 rounded text-xs font-bold text-indigo-800 whitespace-nowrap">
+                      D: {displayValue(measurements.measurement_d)}
+                    </span>
                   </div>
+                  {/* Bottom arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-indigo-600"></div>
                 </div>
               )}
 
-              {/* Total Width measurement (F) */}
+              {/* Total Height measurement (E) with arrows */}
+              {measurements.measurement_e && (
+                <div className="absolute top-16 right-2 bottom-4 flex flex-col items-center">
+                  {/* Top arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-pink-600"></div>
+                  {/* Line */}
+                  <div className="flex-1 border-l-2 border-pink-600 relative">
+                    <span className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-pink-100 px-2 py-1 rounded text-xs font-bold text-pink-800 whitespace-nowrap">
+                      E: {displayValue(measurements.measurement_e)}
+                    </span>
+                  </div>
+                  {/* Bottom arrow */}
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-pink-600"></div>
+                </div>
+              )}
+
+              {/* Total Width measurement (F) with arrows */}
               {measurements.measurement_f && (
-                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs">
-                  <span className="bg-white px-2 border rounded font-semibold">
-                    F: {displayValue(measurements.measurement_f)}
-                  </span>
+                <div className="absolute bottom-0 left-8 right-8 flex items-center">
+                  {/* Left arrow */}
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-teal-600"></div>
+                  {/* Line */}
+                  <div className="flex-1 border-t-2 border-teal-600 relative">
+                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-teal-100 px-2 py-1 rounded text-xs font-bold text-teal-800">
+                      F: {displayValue(measurements.measurement_f)}
+                    </span>
+                  </div>
+                  {/* Right arrow */}
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-teal-600"></div>
                 </div>
               )}
             </div>
@@ -234,7 +272,7 @@ export const VisualMeasurementSheet = ({
                   <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
-                      console.log("RadioGroup onValueChange triggered with value:", value);
+                      console.log("Curtain type changed to:", value);
                       handleInputChange("curtain_type", value);
                     }}
                     className="space-y-2"
@@ -256,7 +294,7 @@ export const VisualMeasurementSheet = ({
                     <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
-                        console.log("Panel side RadioGroup onValueChange triggered with value:", value);
+                        console.log("Panel side changed to:", value);
                         handleInputChange("curtain_side", value);
                       }}
                       className="space-y-2"
