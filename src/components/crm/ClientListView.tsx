@@ -27,9 +27,15 @@ import {
   Eye,
   Phone,
   Building2,
-  User
+  User,
+  MoreHorizontal,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { useUpdateClientStage } from "@/hooks/useClients";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
+import type { MenuItem } from "@/components/ui/three-dot-menu";
 
 const FUNNEL_STAGES = [
   { key: "lead", label: "Lead", icon: User, color: "bg-gray-100 text-gray-800" },
@@ -68,6 +74,59 @@ export const ClientListView = ({
       stage: newStage
     });
   };
+
+  const getClientInitials = (client: any) => {
+    const name = client.client_type === 'B2B' ? client.company_name : client.name;
+    if (!name) return 'UN';
+    const names = name.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getClientAvatarColor = (client: any) => {
+    const name = client.client_type === 'B2B' ? client.company_name : client.name;
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-orange-500',
+      'bg-pink-500',
+      'bg-indigo-500'
+    ];
+    const index = (name?.length || 0) % colors.length;
+    return colors[index];
+  };
+
+  const getClientMenuItems = (client: any): MenuItem[] => [
+    {
+      label: "View Client",
+      icon: <Eye className="h-4 w-4" />,
+      onClick: () => onClientClick(client)
+    },
+    {
+      label: "Edit Client",
+      icon: <Edit className="h-4 w-4" />,
+      onClick: () => console.log("Edit client:", client.id)
+    },
+    {
+      label: "Send Email",
+      icon: <Mail className="h-4 w-4" />,
+      onClick: () => console.log("Send email to:", client.email)
+    },
+    {
+      label: "Call Client",
+      icon: <Phone className="h-4 w-4" />,
+      onClick: () => client.phone && window.open(`tel:${client.phone}`, '_self')
+    },
+    {
+      label: "Delete Client",
+      icon: <Trash2 className="h-4 w-4" />,
+      onClick: () => console.log("Delete client:", client.id),
+      variant: "destructive" as const
+    }
+  ];
 
   const sortedClients = [...clients].sort((a, b) => {
     let aValue = a[sortField];
@@ -125,20 +184,21 @@ export const ClientListView = ({
                   )}
                 </div>
               </TableHead>
+              <TableHead>Location</TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => handleSort('last_contact_date')}
+                onClick={() => handleSort('created_at')}
               >
                 <div className="flex items-center gap-2">
-                  Last Contact
-                  {sortField === 'last_contact_date' && (
+                  Created
+                  {sortField === 'created_at' && (
                     <div className="text-xs">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </div>
                   )}
                 </div>
               </TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="w-[70px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -147,24 +207,35 @@ export const ClientListView = ({
               const StageIcon = stageConfig.icon;
               
               return (
-                <TableRow key={client.id} className="hover:bg-muted/50">
+                <TableRow 
+                  key={client.id} 
+                  className="hover:bg-muted/50 cursor-pointer"
+                  onClick={() => onClientClick(client)}
+                >
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        {client.client_type === 'B2B' ? (
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <User className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className={`${getClientAvatarColor(client)} text-white text-xs font-medium`}>
+                          {getClientInitials(client)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          {client.client_type === 'B2B' ? (
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <User className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <div className="font-medium">
+                            {client.client_type === 'B2B' ? client.company_name : client.name}
+                          </div>
+                        </div>
+                        {client.client_type === 'B2B' && client.name && (
+                          <div className="text-sm text-muted-foreground ml-6">
+                            Contact: {client.name}
+                          </div>
                         )}
-                        <div className="font-medium">
-                          {client.client_type === 'B2B' ? client.company_name : client.name}
-                        </div>
                       </div>
-                      {client.client_type === 'B2B' && client.name && (
-                        <div className="text-sm text-muted-foreground ml-6">
-                          Contact: {client.name}
-                        </div>
-                      )}
                     </div>
                   </TableCell>
 
@@ -190,7 +261,7 @@ export const ClientListView = ({
                       value={client.funnel_stage || 'lead'}
                       onValueChange={(value) => handleStatusChange(client.id, value)}
                     >
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-40" onClick={(e) => e.stopPropagation()}>
                         <SelectValue>
                           <div className="flex items-center gap-2">
                             <StageIcon className="w-3 h-3" />
@@ -215,26 +286,21 @@ export const ClientListView = ({
                   </TableCell>
 
                   <TableCell>
-                    {client.last_contact_date ? (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {new Date(client.last_contact_date).toLocaleDateString()}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Never</span>
-                    )}
+                    <span className="text-sm text-gray-600">
+                      {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
+                    </span>
                   </TableCell>
 
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onClientClick(client)}
-                      className="w-full"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
+                    <span className="text-sm text-gray-600">
+                      {new Date(client.created_at).toLocaleDateString()}
+                    </span>
+                  </TableCell>
+
+                  <TableCell>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ThreeDotMenu items={getClientMenuItems(client)} />
+                    </div>
                   </TableCell>
                 </TableRow>
               );
