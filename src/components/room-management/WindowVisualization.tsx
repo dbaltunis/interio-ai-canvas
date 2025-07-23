@@ -1,8 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Ruler, Settings, Eye } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface WindowVisualizationProps {
   room: any;
@@ -17,149 +16,186 @@ export const WindowVisualization = ({
   treatments,
   measurements
 }: WindowVisualizationProps) => {
-  const getVisualizationStyle = (surface: any, treatment: any) => {
-    if (!treatment) return "bg-gray-200 border-2 border-dashed border-gray-400";
-    
-    // Different styles based on treatment type
-    switch (treatment.treatment_type) {
-      case 'curtains':
-        return "bg-gradient-to-b from-blue-100 to-blue-200 border-2 border-blue-300";
-      case 'blinds':
-        return "bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 border-2 border-gray-400";
-      case 'shutters':
-        return "bg-gradient-to-b from-amber-100 to-amber-200 border-2 border-amber-300";
-      case 'drapes':
-        return "bg-gradient-to-b from-purple-100 to-purple-200 border-2 border-purple-300";
-      default:
-        return "bg-gradient-to-b from-green-100 to-green-200 border-2 border-green-300";
+  const { formatLength } = useMeasurementUnits();
+
+  const getSurfaceTreatment = (surfaceId: string) => {
+    return treatments.find(t => t.window_id === surfaceId);
+  };
+
+  const getSurfaceMeasurement = (surfaceId: string) => {
+    return measurements.find(m => 
+      m.measurements && 
+      Object.keys(m.measurements).some(key => 
+        key.includes(surfaceId) || key.includes('window')
+      )
+    );
+  };
+
+  const getClientImages = (measurement: any) => {
+    if (!measurement?.photos) return [];
+    try {
+      return Array.isArray(measurement.photos) ? measurement.photos : JSON.parse(measurement.photos);
+    } catch {
+      return [];
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Room Overview */}
-      <Card>
+      <div className="text-center">
+        <h3 className="text-xl font-semibold">{room.name} Visualization</h3>
+        <p className="text-muted-foreground">
+          Room type: {room.room_type} • {surfaces.length} windows
+        </p>
+      </div>
+
+      {/* Room Layout */}
+      <Card className="bg-gradient-to-b from-blue-50 to-blue-100 border-2 border-blue-200">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{room.name} Layout</span>
-            <Badge variant="outline">{surfaces.length} Windows</Badge>
-          </CardTitle>
+          <CardTitle className="text-center text-blue-800">Room Layout</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 min-h-[300px] p-4 bg-gray-50 rounded-lg">
-            {surfaces.map((surface, index) => {
-              const treatment = treatments.find(t => t.window_id === surface.id);
-              const measurement = measurements.find(m => 
-                m.measurements && Object.keys(m.measurements).length > 0
-              );
+          <div className="relative bg-white rounded-lg p-8 min-h-[400px] border-2 border-dashed border-blue-300">
+            {/* Room representation */}
+            <div className="absolute inset-4 border-4 border-gray-300 rounded-lg bg-gray-50">
+              <div className="absolute top-2 left-2 text-xs text-gray-600 font-medium">
+                {room.name}
+              </div>
               
-              // Calculate relative size for visualization
-              const maxWidth = Math.max(...surfaces.map(s => s.width || 60));
-              const maxHeight = Math.max(...surfaces.map(s => s.height || 48));
-              const relativeWidth = ((surface.width || 60) / maxWidth) * 120;
-              const relativeHeight = ((surface.height || 48) / maxHeight) * 80;
-              
-              return (
-                <div
-                  key={surface.id}
-                  className="relative flex flex-col items-center justify-center"
-                >
-                  {/* Window representation */}
-                  <div
-                    className={`rounded-lg flex items-center justify-center text-xs font-medium relative ${getVisualizationStyle(surface, treatment)}`}
-                    style={{
-                      width: `${relativeWidth}px`,
-                      height: `${relativeHeight}px`,
-                      minWidth: '80px',
-                      minHeight: '60px'
-                    }}
-                  >
-                    {treatment ? (
-                      <div className="text-center">
-                        <div className="font-semibold">{treatment.treatment_type}</div>
-                        {treatment.fabric_type && (
-                          <div className="text-xs opacity-75">{treatment.fabric_type}</div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-gray-500">No Treatment</div>
-                    )}
-                    
-                    {/* Measurement indicator */}
-                    {measurement && (
-                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <Ruler className="h-2 w-2 text-white" />
-                      </div>
-                    )}
-                  </div>
+              {/* Windows positioned around the room */}
+              <div className="grid grid-cols-2 gap-4 p-4 h-full">
+                {surfaces.map((surface, index) => {
+                  const treatment = getSurfaceTreatment(surface.id);
+                  const measurement = getSurfaceMeasurement(surface.id);
+                  const clientImages = getClientImages(measurement);
                   
-                  {/* Window details */}
-                  <div className="mt-2 text-center">
-                    <div className="font-medium text-sm">{surface.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {surface.width}" × {surface.height}"
+                  return (
+                    <div
+                      key={surface.id}
+                      className="relative bg-white border-2 border-blue-300 rounded-lg p-3 shadow-sm"
+                    >
+                      {/* Window representation */}
+                      <div className="bg-sky-100 border border-sky-300 rounded p-2 mb-2">
+                        <div className="text-xs font-medium text-center">{surface.name}</div>
+                        <div className="text-xs text-center text-muted-foreground">
+                          {formatLength(surface.width || 60)} × {formatLength(surface.height || 48)}
+                        </div>
+                      </div>
+
+                      {/* Client Images */}
+                      {clientImages.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-xs font-medium mb-1">Client Photos:</div>
+                          <div className="grid grid-cols-2 gap-1">
+                            {clientImages.slice(0, 4).map((image: any, imgIndex: number) => (
+                              <img
+                                key={imgIndex}
+                                src={image.url || image}
+                                alt={`Client photo ${imgIndex + 1}`}
+                                className="w-full h-8 object-cover rounded border"
+                              />
+                            ))}
+                          </div>
+                          {clientImages.length > 4 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              +{clientImages.length - 4} more photos
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Treatment visualization */}
+                      {treatment ? (
+                        <div className="space-y-1">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs ${
+                              treatment.treatment_type.includes('curtain') || treatment.treatment_type.includes('drape')
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {treatment.treatment_type}
+                          </Badge>
+                          
+                          {treatment.fabric_type && (
+                            <div className="text-xs text-muted-foreground">
+                              Fabric: {treatment.fabric_type}
+                            </div>
+                          )}
+                          
+                          {treatment.color && (
+                            <div className="text-xs text-muted-foreground">
+                              Color: {treatment.color}
+                            </div>
+                          )}
+                          
+                          {treatment.total_price && (
+                            <div className="text-xs font-medium text-green-600">
+                              ${treatment.total_price.toFixed(2)}
+                            </div>
+                          )}
+
+                          {/* Treatment visualization overlay */}
+                          <div 
+                            className={`absolute inset-0 rounded-lg opacity-30 pointer-events-none ${
+                              treatment.treatment_type.includes('curtain') || treatment.treatment_type.includes('drape')
+                                ? 'bg-gradient-to-b from-purple-200 to-purple-400'
+                                : 'bg-gradient-to-b from-gray-200 to-gray-400'
+                            }`}
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground text-center py-2">
+                          No treatment selected
+                        </div>
+                      )}
                     </div>
-                    {treatment && (
-                      <Badge variant="secondary" className="text-xs mt-1">
-                        ${treatment.total_price?.toFixed(2) || '0.00'}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Treatment Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Treatment Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {treatments.map((treatment) => {
-              const surface = surfaces.find(s => s.id === treatment.window_id);
-              return (
-                <div key={treatment.id} className="p-3 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{surface?.name}</span>
-                    <Badge>{treatment.treatment_type}</Badge>
+      {treatments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Treatment Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {treatments.map((treatment) => (
+                <div key={treatment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <div className="font-medium">{treatment.product_name || treatment.treatment_type}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {treatment.fabric_type && `${treatment.fabric_type} • `}
+                      {treatment.color && `${treatment.color} • `}
+                      Qty: {treatment.quantity || 1}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    {treatment.fabric_type && (
-                      <div>Fabric: {treatment.fabric_type}</div>
-                    )}
-                    {treatment.color && (
-                      <div>Color: {treatment.color}</div>
-                    )}
-                    <div className="font-medium text-foreground">
-                      Price: ${treatment.total_price?.toFixed(2) || '0.00'}
+                  <div className="text-right">
+                    <div className="font-medium">${treatment.total_price?.toFixed(2) || '0.00'}</div>
+                    <div className="text-sm text-muted-foreground">
+                      ${treatment.unit_price?.toFixed(2) || '0.00'} each
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Buttons */}
-      <div className="flex justify-center gap-3">
-        <Button variant="outline">
-          <Settings className="h-4 w-4 mr-2" />
-          Modify Treatments
-        </Button>
-        <Button variant="outline">
-          <Ruler className="h-4 w-4 mr-2" />
-          Review Measurements
-        </Button>
-        <Button>
-          <Eye className="h-4 w-4 mr-2" />
-          Generate Quote
-        </Button>
-      </div>
+              ))}
+              
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between font-bold">
+                  <span>Total Room Cost:</span>
+                  <span>${treatments.reduce((sum, t) => sum + (t.total_price || 0), 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

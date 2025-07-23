@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface TreatmentSelectorProps {
   surface: any;
@@ -18,6 +19,19 @@ export const TreatmentSelector = ({
 }: TreatmentSelectorProps) => {
   const [selectedTreatment, setSelectedTreatment] = useState<string>("");
   const { data: windowCoverings = [] } = useWindowCoverings();
+  const { units, formatLength } = useMeasurementUnits();
+
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+  };
 
   const treatmentCategories = [
     {
@@ -41,7 +55,7 @@ export const TreatmentSelector = ({
       <div className="text-center">
         <h3 className="text-lg font-semibold">Select Treatment for {surface.name}</h3>
         <p className="text-sm text-muted-foreground">
-          Window Size: {surface.width}" × {surface.height}" in {room.name}
+          Window Size: {formatLength(surface.width || 60)} × {formatLength(surface.height || 48)} in {room.name}
         </p>
       </div>
 
@@ -70,7 +84,7 @@ export const TreatmentSelector = ({
                       </Badge>
                       {treatment.base_price && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          From ${treatment.base_price}
+                          From {formatCurrency(treatment.base_price)}
                         </div>
                       )}
                     </CardContent>

@@ -16,6 +16,7 @@ import {
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 import { WindowVisualization } from "./WindowVisualization";
 import { TreatmentSelector } from "./TreatmentSelector";
@@ -43,9 +44,22 @@ export const VisualRoomCard = ({
   const { data: surfaces = [] } = useSurfaces(room.project_id);
   const { data: treatments = [] } = useTreatments(room.project_id);
   const { data: clientMeasurements = [] } = useClientMeasurements(clientId);
+  const { units, formatLength } = useMeasurementUnits();
 
   const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
   const roomTreatments = treatments.filter(t => t.room_id === room.id);
+
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+  };
 
   const getMeasurementStatus = (surface: any) => {
     const hasMeasurement = clientMeasurements.some(m => 
@@ -84,7 +98,7 @@ export const VisualRoomCard = ({
               <p className="text-sm text-muted-foreground">{room.room_type}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">${roomTotal.toFixed(2)}</Badge>
+              <Badge variant="outline">{formatCurrency(roomTotal)}</Badge>
               <Button
                 size="sm"
                 variant="outline"
@@ -119,7 +133,7 @@ export const VisualRoomCard = ({
                     </div>
                     
                     <div className="text-xs text-muted-foreground">
-                      {surface.width}" × {surface.height}"
+                      {formatLength(surface.width || 60)} × {formatLength(surface.height || 48)}
                     </div>
                     
                     {treatment && (
