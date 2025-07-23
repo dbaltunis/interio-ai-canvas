@@ -1,5 +1,5 @@
 
-import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement } from "./useBusinessSettings";
+import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement, formatCurrency as formatCurrencyUtil } from "./useBusinessSettings";
 
 export const useMeasurementUnits = () => {
   const { data: businessSettings } = useBusinessSettings();
@@ -31,15 +31,7 @@ export const useMeasurementUnits = () => {
   };
 
   const formatCurrency = (amount: number): string => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+    return formatCurrencyUtil(amount, units.currency);
   };
 
   const getLengthUnitLabel = (): string => {

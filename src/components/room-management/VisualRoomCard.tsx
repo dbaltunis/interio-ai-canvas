@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { EnhancedMeasurementWorksheet } from "../measurements/EnhancedMeasurementWorksheet";
+import { MeasurementDiagram } from "../measurements/MeasurementDiagram";
 import { WindowVisualization } from "./WindowVisualization";
 import { TreatmentSelector } from "./TreatmentSelector";
 
@@ -43,22 +44,10 @@ export const VisualRoomCard = ({
   const { data: surfaces = [] } = useSurfaces(room.project_id);
   const { data: treatments = [] } = useTreatments(room.project_id);
   const { data: clientMeasurements = [] } = useClientMeasurements(clientId);
-  const { units, formatLength } = useMeasurementUnits();
+  const { units, formatLength, formatCurrency } = useMeasurementUnits();
 
   const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
   const roomTreatments = treatments.filter(t => t.room_id === room.id);
-
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
-  };
 
   const getMeasurementStatus = (surface: any) => {
     const hasMeasurement = clientMeasurements.some(m => 
@@ -139,9 +128,16 @@ export const VisualRoomCard = ({
                     </div>
                     
                     {treatment && (
-                      <Badge variant="secondary" className="text-xs">
-                        {treatment.treatment_type}
-                      </Badge>
+                      <div className="space-y-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {treatment.treatment_type}
+                        </Badge>
+                        {treatment.total_price > 0 && (
+                          <div className="text-xs font-medium text-green-600">
+                            {formatCurrency(treatment.total_price)}
+                          </div>
+                        )}
+                      </div>
                     )}
                     
                     <div className="flex gap-1">
@@ -200,30 +196,27 @@ export const VisualRoomCard = ({
         </CardContent>
       </Card>
 
-      {/* Enhanced Measurement Dialog */}
+      {/* Measurement Dialog using existing MeasurementDiagram */}
       <Dialog open={showMeasurement} onOpenChange={setShowMeasurement}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>
-              Configure Treatment - {selectedWindow?.name}
+              Measure Window - {selectedWindow?.name}
             </DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[85vh]">
+          <div className="overflow-y-auto max-h-[85vh] p-4">
             {selectedWindow && (
-              <EnhancedMeasurementWorksheet
-                clientId={clientId || ""}
-                projectId={room.project_id}
-                roomId={room.id}
-                surfaceId={selectedWindow.id}
-                surfaceName={selectedWindow.name}
-                existingMeasurement={clientMeasurements.find(m => 
-                  m.room_id === room.id && 
-                  typeof m.measurements === 'object' && 
-                  m.measurements !== null &&
-                  'surface_id' in m.measurements &&
-                  m.measurements.surface_id === selectedWindow.id
-                )}
-                onSave={() => setShowMeasurement(false)}
+              <MeasurementDiagram
+                measurements={{
+                  width: selectedWindow.width?.toString() || "",
+                  height: selectedWindow.height?.toString() || "",
+                  depth: "",
+                  notes: ""
+                }}
+                onMeasurementChange={(field, value) => {
+                  console.log(`Measurement changed: ${field} = ${value}`);
+                  // This would update the surface measurements
+                }}
               />
             )}
           </div>
