@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,6 +55,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   const filteredQuotes = quotes.filter((quote) => {
     const matchesSearch = 
       quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,11 +81,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-
-  // Reset page when search or filter changes
-  useState(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
