@@ -9,7 +9,7 @@ export const Hardware = ({ hardwareType, measurements, visibleMeasurements }: Ha
   const showRailWidth = visibleMeasurements.includes('rail_width') && measurements.rail_width;
   
   return (
-    <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} left-16 right-16 flex items-center z-20`}>
+    <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-16"} left-16 right-16 flex items-center z-20`}>
       {hardwareType === "track" ? (
         <div className="w-full h-1.5 bg-gray-500 relative rounded-sm shadow-sm">
           <div className="absolute -left-2 -top-1 w-2 h-3.5 bg-gray-600 rounded-sm"></div>
