@@ -1,38 +1,15 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy } from "lucide-react";
-import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
-import { useClients } from "@/hooks/useClients";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
-import { JobNotesDialog } from "./JobNotesDialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, User, DollarSign, Search, Filter, X } from "lucide-react";
+import { useQuotes } from "@/hooks/useQuotes";
+import { JobActionsMenu } from "./JobActionsMenu";
+import { EmailStatusIndicator } from "./EmailStatusIndicator";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -41,343 +18,238 @@ interface JobsTableViewProps {
 }
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+  const [localStatusFilter, setLocalStatusFilter] = useState(statusFilter);
   const { data: quotes = [], isLoading } = useQuotes();
-  const { data: clients = [] } = useClients();
-  const { toast } = useToast();
-  const deleteQuote = useDeleteQuote();
-  const updateQuote = useUpdateQuote();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
-  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
-  const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
 
-  const filteredQuotes = quotes.filter((quote) => {
-    const matchesSearch = 
-      quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.projects?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getClientName(quote).toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredQuotes = quotes.filter(quote => {
+    const matchesSearch = !localSearchTerm || 
+      quote.quote_number?.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
+      quote.projects?.name?.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
+      quote.clients?.name?.toLowerCase().includes(localSearchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || quote.status === statusFilter || quote.projects?.status === statusFilter;
+    const matchesStatus = localStatusFilter === 'all' || quote.status === localStatusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'sent':
-      case 'planning':
-        return 'bg-blue-100 text-blue-800';
-      case 'approved':
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'in_progress':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
   };
 
-  const getClientName = (quote: any) => {
-    if (quote.clients?.name) {
-      return quote.clients.name;
-    }
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'No date';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      draft: { bg: "bg-gray-100", text: "text-gray-800", label: "Draft" },
+      sent: { bg: "bg-blue-100", text: "text-blue-800", label: "Sent" },
+      accepted: { bg: "bg-green-100", text: "text-green-800", label: "Accepted" },
+      rejected: { bg: "bg-red-100", text: "text-red-800", label: "Rejected" },
+      expired: { bg: "bg-orange-100", text: "text-orange-800", label: "Expired" }
+    };
     
-    if (quote.client_id && clients.length > 0) {
-      const client = clients.find(c => c.id === quote.client_id);
-      if (client?.name) {
-        return client.name;
-      }
-    }
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
     
-    if (quote.projects?.client_id && clients.length > 0) {
-      const client = clients.find(c => c.id === quote.projects.client_id);
-      if (client?.name) {
-        return client.name;
-      }
-    }
-    
-    return 'No Client';
+    return (
+      <Badge className={`${config.bg} ${config.text} hover:${config.bg}`}>
+        {config.label}
+      </Badge>
+    );
   };
 
-  const getClientForQuote = (quote: any) => {
-    if (quote.clients) {
-      return quote.clients;
-    }
-    
-    if (quote.client_id && clients.length > 0) {
-      const client = clients.find(c => c.id === quote.client_id);
-      if (client) {
-        return client;
-      }
-    }
-    
-    if (quote.projects?.client_id && clients.length > 0) {
-      const client = clients.find(c => c.id === quote.projects.client_id);
-      if (client) {
-        return client;
-      }
-    }
-    
-    return null;
+  const clearFilters = () => {
+    setLocalSearchTerm("");
+    setLocalStatusFilter("all");
   };
 
-  const getClientInitials = (clientName: string) => {
-    if (clientName === 'No Client') return 'NC';
-    const names = clientName.split(' ');
-    if (names.length >= 2) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return clientName.substring(0, 2).toUpperCase();
-  };
-
-  const getClientAvatarColor = (clientName: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500', 
-      'bg-purple-500',
-      'bg-orange-500',
-      'bg-pink-500',
-      'bg-indigo-500'
-    ];
-    const index = clientName.length % colors.length;
-    return colors[index];
-  };
-
-  const getCurrentStatus = (quote: any) => {
-    // Prioritize project status if available, fallback to quote status
-    return quote.projects?.status || quote.status || 'draft';
-  };
-
-  const handleDeleteJob = async (quote: any) => {
-    try {
-      await deleteQuote.mutateAsync(quote.id);
-      toast({
-        title: "Success",
-        description: "Job deleted successfully",
-      });
-      setDeleteDialogOpen(false);
-      setQuoteToDelete(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete job",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleJobCopy = async (jobId: string) => {
-    const quote = quotes.find(q => q.id === jobId);
-    if (quote) {
-      try {
-        // Create a copy by updating status to maintain current functionality
-        console.log("Copying job:", jobId);
-        toast({
-          title: "Job Copied",
-          description: "Job has been copied successfully",
-        });
-      } catch (error) {
-        toast({
-          title: "Error", 
-          description: "Failed to copy job",
-          variant: "destructive"
-        });
-      }
-    }
-  };
-
-  const handleJobEdit = (jobId: string) => {
-    const quote = quotes.find(q => q.id === jobId);
-    if (quote) {
-      onJobSelect(quote);
-    }
-  };
-
-  const handleJobView = (jobId: string) => {
-    const quote = quotes.find(q => q.id === jobId);
-    if (quote) {
-      onJobSelect(quote);
-    }
-  };
-
-  const handleNotesClick = (quote: any) => {
-    setSelectedQuoteForNotes(quote);
-    setNotesDialogOpen(true);
-  };
+  const hasActiveFilters = localSearchTerm || localStatusFilter !== 'all';
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Loading jobs...</p>
         </div>
       </div>
     );
   }
 
-  if (filteredQuotes.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No jobs found matching your criteria.</p>
-      </div>
-    );
-  }
-
   return (
-    <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Job Number</TableHead>
-              <TableHead>Project Name</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[70px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredQuotes.map((quote) => {
-              const clientName = getClientName(quote);
-              const client = getClientForQuote(quote);
-              const currentStatus = getCurrentStatus(quote);
-              
-              return (
-                <TableRow 
-                  key={quote.id} 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => onJobSelect(quote)}
-                >
-                  <TableCell className="font-medium">
-                    {quote.quote_number}
-                  </TableCell>
-                  <TableCell>
-                    {quote.projects?.name || 'Untitled Project'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className={`${getClientAvatarColor(clientName)} text-white text-xs font-medium`}>
-                          {getClientInitials(clientName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{clientName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant="secondary" 
-                      className={getStatusColor(currentStatus)}
-                    >
-                      {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    ${quote.total_amount?.toFixed(2) || '0.00'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="bg-brand-primary text-white text-xs">
-                          ME
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-600">You</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(quote.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Job
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem onClick={() => handleJobEdit(quote.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Edit Job
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem onClick={() => handleJobCopy(quote.id)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copy Job
-                          </DropdownMenuItem>
+    <div className="space-y-4">
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search jobs..."
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-                          <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
-                            <StickyNote className="mr-2 h-4 w-4" />
-                            Add Note
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          <DropdownMenuItem onClick={() => {
-                            setQuoteToDelete(quote);
-                            setDeleteDialogOpen(true);
-                          }}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Job
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <div className="flex gap-2">
+          <Select value={localStatusFilter} onValueChange={setLocalStatusFilter}>
+            <SelectTrigger className="w-40">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="sent">Sent</SelectItem>
+              <SelectItem value="accepted">Accepted</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Job</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete job {quoteToDelete?.quote_number}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setDeleteDialogOpen(false);
-              setQuoteToDelete(null);
-            }}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => quoteToDelete && handleDeleteJob(quoteToDelete)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Results Info */}
+      {filteredQuotes.length > 0 && (
+        <div className="text-sm text-gray-500">
+          Showing {filteredQuotes.length} of {quotes.length} jobs
+          {hasActiveFilters && filteredQuotes.length < quotes.length && (
+            <span> (filtered)</span>
+          )}
+        </div>
+      )}
 
-      {/* Notes Dialog */}
-      <JobNotesDialog
-        open={notesDialogOpen}
-        onOpenChange={setNotesDialogOpen}
-        quote={selectedQuoteForNotes}
-      />
-    </>
+      {/* Jobs Table */}
+      {filteredQuotes.length > 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 hover:bg-gray-50">
+                  <TableHead className="font-semibold text-gray-900">Job Number</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Project & Communication</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Client</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Value</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Date</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredQuotes.map((quote) => (
+                  <TableRow key={quote.id} className="hover:bg-gray-50 cursor-pointer group">
+                    <TableCell 
+                      className="font-medium text-brand-primary hover:underline"
+                      onClick={() => onJobSelect(quote)}
+                    >
+                      #{quote.quote_number}
+                    </TableCell>
+                    
+                    <TableCell>
+                      <div className="space-y-2">
+                        <div 
+                          className="font-medium text-gray-900 group-hover:text-brand-primary cursor-pointer"
+                          onClick={() => onJobSelect(quote)}
+                        >
+                          {quote.projects?.name || 'Untitled Project'}
+                        </div>
+                        <EmailStatusIndicator 
+                          clientId={quote.client_id} 
+                          projectId={quote.project_id}
+                        />
+                      </div>
+                    </TableCell>
+                    
+                    <TableCell>
+                      {quote.clients ? (
+                        <div className="flex items-center space-x-2">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <div className="font-medium">{quote.clients.name}</div>
+                            {quote.clients.company_name && (
+                              <div className="text-xs text-gray-500">{quote.clients.company_name}</div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic">No client</span>
+                      )}
+                    </TableCell>
+                    
+                    <TableCell>
+                      {getStatusBadge(quote.status)}
+                    </TableCell>
+                    
+                    <TableCell className="font-medium text-gray-900">
+                      <div className="flex items-center space-x-1">
+                        <DollarSign className="h-4 w-4 text-gray-400" />
+                        <span>{formatCurrency(quote.total_amount)}</span>
+                      </div>
+                    </TableCell>
+                    
+                    <TableCell className="text-gray-600">
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">{formatDate(quote.created_at)}</span>
+                      </div>
+                    </TableCell>
+                    
+                    <TableCell className="text-center">
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <JobActionsMenu 
+                          quote={quote}
+                          client={quote.clients}
+                          project={quote.projects}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : hasActiveFilters ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+            <Search className="h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Jobs Found</h3>
+            <p className="text-gray-600 mb-4">
+              No jobs match your current search and filter criteria.
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+            <Calendar className="h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Jobs Yet</h3>
+            <p className="text-gray-600">
+              Create your first job to get started with project management.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
