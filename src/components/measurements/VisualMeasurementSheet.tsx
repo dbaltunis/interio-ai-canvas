@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +25,11 @@ export const VisualMeasurementSheet = ({
   const curtainType = measurements.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
 
+  // Helper function to display measurement values
+  const displayValue = (value: any) => {
+    return value ? `${value}"` : "0.00";
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -43,7 +47,7 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Drapery Rod */}
+              {/* Drapery Rod with measurement */}
               <div className="absolute top-16 left-12 right-12 flex items-center">
                 <div className="w-full h-2 bg-gray-600 rounded-full relative">
                   <div className="absolute -left-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
@@ -51,6 +55,18 @@ export const VisualMeasurementSheet = ({
                   <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs">
                     Drapery Rod
                   </span>
+                  {/* Rod width measurement */}
+                  <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-red-600">
+                    {displayValue(measurements.rail_width)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rod to Ceiling measurement (C) */}
+              <div className="absolute top-4 left-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">C: {displayValue(measurements.measurement_c)}</span>
+                  <div className="w-px h-12 bg-gray-600"></div>
                 </div>
               </div>
 
@@ -64,73 +80,114 @@ export const VisualMeasurementSheet = ({
                     ))}
                   </div>
                   
-                  {/* Measurement Labels */}
+                  {/* Window Width Measurement (A) */}
                   <div className="absolute -top-8 left-0 right-0 flex justify-center">
-                    <span className="text-xs bg-white px-2 border rounded">A: Window Width</span>
+                    <span className="text-xs bg-white px-2 border rounded font-semibold">
+                      A: {displayValue(measurements.measurement_a)}
+                    </span>
                   </div>
+                  
+                  {/* Window Height Measurement (B) */}
                   <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 -rotate-90">
-                    <span className="text-xs bg-white px-2 border rounded">B: Window Height</span>
+                    <span className="text-xs bg-white px-2 border rounded font-semibold">
+                      B: {displayValue(measurements.measurement_b)}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Dynamic Curtain Panels - Attached to Rod */}
+              {/* Dynamic Curtain Panels */}
               {curtainType === "pair" ? (
                 <>
-                  {/* Left Panel - Attached to Rod */}
-                  <div className="absolute top-18 left-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                  {/* Left Panel */}
+                  <div className="absolute top-18 left-4 w-12 bottom-12 bg-gradient-to-r from-red-500 to-red-700 opacity-80 rounded-sm shadow-lg">
                     {/* Curtain Ring/Hook Connection */}
                     <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
-                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-900 opacity-60"></div>
-                    <div className="absolute top-6 bottom-6 left-2 right-2 border-l border-blue-800 opacity-40"></div>
-                    <div className="absolute top-8 bottom-8 left-3 right-3 border-l border-blue-700 opacity-30"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-200 to-transparent opacity-40"></div>
+                    
                     {/* Pleats effect */}
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-blue-900 opacity-50"></div>
-                    <div className="absolute top-2 bottom-2 left-2.5 w-0.5 bg-blue-800 opacity-40"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-blue-700 opacity-30"></div>
-                    <span className="absolute -left-12 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-blue-800">
+                    <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-red-900 opacity-60"></div>
+                    <div className="absolute top-6 bottom-6 left-3 right-3 border-l border-red-800 opacity-40"></div>
+                    <div className="absolute top-8 bottom-8 left-4 right-4 border-l border-red-700 opacity-30"></div>
+                    
+                    {/* Pleat lines */}
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-900 opacity-50"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-800 opacity-40"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-700 opacity-30"></div>
+                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-600 opacity-25"></div>
+                    
+                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs font-medium text-red-800">
                       Left Panel
                     </span>
                   </div>
-                  {/* Right Panel - Attached to Rod */}
-                  <div className="absolute top-18 right-8 w-8 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg">
+                  
+                  {/* Right Panel */}
+                  <div className="absolute top-18 right-4 w-12 bottom-12 bg-gradient-to-r from-red-500 to-red-700 opacity-80 rounded-sm shadow-lg">
                     {/* Curtain Ring/Hook Connection */}
                     <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
-                    <div className="absolute top-4 bottom-4 left-1 right-1 border-l-2 border-blue-900 opacity-60"></div>
-                    <div className="absolute top-6 bottom-6 left-2 right-2 border-l border-blue-800 opacity-40"></div>
-                    <div className="absolute top-8 bottom-8 left-3 right-3 border-l border-blue-700 opacity-30"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-200 to-transparent opacity-40"></div>
+                    
                     {/* Pleats effect */}
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-blue-900 opacity-50"></div>
-                    <div className="absolute top-2 bottom-2 left-2.5 w-0.5 bg-blue-800 opacity-40"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-blue-700 opacity-30"></div>
-                    <span className="absolute -right-12 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-blue-800">
+                    <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-red-900 opacity-60"></div>
+                    <div className="absolute top-6 bottom-6 left-3 right-3 border-l border-red-800 opacity-40"></div>
+                    <div className="absolute top-8 bottom-8 left-4 right-4 border-l border-red-700 opacity-30"></div>
+                    
+                    {/* Pleat lines */}
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-900 opacity-50"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-800 opacity-40"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-700 opacity-30"></div>
+                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-600 opacity-25"></div>
+                    
+                    <span className="absolute -right-16 top-1/2 transform -translate-y-1/2 rotate-90 text-xs font-medium text-red-800">
                       Right Panel
                     </span>
                   </div>
                 </>
               ) : (
-                /* Single Panel - Attached to Rod */
-                <div className={`absolute top-18 ${curtainSide === "left" ? "left-8" : "right-8"} w-16 bottom-12 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 rounded-sm shadow-lg`}>
+                /* Single Panel */
+                <div className={`absolute top-18 ${curtainSide === "left" ? "left-4" : "right-4"} w-20 bottom-12 bg-gradient-to-r from-red-500 to-red-700 opacity-80 rounded-sm shadow-lg`}>
                   {/* Curtain Ring/Hook Connection */}
                   <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-gray-800"></div>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200 to-transparent opacity-40"></div>
-                  <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-blue-900 opacity-60"></div>
-                  <div className="absolute top-6 bottom-6 left-3 right-3 border-l border-blue-800 opacity-40"></div>
-                  <div className="absolute top-8 bottom-8 left-4 right-4 border-l border-blue-700 opacity-30"></div>
-                  <div className="absolute top-10 bottom-10 left-5 right-5 border-l border-blue-600 opacity-25"></div>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-200 to-transparent opacity-40"></div>
+                  
                   {/* More pleats for single panel */}
-                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-blue-900 opacity-50"></div>
-                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-blue-800 opacity-40"></div>
-                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-blue-700 opacity-30"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-blue-600 opacity-25"></div>
-                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-blue-500 opacity-20"></div>
-                  <span className={`absolute ${curtainSide === "left" ? "-left-14" : "-right-14"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-blue-800`}>
+                  <div className="absolute top-4 bottom-4 left-2 right-2 border-l-2 border-red-900 opacity-60"></div>
+                  <div className="absolute top-6 bottom-6 left-3 right-3 border-l border-red-800 opacity-40"></div>
+                  <div className="absolute top-8 bottom-8 left-4 right-4 border-l border-red-700 opacity-30"></div>
+                  <div className="absolute top-10 bottom-10 left-5 right-5 border-l border-red-600 opacity-25"></div>
+                  
+                  {/* Pleat lines */}
+                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-900 opacity-50"></div>
+                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-800 opacity-40"></div>
+                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-700 opacity-30"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-600 opacity-25"></div>
+                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-500 opacity-20"></div>
+                  <div className="absolute top-2 bottom-2 left-12 w-0.5 bg-red-400 opacity-15"></div>
+                  <div className="absolute top-2 bottom-2 left-14 w-0.5 bg-red-300 opacity-10"></div>
+                  
+                  <span className={`absolute ${curtainSide === "left" ? "-left-18" : "-right-18"} top-1/2 transform -translate-y-1/2 ${curtainSide === "left" ? "-rotate-90" : "rotate-90"} text-xs font-medium text-red-800`}>
                     Single Panel
                   </span>
                 </div>
               )}
+
+              {/* Total Height measurement (E) */}
+              <div className="absolute top-1/2 left-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">E: {displayValue(measurements.measurement_e)}</span>
+                  <div className="w-px h-24 bg-gray-600"></div>
+                </div>
+              </div>
+
+              {/* Curtain Drop measurement */}
+              <div className="absolute top-18 right-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-px h-48 bg-red-600"></div>
+                  <span className="font-semibold text-red-600 transform rotate-90 whitespace-nowrap">
+                    Drop: {displayValue(measurements.drop)}
+                  </span>
+                </div>
+              </div>
 
               {/* Floor Line */}
               <div className="absolute bottom-4 left-8 right-8 border-t-2 border-gray-800">
@@ -139,18 +196,19 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Measurement Arrows and Labels */}
-              <div className="absolute top-12 left-2 text-xs">
+              {/* Window to Floor measurement (D) */}
+              <div className="absolute bottom-4 left-2 text-xs">
                 <div className="flex items-center gap-1">
-                  <span>C:</span>
-                  <div className="w-px h-8 bg-gray-600"></div>
+                  <span className="font-semibold">D: {displayValue(measurements.measurement_d)}</span>
+                  <div className="w-px h-12 bg-gray-600"></div>
                 </div>
               </div>
-              <div className="absolute top-1/2 left-2 text-xs">
-                <div className="flex items-center gap-1">
-                  <span>E:</span>
-                  <div className="w-px h-16 bg-gray-600"></div>
-                </div>
+
+              {/* Total Width measurement (F) */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs">
+                <span className="bg-white px-2 border rounded font-semibold">
+                  F: {displayValue(measurements.measurement_f)}
+                </span>
               </div>
             </div>
 
