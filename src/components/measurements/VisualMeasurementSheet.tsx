@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,11 +109,11 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {/* Curtain Panels - Dynamic based on curtain type */}
+              {/* Curtain Panels - Dynamic based on curtain type and positioned more inside */}
               {curtainType === "pair" ? (
                 <>
-                  {/* Left Panel */}
-                  <div className="absolute top-16 left-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  {/* Left Panel - moved more inside */}
+                  <div className="absolute top-16 left-8 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
@@ -122,8 +123,8 @@ export const VisualMeasurementSheet = ({
                     </span>
                   </div>
                   
-                  {/* Right Panel */}
-                  <div className="absolute top-16 right-4 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
+                  {/* Right Panel - moved more inside */}
+                  <div className="absolute top-16 right-8 w-12 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg">
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
@@ -134,8 +135,8 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </>
               ) : (
-                /* Single Panel */
-                <div className={`absolute top-16 ${curtainSide === "left" ? "left-4" : "right-4"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                /* Single Panel - moved more inside */
+                <div className={`absolute top-16 ${curtainSide === "left" ? "left-8" : "right-8"} w-20 bottom-12 bg-red-500 opacity-80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-800 opacity-60"></div>
                   <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-700 opacity-40"></div>
@@ -149,9 +150,9 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Curtain Drop measurement */}
+              {/* Curtain Drop measurement - repositioned to avoid panel overlap */}
               {measurements.drop && (
-                <div className="absolute top-16 right-2 text-xs">
+                <div className="absolute top-16 right-32 text-xs">
                   <div className="flex flex-col items-center gap-1">
                     <div className="w-px h-48 bg-red-600"></div>
                     <span className="font-semibold text-red-600 -rotate-90 whitespace-nowrap">
@@ -220,17 +221,20 @@ export const VisualMeasurementSheet = ({
                   <Label className="text-sm font-medium">Curtain Type</Label>
                   <RadioGroup 
                     value={curtainType} 
-                    onValueChange={(value) => handleInputChange("curtain_type", value)}
+                    onValueChange={(value) => {
+                      console.log("Curtain type changed to:", value);
+                      handleInputChange("curtain_type", value);
+                    }}
                     className="mt-2"
                     disabled={readOnly}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="pair" id="pair" />
-                      <Label htmlFor="pair" className="text-sm">Pair (Two panels)</Label>
+                      <Label htmlFor="pair" className="text-sm cursor-pointer">Pair (Two panels)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="single" id="single" />
-                      <Label htmlFor="single" className="text-sm">Single (One panel)</Label>
+                      <Label htmlFor="single" className="text-sm cursor-pointer">Single (One panel)</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -240,17 +244,20 @@ export const VisualMeasurementSheet = ({
                     <Label className="text-sm font-medium">Panel Position</Label>
                     <RadioGroup 
                       value={curtainSide} 
-                      onValueChange={(value) => handleInputChange("curtain_side", value)}
+                      onValueChange={(value) => {
+                        console.log("Curtain side changed to:", value);
+                        handleInputChange("curtain_side", value);
+                      }}
                       className="mt-2"
                       disabled={readOnly}
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="left" id="left" />
-                        <Label htmlFor="left" className="text-sm">Left side</Label>
+                        <Label htmlFor="left" className="text-sm cursor-pointer">Left side</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="right" id="right" />
-                        <Label htmlFor="right" className="text-sm">Right side</Label>
+                        <Label htmlFor="right" className="text-sm cursor-pointer">Right side</Label>
                       </div>
                     </RadioGroup>
                   </div>
