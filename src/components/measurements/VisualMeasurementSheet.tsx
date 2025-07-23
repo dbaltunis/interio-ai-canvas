@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,44 +51,13 @@ export const VisualMeasurementSheet = ({
   // Calculate curtain bottom position based on pooling
   const getCurtainBottomPosition = () => {
     if (poolingOption === "touching_floor") {
-      return "bottom-24"; // Touching floor
+      return "bottom-4"; // Touching floor
     } else if (poolingOption === "below_floor" && hasValue(poolingAmount)) {
-      return "bottom-16"; // Below floor level
+      return "bottom-0"; // Below floor level
     } else {
-      return "bottom-28"; // Above floor (default)
+      return "bottom-12"; // Above floor (default)
     }
   };
-
-  // Calculate curtain positions based on rail width
-  const getCurtainPositions = () => {
-    const railWidth = parseFloat(measurements.rail_width) || 0;
-    const windowWidth = parseFloat(measurements.measurement_a) || 0;
-    
-    // If no rail width, use default positions
-    if (railWidth === 0) {
-      return {
-        leftStart: "left-28",
-        rightStart: "right-28",
-        singleLeft: "left-28",
-        singleRight: "right-28"
-      };
-    }
-    
-    // Calculate positions based on rail width
-    // Assuming window is centered and rail extends equally on both sides
-    const extension = (railWidth - windowWidth) / 2;
-    const leftPos = Math.max(20, 32 - (extension * 2)); // Adjust based on extension
-    const rightPos = Math.max(20, 32 - (extension * 2));
-    
-    return {
-      leftStart: `left-[${leftPos}px]`,
-      rightStart: `right-[${rightPos}px]`,
-      singleLeft: `left-[${leftPos}px]`,
-      singleRight: `right-[${rightPos}px]`
-    };
-  };
-
-  const curtainPositions = getCurtainPositions();
 
   return (
     <Card className="w-full">
@@ -96,33 +66,39 @@ export const VisualMeasurementSheet = ({
       </CardHeader>
       <CardContent>
         <div className="flex flex-col xl:flex-row gap-8">
-          {/* Visual Diagram - Made larger */}
+          {/* Visual Diagram */}
           <div className="flex-1 min-w-0">
-            <div className="relative bg-gradient-to-b from-blue-50 to-gray-50 border-2 border-gray-200 rounded-xl p-16 h-[750px] shadow-inner overflow-hidden">
+            <div className="relative bg-gradient-to-b from-blue-50 to-gray-50 border-2 border-gray-200 rounded-xl p-8 min-h-[500px] shadow-inner">
               {/* Ceiling Line */}
-              <div className="absolute top-12 left-20 right-20 border-t-2 border-gray-800">
-                <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 text-sm font-semibold bg-white px-3 py-1 rounded shadow-sm">
+              <div className="absolute top-4 left-8 right-8 border-t-2 border-gray-800">
+                <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold bg-white px-2 rounded">
                   Ceiling Line
                 </span>
               </div>
 
-              {/* Hardware - Track (very thin) or Rod (thicker) */}
-              <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} left-24 right-24 flex items-center z-20`}>
+              {/* Hardware - Track (on ceiling) or Rod (below ceiling) */}
+              <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12 flex items-center`}>
                 {hardwareType === "track" ? (
-                  <div className="w-full h-0.5 bg-gray-500 relative shadow-sm">
-                    <div className="absolute -left-1 -top-1 w-2 h-2 bg-gray-600 rounded-sm"></div>
-                    <div className="absolute -right-1 -top-1 w-2 h-2 bg-gray-600 rounded-sm"></div>
+                  <div className="w-full h-4 bg-gray-600 relative rounded-sm shadow-md">
+                    <div className="absolute -left-2 -top-1 w-3 h-6 bg-gray-700 rounded-sm"></div>
+                    <div className="absolute -right-2 -top-1 w-3 h-6 bg-gray-700 rounded-sm"></div>
+                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-gray-600 text-white px-3 py-1 rounded">
+                      Curtain Track
+                    </span>
                   </div>
                 ) : (
                   <div className="w-full h-3 bg-gray-600 rounded-full relative shadow-md">
                     <div className="absolute -left-3 -top-1 w-5 h-5 bg-gray-700 rounded-full shadow-sm"></div>
                     <div className="absolute -right-3 -top-1 w-5 h-5 bg-gray-700 rounded-full shadow-sm"></div>
+                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-gray-600 text-white px-3 py-1 rounded">
+                      Curtain Rod
+                    </span>
                   </div>
                 )}
               </div>
 
               {/* Window Frame */}
-              <div className="absolute top-40 left-32 right-32 bottom-32">
+              <div className="absolute top-28 left-16 right-16 bottom-20">
                 <div className="w-full h-full border-4 border-gray-500 bg-white relative rounded-sm shadow-lg">
                   {/* Window Panes */}
                   <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-3">
@@ -137,7 +113,7 @@ export const VisualMeasurementSheet = ({
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} left-26 w-12 ${getCurtainBottomPosition()} bg-gradient-to-r from-red-600 to-red-500 opacity-85 rounded-sm shadow-xl z-10`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-10 ${getCurtainBottomPosition()} bg-gradient-to-r from-red-600 to-red-500 opacity-85 rounded-sm shadow-xl`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     {/* Curtain fold lines */}
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
@@ -146,16 +122,15 @@ export const VisualMeasurementSheet = ({
                     <div className="absolute top-2 bottom-2 left-5.5 w-0.5 bg-red-500 opacity-30"></div>
                     <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-red-400 opacity-25"></div>
                     <div className="absolute top-2 bottom-2 left-8.5 w-0.5 bg-red-300 opacity-20"></div>
-                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-200 opacity-15"></div>
                     
                     {/* Pooling visual effect */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-8 left-0 w-full h-8 bg-gradient-to-b from-red-500 to-red-400 opacity-70 rounded-b-lg shadow-lg"></div>
+                      <div className="absolute -bottom-6 left-0 w-full h-6 bg-gradient-to-b from-red-500 to-red-400 opacity-70 rounded-b-lg shadow-lg"></div>
                     )}
                   </div>
                   
                   {/* Right Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} right-26 w-12 ${getCurtainBottomPosition()} bg-gradient-to-r from-red-600 to-red-500 opacity-85 rounded-sm shadow-xl z-10`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-10 ${getCurtainBottomPosition()} bg-gradient-to-r from-red-600 to-red-500 opacity-85 rounded-sm shadow-xl`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                     {/* Curtain fold lines */}
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
@@ -164,17 +139,16 @@ export const VisualMeasurementSheet = ({
                     <div className="absolute top-2 bottom-2 left-5.5 w-0.5 bg-red-500 opacity-30"></div>
                     <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-red-400 opacity-25"></div>
                     <div className="absolute top-2 bottom-2 left-8.5 w-0.5 bg-red-300 opacity-20"></div>
-                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-200 opacity-15"></div>
                     
                     {/* Pooling visual effect */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-8 left-0 w-full h-8 bg-gradient-to-b from-red-500 to-red-400 opacity-70 rounded-b-lg shadow-lg"></div>
+                      <div className="absolute -bottom-6 left-0 w-full h-6 bg-gradient-to-b from-red-500 to-red-400 opacity-70 rounded-b-lg shadow-lg"></div>
                     )}
                   </div>
                 </>
               ) : (
                 /* Single Panel */
-                <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} ${curtainSide === "left" ? "left-26" : "right-26"} w-16 ${getCurtainBottomPosition()} bg-gradient-to-r from-red-600 to-red-500 opacity-85 rounded-sm shadow-xl z-10`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-14 ${getCurtainBottomPosition()} bg-gradient-to-r from-red-600 to-red-500 opacity-85 rounded-sm shadow-xl`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
                   {/* Curtain fold lines */}
                   <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
@@ -185,22 +159,20 @@ export const VisualMeasurementSheet = ({
                   <div className="absolute top-2 bottom-2 left-8.5 w-0.5 bg-red-300 opacity-20"></div>
                   <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-red-200 opacity-15"></div>
                   <div className="absolute top-2 bottom-2 left-11.5 w-0.5 bg-red-100 opacity-10"></div>
-                  <div className="absolute top-2 bottom-2 left-13 w-0.5 bg-red-50 opacity-8"></div>
-                  <div className="absolute top-2 bottom-2 left-14.5 w-0.5 bg-red-50 opacity-6"></div>
                   
                   {/* Pooling visual effect */}
                   {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                    <div className="absolute -bottom-8 left-0 w-full h-8 bg-gradient-to-b from-red-500 to-red-400 opacity-70 rounded-b-lg shadow-lg"></div>
+                    <div className="absolute -bottom-6 left-0 w-full h-6 bg-gradient-to-b from-red-500 to-red-400 opacity-70 rounded-b-lg shadow-lg"></div>
                   )}
                 </div>
               )}
 
-              {/* Rail Width measurement - positioned higher to avoid overlap */}
+              {/* Rail Width measurement - positioned near the hardware */}
               {hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-6" : "top-18"} left-24 right-24 flex items-center z-30`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -210,10 +182,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Window Width Measurement (A) */}
               {hasValue(measurements.measurement_a) && (
-                <div className="absolute top-36 left-32 right-32 flex items-center z-30">
+                <div className="absolute top-24 left-16 right-16 flex items-center">
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
                   <div className="flex-1 border-t-2 border-green-600 relative">
-                    <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                       A: {displayValue(measurements.measurement_a)}
                     </span>
                   </div>
@@ -223,10 +195,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Drop measurement - from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} left-12 flex flex-col items-center z-30`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-purple-600"></div>
-                  <div className="h-80 border-l-2 border-purple-600 relative">
-                    <span className="absolute -left-24 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
+                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-purple-600 relative`}>
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
@@ -236,10 +208,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Window Height Measurement (B) */}
               {hasValue(measurements.measurement_b) && (
-                <div className="absolute top-40 left-16 bottom-32 flex flex-col items-center z-30">
+                <div className="absolute top-28 left-8 bottom-20 flex flex-col items-center">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
                   <div className="flex-1 border-l-2 border-orange-600 relative">
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
+                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
                       B: {displayValue(measurements.measurement_b)}
                     </span>
                   </div>
@@ -249,7 +221,7 @@ export const VisualMeasurementSheet = ({
 
               {/* Rod to Ceiling measurement (C) - only for rod, not track */}
               {hasValue(measurements.measurement_c) && hardwareType === "rod" && (
-                <div className="absolute top-12 right-12 flex flex-col items-center z-30">
+                <div className="absolute top-4 right-4 flex flex-col items-center">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-red-600"></div>
                   <div className="h-12 border-l-2 border-red-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
@@ -261,17 +233,17 @@ export const VisualMeasurementSheet = ({
               )}
 
               {/* Floor Line */}
-              <div className="absolute bottom-24 left-20 right-20 border-t-4 border-gray-800">
-                <span className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-sm font-semibold bg-white px-3 py-1 rounded shadow-sm">
+              <div className="absolute bottom-4 left-8 right-8 border-t-4 border-gray-800">
+                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-sm font-semibold bg-white px-2 rounded shadow-sm">
                   Floor
                 </span>
               </div>
 
               {/* Pooling measurement indicator */}
               {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-16 left-16 flex flex-col items-center z-30">
+                <div className="absolute bottom-0 left-6 flex flex-col items-center">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-amber-600"></div>
-                  <div className="h-8 border-l-2 border-amber-600 relative">
+                  <div className="h-6 border-l-2 border-amber-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
                       Pooling: {displayValue(poolingAmount)}
                     </span>
@@ -282,9 +254,9 @@ export const VisualMeasurementSheet = ({
 
               {/* Above floor clearance measurement indicator */}
               {poolingOption === "above_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-28 left-16 flex flex-col items-center z-30">
+                <div className="absolute bottom-8 left-6 flex flex-col items-center">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-emerald-600"></div>
-                  <div className="h-4 border-l-2 border-emerald-600 relative">
+                  <div className="h-8 border-l-2 border-emerald-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
                       Clearance: {displayValue(poolingAmount)}
                     </span>
@@ -295,9 +267,9 @@ export const VisualMeasurementSheet = ({
 
               {/* Window to Floor measurement (D) */}
               {hasValue(measurements.measurement_d) && (
-                <div className="absolute bottom-24 right-16 flex flex-col items-center z-30">
+                <div className="absolute bottom-4 right-8 flex flex-col items-center">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-indigo-600"></div>
-                  <div className="h-8 border-l-2 border-indigo-600 relative">
+                  <div className="h-16 border-l-2 border-indigo-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
                       D: {displayValue(measurements.measurement_d)}
                     </span>
@@ -308,7 +280,7 @@ export const VisualMeasurementSheet = ({
 
               {/* Total Height measurement (E) - from hardware to floor */}
               {hasValue(measurements.measurement_e) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-12" : "top-24"} right-8 bottom-24 flex flex-col items-center z-30`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-0 bottom-4 flex flex-col items-center`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-pink-600"></div>
                   <div className="flex-1 border-l-2 border-pink-600 relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-pink-600 text-white px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
@@ -321,10 +293,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Total Width measurement (F) - from extension to extension */}
               {hasValue(measurements.measurement_f) && (
-                <div className="absolute bottom-12 left-12 right-12 flex items-center z-30">
+                <div className="absolute bottom-0 left-4 right-4 flex items-center">
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-teal-600"></div>
                   <div className="flex-1 border-t-2 border-teal-600 relative">
-                    <span className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                       F: {displayValue(measurements.measurement_f)}
                     </span>
                   </div>
@@ -468,6 +440,67 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
+            {/* Pooling Configuration */}
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 shadow-sm">
+              <h4 className="font-semibold mb-4 text-amber-800 flex items-center">
+                <span className="w-2 h-2 bg-amber-500 rounded-full mr-3"></span>
+                Pooling Configuration
+              </h4>
+              
+              <div className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block text-amber-700">Pooling Position</Label>
+                  <RadioGroup 
+                    value={poolingOption} 
+                    onValueChange={(value) => {
+                      console.log("Pooling option changed to:", value);
+                      handleInputChange("pooling_option", value);
+                    }}
+                    disabled={readOnly}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="above_floor" id="above_floor" />
+                      <Label htmlFor="above_floor" className="font-medium">Above floor (hanging)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="touching_floor" id="touching_floor" />
+                      <Label htmlFor="touching_floor" className="font-medium">Touching floor</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="below_floor" id="below_floor" />
+                      <Label htmlFor="below_floor" className="font-medium">Below floor (pooling)</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {(poolingOption === "above_floor" || poolingOption === "below_floor") && (
+                  <div>
+                    <Label htmlFor="pooling_amount" className="text-sm font-semibold text-amber-700">
+                      {poolingOption === "above_floor" ? "Floor Clearance" : "Pooling Amount"}
+                    </Label>
+                    <p className="text-xs text-amber-600 mb-2">
+                      {poolingOption === "above_floor" 
+                        ? "Distance between curtain bottom and floor" 
+                        : "How much fabric pools on the floor"}
+                    </p>
+                    <Input
+                      id="pooling_amount"
+                      type="number"
+                      step="0.25"
+                      value={poolingAmount}
+                      onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
+                      placeholder="2.00"
+                      readOnly={readOnly}
+                      className="font-semibold border-amber-300 focus:border-amber-500"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Detailed Window Measurements */}
             <div className="bg-white border-2 border-gray-200 rounded-xl p-5 shadow-sm">
               <h4 className="font-semibold mb-4 text-gray-800 flex items-center">
@@ -563,67 +596,6 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
             </div>
-
-            {/* Pooling Configuration */}
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 shadow-sm">
-              <h4 className="font-semibold mb-4 text-amber-800 flex items-center">
-                <span className="w-2 h-2 bg-amber-500 rounded-full mr-3"></span>
-                Pooling Configuration
-              </h4>
-              
-              <div className="space-y-5">
-                <div>
-                  <Label className="text-sm font-semibold mb-3 block text-amber-700">Pooling Position</Label>
-                  <RadioGroup 
-                    value={poolingOption} 
-                    onValueChange={(value) => {
-                      console.log("Pooling option changed to:", value);
-                      handleInputChange("pooling_option", value);
-                    }}
-                    disabled={readOnly}
-                    className="space-y-3"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="above_floor" id="above_floor" />
-                      <Label htmlFor="above_floor" className="font-medium">Above floor (hanging)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="touching_floor" id="touching_floor" />
-                      <Label htmlFor="touching_floor" className="font-medium">Touching floor</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="below_floor" id="below_floor" />
-                      <Label htmlFor="below_floor" className="font-medium">Below floor (pooling)</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {(poolingOption === "above_floor" || poolingOption === "below_floor") && (
-                  <div>
-                    <Label htmlFor="pooling_amount" className="text-sm font-semibold text-amber-700">
-                      {poolingOption === "above_floor" ? "Floor Clearance" : "Pooling Amount"}
-                    </Label>
-                    <p className="text-xs text-amber-600 mb-2">
-                      {poolingOption === "above_floor" 
-                        ? "Distance between curtain bottom and floor" 
-                        : "How much fabric pools on the floor"}
-                    </p>
-                    <Input
-                      id="pooling_amount"
-                      type="number"
-                      step="0.25"
-                      value={poolingAmount}
-                      onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
-                      placeholder="2.00"
-                      readOnly={readOnly}
-                      className="font-semibold border-amber-300 focus:border-amber-500"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
 
             {/* Additional Measurements for Curtain Makers */}
             <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-5 shadow-sm">
