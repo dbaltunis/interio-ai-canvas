@@ -62,7 +62,10 @@ export const VisualRoomCard = ({
 
   const getMeasurementStatus = (surface: any) => {
     const hasMeasurement = clientMeasurements.some(m => 
-      m.room_id === room.id && m.measurements && Object.keys(m.measurements).length > 0
+      m.room_id === room.id && m.measurements && 
+      typeof m.measurements === 'object' && 
+      m.measurements !== null &&
+      Object.keys(m.measurements).length > 0
     );
     return hasMeasurement ? 'measured' : 'not_measured';
   };
@@ -214,7 +217,11 @@ export const VisualRoomCard = ({
                 surfaceId={selectedWindow.id}
                 surfaceName={selectedWindow.name}
                 existingMeasurement={clientMeasurements.find(m => 
-                  m.room_id === room.id && m.measurements?.surface_id === selectedWindow.id
+                  m.room_id === room.id && 
+                  typeof m.measurements === 'object' && 
+                  m.measurements !== null &&
+                  'surface_id' in m.measurements &&
+                  m.measurements.surface_id === selectedWindow.id
                 )}
                 onSave={() => setShowMeasurement(false)}
               />

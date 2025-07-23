@@ -30,6 +30,18 @@ export const useMeasurementUnits = () => {
     return formatMeasurement(value, units.fabric);
   };
 
+  const formatCurrency = (amount: number): string => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+  };
+
   const getLengthUnitLabel = (): string => {
     const labels: Record<string, string> = {
       'mm': 'mm',
@@ -57,6 +69,7 @@ export const useMeasurementUnits = () => {
     formatLength,
     formatArea, 
     formatFabric,
+    formatCurrency,
     getLengthUnitLabel,
     getFabricUnitLabel
   };
