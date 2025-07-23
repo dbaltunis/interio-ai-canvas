@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Plus, Send, History, Settings } from "lucide-react";
+import { Mail, Plus, Send, History, Settings, Sparkles, MessageCircle, FileText, Clock } from "lucide-react";
 import { ProjectEmailComposer } from "../email/ProjectEmailComposer";
 import { ProjectEmailHistory } from "../email/ProjectEmailHistory";
 import { useProjects } from "@/hooks/useProjects";
@@ -24,31 +24,37 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
 
   if (!project) {
     return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Project not found</h3>
-          <p className="text-gray-500">Unable to load project information.</p>
-        </CardContent>
-      </Card>
+      <div className="bg-white rounded-xl shadow-sm border-0 p-8">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto">
+            <Mail className="h-8 w-8 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900">Oops! Project not found</h3>
+          <p className="text-gray-500">We couldn't find this project.</p>
+        </div>
+      </div>
     );
   }
 
   if (!hasSendGridIntegration) {
     return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Email Integration Required</h3>
-          <p className="text-gray-500 mb-4">
-            Please configure your email integration in Settings to send emails.
-          </p>
-          <Button>
-            <Settings className="h-4 w-4 mr-2" />
-            Configure Email
+      <div className="bg-white rounded-xl shadow-sm border-0 p-8">
+        <div className="text-center space-y-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto">
+            <Settings className="h-10 w-10 text-orange-600" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-gray-900">Connect Your Email</h3>
+            <p className="text-gray-500">
+              Ready to start sending emails? Let's get you connected!
+            </p>
+          </div>
+          <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 rounded-lg shadow-md">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Set Up Email
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -65,65 +71,76 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Email Communication</h2>
-          <p className="text-gray-600">
-            Manage email communication for: <span className="font-medium">{project.name}</span>
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-sm border-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+              <MessageCircle className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
+              <p className="text-gray-600">
+                for <span className="font-medium text-blue-600">{project.name}</span>
+              </p>
+            </div>
+          </div>
           <Button 
             onClick={() => setShowComposer(true)}
-            className="flex items-center gap-2"
+            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg shadow-md"
           >
-            <Plus className="h-4 w-4" />
-            Compose Email
+            <Plus className="h-4 w-4 mr-2" />
+            New Message
           </Button>
         </div>
       </div>
 
-      {/* Email Management Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            Email History
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            Templates
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border-0 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="bg-gray-50 px-6 py-4">
+            <TabsList className="bg-white rounded-lg p-1 shadow-sm">
+              <TabsTrigger 
+                value="history" 
+                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+              >
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline">Recent</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="templates" 
+                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Templates</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <TabsContent value="history">
-          <ProjectEmailHistory projectId={projectId} />
-        </TabsContent>
+          <div className="p-6">
+            <TabsContent value="history" className="mt-0">
+              <ProjectEmailHistory projectId={projectId} />
+            </TabsContent>
 
-        <TabsContent value="templates">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                Email Templates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Email Templates</h3>
-                <p className="text-gray-500 mb-4">
-                  Create and manage reusable email templates for your projects.
-                </p>
-                <Button>
+            <TabsContent value="templates" className="mt-0">
+              <div className="text-center py-16 space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto">
+                  <Sparkles className="h-10 w-10 text-purple-600" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-gray-900">Message Templates</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">
+                    Save time with reusable message templates for common communications.
+                  </p>
+                </div>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg shadow-md">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Template
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 };
