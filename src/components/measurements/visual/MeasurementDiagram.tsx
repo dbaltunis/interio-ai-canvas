@@ -23,11 +23,11 @@ export const MeasurementDiagram = ({
   const poolingAmount = measurements.pooling_amount || "";
 
   return (
-    <Card className="p-6 bg-gradient-to-b from-blue-50 to-gray-50 border-2 border-gray-200 shadow-inner">
-      <div className="relative w-full h-[500px] overflow-hidden">
-        {/* Ceiling Line - Moved higher to avoid cutoff */}
-        <div className="absolute top-2 left-8 right-8 border-t-2 border-gray-800">
-          <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-white px-2 rounded">
+    <Card className="p-8 bg-gradient-to-b from-blue-50 to-gray-50 border-2 border-gray-200 shadow-inner">
+      <div className="relative w-full h-[600px] overflow-visible">
+        {/* Ceiling Line - More padding from top to prevent cutoff */}
+        <div className="absolute top-8 left-12 right-12 border-t-2 border-gray-800">
+          <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-white px-2 rounded border border-gray-300 shadow-sm">
             Ceiling
           </span>
         </div>
@@ -59,8 +59,8 @@ export const MeasurementDiagram = ({
         />
 
         {/* Floor Line */}
-        <div className="absolute bottom-4 left-8 right-8 border-t-4 border-gray-800">
-          <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-white px-2 rounded">
+        <div className="absolute bottom-8 left-12 right-12 border-t-4 border-gray-800">
+          <span className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-xs font-semibold bg-white px-2 rounded border border-gray-300 shadow-sm">
             Floor
           </span>
         </div>
