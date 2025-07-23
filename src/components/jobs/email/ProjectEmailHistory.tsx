@@ -16,7 +16,14 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const { data: projects } = useProjects();
   
   const project = projects?.find(p => p.id === projectId);
-  const projectEmails = emails.filter(email => email.project_id === projectId);
+  // Filter emails by client_id since emails table doesn't have project_id
+  // We need to match through the project's client_id
+  const projectEmails = emails.filter(email => {
+    if (project?.client_id) {
+      return email.client_id === project.client_id;
+    }
+    return false;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -113,9 +120,9 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                   <MousePointer className="h-3 w-3" />
                   <span>{email.click_count} clicks</span>
                 </div>
-                {email.delivered_at && (
+                {email.status === 'delivered' && (
                   <span className="text-green-600">
-                    Delivered {formatDate(email.delivered_at)}
+                    Delivered
                   </span>
                 )}
               </div>
