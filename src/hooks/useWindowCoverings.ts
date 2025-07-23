@@ -21,14 +21,14 @@ export const useWindowCoverings = () => {
       // For now, return static data until we have a proper window_coverings table
       // This can be expanded to fetch from database later
       return [
-        { id: "curtains", name: "Curtains", category: "fabric" },
-        { id: "drapes", name: "Drapes", category: "fabric" },
-        { id: "blinds", name: "Blinds", category: "hard" },
-        { id: "shutters", name: "Shutters", category: "hard" },
-        { id: "valances", name: "Valances", category: "fabric" },
-        { id: "roman_shades", name: "Roman Shades", category: "fabric" },
-        { id: "roller_shades", name: "Roller Shades", category: "hard" },
-        { id: "cellular_shades", name: "Cellular Shades", category: "hard" }
+        { id: "curtains", name: "Curtains", category: "fabric", base_price: 45 },
+        { id: "drapes", name: "Drapes", category: "fabric", base_price: 65 },
+        { id: "blinds", name: "Blinds", category: "hard", base_price: 35 },
+        { id: "shutters", name: "Shutters", category: "hard", base_price: 120 },
+        { id: "valances", name: "Valances", category: "fabric", base_price: 25 },
+        { id: "roman_shades", name: "Roman Shades", category: "fabric", base_price: 55 },
+        { id: "roller_shades", name: "Roller Shades", category: "hard", base_price: 40 },
+        { id: "cellular_shades", name: "Cellular Shades", category: "hard", base_price: 50 }
       ];
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
