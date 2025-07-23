@@ -1,9 +1,11 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Home, Square } from "lucide-react";
-import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Ruler } from "lucide-react";
+import { useSurfaces, useCreateSurface } from "@/hooks/useSurfaces";
+import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 
 interface WindowsCanvasInterfaceProps {
   rooms: any[];
@@ -15,115 +17,129 @@ interface WindowsCanvasInterfaceProps {
 export const WindowsCanvasInterface = ({ 
   rooms, 
   surfaces, 
-  onCreateSurface,
+  onCreateSurface, 
   onBack 
 }: WindowsCanvasInterfaceProps) => {
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [showMeasurementDialog, setShowMeasurementDialog] = useState(false);
+  const [selectedSurface, setSelectedSurface] = useState<any>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const createSurface = useCreateSurface();
 
-  const handleAddWindow = (roomId: string) => {
-    console.log("Adding window to room:", roomId);
-    setSelectedRoomId(roomId);
-    onCreateSurface?.(roomId, 'window');
-    // Small delay to show visual feedback
-    setTimeout(() => setSelectedRoomId(null), 500);
+  const handleCreateWindow = async (room: any) => {
+    if (!room.id) return;
+    
+    const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
+    const windowNumber = roomSurfaces.length + 1;
+    
+    const newSurface = await createSurface.mutateAsync({
+      room_id: room.id,
+      project_id: room.project_id,
+      name: `Window ${windowNumber}`,
+      surface_type: 'window',
+      width: 36,
+      height: 84
+    });
+
+    // Open measurement dialog for the new window
+    setSelectedSurface(newSurface);
+    setSelectedRoom(room);
+    setShowMeasurementDialog(true);
   };
 
-  const getRoomSurfaces = (roomId: string) => {
-    return surfaces.filter(surface => surface.room_id === roomId);
+  const handleMeasureWindow = (surface: any) => {
+    const room = rooms.find(r => r.id === surface.room_id);
+    setSelectedSurface(surface);
+    setSelectedRoom(room);
+    setShowMeasurementDialog(true);
+  };
+
+  const handleMeasurementSave = () => {
+    setShowMeasurementDialog(false);
+    setSelectedSurface(null);
+    setSelectedRoom(null);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold mb-2">Add Windows to Rooms</h3>
-        <p className="text-muted-foreground">Click the + button on any room to add windows</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rooms.map((room) => {
-          const roomSurfaces = getRoomSurfaces(room.id);
-          const isSelected = selectedRoomId === room.id;
-          
-          return (
-            <Card 
-              key={room.id} 
-              className={`relative transition-all duration-200 ${
-                isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
-              }`}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-between text-lg">
-                  <div className="flex items-center gap-2">
-                    <Home className="h-5 w-5" />
-                    {room.name}
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleAddWindow(room.id)}
-                    className="h-8 w-8 p-0"
-                    disabled={isSelected}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Room Type:</span>
-                    <Badge variant="outline">
-                      {room.room_type?.replace('_', ' ') || 'General'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Windows:</span>
-                      <span className="font-medium">{roomSurfaces.length}</span>
-                    </div>
-                    
-                    {roomSurfaces.length > 0 && (
-                      <div className="space-y-1">
-                        {roomSurfaces.map((surface) => (
-                          <div key={surface.id} className="flex items-center gap-2 text-xs">
-                            <Square className="h-3 w-3" />
-                            <span>{surface.name}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {surface.surface_type}
-                            </Badge>
+    <>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {rooms.map((room) => {
+            const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
+            return (
+              <Card key={room.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{room.name}</span>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleCreateWindow(room)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Window
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {roomSurfaces.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      No windows yet
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {roomSurfaces.map((surface) => (
+                        <div
+                          key={surface.id}
+                          className="flex items-center justify-between p-2 border rounded"
+                        >
+                          <div>
+                            <span className="font-medium">{surface.name}</span>
+                            <p className="text-sm text-muted-foreground">
+                              {surface.width || 0}" × {surface.height || 0}"
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {roomSurfaces.length === 0 && (
-                      <div className="text-xs text-muted-foreground italic">
-                        No windows added yet
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleMeasureWindow(surface)}
+                          >
+                            <Ruler className="h-3 w-3 mr-1" />
+                            Measure
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
-      {rooms.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">No Rooms Available</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              You need to create rooms first before adding windows.
-            </p>
-            <Button onClick={onBack} variant="outline">
-              Go Back to Create Rooms
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      {/* Measurement Dialog */}
+      <Dialog open={showMeasurementDialog} onOpenChange={setShowMeasurementDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Measure Window - {selectedSurface?.name} ({selectedRoom?.name})
+            </DialogTitle>
+          </DialogHeader>
+          {selectedSurface && selectedRoom && (
+            <MeasurementWorksheet
+              clientId="" // We'll use project context instead
+              projectId={selectedRoom.project_id}
+              existingMeasurement={selectedSurface.measurements ? {
+                measurements: selectedSurface.measurements,
+                measurement_type: "standard",
+                notes: "",
+                measured_by: "",
+                measured_at: new Date().toISOString()
+              } : undefined}
+              onSave={handleMeasurementSave}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
