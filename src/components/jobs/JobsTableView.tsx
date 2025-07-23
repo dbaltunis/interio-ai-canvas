@@ -172,15 +172,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     return quote.projects?.status || quote.status || 'draft';
   };
 
-  const getEmailStatus = (quote: any) => {
-    const mockEmailData = {
-      hasEmails: Math.random() > 0.3,
-      totalSent: Math.floor(Math.random() * 5) + 1,
-      lastStatus: ['sent', 'opened', 'sent'][Math.floor(Math.random() * 3)]
-    };
-    return mockEmailData;
-  };
-
   const handleDeleteJob = async (quote: any) => {
     try {
       await deleteQuote.mutateAsync(quote.id);
@@ -277,7 +268,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
               const clientName = getClientName(quote);
               const client = getClientForQuote(quote);
               const currentStatus = getCurrentStatus(quote);
-              const emailStatus = getEmailStatus(quote);
               
               return (
                 <TableRow 
@@ -288,11 +278,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   <TableCell className="font-medium">
                     {quote.quote_number}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <EmailStatusDisplay 
-                      hasEmails={emailStatus.hasEmails}
-                      totalSent={emailStatus.totalSent}
-                      lastStatus={emailStatus.lastStatus}
+                      jobId={quote.id}
+                      clientEmail={client?.email}
                     />
                   </TableCell>
                   <TableCell>
@@ -385,7 +374,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
         />
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -411,7 +399,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Notes Dialog */}
       <JobNotesDialog
         open={notesDialogOpen}
         onOpenChange={setNotesDialogOpen}
