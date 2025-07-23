@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useJobHandlers } from "../job-creation/JobHandlers";
-import { RoomManagementTabs } from "./RoomManagementTabs";
+import { VisualRoomManagementTabs } from "./VisualRoomManagementTabs";
 import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedRoomViewProps {
@@ -30,7 +31,6 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
 
   const handleCreateFromTemplate = async (template: any, customName?: string) => {
     try {
-      // Create the room
       const actualProjectId = project.project_id || project.id;
       const newRoom = await createRoom.mutateAsync({
         project_id: actualProjectId,
@@ -38,7 +38,6 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
         room_type: template.type
       });
 
-      // Create surfaces from template
       for (const surfaceTemplate of template.surfaces) {
         await handleCreateSurface(newRoom.id, surfaceTemplate.type);
       }
@@ -66,11 +65,12 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
   }
 
   return (
-    <RoomManagementTabs
+    <VisualRoomManagementTabs
       rooms={rooms || []}
       surfaces={allSurfaces || []}
       treatments={allTreatments || []}
       projectId={project.project_id || project.id}
+      clientId={project.client_id}
       onUpdateRoom={() => {}}
       onDeleteRoom={() => {}}
       onCreateTreatment={handleCreateTreatment}
