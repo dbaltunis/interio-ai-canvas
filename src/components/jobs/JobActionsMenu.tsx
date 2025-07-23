@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useDeleteQuote } from "@/hooks/useQuotes";
+import { useDeleteQuote, useQuotes } from "@/hooks/useQuotes";
 
 interface JobActionsMenuProps {
   quote: any;
@@ -66,6 +66,7 @@ export const JobActionsMenu = ({
   
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
+  const { refetch } = useQuotes();
 
   const handleCopyJob = () => {
     onJobCopy?.(quote.id);
@@ -86,12 +87,18 @@ export const JobActionsMenu = ({
   const handleDeleteJob = async () => {
     try {
       await deleteQuote.mutateAsync(quote.id);
+      
+      // Immediately refetch the quotes to update the UI
+      await refetch();
+      
       toast({
         title: "Success",
         description: "Job deleted successfully",
       });
+      
       setShowDeleteDialog(false);
     } catch (error) {
+      console.error("Error deleting job:", error);
       toast({
         title: "Error",
         description: "Failed to delete job",

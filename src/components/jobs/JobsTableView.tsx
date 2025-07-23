@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +45,7 @@ interface JobsTableViewProps {
 const ITEMS_PER_PAGE = 20;
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
-  const { data: quotes = [], isLoading } = useQuotes();
+  const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: clients = [] } = useClients();
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
@@ -175,13 +176,19 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const handleDeleteJob = async (quote: any) => {
     try {
       await deleteQuote.mutateAsync(quote.id);
+      
+      // Immediately refetch the quotes to update the UI
+      await refetch();
+      
       toast({
         title: "Success",
         description: "Job deleted successfully",
       });
+      
       setDeleteDialogOpen(false);
       setQuoteToDelete(null);
     } catch (error) {
+      console.error("Error deleting job:", error);
       toast({
         title: "Error",
         description: "Failed to delete job",
