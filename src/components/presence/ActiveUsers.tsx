@@ -25,7 +25,14 @@ export const ActiveUsers = () => {
   const onlineUsers = activeUsers.filter(user => user.is_online);
 
   if (onlineUsers.length === 0) {
-    return null;
+    return (
+      <Button variant="ghost" size="sm" className="relative">
+        <Users className="h-4 w-4" />
+        <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+          0
+        </Badge>
+      </Button>
+    );
   }
 
   return (
@@ -33,11 +40,9 @@ export const ActiveUsers = () => {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Users className="h-4 w-4" />
-          {onlineUsers.length > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-              {onlineUsers.length}
-            </Badge>
-          )}
+          <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+            {onlineUsers.length}
+          </Badge>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
