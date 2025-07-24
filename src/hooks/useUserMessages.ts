@@ -39,7 +39,7 @@ export const useUserMessages = () => {
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const isInitialized = useRef(false);
+  const mountedRef = useRef(true);
 
   // Send a message
   const sendMessage = async (recipientId: string, message: string) => {
@@ -138,7 +138,7 @@ export const useUserMessages = () => {
 
   // Fetch message threads
   const fetchThreads = async () => {
-    if (!user) return;
+    if (!user || !mountedRef.current) return;
 
     const { data: messagesData, error: messagesError } = await supabase
       .from('user_messages')
@@ -148,7 +148,9 @@ export const useUserMessages = () => {
 
     if (messagesError) {
       console.error('Error fetching threads:', messagesError);
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
       return;
     }
 
@@ -211,35 +213,46 @@ export const useUserMessages = () => {
       }
     });
 
-    setThreads(Array.from(threadMap.values()));
-    setLoading(false);
+    if (mountedRef.current) {
+      setThreads(Array.from(threadMap.values()));
+      setLoading(false);
+    }
   };
 
-  // Clean up existing channel
-  const cleanupChannel = () => {
+  // Clean up channel
+  const cleanup = () => {
+    console.log('Cleaning up messages resources');
+    
     if (channelRef.current) {
-      console.log('Cleaning up messages channel');
-      supabase.removeChannel(channelRef.current);
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (error) {
+        console.error('Error removing channel:', error);
+      }
       channelRef.current = null;
     }
   };
 
   // Set up realtime subscription
   useEffect(() => {
-    if (!user || isInitialized.current) return;
+    if (!user) return;
 
     console.log('Setting up messages subscription for user:', user.id);
     
     // Clean up any existing channel first
-    cleanupChannel();
+    cleanup();
 
     // Fetch initial data
     fetchThreads();
 
-    // Create new channel with unique name
+    // Create new channel
     const channelName = `user-messages-${user.id}-${Date.now()}`;
-    channelRef.current = supabase
-      .channel(channelName)
+    const newChannel = supabase.channel(channelName);
+    
+    channelRef.current = newChannel;
+
+    // Set up the channel subscription
+    newChannel
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'user_messages' },
         (payload) => {
@@ -249,17 +262,21 @@ export const useUserMessages = () => {
       )
       .subscribe((status) => {
         console.log('Messages subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isInitialized.current = true;
-        }
       });
 
     return () => {
       console.log('Cleaning up messages subscription');
-      cleanupChannel();
-      isInitialized.current = false;
+      mountedRef.current = false;
+      cleanup();
     };
   }, [user?.id]);
+
+  // Set mounted ref to false on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   return {
     messages,

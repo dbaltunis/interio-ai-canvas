@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,11 +26,11 @@ export const useUserPresence = () => {
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitialized = useRef(false);
+  const mountedRef = useRef(true);
 
   // Update current user's presence
   const updatePresence = async (currentPage: string, currentJobId?: string) => {
-    if (!user) return;
+    if (!user || !mountedRef.current) return;
 
     console.log('Updating presence:', { currentPage, currentJobId });
     
@@ -50,6 +51,8 @@ export const useUserPresence = () => {
 
   // Fetch active users
   const fetchActiveUsers = async () => {
+    if (!mountedRef.current) return;
+
     const { data: presenceData, error: presenceError } = await supabase
       .from('user_presence')
       .select('*')
@@ -58,8 +61,10 @@ export const useUserPresence = () => {
 
     if (presenceError) {
       console.error('Error fetching active users:', presenceError);
-      setActiveUsers([]);
-      setLoading(false);
+      if (mountedRef.current) {
+        setActiveUsers([]);
+        setLoading(false);
+      }
       return;
     }
 
@@ -98,8 +103,10 @@ export const useUserPresence = () => {
       user_profiles: profilesMap.get(item.user_id) || null
     }));
 
-    setActiveUsers(transformedData);
-    setLoading(false);
+    if (mountedRef.current) {
+      setActiveUsers(transformedData);
+      setLoading(false);
+    }
   };
 
   // Set user offline
@@ -112,18 +119,16 @@ export const useUserPresence = () => {
       .eq('user_id', user.id);
   };
 
-  // Update presence when route changes
-  useEffect(() => {
-    if (user && isInitialized.current) {
-      updatePresence(location.pathname);
-    }
-  }, [user, location.pathname]);
-
-  // Clean up existing resources
+  // Clean up all resources
   const cleanup = () => {
+    console.log('Cleaning up presence resources');
+    
     if (channelRef.current) {
-      console.log('Cleaning up presence channel');
-      supabase.removeChannel(channelRef.current);
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (error) {
+        console.error('Error removing channel:', error);
+      }
       channelRef.current = null;
     }
 
@@ -133,9 +138,16 @@ export const useUserPresence = () => {
     }
   };
 
+  // Update presence when route changes
+  useEffect(() => {
+    if (user && mountedRef.current) {
+      updatePresence(location.pathname);
+    }
+  }, [user, location.pathname]);
+
   // Set up realtime subscription
   useEffect(() => {
-    if (!user || isInitialized.current) return;
+    if (!user) return;
 
     console.log('Setting up presence subscription for user:', user.id);
     
@@ -146,10 +158,14 @@ export const useUserPresence = () => {
     updatePresence(location.pathname);
     fetchActiveUsers();
 
-    // Create new channel with unique name
+    // Create new channel
     const channelName = `user-presence-${user.id}-${Date.now()}`;
-    channelRef.current = supabase
-      .channel(channelName)
+    const newChannel = supabase.channel(channelName);
+    
+    channelRef.current = newChannel;
+
+    // Set up the channel subscription
+    newChannel
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'user_presence' },
         () => {
@@ -159,14 +175,11 @@ export const useUserPresence = () => {
       )
       .subscribe((status) => {
         console.log('Presence subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isInitialized.current = true;
-        }
       });
 
     // Heartbeat to keep presence alive
     heartbeatRef.current = setInterval(() => {
-      if (user && isInitialized.current) {
+      if (user && mountedRef.current) {
         updatePresence(location.pathname);
       }
     }, 30000);
@@ -180,12 +193,19 @@ export const useUserPresence = () => {
 
     return () => {
       console.log('Cleaning up presence subscription');
+      mountedRef.current = false;
       cleanup();
       window.removeEventListener('beforeunload', handleBeforeUnload);
       setOffline();
-      isInitialized.current = false;
     };
   }, [user?.id]);
+
+  // Set mounted ref to false on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   return {
     activeUsers,
