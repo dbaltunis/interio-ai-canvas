@@ -94,13 +94,13 @@ export const MeasurementWorksheet = ({
         drop: formData.drop,
         pooling: formData.pooling,
         quantity: formData.quantity,
-        fabric_usage_yards: fabricUsage.yards,
-        fabric_usage_meters: fabricUsage.meters,
-        fabric_usage_details: JSON.stringify(fabricUsage.details),
-        fabric_orientation: fabricUsage.fabricOrientation,
-        seams_required: fabricUsage.seamsRequired,
-        seam_labor_hours: fabricUsage.seamLaborHours,
-        widths_required: fabricUsage.widthsRequired
+        fabric_usage_yards: typeof fabricUsage === 'object' ? fabricUsage.yards : 0,
+        fabric_usage_meters: typeof fabricUsage === 'object' ? fabricUsage.meters : 0,
+        fabric_usage_details: typeof fabricUsage === 'object' ? JSON.stringify(fabricUsage.details) : '',
+        fabric_orientation: typeof fabricUsage === 'object' ? fabricUsage.fabricOrientation : '',
+        seams_required: typeof fabricUsage === 'object' ? fabricUsage.seamsRequired : 0,
+        seam_labor_hours: typeof fabricUsage === 'object' ? fabricUsage.seamLaborHours : 0,
+        widths_required: typeof fabricUsage === 'object' ? fabricUsage.widthsRequired : 0
       },
       
       // Fabric details
@@ -286,8 +286,7 @@ export const MeasurementWorksheet = ({
               <FabricDetailsCard 
                 formData={formData} 
                 onInputChange={handleInputChange}
-                fabricUsage={fabricUsage}
-                disabled={readOnly}
+                fabricUsage={typeof fabricUsage === 'object' ? `${fabricUsage.yards} yards` : '0 yards'}
               />
             </CardContent>
           </Card>

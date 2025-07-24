@@ -35,10 +35,11 @@ export const InteractiveProjectDialog = ({
     priority: "medium",
     funnel_stage: "lead"
   });
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
 
   const { data: clients } = useClients();
   const createProject = useCreateProject();
-  const { data: rooms } = useRooms(projectData.client_id);
+  const { data: rooms } = useRooms(createdProjectId || undefined);
   const { data: surfaces } = useSurfaces();
   const createRoom = useCreateRoom();
   const createSurface = useCreateSurface();
@@ -48,7 +49,7 @@ export const InteractiveProjectDialog = ({
       // Create project first
       createProject.mutate(projectData, {
         onSuccess: (project) => {
-          setProjectData(prev => ({ ...prev, id: project.id }));
+          setCreatedProjectId(project.id);
           setStep(2);
         }
       });
@@ -62,16 +63,18 @@ export const InteractiveProjectDialog = ({
   };
 
   const handleFinish = () => {
-    if (projectData.id) {
-      onProjectCreated(projectData.id);
+    if (createdProjectId) {
+      onProjectCreated(createdProjectId);
     }
     onClose();
   };
 
   const handleCreateSurface = async (roomId: string, surfaceType: string) => {
+    if (!createdProjectId) return;
+    
     const surfaceNumber = surfaces?.filter(s => s.room_id === roomId).length || 0;
     await createSurface.mutateAsync({
-      project_id: projectData.id,
+      project_id: createdProjectId,
       room_id: roomId,
       name: `${surfaceType} ${surfaceNumber + 1}`,
       surface_type: surfaceType.toLowerCase()
@@ -123,9 +126,9 @@ export const InteractiveProjectDialog = ({
       case 2:
         return (
           <div className="space-y-4">
-            {projectData.id && (
+            {createdProjectId && (
               <WindowsCanvasInterface
-                projectId={projectData.id}
+                projectId={createdProjectId}
               />
             )}
           </div>
