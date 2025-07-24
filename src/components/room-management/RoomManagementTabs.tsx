@@ -8,7 +8,6 @@ interface RoomManagementTabsProps {
   projectId: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
-  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
   onCreateSurface: (roomId: string, surfaceType: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
@@ -31,7 +30,6 @@ export const RoomManagementTabs = ({
   projectId,
   onUpdateRoom,
   onDeleteRoom,
-  onCreateTreatment,
   onCreateSurface,
   onUpdateSurface,
   onDeleteSurface,
@@ -46,6 +44,11 @@ export const RoomManagementTabs = ({
   onChangeRoomType,
   onCreateFromTemplate
 }: RoomManagementTabsProps) => {
+  // Dummy handler for treatment creation (not used in room management)
+  const handleCreateTreatment = (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
+    console.log("Treatment creation not implemented in room management");
+  };
+
   return (
     <div className="space-y-6">
       <RoomsGrid
@@ -53,7 +56,7 @@ export const RoomManagementTabs = ({
         projectId={projectId}
         onUpdateRoom={onUpdateRoom}
         onDeleteRoom={onDeleteRoom}
-        onCreateTreatment={onCreateTreatment}
+        onCreateTreatment={handleCreateTreatment}
         onCreateSurface={onCreateSurface}
         onUpdateSurface={onUpdateSurface}
         onDeleteSurface={onDeleteSurface}

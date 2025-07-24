@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useJobHandlers } from "../job-creation/JobHandlers";
 import { RoomManagementTabs } from "./RoomManagementTabs";
@@ -24,7 +25,6 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
     handleUpdateSurface,
     handleDeleteSurface,
     handleCopyRoom,
-    handleCreateTreatment,
     createRoom
   } = useJobHandlers(project);
 
@@ -73,7 +73,6 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
       projectId={project.project_id || project.id}
       onUpdateRoom={() => {}}
       onDeleteRoom={() => {}}
-      onCreateTreatment={handleCreateTreatment}
       onCreateSurface={handleCreateSurface}
       onUpdateSurface={handleUpdateSurface}
       onDeleteSurface={handleDeleteSurface}

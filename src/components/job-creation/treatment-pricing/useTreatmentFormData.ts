@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useFabricCalculation } from "./useFabricCalculation";
 
 export interface TreatmentFormData {
   product_name: string;
@@ -24,9 +25,13 @@ export interface TreatmentFormData {
   images: File[];
 }
 
-export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any) => {
+export const useTreatmentFormData = (params: {
+  treatmentType: string;
+  surfaceId: string;
+  measurements: any;
+}) => {
   const [formData, setFormData] = useState<TreatmentFormData>({
-    product_name: windowCovering?.name || treatmentType || "Curtains",
+    product_name: params.treatmentType || "Curtains",
     rail_width: "",
     drop: "",
     pooling: "0",
@@ -35,7 +40,7 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
     fabric_code: "",
     fabric_cost_per_yard: "",
     fabric_width: "137",
-    roll_direction: "vertical", // Default to vertical for narrow fabrics
+    roll_direction: "vertical",
     heading_fullness: "2.5",
     header_hem: "15",
     bottom_hem: "10",
@@ -66,7 +71,7 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
 
   const resetForm = () => {
     setFormData({
-      product_name: windowCovering?.name || treatmentType || "Curtains",
+      product_name: params.treatmentType || "Curtains",
       rail_width: "",
       drop: "",
       pooling: "0",
@@ -75,7 +80,7 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
       fabric_code: "",
       fabric_cost_per_yard: "",
       fabric_width: "137",
-      roll_direction: "vertical", // Default to vertical for narrow fabrics
+      roll_direction: "vertical",
       heading_fullness: "2.5",
       header_hem: "15",
       bottom_hem: "10",
@@ -88,10 +93,24 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
     });
   };
 
+  // Get fabric calculation results
+  const { calculateFabricUsage, calculateCosts } = useFabricCalculation(
+    formData,
+    [],
+    [],
+    params.treatmentType,
+    []
+  );
+
+  const fabricUsage = calculateFabricUsage();
+  const costs = calculateCosts();
+
   return {
     formData,
     setFormData,
     handleInputChange,
-    resetForm
+    resetForm,
+    fabricUsage,
+    costs
   };
 };

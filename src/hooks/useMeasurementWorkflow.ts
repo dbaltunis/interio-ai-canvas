@@ -38,7 +38,6 @@ export const useMeasurementWorkflow = () => {
         await createClientMeasurement.mutateAsync({
           client_id: currentWorkflowData.clientId,
           project_id: currentWorkflowData.projectId,
-          room_id: currentWorkflowData.roomId,
           measurement_type: "treatment_measurement",
           measurements: measurementData.measurements,
           notes: measurementData.notes,
