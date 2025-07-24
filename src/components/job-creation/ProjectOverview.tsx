@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -259,13 +258,6 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         client={client}
-        project={project}
-        rooms={rooms || []}
-        surfaces={surfaces || []}
-        treatments={treatments || []}
-        onCreateRoom={handleCreateRoom}
-        onCreateSurface={handleCreateSurface}
-        onCreateTreatment={handleCreateTreatment}
       />
     </div>
   );
