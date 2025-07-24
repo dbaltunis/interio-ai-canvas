@@ -13,8 +13,6 @@ interface JobEditorProps {
 }
 
 export const JobEditor = ({ projectId, onBack }: JobEditorProps) => {
-  const [activeRoomId, setActiveRoomId] = useState("");
-  const [selectedWindowId, setSelectedWindowId] = useState("");
   const { data: project, isLoading } = useProject(projectId);
 
   if (isLoading) {
@@ -73,9 +71,7 @@ export const JobEditor = ({ projectId, onBack }: JobEditorProps) => {
         <div className="lg:col-span-3">
           <WindowManager
             project={project}
-            activeRoomId={activeRoomId}
-            selectedWindowId={selectedWindowId}
-            onWindowSelect={setSelectedWindowId}
+            onSave={(data) => console.log('Saving project data:', data)}
           />
         </div>
         

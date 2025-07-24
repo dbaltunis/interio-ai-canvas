@@ -2,7 +2,7 @@
 import { ClientManagementPage } from "../clients/ClientManagementPage";
 
 export const ClientManagement = () => {
-  return <ClientManagementPage />;
+  return <ClientManagementPage onBack={() => {}} />;
 };
 
 export default ClientManagement;

@@ -13,13 +13,15 @@ import { InventoryIntegrationManager } from "./InventoryIntegrationManager";
 export const InventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
-  const { data: inventory, isLoading } = useInventoryManagement();
+  const { inventory, isLoading } = useInventoryManagement();
+
+  const inventoryData = inventory?.data || [];
 
   const stats = {
-    totalItems: inventory?.length || 0,
-    lowStockItems: inventory?.filter(item => item.quantity <= (item.reorder_point || 10)).length || 0,
-    totalValue: inventory?.reduce((sum, item) => sum + (item.unit_price || 0) * item.quantity, 0) || 0,
-    categories: new Set(inventory?.map(item => item.category)).size || 0
+    totalItems: inventoryData.length || 0,
+    lowStockItems: inventoryData.filter(item => item.quantity <= (item.reorder_point || 10)).length || 0,
+    totalValue: inventoryData.reduce((sum, item) => sum + (item.unit_price || 0) * item.quantity, 0) || 0,
+    categories: new Set(inventoryData.map(item => item.category)).size || 0
   };
 
   return (
@@ -129,7 +131,7 @@ export const InventoryDashboard = () => {
                 <div className="text-center py-8">Loading inventory...</div>
               ) : (
                 <div className="space-y-4">
-                  {inventory?.map((item) => (
+                  {inventoryData.map((item) => (
                     <div key={item.id} className="border rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">

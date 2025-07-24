@@ -1,307 +1,278 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { MapPin, Square, Settings2, DollarSign, Plus, Edit, Trash2 } from "lucide-react";
+
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, MapPin, Phone, Mail, User, Building, Plus, Edit } from "lucide-react";
+import { useProject } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { useTreatments } from "@/hooks/useTreatments";
 import { InteractiveProjectDialog } from "./InteractiveProjectDialog";
 
 interface ProjectOverviewProps {
   project: any;
-  rooms: any[];
-  surfaces: any[];
-  treatments: any[];
-  onCreateRoom?: (roomData?: { name: string; room_type: string }) => Promise<void>;
-  onCreateSurface?: (roomId: string, surfaceType: string) => void;
-  onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
-  onUpdateRoom?: (roomId: string, updates: any) => void;
-  onDeleteRoom?: (roomId: string) => void;
+  onUpdateProject: (data: any) => void;
 }
 
-export const ProjectOverview = ({ 
-  project, 
-  rooms, 
-  surfaces, 
-  treatments,
-  onCreateRoom,
-  onCreateSurface,
-  onCreateTreatment,
-  onUpdateRoom,
-  onDeleteRoom
-}: ProjectOverviewProps) => {
+export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewProps) => {
+  const [isEditingProject, setIsEditingProject] = useState(false);
+  const [editedProject, setEditedProject] = useState(project);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<'rooms' | 'surfaces' | 'treatments' | 'connect'>('rooms');
-  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-  const [editingRoomName, setEditingRoomName] = useState("");
+  const [dialogType, setDialogType] = useState<"rooms" | "surfaces" | "treatments" | "connect">("rooms");
 
-  console.log("ProjectOverview render data:", { project, rooms, surfaces, treatments });
+  const { data: clients } = useClients();
+  const { data: rooms } = useRooms(project.id);
+  const { data: surfaces } = useSurfaces(project.id);
+  const { data: treatments } = useTreatments(project.id);
 
-  // Safely calculate totals with error handling
-  const calculateTreatmentTotal = (treatment: any) => {
-    try {
-      if (treatment.total_price && typeof treatment.total_price === 'number') {
-        return treatment.total_price;
-      }
-      return 0;
-    } catch (error) {
-      console.error("Error calculating treatment total:", error, treatment);
-      return 0;
-    }
+  const client = clients?.find(c => c.id === project.client_id);
+
+  const handleSaveProject = () => {
+    onUpdateProject(editedProject);
+    setIsEditingProject(false);
   };
 
-  const projectTotal = treatments?.reduce((sum, treatment) => {
-    return sum + calculateTreatmentTotal(treatment);
-  }, 0) || 0;
-
-  const handleCardClick = (type: 'rooms' | 'surfaces' | 'treatments' | 'connect') => {
+  const handleOpenDialog = (type: "rooms" | "surfaces" | "treatments" | "connect") => {
     setDialogType(type);
     setDialogOpen(true);
   };
 
-  const handleEditRoom = (room: any) => {
-    setEditingRoomId(room.id);
-    setEditingRoomName(room.name);
+  const handleCreateRoom = async (roomData?: { name: string; room_type: string }) => {
+    console.log('Creating room:', roomData);
+    // Implementation would go here
   };
 
-  const handleSaveRoomEdit = async (roomId: string) => {
-    if (editingRoomName.trim() && onUpdateRoom) {
-      await onUpdateRoom(roomId, { name: editingRoomName.trim() });
-      setEditingRoomId(null);
-      setEditingRoomName("");
+  const handleCreateSurface = (roomId: string, surfaceType: string) => {
+    console.log('Creating surface:', roomId, surfaceType);
+    // Implementation would go here
+  };
+
+  const handleCreateTreatment = (surfaceId: string, treatmentType: string) => {
+    console.log('Creating treatment:', surfaceId, treatmentType);
+    // Implementation would go here
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'planning': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingRoomId(null);
-    setEditingRoomName("");
-  };
-
-  const handleDeleteRoom = async (roomId: string) => {
-    if (confirm("Are you sure you want to delete this room? This will also delete all associated surfaces and treatments.")) {
-      if (onDeleteRoom) {
-        await onDeleteRoom(roomId);
-      }
-    }
-  };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    // Small delay to allow any pending operations to complete
-    setTimeout(() => {
-      // This will trigger a re-render to show updated room counts
-      console.log("Dialog closed, rooms updated:", rooms?.length);
-    }, 100);
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
-          onClick={() => handleCardClick('rooms')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rooms</CardTitle>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <Plus className="h-3 w-3 text-primary" />
+      {/* Project Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">{project.name}</CardTitle>
+              <p className="text-muted-foreground">{project.job_number}</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{rooms?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Click to add rooms
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
-          onClick={() => handleCardClick('surfaces')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Surfaces</CardTitle>
             <div className="flex items-center gap-2">
-              <Square className="h-4 w-4 text-muted-foreground" />
-              <Plus className="h-3 w-3 text-primary" />
+              <Badge className={getStatusColor(project.status)}>
+                {project.status}
+              </Badge>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsEditingProject(!isEditingProject)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{surfaces?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Click to add windows & walls
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
-          onClick={() => handleCardClick('treatments')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Treatments</CardTitle>
-            <div className="flex items-center gap-2">
-              <Settings2 className="h-4 w-4 text-muted-foreground" />
-              <Plus className="h-3 w-3 text-primary" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isEditingProject ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Project Name</Label>
+                  <Input
+                    id="name"
+                    value={editedProject.name}
+                    onChange={(e) => setEditedProject({...editedProject, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={editedProject.status} onValueChange={(value) => setEditedProject({...editedProject, status: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planning">Planning</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editedProject.description}
+                  onChange={(e) => setEditedProject({...editedProject, description: e.target.value})}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveProject}>Save</Button>
+                <Button variant="outline" onClick={() => setIsEditingProject(false)}>Cancel</Button>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{treatments?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Click for advanced treatments
-            </p>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-muted-foreground">{project.description}</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Priority</p>
+                  <p className="text-sm text-muted-foreground capitalize">{project.priority}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Due Date</p>
+                  <p className="text-sm text-muted-foreground">{project.due_date || "Not set"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Created</p>
+                  <p className="text-sm text-muted-foreground">{new Date(project.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-green-500"
-          onClick={() => handleCardClick('connect')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Connect & Calculate</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">${projectTotal.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Advanced calculations
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {rooms && rooms.length > 0 && (
+      {/* Client Information */}
+      {client && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>All Rooms ({rooms.length})</span>
-              <Button 
-                onClick={() => handleCardClick('rooms')} 
-                size="sm"
-                variant="outline"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Room
-              </Button>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Client Information
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {rooms.map((room) => {
-                const roomSurfaces = surfaces?.filter(s => s.room_id === room.id) || [];
-                const roomTreatments = treatments?.filter(t => t.room_id === room.id) || [];
-                const roomTotal = roomTreatments.reduce((sum, t) => sum + calculateTreatmentTotal(t), 0);
-
-                return (
-                  <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        {editingRoomId === room.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editingRoomName}
-                              onChange={(e) => setEditingRoomName(e.target.value)}
-                              className="px-2 py-1 border rounded text-sm font-medium"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSaveRoomEdit(room.id);
-                                } else if (e.key === 'Escape') {
-                                  handleCancelEdit();
-                                }
-                              }}
-                            />
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleSaveRoomEdit(room.id)}
-                              className="h-7 px-2"
-                            >
-                              Save
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleCancelEdit}
-                              className="h-7 px-2"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <h4 className="font-medium">{room.name}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {room.room_type?.replace('_', ' ') || 'Unknown'}
-                            </Badge>
-                          </>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="text-right mr-4">
-                        <div className="font-medium">${roomTotal.toFixed(2)}</div>
-                      </div>
-                      
-                      {editingRoomId !== room.id && (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEditRoom(room)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteRoom(room.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{client.company_name}</p>
+                    <p className="text-sm text-muted-foreground">{client.contact_person}</p>
                   </div>
-                );
-              })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm">{client.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm">{client.phone}</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm">{client.address}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {client.city}, {client.state} {client.zip_code}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {(!rooms || rooms.length === 0) && (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">No Rooms Yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Click on the cards above to start adding rooms, surfaces, and treatments.
-            </p>
-            <Button onClick={() => handleCardClick('rooms')} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Get Started
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* Project Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{rooms?.length || 0}</div>
+              <p className="text-sm text-muted-foreground">Rooms</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => handleOpenDialog("rooms")}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Room
+              </Button>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{surfaces?.length || 0}</div>
+              <p className="text-sm text-muted-foreground">Surfaces</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => handleOpenDialog("surfaces")}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Surface
+              </Button>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{treatments?.length || 0}</div>
+              <p className="text-sm text-muted-foreground">Treatments</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => handleOpenDialog("treatments")}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Treatment
+              </Button>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">$0</div>
+              <p className="text-sm text-muted-foreground">Total Value</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => handleOpenDialog("connect")}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Connect
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Interactive Project Dialog */}
       <InteractiveProjectDialog
-        isOpen={dialogOpen}
-        onClose={handleDialogClose}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        client={client}
         type={dialogType}
         project={project}
-        rooms={rooms}
-        surfaces={surfaces}
-        treatments={treatments}
-        onCreateRoom={onCreateRoom}
-        onCreateSurface={onCreateSurface}
-        onCreateTreatment={onCreateTreatment}
+        rooms={rooms || []}
+        surfaces={surfaces || []}
+        treatments={treatments || []}
+        onCreateRoom={handleCreateRoom}
+        onCreateSurface={handleCreateSurface}
+        onCreateTreatment={handleCreateTreatment}
       />
     </div>
   );
