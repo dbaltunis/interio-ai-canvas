@@ -31,10 +31,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-50 w-full flex items-center justify-center">
+      <div className="min-h-screen bg-background w-full flex items-center justify-center">
         <Card className="w-96">
           <CardContent className="p-6 text-center space-y-4">
-            <div className="text-gray-500">Job not found</div>
+            <div className="text-muted-foreground">Job not found</div>
             <Button onClick={onBack} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Jobs
@@ -51,13 +51,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "bg-green-100 text-green-800 border-green-200";
-      case "in-production": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "approved": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "quoted": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "measuring": return "bg-orange-100 text-orange-800 border-orange-200";
-      case "cancelled": return "bg-red-100 text-red-800 border-red-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+      case "completed": return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
+      case "in-production": return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
+      case "approved": return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800";
+      case "quoted": return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
+      case "measuring": return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800";
+      case "cancelled": return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
+      default: return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -78,115 +78,72 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
-      {/* Header Section */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          {/* Navigation */}
-          <div className="flex items-center mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="flex items-center space-x-2 hover:bg-gray-100 text-gray-600"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Jobs</span>
-            </Button>
-          </div>
-
-          {/* Job Header Information */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Job Info */}
-            <div className="lg:col-span-2">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {project.name}
-                  </h1>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span className="font-mono bg-gray-100 px-2 py-1 rounded">
-                      {project.job_number}
-                    </span>
-                    <Badge className={getStatusColor(project.status)}>
-                      {project.status}
-                    </Badge>
-                  </div>
-                </div>
+    <div className="min-h-screen bg-background w-full">
+      {/* Compact Header Bar */}
+      <div className="bg-card border-b shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          {/* Navigation & Main Info in Single Row */}
+          <div className="flex items-center justify-between">
+            {/* Left: Navigation + Job Info */}
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="flex items-center space-x-1 hover:bg-muted text-muted-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <div className="flex items-center space-x-3">
+                <h1 className="text-xl font-bold text-foreground">
+                  {project.name}
+                </h1>
+                <Badge className={getStatusColor(project.status)}>
+                  {project.status}
+                </Badge>
+                <span className="font-mono bg-muted px-2 py-1 rounded text-xs text-muted-foreground">
+                  {project.job_number}
+                </span>
               </div>
-
-              {/* Client Information */}
-              <Card className="mb-4">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <User className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {client ? client.name : 'No client assigned'}
-                      </p>
-                      {client && (
-                        <div className="text-sm text-gray-500 space-y-1">
-                          {client.email && <p>{client.email}</p>}
-                          {client.phone && <p>{client.phone}</p>}
-                          {client.address && (
-                            <p className="flex items-center">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {client.address}
-                              {client.city && `, ${client.city}`}
-                              {client.state && `, ${client.state}`}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
-            {/* Quick Stats */}
-            <div className="space-y-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Project Value</p>
-                      <p className="text-xl font-bold text-gray-900">
-                        {formatCurrency(project.total_amount || 0)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Due Date</p>
-                      <p className="font-medium text-gray-900">
-                        {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Created</p>
-                      <p className="font-medium text-gray-900">
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Right: Client & Key Info */}
+            <div className="flex items-center space-x-6 text-sm">
+              {/* Client Info */}
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-foreground font-medium">
+                  {client ? client.name : 'No client'}
+                </span>
+                {client?.email && (
+                  <span className="text-muted-foreground">• {client.email}</span>
+                )}
+              </div>
+              
+              <Separator orientation="vertical" className="h-4" />
+              
+              {/* Key Metrics */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Due:</span>
+                  <span className="text-foreground font-medium">
+                    {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Created:</span>
+                  <span className="text-foreground font-medium">
+                    {new Date(project.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -196,8 +153,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       <div className="max-w-7xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Tab Navigation */}
-          <div className="bg-white border-b">
-            <div className="px-6">
+          <div className="bg-card border-b">
+            <div className="px-4">
               <TabsList className="bg-transparent p-0 h-auto border-b-0">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
@@ -205,7 +162,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     <TabsTrigger 
                       key={tab.id}
                       value={tab.id} 
-                      className="px-6 py-4 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-primary data-[state=active]:text-brand-primary data-[state=active]:bg-blue-50/50 rounded-none flex items-center gap-2 hover:bg-gray-50"
+                      className="px-4 py-3 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-primary/5 rounded-none flex items-center gap-2 hover:bg-muted/50"
                     >
                       <Icon className="h-4 w-4" />
                       {tab.label}
@@ -217,10 +174,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-gray-50 min-h-[calc(100vh-280px)]">
-            <div className="p-6">
+          <div className="bg-background min-h-[calc(100vh-160px)]">
+            <div className="p-4">
               <TabsContent value="details" className="mt-0">
-                <div className="bg-white rounded-lg shadow-sm border">
+                <div className="bg-card rounded-lg shadow-sm border">
                   <div className="p-6">
                     <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
                   </div>
@@ -228,7 +185,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="rooms" className="mt-0">
-                <div className="bg-white rounded-lg shadow-sm border">
+                <div className="bg-card rounded-lg shadow-sm border">
                   <div className="p-6">
                     <RoomsTab projectId={jobId} />
                   </div>
@@ -236,7 +193,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
-                <div className="bg-white rounded-lg shadow-sm border">
+                <div className="bg-card rounded-lg shadow-sm border">
                   <div className="p-6">
                     <QuotationTab projectId={jobId} />
                   </div>
@@ -244,7 +201,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="workroom" className="mt-0">
-                <div className="bg-white rounded-lg shadow-sm border">
+                <div className="bg-card rounded-lg shadow-sm border">
                   <div className="p-6">
                     <WorkroomTab projectId={jobId} />
                   </div>
@@ -252,7 +209,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="emails" className="mt-0">
-                <div className="bg-white rounded-lg shadow-sm border">
+                <div className="bg-card rounded-lg shadow-sm border">
                   <div className="p-6">
                     <EmailsTab projectId={jobId} />
                   </div>
@@ -260,7 +217,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="calendar" className="mt-0">
-                <div className="bg-white rounded-lg shadow-sm border">
+                <div className="bg-card rounded-lg shadow-sm border">
                   <div className="p-6">
                     <CalendarTab projectId={jobId} />
                   </div>
