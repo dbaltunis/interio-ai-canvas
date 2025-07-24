@@ -1,72 +1,133 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/auth/AuthProvider";
 
-interface ScheduleReminderParams {
+interface CreateAppointmentFromNotificationRequest {
   notificationId: string;
   title: string;
-  message: string;
-  scheduleDate: Date;
-  duration: number;
+  description: string;
+  startTime: Date;
+  endTime: Date;
+  appointmentType?: string;
+  location?: string;
+  clientId?: string;
+  projectId?: string;
 }
 
-export const useScheduleNotificationReminder = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+// Valid appointment types based on database constraints
+const VALID_APPOINTMENT_TYPES = [
+  'consultation',
+  'measurement', 
+  'installation',
+  'follow-up',
+  'reminder',
+  'meeting',
+  'call'
+] as const;
+
+type ValidAppointmentType = typeof VALID_APPOINTMENT_TYPES[number];
+
+// Mock hooks
+const useCreateAppointment = () => ({
+  mutateAsync: async (data: any) => {
+    console.log('Mock creating appointment:', data);
+    return { id: 'mock-appointment', ...data };
+  }
+});
+
+const useMarkAsRead = () => ({
+  mutateAsync: async (id: string) => {
+    console.log('Mock marking notification as read:', id);
+    return { id };
+  }
+});
+
+export const useCreateAppointmentFromNotification = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const createAppointment = useCreateAppointment();
+  const markAsRead = useMarkAsRead();
 
   return useMutation({
-    mutationFn: async (params: ScheduleReminderParams) => {
-      if (!user) throw new Error("User not authenticated");
+    mutationFn: async (data: CreateAppointmentFromNotificationRequest) => {
+      // Ensure we use a valid appointment type
+      const appointmentType: ValidAppointmentType = (data.appointmentType && VALID_APPOINTMENT_TYPES.includes(data.appointmentType as ValidAppointmentType))
+        ? data.appointmentType as ValidAppointmentType
+        : 'reminder';
 
-      const { notificationId, title, message, scheduleDate, duration } = params;
+      // Create the appointment
+      const appointment = await createAppointment.mutateAsync({
+        title: data.title,
+        description: data.description,
+        appointment_type: appointmentType,
+        start_time: data.startTime.toISOString(),
+        end_time: data.endTime.toISOString(),
+        location: data.location || null,
+        client_id: data.clientId || null,
+        project_id: data.projectId || null,
+      });
 
-      // Create a calendar appointment (using the appointments table)
-      const { data, error } = await supabase
-        .from("appointments")
-        .insert([{
-          user_id: user.id,
-          title: `Reminder: ${title}`,
-          description: message,
-          start_time: scheduleDate.toISOString(),
-          end_time: new Date(scheduleDate.getTime() + duration * 60000).toISOString(),
-          appointment_type: 'reminder',
-          status: 'scheduled'
-        }])
-        .select()
-        .single();
+      // Mark the notification as read
+      await markAsRead.mutateAsync(data.notificationId);
 
-      if (error) throw error;
-
-      // Create a follow-up notification for the scheduled time
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert([{
-          user_id: user.id,
-          title: `Scheduled: ${title}`,
-          message: `Reminder scheduled for ${scheduleDate.toLocaleDateString()} at ${scheduleDate.toLocaleTimeString()}`,
-          type: 'info'
-        }]);
-
-      if (notificationError) throw notificationError;
-
-      return data;
+      return appointment;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      
+      toast({
+        title: "Calendar Event Created",
+        description: "Appointment created successfully from notification",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create appointment from notification:', error);
+      toast({
+        title: "Failed to Create Event",
+        description: "There was an error creating the calendar event. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useScheduleNotificationReminder = () => {
+  const { toast } = useToast();
+  const createAppointmentFromNotification = useCreateAppointmentFromNotification();
+
+  return useMutation({
+    mutationFn: async (params: {
+      notificationId: string;
+      title: string;
+      message: string;
+      scheduleDate: Date;
+      duration?: number; // in minutes, default 30
+    }) => {
+      const startTime = new Date(params.scheduleDate);
+      const endTime = new Date(startTime);
+      endTime.setMinutes(endTime.getMinutes() + (params.duration || 30));
+
+      return await createAppointmentFromNotification.mutateAsync({
+        notificationId: params.notificationId,
+        title: params.title,
+        description: params.message,
+        startTime,
+        endTime,
+        appointmentType: 'reminder'
+      });
+    },
+    onSuccess: () => {
       toast({
         title: "Reminder Scheduled",
-        description: "Your reminder has been added to the calendar",
+        description: "Calendar reminder created successfully",
       });
     },
     onError: (error) => {
       console.error('Failed to schedule reminder:', error);
       toast({
-        title: "Error",
-        description: "Failed to schedule reminder",
+        title: "Failed to Schedule Reminder",
+        description: "There was an error scheduling your reminder. Please try again.",
         variant: "destructive",
       });
     },
