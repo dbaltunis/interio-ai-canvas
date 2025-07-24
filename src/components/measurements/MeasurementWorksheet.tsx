@@ -34,6 +34,12 @@ interface MeasurementWorksheetProps {
   surfaceId?: string;
   treatmentType?: string;
   isJobFlow?: boolean;
+  // For existing measurements
+  existingMeasurement?: any;
+  readOnly?: boolean;
+  // Alternative props for backward compatibility
+  clientId?: string;
+  projectId?: string;
 }
 
 export const MeasurementWorksheet = ({ 
@@ -45,15 +51,23 @@ export const MeasurementWorksheet = ({
   roomId,
   surfaceId,
   treatmentType = "Curtains",
-  isJobFlow = false
+  isJobFlow = false,
+  existingMeasurement,
+  readOnly = false,
+  clientId,
+  projectId
 }: MeasurementWorksheetProps) => {
   const [measuredBy, setMeasuredBy] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   
+  // Handle backward compatibility
+  const effectiveClient = client || (clientId ? { id: clientId, name: "Client" } : undefined);
+  const effectiveProject = project || (projectId ? { id: projectId, name: "Project" } : undefined);
+  
   const { formData, setFormData, handleInputChange, resetForm, fabricUsage, costs } = useTreatmentFormData({
     treatmentType,
     surfaceId: surfaceId || '',
-    measurements: {}
+    measurements: existingMeasurement?.measurements || {}
   });
 
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
@@ -66,7 +80,13 @@ export const MeasurementWorksheet = ({
         product_name: treatmentType
       }));
     }
-  }, [isOpen, treatmentType, setFormData]);
+    
+    // Load existing measurement data if provided
+    if (existingMeasurement) {
+      setMeasuredBy(existingMeasurement.measured_by || "");
+      setAdditionalNotes(existingMeasurement.notes || "");
+    }
+  }, [isOpen, treatmentType, setFormData, existingMeasurement]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +105,7 @@ export const MeasurementWorksheet = ({
         quantity: formData.quantity,
         fabric_usage_yards: fabricUsage.yards,
         fabric_usage_meters: fabricUsage.meters,
-        fabric_usage_details: fabricUsage.details,
+        fabric_usage_details: JSON.stringify(fabricUsage.details),
         fabric_orientation: fabricUsage.fabricOrientation,
         seams_required: fabricUsage.seamsRequired,
         seam_labor_hours: fabricUsage.seamLaborHours,
@@ -135,16 +155,22 @@ export const MeasurementWorksheet = ({
     };
 
     onSave(measurementData);
-    resetForm();
-    setMeasuredBy("");
-    setAdditionalNotes("");
+    
+    if (!existingMeasurement) {
+      resetForm();
+      setMeasuredBy("");
+      setAdditionalNotes("");
+    }
+    
     onClose();
   };
 
   const handleClose = () => {
-    resetForm();
-    setMeasuredBy("");
-    setAdditionalNotes("");
+    if (!existingMeasurement) {
+      resetForm();
+      setMeasuredBy("");
+      setAdditionalNotes("");
+    }
     onClose();
   };
 
@@ -159,11 +185,11 @@ export const MeasurementWorksheet = ({
             {isJobFlow ? 'Treatment Configuration & Measurements' : 'Measurement Worksheet'}
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {client && (
-              <span>Client: <Badge variant="secondary">{client.name}</Badge></span>
+            {effectiveClient && (
+              <span>Client: <Badge variant="secondary">{effectiveClient.name}</Badge></span>
             )}
-            {project && (
-              <span>Project: <Badge variant="secondary">{project.name}</Badge></span>
+            {effectiveProject && (
+              <span>Project: <Badge variant="secondary">{effectiveProject.name}</Badge></span>
             )}
             {isJobFlow && treatmentType && (
               <span>Treatment: <Badge variant="outline">{treatmentType}</Badge></span>
@@ -189,6 +215,7 @@ export const MeasurementWorksheet = ({
                     value={formData.product_name}
                     onChange={(e) => handleInputChange("product_name", e.target.value)}
                     placeholder="e.g., Curtains, Blinds, Shutters"
+                    disabled={readOnly}
                   />
                 </div>
                 <div>
@@ -198,6 +225,7 @@ export const MeasurementWorksheet = ({
                     value={measuredBy}
                     onChange={(e) => setMeasuredBy(e.target.value)}
                     placeholder="Your name"
+                    disabled={readOnly}
                   />
                 </div>
               </div>
@@ -211,6 +239,7 @@ export const MeasurementWorksheet = ({
                   value={formData.quantity}
                   onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 1)}
                   placeholder="Number of units"
+                  disabled={readOnly}
                 />
               </div>
             </CardContent>
@@ -228,6 +257,7 @@ export const MeasurementWorksheet = ({
               <TreatmentMeasurementsCard
                 formData={formData}
                 onInputChange={handleInputChange}
+                disabled={readOnly}
               />
             </CardContent>
           </Card>
@@ -240,6 +270,8 @@ export const MeasurementWorksheet = ({
               treatmentType={treatmentType}
               selectedOptions={formData.selected_options}
               onOptionToggle={(optionId) => {
+                if (readOnly) return;
+                
                 const newSelectedOptions = formData.selected_options.includes(optionId)
                   ? formData.selected_options.filter(id => id !== optionId)
                   : [...formData.selected_options, optionId];
@@ -249,6 +281,7 @@ export const MeasurementWorksheet = ({
                   selected_options: newSelectedOptions
                 }));
               }}
+              disabled={readOnly}
             />
           )}
 
@@ -265,6 +298,7 @@ export const MeasurementWorksheet = ({
                 formData={formData} 
                 onInputChange={handleInputChange}
                 fabricUsage={fabricUsage}
+                disabled={readOnly}
               />
             </CardContent>
           </Card>
@@ -300,6 +334,7 @@ export const MeasurementWorksheet = ({
                 onChange={(e) => setAdditionalNotes(e.target.value)}
                 placeholder="Add any additional notes about the measurements, installation requirements, or special considerations..."
                 rows={4}
+                disabled={readOnly}
               />
             </CardContent>
           </Card>
@@ -308,12 +343,14 @@ export const MeasurementWorksheet = ({
           <div className="flex justify-end space-x-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={handleClose}>
               <X className="h-4 w-4 mr-2" />
-              Cancel
+              {readOnly ? 'Close' : 'Cancel'}
             </Button>
-            <Button type="submit">
-              <Save className="h-4 w-4 mr-2" />
-              {isJobFlow ? 'Save Treatment & Measurements' : 'Save Measurements'}
-            </Button>
+            {!readOnly && (
+              <Button type="submit">
+                <Save className="h-4 w-4 mr-2" />
+                {isJobFlow ? 'Save Treatment & Measurements' : 'Save Measurements'}
+              </Button>
+            )}
           </div>
         </form>
       </DialogContent>

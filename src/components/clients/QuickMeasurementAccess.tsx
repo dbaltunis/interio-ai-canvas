@@ -54,8 +54,10 @@ export const QuickMeasurementAccess = ({
                 <DialogTitle>New Measurement - {clientName}</DialogTitle>
               </DialogHeader>
               <MeasurementWorksheet
-                clientId={clientId}
-                projectId={projectId}
+                isOpen={showNewMeasurement}
+                onClose={() => setShowNewMeasurement(false)}
+                client={{ id: clientId, name: clientName }}
+                project={projectId ? { id: projectId, name: "Project" } : undefined}
                 onSave={() => setShowNewMeasurement(false)}
               />
             </DialogContent>
@@ -83,8 +85,10 @@ export const QuickMeasurementAccess = ({
             </DialogHeader>
             {selectedMeasurement && (
               <MeasurementWorksheet
-                clientId={clientId}
-                projectId={projectId}
+                isOpen={!!selectedMeasurement}
+                onClose={() => setSelectedMeasurement(null)}
+                client={{ id: clientId, name: clientName }}
+                project={projectId ? { id: projectId, name: "Project" } : undefined}
                 existingMeasurement={selectedMeasurement}
                 onSave={() => setSelectedMeasurement(null)}
                 readOnly={viewMode === 'view'}
