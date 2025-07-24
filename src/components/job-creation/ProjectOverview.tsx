@@ -92,6 +92,11 @@ export const ProjectOverview = ({
     }, 100);
   };
 
+  const handleProjectCreated = (projectId: string) => {
+    console.log("Project created:", projectId);
+    setDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -294,14 +299,7 @@ export const ProjectOverview = ({
       <InteractiveProjectDialog
         isOpen={dialogOpen}
         onClose={handleDialogClose}
-        type={dialogType}
-        project={project}
-        rooms={rooms}
-        surfaces={surfaces}
-        treatments={treatments}
-        onCreateRoom={onCreateRoom}
-        onCreateSurface={onCreateSurface}
-        onCreateTreatment={onCreateTreatment}
+        onProjectCreated={handleProjectCreated}
       />
     </div>
   );
