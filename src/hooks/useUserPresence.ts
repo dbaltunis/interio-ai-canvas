@@ -1,8 +1,8 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation } from 'react-router-dom';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UserPresence {
   id: string;
@@ -23,6 +23,8 @@ export const useUserPresence = () => {
   const location = useLocation();
   const [activeUsers, setActiveUsers] = useState<UserPresence[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update current user's presence
   const updatePresence = async (currentPage: string, currentJobId?: string) => {
@@ -64,19 +66,24 @@ export const useUserPresence = () => {
     // Get unique user IDs from the presence data
     const userIds = presenceData.map(presence => presence.user_id);
 
-    // Fetch user profiles
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('user_profiles')
-      .select('user_id, display_name, avatar_url, status')
-      .in('user_id', userIds);
+    // Fetch user profiles if we have user IDs
+    let profilesData = [];
+    if (userIds.length > 0) {
+      const { data, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, display_name, avatar_url, status')
+        .in('user_id', userIds);
 
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      } else {
+        profilesData = data || [];
+      }
     }
 
     // Create a map of user profiles
     const profilesMap = new Map();
-    profilesData?.forEach(profile => {
+    profilesData.forEach(profile => {
       profilesMap.set(profile.user_id, {
         display_name: profile.display_name,
         avatar_url: profile.avatar_url,
@@ -120,9 +127,22 @@ export const useUserPresence = () => {
   useEffect(() => {
     if (!user) return;
 
+    // Clean up any existing channel and heartbeat
+    if (channelRef.current) {
+      console.log('Cleaning up existing presence channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+
     fetchActiveUsers();
 
-    const channel = supabase
+    // Create new channel
+    channelRef.current = supabase
       .channel('user-presence-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'user_presence' },
@@ -133,7 +153,7 @@ export const useUserPresence = () => {
       .subscribe();
 
     // Heartbeat to keep presence alive
-    const heartbeat = setInterval(() => {
+    heartbeatRef.current = setInterval(() => {
       if (user) {
         updatePresence(location.pathname);
       }
@@ -147,12 +167,19 @@ export const useUserPresence = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      clearInterval(heartbeat);
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        console.log('Cleaning up presence channel on unmount');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       setOffline();
     };
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to prevent unnecessary re-subscriptions
 
   return {
     activeUsers,
