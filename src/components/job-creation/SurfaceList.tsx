@@ -1,219 +1,87 @@
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RectangleHorizontal, Square, Plus, Edit2, Trash2, Check, X, Ruler } from "lucide-react";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
-import { useMeasurementWorkflow } from "@/hooks/useMeasurementWorkflow";
+import { MoreVertical, Pencil, Eye } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MeasurementWorksheet } from '@/components/measurements/MeasurementWorksheet';
 
 interface SurfaceListProps {
   surfaces: any[];
   treatments: any[];
-  projectId: string;
-  clientId?: string;
-  onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
+  onDeleteTreatment: (treatmentId: string) => void;
+  onViewMeasurements: (surface: any) => void;
 }
 
-export const SurfaceList = ({
-  surfaces,
-  treatments,
-  projectId,
-  clientId,
-  onUpdateSurface,
-  onDeleteSurface
+export const SurfaceList = ({ 
+  surfaces, 
+  treatments, 
+  onDeleteSurface, 
+  onDeleteTreatment, 
+  onViewMeasurements 
 }: SurfaceListProps) => {
-  const [editingSurface, setEditingSurface] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-  
-  const {
-    isWorksheetOpen,
-    currentWorkflowData,
-    startMeasurementWorkflow,
-    completeMeasurementWorkflow,
-    closeWorksheet
-  } = useMeasurementWorkflow();
+  const [showMeasurementForm, setShowMeasurementForm] = useState(false);
+  const [selectedSurface, setSelectedSurface] = useState(null);
 
-  const handleStartEdit = (surface: any) => {
-    setEditingSurface(surface.id);
-    setEditingName(surface.name);
+  const handleViewMeasurements = (surface: any) => {
+    setSelectedSurface(surface);
+    setShowMeasurementForm(true);
+    onViewMeasurements(surface);
   };
 
-  const handleSaveEdit = (surfaceId: string) => {
-    onUpdateSurface(surfaceId, { name: editingName });
-    setEditingSurface(null);
+  const handleSaveMeasurement = () => {
+    setShowMeasurementForm(false);
+    setSelectedSurface(null);
   };
-
-  const handleCancelEdit = () => {
-    setEditingSurface(null);
-    setEditingName("");
-  };
-
-  const handleAddTreatment = (surface: any, treatmentType: string) => {
-    startMeasurementWorkflow({
-      roomId: surface.room_id,
-      surfaceId: surface.id,
-      treatmentType,
-      projectId,
-      clientId
-    });
-  };
-
-  const getSurfaceTreatments = (surfaceId: string) => {
-    return treatments.filter(t => t.window_id === surfaceId);
-  };
-
-  const treatmentTypes = [
-    { id: 'curtains', label: 'Curtains' },
-    { id: 'blinds', label: 'Blinds' },
-    { id: 'shutters', label: 'Shutters' },
-    { id: 'valance', label: 'Valance' },
-    { id: 'shade', label: 'Shade' }
-  ];
 
   return (
-    <>
-      <div className="space-y-3">
-        {surfaces.map((surface) => {
-          const surfaceTreatments = getSurfaceTreatments(surface.id);
-          const isEditing = editingSurface === surface.id;
-
-          return (
-            <div key={surface.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  {surface.surface_type === 'window' ? (
-                    <RectangleHorizontal className="h-5 w-5 text-brand-primary" />
-                  ) : (
-                    <Square className="h-5 w-5 text-brand-primary" />
-                  )}
-                  
-                  {isEditing ? (
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        className="h-8 w-32"
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleSaveEdit(surface.id)}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleCancelEdit}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <div>
-                        <h4 className="font-medium text-gray-900">{surface.name}</h4>
-                        <p className="text-sm text-gray-500">
-                          {surface.width}" × {surface.height}"
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {!isEditing && (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleStartEdit(surface)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onDeleteSurface(surface.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Existing Treatments */}
-              {surfaceTreatments.length > 0 && (
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-2">
-                    {surfaceTreatments.map((treatment) => (
-                      <div key={treatment.id} className="flex items-center gap-2">
-                        <Badge variant="default" className="capitalize">
-                          {treatment.treatment_type}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => startMeasurementWorkflow({
-                            roomId: surface.room_id,
-                            surfaceId: surface.id,
-                            treatmentType: treatment.treatment_type,
-                            projectId,
-                            clientId
-                          })}
-                        >
-                          <Ruler className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Add Treatment Buttons */}
-              <div className="flex flex-wrap gap-2">
-                {treatmentTypes.map((type) => (
-                  <Button
-                    key={type.id}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleAddTreatment(surface, type.id)}
-                    className="text-xs"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    {type.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Measurement Worksheet Dialog */}
-      <Dialog open={isWorksheetOpen} onOpenChange={closeWorksheet}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Configure {currentWorkflowData?.treatmentType} Treatment
-            </DialogTitle>
-          </DialogHeader>
-          {currentWorkflowData && (
-            <MeasurementWorksheet
-              clientId={currentWorkflowData.clientId || ""}
-              projectId={currentWorkflowData.projectId}
-              roomId={currentWorkflowData.roomId}
-              surfaceId={currentWorkflowData.surfaceId}
-              treatmentType={currentWorkflowData.treatmentType}
-              isJobFlow={true}
-              onSave={completeMeasurementWorkflow}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="space-y-4">
+      {surfaces.map((surface) => (
+        <Card key={surface.id} className="bg-white shadow-sm border border-brand-secondary/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{surface.name}</CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleViewMeasurements(surface)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Measurements
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDeleteSurface(surface.id)}>
+                  Delete Surface
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardHeader>
+          <CardContent className="p-4">
+            <p className="text-sm text-brand-neutral/80">
+              {surface.description}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+      
+      {showMeasurementForm && selectedSurface && (
+        <MeasurementWorksheet
+          client={selectedSurface.client}
+          project={selectedSurface.project}
+          room={selectedSurface.room}
+          surface={selectedSurface}
+          treatment={selectedSurface.treatment}
+          isJobFlow={true}
+          onSave={handleSaveMeasurement}
+        />
+      )}
+    </div>
   );
 };

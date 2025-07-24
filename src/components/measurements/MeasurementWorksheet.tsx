@@ -1,322 +1,195 @@
-
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Calculator, Ruler, Palette, Settings, Save, X } from "lucide-react";
-import { useTreatmentFormData } from "../job-creation/treatment-pricing/useTreatmentFormData";
-import { FabricDetailsCard } from "../job-creation/treatment-pricing/FabricDetailsCard";
-import { TreatmentMeasurementsCard } from "../job-creation/treatment-pricing/TreatmentMeasurementsCard";
-import { CostSummaryCard } from "../job-creation/treatment-pricing/CostSummaryCard";
-import { TreatmentOptionsCard } from "../job-creation/treatment-pricing/TreatmentOptionsCard";
-import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 
 interface MeasurementWorksheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (measurementData: any) => void;
-  client?: {
-    id: string;
-    name: string;
-  };
-  project?: {
-    id: string;
-    name: string;
-  };
-  // Job creation specific props
-  roomId?: string;
-  surfaceId?: string;
-  treatmentType?: string;
+  client: any;
+  project: any;
+  room?: any;
+  surface?: any;
+  treatment?: any;
+  existingMeasurement?: any;
   isJobFlow?: boolean;
+  onSave: (measurement: any) => void;
+  readOnly?: boolean;
 }
 
-export const MeasurementWorksheet = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
+export const MeasurementWorksheet = ({
   client,
   project,
-  roomId,
-  surfaceId,
-  treatmentType = "Curtains",
-  isJobFlow = false
+  room,
+  surface,
+  treatment,
+  existingMeasurement,
+  isJobFlow = false,
+  onSave,
+  readOnly = false,
 }: MeasurementWorksheetProps) => {
-  const [measuredBy, setMeasuredBy] = useState("");
-  const [additionalNotes, setAdditionalNotes] = useState("");
-  
-  const { formData, setFormData, handleInputChange, resetForm, fabricUsage, costs } = useTreatmentFormData({
-    treatmentType,
-    surfaceId: surfaceId || '',
-    measurements: {}
+  const [measurement, setMeasurement] = useState({
+    client_id: client?.id || '',
+    project_id: project?.id || '',
+    room_id: room?.id || '',
+    surface_id: surface?.id || '',
+    treatment_id: treatment?.id || '',
+    width: '',
+    height: '',
+    depth: '',
+    fabric_width: '54',
+    fabric_multiplier: '1',
+    notes: '',
+    photo_url: '',
   });
 
-  const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
-
-  // Initialize form when dialog opens
   useEffect(() => {
-    if (isOpen && treatmentType) {
-      setFormData(prev => ({
-        ...prev,
-        product_name: treatmentType
-      }));
+    if (existingMeasurement) {
+      setMeasurement(existingMeasurement);
     }
-  }, [isOpen, treatmentType, setFormData]);
+  }, [existingMeasurement]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
+    setMeasurement(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = () => {
+    onSave(measurement);
+  };
+
+  const calculateFabricUsage = () => {
+    if (!measurement.width || !measurement.height) return "0";
     
-    const measurementData = {
-      // Basic measurement info
-      measured_by: measuredBy,
-      measured_at: new Date().toISOString(),
-      notes: additionalNotes,
-      
-      // Treatment measurements
-      measurements: {
-        rail_width: formData.rail_width,
-        drop: formData.drop,
-        pooling: formData.pooling,
-        quantity: formData.quantity,
-        fabric_usage_yards: fabricUsage.yards,
-        fabric_usage_meters: fabricUsage.meters,
-        fabric_usage_details: fabricUsage.details,
-        fabric_orientation: fabricUsage.fabricOrientation,
-        seams_required: fabricUsage.seamsRequired,
-        seam_labor_hours: fabricUsage.seamLaborHours,
-        widths_required: fabricUsage.widthsRequired
-      },
-      
-      // Fabric details
-      fabric_details: {
-        fabric_type: formData.fabric_type,
-        fabric_code: formData.fabric_code,
-        fabric_cost_per_yard: formData.fabric_cost_per_yard,
-        fabric_width: formData.fabric_width,
-        roll_direction: formData.roll_direction,
-        heading_fullness: formData.heading_fullness
-      },
-      
-      // Treatment configuration
-      treatment_details: {
-        product_name: formData.product_name,
-        header_hem: formData.header_hem,
-        bottom_hem: formData.bottom_hem,
-        side_hem: formData.side_hem,
-        seam_hem: formData.seam_hem,
-        selected_options: formData.selected_options,
-        custom_labor_rate: formData.custom_labor_rate
-      },
-      
-      // Cost calculations
-      calculation_details: {
-        fabric_cost: costs.fabricCost,
-        labor_cost: costs.laborCost,
-        total_cost: costs.totalCost,
-        unit_price: costs.totalCost / formData.quantity,
-        cost_breakdown: costs.breakdown
-      },
-      
-      // Pricing for job flow
-      material_cost: parseFloat(costs.fabricCost) || 0,
-      labor_cost: parseFloat(costs.laborCost) || 0,
-      total_price: parseFloat(costs.totalCost) || 0,
-      
-      // Job flow specific data
-      roomId,
-      surfaceId,
-      treatmentType,
-      isJobFlow
+    const area = measurement.width * measurement.height;
+    const fabric_multiplier = parseFloat(measurement.fabric_multiplier) || 1;
+    const fabric_width = parseFloat(measurement.fabric_width) || 54;
+    
+    const result = {
+      area,
+      fabric_multiplier,
+      fabric_width,
+      total_fabric: area * fabric_multiplier,
+      cuts_needed: Math.ceil(measurement.width / fabric_width),
+      waste_percentage: ((fabric_width - (measurement.width % fabric_width)) / fabric_width) * 100
     };
-
-    onSave(measurementData);
-    resetForm();
-    setMeasuredBy("");
-    setAdditionalNotes("");
-    onClose();
+    
+    return typeof result === 'string' ? result : result.total_fabric.toFixed(2);
   };
-
-  const handleClose = () => {
-    resetForm();
-    setMeasuredBy("");
-    setAdditionalNotes("");
-    onClose();
-  };
-
-  if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-4">
-          <DialogTitle className="flex items-center gap-2">
-            <Ruler className="h-5 w-5" />
-            {isJobFlow ? 'Treatment Configuration & Measurements' : 'Measurement Worksheet'}
-          </DialogTitle>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {client && (
-              <span>Client: <Badge variant="secondary">{client.name}</Badge></span>
-            )}
-            {project && (
-              <span>Project: <Badge variant="secondary">{project.name}</Badge></span>
-            )}
-            {isJobFlow && treatmentType && (
-              <span>Treatment: <Badge variant="outline">{treatmentType}</Badge></span>
-            )}
+    <div className="space-y-6">
+      {/* Measurement Input Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="width">Width (in inches)</Label>
+          <Input
+            type="number"
+            id="width"
+            name="width"
+            value={measurement.width}
+            onChange={handleChange}
+            disabled={readOnly}
+          />
+        </div>
+        <div>
+          <Label htmlFor="height">Height (in inches)</Label>
+          <Input
+            type="number"
+            id="height"
+            name="height"
+            value={measurement.height}
+            onChange={handleChange}
+            disabled={readOnly}
+          />
+        </div>
+        <div>
+          <Label htmlFor="depth">Depth (in inches)</Label>
+          <Input
+            type="number"
+            id="depth"
+            name="depth"
+            value={measurement.depth}
+            onChange={handleChange}
+            disabled={readOnly}
+          />
+        </div>
+        <div>
+          <Label htmlFor="fabric_width">Fabric Width (in inches)</Label>
+          <Input
+            type="number"
+            id="fabric_width"
+            name="fabric_width"
+            value={measurement.fabric_width}
+            onChange={handleChange}
+            disabled={readOnly}
+          />
+        </div>
+        <div>
+          <Label htmlFor="fabric_multiplier">Fabric Multiplier</Label>
+          <Input
+            type="number"
+            id="fabric_multiplier"
+            name="fabric_multiplier"
+            value={measurement.fabric_multiplier}
+            onChange={handleChange}
+            disabled={readOnly}
+          />
+        </div>
+      </div>
+
+      {/* Notes Section */}
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          name="notes"
+          value={measurement.notes}
+          onChange={handleChange}
+          placeholder="Additional notes about this measurement"
+          disabled={readOnly}
+        />
+      </div>
+      
+      {/* Fabric Usage Calculation */}
+      <div className="bg-brand-secondary/10 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-brand-primary mb-2">Fabric Usage</h3>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="font-medium">Total Fabric Needed:</span>
+            <span className="ml-2">{calculateFabricUsage()} sq ft</span>
           </div>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="product_name">Product Name</Label>
-                  <Input
-                    id="product_name"
-                    value={formData.product_name}
-                    onChange={(e) => handleInputChange("product_name", e.target.value)}
-                    placeholder="e.g., Curtains, Blinds, Shutters"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measured_by">Measured By</Label>
-                  <Input
-                    id="measured_by"
-                    value={measuredBy}
-                    onChange={(e) => setMeasuredBy(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 1)}
-                  placeholder="Number of units"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Measurements Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Ruler className="h-4 w-4" />
-                Measurements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TreatmentMeasurementsCard
-                formData={formData}
-                onInputChange={handleInputChange}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Treatment Options */}
-          {isJobFlow && (
-            <TreatmentOptionsCard 
-              treatmentTypesData={treatmentTypesData}
-              treatmentTypesLoading={treatmentTypesLoading}
-              treatmentType={treatmentType}
-              selectedOptions={formData.selected_options}
-              onOptionToggle={(optionId) => {
-                const newSelectedOptions = formData.selected_options.includes(optionId)
-                  ? formData.selected_options.filter(id => id !== optionId)
-                  : [...formData.selected_options, optionId];
-                
-                setFormData(prev => ({
-                  ...prev,
-                  selected_options: newSelectedOptions
-                }));
-              }}
-            />
-          )}
-
-          {/* Fabric Details Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                Fabric & Material Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FabricDetailsCard 
-                formData={formData} 
-                onInputChange={handleInputChange}
-                fabricUsage={fabricUsage}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Cost Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-4 w-4" />
-                Cost Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CostSummaryCard 
-                costs={costs} 
-                treatmentType={treatmentType}
-                selectedOptions={formData.selected_options}
-                availableOptions={[]}
-                hierarchicalOptions={[]}
-                formData={formData}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Additional Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Additional Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={additionalNotes}
-                onChange={(e) => setAdditionalNotes(e.target.value)}
-                placeholder="Add any additional notes about the measurements, installation requirements, or special considerations..."
-                rows={4}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button type="submit">
-              <Save className="h-4 w-4 mr-2" />
-              {isJobFlow ? 'Save Treatment & Measurements' : 'Save Measurements'}
-            </Button>
+          <div>
+            <span className="font-medium">Cuts Needed:</span>
+            <span className="ml-2">{Math.ceil(parseFloat(measurement.width || '0') / parseFloat(measurement.fabric_width || '54'))}</span>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <div>
+            <span className="font-medium">Waste Percentage:</span>
+            <span className="ml-2">{(((parseFloat(measurement.fabric_width || '54') - (parseFloat(measurement.width || '0') % parseFloat(measurement.fabric_width || '54'))) / parseFloat(measurement.fabric_width || '54')) * 100).toFixed(2)}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      {!readOnly && (
+        <Button onClick={handleSubmit} className="w-full">
+          Save Measurement
+        </Button>
+      )}
+    </div>
   );
 };

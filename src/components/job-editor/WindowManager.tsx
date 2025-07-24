@@ -1,159 +1,111 @@
-
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Home, Trash2, Ruler } from "lucide-react";
-import { useSurfaces, useCreateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
-import { useRooms } from "@/hooks/useRooms";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, Edit, Trash } from 'lucide-react';
+import { MeasurementWorksheet } from '@/components/measurements/MeasurementWorksheet';
 
 interface WindowManagerProps {
-  projectId: string;
-  activeRoomId: string | null;
-  selectedWindowId: string | null;
-  onWindowSelect: (windowId: string) => void;
+  project: any;
+  onSave: (data: any) => void;
 }
 
-export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWindowSelect }: WindowManagerProps) => {
-  const [showMeasurementDialog, setShowMeasurementDialog] = useState(false);
-  const [selectedSurface, setSelectedSurface] = useState<any>(null);
-  const { data: rooms } = useRooms(projectId);
-  const { data: surfaces } = useSurfaces(projectId);
-  const createSurface = useCreateSurface();
-  const deleteSurface = useDeleteSurface();
+export const WindowManager = ({ project, onSave }: WindowManagerProps) => {
+  const [windows, setWindows] = useState(project.windows || []);
+  const [newWindowName, setNewWindowName] = useState('');
+  const [selectedMeasurement, setSelectedMeasurement] = useState(null);
+  const [showMeasurementForm, setShowMeasurementForm] = useState(false);
 
-  const currentRoom = rooms?.find(room => room.id === activeRoomId);
-  const roomSurfaces = surfaces?.filter(surface => surface.room_id === activeRoomId) || [];
+  useEffect(() => {
+    setWindows(project.windows || []);
+  }, [project.windows]);
 
-  const handleCreateWindow = async () => {
-    if (!activeRoomId || !projectId) return;
-    
-    const windowNumber = roomSurfaces.length + 1;
-    const newSurface = await createSurface.mutateAsync({
-      room_id: activeRoomId,
-      project_id: projectId,
-      name: `Window ${windowNumber}`,
-      surface_type: 'window',
-      width: 36,
-      height: 84
-    });
-
-    // Open measurement dialog for the new window
-    setSelectedSurface(newSurface);
-    setShowMeasurementDialog(true);
+  const handleAddWindow = () => {
+    if (newWindowName.trim() !== '') {
+      const newWindow = {
+        id: Date.now(),
+        name: newWindowName,
+        measurements: [],
+        client: project.client,
+      };
+      const updatedWindows = [...windows, newWindow];
+      setWindows(updatedWindows);
+      setNewWindowName('');
+      onSave({ ...project, windows: updatedWindows });
+    }
   };
 
-  const handleMeasureWindow = (surface: any) => {
-    setSelectedSurface(surface);
-    setShowMeasurementDialog(true);
+  const handleEditWindow = (windowId: number) => {
+    // Implement edit functionality
+    console.log('Edit window:', windowId);
   };
 
-  const handleMeasurementSave = () => {
-    setShowMeasurementDialog(false);
-    setSelectedSurface(null);
+  const handleDeleteWindow = (windowId: number) => {
+    const updatedWindows = windows.filter(window => window.id !== windowId);
+    setWindows(updatedWindows);
+    onSave({ ...project, windows: updatedWindows });
+  };
+
+  const handleAddMeasurement = (window: any) => {
+    setSelectedMeasurement({ ...window, client: project.client });
+    setShowMeasurementForm(true);
+  };
+
+  const handleSaveMeasurement = (measurementData: any) => {
+    setShowMeasurementForm(false);
+    setSelectedMeasurement(null);
+    // Integrate the new measurement into the window's data
+    console.log('Measurement data saved:', measurementData);
+    // Update the project with the new measurement
+    onSave({ ...project, windows: windows.map(window => window.id === measurementData.id ? { ...window, measurements: [...(window.measurements || []), measurementData] } : window) });
   };
 
   return (
-    <>
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>
-              {currentRoom ? `${currentRoom.name} - Windows` : 'Select a Room'}
-            </span>
-            {currentRoom && (
-              <Button size="sm" onClick={handleCreateWindow}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
-          </CardTitle>
+          <CardTitle>Windows</CardTitle>
         </CardHeader>
-        <CardContent>
-          {!currentRoom ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Home className="mx-auto h-12 w-12 mb-4" />
-              <p>Select a room to manage windows</p>
-            </div>
-          ) : !roomSurfaces || roomSurfaces.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Plus className="mx-auto h-12 w-12 mb-4" />
-              <p>No windows in this room</p>
-              <p className="text-sm">Click "+" to add a window</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {roomSurfaces.map((surface) => (
-                <div
-                  key={surface.id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedWindowId === surface.id 
-                      ? 'border-primary bg-primary/5' 
-                      : 'hover:bg-muted'
-                  }`}
-                  onClick={() => onWindowSelect(surface.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{surface.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {surface.width || 0}" × {surface.height || 0}"
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMeasureWindow(surface);
-                        }}
-                      >
-                        <Ruler className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteSurface.mutate(surface.id);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
+        <CardContent className="grid gap-4">
+          <div className="grid grid-cols-[1fr_150px] gap-4">
+            <Input
+              type="text"
+              placeholder="Window Name"
+              value={newWindowName}
+              onChange={(e) => setNewWindowName(e.target.value)}
+            />
+            <Button onClick={handleAddWindow}>Add Window</Button>
+          </div>
+          <div className="space-y-2">
+            {windows.map((window) => (
+              <div key={window.id} className="flex items-center justify-between border rounded-md p-2">
+                <span>{window.name}</span>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="icon" onClick={() => handleAddMeasurement(window)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={() => handleEditWindow(window.id)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="destructive" size="icon" onClick={() => handleDeleteWindow(window.id)}>
+                    <Trash className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
-
-      {/* Measurement Dialog */}
-      <Dialog open={showMeasurementDialog} onOpenChange={setShowMeasurementDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Measure Window - {selectedSurface?.name} ({currentRoom?.name})
-            </DialogTitle>
-          </DialogHeader>
-          {selectedSurface && (
-            <MeasurementWorksheet
-              clientId="" // We'll use project context instead
-              projectId={projectId}
-              existingMeasurement={selectedSurface.measurements ? {
-                measurements: selectedSurface.measurements,
-                measurement_type: "standard",
-                notes: "",
-                measured_by: "",
-                measured_at: new Date().toISOString()
-              } : undefined}
-              onSave={handleMeasurementSave}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+      
+      {showMeasurementForm && selectedMeasurement && (
+        <MeasurementWorksheet
+          client={selectedMeasurement.client}
+          project={project}
+          existingMeasurement={selectedMeasurement}
+          onSave={handleSaveMeasurement}
+        />
+      )}
+    </div>
   );
 };
