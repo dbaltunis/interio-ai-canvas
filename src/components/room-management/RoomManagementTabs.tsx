@@ -1,88 +1,110 @@
 
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, Users, Calendar } from "lucide-react";
+import { Plus } from 'lucide-react';
 
-export const RoomManagementTabs = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+interface RoomManagementTabsProps {
+  surfaces: any[];
+  treatments: any[];
+  projectId: string;
+  onUpdateRoom: (roomId: string, data: any) => void;
+  onDeleteRoom: (roomId: string) => void;
+  onCreateSurface: (roomId: string, surfaceType: string) => void;
+  onUpdateSurface: (surfaceId: string, data: any) => void;
+  onDeleteSurface: (surfaceId: string) => void;
+  onCopyRoom: (roomId: string) => void;
+  editingRoomId: string | null;
+  setEditingRoomId: (id: string | null) => void;
+  editingRoomName: string;
+  setEditingRoomName: (name: string) => void;
+  onRenameRoom: (roomId: string, newName: string) => void;
+  onCreateRoom: (roomData?: { name: string; room_type: string }) => void;
+  isCreatingRoom: boolean;
+  onChangeRoomType: (roomId: string, roomType: string) => void;
+  onCreateFromTemplate: (template: any, customName?: string) => void;
+}
 
-  const handleCreateRoom = async (roomData?: { name: string; room_type: string; }) => {
-    // Implementation for creating room
-    console.log("Creating room:", roomData);
-  };
-
+export const RoomManagementTabs = ({
+  surfaces,
+  treatments,
+  projectId,
+  onUpdateRoom,
+  onDeleteRoom,
+  onCreateSurface,
+  onUpdateSurface,
+  onDeleteSurface,
+  onCopyRoom,
+  editingRoomId,
+  setEditingRoomId,
+  editingRoomName,
+  setEditingRoomName,
+  onRenameRoom,
+  onCreateRoom,
+  isCreatingRoom,
+  onChangeRoomType,
+  onCreateFromTemplate
+}: RoomManagementTabsProps) => {
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Room Management</h2>
-          <p className="text-muted-foreground">
-            Manage rooms, surfaces, and window configurations
-          </p>
-        </div>
-        <Button onClick={() => handleCreateRoom()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Room
-        </Button>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">
-            <Home className="h-4 w-4 mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="templates">
-            <Users className="h-4 w-4 mr-2" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="schedule">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedule
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <CardTitle>Room Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Room overview functionality will be implemented here.
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Room Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Rooms & Surfaces</h3>
+            <Button onClick={() => onCreateRoom()} disabled={isCreatingRoom}>
+              <Plus className="h-4 w-4 mr-2" />
+              {isCreatingRoom ? 'Creating...' : 'Add Room'}
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            {surfaces.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                No surfaces created yet. Create a room first, then add surfaces to it.
               </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="templates">
-          <Card>
-            <CardHeader>
-              <CardTitle>Room Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Room templates functionality will be implemented here.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="schedule">
-          <Card>
-            <CardHeader>
-              <CardTitle>Room Schedule</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Room scheduling functionality will be implemented here.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            ) : (
+              <div className="grid gap-4">
+                {surfaces.map((surface) => (
+                  <Card key={surface.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{surface.name}</h4>
+                        <p className="text-sm text-gray-600">{surface.surface_type}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onUpdateSurface(surface.id, surface)}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {treatments.length > 0 && (
+            <div className="mt-6">
+              <h4 className="font-medium mb-3">Treatments</h4>
+              <div className="space-y-2">
+                {treatments.map((treatment) => (
+                  <div key={treatment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div>
+                      <span className="font-medium">{treatment.product_name || treatment.treatment_type}</span>
+                      <p className="text-sm text-gray-600">${treatment.total_price || 0}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

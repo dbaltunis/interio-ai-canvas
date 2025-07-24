@@ -80,9 +80,8 @@ export const InteractiveProjectDialog = ({ open, onOpenChange, client }: Interac
       case 2:
         return (
           <WindowsCanvasInterface
-            projectId="temp"
-            onCreateSurface={handleCreateSurface}
-            onBack={handleBack}
+            project={projectData}
+            onSave={(data) => setProjectData(data)}
           />
         );
       case 3:

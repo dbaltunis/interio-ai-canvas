@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { MeasurementWorksheet } from '@/components/measurements/MeasurementWorks
 
 interface QuickMeasurementAccessProps {
   client: any;
-  onSave: (measurement: any) => void;
+  onSave?: (measurement: any) => void;
 }
 
 export const QuickMeasurementAccess = ({ client, onSave }: QuickMeasurementAccessProps) => {
@@ -67,7 +68,8 @@ export const QuickMeasurementAccess = ({ client, onSave }: QuickMeasurementAcces
 
     const newMeasurement = await response.json();
 
-    onSave(newMeasurement);
+    // Call onSave if provided
+    onSave?.(newMeasurement);
 
     // Update the project with the new measurement
     setSelectedProject(prev => ({

@@ -144,3 +144,13 @@ export const useDeleteInventoryItem = () => {
     },
   });
 };
+
+// Add the missing export
+export const useInventoryManagement = () => {
+  return {
+    inventory: useInventory(),
+    createItem: useCreateInventoryItem(),
+    updateItem: useUpdateInventoryItem(),
+    deleteItem: useDeleteInventoryItem()
+  };
+};
