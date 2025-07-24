@@ -36,16 +36,13 @@ export const TreatmentPricingForm = ({
   windowCovering,
   projectId
 }: TreatmentPricingFormProps) => {
-  const { formData, setFormData, handleInputChange, resetForm, fabricUsage, costs } = useTreatmentFormData({
-    treatmentType,
-    surfaceId: windowCovering?.id || '',
-    measurements: windowCovering || {}
-  });
-  
+  const { formData, setFormData, handleInputChange, resetForm } = useTreatmentFormData(treatmentType, windowCovering);
   const { options, hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
   const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
+
+  const costs = calculateCosts();
 
   // Enhanced debugging for options loading
   console.log('=== TreatmentPricingForm Debug ===');

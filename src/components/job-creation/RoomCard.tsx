@@ -1,68 +1,158 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Ruler } from 'lucide-react';
-import { SurfaceList } from './SurfaceList';
+import { Badge } from "@/components/ui/badge";
+import { Plus, RectangleHorizontal } from "lucide-react";
+import { useRoomCardLogic } from "./RoomCardLogic";
+import { RoomHeader } from "./RoomHeader";
+import { SurfaceList } from "./SurfaceList";
 
 interface RoomCardProps {
   room: any;
-  surfaces: any[];
-  treatments: any[];
-  onCreateSurface: (roomId: string) => void;
-  onDeleteRoom: (roomId: string) => void;
+  projectId: string;
+  onUpdateRoom: any;
+  onDeleteRoom: any;
+  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
+  onCreateSurface: (roomId: string, surfaceType: string) => void;
+  onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
-  onDeleteTreatment: (treatmentId: string) => void;
-  onViewMeasurements: (surfaceId: string) => void;
+  onCopyRoom: (room: any) => void;
+  editingRoomId: string | null;
+  setEditingRoomId: (id: string | null) => void;
+  editingRoomName: string;
+  setEditingRoomName: (name: string) => void;
+  onRenameRoom: (roomId: string, newName: string) => void;
+  onChangeRoomType: (roomId: string, roomType: string) => void;
 }
 
 export const RoomCard = ({ 
   room, 
-  surfaces, 
-  treatments, 
-  onCreateSurface, 
+  projectId, 
+  onUpdateRoom, 
   onDeleteRoom, 
-  onDeleteSurface, 
-  onDeleteTreatment, 
-  onViewMeasurements 
+  onCreateTreatment,
+  onCreateSurface,
+  onUpdateSurface,
+  onDeleteSurface,
+  onCopyRoom,
+  editingRoomId,
+  setEditingRoomId,
+  editingRoomName,
+  setEditingRoomName,
+  onRenameRoom,
+  onChangeRoomType
 }: RoomCardProps) => {
-  const [showMeasurementForm, setShowMeasurementForm] = useState(false);
-  const [selectedSurface, setSelectedSurface] = useState(null);
+  const {
+    surfacesLoading,
+    roomSurfaces,
+    roomTreatments,
+    roomTotal,
+    pricingFormOpen,
+    setPricingFormOpen,
+    calculatorDialogOpen,
+    setCalculatorDialogOpen,
+    currentFormData,
+    handleAddTreatment
+  } = useRoomCardLogic(room, projectId);
 
-  const handleCreateSurface = () => {
-    onCreateSurface(room.id);
+  const [isCreatingSurface, setIsCreatingSurface] = useState(false);
+  
+  const handleSurfaceCreation = async () => {
+    setIsCreatingSurface(true);
+    try {
+      await onCreateSurface(room.id, 'window');
+    } catch (error) {
+      console.error("Surface creation failed:", error);
+    } finally {
+      setIsCreatingSurface(false);
+    }
   };
 
-  const handleDeleteRoom = () => {
-    onDeleteRoom(room.id);
+  const handleStartEditing = () => {
+    setEditingRoomId(room.id);
+    setEditingRoomName(room.name);
   };
 
-  const handleViewMeasurements = (surfaceId: string) => {
-    onViewMeasurements(surfaceId);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onRenameRoom(room.id, editingRoomName);
+      setEditingRoomId(null);
+    } else if (e.key === 'Escape') {
+      setEditingRoomId(null);
+      setEditingRoomName(room.name);
+    }
   };
+
+  if (surfacesLoading) {
+    return (
+      <Card className="bg-gray-100 min-h-[500px] flex flex-col">
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-brand-neutral">Loading surfaces...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="bg-white shadow-sm border border-brand-secondary/20">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{room.name}</CardTitle>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="icon" onClick={handleCreateSurface}>
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button variant="destructive" size="icon" onClick={handleDeleteRoom}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+    <Card className="bg-white border-brand-secondary/20 shadow-sm hover:shadow-md transition-shadow">
+      <RoomHeader
+        room={room}
+        roomTotal={roomTotal}
+        editingRoomId={editingRoomId}
+        editingRoomName={editingRoomName}
+        setEditingRoomName={setEditingRoomName}
+        onStartEditing={handleStartEditing}
+        onKeyPress={handleKeyPress}
+        onRenameRoom={onRenameRoom}
+        onCopyRoom={onCopyRoom}
+        onDeleteRoom={onDeleteRoom}
+        onChangeRoomType={onChangeRoomType}
+      />
+
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          {/* Room Type Badge */}
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary" className="capitalize">
+              {room.room_type?.replace('_', ' ') || 'Living Room'}
+            </Badge>
+            <div className="text-sm text-muted-foreground">
+              {roomSurfaces.length} window{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+
+          {/* Surfaces List */}
+          {roomSurfaces.length > 0 ? (
+            <SurfaceList
+              surfaces={roomSurfaces}
+              treatments={roomTreatments}
+              onAddTreatment={handleAddTreatment}
+              onUpdateSurface={onUpdateSurface}
+              onDeleteSurface={onDeleteSurface}
+            />
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+              <div className="text-4xl mb-2">🪟</div>
+              <h4 className="font-medium text-gray-900 mb-1">No windows added</h4>
+              <p className="text-sm text-gray-500 mb-4">Add windows to get started with treatments</p>
+            </div>
+          )}
+
+          {/* Add Window Button */}
+          <div className="flex gap-2 pt-4 border-t border-gray-100">
+            <Button
+              onClick={handleSurfaceCreation}
+              disabled={isCreatingSurface}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <RectangleHorizontal className="h-4 w-4 mr-2" />
+              Add Window
+            </Button>
+          </div>
         </div>
-      </CardHeader>
-      
-      <CardContent className="p-4">
-        <SurfaceList 
-          surfaces={surfaces}
-          treatments={treatments}
-          onDeleteSurface={onDeleteSurface}
-          onDeleteTreatment={onDeleteTreatment}
-          onViewMeasurements={onViewMeasurements}
-        />
-        
       </CardContent>
     </Card>
   );

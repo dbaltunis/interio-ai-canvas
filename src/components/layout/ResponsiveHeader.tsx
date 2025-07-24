@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -36,48 +35,44 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   return (
     <>
       {/* Desktop Header */}
-      <header className="bg-white border-b border-brand-secondary/20 shadow-sm sticky top-0 z-40 w-full">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
+      <header className="bg-white border-b border-brand-secondary/20 shadow-sm sticky top-0 z-40">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Left side - Logo */}
             <div className="flex items-center">
-              <BrandHeader size="lg" showTagline={true} />
+              <BrandHeader size="sm" showTagline={true} />
             </div>
             
-            {/* Right side - Navigation, Notifications, and User Profile */}
+            {/* Center - Navigation (hidden on mobile) */}
+            <nav className="hidden md:flex items-center space-x-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <Button
+                    key={item.id}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onTabChange(item.id)}
+                    className={cn(
+                      "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative",
+                      isActive
+                        ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
+                        : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    {item.label}
+                    {isActive && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
+                    )}
+                  </Button>
+                );
+              })}
+            </nav>
+            
+            {/* Right side - User Profile */}
             <div className="flex items-center space-x-4">
-              {/* Center - Navigation (hidden on mobile) */}
-              <nav className="hidden md:flex items-center space-x-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                    <Button
-                      key={item.id}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onTabChange(item.id)}
-                      className={cn(
-                        "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative",
-                        isActive
-                          ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
-                          : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
-                      )}
-                    >
-                      <Icon className="h-4 w-4 mr-2" />
-                      {item.label}
-                      {isActive && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
-                      )}
-                    </Button>
-                  );
-                })}
-              </nav>
-
-              {/* Notification Center */}
-              <NotificationCenter />
-              
-              {/* User Profile */}
               <UserProfile />
               
               {/* Mobile menu button */}

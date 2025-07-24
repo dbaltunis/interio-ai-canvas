@@ -155,38 +155,6 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
-  const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
-    try {
-      await createTreatment.mutateAsync({
-        project_id: projectId,
-        room_id: roomId,
-        window_id: surfaceId,
-        treatment_type: treatmentType,
-        measurements: treatmentData?.measurements || {},
-        fabric_details: treatmentData?.fabric_details || {},
-        treatment_details: treatmentData?.treatment_details || {},
-        calculation_details: treatmentData?.calculation_details || {},
-        material_cost: treatmentData?.material_cost || 0,
-        labor_cost: treatmentData?.labor_cost || 0,
-        total_price: treatmentData?.total_price || 0,
-        notes: treatmentData?.notes || "",
-        status: 'planned'
-      });
-
-      toast({
-        title: "Success",
-        description: "Treatment created successfully",
-      });
-    } catch (error) {
-      console.error("Failed to create treatment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create treatment. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleCopyRoom = async (room: any) => {
     try {
       const newRoom = await createRoom.mutateAsync({
@@ -236,6 +204,30 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
+  const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
+    try {
+      await createTreatment.mutateAsync({
+        project_id: projectId,
+        room_id: roomId,
+        window_id: surfaceId,
+        treatment_type: treatmentType,
+        ...treatmentData
+      });
+
+      toast({
+        title: "Success",
+        description: "Treatment created successfully",
+      });
+    } catch (error) {
+      console.error("Failed to create treatment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create treatment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     rooms,
     roomsLoading,
@@ -247,8 +239,8 @@ export const useJobHandlers = (project: any) => {
     handleCreateSurface,
     handleUpdateSurface,
     handleDeleteSurface,
-    handleCreateTreatment,
     handleCopyRoom,
+    handleCreateTreatment,
     createRoom
   };
 };
