@@ -6,6 +6,7 @@ interface RoomManagementTabsProps {
   surfaces: any[];
   treatments: any[];
   projectId: string;
+  clientId?: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
   onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
@@ -29,6 +30,7 @@ export const RoomManagementTabs = ({
   surfaces,
   treatments,
   projectId,
+  clientId,
   onUpdateRoom,
   onDeleteRoom,
   onCreateTreatment,
@@ -51,6 +53,7 @@ export const RoomManagementTabs = ({
       <RoomsGrid
         rooms={rooms}
         projectId={projectId}
+        clientId={clientId}
         onUpdateRoom={onUpdateRoom}
         onDeleteRoom={onDeleteRoom}
         onCreateTreatment={onCreateTreatment}

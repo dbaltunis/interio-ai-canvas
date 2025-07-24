@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { RectangleHorizontal, Square, Plus, Edit2, Trash2, Check, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RectangleHorizontal, Ruler, Plus, Edit2, Trash2, Eye } from "lucide-react";
+import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
+import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 
 interface SurfaceListProps {
   surfaces: any[];
   treatments: any[];
+  clientId?: string;
+  projectId?: string;
   onAddTreatment: (surfaceId: string, treatmentType: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
@@ -15,26 +19,33 @@ interface SurfaceListProps {
 export const SurfaceList = ({
   surfaces,
   treatments,
+  clientId,
+  projectId,
   onAddTreatment,
   onUpdateSurface,
   onDeleteSurface
 }: SurfaceListProps) => {
-  const [editingSurface, setEditingSurface] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
+  const [selectedSurface, setSelectedSurface] = useState<any>(null);
+  const [showMeasurementDialog, setShowMeasurementDialog] = useState(false);
+  
+  const { data: clientMeasurements } = useClientMeasurements(clientId);
 
-  const handleStartEdit = (surface: any) => {
-    setEditingSurface(surface.id);
-    setEditingName(surface.name);
+  const handleOpenMeasurement = (surface: any) => {
+    setSelectedSurface(surface);
+    setShowMeasurementDialog(true);
   };
 
-  const handleSaveEdit = (surfaceId: string) => {
-    onUpdateSurface(surfaceId, { name: editingName });
-    setEditingSurface(null);
+  const handleCloseMeasurement = () => {
+    setSelectedSurface(null);
+    setShowMeasurementDialog(false);
   };
 
-  const handleCancelEdit = () => {
-    setEditingSurface(null);
-    setEditingName("");
+  // Find matching client measurement for a surface
+  const getClientMeasurementForSurface = (surface: any) => {
+    return clientMeasurements?.find(measurement => 
+      measurement.notes?.includes(surface.name) || 
+      measurement.project_id === projectId
+    );
   };
 
   const getSurfaceTreatments = (surfaceId: string) => {
@@ -50,64 +61,60 @@ export const SurfaceList = ({
   ];
 
   return (
-    <div className="space-y-3">
-      {surfaces.map((surface) => {
-        const surfaceTreatments = getSurfaceTreatments(surface.id);
-        const isEditing = editingSurface === surface.id;
+    <>
+      <div className="space-y-3">
+        {surfaces.map((surface) => {
+          const surfaceTreatments = getSurfaceTreatments(surface.id);
+          const clientMeasurement = getClientMeasurementForSurface(surface);
+          const hasMeasurements = clientMeasurement?.measurements && Object.keys(clientMeasurement.measurements).length > 0;
 
-        return (
-          <div key={surface.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                {surface.surface_type === 'window' ? (
+          return (
+            <div key={surface.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
                   <RectangleHorizontal className="h-5 w-5 text-brand-primary" />
-                ) : (
-                  <Square className="h-5 w-5 text-brand-primary" />
-                )}
-                
-                {isEditing ? (
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      className="h-8 w-32"
-                      autoFocus
-                    />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleSaveEdit(surface.id)}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCancelEdit}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                      {surface.name}
+                      {hasMeasurements ? (
+                        <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                          Measured
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-orange-600 border-orange-200 text-xs">
+                          Needs Measurement
+                        </Badge>
+                      )}
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      {hasMeasurements ? (
+                        (() => {
+                          const measurements = clientMeasurement.measurements as Record<string, any>;
+                          return (
+                            <>
+                              {clientMeasurement.measurement_type?.replace('_', ' ')} • 
+                              {measurements.measurement_a ? ` ${measurements.measurement_a}"` : ''} × 
+                              {measurements.measurement_b ? ` ${measurements.measurement_b}"` : ''}
+                            </>
+                          );
+                        })()
+                      ) : (
+                        `${surface.width}" × ${surface.height}" (Basic dimensions)`
+                      )}
+                    </p>
                   </div>
-                ) : (
-                  <>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{surface.name}</h4>
-                      <p className="text-sm text-gray-500">
-                        {surface.width}" × {surface.height}"
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+                </div>
 
-              {!isEditing && (
                 <div className="flex items-center space-x-2">
                   <Button
                     size="sm"
-                    variant="ghost"
-                    onClick={() => handleStartEdit(surface)}
+                    variant="outline"
+                    onClick={() => handleOpenMeasurement(surface)}
+                    className="flex items-center gap-1"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Ruler className="h-4 w-4" />
+                    {hasMeasurements ? 'View' : 'Measure'}
                   </Button>
                   <Button
                     size="sm"
@@ -118,40 +125,65 @@ export const SurfaceList = ({
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Existing Treatments */}
-            {surfaceTreatments.length > 0 && (
-              <div className="mb-3">
+              {/* Existing Treatments */}
+              {surfaceTreatments.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-2">
+                    {surfaceTreatments.map((treatment) => (
+                      <Badge key={treatment.id} variant="default" className="capitalize">
+                        {treatment.treatment_type} - ${treatment.total_price || 0}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add Treatment Buttons - Only show if measurements exist */}
+              {hasMeasurements ? (
                 <div className="flex flex-wrap gap-2">
-                  {surfaceTreatments.map((treatment) => (
-                    <Badge key={treatment.id} variant="default" className="capitalize">
-                      {treatment.treatment_type} - ${treatment.total_price || 0}
-                    </Badge>
+                  {treatmentTypes.map((type) => (
+                    <Button
+                      key={type.id}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onAddTreatment(surface.id, type.id)}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      {type.label}
+                    </Button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Add Treatment Buttons */}
-            <div className="flex flex-wrap gap-2">
-              {treatmentTypes.map((type) => (
-                <Button
-                  key={type.id}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onAddTreatment(surface.id, type.id)}
-                  className="text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  {type.label}
-                </Button>
-              ))}
+              ) : (
+                <div className="text-center py-2 text-sm text-gray-500 bg-gray-100 rounded-md">
+                  Complete measurements first to add treatments
+                </div>
+              )}
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {/* Measurement Dialog */}
+      {showMeasurementDialog && selectedSurface && clientId && (
+        <Dialog open={showMeasurementDialog} onOpenChange={setShowMeasurementDialog}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Measurement Worksheet - {selectedSurface.name}
+              </DialogTitle>
+            </DialogHeader>
+            <MeasurementWorksheet
+              clientId={clientId}
+              projectId={projectId}
+              existingMeasurement={getClientMeasurementForSurface(selectedSurface)}
+              onSave={handleCloseMeasurement}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };

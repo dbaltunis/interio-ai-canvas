@@ -11,6 +11,7 @@ import { SurfaceList } from "./SurfaceList";
 interface RoomCardProps {
   room: any;
   projectId: string;
+  clientId?: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
   onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
@@ -28,7 +29,8 @@ interface RoomCardProps {
 
 export const RoomCard = ({ 
   room, 
-  projectId, 
+  projectId,
+  clientId,
   onUpdateRoom, 
   onDeleteRoom, 
   onCreateTreatment,
@@ -127,6 +129,8 @@ export const RoomCard = ({
             <SurfaceList
               surfaces={roomSurfaces}
               treatments={roomTreatments}
+              clientId={clientId}
+              projectId={projectId}
               onAddTreatment={handleAddTreatment}
               onUpdateSurface={onUpdateSurface}
               onDeleteSurface={onDeleteSurface}

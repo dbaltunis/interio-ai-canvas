@@ -71,6 +71,7 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
       surfaces={allSurfaces || []}
       treatments={allTreatments || []}
       projectId={project.project_id || project.id}
+      clientId={project.client_id}
       onUpdateRoom={() => {}}
       onDeleteRoom={() => {}}
       onCreateTreatment={handleCreateTreatment}

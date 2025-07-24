@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 interface RoomsGridProps {
   rooms: any[];
   projectId: string;
+  clientId?: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
   onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
@@ -27,7 +28,8 @@ interface RoomsGridProps {
 
 export const RoomsGrid = ({ 
   rooms, 
-  projectId, 
+  projectId,
+  clientId,
   onUpdateRoom,
   onDeleteRoom,
   onCreateTreatment,
@@ -58,6 +60,7 @@ export const RoomsGrid = ({
               key={room.id} 
               room={room} 
               projectId={projectId}
+              clientId={clientId}
               onUpdateRoom={onUpdateRoom}
               onDeleteRoom={onDeleteRoom}
               onCreateTreatment={onCreateTreatment}
