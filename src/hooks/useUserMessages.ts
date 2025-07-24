@@ -107,7 +107,19 @@ export const useUserMessages = () => {
       return [];
     }
 
-    return data || [];
+    // Transform the data to match our interface
+    const transformedData: UserMessage[] = (data || []).map(item => ({
+      id: item.id,
+      sender_id: item.sender_id,
+      recipient_id: item.recipient_id,
+      message: item.message,
+      read_at: item.read_at,
+      created_at: item.created_at,
+      sender_profile: item.sender_profile || null,
+      recipient_profile: item.recipient_profile || null
+    }));
+
+    return transformedData;
   };
 
   // Fetch message threads
@@ -139,7 +151,19 @@ export const useUserMessages = () => {
     // Group messages by conversation
     const threadMap = new Map<string, MessageThread>();
     
-    data?.forEach((message) => {
+    data?.forEach((item) => {
+      // Transform the raw data
+      const message: UserMessage = {
+        id: item.id,
+        sender_id: item.sender_id,
+        recipient_id: item.recipient_id,
+        message: item.message,
+        read_at: item.read_at,
+        created_at: item.created_at,
+        sender_profile: item.sender_profile || null,
+        recipient_profile: item.recipient_profile || null
+      };
+
       const otherUserId = message.sender_id === user.id ? message.recipient_id : message.sender_id;
       const otherUserProfile = message.sender_id === user.id ? message.recipient_profile : message.sender_profile;
       

@@ -62,8 +62,19 @@ export const useUserPresence = () => {
 
     if (error) {
       console.error('Error fetching active users:', error);
+      setActiveUsers([]);
     } else {
-      setActiveUsers(data || []);
+      // Transform the data to match our interface
+      const transformedData: UserPresence[] = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        current_page: item.current_page,
+        current_job_id: item.current_job_id,
+        last_seen: item.last_seen,
+        is_online: item.is_online,
+        user_profiles: item.user_profiles || null
+      }));
+      setActiveUsers(transformedData);
     }
     setLoading(false);
   };
