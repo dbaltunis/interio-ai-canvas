@@ -1,26 +1,26 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const Settings = () => {
+const Quotes = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-bold">Quotes</h1>
         <p className="text-muted-foreground">
-          Manage your application settings
+          Manage your quotes here
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Application Settings</CardTitle>
+          <CardTitle>No Quotes Yet</CardTitle>
           <CardDescription>
-            Configure your application preferences
+            Create your first quote to get started
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Settings options will be available here.
+            Quotes will appear here once you create them.
           </p>
         </CardContent>
       </Card>
@@ -28,4 +28,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Quotes;

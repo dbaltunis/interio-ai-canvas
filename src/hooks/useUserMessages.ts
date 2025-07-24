@@ -90,11 +90,11 @@ export const useUserMessages = () => {
       .from('user_messages')
       .select(`
         *,
-        sender_profile:user_profiles!sender_id (
+        sender_profile:user_profiles!user_messages_sender_id_fkey (
           display_name,
           avatar_url
         ),
-        recipient_profile:user_profiles!recipient_id (
+        recipient_profile:user_profiles!user_messages_recipient_id_fkey (
           display_name,
           avatar_url
         )
@@ -118,11 +118,11 @@ export const useUserMessages = () => {
       .from('user_messages')
       .select(`
         *,
-        sender_profile:user_profiles!sender_id (
+        sender_profile:user_profiles!user_messages_sender_id_fkey (
           display_name,
           avatar_url
         ),
-        recipient_profile:user_profiles!recipient_id (
+        recipient_profile:user_profiles!user_messages_recipient_id_fkey (
           display_name,
           avatar_url
         )

@@ -1,26 +1,26 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const Settings = () => {
+const Clients = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-bold">Clients</h1>
         <p className="text-muted-foreground">
-          Manage your application settings
+          Manage your clients here
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Application Settings</CardTitle>
+          <CardTitle>No Clients Yet</CardTitle>
           <CardDescription>
-            Configure your application preferences
+            Add your first client to get started
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Settings options will be available here.
+            Clients will appear here once you add them.
           </p>
         </CardContent>
       </Card>
@@ -28,4 +28,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Clients;

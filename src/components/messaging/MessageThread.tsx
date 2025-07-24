@@ -41,7 +41,7 @@ const MessageThread = ({ userId, onBack }: MessageThreadProps) => {
   const loadConversation = async () => {
     setLoading(true);
     const conversation = await getConversation(userId);
-    setMessages(conversation);
+    setMessages(conversation as Message[]);
     setLoading(false);
     
     // Mark unread messages as read
