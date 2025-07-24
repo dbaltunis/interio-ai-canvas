@@ -1,158 +1,179 @@
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, RectangleHorizontal } from "lucide-react";
-import { useRoomCardLogic } from "./RoomCardLogic";
-import { RoomHeader } from "./RoomHeader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MoreHorizontal, Edit2, Trash2, Plus, Copy, Check, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SurfaceList } from "./SurfaceList";
+import { useRoomCardLogic } from "./RoomCardLogic";
 
 interface RoomCardProps {
   room: any;
   projectId: string;
-  onUpdateRoom: any;
-  onDeleteRoom: any;
-  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
+  clientId?: string;
+  isEditing: boolean;
+  editingName: string;
+  onStartEdit: (room: any) => void;
+  onSaveEdit: (roomId: string, newName: string) => void;
+  onCancelEdit: () => void;
+  onEditingNameChange: (name: string) => void;
+  onDeleteRoom: (roomId: string) => void;
   onCreateSurface: (roomId: string, surfaceType: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
   onCopyRoom: (room: any) => void;
-  editingRoomId: string | null;
-  setEditingRoomId: (id: string | null) => void;
-  editingRoomName: string;
-  setEditingRoomName: (name: string) => void;
-  onRenameRoom: (roomId: string, newName: string) => void;
   onChangeRoomType: (roomId: string, roomType: string) => void;
 }
 
-export const RoomCard = ({ 
-  room, 
-  projectId, 
-  onUpdateRoom, 
-  onDeleteRoom, 
-  onCreateTreatment,
+const ROOM_TYPES = [
+  { value: "living_room", label: "Living Room" },
+  { value: "bedroom", label: "Bedroom" },
+  { value: "dining_room", label: "Dining Room" },
+  { value: "kitchen", label: "Kitchen" },
+  { value: "bathroom", label: "Bathroom" },
+  { value: "office", label: "Office" },
+  { value: "other", label: "Other" }
+];
+
+export const RoomCard = ({
+  room,
+  projectId,
+  clientId,
+  isEditing,
+  editingName,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onEditingNameChange,
+  onDeleteRoom,
   onCreateSurface,
   onUpdateSurface,
   onDeleteSurface,
   onCopyRoom,
-  editingRoomId,
-  setEditingRoomId,
-  editingRoomName,
-  setEditingRoomName,
-  onRenameRoom,
   onChangeRoomType
 }: RoomCardProps) => {
   const {
-    surfacesLoading,
     roomSurfaces,
     roomTreatments,
-    roomTotal,
-    pricingFormOpen,
-    setPricingFormOpen,
-    calculatorDialogOpen,
-    setCalculatorDialogOpen,
-    currentFormData,
-    handleAddTreatment
+    roomTotal
   } = useRoomCardLogic(room, projectId);
 
-  const [isCreatingSurface, setIsCreatingSurface] = useState(false);
-  
-  const handleSurfaceCreation = async () => {
-    setIsCreatingSurface(true);
-    try {
-      await onCreateSurface(room.id, 'window');
-    } catch (error) {
-      console.error("Surface creation failed:", error);
-    } finally {
-      setIsCreatingSurface(false);
-    }
-  };
-
-  const handleStartEditing = () => {
-    setEditingRoomId(room.id);
-    setEditingRoomName(room.name);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onRenameRoom(room.id, editingRoomName);
-      setEditingRoomId(null);
-    } else if (e.key === 'Escape') {
-      setEditingRoomId(null);
-      setEditingRoomName(room.name);
-    }
-  };
-
-  if (surfacesLoading) {
-    return (
-      <Card className="bg-gray-100 min-h-[500px] flex flex-col">
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-brand-neutral">Loading surfaces...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="bg-white border-brand-secondary/20 shadow-sm hover:shadow-md transition-shadow">
-      <RoomHeader
-        room={room}
-        roomTotal={roomTotal}
-        editingRoomId={editingRoomId}
-        editingRoomName={editingRoomName}
-        setEditingRoomName={setEditingRoomName}
-        onStartEditing={handleStartEditing}
-        onKeyPress={handleKeyPress}
-        onRenameRoom={onRenameRoom}
-        onCopyRoom={onCopyRoom}
-        onDeleteRoom={onDeleteRoom}
-        onChangeRoomType={onChangeRoomType}
-      />
-
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          {/* Room Type Badge */}
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary" className="capitalize">
-              {room.room_type?.replace('_', ' ') || 'Living Room'}
-            </Badge>
-            <div className="text-sm text-muted-foreground">
-              {roomSurfaces.length} window{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
-            </div>
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 flex-1">
+            {isEditing ? (
+              <div className="flex items-center space-x-2 flex-1">
+                <Input
+                  value={editingName}
+                  onChange={(e) => onEditingNameChange(e.target.value)}
+                  className="flex-1"
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onSaveEdit(room.id, editingName)}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onCancelEdit}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <CardTitle className="text-lg">{room.name}</CardTitle>
+                <Badge variant="secondary" className="text-xs">
+                  {ROOM_TYPES.find(type => type.value === room.room_type)?.label || room.room_type}
+                </Badge>
+              </>
+            )}
           </div>
 
-          {/* Surfaces List */}
-          {roomSurfaces.length > 0 ? (
-            <SurfaceList
-              surfaces={roomSurfaces}
-              treatments={roomTreatments}
-              onAddTreatment={handleAddTreatment}
-              onUpdateSurface={onUpdateSurface}
-              onDeleteSurface={onDeleteSurface}
-            />
-          ) : (
-            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-              <div className="text-4xl mb-2">🪟</div>
-              <h4 className="font-medium text-gray-900 mb-1">No windows added</h4>
-              <p className="text-sm text-gray-500 mb-4">Add windows to get started with treatments</p>
+          {!isEditing && (
+            <div className="flex items-center space-x-2">
+              <div className="text-right">
+                <div className="text-sm font-medium text-green-600">
+                  ${roomTotal.toFixed(2)}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {roomTreatments.length} treatments
+                </div>
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onStartEdit(room)}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit Name
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onCopyRoom(room)}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Room
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDeleteRoom(room.id)} className="text-red-600">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
+        </div>
 
-          {/* Add Window Button */}
-          <div className="flex gap-2 pt-4 border-t border-gray-100">
-            <Button
-              onClick={handleSurfaceCreation}
-              disabled={isCreatingSurface}
-              variant="outline"
-              size="sm"
-              className="flex-1"
+        {!isEditing && (
+          <div className="flex items-center justify-between pt-2">
+            <Select 
+              value={room.room_type} 
+              onValueChange={(value) => onChangeRoomType(room.id, value)}
             >
-              <RectangleHorizontal className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-40 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROOM_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onCreateSurface(room.id, 'window')}
+            >
+              <Plus className="h-4 w-4 mr-1" />
               Add Window
             </Button>
           </div>
-        </div>
+        )}
+      </CardHeader>
+
+      <CardContent>
+        <SurfaceList
+          surfaces={roomSurfaces}
+          treatments={roomTreatments}
+          projectId={projectId}
+          clientId={clientId}
+          onUpdateSurface={onUpdateSurface}
+          onDeleteSurface={onDeleteSurface}
+        />
       </CardContent>
     </Card>
   );

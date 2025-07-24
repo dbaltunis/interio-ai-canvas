@@ -1,15 +1,15 @@
 
-import { RoomCard } from "./RoomCard";
-import { EmptyRoomsState } from "./EmptyRoomsState";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { RoomCard } from "./RoomCard";
+import { useProjects } from "@/hooks/useProjects";
 
 interface RoomsGridProps {
   rooms: any[];
   projectId: string;
   onUpdateRoom: any;
   onDeleteRoom: any;
-  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
   onCreateSurface: (roomId: string, surfaceType: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
@@ -24,12 +24,11 @@ interface RoomsGridProps {
   onChangeRoomType: (roomId: string, roomType: string) => void;
 }
 
-export const RoomsGrid = ({ 
-  rooms, 
-  projectId, 
+export const RoomsGrid = ({
+  rooms,
+  projectId,
   onUpdateRoom,
   onDeleteRoom,
-  onCreateTreatment,
   onCreateSurface,
   onUpdateSurface,
   onDeleteSurface,
@@ -43,50 +42,71 @@ export const RoomsGrid = ({
   isCreatingRoom,
   onChangeRoomType
 }: RoomsGridProps) => {
+  const { data: projects } = useProjects();
+  const project = projects?.find(p => p.id === projectId);
+
+  const handleStartEdit = (room: any) => {
+    setEditingRoomId(room.id);
+    setEditingRoomName(room.name);
+  };
+
+  const handleSaveEdit = (roomId: string, newName: string) => {
+    onRenameRoom(roomId, newName);
+    setEditingRoomId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoomId(null);
+    setEditingRoomName("");
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {!rooms || rooms.length === 0 ? (
-          <div className="lg:col-span-2">
-            <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
-          </div>
-        ) : (
-          rooms.map((room) => (
-            <RoomCard 
-              key={room.id} 
-              room={room} 
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Rooms</h3>
+          <p className="text-sm text-gray-600">
+            {rooms.length} room{rooms.length !== 1 ? 's' : ''} configured
+          </p>
+        </div>
+        <Button onClick={onCreateRoom} disabled={isCreatingRoom}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Room
+        </Button>
+      </div>
+
+      {rooms.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="text-4xl mb-2">🏠</div>
+          <h4 className="font-medium text-gray-900 mb-1">No rooms yet</h4>
+          <p className="text-sm text-gray-500 mb-4">Start by adding your first room</p>
+          <Button onClick={onCreateRoom} disabled={isCreatingRoom}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add First Room
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              room={room}
               projectId={projectId}
-              onUpdateRoom={onUpdateRoom}
+              clientId={project?.client_id}
+              isEditing={editingRoomId === room.id}
+              editingName={editingRoomName}
+              onStartEdit={handleStartEdit}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              onEditingNameChange={setEditingRoomName}
               onDeleteRoom={onDeleteRoom}
-              onCreateTreatment={onCreateTreatment}
               onCreateSurface={onCreateSurface}
               onUpdateSurface={onUpdateSurface}
               onDeleteSurface={onDeleteSurface}
               onCopyRoom={onCopyRoom}
-              editingRoomId={editingRoomId}
-              setEditingRoomId={setEditingRoomId}
-              editingRoomName={editingRoomName}
-              setEditingRoomName={setEditingRoomName}
-              onRenameRoom={onRenameRoom}
               onChangeRoomType={onChangeRoomType}
             />
-          ))
-        )}
-      </div>
-      
-      {/* Add Room Button - show when there are existing rooms */}
-      {rooms && rooms.length > 0 && (
-        <div className="flex justify-center">
-          <Button
-            onClick={onCreateRoom}
-            disabled={isCreatingRoom}
-            variant="outline"
-            size="lg"
-            className="flex items-center space-x-2 px-8 py-4 border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5"
-          >
-            <Plus className="h-5 w-5" />
-            <span>{isCreatingRoom ? 'Adding Room...' : 'Add Another Room'}</span>
-          </Button>
+          ))}
         </div>
       )}
     </div>

@@ -1,4 +1,3 @@
-
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
@@ -204,30 +203,6 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
-  const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
-    try {
-      await createTreatment.mutateAsync({
-        project_id: projectId,
-        room_id: roomId,
-        window_id: surfaceId,
-        treatment_type: treatmentType,
-        ...treatmentData
-      });
-
-      toast({
-        title: "Success",
-        description: "Treatment created successfully",
-      });
-    } catch (error) {
-      console.error("Failed to create treatment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create treatment. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return {
     rooms,
     roomsLoading,
@@ -240,7 +215,6 @@ export const useJobHandlers = (project: any) => {
     handleUpdateSurface,
     handleDeleteSurface,
     handleCopyRoom,
-    handleCreateTreatment,
     createRoom
   };
 };
