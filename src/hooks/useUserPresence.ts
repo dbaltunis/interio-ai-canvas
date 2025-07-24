@@ -25,6 +25,7 @@ export const useUserPresence = () => {
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialized = useRef(false);
 
   // Update current user's presence
   const updatePresence = async (currentPage: string, currentJobId?: string) => {
@@ -49,12 +50,11 @@ export const useUserPresence = () => {
 
   // Fetch active users
   const fetchActiveUsers = async () => {
-    // First get the presence data
     const { data: presenceData, error: presenceError } = await supabase
       .from('user_presence')
       .select('*')
       .eq('is_online', true)
-      .gte('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString()); // 5 minutes ago
+      .gte('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString());
 
     if (presenceError) {
       console.error('Error fetching active users:', presenceError);
@@ -63,10 +63,8 @@ export const useUserPresence = () => {
       return;
     }
 
-    // Get unique user IDs from the presence data
     const userIds = presenceData.map(presence => presence.user_id);
 
-    // Fetch user profiles if we have user IDs
     let profilesData = [];
     if (userIds.length > 0) {
       const { data, error: profilesError } = await supabase
@@ -81,7 +79,6 @@ export const useUserPresence = () => {
       }
     }
 
-    // Create a map of user profiles
     const profilesMap = new Map();
     profilesData.forEach(profile => {
       profilesMap.set(profile.user_id, {
@@ -91,7 +88,6 @@ export const useUserPresence = () => {
       });
     });
 
-    // Transform the data to match our interface
     const transformedData: UserPresence[] = presenceData.map(item => ({
       id: item.id,
       user_id: item.user_id,
@@ -118,18 +114,15 @@ export const useUserPresence = () => {
 
   // Update presence when route changes
   useEffect(() => {
-    if (user) {
+    if (user && isInitialized.current) {
       updatePresence(location.pathname);
     }
   }, [user, location.pathname]);
 
-  // Set up realtime subscription
-  useEffect(() => {
-    if (!user) return;
-
-    // Clean up any existing channel and heartbeat
+  // Clean up existing resources
+  const cleanup = () => {
     if (channelRef.current) {
-      console.log('Cleaning up existing presence channel');
+      console.log('Cleaning up presence channel');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
@@ -138,26 +131,45 @@ export const useUserPresence = () => {
       clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
     }
+  };
 
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!user || isInitialized.current) return;
+
+    console.log('Setting up presence subscription for user:', user.id);
+    
+    // Clean up any existing resources
+    cleanup();
+
+    // Initial presence update and fetch
+    updatePresence(location.pathname);
     fetchActiveUsers();
 
-    // Create new channel
+    // Create new channel with unique name
+    const channelName = `user-presence-${user.id}-${Date.now()}`;
     channelRef.current = supabase
-      .channel('user-presence-changes')
+      .channel(channelName)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'user_presence' },
         () => {
+          console.log('Presence change detected');
           fetchActiveUsers();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Presence subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isInitialized.current = true;
+        }
+      });
 
     // Heartbeat to keep presence alive
     heartbeatRef.current = setInterval(() => {
-      if (user) {
+      if (user && isInitialized.current) {
         updatePresence(location.pathname);
       }
-    }, 30000); // 30 seconds
+    }, 30000);
 
     // Set offline on page unload
     const handleBeforeUnload = () => {
@@ -167,19 +179,13 @@ export const useUserPresence = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      if (heartbeatRef.current) {
-        clearInterval(heartbeatRef.current);
-        heartbeatRef.current = null;
-      }
+      console.log('Cleaning up presence subscription');
+      cleanup();
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (channelRef.current) {
-        console.log('Cleaning up presence channel on unmount');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
       setOffline();
+      isInitialized.current = false;
     };
-  }, [user?.id]); // Only depend on user.id to prevent unnecessary re-subscriptions
+  }, [user?.id]);
 
   return {
     activeUsers,

@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,7 @@ export const useUserMessages = () => {
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const isInitialized = useRef(false);
 
   // Send a message
   const sendMessage = async (recipientId: string, message: string) => {
@@ -87,7 +89,6 @@ export const useUserMessages = () => {
   const getConversation = async (otherUserId: string) => {
     if (!user) return [];
 
-    // First get the messages
     const { data: messagesData, error: messagesError } = await supabase
       .from('user_messages')
       .select('*')
@@ -99,13 +100,11 @@ export const useUserMessages = () => {
       return [];
     }
 
-    // Get unique user IDs from the messages
     const userIds = Array.from(new Set([
       ...messagesData.map(msg => msg.sender_id),
       ...messagesData.map(msg => msg.recipient_id)
     ]));
 
-    // Fetch user profiles
     const { data: profilesData, error: profilesError } = await supabase
       .from('user_profiles')
       .select('user_id, display_name, avatar_url')
@@ -115,7 +114,6 @@ export const useUserMessages = () => {
       console.error('Error fetching profiles:', profilesError);
     }
 
-    // Create a map of user profiles
     const profilesMap = new Map();
     profilesData?.forEach(profile => {
       profilesMap.set(profile.user_id, {
@@ -124,7 +122,6 @@ export const useUserMessages = () => {
       });
     });
 
-    // Transform the data to match our interface
     const transformedData: UserMessage[] = messagesData.map(item => ({
       id: item.id,
       sender_id: item.sender_id,
@@ -143,7 +140,6 @@ export const useUserMessages = () => {
   const fetchThreads = async () => {
     if (!user) return;
 
-    // First get the messages
     const { data: messagesData, error: messagesError } = await supabase
       .from('user_messages')
       .select('*')
@@ -156,13 +152,11 @@ export const useUserMessages = () => {
       return;
     }
 
-    // Get unique user IDs from the messages (excluding current user)
     const userIds = Array.from(new Set([
       ...messagesData.map(msg => msg.sender_id),
       ...messagesData.map(msg => msg.recipient_id)
     ])).filter(id => id !== user.id);
 
-    // Fetch user profiles if we have user IDs
     let profilesData = [];
     if (userIds.length > 0) {
       const { data, error: profilesError } = await supabase
@@ -177,7 +171,6 @@ export const useUserMessages = () => {
       }
     }
 
-    // Create a map of user profiles
     const profilesMap = new Map();
     profilesData.forEach(profile => {
       profilesMap.set(profile.user_id, {
@@ -186,11 +179,9 @@ export const useUserMessages = () => {
       });
     });
 
-    // Group messages by conversation
     const threadMap = new Map<string, MessageThread>();
     
     messagesData?.forEach((item) => {
-      // Transform the raw data
       const message: UserMessage = {
         id: item.id,
         sender_id: item.sender_id,
@@ -214,7 +205,6 @@ export const useUserMessages = () => {
         });
       }
       
-      // Count unread messages
       if (message.recipient_id === user.id && !message.read_at) {
         const thread = threadMap.get(otherUserId)!;
         thread.unread_count++;
@@ -225,39 +215,51 @@ export const useUserMessages = () => {
     setLoading(false);
   };
 
-  // Set up realtime subscription
-  useEffect(() => {
-    if (!user) return;
-
-    // Clean up any existing channel
+  // Clean up existing channel
+  const cleanupChannel = () => {
     if (channelRef.current) {
-      console.log('Cleaning up existing messages channel');
+      console.log('Cleaning up messages channel');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
+  };
 
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!user || isInitialized.current) return;
+
+    console.log('Setting up messages subscription for user:', user.id);
+    
+    // Clean up any existing channel first
+    cleanupChannel();
+
+    // Fetch initial data
     fetchThreads();
 
-    // Create new channel
+    // Create new channel with unique name
+    const channelName = `user-messages-${user.id}-${Date.now()}`;
     channelRef.current = supabase
-      .channel('user-messages-changes')
+      .channel(channelName)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'user_messages' },
         (payload) => {
-          console.log('Message change:', payload);
+          console.log('Message change detected:', payload);
           fetchThreads();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Messages subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isInitialized.current = true;
+        }
+      });
 
     return () => {
-      if (channelRef.current) {
-        console.log('Cleaning up messages channel on unmount');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      console.log('Cleaning up messages subscription');
+      cleanupChannel();
+      isInitialized.current = false;
     };
-  }, [user?.id]); // Only depend on user.id to prevent unnecessary re-subscriptions
+  }, [user?.id]);
 
   return {
     messages,
