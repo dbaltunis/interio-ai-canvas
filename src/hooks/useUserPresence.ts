@@ -51,7 +51,7 @@ export const useUserPresence = () => {
       .from('user_presence')
       .select(`
         *,
-        user_profiles (
+        user_profiles!user_presence_user_id_fkey (
           display_name,
           avatar_url,
           status
