@@ -22,7 +22,8 @@ export const ClientFunnelDashboard = () => {
     return {
       ...stage,
       count: stageClients.length,
-      value: stageClients.reduce((sum, client) => sum + (client.lifetime_revenue || 0), 0)
+      // Use 0 as fallback since lifetime_revenue doesn't exist in current schema
+      value: stageClients.reduce((sum, client) => sum + 0, 0)
     };
   });
 

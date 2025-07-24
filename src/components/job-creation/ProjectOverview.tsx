@@ -24,7 +24,6 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [editedProject, setEditedProject] = useState(project);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"rooms" | "surfaces" | "treatments" | "connect">("rooms");
 
   const { data: clients } = useClients();
   const { data: rooms } = useRooms(project.id);
@@ -36,11 +35,6 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
   const handleSaveProject = () => {
     onUpdateProject(editedProject);
     setIsEditingProject(false);
-  };
-
-  const handleOpenDialog = (type: "rooms" | "surfaces" | "treatments" | "connect") => {
-    setDialogType(type);
-    setDialogOpen(true);
   };
 
   const handleCreateRoom = async (roomData?: { name: string; room_type: string }) => {
@@ -211,7 +205,7 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
                 variant="outline" 
                 size="sm" 
                 className="mt-2"
-                onClick={() => handleOpenDialog("rooms")}
+                onClick={() => setDialogOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Room
@@ -224,7 +218,7 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
                 variant="outline" 
                 size="sm" 
                 className="mt-2"
-                onClick={() => handleOpenDialog("surfaces")}
+                onClick={() => setDialogOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Surface
@@ -237,7 +231,7 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
                 variant="outline" 
                 size="sm" 
                 className="mt-2"
-                onClick={() => handleOpenDialog("treatments")}
+                onClick={() => setDialogOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Treatment
@@ -250,7 +244,7 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
                 variant="outline" 
                 size="sm" 
                 className="mt-2"
-                onClick={() => handleOpenDialog("connect")}
+                onClick={() => setDialogOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Connect
@@ -265,7 +259,6 @@ export const ProjectOverview = ({ project, onUpdateProject }: ProjectOverviewPro
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         client={client}
-        type={dialogType}
         project={project}
         rooms={rooms || []}
         surfaces={surfaces || []}
