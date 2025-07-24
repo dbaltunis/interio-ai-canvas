@@ -2,11 +2,20 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Zap, CreditCard, MessageSquare, Calendar } from "lucide-react";
+import { Mail, Zap, CreditCard, MessageSquare, Calendar, Package, Building, Database } from "lucide-react";
 import { SendGridIntegrationTab } from "./SendGridIntegrationTab";
 import { GoogleCalendarTab } from "./GoogleCalendarTab";
+import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
+import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
+import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 export const IntegrationsTab = () => {
+  const { integrations } = useIntegrations();
+  
+  const getIntegrationByType = (type: string) => 
+    integrations.find(integration => integration.integration_type === type);
+
   return (
     <div className="space-y-6">
       <div>
@@ -17,7 +26,7 @@ export const IntegrationsTab = () => {
       </div>
 
       <Tabs defaultValue="email" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email
@@ -25,6 +34,18 @@ export const IntegrationsTab = () => {
           <TabsTrigger value="calendar" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Calendar
+          </TabsTrigger>
+          <TabsTrigger value="pim" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            PIM
+          </TabsTrigger>
+          <TabsTrigger value="erp" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            ERP
+          </TabsTrigger>
+          <TabsTrigger value="rfms" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            RFMS
           </TabsTrigger>
           <TabsTrigger value="automation" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -46,6 +67,18 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="calendar">
           <GoogleCalendarTab />
+        </TabsContent>
+
+        <TabsContent value="pim">
+          <TIGPIMIntegrationTab integration={getIntegrationByType('tig_pim') as any} />
+        </TabsContent>
+
+        <TabsContent value="erp">
+          <MYOBExoIntegrationTab integration={getIntegrationByType('myob_exo') as any} />
+        </TabsContent>
+
+        <TabsContent value="rfms">
+          <RFMSIntegrationTab integration={getIntegrationByType('rfms') as any} />
         </TabsContent>
 
         <TabsContent value="automation">
