@@ -11,13 +11,13 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
   const sizeClasses = {
     sm: "h-8 sm:h-10 md:h-12", 
     md: "h-12 sm:h-14 md:h-16",  
-    lg: "h-16 sm:h-18 md:h-20"  
+    lg: "h-16 sm:h-20 md:h-24"  
   };
 
   const sloganSizeClasses = {
     sm: "text-xs sm:text-sm",
     md: "text-sm sm:text-base",
-    lg: "text-base sm:text-lg"
+    lg: "text-lg sm:text-xl"
   };
 
   return (
