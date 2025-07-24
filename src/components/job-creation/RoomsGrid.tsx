@@ -76,7 +76,7 @@ export const RoomsGrid = ({
         )}
       </div>
       
-      {/* Add Room Button - show when there are existing rooms */}
+      {/* Add Room Button - always show when there are existing rooms */}
       {rooms && rooms.length > 0 && (
         <div className="flex justify-center">
           <Button
@@ -84,7 +84,7 @@ export const RoomsGrid = ({
             disabled={isCreatingRoom}
             variant="outline"
             size="lg"
-            className="flex items-center space-x-2 px-8 py-4 border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5"
+            className="flex items-center space-x-2 px-8 py-4 border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
           >
             <Plus className="h-5 w-5" />
             <span>{isCreatingRoom ? 'Adding Room...' : 'Add Another Room'}</span>

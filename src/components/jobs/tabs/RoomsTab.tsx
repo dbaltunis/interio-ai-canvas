@@ -46,9 +46,9 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Rooms & Treatments</h2>
+          <h2 className="text-2xl font-bold">Rooms & Measurement Worksheets</h2>
           <p className="text-muted-foreground">
-            Manage rooms and configure window treatments for this project
+            Manage rooms and create measurement worksheets for this project
           </p>
         </div>
         <div className="text-right">

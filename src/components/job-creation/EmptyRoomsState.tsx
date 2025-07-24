@@ -18,8 +18,8 @@ export const EmptyRoomsState = ({ onCreateRoom, isCreatingRoom }: EmptyRoomsStat
             No rooms added yet
           </h3>
           <p className="text-brand-neutral max-w-md mx-auto">
-            Start by adding rooms to this project. You can then configure window treatments, 
-            measurements, and specifications for each room.
+            Start by adding rooms to this project. You can then create measurement worksheets 
+            and configure treatments for each room.
           </p>
         </div>
         

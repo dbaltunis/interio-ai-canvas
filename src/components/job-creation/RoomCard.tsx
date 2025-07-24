@@ -118,7 +118,7 @@ export const RoomCard = ({
               {room.room_type?.replace('_', ' ') || 'Living Room'}
             </Badge>
             <div className="text-sm text-muted-foreground">
-              {roomSurfaces.length} window{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
+              {roomSurfaces.length} worksheet{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
             </div>
           </div>
 
@@ -134,8 +134,8 @@ export const RoomCard = ({
           ) : (
             <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
               <div className="text-4xl mb-2">🪟</div>
-              <h4 className="font-medium text-gray-900 mb-1">No windows added</h4>
-              <p className="text-sm text-gray-500 mb-4">Add windows to get started with treatments</p>
+              <h4 className="font-medium text-foreground mb-1">No measurement worksheets added</h4>
+              <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets to get started with treatments</p>
             </div>
           )}
 
@@ -149,7 +149,7 @@ export const RoomCard = ({
               className="flex-1"
             >
               <RectangleHorizontal className="h-4 w-4 mr-2" />
-              Add Window
+              Add Measurement Worksheet
             </Button>
           </div>
         </div>
