@@ -22,6 +22,7 @@ interface RoomsGridProps {
   onCreateRoom: () => void;
   isCreatingRoom: boolean;
   onChangeRoomType: (roomId: string, roomType: string) => void;
+  onCreateFromTemplate?: (template: any, customName?: string) => void;
 }
 
 export const RoomsGrid = ({ 
@@ -41,7 +42,8 @@ export const RoomsGrid = ({
   onRenameRoom,
   onCreateRoom,
   isCreatingRoom,
-  onChangeRoomType
+  onChangeRoomType,
+  onCreateFromTemplate
 }: RoomsGridProps) => {
   return (
     <div className="space-y-6">

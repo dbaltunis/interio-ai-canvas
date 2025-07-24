@@ -66,6 +66,7 @@ export const RoomManagementTabs = ({
         onCreateRoom={onCreateRoom}
         isCreatingRoom={isCreatingRoom}
         onChangeRoomType={onChangeRoomType}
+        onCreateFromTemplate={onCreateFromTemplate}
       />
     </div>
   );
