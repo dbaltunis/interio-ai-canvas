@@ -1,91 +1,137 @@
-
-import { useState } from "react";
-import { RoomCard } from "./RoomCard";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Home } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Square } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface RoomsGridProps {
   rooms: any[];
-  projectId: string;
-  onUpdateRoom: (roomId: string, updates: any) => void;
-  onDeleteRoom: (roomId: string) => void;
-  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
-  onCreateSurface: (roomId: string, surfaceType: string) => void;
-  onUpdateSurface: (surfaceId: string, updates: any) => void;
-  onDeleteSurface: (surfaceId: string) => void;
-  onCopyRoom: (room: any) => void;
-  editingRoomId: string | null;
-  setEditingRoomId: (id: string | null) => void;
-  editingRoomName: string;
-  setEditingRoomName: (name: string) => void;
-  onRenameRoom: (roomId: string, newName: string) => void;
-  onCreateRoom: () => void;
-  isCreatingRoom: boolean;
-  onChangeRoomType: (roomId: string, roomType: string) => void;
+  onCreateRoom?: (roomData?: { name: string; room_type: string }) => Promise<void>;
+  onCreateSurface?: (roomId: string, surfaceType: string) => void;
+  onBack?: () => void;
 }
 
-export const RoomsGrid = ({ 
-  rooms, 
-  projectId, 
-  onUpdateRoom, 
-  onDeleteRoom, 
-  onCreateTreatment,
-  onCreateSurface, 
-  onUpdateSurface, 
-  onDeleteSurface, 
-  onCopyRoom, 
-  editingRoomId, 
-  setEditingRoomId, 
-  editingRoomName, 
-  setEditingRoomName, 
-  onRenameRoom, 
-  onCreateRoom, 
-  isCreatingRoom, 
-  onChangeRoomType 
-}: RoomsGridProps) => {
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+export const RoomsGrid = ({ rooms, onCreateRoom, onCreateSurface, onBack }: RoomsGridProps) => {
+  const [showNewRoomForm, setShowNewRoomForm] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomType, setNewRoomType] = useState('living_room');
+  const [showSurfaceSelector, setShowSurfaceSelector] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
 
-  if (!rooms || rooms.length === 0) {
-    return (
-      <Card className="border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Home className="h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
-          <p className="text-gray-500 text-center mb-4">
-            Create your first room to start designing window treatments
-          </p>
-          <Button onClick={onCreateRoom} disabled={isCreatingRoom}>
-            <Plus className="mr-2 h-4 w-4" />
-            {isCreatingRoom ? 'Creating...' : 'Create First Room'}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleCreateRoom = async () => {
+    if (newRoomName.trim() !== '' && onCreateRoom) {
+      await onCreateRoom({ name: newRoomName, room_type: newRoomType });
+      setShowNewRoomForm(false);
+      setNewRoomName('');
+    }
+  };
+
+  const handleRoomClick = (room: any) => {
+    setSelectedRoom(room);
+    setShowSurfaceSelector(true);
+  };
+
+  const handleSurfaceCreate = (surfaceType: string) => {
+    if (selectedRoom && onCreateSurface) {
+      onCreateSurface(selectedRoom.id, surfaceType);
+      setShowSurfaceSelector(false);
+      setSelectedRoom(null);
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {rooms.map((room) => (
-        <RoomCard
-          key={room.id}
-          room={room}
-          projectId={projectId}
-          onUpdateRoom={onUpdateRoom}
-          onDeleteRoom={onDeleteRoom}
-          onCreateTreatment={onCreateTreatment}
-          onCreateSurface={onCreateSurface}
-          onUpdateSurface={onUpdateSurface}
-          onDeleteSurface={onDeleteSurface}
-          onCopyRoom={onCopyRoom}
-          editingRoomId={editingRoomId}
-          setEditingRoomId={setEditingRoomId}
-          editingRoomName={editingRoomName}
-          setEditingRoomName={setEditingRoomName}
-          onRenameRoom={onRenameRoom}
-          onChangeRoomType={onChangeRoomType}
-        />
-      ))}
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle>Rooms</CardTitle>
+          <Button onClick={() => setShowNewRoomForm(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Room
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {showNewRoomForm && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="roomName" className="block text-sm font-medium text-gray-700">
+                    Room Name
+                  </label>
+                  <input
+                    type="text"
+                    id="roomName"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    value={newRoomName}
+                    onChange={(e) => setNewRoomName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="roomType" className="block text-sm font-medium text-gray-700">
+                    Room Type
+                  </label>
+                  <Select onValueChange={setNewRoomType}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a room type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="living_room">Living Room</SelectItem>
+                      <SelectItem value="bedroom">Bedroom</SelectItem>
+                      <SelectItem value="kitchen">Kitchen</SelectItem>
+                      <SelectItem value="bathroom">Bathroom</SelectItem>
+                      <SelectItem value="dining_room">Dining Room</SelectItem>
+                      <SelectItem value="office">Office</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button type="button" onClick={handleCreateRoom} className="w-full">
+                Create Room
+              </Button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rooms.map((room) => (
+              <Card key={room.id} className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => handleRoomClick(room)}>
+                <CardHeader>
+                  <CardTitle>{room.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500">Type: {room.room_type}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {showSurfaceSelector && selectedRoom && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Add Surface to {selectedRoom.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>Select a surface type to add to this room:</p>
+            <div className="flex space-x-4">
+              <Button onClick={() => handleSurfaceCreate('window')} variant="outline">
+                <Square className="h-4 w-4 mr-2" />
+                Window
+              </Button>
+              <Button onClick={() => handleSurfaceCreate('wall')} variant="outline">
+                <Square className="h-4 w-4 mr-2" />
+                Wall
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

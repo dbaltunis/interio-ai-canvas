@@ -75,7 +75,9 @@ export const MeasurementWorksheet = ({
   const calculateFabricUsage = () => {
     if (!measurement.width || !measurement.height) return "0";
     
-    const area = measurement.width * measurement.height;
+    const width = parseFloat(measurement.width) || 0;
+    const height = parseFloat(measurement.height) || 0;
+    const area = width * height;
     const fabric_multiplier = parseFloat(measurement.fabric_multiplier) || 1;
     const fabric_width = parseFloat(measurement.fabric_width) || 54;
     
@@ -84,8 +86,8 @@ export const MeasurementWorksheet = ({
       fabric_multiplier,
       fabric_width,
       total_fabric: area * fabric_multiplier,
-      cuts_needed: Math.ceil(measurement.width / fabric_width),
-      waste_percentage: ((fabric_width - (measurement.width % fabric_width)) / fabric_width) * 100
+      cuts_needed: Math.ceil(width / fabric_width),
+      waste_percentage: ((fabric_width - (width % fabric_width)) / fabric_width) * 100
     };
     
     return typeof result === 'string' ? result : result.total_fabric.toFixed(2);
@@ -175,11 +177,11 @@ export const MeasurementWorksheet = ({
           </div>
           <div>
             <span className="font-medium">Cuts Needed:</span>
-            <span className="ml-2">{Math.ceil(parseFloat(measurement.width || '0') / parseFloat(measurement.fabric_width || '54'))}</span>
+            <span className="ml-2">{Math.ceil((parseFloat(measurement.width) || 0) / (parseFloat(measurement.fabric_width) || 54))}</span>
           </div>
           <div>
             <span className="font-medium">Waste Percentage:</span>
-            <span className="ml-2">{(((parseFloat(measurement.fabric_width || '54') - (parseFloat(measurement.width || '0') % parseFloat(measurement.fabric_width || '54'))) / parseFloat(measurement.fabric_width || '54')) * 100).toFixed(2)}%</span>
+            <span className="ml-2">{((((parseFloat(measurement.fabric_width) || 54) - ((parseFloat(measurement.width) || 0) % (parseFloat(measurement.fabric_width) || 54))) / (parseFloat(measurement.fabric_width) || 54)) * 100).toFixed(2)}%</span>
           </div>
         </div>
       </div>
