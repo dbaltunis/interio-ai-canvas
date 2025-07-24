@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useRef } from "react";
 
 export interface Notification {
   id: string;
@@ -16,7 +17,10 @@ export interface Notification {
 }
 
 export const useNotifications = () => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const channelRef = useRef<any>(null);
+
+  const query = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -28,6 +32,35 @@ export const useNotifications = () => {
       return data as Notification[];
     },
   });
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    const channel = supabase
+      .channel('notifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          console.log('Notification change:', payload);
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, [queryClient]);
+
+  return query;
 };
 
 export const useCreateNotification = () => {

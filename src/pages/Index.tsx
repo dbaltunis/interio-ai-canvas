@@ -1,102 +1,53 @@
 
-import { useState, useEffect, Suspense, lazy } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
-import { NotificationCenter } from "@/components/notifications/NotificationCenter";
-import { useAuth } from "@/components/auth/AuthProvider";
-
-// Lazy load heavy components
-const Dashboard = lazy(() => import("@/components/dashboard/Dashboard"));
-const JobsPage = lazy(() => import("@/components/jobs/JobsPage"));
-const LibraryPage = lazy(() => import("@/components/library/LibraryPage"));
-const ClientManagement = lazy(() => import("@/components/jobs/ClientManagement"));
-const EmailManagement = lazy(() => import("@/components/jobs/EmailManagement"));
-
-// Simple loading component
-const PageLoader = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="text-lg text-brand-neutral">Loading...</div>
-  </div>
-);
+import { DashboardPage } from "@/components/dashboard/DashboardPage";
+import { ProjectsPage } from "@/components/projects/ProjectsPage";
+import { ClientFunnelDashboard } from "@/components/crm/ClientFunnelDashboard";
+import { QuotesPage } from "@/components/quotes/QuotesPage";
+import { CalendarPage } from "@/components/calendar/CalendarPage";
+import { InventoryPage } from "@/components/inventory/InventoryPage";
+import { useUserPresence } from "@/hooks/useUserPresence";
 
 const Index = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(() => {
-    // Default to "projects" (Jobs page) instead of "jobs"
-    return searchParams.get('tab') || "projects";
-  });
-  const { signOut } = useAuth();
-
-  // Update URL when active tab changes, but only if it's different from current URL
-  useEffect(() => {
-    const currentTab = searchParams.get('tab') || "projects";
-    if (activeTab !== currentTab) {
-      setSearchParams({ tab: activeTab }, { replace: true });
-    }
-  }, [activeTab, setSearchParams]);
-
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Track user presence with current page
+  const getCurrentPagePath = () => {
+    return `/?tab=${activeTab}`;
   };
+  
+  const { updatePresence } = useUserPresence(getCurrentPagePath());
 
-  const renderActiveComponent = () => {
+  // Update presence when tab changes
+  useEffect(() => {
+    updatePresence(getCurrentPagePath());
+  }, [activeTab, updatePresence]);
+
+  const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <Dashboard />
-          </Suspense>
-        );
+        return <DashboardPage />;
       case "projects":
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <JobsPage />
-          </Suspense>
-        );
+        return <ProjectsPage />;
       case "clients":
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <ClientManagement />
-          </Suspense>
-        );
+        return <ClientFunnelDashboard />;
       case "quotes":
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <EmailManagement />
-          </Suspense>
-        );
+        return <QuotesPage />;
+      case "calendar":
+        return <CalendarPage />;
       case "inventory":
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <LibraryPage />
-          </Suspense>
-        );
-      case 'calendar':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4 text-brand-neutral">Calendar</h1>
-            <div className="text-center text-brand-neutral/70">
-              Calendar functionality coming soon...
-            </div>
-          </div>
-        );
+        return <InventoryPage />;
       default:
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <JobsPage />
-          </Suspense>
-        );
+        return <DashboardPage />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
-      {/* Use the new ResponsiveHeader */}
-      <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
-
-      {/* Main Content - Full Width */}
-      <main className="w-full">
-        {renderActiveComponent()}
+    <div className="min-h-screen bg-gray-50">
+      <ResponsiveHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <main className="flex-1">
+        {renderContent()}
       </main>
     </div>
   );

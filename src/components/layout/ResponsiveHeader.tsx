@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+import { ActiveUsers } from '../presence/ActiveUsers';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -71,8 +73,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               })}
             </nav>
             
-            {/* Right side - User Profile */}
-            <div className="flex items-center space-x-4">
+            {/* Right side - Notifications, Active Users, and User Profile */}
+            <div className="flex items-center space-x-2">
+              <NotificationCenter />
+              <ActiveUsers />
               <UserProfile />
               
               {/* Mobile menu button */}
