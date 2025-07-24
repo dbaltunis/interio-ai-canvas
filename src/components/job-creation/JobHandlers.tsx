@@ -2,15 +2,18 @@
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
+import { useClientMeasurements, useCreateClientMeasurement } from "@/hooks/useClientMeasurements";
 import { useToast } from "@/hooks/use-toast";
 
 export const useJobHandlers = (project: any) => {
   const { toast } = useToast();
   const projectId = project?.project_id || project?.id;
+  const clientId = project?.client_id;
   
   const { data: rooms, isLoading: roomsLoading } = useRooms(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
   const { data: allTreatments } = useTreatments(projectId);
+  const { data: clientMeasurements } = useClientMeasurements(clientId);
   
   const createRoom = useCreateRoom();
   const updateRoom = useUpdateRoom();
@@ -21,6 +24,7 @@ export const useJobHandlers = (project: any) => {
   const createTreatment = useCreateTreatment();
   const updateTreatment = useUpdateTreatment();
   const deleteTreatment = useDeleteTreatment();
+  const createClientMeasurement = useCreateClientMeasurement();
 
   const handleCreateRoom = async () => {
     if (!projectId) return;
@@ -95,10 +99,20 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateSurface = async (roomId: string, surfaceType: string) => {
     try {
+      if (!clientId) {
+        toast({
+          title: "Error",
+          description: "Client ID is required to create measurements",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
       const windowNumber = roomSurfaces.filter(s => s.surface_type === 'window').length + 1;
       
-      await createSurface.mutateAsync({
+      // Create both surface and measurement
+      const surface = await createSurface.mutateAsync({
         room_id: roomId,
         project_id: projectId,
         name: `Window ${windowNumber}`,
@@ -107,15 +121,31 @@ export const useJobHandlers = (project: any) => {
         height: 48
       });
 
+      // Create corresponding client measurement
+      await createClientMeasurement.mutateAsync({
+        client_id: clientId,
+        project_id: projectId,
+        measurement_type: 'standard_window',
+        measurements: {
+          measurement_a: 60, // Window width
+          measurement_b: 48, // Window height
+          measurement_e: 48, // Total height
+          measurement_f: 60, // Total width
+        },
+        photos: [],
+        notes: `Measurement worksheet for ${surface.name}`,
+        measured_at: new Date().toISOString(),
+      });
+
       toast({
         title: "Success",
-        description: `Window created successfully`,
+        description: `Measurement worksheet created successfully`,
       });
     } catch (error) {
-      console.error("Failed to create surface:", error);
+      console.error("Failed to create measurement worksheet:", error);
       toast({
         title: "Error",
-        description: "Failed to create window. Please try again.",
+        description: "Failed to create measurement worksheet. Please try again.",
         variant: "destructive",
       });
     }
@@ -233,6 +263,7 @@ export const useJobHandlers = (project: any) => {
     roomsLoading,
     allSurfaces,
     allTreatments,
+    clientMeasurements,
     handleCreateRoom,
     handleRenameRoom,
     handleChangeRoomType,
