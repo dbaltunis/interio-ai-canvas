@@ -260,15 +260,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Job Number</TableHead>
-              <TableHead>Emails</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[70px]">Actions</TableHead>
+            <TableRow className="bg-brand-primary/10 hover:bg-brand-primary/15">
+              <TableHead className="text-brand-primary font-medium">Job Number</TableHead>
+              <TableHead className="text-brand-primary font-medium">Emails</TableHead>
+              <TableHead className="text-brand-primary font-medium">Client</TableHead>
+              <TableHead className="text-brand-primary font-medium">Status</TableHead>
+              <TableHead className="text-brand-primary font-medium">Total</TableHead>
+              <TableHead className="text-brand-primary font-medium">Owner</TableHead>
+              <TableHead className="text-brand-primary font-medium">Created</TableHead>
+              <TableHead className="w-[70px] text-brand-primary font-medium">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
