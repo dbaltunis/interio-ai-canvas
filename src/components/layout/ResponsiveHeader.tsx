@@ -36,50 +36,51 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     <>
       {/* Desktop Header */}
       <header className="bg-white border-b border-brand-secondary/20 shadow-sm sticky top-0 z-40">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Left side - Logo */}
+            {/* Left side - Logo (made twice bigger) */}
             <div className="flex items-center">
-              <BrandHeader size="sm" showTagline={true} />
+              <BrandHeader size="lg" showTagline={true} />
             </div>
             
-            {/* Center - Navigation (hidden on mobile) */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <Button
-                    key={item.id}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onTabChange(item.id)}
-                    className={cn(
-                      "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative",
-                      isActive
-                        ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
-                        : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
-                    )}
-                  </Button>
-                );
-              })}
-            </nav>
-            
-            {/* Right side - User Profile */}
-            <div className="flex items-center space-x-4">
+            {/* Right side - Navigation, User Profile, and Mobile Menu */}
+            <div className="flex items-center space-x-2">
+              {/* Center - Navigation (hidden on mobile, moved to right, made smaller) */}
+              <nav className="hidden md:flex items-center space-x-1">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <Button
+                      key={item.id}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onTabChange(item.id)}
+                      className={cn(
+                        "px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 relative",
+                        isActive
+                          ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
+                          : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5 mr-1.5" />
+                      {item.label}
+                      {isActive && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
+                      )}
+                    </Button>
+                  );
+                })}
+              </nav>
+              
+              {/* User Profile */}
               <UserProfile />
               
-              {/* Mobile menu button */}
+              {/* Mobile menu button (moved closer to user profile) */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden text-brand-neutral hover:text-brand-primary"
+                className="md:hidden text-brand-neutral hover:text-brand-primary ml-1"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
