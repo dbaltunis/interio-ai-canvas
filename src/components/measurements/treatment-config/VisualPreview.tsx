@@ -28,7 +28,11 @@ export const VisualPreview = ({
     treatmentType: treatment?.id,
     rodTrack: rodTrack,
     fabric: fabric,
-    motorization: { id: "none" } // Default for now
+    motorization: { 
+      id: "none",
+      battery: false,
+      name: "Manual Operation"
+    }
   };
 
   return (
@@ -142,13 +146,13 @@ export const VisualPreview = ({
             {treatmentConfig.rodTrack && (
               <div className="flex justify-between">
                 <span>Hardware:</span>
-                <span className="font-medium">{treatmentConfig.rodTrack.name}</span>
+                <span className="font-medium">{treatmentConfig.rodTrack.name || 'Selected hardware'}</span>
               </div>
             )}
             {treatmentConfig.fabric && (
               <div className="flex justify-between">
                 <span>Fabric:</span>
-                <span className="font-medium">{treatmentConfig.fabric.name}</span>
+                <span className="font-medium">{treatmentConfig.fabric.name || 'Selected fabric'}</span>
               </div>
             )}
             {treatmentConfig.motorization && treatmentConfig.motorization.id !== "none" && (
