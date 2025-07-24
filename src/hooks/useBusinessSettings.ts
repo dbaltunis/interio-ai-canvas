@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
-// Define the business settings interface
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Define the business settings interface directly since tables don't exist
 export interface BusinessSettings {
   id: string;
   user_id: string;
@@ -37,33 +37,15 @@ export const defaultMeasurementUnits: MeasurementUnits = {
   currency: 'USD'
 };
 
+// Mock storage
+let mockBusinessSettings: BusinessSettings | null = null;
+
 export const useBusinessSettings = () => {
   return useQuery({
     queryKey: ["business-settings"],
     queryFn: async () => {
-      console.log('Fetching business settings...');
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.log('No user found');
-        return null;
-      }
-
-      console.log('User ID:', user.id);
-
-      const { data, error } = await supabase
-        .from('business_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching business settings:', error);
-        throw error;
-      }
-
-      console.log('Business settings fetched:', data);
-      return data;
+      // Mock implementation
+      return mockBusinessSettings;
     },
   });
 };
@@ -73,39 +55,20 @@ export const useCreateBusinessSettings = () => {
 
   return useMutation({
     mutationFn: async (settings: Omit<BusinessSettings, "id" | "user_id" | "created_at" | "updated_at">) => {
-      console.log('Creating business settings with data:', settings);
+      // Mock implementation
+      const newSettings: BusinessSettings = {
+        ...settings,
+        id: 'mock-id',
+        user_id: 'mock-user-id',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        throw new Error('User not authenticated');
-      }
-
-      console.log('User ID for creation:', user.id);
-
-      const { data, error } = await supabase
-        .from('business_settings')
-        .insert({
-          ...settings,
-          user_id: user.id
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating business settings:', error);
-        throw error;
-      }
-
-      console.log('Business settings created successfully:', data);
-      return data;
+      mockBusinessSettings = newSettings;
+      return newSettings;
     },
-    onSuccess: (data) => {
-      console.log('Create mutation successful:', data);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
-    },
-    onError: (error) => {
-      console.error('Create mutation failed:', error);
     },
   });
 };
@@ -115,29 +78,18 @@ export const useUpdateBusinessSettings = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...settings }: Partial<BusinessSettings> & { id: string }) => {
-      console.log('Updating business settings with ID:', id, 'Data:', settings);
-      
-      const { data, error } = await supabase
-        .from('business_settings')
-        .update(settings)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating business settings:', error);
-        throw error;
+      // Mock implementation
+      if (mockBusinessSettings && mockBusinessSettings.id === id) {
+        mockBusinessSettings = {
+          ...mockBusinessSettings,
+          ...settings,
+          updated_at: new Date().toISOString()
+        };
       }
-
-      console.log('Business settings updated successfully:', data);
-      return data;
+      return mockBusinessSettings!;
     },
-    onSuccess: (data) => {
-      console.log('Update mutation successful:', data);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
-    },
-    onError: (error) => {
-      console.error('Update mutation failed:', error);
     },
   });
 };

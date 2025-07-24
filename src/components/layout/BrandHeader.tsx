@@ -9,15 +9,15 @@ interface BrandHeaderProps {
 
 export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-16 sm:h-20 md:h-24", 
-    md: "h-24 sm:h-28 md:h-32",  
-    lg: "h-32 sm:h-36 md:h-40"  
+    sm: "h-8 sm:h-10 md:h-12", 
+    md: "h-12 sm:h-14 md:h-16",  
+    lg: "h-16 sm:h-18 md:h-20"  
   };
 
   const sloganSizeClasses = {
-    sm: "text-xs sm:text-xs",
-    md: "text-xs sm:text-sm",
-    lg: "text-sm sm:text-base"
+    sm: "text-xs sm:text-sm",
+    md: "text-sm sm:text-base",
+    lg: "text-base sm:text-lg"
   };
 
   return (

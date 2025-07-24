@@ -1,20 +1,15 @@
 
-import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement, formatCurrency as formatCurrencyUtil } from "./useBusinessSettings";
+import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement } from "./useBusinessSettings";
 
 export const useMeasurementUnits = () => {
-  const { data: businessSettings, isLoading } = useBusinessSettings();
+  const { data: businessSettings } = useBusinessSettings();
   
   const units: MeasurementUnits = (() => {
-    if (!businessSettings?.measurement_units) {
-      return defaultMeasurementUnits;
-    }
-    
     try {
-      return typeof businessSettings.measurement_units === 'string' 
-        ? JSON.parse(businessSettings.measurement_units) 
-        : businessSettings.measurement_units;
+      return businessSettings?.measurement_units ? 
+        JSON.parse(businessSettings.measurement_units) : defaultMeasurementUnits;
     } catch (error) {
-      console.warn('Failed to parse measurement units from settings, using defaults:', error);
+      console.warn('Failed to parse measurement units, using defaults:', error);
       return defaultMeasurementUnits;
     }
   })();
@@ -33,10 +28,6 @@ export const useMeasurementUnits = () => {
 
   const formatFabric = (value: number): string => {
     return formatMeasurement(value, units.fabric);
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return formatCurrencyUtil(amount, units.currency);
   };
 
   const getLengthUnitLabel = (): string => {
@@ -62,12 +53,10 @@ export const useMeasurementUnits = () => {
 
   return {
     units,
-    isLoading,
     convertToUserUnit,
     formatLength,
     formatArea, 
     formatFabric,
-    formatCurrency,
     getLengthUnitLabel,
     getFabricUnitLabel
   };
