@@ -34,9 +34,6 @@ interface MeasurementWorksheetProps {
   surfaceId?: string;
   treatmentType?: string;
   isJobFlow?: boolean;
-  // For existing measurements
-  existingMeasurement?: any;
-  readOnly?: boolean;
 }
 
 export const MeasurementWorksheet = ({ 
@@ -48,9 +45,7 @@ export const MeasurementWorksheet = ({
   roomId,
   surfaceId,
   treatmentType = "Curtains",
-  isJobFlow = false,
-  existingMeasurement,
-  readOnly = false
+  isJobFlow = false
 }: MeasurementWorksheetProps) => {
   const [measuredBy, setMeasuredBy] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
@@ -58,7 +53,7 @@ export const MeasurementWorksheet = ({
   const { formData, setFormData, handleInputChange, resetForm, fabricUsage, costs } = useTreatmentFormData({
     treatmentType,
     surfaceId: surfaceId || '',
-    measurements: existingMeasurement?.measurements || {}
+    measurements: {}
   });
 
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
@@ -71,13 +66,7 @@ export const MeasurementWorksheet = ({
         product_name: treatmentType
       }));
     }
-    
-    // Load existing measurement data if provided
-    if (existingMeasurement) {
-      setMeasuredBy(existingMeasurement.measured_by || "");
-      setAdditionalNotes(existingMeasurement.notes || "");
-    }
-  }, [isOpen, treatmentType, setFormData, existingMeasurement]);
+  }, [isOpen, treatmentType, setFormData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,13 +83,13 @@ export const MeasurementWorksheet = ({
         drop: formData.drop,
         pooling: formData.pooling,
         quantity: formData.quantity,
-        fabric_usage_yards: typeof fabricUsage === 'object' ? fabricUsage.yards : 0,
-        fabric_usage_meters: typeof fabricUsage === 'object' ? fabricUsage.meters : 0,
-        fabric_usage_details: typeof fabricUsage === 'object' ? JSON.stringify(fabricUsage.details) : '',
-        fabric_orientation: typeof fabricUsage === 'object' ? fabricUsage.fabricOrientation : '',
-        seams_required: typeof fabricUsage === 'object' ? fabricUsage.seamsRequired : 0,
-        seam_labor_hours: typeof fabricUsage === 'object' ? fabricUsage.seamLaborHours : 0,
-        widths_required: typeof fabricUsage === 'object' ? fabricUsage.widthsRequired : 0
+        fabric_usage_yards: fabricUsage.yards,
+        fabric_usage_meters: fabricUsage.meters,
+        fabric_usage_details: fabricUsage.details,
+        fabric_orientation: fabricUsage.fabricOrientation,
+        seams_required: fabricUsage.seamsRequired,
+        seam_labor_hours: fabricUsage.seamLaborHours,
+        widths_required: fabricUsage.widthsRequired
       },
       
       // Fabric details
@@ -146,22 +135,16 @@ export const MeasurementWorksheet = ({
     };
 
     onSave(measurementData);
-    
-    if (!existingMeasurement) {
-      resetForm();
-      setMeasuredBy("");
-      setAdditionalNotes("");
-    }
-    
+    resetForm();
+    setMeasuredBy("");
+    setAdditionalNotes("");
     onClose();
   };
 
   const handleClose = () => {
-    if (!existingMeasurement) {
-      resetForm();
-      setMeasuredBy("");
-      setAdditionalNotes("");
-    }
+    resetForm();
+    setMeasuredBy("");
+    setAdditionalNotes("");
     onClose();
   };
 
@@ -206,7 +189,6 @@ export const MeasurementWorksheet = ({
                     value={formData.product_name}
                     onChange={(e) => handleInputChange("product_name", e.target.value)}
                     placeholder="e.g., Curtains, Blinds, Shutters"
-                    disabled={readOnly}
                   />
                 </div>
                 <div>
@@ -216,7 +198,6 @@ export const MeasurementWorksheet = ({
                     value={measuredBy}
                     onChange={(e) => setMeasuredBy(e.target.value)}
                     placeholder="Your name"
-                    disabled={readOnly}
                   />
                 </div>
               </div>
@@ -230,7 +211,6 @@ export const MeasurementWorksheet = ({
                   value={formData.quantity}
                   onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 1)}
                   placeholder="Number of units"
-                  disabled={readOnly}
                 />
               </div>
             </CardContent>
@@ -260,8 +240,6 @@ export const MeasurementWorksheet = ({
               treatmentType={treatmentType}
               selectedOptions={formData.selected_options}
               onOptionToggle={(optionId) => {
-                if (readOnly) return;
-                
                 const newSelectedOptions = formData.selected_options.includes(optionId)
                   ? formData.selected_options.filter(id => id !== optionId)
                   : [...formData.selected_options, optionId];
@@ -286,7 +264,7 @@ export const MeasurementWorksheet = ({
               <FabricDetailsCard 
                 formData={formData} 
                 onInputChange={handleInputChange}
-                fabricUsage={typeof fabricUsage === 'object' ? `${fabricUsage.yards} yards` : '0 yards'}
+                fabricUsage={fabricUsage}
               />
             </CardContent>
           </Card>
@@ -322,7 +300,6 @@ export const MeasurementWorksheet = ({
                 onChange={(e) => setAdditionalNotes(e.target.value)}
                 placeholder="Add any additional notes about the measurements, installation requirements, or special considerations..."
                 rows={4}
-                disabled={readOnly}
               />
             </CardContent>
           </Card>
@@ -331,14 +308,12 @@ export const MeasurementWorksheet = ({
           <div className="flex justify-end space-x-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={handleClose}>
               <X className="h-4 w-4 mr-2" />
-              {readOnly ? 'Close' : 'Cancel'}
+              Cancel
             </Button>
-            {!readOnly && (
-              <Button type="submit">
-                <Save className="h-4 w-4 mr-2" />
-                {isJobFlow ? 'Save Treatment & Measurements' : 'Save Measurements'}
-              </Button>
-            )}
+            <Button type="submit">
+              <Save className="h-4 w-4 mr-2" />
+              {isJobFlow ? 'Save Treatment & Measurements' : 'Save Measurements'}
+            </Button>
           </div>
         </form>
       </DialogContent>
