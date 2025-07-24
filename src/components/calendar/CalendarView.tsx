@@ -1,8 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { useState } from "react";
 
 const CalendarView = () => {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -17,20 +21,34 @@ const CalendarView = () => {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Calendar System</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12">
-            <CalendarIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Calendar Integration Ready</h3>
-            <p className="text-muted-foreground mb-4">
-              Calendar system is being initialized. Full functionality will be available shortly.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Calendar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              className="rounded-md border"
+            />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Events</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                No events scheduled for today
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
