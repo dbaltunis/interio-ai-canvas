@@ -15,9 +15,9 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
   };
 
   const sloganSizeClasses = {
-    sm: "text-xs sm:text-sm",
-    md: "text-sm sm:text-base",
-    lg: "text-base sm:text-lg"
+    sm: "text-[10px] sm:text-xs", // Made 6px smaller (was text-xs sm:text-sm)
+    md: "text-xs sm:text-sm", // Made 6px smaller (was text-sm sm:text-base)  
+    lg: "text-sm sm:text-base" // Made 6px smaller (was text-base sm:text-lg)
   };
 
   return (

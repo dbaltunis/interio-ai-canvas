@@ -11,7 +11,8 @@ import {
   Package, 
   Calendar,
   Menu,
-  X
+  X,
+  Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,8 +45,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
             </div>
             
             {/* Right side - Navigation, User Profile, and Mobile Menu */}
-            <div className="flex items-center space-x-2">
-              {/* Center - Navigation (hidden on mobile, moved to right, made smaller) */}
+            <div className="flex items-center space-x-3">
+              {/* Navigation (hidden on mobile, made 3px bigger) */}
               <nav className="hidden md:flex items-center space-x-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
@@ -57,13 +58,13 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       size="sm"
                       onClick={() => onTabChange(item.id)}
                       className={cn(
-                        "px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 relative",
+                        "px-2.5 py-2 text-sm font-medium rounded-md transition-all duration-200 relative",
                         isActive
                           ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
                           : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
                       )}
                     >
-                      <Icon className="h-3.5 w-3.5 mr-1.5" />
+                      <Icon className="h-4.5 w-4.5 mr-1.5" />
                       {item.label}
                       {isActive && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
@@ -73,14 +74,23 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 })}
               </nav>
               
-              {/* User Profile */}
-              <UserProfile />
-              
-              {/* Mobile menu button (moved closer to user profile) */}
+              {/* Notification Bell */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden text-brand-neutral hover:text-brand-primary ml-1"
+                className="hidden md:flex text-brand-neutral hover:text-brand-primary p-2"
+              >
+                <Bell className="h-5 w-5" />
+              </Button>
+              
+              {/* User Profile */}
+              <UserProfile />
+              
+              {/* Mobile menu button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden text-brand-neutral hover:text-brand-primary"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
