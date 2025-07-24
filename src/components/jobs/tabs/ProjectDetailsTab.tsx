@@ -412,7 +412,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             </div>
             <ClientSearchStep 
               formData={{ client_id: formData.client_id }}
-              updateFormData={handleClientSelection}
+              updateFormData={(clientId) => handleClientSelection(clientId)}
             />
           </div>
         </div>
