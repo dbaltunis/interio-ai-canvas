@@ -1,9 +1,11 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Window, Edit, Trash2, Ruler } from "lucide-react";
+import { Plus, Square, Edit, Trash2, Ruler } from "lucide-react";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 import { useState } from "react";
 
@@ -21,11 +23,13 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
   const { data: surfaces } = useSurfaces();
   const { data: measurements } = useClientMeasurements(projectId);
   const { data: projects } = useProjects();
+  const { data: clients } = useClients();
   const createSurface = useCreateSurface();
   const updateSurface = useUpdateSurface();
   const deleteSurface = useDeleteSurface();
 
   const project = projects?.find(p => p.id === projectId);
+  const client = clients?.find(c => c.id === project?.client_id);
   const roomSurfaces = surfaces?.filter(surface => surface.room_id === activeRoomId) || [];
 
   const handleCreateSurface = async () => {
@@ -50,7 +54,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center">
-            <Window className="mr-2 h-5 w-5" />
+            <Square className="mr-2 h-5 w-5" />
             {activeRoomId ? `Room Surfaces` : 'Select Room'}
           </span>
           {activeRoomId && (
@@ -63,12 +67,12 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
       <CardContent>
         {!activeRoomId ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Window className="mx-auto h-12 w-12 mb-4" />
+            <Square className="mx-auto h-12 w-12 mb-4" />
             <p>Select a room to view surfaces</p>
           </div>
         ) : roomSurfaces.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Window className="mx-auto h-12 w-12 mb-4" />
+            <Square className="mx-auto h-12 w-12 mb-4" />
             <p>No surfaces added yet</p>
             <p className="text-sm">Click the + button to add a surface</p>
           </div>
@@ -147,9 +151,9 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
         <MeasurementWorksheet
           isOpen={showMeasurementDialog}
           onClose={() => setShowMeasurementDialog(false)}
-          client={project?.client_id ? {
-            id: project.client_id,
-            name: project.clients?.name || "Client"
+          client={client ? {
+            id: client.id,
+            name: client.name
           } : undefined}
           project={{
             id: projectId,

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Window, Door, MoreHorizontal, Edit2, Trash2, Plus, Check, X } from "lucide-react";
+import { Square, RectangleHorizontal, MoreHorizontal, Edit2, Trash2, Plus, Check, X } from "lucide-react";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 import { useMeasurementWorkflow } from "@/hooks/useMeasurementWorkflow";
 import { useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -44,7 +46,9 @@ export const SurfaceList = ({
   const [surfaceForTreatment, setSurfaceForTreatment] = useState<string | null>(null);
 
   const { data: projects } = useProjects();
+  const { data: clients } = useClients();
   const project = projects?.find(p => p.id === projectId);
+  const client = clients?.find(c => c.id === project?.client_id);
 
   const {
     isWorksheetOpen,
@@ -89,11 +93,11 @@ export const SurfaceList = ({
   const getSurfaceIcon = (surfaceType: string) => {
     switch (surfaceType) {
       case 'window':
-        return <Window className="h-4 w-4" />;
+        return <Square className="h-4 w-4" />;
       case 'door':
-        return <Door className="h-4 w-4" />;
+        return <RectangleHorizontal className="h-4 w-4" />;
       default:
-        return <Window className="h-4 w-4" />;
+        return <Square className="h-4 w-4" />;
     }
   };
 
@@ -121,7 +125,7 @@ export const SurfaceList = ({
   if (surfaces.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <Window className="mx-auto h-12 w-12 mb-4" />
+        <Square className="mx-auto h-12 w-12 mb-4" />
         <p>No surfaces added yet</p>
         <p className="text-sm">Click "Add Window" to get started</p>
       </div>
@@ -284,9 +288,9 @@ export const SurfaceList = ({
           isOpen={isWorksheetOpen}
           onClose={closeWorksheet}
           onSave={completeMeasurementWorkflow}
-          client={project?.client_id ? {
-            id: project.client_id,
-            name: project.clients?.name || "Client"
+          client={client ? {
+            id: client.id,
+            name: client.name
           } : undefined}
           project={{
             id: projectId,

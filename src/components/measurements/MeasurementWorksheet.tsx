@@ -37,9 +37,6 @@ interface MeasurementWorksheetProps {
   // For existing measurements
   existingMeasurement?: any;
   readOnly?: boolean;
-  // Alternative props for backward compatibility
-  clientId?: string;
-  projectId?: string;
 }
 
 export const MeasurementWorksheet = ({ 
@@ -53,16 +50,10 @@ export const MeasurementWorksheet = ({
   treatmentType = "Curtains",
   isJobFlow = false,
   existingMeasurement,
-  readOnly = false,
-  clientId,
-  projectId
+  readOnly = false
 }: MeasurementWorksheetProps) => {
   const [measuredBy, setMeasuredBy] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
-  
-  // Handle backward compatibility
-  const effectiveClient = client || (clientId ? { id: clientId, name: "Client" } : undefined);
-  const effectiveProject = project || (projectId ? { id: projectId, name: "Project" } : undefined);
   
   const { formData, setFormData, handleInputChange, resetForm, fabricUsage, costs } = useTreatmentFormData({
     treatmentType,
@@ -185,11 +176,11 @@ export const MeasurementWorksheet = ({
             {isJobFlow ? 'Treatment Configuration & Measurements' : 'Measurement Worksheet'}
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {effectiveClient && (
-              <span>Client: <Badge variant="secondary">{effectiveClient.name}</Badge></span>
+            {client && (
+              <span>Client: <Badge variant="secondary">{client.name}</Badge></span>
             )}
-            {effectiveProject && (
-              <span>Project: <Badge variant="secondary">{effectiveProject.name}</Badge></span>
+            {project && (
+              <span>Project: <Badge variant="secondary">{project.name}</Badge></span>
             )}
             {isJobFlow && treatmentType && (
               <span>Treatment: <Badge variant="outline">{treatmentType}</Badge></span>
@@ -257,7 +248,6 @@ export const MeasurementWorksheet = ({
               <TreatmentMeasurementsCard
                 formData={formData}
                 onInputChange={handleInputChange}
-                disabled={readOnly}
               />
             </CardContent>
           </Card>
@@ -281,7 +271,6 @@ export const MeasurementWorksheet = ({
                   selected_options: newSelectedOptions
                 }));
               }}
-              disabled={readOnly}
             />
           )}
 

@@ -1,13 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Home, Edit, Trash2, Window } from "lucide-react";
+import { Plus, Home, Edit, Trash2, Square } from "lucide-react";
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 import { useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 
 interface WindowsCanvasInterfaceProps {
   projectId: string;
@@ -17,7 +19,9 @@ export const WindowsCanvasInterface = ({ projectId }: WindowsCanvasInterfaceProp
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces();
   const { data: projects } = useProjects();
+  const { data: clients } = useClients();
   const project = projects?.find(p => p.id === projectId);
+  const client = clients?.find(c => c.id === project?.client_id);
 
   const createRoom = useCreateRoom();
   const updateRoom = useUpdateRoom();
@@ -116,7 +120,7 @@ export const WindowsCanvasInterface = ({ projectId }: WindowsCanvasInterfaceProp
                   {roomSurfaces.map((surface) => (
                     <div key={surface.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <Window className="h-4 w-4" />
+                        <Square className="h-4 w-4" />
                         <span className="font-medium">{surface.name}</span>
                       </div>
                     </div>
@@ -124,7 +128,7 @@ export const WindowsCanvasInterface = ({ projectId }: WindowsCanvasInterfaceProp
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <Window className="mx-auto h-12 w-12 mb-4" />
+                  <Square className="mx-auto h-12 w-12 mb-4" />
                   <p>No surfaces added yet</p>
                 </div>
               )}
@@ -161,9 +165,9 @@ export const WindowsCanvasInterface = ({ projectId }: WindowsCanvasInterfaceProp
         <MeasurementWorksheet
           isOpen={showMeasurementDialog}
           onClose={() => setShowMeasurementDialog(false)}
-          client={project?.client_id ? {
-            id: project.client_id,
-            name: project.clients?.name || "Client"
+          client={client ? {
+            id: client.id,
+            name: client.name
           } : undefined}
           project={{
             id: projectId,
