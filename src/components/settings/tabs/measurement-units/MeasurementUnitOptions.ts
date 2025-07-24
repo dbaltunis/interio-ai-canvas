@@ -6,8 +6,8 @@ export const metricLengthOptions = [
 ];
 
 export const imperialLengthOptions = [
-  { value: 'inches', label: 'Inches (")' },
-  { value: 'feet', label: 'Feet (\')' }
+  { value: 'inches', label: 'Inches (in)' },
+  { value: 'feet', label: 'Feet (ft)' }
 ];
 
 export const metricAreaOptions = [
@@ -27,15 +27,15 @@ export const metricFabricOptions = [
 ];
 
 export const imperialFabricOptions = [
-  { value: 'inches', label: 'Inches (")' },
+  { value: 'inches', label: 'Inches (in)' },
   { value: 'yards', label: 'Yards (yd)' }
 ];
 
 export const currencyOptions = [
-  { value: 'NZD', label: 'New Zealand Dollar (NZD)' },
-  { value: 'AUD', label: 'Australian Dollar (AUD)' },
-  { value: 'USD', label: 'US Dollar (USD)' },
-  { value: 'GBP', label: 'British Pound (GBP)' },
-  { value: 'EUR', label: 'Euro (EUR)' },
-  { value: 'ZAR', label: 'South African Rand (ZAR)' }
+  { value: 'USD', label: 'US Dollar ($)' },
+  { value: 'AUD', label: 'Australian Dollar (A$)' },
+  { value: 'NZD', label: 'New Zealand Dollar (NZ$)' },
+  { value: 'GBP', label: 'British Pound (£)' },
+  { value: 'EUR', label: 'Euro (€)' },
+  { value: 'ZAR', label: 'South African Rand (R)' }
 ];

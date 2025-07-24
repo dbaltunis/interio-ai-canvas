@@ -6,43 +6,38 @@ interface MeasurementPreviewProps {
 }
 
 export const MeasurementPreview = ({ units }: MeasurementPreviewProps) => {
-  const formatUnit = (unit: string) => {
-    const unitMap: Record<string, string> = {
+  const getUnitLabel = (unitType: keyof MeasurementUnits, value: string) => {
+    const unitLabels: Record<string, string> = {
       'mm': 'mm',
       'cm': 'cm',
       'm': 'm',
-      'inches': '"',
-      'feet': "'",
+      'inches': 'in',
+      'feet': 'ft',
       'yards': 'yd',
       'sq_mm': 'mm²',
       'sq_cm': 'cm²',
       'sq_m': 'm²',
       'sq_inches': 'in²',
-      'sq_feet': 'ft²'
-    };
-    return unitMap[unit] || unit;
-  };
-
-  const formatCurrency = (value: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
+      'sq_feet': 'ft²',
       'USD': '$',
+      'AUD': 'A$',
+      'NZD': 'NZ$',
       'GBP': '£',
       'EUR': '€',
       'ZAR': 'R'
     };
-    return `${currencySymbols[units.currency] || units.currency}${value.toFixed(2)}`;
+    return unitLabels[value] || value;
   };
 
   return (
-    <div className="p-4 bg-gray-50 rounded-lg">
-      <h4 className="font-medium mb-2">Preview</h4>
-      <div className="text-sm space-y-1">
-        <p>Length: 150 {formatUnit(units.length)}</p>
-        <p>Area: 2.5 {formatUnit(units.area)}</p>
-        <p>Fabric: 3.5 {formatUnit(units.fabric)}</p>
-        <p>Price: {formatCurrency(125.50)}</p>
+    <div className="text-sm text-gray-600">
+      <p className="font-medium mb-2">Preview:</p>
+      <div className="space-y-1">
+        <p>System: {units.system === 'metric' ? 'Metric' : 'Imperial'}</p>
+        <p>Length: {getUnitLabel('length', units.length)}</p>
+        <p>Area: {getUnitLabel('area', units.area)}</p>
+        <p>Fabric: {getUnitLabel('fabric', units.fabric)}</p>
+        <p>Currency: {getUnitLabel('currency', units.currency)}</p>
       </div>
     </div>
   );

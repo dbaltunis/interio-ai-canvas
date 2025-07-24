@@ -41,19 +41,28 @@ export const useBusinessSettings = () => {
   return useQuery({
     queryKey: ["business-settings"],
     queryFn: async () => {
+      console.log('Fetching business settings...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      
+      if (!user) {
+        console.log('No user found');
+        return null;
+      }
+
+      console.log('User ID:', user.id);
 
       const { data, error } = await supabase
         .from('business_settings')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        console.error('Error fetching business settings:', error);
         throw error;
       }
 
+      console.log('Business settings fetched:', data);
       return data;
     },
   });
@@ -64,8 +73,15 @@ export const useCreateBusinessSettings = () => {
 
   return useMutation({
     mutationFn: async (settings: Omit<BusinessSettings, "id" | "user_id" | "created_at" | "updated_at">) => {
+      console.log('Creating business settings with data:', settings);
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        console.error('User not authenticated');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('User ID for creation:', user.id);
 
       const { data, error } = await supabase
         .from('business_settings')
@@ -76,11 +92,20 @@ export const useCreateBusinessSettings = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating business settings:', error);
+        throw error;
+      }
+
+      console.log('Business settings created successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Create mutation successful:', data);
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
+    },
+    onError: (error) => {
+      console.error('Create mutation failed:', error);
     },
   });
 };
@@ -90,6 +115,8 @@ export const useUpdateBusinessSettings = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...settings }: Partial<BusinessSettings> & { id: string }) => {
+      console.log('Updating business settings with ID:', id, 'Data:', settings);
+      
       const { data, error } = await supabase
         .from('business_settings')
         .update(settings)
@@ -97,11 +124,20 @@ export const useUpdateBusinessSettings = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating business settings:', error);
+        throw error;
+      }
+
+      console.log('Business settings updated successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Update mutation successful:', data);
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
+    },
+    onError: (error) => {
+      console.error('Update mutation failed:', error);
     },
   });
 };

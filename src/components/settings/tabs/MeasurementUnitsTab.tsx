@@ -7,6 +7,7 @@ import { Settings } from "lucide-react";
 import { UnitSelector } from "./measurement-units/UnitSelector";
 import { MeasurementPreview } from "./measurement-units/MeasurementPreview";
 import { useMeasurementUnitsForm } from "./measurement-units/useMeasurementUnitsForm";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { 
   metricLengthOptions, 
   imperialLengthOptions, 
@@ -18,6 +19,7 @@ import {
 } from "./measurement-units/MeasurementUnitOptions";
 
 export const MeasurementUnitsTab = () => {
+  const { data: businessSettings } = useBusinessSettings();
   const {
     units,
     isLoading,
@@ -26,6 +28,9 @@ export const MeasurementUnitsTab = () => {
     handleUnitChange,
     handleSave
   } = useMeasurementUnitsForm();
+
+  console.log('Current units state:', units);
+  console.log('Business settings:', businessSettings);
 
   if (isLoading) {
     return (
@@ -59,7 +64,10 @@ export const MeasurementUnitsTab = () => {
         <CardContent className="space-y-6">
           <RadioGroup 
             value={units.system} 
-            onValueChange={(value: 'metric' | 'imperial') => handleSystemChange(value)}
+            onValueChange={(value: 'metric' | 'imperial') => {
+              console.log('RadioGroup value changed to:', value);
+              handleSystemChange(value);
+            }}
             className="flex space-x-6"
           >
             <div className="flex items-center space-x-2">
@@ -78,7 +86,10 @@ export const MeasurementUnitsTab = () => {
               label="Length Units"
               value={units.length}
               options={lengthOptions}
-              onValueChange={(value) => handleUnitChange('length', value)}
+              onValueChange={(value) => {
+                console.log('Length unit changed to:', value);
+                handleUnitChange('length', value);
+              }}
             />
 
             <UnitSelector
@@ -86,7 +97,10 @@ export const MeasurementUnitsTab = () => {
               label="Area Units"
               value={units.area}
               options={areaOptions}
-              onValueChange={(value) => handleUnitChange('area', value)}
+              onValueChange={(value) => {
+                console.log('Area unit changed to:', value);
+                handleUnitChange('area', value);
+              }}
             />
 
             <UnitSelector
@@ -94,7 +108,10 @@ export const MeasurementUnitsTab = () => {
               label="Fabric Units"
               value={units.fabric}
               options={fabricOptions}
-              onValueChange={(value) => handleUnitChange('fabric', value)}
+              onValueChange={(value) => {
+                console.log('Fabric unit changed to:', value);
+                handleUnitChange('fabric', value);
+              }}
             />
 
             <UnitSelector
@@ -102,14 +119,20 @@ export const MeasurementUnitsTab = () => {
               label="Currency"
               value={units.currency}
               options={currencyOptions}
-              onValueChange={(value) => handleUnitChange('currency', value)}
+              onValueChange={(value) => {
+                console.log('Currency changed to:', value);
+                handleUnitChange('currency', value);
+              }}
             />
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t">
             <MeasurementPreview units={units} />
             <Button 
-              onClick={handleSave}
+              onClick={() => {
+                console.log('Save button clicked');
+                handleSave();
+              }}
               disabled={isSaving}
               className="bg-brand-primary hover:bg-brand-accent"
             >
