@@ -15,7 +15,7 @@ interface UserPresence {
     display_name: string | null;
     avatar_url: string | null;
     status: string | null;
-  };
+  } | null;
 }
 
 export const useUserPresence = () => {
@@ -51,7 +51,7 @@ export const useUserPresence = () => {
       .from('user_presence')
       .select(`
         *,
-        user_profiles!user_presence_user_id_fkey (
+        user_profiles (
           display_name,
           avatar_url,
           status

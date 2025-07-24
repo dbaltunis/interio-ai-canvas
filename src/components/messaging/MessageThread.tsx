@@ -23,11 +23,11 @@ interface Message {
   sender_profile?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
   recipient_profile?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 const MessageThread = ({ userId, onBack }: MessageThreadProps) => {

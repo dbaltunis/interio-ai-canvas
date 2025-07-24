@@ -14,11 +14,11 @@ interface UserMessage {
   sender_profile?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
   recipient_profile?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 interface MessageThread {
