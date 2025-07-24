@@ -11,6 +11,7 @@ const JobsPage = lazy(() => import("@/components/jobs/JobsPage"));
 const LibraryPage = lazy(() => import("@/components/library/LibraryPage"));
 const ClientManagement = lazy(() => import("@/components/jobs/ClientManagement"));
 const EmailManagement = lazy(() => import("@/components/jobs/EmailManagement"));
+const CalendarView = lazy(() => import("@/components/calendar/CalendarView"));
 
 // Simple loading component
 const PageLoader = () => (
@@ -77,12 +78,9 @@ const Index = () => {
         );
       case 'calendar':
         return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4 text-brand-neutral">Calendar</h1>
-            <div className="text-center text-brand-neutral/70">
-              Calendar functionality coming soon...
-            </div>
-          </div>
+          <Suspense fallback={<PageLoader />}>
+            <CalendarView />
+          </Suspense>
         );
       default:
         return (

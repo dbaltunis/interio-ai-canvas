@@ -1,13 +1,12 @@
 
-// import { GoogleCalendarIntegration } from "@/components/calendar/GoogleCalendarIntegration";
+import { GoogleCalendarIntegrationTab } from "@/components/integrations/GoogleCalendarIntegrationTab";
+import { useIntegrations } from "@/hooks/useIntegrations";
 
 export const GoogleCalendarTab = () => {
+  const { integrations } = useIntegrations();
+  const googleCalendarIntegration = integrations.find(integration => integration.integration_type === 'google_calendar');
+
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Google Calendar Integration</h2>
-      <div className="text-center text-muted-foreground">
-        Google Calendar integration coming soon...
-      </div>
-    </div>
+    <GoogleCalendarIntegrationTab integration={googleCalendarIntegration} />
   );
 };

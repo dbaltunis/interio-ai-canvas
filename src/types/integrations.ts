@@ -77,7 +77,24 @@ export interface ZohoCRMIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration;
+export interface GoogleCalendarIntegration extends BaseIntegration {
+  integration_type: 'google_calendar';
+  api_credentials: {
+    client_id: string;
+    client_secret: string;
+    refresh_token: string;
+    access_token?: string;
+  };
+  configuration: {
+    calendar_id: string;
+    sync_appointments: boolean;
+    auto_create_events: boolean;
+    sync_direction: 'app_to_calendar' | 'calendar_to_app' | 'both';
+    event_duration_buffer: number;
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration;
 
 export interface IntegrationSyncLog {
   id: string;
