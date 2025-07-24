@@ -5,9 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedRoomViewProps {
   project: any;
+  clientId?: string;
 }
 
-export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
+export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
   const { toast } = useToast();
@@ -71,7 +72,7 @@ export const EnhancedRoomView = ({ project }: EnhancedRoomViewProps) => {
       surfaces={allSurfaces || []}
       treatments={allTreatments || []}
       projectId={project.project_id || project.id}
-      clientId={project.client_id}
+      clientId={clientId || project.client_id}
       onUpdateRoom={() => {}}
       onDeleteRoom={() => {}}
       onCreateTreatment={handleCreateTreatment}

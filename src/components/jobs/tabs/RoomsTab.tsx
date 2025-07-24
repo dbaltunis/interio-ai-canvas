@@ -61,7 +61,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
 
       {/* Enhanced Room Management - This handles all room display and management */}
       <div>
-        <EnhancedRoomView project={project} />
+        <EnhancedRoomView project={project} clientId={project.client_id} />
       </div>
     </div>
   );
