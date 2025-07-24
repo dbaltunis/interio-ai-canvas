@@ -86,37 +86,53 @@ export const useUserMessages = () => {
   const getConversation = async (otherUserId: string) => {
     if (!user) return [];
 
-    const { data, error } = await supabase
+    // First get the messages
+    const { data: messagesData, error: messagesError } = await supabase
       .from('user_messages')
-      .select(`
-        *,
-        sender_profile:user_profiles!sender_id (
-          display_name,
-          avatar_url
-        ),
-        recipient_profile:user_profiles!recipient_id (
-          display_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user.id})`)
       .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching conversation:', error);
+    if (messagesError) {
+      console.error('Error fetching conversation:', messagesError);
       return [];
     }
 
+    // Get unique user IDs from the messages
+    const userIds = Array.from(new Set([
+      ...messagesData.map(msg => msg.sender_id),
+      ...messagesData.map(msg => msg.recipient_id)
+    ]));
+
+    // Fetch user profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
+    // Create a map of user profiles
+    const profilesMap = new Map();
+    profilesData?.forEach(profile => {
+      profilesMap.set(profile.user_id, {
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url
+      });
+    });
+
     // Transform the data to match our interface
-    const transformedData: UserMessage[] = (data || []).map(item => ({
+    const transformedData: UserMessage[] = messagesData.map(item => ({
       id: item.id,
       sender_id: item.sender_id,
       recipient_id: item.recipient_id,
       message: item.message,
       read_at: item.read_at,
       created_at: item.created_at,
-      sender_profile: item.sender_profile || null,
-      recipient_profile: item.recipient_profile || null
+      sender_profile: profilesMap.get(item.sender_id) || null,
+      recipient_profile: profilesMap.get(item.recipient_id) || null
     }));
 
     return transformedData;
@@ -126,32 +142,48 @@ export const useUserMessages = () => {
   const fetchThreads = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    // First get the messages
+    const { data: messagesData, error: messagesError } = await supabase
       .from('user_messages')
-      .select(`
-        *,
-        sender_profile:user_profiles!sender_id (
-          display_name,
-          avatar_url
-        ),
-        recipient_profile:user_profiles!recipient_id (
-          display_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching threads:', error);
+    if (messagesError) {
+      console.error('Error fetching threads:', messagesError);
       setLoading(false);
       return;
     }
 
+    // Get unique user IDs from the messages (excluding current user)
+    const userIds = Array.from(new Set([
+      ...messagesData.map(msg => msg.sender_id),
+      ...messagesData.map(msg => msg.recipient_id)
+    ])).filter(id => id !== user.id);
+
+    // Fetch user profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
+    // Create a map of user profiles
+    const profilesMap = new Map();
+    profilesData?.forEach(profile => {
+      profilesMap.set(profile.user_id, {
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url
+      });
+    });
+
     // Group messages by conversation
     const threadMap = new Map<string, MessageThread>();
     
-    data?.forEach((item) => {
+    messagesData?.forEach((item) => {
       // Transform the raw data
       const message: UserMessage = {
         id: item.id,
@@ -160,17 +192,17 @@ export const useUserMessages = () => {
         message: item.message,
         read_at: item.read_at,
         created_at: item.created_at,
-        sender_profile: item.sender_profile || null,
-        recipient_profile: item.recipient_profile || null
+        sender_profile: profilesMap.get(item.sender_id) || null,
+        recipient_profile: profilesMap.get(item.recipient_id) || null
       };
 
       const otherUserId = message.sender_id === user.id ? message.recipient_id : message.sender_id;
-      const otherUserProfile = message.sender_id === user.id ? message.recipient_profile : message.sender_profile;
+      const otherUserProfile = profilesMap.get(otherUserId) || { display_name: null, avatar_url: null };
       
       if (!threadMap.has(otherUserId)) {
         threadMap.set(otherUserId, {
           user_id: otherUserId,
-          user_profile: otherUserProfile || { display_name: null, avatar_url: null },
+          user_profile: otherUserProfile,
           last_message: message,
           unread_count: 0,
         });

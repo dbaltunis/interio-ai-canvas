@@ -47,35 +47,55 @@ export const useUserPresence = () => {
 
   // Fetch active users
   const fetchActiveUsers = async () => {
-    const { data, error } = await supabase
+    // First get the presence data
+    const { data: presenceData, error: presenceError } = await supabase
       .from('user_presence')
-      .select(`
-        *,
-        user_profiles!user_id (
-          display_name,
-          avatar_url,
-          status
-        )
-      `)
+      .select('*')
       .eq('is_online', true)
       .gte('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString()); // 5 minutes ago
 
-    if (error) {
-      console.error('Error fetching active users:', error);
+    if (presenceError) {
+      console.error('Error fetching active users:', presenceError);
       setActiveUsers([]);
-    } else {
-      // Transform the data to match our interface
-      const transformedData: UserPresence[] = (data || []).map(item => ({
-        id: item.id,
-        user_id: item.user_id,
-        current_page: item.current_page,
-        current_job_id: item.current_job_id,
-        last_seen: item.last_seen,
-        is_online: item.is_online,
-        user_profiles: item.user_profiles || null
-      }));
-      setActiveUsers(transformedData);
+      setLoading(false);
+      return;
     }
+
+    // Get unique user IDs from the presence data
+    const userIds = presenceData.map(presence => presence.user_id);
+
+    // Fetch user profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url, status')
+      .in('user_id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
+    // Create a map of user profiles
+    const profilesMap = new Map();
+    profilesData?.forEach(profile => {
+      profilesMap.set(profile.user_id, {
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url,
+        status: profile.status
+      });
+    });
+
+    // Transform the data to match our interface
+    const transformedData: UserPresence[] = presenceData.map(item => ({
+      id: item.id,
+      user_id: item.user_id,
+      current_page: item.current_page,
+      current_job_id: item.current_job_id,
+      last_seen: item.last_seen,
+      is_online: item.is_online,
+      user_profiles: profilesMap.get(item.user_id) || null
+    }));
+
+    setActiveUsers(transformedData);
     setLoading(false);
   };
 
