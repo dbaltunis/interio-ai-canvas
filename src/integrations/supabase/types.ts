@@ -193,6 +193,63 @@ export type Database = {
           },
         ]
       }
+      business_settings: {
+        Row: {
+          abn: string | null
+          address: string | null
+          business_email: string | null
+          business_phone: string | null
+          city: string | null
+          company_logo_url: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          id: string
+          measurement_units: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          abn?: string | null
+          address?: string | null
+          business_email?: string | null
+          business_phone?: string | null
+          city?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          measurement_units?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          abn?: string | null
+          address?: string | null
+          business_email?: string | null
+          business_phone?: string | null
+          city?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          measurement_units?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       client_measurements: {
         Row: {
           client_id: string
