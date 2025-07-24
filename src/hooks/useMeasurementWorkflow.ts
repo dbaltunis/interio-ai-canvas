@@ -40,6 +40,7 @@ export const useMeasurementWorkflow = () => {
           project_id: currentWorkflowData.projectId,
           measurement_type: "treatment_measurement",
           measurements: measurementData.measurements,
+          photos: [], // Empty photos array as required by the type
           notes: measurementData.notes,
           measured_by: measurementData.measured_by,
           measured_at: new Date().toISOString()

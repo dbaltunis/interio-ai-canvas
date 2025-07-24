@@ -13,18 +13,18 @@ import { useRoomCardLogic } from "./RoomCardLogic";
 interface RoomCardProps {
   room: any;
   projectId: string;
-  clientId?: string;
-  isEditing: boolean;
-  editingName: string;
-  onStartEdit: (room: any) => void;
-  onSaveEdit: (roomId: string, newName: string) => void;
-  onCancelEdit: () => void;
-  onEditingNameChange: (name: string) => void;
+  onUpdateRoom: (roomId: string, updates: any) => void;
   onDeleteRoom: (roomId: string) => void;
+  onCreateTreatment: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void;
   onCreateSurface: (roomId: string, surfaceType: string) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
   onCopyRoom: (room: any) => void;
+  editingRoomId: string | null;
+  setEditingRoomId: (id: string | null) => void;
+  editingRoomName: string;
+  setEditingRoomName: (name: string) => void;
+  onRenameRoom: (roomId: string, newName: string) => void;
   onChangeRoomType: (roomId: string, roomType: string) => void;
 }
 
@@ -41,18 +41,18 @@ const ROOM_TYPES = [
 export const RoomCard = ({
   room,
   projectId,
-  clientId,
-  isEditing,
-  editingName,
-  onStartEdit,
-  onSaveEdit,
-  onCancelEdit,
-  onEditingNameChange,
+  onUpdateRoom,
   onDeleteRoom,
+  onCreateTreatment,
   onCreateSurface,
   onUpdateSurface,
   onDeleteSurface,
   onCopyRoom,
+  editingRoomId,
+  setEditingRoomId,
+  editingRoomName,
+  setEditingRoomName,
+  onRenameRoom,
   onChangeRoomType
 }: RoomCardProps) => {
   const {
@@ -60,6 +60,23 @@ export const RoomCard = ({
     roomTreatments,
     roomTotal
   } = useRoomCardLogic(room, projectId);
+
+  const isEditing = editingRoomId === room.id;
+
+  const handleStartEdit = (room: any) => {
+    setEditingRoomId(room.id);
+    setEditingRoomName(room.name);
+  };
+
+  const handleSaveEdit = (roomId: string, newName: string) => {
+    onRenameRoom(roomId, newName);
+    setEditingRoomId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoomId(null);
+    setEditingRoomName("");
+  };
 
   return (
     <Card className="h-full">
@@ -69,22 +86,22 @@ export const RoomCard = ({
             {isEditing ? (
               <div className="flex items-center space-x-2 flex-1">
                 <Input
-                  value={editingName}
-                  onChange={(e) => onEditingNameChange(e.target.value)}
+                  value={editingRoomName}
+                  onChange={(e) => setEditingRoomName(e.target.value)}
                   className="flex-1"
                   autoFocus
                 />
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onSaveEdit(room.id, editingName)}
+                  onClick={() => handleSaveEdit(room.id, editingRoomName)}
                 >
                   <Check className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={onCancelEdit}
+                  onClick={handleCancelEdit}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -117,7 +134,7 @@ export const RoomCard = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onStartEdit(room)}>
+                  <DropdownMenuItem onClick={() => handleStartEdit(room)}>
                     <Edit2 className="h-4 w-4 mr-2" />
                     Edit Name
                   </DropdownMenuItem>
@@ -170,9 +187,9 @@ export const RoomCard = ({
           surfaces={roomSurfaces}
           treatments={roomTreatments}
           projectId={projectId}
-          clientId={clientId}
           onUpdateSurface={onUpdateSurface}
           onDeleteSurface={onDeleteSurface}
+          onCreateTreatment={onCreateTreatment}
         />
       </CardContent>
     </Card>
