@@ -1,85 +1,100 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RoomsGrid } from './RoomsGrid';
-import { WindowsCanvasInterface } from './WindowsCanvasInterface';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { WindowsCanvasInterface } from "./WindowsCanvasInterface";
 import { TreatmentsGrid } from './TreatmentsGrid';
 import { ConnectCalculateInterface } from './ConnectCalculateInterface';
+import { useCreateProject } from "@/hooks/useProjects";
 
 interface InteractiveProjectDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  type: 'rooms' | 'surfaces' | 'treatments' | 'connect';
-  project: any;
-  rooms: any[];
-  surfaces: any[];
-  treatments: any[];
-  onCreateRoom?: (roomData?: { name: string; room_type: string }) => Promise<void>;
-  onCreateSurface?: (roomId: string, surfaceType: string) => void;
-  onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  client: any;
 }
 
-export const InteractiveProjectDialog = ({
-  isOpen,
-  onClose,
-  type,
-  project,
-  rooms,
-  surfaces,
-  treatments,
-  onCreateRoom,
-  onCreateSurface,
-  onCreateTreatment,
-}: InteractiveProjectDialogProps) => {
-  const [dialogType, setDialogType] = useState(type);
+export const InteractiveProjectDialog = ({ open, onOpenChange, client }: InteractiveProjectDialogProps) => {
+  const [step, setStep] = useState(1);
+  const [projectData, setProjectData] = useState({
+    name: "",
+    description: "",
+    rooms: [],
+    surfaces: []
+  });
 
-  const renderContent = () => {
-    switch (type) {
-      case 'rooms':
+  const { mutate: createProject } = useCreateProject();
+
+  const handleNext = () => {
+    if (step < 4) {
+      setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const handleCreateSurface = (roomId: string) => {
+    console.log("Creating surface for room:", roomId);
+    // Implementation for creating surface
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 1:
         return (
-          <RoomsGrid
-            rooms={rooms}
-            onCreateRoom={onCreateRoom}
-            onCreateSurface={onCreateSurface}
-            onBack={() => setDialogType('rooms')}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Setup</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Project Name</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded"
+                    value={projectData.name}
+                    onChange={(e) => setProjectData({...projectData, name: e.target.value})}
+                    placeholder="Enter project name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    className="w-full p-2 border rounded"
+                    value={projectData.description}
+                    onChange={(e) => setProjectData({...projectData, description: e.target.value})}
+                    placeholder="Enter project description"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
-      case 'surfaces':
+      case 2:
         return (
           <WindowsCanvasInterface
-            project={project}
-            onSave={(data) => {
-              console.log('Surface data saved:', data);
-              onClose();
-            }}
+            projectId="temp"
+            onCreateSurface={handleCreateSurface}
+            onBack={handleBack}
           />
         );
-      case 'treatments':
+      case 3:
         return (
-          <TreatmentsGrid
-            rooms={rooms}
-            surfaces={surfaces}
-            treatments={treatments}
-            onCreateTreatment={onCreateTreatment}
-            onBack={() => setDialogType('treatments')}
+          <TreatmentsGrid 
+            projectId="temp"
           />
         );
-      case 'connect':
+      case 4:
         return (
           <ConnectCalculateInterface
-            project={project}
-            rooms={rooms}
-            surfaces={surfaces}
-            treatments={treatments}
-            onBack={() => setDialogType('connect')}
+            projectId="temp"
           />
         );
       default:
@@ -88,19 +103,32 @@ export const InteractiveProjectDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[80%] lg:max-w-[70%] xl:max-w-[60%] 2xl:max-w-[50%]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Interactive Project Setup</DialogTitle>
-          <DialogDescription>
-            Add rooms, surfaces, and treatments to your project.
-          </DialogDescription>
+          <DialogTitle>Create New Project - Step {step} of 4</DialogTitle>
         </DialogHeader>
-        {renderContent()}
-        <div className="py-4 flex justify-end">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Close
-          </Button>
+        
+        <div className="space-y-6">
+          {renderStep()}
+          
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={step === 1}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            
+            <Button
+              onClick={step === 4 ? () => onOpenChange(false) : handleNext}
+            >
+              {step === 4 ? "Create Project" : "Next"}
+              {step !== 4 && <ArrowRight className="h-4 w-4 ml-2" />}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
