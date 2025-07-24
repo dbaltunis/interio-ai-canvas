@@ -1,133 +1,115 @@
 
-import React, { useState } from 'react';
-import { BrandHeader } from './BrandHeader';
-import { UserProfile } from './UserProfile';
-import { NotificationCenter } from '../notifications/NotificationCenter';
-import { ActiveUsers } from '../presence/ActiveUsers';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  FolderOpen, 
-  Package, 
-  Calendar,
-  Menu,
-  X
-} from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { ActiveUsers } from '@/components/presence/ActiveUsers';
 
 interface ResponsiveHeaderProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  navigation: Array<{
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number;
+  }>;
+  userNavigation?: Array<{
+    name: string;
+    href: string;
+    onClick?: () => void;
+  }>;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
+  children?: React.ReactNode;
 }
 
-const navItems = [
-  { id: "dashboard", label: "Home", icon: LayoutDashboard },
-  { id: "projects", label: "Jobs", icon: FolderOpen },
-  { id: "clients", label: "CRM", icon: Users },
-  { id: "quotes", label: "Emails", icon: FileText },
-  { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "inventory", label: "Library", icon: Package },
-];
-
-export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+export const ResponsiveHeader = ({
+  navigation,
+  userNavigation,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+  children,
+}: ResponsiveHeaderProps) => {
   return (
-    <>
-      {/* Desktop Header */}
-      <header className="bg-white border-b border-brand-secondary/20 shadow-sm sticky top-0 z-40">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Left side - Logo */}
-            <div className="flex items-center">
-              <BrandHeader size="sm" showTagline={true} />
-            </div>
-            
-            {/* Center - Navigation (hidden on mobile) */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <Button
-                    key={item.id}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onTabChange(item.id)}
-                    className={cn(
-                      "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative",
-                      isActive
-                        ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
-                        : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
-                    )}
-                  </Button>
-                );
-              })}
-            </nav>
-            
-            {/* Right side - Notifications, Active Users, and User Profile */}
-            <div className="flex items-center space-x-2">
-              <NotificationCenter />
-              <ActiveUsers />
-              <UserProfile />
-              
-              {/* Mobile menu button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden text-brand-neutral hover:text-brand-primary"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          </div>
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <span className="text-xl font-bold">Baltunis</span>
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-brand-secondary/20">
-            <div className="px-4 py-3 space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <Button
-                    key={item.id}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      onTabChange(item.id);
-                      setMobileMenuOpen(false);
-                    }}
+        
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="pr-0">
+            <div className="px-7">
+              <span className="text-xl font-bold">Baltunis</span>
+            </div>
+            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+              <div className="flex flex-col space-y-3">
+                {navigation.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
                     className={cn(
-                      "w-full justify-start px-3 py-2 text-sm font-medium rounded-md",
-                      isActive
-                        ? "bg-brand-primary text-white"
-                        : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
+                      "flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground rounded-md"
                     )}
                   >
-                    <Icon className="h-4 w-4 mr-3" />
-                    {item.label}
-                  </Button>
-                );
-              })}
+                    <item.icon className="h-4 w-4" />
+                    {item.name}
+                    {item.badge && (
+                      <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                        {item.badge}
+                      </span>
+                    )}
+                  </a>
+                ))}
+              </div>
             </div>
+          </SheetContent>
+        </Sheet>
+        
+        <NavigationMenu className="hidden md:flex">
+          <NavigationMenuList>
+            {navigation.map((item) => (
+              <NavigationMenuItem key={item.name}>
+                <NavigationMenuLink
+                  href={item.href}
+                  className={cn(
+                    "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.name}
+                  {item.badge && (
+                    <span className="ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                      {item.badge}
+                    </span>
+                  )}
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
+        
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            {children}
           </div>
-        )}
-      </header>
-    </>
+          <nav className="flex items-center space-x-2">
+            <ActiveUsers />
+            <NotificationCenter />
+          </nav>
+        </div>
+      </div>
+    </header>
   );
 };

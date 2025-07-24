@@ -25,8 +25,8 @@ export const useUserPresence = (currentPage: string = '/') => {
   const { user } = useAuth();
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [isOnline, setIsOnline] = useState(true);
-  const channelRef = useRef<any>(null);
   const presenceUpdateTimeoutRef = useRef<NodeJS.Timeout>();
+  const fetchIntervalRef = useRef<NodeJS.Timeout>();
 
   // Update user's presence in the database
   const updatePresence = async (page: string, online: boolean = true) => {
@@ -98,38 +98,24 @@ export const useUserPresence = (currentPage: string = '/') => {
     }
   };
 
-  // Set up real-time subscriptions
+  // Set up presence tracking
   useEffect(() => {
     if (!user) return;
 
     // Update initial presence
     updatePresence(currentPage);
 
-    // Set up real-time subscription for presence updates
-    const channel = supabase
-      .channel('user_presence_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_presence'
-        },
-        () => {
-          fetchActiveUsers();
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-
     // Initial fetch
     fetchActiveUsers();
 
-    // Set up periodic presence updates
+    // Set up periodic presence updates and fetching
     const presenceInterval = setInterval(() => {
       updatePresence(currentPage);
     }, 60000); // Update every minute
+
+    fetchIntervalRef.current = setInterval(() => {
+      fetchActiveUsers();
+    }, 30000); // Fetch active users every 30 seconds
 
     // Handle page visibility changes
     const handleVisibilityChange = () => {
@@ -142,10 +128,10 @@ export const useUserPresence = (currentPage: string = '/') => {
 
     // Cleanup
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
       clearInterval(presenceInterval);
+      if (fetchIntervalRef.current) {
+        clearInterval(fetchIntervalRef.current);
+      }
       if (presenceUpdateTimeoutRef.current) {
         clearTimeout(presenceUpdateTimeoutRef.current);
       }
