@@ -23,9 +23,13 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
     // Default to "projects" (Jobs page) instead of "jobs"
-    return searchParams.get('tab') || "projects";
+    const tab = searchParams.get('tab') || "projects";
+    console.log('Index: Initial tab =', tab);
+    return tab;
   });
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+
+  console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
 
   // Update URL when active tab changes, but only if it's different from current URL
   useEffect(() => {

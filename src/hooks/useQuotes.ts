@@ -11,52 +11,102 @@ export const useQuotes = () => {
   return useQuery({
     queryKey: ["quotes"],
     queryFn: async () => {
+      console.log("useQuotes: Starting fetch");
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!user) {
+        console.log("useQuotes: No user found, returning empty array");
+        return [];
+      }
 
       console.log("Fetching quotes for user:", user.id);
-      const { data, error } = await supabase
-        .from("quotes")
-        .select(`
-          *,
-          projects (
-            id,
-            name,
-            client_id,
-            job_number,
-            priority,
-            status,
-            start_date,
-            due_date,
-            completion_date,
-            description
-          ),
-          clients (
-            id,
-            name,
-            company_name,
-            email,
-            phone,
-            client_type
-          )
-        `)
-        .order("created_at", { ascending: false });
+      
+      try {
+        // First try the simple query without complex joins
+        console.log("useQuotes: Attempting simple query first");
+        const { data: simpleData, error: simpleError } = await supabase
+          .from("quotes")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      
-      console.log("Quotes fetched:", data?.length, "quotes");
-      // Add is_locked field as mock data for now since it's not in the database yet
-      const quotesWithLock = data?.map(quote => ({
-        ...quote,
-        is_locked: false // Default to unlocked, this would come from database
-      })) || [];
-      
-      return quotesWithLock;
+        if (simpleError) {
+          console.error("useQuotes: Simple query failed:", simpleError);
+          throw simpleError;
+        }
+
+        console.log("useQuotes: Simple query successful, got", simpleData?.length, "quotes");
+
+        // Now try to enrich with project and client data
+        try {
+          console.log("useQuotes: Attempting enriched query");
+          const { data, error } = await supabase
+            .from("quotes")
+            .select(`
+              *,
+              projects (
+                id,
+                name,
+                client_id,
+                job_number,
+                priority,
+                status,
+                start_date,
+                due_date,
+                completion_date,
+                description
+              ),
+              clients (
+                id,
+                name,
+                company_name,
+                email,
+                phone,
+                client_type
+              )
+            `)
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (error) {
+            console.warn("useQuotes: Enriched query failed, falling back to simple data:", error);
+            // Fall back to simple data if complex query fails
+            const quotesWithLock = simpleData?.map(quote => ({
+              ...quote,
+              is_locked: false,
+              projects: null,
+              clients: null
+            })) || [];
+            return quotesWithLock;
+          }
+          
+          console.log("Quotes fetched successfully with enriched data:", data?.length, "quotes");
+          const quotesWithLock = data?.map(quote => ({
+            ...quote,
+            is_locked: false
+          })) || [];
+          
+          return quotesWithLock;
+        } catch (enrichError) {
+          console.warn("useQuotes: Enriched query threw error, using simple data:", enrichError);
+          const quotesWithLock = simpleData?.map(quote => ({
+            ...quote,
+            is_locked: false,
+            projects: null,
+            clients: null
+          })) || [];
+          return quotesWithLock;
+        }
+      } catch (error) {
+        console.error("useQuotes: Error in fetch:", error);
+        throw error;
+      }
     },
-    staleTime: 30 * 1000, // 30 seconds - much shorter cache
-    gcTime: 5 * 60 * 1000, // 5 minutes cache time  
-    refetchOnWindowFocus: true, // Refetch when window gets focus
-    refetchOnMount: true, // Always refetch on mount
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false, // Reduce aggressive refetching
+    refetchOnMount: true,
+    retry: 2, // Reduce retries
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 };
 

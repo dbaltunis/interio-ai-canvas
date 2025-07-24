@@ -32,22 +32,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("AuthProvider: Setting up auth listener");
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('Auth state changed:', event, session?.user?.email || 'no user');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        console.log('AuthProvider: Loading set to false after auth change');
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session?.user?.email);
+    console.log("AuthProvider: Getting initial session");
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('AuthProvider: Error getting session:', error);
+      }
+      console.log('Initial session:', session?.user?.email || 'no user', 'Error:', error);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      console.log('AuthProvider: Loading set to false after initial session');
     });
 
     return () => subscription.unsubscribe();

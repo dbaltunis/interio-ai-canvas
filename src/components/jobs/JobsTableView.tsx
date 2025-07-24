@@ -236,6 +236,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   };
 
   if (isLoading) {
+    console.log('JobsTableView: Still loading data...');
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
