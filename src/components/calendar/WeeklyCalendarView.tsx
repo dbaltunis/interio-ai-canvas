@@ -13,13 +13,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Generate extended time slots from 6 AM to 10 PM
-  const timeSlots = [];
-  for (let hour = 6; hour <= 22; hour++) {
-    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-    if (hour < 22) {
-      timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
+  const timeSlots = (() => {
+    const slots = [];
+    for (let hour = 6; hour <= 22; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+      if (hour < 22) {
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
     }
-  }
+    return slots;
+  })();
 
   // Get week days starting from Sunday
   const getWeekDays = () => {
