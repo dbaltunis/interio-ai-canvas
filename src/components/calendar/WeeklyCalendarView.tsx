@@ -91,7 +91,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   }, []);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col">
       {/* All-day events section */}
       <div className="border-b bg-muted/30 flex-shrink-0">
         <div className="flex">
@@ -134,6 +134,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       <div 
         ref={scrollContainerRef} 
         className="flex-1 overflow-y-auto overflow-x-hidden"
+        style={{ height: 'calc(100vh - 200px)' }}
       >
         <div className="flex min-h-full">
           {/* Time labels column */}
