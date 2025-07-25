@@ -1,15 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video } from "lucide-react";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useClients } from "@/hooks/useClients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarSidebar } from "./CalendarSidebar";
@@ -43,6 +47,8 @@ const CalendarView = () => {
   
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
+  const { data: teamMembers } = useTeamMembers();
+  const { data: clients } = useClients();
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
 
@@ -54,7 +60,11 @@ const CalendarView = () => {
     startTime: '09:00',
     endTime: '10:00',
     appointmentType: 'meeting' as const,
-    location: ''
+    location: '',
+    color: '',
+    videoMeetingLink: '',
+    selectedTeamMembers: [] as string[],
+    inviteClientEmail: ''
   });
 
   const handleCreateEvent = async () => {
@@ -71,6 +81,16 @@ const CalendarView = () => {
         location: newEvent.location,
         status: 'scheduled'
       });
+
+      // Show success message with additional features note
+      toast({
+        title: "Event Created",
+        description: `Event "${newEvent.title}" has been created successfully. ${
+          newEvent.selectedTeamMembers.length > 0 || newEvent.inviteClientEmail || newEvent.videoMeetingLink
+            ? 'Additional features like team invitations and video links will be fully integrated soon.'
+            : ''
+        }`,
+      });
       
       setShowNewEventDialog(false);
       setNewEvent({
@@ -80,7 +100,11 @@ const CalendarView = () => {
         startTime: '09:00',
         endTime: '10:00',
         appointmentType: 'meeting',
-        location: ''
+        location: '',
+        color: '',
+        videoMeetingLink: '',
+        selectedTeamMembers: [],
+        inviteClientEmail: ''
       });
     } catch (error) {
       toast({
@@ -434,6 +458,120 @@ const CalendarView = () => {
                       placeholder="Enter event description"
                       rows={3}
                     />
+                  </div>
+
+                  {/* Event Color Selection */}
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      Event Color
+                    </Label>
+                    <div className="flex gap-2 mt-2">
+                      {[
+                        { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
+                        { name: 'Green', value: '#10B981', bg: 'bg-green-500' },
+                        { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-500' },
+                        { name: 'Orange', value: '#F59E0B', bg: 'bg-orange-500' },
+                        { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
+                        { name: 'Pink', value: '#EC4899', bg: 'bg-pink-500' },
+                        { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
+                      ].map((color) => (
+                        <button
+                          key={color.value}
+                          type="button"
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            newEvent.color === color.value 
+                              ? 'border-foreground scale-110' 
+                              : 'border-muted hover:border-muted-foreground'
+                          } ${color.bg}`}
+                          onClick={() => setNewEvent({ ...newEvent, color: color.value })}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Video Meeting Link */}
+                  <div>
+                    <Label htmlFor="videoMeetingLink" className="flex items-center gap-2">
+                      <Video className="h-4 w-4 text-muted-foreground" />
+                      Video Meeting Link
+                    </Label>
+                    <Input
+                      id="videoMeetingLink"
+                      value={newEvent.videoMeetingLink}
+                      onChange={(e) => setNewEvent({ ...newEvent, videoMeetingLink: e.target.value })}
+                      placeholder="https://meet.google.com/... or https://zoom.us/..."
+                    />
+                  </div>
+                </div>
+
+                {/* Team Members and Client Invitation */}
+                <div className="space-y-4 border-t pt-6">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Attendees
+                  </h3>
+
+                  {/* Team Members Selection */}
+                  {teamMembers && teamMembers.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Invite Team Members</Label>
+                      <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-3">
+                        {teamMembers.map(member => (
+                          <div key={member.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded cursor-pointer"
+                               onClick={() => {
+                                 const isSelected = newEvent.selectedTeamMembers.includes(member.id);
+                                 setNewEvent({
+                                   ...newEvent,
+                                   selectedTeamMembers: isSelected 
+                                     ? newEvent.selectedTeamMembers.filter(id => id !== member.id)
+                                     : [...newEvent.selectedTeamMembers, member.id]
+                                 });
+                               }}>
+                            <Checkbox 
+                              checked={newEvent.selectedTeamMembers.includes(member.id)}
+                              onChange={() => {}}
+                            />
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs">
+                                {member.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <span className="text-sm flex-1">{member.name}</span>
+                              <Badge variant="outline" className="text-xs">{member.role}</Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Client Invitation */}
+                  <div>
+                    <Label htmlFor="inviteClientEmail" className="text-sm font-medium mb-2 block">Invite Client</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="inviteClientEmail"
+                        value={newEvent.inviteClientEmail}
+                        onChange={(e) => setNewEvent({ ...newEvent, inviteClientEmail: e.target.value })}
+                        placeholder="client@example.com"
+                        className="flex-1"
+                      />
+                      {clients && clients.length > 0 && (
+                        <Select onValueChange={(email) => setNewEvent({ ...newEvent, inviteClientEmail: email })}>
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Select client" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clients.map(client => (
+                              <SelectItem key={client.id} value={client.email || ''}>
+                                {client.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
                   </div>
                 </div>
 
