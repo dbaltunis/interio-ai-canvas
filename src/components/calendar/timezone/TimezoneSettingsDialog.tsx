@@ -16,14 +16,17 @@ interface TimezoneSettingsDialogProps {
 }
 
 export const TimezoneSettingsDialog = ({ open, onOpenChange }: TimezoneSettingsDialogProps) => {
+  const timezoneHook = useTimezone();
+  
+  // Destructure with fallbacks to prevent errors
   const { 
-    userTimezone, 
-    setUserTimezone, 
-    detectedTimezone, 
-    getAllTimezones,
-    isTimezoneDifferent,
-    getCurrentOffset 
-  } = useTimezone();
+    userTimezone = 'UTC', 
+    setUserTimezone = () => {}, 
+    detectedTimezone = 'UTC', 
+    getAllTimezones = () => [], 
+    isTimezoneDifferent = () => false,
+    getCurrentOffset = () => '+00:00' 
+  } = timezoneHook || {};
 
   const [selectedTimezone, setSelectedTimezone] = useState(userTimezone);
   const allTimezones = getAllTimezones();
@@ -38,7 +41,12 @@ export const TimezoneSettingsDialog = ({ open, onOpenChange }: TimezoneSettingsD
   };
 
   const getCurrentTime = (timezone: string) => {
-    return TimezoneUtils.formatInTimezone(new Date(), timezone, 'PPp');
+    try {
+      return TimezoneUtils.formatInTimezone(new Date(), timezone, 'PPp');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return new Date().toLocaleString();
+    }
   };
 
   return (
@@ -71,13 +79,13 @@ export const TimezoneSettingsDialog = ({ open, onOpenChange }: TimezoneSettingsD
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">UTC offset:</span>
-                <span className="text-sm font-medium">{getCurrentOffset(userTimezone)}</span>
+                <span className="text-sm font-medium">{getCurrentOffset ? getCurrentOffset(userTimezone) : '+00:00'}</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Timezone Detection Warning */}
-          {isTimezoneDifferent() && (
+          {isTimezoneDifferent && isTimezoneDifferent() && (
             <Card className="border-warning/50 bg-warning/10">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
@@ -135,7 +143,7 @@ export const TimezoneSettingsDialog = ({ open, onOpenChange }: TimezoneSettingsD
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">UTC offset:</span>
-                      <span className="font-medium">{getCurrentOffset(selectedTimezone)}</span>
+                      <span className="font-medium">{getCurrentOffset ? getCurrentOffset(selectedTimezone) : '+00:00'}</span>
                     </div>
                   </div>
                 </CardContent>
