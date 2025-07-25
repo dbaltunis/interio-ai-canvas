@@ -605,7 +605,7 @@ const CalendarView = () => {
             />
           )}
           {view === 'month' && (
-            <div className="h-full p-4">
+            <div className="h-full flex flex-col overflow-hidden">
               {renderMonthView()}
             </div>
           )}
