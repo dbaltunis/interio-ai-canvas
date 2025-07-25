@@ -107,11 +107,15 @@ export type Database = {
       appointments: {
         Row: {
           appointment_type: string | null
+          caldav_calendar_id: string | null
+          caldav_etag: string | null
+          caldav_uid: string | null
           client_id: string | null
           created_at: string
           description: string | null
           end_time: string
           id: string
+          last_caldav_sync: string | null
           location: string | null
           project_id: string | null
           start_time: string
@@ -122,11 +126,15 @@ export type Database = {
         }
         Insert: {
           appointment_type?: string | null
+          caldav_calendar_id?: string | null
+          caldav_etag?: string | null
+          caldav_uid?: string | null
           client_id?: string | null
           created_at?: string
           description?: string | null
           end_time: string
           id?: string
+          last_caldav_sync?: string | null
           location?: string | null
           project_id?: string | null
           start_time: string
@@ -137,11 +145,15 @@ export type Database = {
         }
         Update: {
           appointment_type?: string | null
+          caldav_calendar_id?: string | null
+          caldav_etag?: string | null
+          caldav_uid?: string | null
           client_id?: string | null
           created_at?: string
           description?: string | null
           end_time?: string
           id?: string
+          last_caldav_sync?: string | null
           location?: string | null
           project_id?: string | null
           start_time?: string
@@ -337,11 +349,13 @@ export type Database = {
       caldav_calendars: {
         Row: {
           account_id: string
+          caldav_url: string | null
           calendar_id: string
           color: string | null
           created_at: string
           description: string | null
           display_name: string
+          etag: string | null
           id: string
           last_sync_at: string | null
           read_only: boolean
@@ -352,11 +366,13 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          caldav_url?: string | null
           calendar_id: string
           color?: string | null
           created_at?: string
           description?: string | null
           display_name: string
+          etag?: string | null
           id?: string
           last_sync_at?: string | null
           read_only?: boolean
@@ -367,11 +383,13 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          caldav_url?: string | null
           calendar_id?: string
           color?: string | null
           created_at?: string
           description?: string | null
           display_name?: string
+          etag?: string | null
           id?: string
           last_sync_at?: string | null
           read_only?: boolean

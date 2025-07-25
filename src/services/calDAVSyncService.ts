@@ -111,8 +111,7 @@ class CalDAVSyncService {
   private async fetchLocalChanges(calendarId: string, lastSyncAt?: string) {
     const query = supabase
       .from('appointments')
-      .select('*')
-      .eq('caldav_calendar_id', calendarId);
+      .select('*');
     
     if (lastSyncAt) {
       query.gt('updated_at', lastSyncAt);
@@ -208,7 +207,7 @@ class CalDAVSyncService {
 
   private async applyRemoteChange(calendarId: string, remoteEvent: any) {
     // Convert CalDAV event to appointment format
-    const appointment = this.convertCalDAVToAppointment(remoteEvent, calendarId);
+    const appointmentData = this.convertCalDAVToAppointment(remoteEvent, calendarId);
     
     // Check if appointment already exists
     const { data: existing } = await supabase
@@ -219,18 +218,26 @@ class CalDAVSyncService {
 
     if (existing) {
       // Update existing appointment
-      await supabase
+      const { error } = await supabase
         .from('appointments')
-        .update(appointment)
+        .update(appointmentData)
         .eq('caldav_uid', remoteEvent.uid);
+      
+      if (error) throw error;
     } else {
-      // Create new appointment
-      await supabase
+      // Create new appointment with a user_id (required field)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { error } = await supabase
         .from('appointments')
         .insert({
-          ...appointment,
+          ...appointmentData,
+          user_id: user.id,
           caldav_uid: remoteEvent.uid,
         });
+      
+      if (error) throw error;
     }
   }
 
@@ -250,7 +257,8 @@ class CalDAVSyncService {
       end_time: new Date(calDAVEvent.dtend).toISOString(),
       location: calDAVEvent.location || '',
       caldav_calendar_id: calendarId,
-      updated_at: new Date().toISOString(),
+      caldav_etag: calDAVEvent.etag || '',
+      last_caldav_sync: new Date().toISOString(),
     };
   }
 
