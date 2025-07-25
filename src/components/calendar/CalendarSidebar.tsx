@@ -3,21 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isToday, addDays } from "date-fns";
 import { useState } from "react";
-import { Plus, Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Settings, Link2 } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
+import { useToast } from "@/hooks/use-toast";
 
 interface CalendarSidebarProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
-  onNewEvent: () => void;
-  onNewTask: () => void;
+  onBookingLinks: () => void;
 }
 
-export const CalendarSidebar = ({ currentDate, onDateChange, onNewEvent, onNewTask }: CalendarSidebarProps) => {
+export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
+  const { toast } = useToast();
 
   // Get upcoming events (next 7 days)
   const upcomingEvents = appointments?.filter(appointment => {
@@ -35,20 +36,8 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onNewEvent, onNewTa
   };
 
   return (
-    <div className="w-80 border-r bg-background h-full flex flex-col space-y-6 p-4">
-      {/* Quick Actions */}
-      <div className="space-y-2">
-        <Button onClick={onNewEvent} className="w-full justify-start">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Event
-        </Button>
-        <Button variant="outline" onClick={onNewTask} className="w-full justify-start">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Task
-        </Button>
-      </div>
-
-      {/* Mini Calendar */}
+    <div className="w-80 border-r bg-background h-full flex flex-col space-y-4 p-4">
+      {/* Mini Calendar - Moved up */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Calendar</CardTitle>
@@ -114,22 +103,47 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onNewEvent, onNewTa
         </CardContent>
       </Card>
 
-      {/* Quick Scheduler Access */}
-      {schedulers && schedulers.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Booking Links</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {schedulers.slice(0, 3).map(scheduler => (
-              <div key={scheduler.id} className="text-xs p-2 rounded bg-muted/50">
-                <div className="font-medium truncate">{scheduler.name}</div>
-                <div className="text-muted-foreground">{scheduler.duration} min</div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      {/* Appointment Scheduler */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button onClick={onBookingLinks} variant="outline" className="w-full justify-start">
+            <Link2 className="h-4 w-4 mr-2" />
+            Manage Booking Links
+          </Button>
+          
+          {schedulers && schedulers.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Quick Links</div>
+              {schedulers.slice(0, 2).map(scheduler => (
+                <div key={scheduler.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate">{scheduler.name}</div>
+                    <div className="text-xs text-muted-foreground">{scheduler.duration} min</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => {
+                      const url = `${window.location.origin}/book/${scheduler.slug}`;
+                      navigator.clipboard.writeText(url);
+                      toast({
+                        title: "Link copied!",
+                        description: "Booking link copied to clipboard",
+                      });
+                    }}
+                  >
+                    <Link2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -14,6 +14,7 @@ import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarSidebar } from "./CalendarSidebar";
 import { WeeklyCalendarView } from "./WeeklyCalendarView";
+import { DailyCalendarView } from "./DailyCalendarView";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -23,7 +24,6 @@ const CalendarView = () => {
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerDialog, setShowSchedulerDialog] = useState(false);
-  const [showTaskDialog, setShowTaskDialog] = useState(false);
   
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
@@ -102,48 +102,95 @@ const CalendarView = () => {
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    // Get the first day of the week that contains the first day of the month
+    const calendarStart = new Date(monthStart);
+    calendarStart.setDate(monthStart.getDate() - monthStart.getDay());
+    
+    // Get 42 days (6 weeks) to ensure we always show complete weeks
+    const days = [];
+    for (let i = 0; i < 42; i++) {
+      const day = new Date(calendarStart);
+      day.setDate(calendarStart.getDate() + i);
+      days.push(day);
+    }
 
     return (
-      <div className="grid grid-cols-7 gap-1">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground border-b">
-            {day}
-          </div>
-        ))}
-        {days.map(day => {
-          const events = getEventsForDate(day);
-          const isSelected = selectedDate && isSameDay(day, selectedDate);
-          const isCurrentMonth = isSameMonth(day, currentDate);
-          
-          return (
-            <div
-              key={day.toString()}
-              className={`min-h-24 p-1 border border-border cursor-pointer hover:bg-accent/50 transition-colors ${
-                isSelected ? 'bg-primary/10 border-primary' : ''
-              } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/20' : ''} ${
-                isToday(day) ? 'bg-accent' : ''
-              }`}
-              onClick={() => setSelectedDate(day)}
-            >
-              <div className="text-sm font-medium mb-1">{format(day, 'd')}</div>
-              <div className="space-y-1">
-                {events.slice(0, 3).map(event => (
-                  <div
-                    key={event.id}
-                    className="text-xs p-1 bg-primary/20 text-primary rounded truncate"
-                    title={event.title}
-                  >
-                    {format(new Date(event.start_time), 'HH:mm')} {event.title}
-                  </div>
-                ))}
-                {events.length > 3 && (
-                  <div className="text-xs text-muted-foreground">+{events.length - 3} more</div>
-                )}
-              </div>
+      <div className="h-full flex flex-col">
+        {/* Month header */}
+        <div className="grid grid-cols-7 border-b">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="p-3 text-center text-sm font-medium text-muted-foreground bg-muted/30">
+              {day}
             </div>
-          );
-        })}
+          ))}
+        </div>
+        
+        {/* Calendar grid */}
+        <div className="flex-1 grid grid-cols-7 grid-rows-6">
+          {days.map(day => {
+            const events = getEventsForDate(day);
+            const isSelected = selectedDate && isSameDay(day, selectedDate);
+            const isCurrentMonth = isSameMonth(day, currentDate);
+            const dayIsToday = isToday(day);
+            
+            return (
+              <div
+                key={day.toString()}
+                className={`border border-border cursor-pointer hover:bg-accent/50 transition-colors p-2 flex flex-col min-h-0 ${
+                  isSelected ? 'bg-primary/10 border-primary' : ''
+                } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/10' : 'bg-background'}`}
+                onClick={() => setSelectedDate(day)}
+              >
+                <div className={`text-sm font-medium mb-2 ${
+                  dayIsToday 
+                    ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs' 
+                    : ''
+                }`}>
+                  {format(day, 'd')}
+                </div>
+                
+                <div className="flex-1 space-y-1 overflow-hidden">
+                  {events.slice(0, 4).map((event, index) => {
+                    // Color coding by appointment type
+                    const getEventColor = (type: string) => {
+                      switch (type) {
+                        case 'meeting': return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
+                        case 'consultation': return 'bg-green-500/20 text-green-700 border-green-500/30';
+                        case 'call': return 'bg-purple-500/20 text-purple-700 border-purple-500/30';
+                        case 'follow-up': return 'bg-orange-500/20 text-orange-700 border-orange-500/30';
+                        default: return 'bg-primary/20 text-primary border-primary/30';
+                      }
+                    };
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className={`text-xs p-1 rounded border truncate cursor-pointer hover:shadow-sm transition-shadow ${
+                          getEventColor(event.appointment_type || 'meeting')
+                        }`}
+                        title={`${event.title}\n${format(new Date(event.start_time), 'HH:mm')} - ${format(new Date(event.end_time), 'HH:mm')}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEventClick(event.id);
+                        }}
+                      >
+                        <div className="font-medium truncate leading-tight">
+                          {format(new Date(event.start_time), 'HH:mm')} {event.title}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {events.length > 4 && (
+                    <div className="text-xs text-muted-foreground font-medium">
+                      +{events.length - 4} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -177,8 +224,7 @@ const CalendarView = () => {
       <CalendarSidebar 
         currentDate={currentDate}
         onDateChange={setCurrentDate}
-        onNewEvent={() => setShowNewEventDialog(true)}
-        onNewTask={() => setShowTaskDialog(true)}
+        onBookingLinks={() => setShowSchedulerDialog(true)}
       />
 
       {/* Main Calendar */}
@@ -231,13 +277,12 @@ const CalendarView = () => {
                 </SelectContent>
               </Select>
 
-          <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
-            <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => setShowNewEventDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Event
               </Button>
-            </DialogTrigger>
+              
+              <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Create New Event</DialogTitle>
@@ -345,61 +390,20 @@ const CalendarView = () => {
             />
           )}
           {view === 'month' && (
-            <div className="p-4 h-full overflow-auto">
-              <Card className="h-full">
-                <CardContent className="p-4">
-                  {renderMonthView()}
-                </CardContent>
-              </Card>
+            <div className="h-full p-4">
+              {renderMonthView()}
             </div>
           )}
           {view === 'day' && (
-            <div className="p-4 text-center text-muted-foreground flex items-center justify-center h-full">
-              Day view - Coming soon
-            </div>
+            <DailyCalendarView 
+              currentDate={currentDate}
+              onEventClick={handleEventClick}
+              onTimeSlotClick={handleTimeSlotClick}
+            />
           )}
         </div>
       </div>
 
-      {/* Task Dialog */}
-      <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Task</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="taskTitle">Task Title</Label>
-              <Input
-                id="taskTitle"
-                placeholder="Enter task title"
-              />
-            </div>
-            <div>
-              <Label htmlFor="taskDescription">Description</Label>
-              <Textarea
-                id="taskDescription"
-                placeholder="Task description (optional)"
-              />
-            </div>
-            <div>
-              <Label htmlFor="taskDue">Due Date</Label>
-              <Input
-                id="taskDue"
-                type="date"
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowTaskDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setShowTaskDialog(false)}>
-                Add Task
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Booking Links Dialog */}
       <Dialog open={showSchedulerDialog} onOpenChange={setShowSchedulerDialog}>
