@@ -15,6 +15,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Event creation state
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
+  const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
 
   // Generate 24-hour time slots from 00:00 to 23:30
   const timeSlots = (() => {
@@ -60,8 +65,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // Calculate position based on 30-minute slots (30px each)
-    const slotHeight = 30; // Each 30-minute slot is 30px
+    // Calculate position based on 30-minute slots (20px each - reduced height)
+    const slotHeight = 20; // Each 30-minute slot is 20px (reduced from 30px)
     
     // Calculate minutes from midnight start
     const minutesFromStart = startHour * 60 + startMinutes;
@@ -69,28 +74,78 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
     // Calculate duration and height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * slotHeight, 20);
+    const height = Math.max((durationInMinutes / 30) * slotHeight, 15);
 
     return { top, height, visible: true };
+  };
+
+  // Handle event creation mouse events
+  const handleMouseDown = (date: Date, timeSlotIndex: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsCreatingEvent(true);
+    setEventCreationStart({ date, timeSlot: timeSlotIndex });
+    setEventCreationEnd({ date, timeSlot: timeSlotIndex });
+  };
+
+  const handleMouseMove = (date: Date, timeSlotIndex: number) => {
+    if (isCreatingEvent && eventCreationStart) {
+      setEventCreationEnd({ date, timeSlot: timeSlotIndex });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isCreatingEvent && eventCreationStart && eventCreationEnd) {
+      // Calculate start and end times
+      const startDate = eventCreationStart.date;
+      const endDate = eventCreationEnd.date;
+      
+      if (isSameDay(startDate, endDate)) {
+        const minSlot = Math.min(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
+        const maxSlot = Math.max(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
+        
+        const startTime = timeSlots[minSlot];
+        const endTime = timeSlots[Math.min(maxSlot + 1, timeSlots.length - 1)];
+        
+        onTimeSlotClick?.(startDate, `${startTime}-${endTime}`);
+      }
+    }
+    
+    setIsCreatingEvent(false);
+    setEventCreationStart(null);
+    setEventCreationEnd(null);
+  };
+
+  // Get event creation preview style
+  const getEventCreationPreviewStyle = () => {
+    if (!isCreatingEvent || !eventCreationStart || !eventCreationEnd) return null;
+    
+    const minSlot = Math.min(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
+    const maxSlot = Math.max(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
+    
+    const slotHeight = 20;
+    const top = minSlot * slotHeight;
+    const height = (maxSlot - minSlot + 1) * slotHeight;
+    
+    return { top, height };
   };
 
   // Auto-scroll to 8 AM on mount
   useEffect(() => {
     if (scrollContainerRef.current) {
       const scrollTo8AM = 8 * 60; // 8 AM in minutes from midnight
-      const scrollPosition = (scrollTo8AM / 30) * 30; // Each 30-minute slot is 30px
+      const scrollPosition = (scrollTo8AM / 30) * 20; // Each 30-minute slot is 20px
       scrollContainerRef.current.scrollTop = scrollPosition;
     }
   }, []);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
       {/* All-day events section */}
       <div className="border-b bg-muted/30 flex-shrink-0">
         <div className="grid grid-cols-8 text-xs">
-          <div className="p-1 border-r font-medium text-muted-foreground w-16 flex-shrink-0">All day</div>
+          <div className="p-1 border-r font-medium text-muted-foreground w-12 flex-shrink-0 text-center">All day</div>
           {weekDays.map(day => (
-            <div key={day.toString()} className="p-2 border-r min-h-8">
+            <div key={day.toString()} className="p-1 border-r min-h-6">
               {/* All-day events would go here */}
             </div>
           ))}
@@ -99,11 +154,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
       {/* Week header with dates */}
       <div className="grid grid-cols-8 border-b bg-background sticky top-0 z-10 flex-shrink-0">
-        <div className="p-3 border-r w-16 flex-shrink-0"></div>
+        <div className="p-2 border-r w-12 flex-shrink-0"></div>
         {weekDays.map(day => {
           const isCurrentDay = isToday(day);
           return (
-            <div key={day.toString()} className="p-3 text-center border-r">
+            <div key={day.toString()} className="p-2 text-center border-r">
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 {format(day, 'EEE')}
               </div>
@@ -123,25 +178,27 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
         <div className="grid grid-cols-8 relative min-h-full">
           {/* Time labels column */}
-          <div className="border-r bg-muted/20 w-16 flex-shrink-0">
+          <div className="border-r bg-muted/20 w-12 flex-shrink-0">
             {timeSlots.map((time, index) => (
               <div 
                 key={time} 
-                className={`h-[30px] p-1 text-xs text-muted-foreground flex items-center ${
+                className={`h-[20px] px-1 text-xs text-muted-foreground flex items-center justify-end ${
                   index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
                 }`}
               >
                 {index % 2 === 0 && (
-                  <span className="font-medium">{time}</span>
+                  <span className="font-medium text-[10px]">{time}</span>
                 )}
               </div>
             ))}
           </div>
           
           {/* Day columns */}
-          {weekDays.map(day => {
+          {weekDays.map((day, dayIndex) => {
             const dayEvents = getEventsForDate(day);
             const isCurrentDay = isToday(day);
+            const previewStyle = getEventCreationPreviewStyle();
+            const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
             
             return (
               <div key={day.toString()} className={`border-r relative ${
@@ -151,13 +208,26 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 {timeSlots.map((time, index) => (
                   <div 
                     key={time} 
-                    className={`h-[30px] hover:bg-accent/30 cursor-pointer transition-colors ${
+                    className={`h-[20px] hover:bg-accent/50 cursor-pointer transition-colors ${
                       index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
                     }`}
-                    onClick={() => onTimeSlotClick?.(day, time)}
+                    onMouseDown={(e) => handleMouseDown(day, index, e)}
+                    onMouseMove={() => handleMouseMove(day, index)}
+                    onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
                     title={`${format(day, 'MMM d')} at ${time}`}
                   />
                 ))}
+
+                {/* Event creation preview */}
+                {showPreview && previewStyle && (
+                  <div
+                    className="absolute left-0 right-0 bg-primary/30 border-l-4 border-primary z-15"
+                    style={{
+                      top: `${previewStyle.top}px`,
+                      height: `${previewStyle.height}px`
+                    }}
+                  />
+                )}
                 
                 {/* Current time indicator */}
                 {isCurrentDay && (() => {
@@ -166,7 +236,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const currentMinutes = now.getMinutes();
                   
                   const minutesFromStart = currentHour * 60 + currentMinutes;
-                  const top = (minutesFromStart / 30) * 30;
+                  const top = (minutesFromStart / 30) * 20; // Adjusted for 20px slot height
                   
                   return (
                     <div 
@@ -186,6 +256,19 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   
                   if (!style.visible) return null;
                   
+                  // Calculate overlapping events positioning
+                  const overlappingEvents = dayEvents.filter(otherEvent => {
+                    const otherStart = new Date(otherEvent.start_time);
+                    const otherEnd = new Date(otherEvent.end_time);
+                    return (
+                      (startTime < otherEnd && endTime > otherStart) || 
+                      (otherStart < endTime && otherEnd > startTime)
+                    );
+                  });
+                  
+                  const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
+                  const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
+                  
                   // Color coding by appointment color or type
                   const getEventColor = (event: any) => {
                     if (event.color) {
@@ -204,14 +287,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   return (
                     <div
                       key={event.id}
-                      className={`absolute left-0.5 right-0.5 rounded border-l-4 p-1 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
+                      className={`absolute rounded border-l-4 p-0.5 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
                         getEventColor(event)
                       }`}
                       style={{
                         top: `${style.top}px`,
                         height: `${style.height}px`,
-                        width: dayEvents.length > 1 ? `${100 / dayEvents.length}%` : '100%', // Adjust width for overlapping events
-                        left: `${(100 / dayEvents.length) * eventIndex}%`, // Position overlapping events side by side
+                        width: eventWidth,
+                        left: eventLeft,
                         zIndex: 10 + eventIndex,
                         backgroundColor: event.color || undefined,
                         borderLeftColor: event.color || undefined
@@ -219,19 +302,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       onClick={() => onEventClick?.(event.id)}
                       title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                      <div className="flex items-center gap-1 mb-1">
-                        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                          {event.user_id ? 'U' : '?'}
-                        </div>
-                        <div className="font-medium truncate text-xs leading-tight flex-1">
-                          {event.title}
-                        </div>
+                      <div className="font-medium truncate text-[10px] leading-tight mb-0.5">
+                        {event.title}
                       </div>
-                      <div className="text-xs opacity-90 leading-tight">
+                      <div className="text-[10px] opacity-90 leading-tight">
                         {format(startTime, 'HH:mm')}
                       </div>
-                      {style.height > 60 && (
-                        <div className="text-xs opacity-75 leading-tight truncate">
+                      {style.height > 40 && (
+                        <div className="text-[9px] opacity-75 leading-tight truncate">
                           {event.location}
                         </div>
                       )}
