@@ -36,7 +36,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   };
 
   return (
-    <div className="w-80 border-r bg-background h-full flex flex-col space-y-4 p-4">
+    <div className="w-80 border-r bg-background flex flex-col space-y-4 p-4 overflow-y-auto" style={{ height: 'calc(100vh - 4rem)' }}>
       {/* Mini Calendar - Moved up */}
       <Card>
         <CardHeader className="pb-3">
