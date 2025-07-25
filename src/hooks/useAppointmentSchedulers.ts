@@ -14,6 +14,8 @@ interface AppointmentScheduler {
   max_advance_booking: number;
   min_advance_notice: number;
   image_url?: string;
+  google_meet_link?: string;
+  user_email?: string;
   active: boolean;
   availability: any;
   locations: any;

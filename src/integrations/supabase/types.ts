@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           description: string | null
           duration: number | null
+          google_meet_link: string | null
           id: string
           image_url: string | null
           locations: Json | null
@@ -30,6 +31,7 @@ export type Database = {
           name: string
           slug: string
           updated_at: string
+          user_email: string | null
           user_id: string
         }
         Insert: {
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration?: number | null
+          google_meet_link?: string | null
           id?: string
           image_url?: string | null
           locations?: Json | null
@@ -47,6 +50,7 @@ export type Database = {
           name: string
           slug: string
           updated_at?: string
+          user_email?: string | null
           user_id: string
         }
         Update: {
@@ -56,6 +60,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration?: number | null
+          google_meet_link?: string | null
           id?: string
           image_url?: string | null
           locations?: Json | null
@@ -64,6 +69,7 @@ export type Database = {
           name?: string
           slug?: string
           updated_at?: string
+          user_email?: string | null
           user_id?: string
         }
         Relationships: []
@@ -192,6 +198,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      business_settings: {
+        Row: {
+          abn: string | null
+          address: string | null
+          business_email: string | null
+          business_phone: string | null
+          city: string | null
+          company_logo_url: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          id: string
+          measurement_units: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          abn?: string | null
+          address?: string | null
+          business_email?: string | null
+          business_phone?: string | null
+          city?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          measurement_units?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          abn?: string | null
+          address?: string | null
+          business_email?: string | null
+          business_phone?: string | null
+          city?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          measurement_units?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
       }
       client_measurements: {
         Row: {
@@ -603,6 +666,44 @@ export type Database = {
         }
         Relationships: []
       }
+      message_attachments: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          message_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          message_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "user_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -985,6 +1086,102 @@ export type Database = {
           updated_at?: string
           user_id?: string
           window_id?: string
+        }
+        Relationships: []
+      }
+      user_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          created_at: string | null
+          current_job_id: string | null
+          current_page: string | null
+          id: string
+          is_online: boolean | null
+          last_seen: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_job_id?: string | null
+          current_page?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_job_id?: string | null
+          current_page?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          status: string | null
+          status_message: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          status?: string | null
+          status_message?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          status?: string | null
+          status_message?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

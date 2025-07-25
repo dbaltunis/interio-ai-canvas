@@ -1,9 +1,12 @@
+import { CalendarDays, Link2, Settings } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { format, isToday, addDays } from "date-fns";
 import { useState } from "react";
-import { Clock, MapPin, Settings, Link2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SchedulerManagement } from "./SchedulerManagement";
+import { format, isToday, addDays } from "date-fns";
+import { Clock, MapPin } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
@@ -104,6 +107,40 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         </CardContent>
       </Card>
 
+      {/* Action Buttons */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <Button 
+              onClick={onBookingLinks}
+              className="w-full"
+              variant="outline"
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              Create Schedule
+            </Button>
+            
+            <Button 
+              onClick={() => setShowSchedulerManagement(true)}
+              className="w-full"
+              variant="outline"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Schedules
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scheduler Management Dialog */}
+      <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Appointment Schedulers</DialogTitle>
+          </DialogHeader>
+          <SchedulerManagement />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

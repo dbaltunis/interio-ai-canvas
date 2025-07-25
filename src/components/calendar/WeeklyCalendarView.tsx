@@ -1,5 +1,6 @@
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useState, useRef, useEffect } from "react";
 
 interface WeeklyCalendarViewProps {
@@ -10,6 +11,7 @@ interface WeeklyCalendarViewProps {
 
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
+  const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Generate extended time slots from 6 AM to 10 PM

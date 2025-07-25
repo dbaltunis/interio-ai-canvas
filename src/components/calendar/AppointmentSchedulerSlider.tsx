@@ -33,6 +33,9 @@ interface SchedulerForm {
   bufferTime: number;
   maxAdvanceBooking: number;
   minAdvanceNotice: number;
+  image_url?: string;
+  google_meet_link?: string;
+  user_email?: string;
   availability: Record<string, DayAvailability>;
   locations: {
     inPerson: boolean;
@@ -64,6 +67,9 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
     bufferTime: 15,
     maxAdvanceBooking: 30,
     minAdvanceNotice: 24,
+    image_url: "",
+    google_meet_link: "",
+    user_email: "",
     availability: WEEKDAYS.reduce((acc, day) => ({
       ...acc,
       [day.key]: {
@@ -135,6 +141,9 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
         buffer_time: form.bufferTime,
         max_advance_booking: form.maxAdvanceBooking,
         min_advance_notice: form.minAdvanceNotice,
+        image_url: form.image_url,
+        google_meet_link: form.google_meet_link,
+        user_email: form.user_email,
         availability: availabilityArray,
         locations: form.locations,
         active: true,
@@ -322,6 +331,36 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
                         onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
                         placeholder="Describe what this appointment is for..."
                         rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user_email">Your Email Address</Label>
+                      <Input
+                        id="user_email"
+                        type="email"
+                        value={form.user_email}
+                        onChange={(e) => setForm(prev => ({ ...prev, user_email: e.target.value }))}
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="image_url">Profile Image URL (Optional)</Label>
+                      <Input
+                        id="image_url"
+                        type="url"
+                        value={form.image_url}
+                        onChange={(e) => setForm(prev => ({ ...prev, image_url: e.target.value }))}
+                        placeholder="https://example.com/image.jpg"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="google_meet_link">Google Meet Link (Optional)</Label>
+                      <Input
+                        id="google_meet_link"
+                        type="url"
+                        value={form.google_meet_link}
+                        onChange={(e) => setForm(prev => ({ ...prev, google_meet_link: e.target.value }))}
+                        placeholder="https://meet.google.com/xxx-xxxx-xxx"
                       />
                     </div>
                   </CardContent>
