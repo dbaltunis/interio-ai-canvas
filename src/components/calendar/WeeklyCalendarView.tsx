@@ -16,12 +16,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Generate extended time slots from 6 AM to 10 PM
+  // Generate 24-hour time slots from 00:00 to 23:30
   const timeSlots = (() => {
     const slots = [];
-    for (let hour = 6; hour <= 22; hour++) {
+    for (let hour = 0; hour <= 23; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour < 22) {
+      if (hour < 23) {
         slots.push(`${hour.toString().padStart(2, '0')}:30`);
       }
     }
@@ -60,16 +60,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // Check if event is within the visible time range (6 AM to 10 PM)
-    if (startHour < 6 || startHour > 22) {
-      return { top: 0, height: 32, visible: false };
-    }
-
-    // Calculate position based on 30-minute slots
-    const slotHeight = 32; // Each 30-minute slot is 32px
+    // Calculate position based on 30-minute slots (30px each)
+    const slotHeight = 30; // Each 30-minute slot is 30px
     
-    // Calculate minutes from 6 AM start
-    const minutesFromStart = (startHour - 6) * 60 + startMinutes;
+    // Calculate minutes from midnight start
+    const minutesFromStart = startHour * 60 + startMinutes;
     const top = (minutesFromStart / 30) * slotHeight;
 
     // Calculate duration and height
@@ -79,14 +74,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     return { top, height, visible: true };
   };
 
-  // Auto-scroll to current time on mount
+  // Auto-scroll to 8 AM on mount
   useEffect(() => {
     if (scrollContainerRef.current) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
-      const scrollPosition = (scrollToHour - 6) * 64; // Each hour is 64px (2 slots * 32px)
-      scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      const scrollTo8AM = 8 * 60; // 8 AM in minutes from midnight
+      const scrollPosition = (scrollTo8AM / 30) * 30; // Each 30-minute slot is 30px
+      scrollContainerRef.current.scrollTop = scrollPosition;
     }
   }, []);
 
@@ -134,7 +127,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             {timeSlots.map((time, index) => (
               <div 
                 key={time} 
-                className={`h-8 p-1 text-xs text-muted-foreground flex items-center ${
+                className={`h-[30px] p-1 text-xs text-muted-foreground flex items-center ${
                   index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
                 }`}
               >
@@ -158,7 +151,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 {timeSlots.map((time, index) => (
                   <div 
                     key={time} 
-                    className={`h-8 hover:bg-accent/30 cursor-pointer transition-colors ${
+                    className={`h-[30px] hover:bg-accent/30 cursor-pointer transition-colors ${
                       index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
                     }`}
                     onClick={() => onTimeSlotClick?.(day, time)}
@@ -172,20 +165,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const currentHour = now.getHours();
                   const currentMinutes = now.getMinutes();
                   
-                  if (currentHour >= 6 && currentHour <= 22) {
-                    const minutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-                    const top = (minutesFromStart / 30) * 32;
-                    
-                    return (
-                      <div 
-                        className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
-                        style={{ top: `${top}px` }}
-                      >
-                        <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                      </div>
-                    );
-                  }
-                  return null;
+                  const minutesFromStart = currentHour * 60 + currentMinutes;
+                  const top = (minutesFromStart / 30) * 30;
+                  
+                  return (
+                    <div 
+                      className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
+                      style={{ top: `${top}px` }}
+                    >
+                      <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                  );
                 })()}
                 
                 {/* Events */}
@@ -220,7 +210,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       style={{
                         top: `${style.top}px`,
                         height: `${style.height}px`,
-                        marginLeft: `${eventIndex * 2}px`, // Slight offset for overlapping events
+                        width: dayEvents.length > 1 ? `${100 / dayEvents.length}%` : '100%', // Adjust width for overlapping events
+                        left: `${(100 / dayEvents.length) * eventIndex}%`, // Position overlapping events side by side
                         zIndex: 10 + eventIndex,
                         backgroundColor: event.color || undefined,
                         borderLeftColor: event.color || undefined
