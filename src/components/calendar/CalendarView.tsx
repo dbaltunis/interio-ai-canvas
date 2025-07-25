@@ -22,7 +22,7 @@ import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
-import { EventDetailsModal } from "./EventDetailsModal";
+import { CalendarEventDialog } from "./CalendarEventDialog";
 import { DurationPicker } from "./TimePicker";
 
 type CalendarView = 'month' | 'week' | 'day';
@@ -644,13 +644,14 @@ const CalendarView = () => {
       />
 
       {/* Event Details Modal */}
-      <EventDetailsModal
-        isOpen={showEventDetails}
-        onClose={() => {
-          setShowEventDetails(false);
-          setSelectedAppointment(null);
+      <CalendarEventDialog
+        open={showEventDetails}
+        onOpenChange={(open) => {
+          setShowEventDetails(open);
+          if (!open) setSelectedAppointment(null);
         }}
         appointment={selectedAppointment}
+        selectedDate={selectedDate}
       />
     </div>
   );
