@@ -57,19 +57,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
-    const endHour = endTime.getHours();
-    const endMinutes = endTime.getMinutes();
     
-    // Calculate position based on 30-minute slots (24 hours)
-    const slotHeight = 64; // Each 30-minute slot is now 64px (doubled from 32px)
+    // Each hour = 60px, each minute = 1px for precise positioning
+    const pixelsPerHour = 60;
+    const pixelsPerMinute = 1;
     
-    // Calculate minutes from midnight (00:00) start
+    // Calculate minutes from midnight
     const minutesFromStart = startHour * 60 + startMinutes;
-    const top = (minutesFromStart / 30) * slotHeight;
+    const top = minutesFromStart * pixelsPerMinute;
 
-    // Calculate duration in minutes
+    // Calculate duration in minutes and convert to pixels
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * slotHeight, 40);
+    const height = Math.max(durationInMinutes * pixelsPerMinute, 20);
 
     return { top, height, visible: true };
   };
@@ -79,14 +78,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     if (scrollContainerRef.current) {
       // Scroll to 8 AM to show working hours by default
       const targetHour = 8;
-      const scrollPosition = targetHour * 128; // Each hour is 128px (2 slots * 64px each)
+      const scrollPosition = targetHour * 60; // Each hour is 60px
       
       // Use setTimeout to ensure the DOM is fully rendered
       setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = scrollPosition;
         }
-      }, 200);
+      }, 100);
     }
   }, []);
 
@@ -193,16 +192,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   isCurrentDay ? 'bg-primary/5' : ''
                 }`}>
                 {/* Time slot grid */}
-                {timeSlots.map((time, index) => (
-                  <div 
-                    key={time} 
-                    className={`h-16 hover:bg-accent/30 cursor-pointer transition-colors ${
-                      index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
-                    }`}
-                    onClick={() => onTimeSlotClick?.(day, time)}
-                    title={`${format(day, 'MMM d')} at ${time}`}
-                  />
-                ))}
+                 {timeSlots.map((time, index) => (
+                   <div 
+                     key={time} 
+                     className={`h-[30px] hover:bg-accent/30 cursor-pointer transition-colors ${
+                       index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
+                     }`}
+                     onClick={() => onTimeSlotClick?.(day, time)}
+                     title={`${format(day, 'MMM d')} at ${time}`}
+                   />
+                 ))}
                 
                 {/* Current time indicator */}
                 {isCurrentDay && (() => {
@@ -210,9 +209,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const currentHour = now.getHours();
                   const currentMinutes = now.getMinutes();
                   
-                  // Calculate position for 24-hour view
-                  const minutesFromStart = currentHour * 60 + currentMinutes;
-                  const top = (minutesFromStart / 30) * 64;
+                   // Calculate position for 24-hour view
+                   const minutesFromStart = currentHour * 60 + currentMinutes;
+                   const top = minutesFromStart * 1; // 1px per minute
                   
                   return (
                     <div 
