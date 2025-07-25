@@ -256,6 +256,173 @@ export type Database = {
         }
         Relationships: []
       }
+      caldav_accounts: {
+        Row: {
+          account_name: string
+          active: boolean
+          created_at: string
+          email: string
+          id: string
+          last_sync_at: string | null
+          password_encrypted: string
+          server_url: string | null
+          sync_enabled: boolean
+          sync_token: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          account_name: string
+          active?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          last_sync_at?: string | null
+          password_encrypted: string
+          server_url?: string | null
+          sync_enabled?: boolean
+          sync_token?: string | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          account_name?: string
+          active?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          last_sync_at?: string | null
+          password_encrypted?: string
+          server_url?: string | null
+          sync_enabled?: boolean
+          sync_token?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      caldav_calendars: {
+        Row: {
+          account_id: string
+          calendar_id: string
+          color: string | null
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          last_sync_at: string | null
+          read_only: boolean
+          sync_enabled: boolean
+          sync_token: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          calendar_id: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          last_sync_at?: string | null
+          read_only?: boolean
+          sync_enabled?: boolean
+          sync_token?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          calendar_id?: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          last_sync_at?: string | null
+          read_only?: boolean
+          sync_enabled?: boolean
+          sync_token?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caldav_calendars_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "caldav_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      caldav_sync_log: {
+        Row: {
+          account_id: string
+          calendar_id: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          events_created: number | null
+          events_deleted: number | null
+          events_synced: number | null
+          events_updated: number | null
+          id: string
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          account_id: string
+          calendar_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          events_created?: number | null
+          events_deleted?: number | null
+          events_synced?: number | null
+          events_updated?: number | null
+          id?: string
+          started_at?: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          account_id?: string
+          calendar_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          events_created?: number | null
+          events_deleted?: number | null
+          events_synced?: number | null
+          events_updated?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caldav_sync_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "caldav_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "caldav_sync_log_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "caldav_calendars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_measurements: {
         Row: {
           client_id: string

@@ -1,12 +1,17 @@
 
-import { GoogleCalendarIntegrationTab } from "@/components/integrations/GoogleCalendarIntegrationTab";
-import { useIntegrations } from "@/hooks/useIntegrations";
+import { CalDAVAccountManager } from "@/components/calendar/CalDAVAccountManager";
 
 export const GoogleCalendarTab = () => {
-  const { integrations } = useIntegrations();
-  const googleCalendarIntegration = integrations.find(integration => integration.integration_type === 'google_calendar');
-
   return (
-    <GoogleCalendarIntegrationTab integration={googleCalendarIntegration} />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Calendar Integration</h1>
+        <p className="text-muted-foreground mt-2">
+          Connect your calendar accounts to sync events with InteriorApp. Works with Google Calendar, 
+          Apple Calendar, Outlook, Yahoo, and any CalDAV-compatible calendar service.
+        </p>
+      </div>
+      <CalDAVAccountManager />
+    </div>
   );
 };
