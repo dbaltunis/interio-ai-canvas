@@ -61,7 +61,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const endMinutes = endTime.getMinutes();
     
     // Calculate position based on 30-minute slots (24 hours)
-    const slotHeight = 32; // Each 30-minute slot is 32px
+    const slotHeight = 64; // Each 30-minute slot is now 64px (doubled from 32px)
     
     // Calculate minutes from midnight (00:00) start
     const minutesFromStart = startHour * 60 + startMinutes;
@@ -69,7 +69,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
     // Calculate duration in minutes
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * slotHeight, 20);
+    const height = Math.max((durationInMinutes / 30) * slotHeight, 40);
 
     return { top, height, visible: true };
   };
@@ -79,14 +79,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     if (scrollContainerRef.current) {
       // Scroll to 8 AM to show working hours by default
       const targetHour = 8;
-      const scrollPosition = targetHour * 64; // Each hour is 64px (2 slots * 32px)
+      const scrollPosition = targetHour * 128; // Each hour is 128px (2 slots * 64px each)
       
       // Use setTimeout to ensure the DOM is fully rendered
       setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = scrollPosition;
         }
-      }, 100);
+      }, 200);
     }
   }, []);
 
@@ -196,7 +196,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 {timeSlots.map((time, index) => (
                   <div 
                     key={time} 
-                    className={`h-8 hover:bg-accent/30 cursor-pointer transition-colors ${
+                    className={`h-16 hover:bg-accent/30 cursor-pointer transition-colors ${
                       index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
                     }`}
                     onClick={() => onTimeSlotClick?.(day, time)}
@@ -212,7 +212,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   
                   // Calculate position for 24-hour view
                   const minutesFromStart = currentHour * 60 + currentMinutes;
-                  const top = (minutesFromStart / 30) * 32;
+                  const top = (minutesFromStart / 30) * 64;
                   
                   return (
                     <div 
