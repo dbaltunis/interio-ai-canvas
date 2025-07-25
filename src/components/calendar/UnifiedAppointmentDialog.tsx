@@ -9,43 +9,49 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, ExternalLink, Share } from "lucide-react";
-import { useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
-import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share } from "lucide-react";
+import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
+import { useOfflineSupport } from "@/hooks/useOfflineSupport";
+import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { format } from "date-fns";
 
-interface AppointmentEditDialogProps {
+interface UnifiedAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  appointment: any;
+  selectedDate?: Date;
+  appointment?: any;
 }
 
-export const AppointmentEditDialog = ({ 
+export const UnifiedAppointmentDialog = ({ 
   open, 
   onOpenChange, 
+  selectedDate,
   appointment 
-}: AppointmentEditDialogProps) => {
-  const [editedAppointment, setEditedAppointment] = useState({
+}: UnifiedAppointmentDialogProps) => {
+  const isEditing = !!appointment;
+  const [event, setEvent] = useState({
     title: "",
     description: "",
     start_time: "",
     end_time: "",
     location: "",
-    appointment_type: "meeting",
+    appointment_type: "meeting" as "meeting" | "consultation" | "measurement" | "installation" | "follow_up" | "reminder" | "call",
   });
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
   const [syncToCalendars, setSyncToCalendars] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
 
+  const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
   const { syncableCalendars, syncAppointmentToCalDAV } = useAppointmentCalDAVSync();
+  const { isOnline, queueOfflineOperation } = useOfflineSupport();
 
   useEffect(() => {
     if (appointment) {
-      setEditedAppointment({
+      setEvent({
         title: appointment.title || "",
         description: appointment.description || "",
         start_time: appointment.start_time ? new Date(appointment.start_time).toISOString().slice(0, 16) : "",
@@ -53,35 +59,66 @@ export const AppointmentEditDialog = ({
         location: appointment.location || "",
         appointment_type: appointment.appointment_type || "meeting",
       });
+    } else if (selectedDate) {
+      setEvent({
+        title: "",
+        description: "",
+        start_time: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 9, 0).toISOString().slice(0, 16),
+        end_time: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 10, 0).toISOString().slice(0, 16),
+        location: "",
+        appointment_type: "meeting",
+      });
     }
-  }, [appointment]);
+  }, [appointment, selectedDate]);
 
-  const handleUpdate = async () => {
-    if (!editedAppointment.title || !editedAppointment.start_time || !editedAppointment.end_time) return;
+  const handleSubmit = async () => {
+    if (!event.title || !event.start_time || !event.end_time) return;
+
+    const appointmentData = {
+      ...event,
+      start_time: new Date(event.start_time).toISOString(),
+      end_time: new Date(event.end_time).toISOString(),
+    };
 
     try {
-      const updatedData = {
-        ...editedAppointment,
-        start_time: new Date(editedAppointment.start_time).toISOString(),
-        end_time: new Date(editedAppointment.end_time).toISOString(),
-      };
+      if (isOnline) {
+        if (isEditing) {
+          await updateAppointment.mutateAsync({ 
+            id: appointment.id, 
+            ...appointmentData 
+          } as any);
 
-      await updateAppointment.mutateAsync({ 
-        id: appointment.id, 
-        ...updatedData 
-      } as any);
-
-      // Sync to selected calendars if enabled
-      if (syncToCalendars && selectedCalendars.length > 0) {
-        await syncAppointmentToCalDAV.mutateAsync({
-          appointment: { ...appointment, ...updatedData },
-          calendarIds: selectedCalendars
-        });
+          // Sync to selected calendars if enabled for editing
+          if (syncToCalendars && selectedCalendars.length > 0) {
+            await syncAppointmentToCalDAV.mutateAsync({
+              appointment: { ...appointment, ...appointmentData },
+              calendarIds: selectedCalendars
+            });
+          }
+        } else {
+          const newAppointment = await createAppointment.mutateAsync(appointmentData as any);
+          
+          // Auto-sync to selected calendars if enabled for creation
+          if (syncToCalendars && selectedCalendars.length > 0) {
+            await syncAppointmentToCalDAV.mutateAsync({
+              appointment: newAppointment,
+              calendarIds: selectedCalendars
+            });
+          }
+        }
+      } else {
+        // Queue for offline processing
+        if (isEditing) {
+          queueOfflineOperation('update', 'appointments', { id: appointment.id, ...appointmentData });
+        } else {
+          queueOfflineOperation('create', 'appointments', appointmentData);
+        }
       }
 
       onOpenChange(false);
+      resetForm();
     } catch (error) {
-      console.error('Failed to update appointment:', error);
+      console.error('Failed to save appointment:', error);
     }
   };
 
@@ -89,9 +126,23 @@ export const AppointmentEditDialog = ({
     try {
       await deleteAppointment.mutateAsync(appointment.id);
       onOpenChange(false);
+      resetForm();
     } catch (error) {
       console.error('Failed to delete appointment:', error);
     }
+  };
+
+  const resetForm = () => {
+    setEvent({
+      title: "",
+      description: "",
+      start_time: "",
+      end_time: "",
+      location: "",
+      appointment_type: "meeting",
+    });
+    setSelectedCalendars([]);
+    setSyncToCalendars(false);
   };
 
   const handleCalendarToggle = (calendarId: string, checked: boolean) => {
@@ -102,9 +153,7 @@ export const AppointmentEditDialog = ({
     );
   };
 
-  const isLoading = updateAppointment.isPending || deleteAppointment.isPending || syncAppointmentToCalDAV.isPending;
-
-  if (!appointment) return null;
+  const isLoading = createAppointment.isPending || updateAppointment.isPending || deleteAppointment.isPending || syncAppointmentToCalDAV.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,7 +161,7 @@ export const AppointmentEditDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5" />
-            Edit Appointment
+            {isEditing ? 'Edit Appointment' : 'Create New Appointment'}
           </DialogTitle>
         </DialogHeader>
         
@@ -123,8 +172,8 @@ export const AppointmentEditDialog = ({
             <Input
               id="title"
               placeholder="Enter appointment title"
-              value={editedAppointment.title}
-              onChange={(e) => setEditedAppointment({ ...editedAppointment, title: e.target.value })}
+              value={event.title}
+              onChange={(e) => setEvent({ ...event, title: e.target.value })}
             />
           </div>
 
@@ -137,8 +186,8 @@ export const AppointmentEditDialog = ({
               <Input
                 id="start_time"
                 type="datetime-local"
-                value={editedAppointment.start_time}
-                onChange={(e) => setEditedAppointment({ ...editedAppointment, start_time: e.target.value })}
+                value={event.start_time}
+                onChange={(e) => setEvent({ ...event, start_time: e.target.value })}
               />
             </div>
             <div>
@@ -149,15 +198,15 @@ export const AppointmentEditDialog = ({
               <Input
                 id="end_time"
                 type="datetime-local"
-                value={editedAppointment.end_time}
-                onChange={(e) => setEditedAppointment({ ...editedAppointment, end_time: e.target.value })}
+                value={event.end_time}
+                onChange={(e) => setEvent({ ...event, end_time: e.target.value })}
               />
             </div>
           </div>
 
           <div>
             <Label htmlFor="type">Appointment Type</Label>
-            <Select value={editedAppointment.appointment_type} onValueChange={(value) => setEditedAppointment({ ...editedAppointment, appointment_type: value })}>
+            <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -167,7 +216,8 @@ export const AppointmentEditDialog = ({
                 <SelectItem value="measurement">Measurement</SelectItem>
                 <SelectItem value="installation">Installation</SelectItem>
                 <SelectItem value="follow_up">Follow-up</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="reminder">Reminder</SelectItem>
+                <SelectItem value="call">Call</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -180,8 +230,8 @@ export const AppointmentEditDialog = ({
             <Input
               id="location"
               placeholder="Enter location"
-              value={editedAppointment.location}
-              onChange={(e) => setEditedAppointment({ ...editedAppointment, location: e.target.value })}
+              value={event.location}
+              onChange={(e) => setEvent({ ...event, location: e.target.value })}
             />
           </div>
 
@@ -193,30 +243,34 @@ export const AppointmentEditDialog = ({
             <Textarea
               id="description"
               placeholder="Enter appointment description"
-              value={editedAppointment.description}
-              onChange={(e) => setEditedAppointment({ ...editedAppointment, description: e.target.value })}
+              value={event.description}
+              onChange={(e) => setEvent({ ...event, description: e.target.value })}
               rows={3}
             />
           </div>
 
-          {/* Appointment Metadata */}
-          <Separator />
-          <div className="text-sm text-muted-foreground space-y-1">
-            <div className="flex justify-between">
-              <span>Created:</span>
-              <span>{format(new Date(appointment.created_at), 'MMM d, yyyy h:mm a')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Updated:</span>
-              <span>{format(new Date(appointment.updated_at), 'MMM d, yyyy h:mm a')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Status:</span>
-              <Badge variant="outline" className="text-xs">
-                {appointment.status}
-              </Badge>
-            </div>
-          </div>
+          {/* Appointment Metadata - only show when editing */}
+          {isEditing && appointment && (
+            <>
+              <Separator />
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>Created:</span>
+                  <span>{format(new Date(appointment.created_at), 'MMM d, yyyy h:mm a')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Updated:</span>
+                  <span>{format(new Date(appointment.updated_at), 'MMM d, yyyy h:mm a')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Status:</span>
+                  <Badge variant="outline" className="text-xs">
+                    {appointment.status}
+                  </Badge>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Calendar Sync Options */}
           {syncableCalendars.length > 0 && (
@@ -230,7 +284,7 @@ export const AppointmentEditDialog = ({
                     onCheckedChange={(checked) => setSyncToCalendars(checked === true)}
                   />
                   <Label htmlFor="sync-calendars" className="text-sm font-medium">
-                    Update in connected calendars
+                    {isEditing ? 'Update in connected calendars' : 'Sync to connected calendars'}
                   </Label>
                 </div>
                 
@@ -269,53 +323,57 @@ export const AppointmentEditDialog = ({
           <Separator />
           <div className="flex gap-2">
             <Button
-              onClick={handleUpdate}
-              disabled={!editedAppointment.title || !editedAppointment.start_time || !editedAppointment.end_time || isLoading}
+              onClick={handleSubmit}
+              disabled={!event.title || !event.start_time || !event.end_time || isLoading}
               className="flex-1"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
+                  {isEditing ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
-                'Update Appointment'
+                isEditing ? 'Update Appointment' : 'Create Appointment'
               )}
             </Button>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowSharingDialog(true)}
-              disabled={isLoading}
-            >
-              <Share className="w-4 h-4" />
-            </Button>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="icon" disabled={isLoading}>
-                  <Trash2 className="w-4 h-4" />
+            {isEditing && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSharingDialog(true)}
+                  disabled={isLoading}
+                >
+                  <Share className="w-4 h-4" />
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{appointment.title}"? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="icon" disabled={isLoading}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{appointment?.title}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
             
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -323,12 +381,14 @@ export const AppointmentEditDialog = ({
           </div>
         </div>
 
-        <AppointmentSharingDialog
-          open={showSharingDialog}
-          onOpenChange={setShowSharingDialog}
-          appointmentId={appointment?.id || ""}
-          appointmentTitle={editedAppointment?.title || ""}
-        />
+        {isEditing && (
+          <AppointmentSharingDialog
+            open={showSharingDialog}
+            onOpenChange={setShowSharingDialog}
+            appointmentId={appointment?.id || ""}
+            appointmentTitle={event?.title || ""}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

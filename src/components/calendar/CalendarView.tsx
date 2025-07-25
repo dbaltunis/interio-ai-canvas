@@ -22,12 +22,11 @@ import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { CalendarFilterState } from "./CalendarFilters";
-import { CalendarEventDialog } from "./CalendarEventDialog";
 import { DurationPicker } from "./TimePicker";
 import { CalendarSyncStatus } from "./CalendarSyncStatus";
 import { CalDAVSyncDialog } from "./CalDAVSyncDialog";
 import { CalendarStatusIndicator } from "./CalendarStatusIndicator";
-import { AppointmentEditDialog } from "./AppointmentEditDialog";
+import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
 import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 import { CalendarColorPicker } from "./colors/CalendarColorPicker";
@@ -715,11 +714,12 @@ const CalendarView = () => {
         onClose={() => setShowSchedulerSlider(false)}
       />
 
-      {/* Event Details Modal */}
-      <CalendarEventDialog
-        open={showEventDetails}
+      {/* Unified Appointment Dialog for both create and edit */}
+      <UnifiedAppointmentDialog
+        open={showEventDetails || showEditDialog}
         onOpenChange={(open) => {
           setShowEventDetails(open);
+          setShowEditDialog(open);
           if (!open) setSelectedAppointment(null);
         }}
         appointment={selectedAppointment}
@@ -732,16 +732,6 @@ const CalendarView = () => {
         onOpenChange={setShowCalDAVSync}
         appointment={selectedAppointment}
         onSyncComplete={() => setSelectedAppointment(null)}
-      />
-
-      {/* Appointment Edit Dialog */}
-      <AppointmentEditDialog
-        open={showEditDialog}
-        onOpenChange={(open) => {
-          setShowEditDialog(open);
-          if (!open) setSelectedAppointment(null);
-        }}
-        appointment={selectedAppointment}
       />
 
       <CalendarSharingDialog
