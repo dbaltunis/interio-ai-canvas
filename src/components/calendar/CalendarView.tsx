@@ -374,7 +374,7 @@ const CalendarView = () => {
 
               <Button variant="outline" onClick={() => setShowSchedulerDialog(true)}>
                 <Link2 className="h-4 w-4 mr-2" />
-                Booking Links
+                Appointment Schedule
               </Button>
             </div>
           </div>
