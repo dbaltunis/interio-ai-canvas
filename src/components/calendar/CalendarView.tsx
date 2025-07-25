@@ -155,10 +155,21 @@ const CalendarView = () => {
       days.push(day);
     }
 
+    // Get color dot for event type
+    const getEventDotColor = (type: string) => {
+      switch (type) {
+        case 'meeting': return 'bg-blue-500';
+        case 'consultation': return 'bg-green-500';
+        case 'call': return 'bg-purple-500';
+        case 'follow-up': return 'bg-orange-500';
+        default: return 'bg-primary';
+      }
+    };
+
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col overflow-hidden">
         {/* Month header */}
-        <div className="grid grid-cols-7 border-b">
+        <div className="grid grid-cols-7 border-b flex-shrink-0">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="p-3 text-center text-sm font-medium text-muted-foreground bg-muted/30">
               {day}
@@ -166,8 +177,8 @@ const CalendarView = () => {
           ))}
         </div>
         
-        {/* Calendar grid */}
-        <div className="flex-1 grid grid-cols-7 grid-rows-6">
+        {/* Calendar grid - fixed height, no scrolling */}
+        <div className="flex-1 grid grid-cols-7 grid-rows-6 min-h-0">
           {days.map(day => {
             const events = getEventsForDate(day);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
@@ -182,7 +193,8 @@ const CalendarView = () => {
                 } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/10' : 'bg-background'}`}
                 onClick={() => setSelectedDate(day)}
               >
-                <div className={`text-sm font-medium mb-2 ${
+                {/* Day number */}
+                <div className={`text-sm font-medium mb-1 flex-shrink-0 ${
                   dayIsToday 
                     ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs' 
                     : ''
@@ -190,40 +202,34 @@ const CalendarView = () => {
                   {format(day, 'd')}
                 </div>
                 
+                {/* Events list */}
                 <div className="flex-1 space-y-1 overflow-hidden">
-                  {events.slice(0, 4).map((event, index) => {
-                    // Color coding by appointment type
-                    const getEventColor = (type: string) => {
-                      switch (type) {
-                        case 'meeting': return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
-                        case 'consultation': return 'bg-green-500/20 text-green-700 border-green-500/30';
-                        case 'call': return 'bg-purple-500/20 text-purple-700 border-purple-500/30';
-                        case 'follow-up': return 'bg-orange-500/20 text-orange-700 border-orange-500/30';
-                        default: return 'bg-primary/20 text-primary border-primary/30';
-                      }
-                    };
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className={`text-xs p-1 rounded border truncate cursor-pointer hover:shadow-sm transition-shadow ${
-                          getEventColor(event.appointment_type || 'meeting')
-                        }`}
-                        title={`${event.title}\n${format(new Date(event.start_time), 'HH:mm')} - ${format(new Date(event.end_time), 'HH:mm')}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEventClick(event.id);
-                        }}
-                      >
-                        <div className="font-medium truncate leading-tight">
-                          {format(new Date(event.start_time), 'HH:mm')} {event.title}
+                  {events.slice(0, 3).map((event, index) => (
+                    <div
+                      key={event.id}
+                      className="text-xs cursor-pointer hover:bg-accent/30 transition-colors rounded p-1 group"
+                      title={`${event.title}\n${format(new Date(event.start_time), 'HH:mm')} - ${format(new Date(event.end_time), 'HH:mm')}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEventClick(event.id);
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getEventDotColor(event.appointment_type || 'meeting')}`} />
+                        <div className="truncate text-foreground group-hover:text-foreground/80">
+                          <span className="font-medium">
+                            {format(new Date(event.start_time), 'HH:mm')}
+                          </span>
+                          <span className="ml-1">
+                            {event.title}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                  {events.length > 4 && (
-                    <div className="text-xs text-muted-foreground font-medium">
-                      +{events.length - 4} more
+                    </div>
+                  ))}
+                  {events.length > 3 && (
+                    <div className="text-xs text-muted-foreground font-medium pl-3.5">
+                      +{events.length - 3} more
                     </div>
                   )}
                 </div>
