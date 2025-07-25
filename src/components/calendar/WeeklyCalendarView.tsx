@@ -59,24 +59,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
-    const endHour = endTime.getHours();
-    const endMinutes = endTime.getMinutes();
+    
+    // Check if event is within the visible time range (6 AM to 10 PM)
+    if (startHour < 6 || startHour > 22) {
+      return { top: 0, height: 32, visible: false };
+    }
 
-    // Find the start slot index (each slot is 30 minutes)
-    const startSlotIndex = timeSlots.findIndex(slot => {
-      const [slotHour, slotMinute] = slot.split(':').map(Number);
-      return slotHour === startHour && (
-        (slotMinute === 0 && startMinutes < 30) ||
-        (slotMinute === 30 && startMinutes >= 30)
-      );
-    });
-
-    if (startSlotIndex === -1) return { top: 0, height: 32, visible: false };
-
-    // Calculate exact position within the slot
-    const slotHeight = 32; // 8rem / 2 = 32px per 30-min slot
-    const minutesFromSlotStart = startMinutes % 30;
-    const top = startSlotIndex * slotHeight + (minutesFromSlotStart / 30) * slotHeight;
+    // Calculate position based on 30-minute slots
+    const slotHeight = 32; // Each 30-minute slot is 32px
+    
+    // Calculate minutes from 6 AM start
+    const minutesFromStart = (startHour - 6) * 60 + startMinutes;
+    const top = (minutesFromStart / 30) * slotHeight;
 
     // Calculate duration and height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
@@ -202,9 +196,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   
                   if (!style.visible) return null;
                   
-                  // Color coding by appointment type
-                  const getEventColor = (type: string) => {
-                    switch (type) {
+                  // Color coding by appointment color or type
+                  const getEventColor = (event: any) => {
+                    if (event.color) {
+                      return `text-white border-l-4`;
+                    }
+                    
+                    switch (event.appointment_type) {
                       case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
                       case 'consultation': return 'bg-green-500/90 text-white border-green-600';
                       case 'call': return 'bg-purple-500/90 text-white border-purple-600';
@@ -217,13 +215,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     <div
                       key={event.id}
                       className={`absolute left-0.5 right-0.5 rounded border-l-4 p-1 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
-                        getEventColor(event.appointment_type || 'meeting')
+                        getEventColor(event)
                       }`}
                       style={{
                         top: `${style.top}px`,
                         height: `${style.height}px`,
                         marginLeft: `${eventIndex * 2}px`, // Slight offset for overlapping events
-                        zIndex: 10 + eventIndex
+                        zIndex: 10 + eventIndex,
+                        backgroundColor: event.color || undefined,
+                        borderLeftColor: event.color || undefined
                       }}
                       onClick={() => onEventClick?.(event.id)}
                       title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
