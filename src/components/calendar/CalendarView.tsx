@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
-import { useAppointments } from "@/hooks/useAppointments";
+import { useAppointments, Appointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { EventDetailsModal } from "./EventDetailsModal";
-import { Appointment } from "@/hooks/useAppointments";
+import { DurationPicker } from "./TimePicker";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -405,29 +405,12 @@ const CalendarView = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startTime" className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Start Time
-                      </Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={newEvent.startTime}
-                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="endTime">End Time</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={newEvent.endTime}
-                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  <DurationPicker
+                    startTime={newEvent.startTime}
+                    endTime={newEvent.endTime}
+                    onStartTimeChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
+                    onEndTimeChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
+                  />
 
                   <div>
                     <Label htmlFor="location" className="flex items-center gap-2">
