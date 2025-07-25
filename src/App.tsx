@@ -10,7 +10,7 @@ import { AuthPage } from "./components/auth/AuthPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
-// import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
+import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 
 const queryClient = new QueryClient();
 
@@ -22,8 +22,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public booking route - temporarily disabled */}
-            {/* <Route path="/book/:schedulerSlug" element={<PublicBookingPage />} /> */}
+            {/* Public booking routes */}
+            <Route path="/schedule/:slug" element={<PublicBookingPage />} />
+            <Route path="/book/:slug" element={<PublicBookingPage />} />
             
             {/* Authentication route */}
             <Route path="/auth" element={<AuthPage />} />

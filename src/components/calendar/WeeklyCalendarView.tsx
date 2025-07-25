@@ -44,6 +44,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
     );
   };
 
+  const getSchedulerSlotsForDate = (date: Date) => {
+    if (!schedulerSlots) return [];
+    return schedulerSlots.filter(slot => 
+      isSameDay(slot.date, date)
+    );
+  };
+
   // Calculate event position and styling
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();

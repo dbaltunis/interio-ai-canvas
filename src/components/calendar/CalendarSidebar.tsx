@@ -15,6 +15,7 @@ interface CalendarSidebarProps {
 }
 
 export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
+  const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
