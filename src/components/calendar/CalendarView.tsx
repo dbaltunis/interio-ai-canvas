@@ -192,7 +192,7 @@ const CalendarView = () => {
             return (
               <div
                 key={day.toString()}
-                className={`border border-border cursor-pointer hover:bg-accent/50 transition-colors p-2 flex flex-col min-h-0 ${
+                className={`border border-border cursor-pointer transition-colors p-2 flex flex-col min-h-0 ${
                   isSelected ? 'bg-primary/10 border-primary' : ''
                 } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/10' : 'bg-background'}`}
                 onClick={() => setSelectedDate(day)}
