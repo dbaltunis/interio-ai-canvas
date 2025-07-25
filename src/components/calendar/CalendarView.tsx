@@ -147,9 +147,13 @@ const CalendarView = () => {
     const calendarStart = new Date(monthStart);
     calendarStart.setDate(monthStart.getDate() - monthStart.getDay());
     
-    // Get 42 days (6 weeks) to ensure we always show complete weeks
+    // Calculate minimum weeks needed for the current month
+    const weeksNeeded = Math.ceil((monthEnd.getDate() + monthStart.getDay()) / 7);
+    const daysToShow = Math.min(weeksNeeded * 7, 35); // Max 5 weeks to prevent overflow
+    
+    // Get only the necessary days to prevent scrolling
     const days = [];
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < daysToShow; i++) {
       const day = new Date(calendarStart);
       day.setDate(calendarStart.getDate() + i);
       days.push(day);
@@ -178,7 +182,7 @@ const CalendarView = () => {
         </div>
         
         {/* Calendar grid - fixed height, no scrolling */}
-        <div className="flex-1 grid grid-cols-7 grid-rows-6 min-h-0">
+        <div className={`flex-1 grid grid-cols-7 min-h-0`} style={{gridTemplateRows: `repeat(${Math.ceil(daysToShow / 7)}, 1fr)`}}>
           {days.map(day => {
             const events = getEventsForDate(day);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
