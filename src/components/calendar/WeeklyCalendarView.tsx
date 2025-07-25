@@ -141,7 +141,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             {timeSlots.map((time, index) => (
               <div 
                 key={time} 
-                className={`h-8 p-1 text-xs text-muted-foreground flex items-center ${
+                className={`h-16 p-1 text-xs text-muted-foreground flex items-start ${
                   index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
                 }`}
               >
