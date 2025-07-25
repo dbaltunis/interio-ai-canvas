@@ -113,44 +113,48 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   }, []);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col">
       {/* All-day events section */}
       <div className="border-b bg-muted/30 flex-shrink-0">
-        <div className="grid grid-cols-8 text-xs">
+        <div className="flex">
           <div className="p-1 border-r font-medium text-muted-foreground w-16 flex-shrink-0">All day</div>
-          {weekDays.map(day => (
-            <div key={day.toString()} className="p-2 border-r min-h-8">
-              {/* All-day events would go here */}
-            </div>
-          ))}
+          <div className="flex-1 grid grid-cols-7">
+            {weekDays.map(day => (
+              <div key={day.toString()} className="p-2 border-r min-h-8">
+                {/* All-day events would go here */}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Week header with dates */}
-      <div className="grid grid-cols-8 border-b bg-background sticky top-0 z-10 flex-shrink-0">
+      <div className="border-b bg-background sticky top-0 z-10 flex-shrink-0 flex">
         <div className="p-3 border-r w-16 flex-shrink-0"></div>
-        {weekDays.map(day => {
-          const isCurrentDay = isToday(day);
-          return (
-            <div key={day.toString()} className="p-3 text-center border-r">
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                {format(day, 'EEE')}
+        <div className="flex-1 grid grid-cols-7">
+          {weekDays.map(day => {
+            const isCurrentDay = isToday(day);
+            return (
+              <div key={day.toString()} className="p-3 text-center border-r">
+                <div className="text-xs font-medium text-muted-foreground mb-1">
+                  {format(day, 'EEE')}
+                </div>
+                <div className={`text-lg font-semibold ${
+                  isCurrentDay 
+                    ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' 
+                    : ''
+                }`}>
+                  {format(day, 'd')}
+                </div>
               </div>
-              <div className={`text-lg font-semibold ${
-                isCurrentDay 
-                  ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' 
-                  : ''
-              }`}>
-                {format(day, 'd')}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
       
       {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
-        <div className="grid grid-cols-8 relative min-h-full">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex">
           {/* Time labels column */}
           <div className="border-r bg-muted/20 w-16 flex-shrink-0">
             {timeSlots.map((time, index) => (
@@ -168,14 +172,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           </div>
           
           {/* Day columns */}
-          {weekDays.map(day => {
-            const dayEvents = getEventsForDate(day);
-            const isCurrentDay = isToday(day);
-            
-            return (
-              <div key={day.toString()} className={`border-r relative ${
-                isCurrentDay ? 'bg-primary/5' : ''
-              }`}>
+          <div className="flex-1 grid grid-cols-7">
+            {weekDays.map(day => {
+              const dayEvents = getEventsForDate(day);
+              const isCurrentDay = isToday(day);
+              
+              return (
+                <div key={day.toString()} className={`border-r relative ${
+                  isCurrentDay ? 'bg-primary/5' : ''
+                }`}>
                 {/* Time slot grid */}
                 {timeSlots.map((time, index) => (
                   <div 
@@ -268,10 +273,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       )}
                     </div>
                   );
-                })}
-              </div>
-            );
-          })}
+                 })}
+               </div>
+             );
+           })}
+         </div>
         </div>
       </div>
     </div>
