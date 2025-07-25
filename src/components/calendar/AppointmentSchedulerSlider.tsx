@@ -82,10 +82,35 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
   const [activeTab, setActiveTab] = useState<'create' | 'preview'>('create');
 
   const handleSubmit = async () => {
+    // Validate required fields
     if (!form.name.trim()) {
       toast({
         title: "Error",
         description: "Please enter a schedule name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate at least one day is enabled
+    const hasEnabledDay = Object.values(form.availability).some(day => day.enabled);
+    if (!hasEnabledDay) {
+      toast({
+        title: "Error",
+        description: "Please enable at least one day for availability",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate at least one location option is selected
+    const hasLocation = Object.values(form.locations).some(location => 
+      typeof location === 'boolean' ? location : location.trim().length > 0
+    );
+    if (!hasLocation) {
+      toast({
+        title: "Error",
+        description: "Please select at least one meeting option",
         variant: "destructive"
       });
       return;
@@ -98,7 +123,12 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
         timeSlots: form.availability[day.key].timeSlots
       }));
 
-      await createScheduler.mutateAsync({
+      // Generate a unique slug to avoid conflicts
+      const baseSlug = form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const timestamp = Date.now().toString().slice(-6);
+      const uniqueSlug = `${baseSlug}-${timestamp}`;
+
+      const result = await createScheduler.mutateAsync({
         name: form.name,
         description: form.description,
         duration: form.duration,
@@ -108,20 +138,37 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
         availability: availabilityArray,
         locations: form.locations,
         active: true,
-        slug: form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        slug: uniqueSlug
       });
 
-      toast({
-        title: "Success",
-        description: "Appointment schedule created successfully!"
-      });
+      // Generate shareable link
+      const shareableLink = `${window.location.origin}/schedule/${uniqueSlug}`;
+      
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareableLink);
+        toast({
+          title: "Schedule Created Successfully!",
+          description: `Shareable link copied to clipboard: ${shareableLink}`,
+          duration: 8000
+        });
+      } catch (clipboardError) {
+        toast({
+          title: "Schedule Created Successfully!",
+          description: `Share this link: ${shareableLink}`,
+          duration: 8000
+        });
+      }
 
       onClose();
     } catch (error) {
+      console.error("Error creating schedule:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
-        title: "Error",
-        description: "Failed to create schedule",
-        variant: "destructive"
+        title: "Failed to Create Schedule",
+        description: `Please try again. Error: ${errorMessage}`,
+        variant: "destructive",
+        duration: 5000
       });
     }
   };
