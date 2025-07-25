@@ -103,47 +103,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         </CardContent>
       </Card>
 
-      {/* Appointment Scheduler */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button onClick={onBookingLinks} variant="outline" className="w-full justify-start">
-            <Link2 className="h-4 w-4 mr-2" />
-            Manage Booking Links
-          </Button>
-          
-          {schedulers && schedulers.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">Quick Links</div>
-              {schedulers.slice(0, 2).map(scheduler => (
-                <div key={scheduler.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium truncate">{scheduler.name}</div>
-                    <div className="text-xs text-muted-foreground">{scheduler.duration} min</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => {
-                      const url = `${window.location.origin}/book/${scheduler.slug}`;
-                      navigator.clipboard.writeText(url);
-                      toast({
-                        title: "Link copied!",
-                        description: "Booking link copied to clipboard",
-                      });
-                    }}
-                  >
-                    <Link2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };
