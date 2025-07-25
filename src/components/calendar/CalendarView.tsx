@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -213,10 +213,27 @@ const CalendarView = () => {
 
   const handleTimeSlotClick = (date: Date, time: string) => {
     setSelectedDate(date);
+    
+    // Parse time range if it contains a dash (from drag creation)
+    let startTime = time;
+    let endTime = '10:00';
+    
+    if (time.includes('-')) {
+      const [start, end] = time.split('-');
+      startTime = start;
+      endTime = end;
+    } else {
+      // For single time slot clicks, default to 1 hour duration
+      const hour = parseInt(time.split(':')[0]);
+      const minutes = time.split(':')[1];
+      endTime = `${(hour + 1).toString().padStart(2, '0')}:${minutes}`;
+    }
+    
     setNewEvent({
       ...newEvent,
       date: format(date, 'yyyy-MM-dd'),
-      startTime: time
+      startTime: startTime,
+      endTime: endTime
     });
     setShowNewEventDialog(true);
   };
@@ -338,84 +355,107 @@ const CalendarView = () => {
               </Button>
               
               <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Create New Event</DialogTitle>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  Create New Event
+                </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    placeholder="Event title"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6">
+                {/* Event Details */}
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="title">Event Title</Label>
                     <Input
-                      id="date"
-                      type="date"
-                      value={newEvent.date}
-                      onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                      id="title"
+                      value={newEvent.title}
+                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                      placeholder="Enter event title"
+                      className="text-lg"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="type">Type</Label>
-                    <Select value={newEvent.appointmentType} onValueChange={(value: any) => setNewEvent({ ...newEvent, appointmentType: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="meeting">Meeting</SelectItem>
-                        <SelectItem value="consultation">Consultation</SelectItem>
-                        <SelectItem value="call">Call</SelectItem>
-                        <SelectItem value="follow-up">Follow-up</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="date" className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        Date
+                      </Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={newEvent.date}
+                        onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="type">Event Type</Label>
+                      <Select value={newEvent.appointmentType} onValueChange={(value: any) => setNewEvent({ ...newEvent, appointmentType: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="meeting">Meeting</SelectItem>
+                          <SelectItem value="consultation">Consultation</SelectItem>
+                          <SelectItem value="call">Call</SelectItem>
+                          <SelectItem value="follow-up">Follow-up</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startTime" className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Start Time
+                      </Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={newEvent.startTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={newEvent.endTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="startTime">Start Time</Label>
+                    <Label htmlFor="location" className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      Location
+                    </Label>
                     <Input
-                      id="startTime"
-                      type="time"
-                      value={newEvent.startTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                      id="location"
+                      value={newEvent.location}
+                      onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                      placeholder="Enter meeting location"
                     />
                   </div>
+
                   <div>
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={newEvent.endTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={newEvent.description}
+                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                      placeholder="Enter event description"
+                      rows={3}
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={newEvent.location}
-                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                    placeholder="Meeting location"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={newEvent.description}
-                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    placeholder="Event description"
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-2 pt-4 border-t">
                   <Button variant="outline" onClick={() => setShowNewEventDialog(false)}>
                     Cancel
                   </Button>
