@@ -87,7 +87,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   }, []);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* All-day events section */}
       <div className="border-b bg-muted/30 flex-shrink-0">
         <div className="flex">
@@ -127,8 +127,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       </div>
       
       {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="flex">
+      <div className="flex-1 flex overflow-hidden">
+        <div ref={scrollContainerRef} className="flex overflow-y-auto overflow-x-hidden w-full">
           {/* Time labels column */}
           <div className="border-r bg-muted/20 w-16 flex-shrink-0">
             {timeSlots.map((time, index) => (
@@ -150,6 +150,36 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             {weekDays.map(day => {
               const dayEvents = getEventsForDate(day);
               const isCurrentDay = isToday(day);
+              
+              // Group overlapping events
+              const groupedEvents = (() => {
+                const groups: any[] = [];
+                dayEvents.forEach(event => {
+                  const eventStart = new Date(event.start_time);
+                  const eventEnd = new Date(event.end_time);
+                  
+                  // Find if this event overlaps with any existing group
+                  let addedToGroup = false;
+                  for (let group of groups) {
+                    const hasOverlap = group.some((groupEvent: any) => {
+                      const groupStart = new Date(groupEvent.start_time);
+                      const groupEnd = new Date(groupEvent.end_time);
+                      return eventStart < groupEnd && eventEnd > groupStart;
+                    });
+                    
+                    if (hasOverlap) {
+                      group.push(event);
+                      addedToGroup = true;
+                      break;
+                    }
+                  }
+                  
+                  if (!addedToGroup) {
+                    groups.push([event]);
+                  }
+                });
+                return groups;
+              })();
               
               return (
                 <div key={day.toString()} className={`border-r relative ${
@@ -188,64 +218,72 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 })()}
                 
                 {/* Events */}
-                {dayEvents.map((event, eventIndex) => {
-                  const startTime = new Date(event.start_time);
-                  const endTime = new Date(event.end_time);
-                  const style = calculateEventStyle(startTime, endTime);
-                  
-                  if (!style.visible) return null;
-                  
-                  // Color coding by appointment color or type
-                  const getEventColor = (event: any) => {
-                    if (event.color) {
-                      return `text-white border-l-4`;
-                    }
+                {groupedEvents.map((group, groupIndex) => 
+                  group.map((event: any, eventIndex: number) => {
+                    const startTime = new Date(event.start_time);
+                    const endTime = new Date(event.end_time);
+                    const style = calculateEventStyle(startTime, endTime);
                     
-                    switch (event.appointment_type) {
-                      case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
-                      case 'consultation': return 'bg-green-500/90 text-white border-green-600';
-                      case 'call': return 'bg-purple-500/90 text-white border-purple-600';
-                      case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
-                      default: return 'bg-primary/90 text-primary-foreground border-primary';
-                    }
-                  };
-                  
-                  return (
-                    <div
-                      key={event.id}
-                      className={`absolute left-0.5 right-0.5 rounded border-l-4 p-1 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
-                        getEventColor(event)
-                      }`}
-                      style={{
-                        top: `${style.top}px`,
-                        height: `${style.height}px`,
-                        marginLeft: `${eventIndex * 2}px`, // Slight offset for overlapping events
-                        zIndex: 10 + eventIndex,
-                        backgroundColor: event.color || undefined,
-                        borderLeftColor: event.color || undefined
-                      }}
-                      onClick={() => onEventClick?.(event.id)}
-                      title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
-                    >
-                      <div className="flex items-center gap-1 mb-1">
-                        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                          {event.user_id ? 'U' : '?'}
+                    if (!style.visible) return null;
+                    
+                    // Calculate width and position for overlapping events
+                    const totalInGroup = group.length;
+                    const eventWidth = totalInGroup > 1 ? `${95 / totalInGroup}%` : '95%';
+                    const leftPosition = totalInGroup > 1 ? `${(eventIndex * 95) / totalInGroup}%` : '2.5%';
+                    
+                    // Color coding by appointment color or type
+                    const getEventColor = (event: any) => {
+                      if (event.color) {
+                        return `text-white border-l-4`;
+                      }
+                      
+                      switch (event.appointment_type) {
+                        case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
+                        case 'consultation': return 'bg-green-500/90 text-white border-green-600';
+                        case 'call': return 'bg-purple-500/90 text-white border-purple-600';
+                        case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
+                        default: return 'bg-primary/90 text-primary-foreground border-primary';
+                      }
+                    };
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className={`absolute rounded border-l-4 p-1 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
+                          getEventColor(event)
+                        }`}
+                        style={{
+                          top: `${style.top}px`,
+                          height: `${style.height}px`,
+                          left: leftPosition,
+                          width: eventWidth,
+                          zIndex: 10 + groupIndex * 10 + eventIndex,
+                          backgroundColor: event.color || undefined,
+                          borderLeftColor: event.color || undefined
+                        }}
+                        onClick={() => onEventClick?.(event.id)}
+                        title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
+                      >
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-3 h-3 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                            {event.user_id ? 'U' : '?'}
+                          </div>
+                          <div className="font-medium truncate text-xs leading-tight flex-1">
+                            {event.title}
+                          </div>
                         </div>
-                        <div className="font-medium truncate text-xs leading-tight flex-1">
-                          {event.title}
+                        <div className="text-xs opacity-90 leading-tight">
+                          {format(startTime, 'HH:mm')}
                         </div>
+                        {style.height > 60 && (
+                          <div className="text-xs opacity-75 leading-tight truncate">
+                            {event.location}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs opacity-90 leading-tight">
-                        {format(startTime, 'HH:mm')}
-                      </div>
-                      {style.height > 60 && (
-                        <div className="text-xs opacity-75 leading-tight truncate">
-                          {event.location}
-                        </div>
-                      )}
-                    </div>
-                  );
-                 })}
+                    );
+                  })
+                )}
                </div>
              );
            })}
