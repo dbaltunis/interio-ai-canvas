@@ -35,6 +35,9 @@ import { CalendarFilters } from "./filters/CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useTwoWaySync } from "@/hooks/useTwoWaySync";
 import { ConflictResolutionDialog } from "./sync/ConflictResolutionDialog";
+import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
+import { useTimezone } from "@/hooks/useTimezone";
+import { TimezoneUtils } from "@/utils/timezoneUtils";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -50,6 +53,7 @@ const CalendarView = () => {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [showTimezoneDialog, setShowTimezoneDialog] = useState(false);
   const [syncConflicts, setSyncConflicts] = useState<any[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
@@ -70,6 +74,7 @@ const CalendarView = () => {
   const twoWaySync = useTwoWaySync();
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
+  const { userTimezone, isTimezoneDifferent } = useTimezone();
 
   // New appointment form state
   const [newEvent, setNewEvent] = useState({
@@ -755,6 +760,11 @@ const CalendarView = () => {
         open={showConflictDialog}
         onOpenChange={setShowConflictDialog}
         conflicts={syncConflicts}
+      />
+
+      <TimezoneSettingsDialog
+        open={showTimezoneDialog}
+        onOpenChange={setShowTimezoneDialog}
       />
 
       <OfflineIndicator />
