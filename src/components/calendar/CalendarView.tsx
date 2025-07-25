@@ -281,7 +281,7 @@ const CalendarView = () => {
       />
 
       {/* Main Calendar */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col h-full">
         {/* Header */}
         <div className="border-b bg-background p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
