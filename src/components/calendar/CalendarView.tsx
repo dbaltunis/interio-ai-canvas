@@ -563,11 +563,13 @@ const CalendarView = () => {
                             <SelectValue placeholder="Select client" />
                           </SelectTrigger>
                           <SelectContent>
-                            {clients.map(client => (
-                              <SelectItem key={client.id} value={client.email || ''}>
-                                {client.name}
-                              </SelectItem>
-                            ))}
+                            {clients
+                              .filter(client => client.email && client.email.trim() !== '')
+                              .map(client => (
+                                <SelectItem key={client.id} value={client.email!}>
+                                  {client.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       )}
