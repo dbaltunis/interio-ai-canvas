@@ -58,17 +58,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // Each hour = 60px, each minute = 1px for precise positioning
+    // Each 30-minute slot = 30px, so each hour = 60px
     const pixelsPerHour = 60;
-    const pixelsPerMinute = 1;
+    const pixelsPerHalfHour = 30;
     
-    // Calculate minutes from midnight
+    // Calculate position based on 30-minute slots
     const minutesFromStart = startHour * 60 + startMinutes;
-    const top = minutesFromStart * pixelsPerMinute;
+    const top = (minutesFromStart / 30) * pixelsPerHalfHour;
 
-    // Calculate duration in minutes and convert to pixels
+    // Calculate duration and convert to pixels
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max(durationInMinutes * pixelsPerMinute, 20);
+    const height = Math.max((durationInMinutes / 30) * pixelsPerHalfHour, 20);
 
     return { top, height, visible: true };
   };
@@ -203,15 +203,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                    />
                  ))}
                 
-                {/* Current time indicator */}
+                 {/* Current time indicator */}
                 {isCurrentDay && (() => {
                   const now = new Date();
                   const currentHour = now.getHours();
                   const currentMinutes = now.getMinutes();
                   
-                   // Calculate position for 24-hour view
+                   // Calculate position using same scale as events (30px per 30-minute slot)
                    const minutesFromStart = currentHour * 60 + currentMinutes;
-                   const top = minutesFromStart * 1; // 1px per minute
+                   const top = (minutesFromStart / 30) * 30; // 30px per 30-minute slot
                   
                   return (
                     <div 
