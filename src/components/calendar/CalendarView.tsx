@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,15 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useToast } from "@/hooks/use-toast";
+import { CalendarSidebar } from "./CalendarSidebar";
+import { WeeklyCalendarView } from "./WeeklyCalendarView";
 
 type CalendarView = 'month' | 'week' | 'day';
 
 const CalendarView = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [view, setView] = useState<CalendarView>('month');
+  const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerDialog, setShowSchedulerDialog] = useState(false);
+  const [showTaskDialog, setShowTaskDialog] = useState(false);
   
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
@@ -146,151 +148,88 @@ const CalendarView = () => {
     );
   };
 
-  const renderWeekView = () => {
-    const weekDays = getWeekDays();
-    
-    return (
-      <div className="h-full flex flex-col">
-        {/* Week header */}
-        <div className="grid grid-cols-8 border-b">
-          <div className="p-4 border-r"></div>
-          {weekDays.map(day => (
-            <div key={day.toString()} className="p-4 text-center border-r">
-              <div className="text-sm font-medium text-muted-foreground">
-                {format(day, 'EEE')}
-              </div>
-              <div className={`text-lg font-semibold ${isToday(day) ? 'text-primary' : ''}`}>
-                {format(day, 'd')}
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Time grid */}
-        <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-8 min-h-full">
-            {/* Time labels */}
-            <div className="border-r">
-              {timeSlots.map(time => (
-                <div key={time} className="h-16 p-2 text-sm text-muted-foreground border-b flex items-start">
-                  {time}
-                </div>
-              ))}
-            </div>
-            
-            {/* Day columns */}
-            {weekDays.map(day => {
-              const dayEvents = getEventsForDate(day);
-              
-              return (
-                <div key={day.toString()} className="border-r relative">
-                  {timeSlots.map((time, index) => (
-                    <div 
-                      key={time} 
-                      className="h-16 border-b hover:bg-accent/30 cursor-pointer transition-colors"
-                      onClick={() => {
-                        setSelectedDate(day);
-                        setNewEvent({
-                          ...newEvent,
-                          date: format(day, 'yyyy-MM-dd'),
-                          startTime: time
-                        });
-                        setShowNewEventDialog(true);
-                      }}
-                    />
-                  ))}
-                  
-                  {/* Events */}
-                  {dayEvents.map(event => {
-                    const startTime = new Date(event.start_time);
-                    const endTime = new Date(event.end_time);
-                    const startHour = startTime.getHours();
-                    const endHour = endTime.getHours();
-                    const startMinutes = startTime.getMinutes();
-                    const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-                    
-                    // Calculate position
-                    const startSlotIndex = timeSlots.findIndex(slot => 
-                      parseInt(slot.split(':')[0]) === startHour
-                    );
-                    
-                    if (startSlotIndex === -1) return null;
-                    
-                    const top = startSlotIndex * 64 + (startMinutes / 60) * 64;
-                    const height = duration * 64;
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className="absolute left-1 right-1 bg-primary/80 text-primary-foreground rounded p-1 text-xs overflow-hidden cursor-pointer hover:bg-primary/90 transition-colors"
-                        style={{
-                          top: `${top}px`,
-                          height: `${Math.max(height, 16)}px`,
-                          zIndex: 10
-                        }}
-                        title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`}
-                      >
-                        <div className="font-medium truncate">{event.title}</div>
-                        <div className="text-xs opacity-90">
-                          {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
+  const handleTimeSlotClick = (date: Date, time: string) => {
+    setSelectedDate(date);
+    setNewEvent({
+      ...newEvent,
+      date: format(date, 'yyyy-MM-dd'),
+      startTime: time
+    });
+    setShowNewEventDialog(true);
+  };
+
+  const handleEventClick = (eventId: string) => {
+    // Handle event click - could open edit dialog
+    console.log('Event clicked:', eventId);
+  };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentDate(subWeeks(currentDate, 1));
+    } else {
+      setCurrentDate(addWeeks(currentDate, 1));
+    }
   };
 
   return (
-    <div className="h-full flex flex-col p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold text-primary">Calendar</h1>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentDate(new Date())}
-            >
-              Today
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentDate(addDays(currentDate, -30))}
-            >
-              ←
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentDate(addDays(currentDate, 30))}
-            >
-              →
-            </Button>
-            <h2 className="text-xl font-semibold ml-4">
-              {format(currentDate, 'MMMM yyyy')}
-            </h2>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Month</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="day">Day</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="h-screen flex">
+      {/* Sidebar */}
+      <CalendarSidebar 
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
+        onNewEvent={() => setShowNewEventDialog(true)}
+        onNewTask={() => setShowTaskDialog(true)}
+      />
+
+      {/* Main Calendar */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="border-b bg-background p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-primary">Calendar</h1>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentDate(new Date())}
+                >
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateWeek('prev')}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateWeek('next')}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <h2 className="text-lg font-semibold ml-4">
+                  {view === 'week' 
+                    ? format(currentDate, 'MMMM yyyy')
+                    : format(currentDate, 'MMMM yyyy')
+                  }
+                </h2>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="day">Day</SelectItem>
+                </SelectContent>
+              </Select>
 
           <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
             <DialogTrigger asChild>
@@ -388,25 +327,79 @@ const CalendarView = () => {
             </DialogContent>
           </Dialog>
 
-          <Button variant="outline" onClick={() => setShowSchedulerDialog(true)}>
-            <Link2 className="h-4 w-4 mr-2" />
-            Booking Links
-          </Button>
+              <Button variant="outline" onClick={() => setShowSchedulerDialog(true)}>
+                <Link2 className="h-4 w-4 mr-2" />
+                Booking Links
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Calendar Grid */}
-      <Card className="flex-1">
-        <CardContent className="p-0">
-          {view === 'month' && renderMonthView()}
-          {view === 'week' && renderWeekView()}
+        {/* Calendar Content */}
+        <div className="flex-1 overflow-hidden">
+          {view === 'week' && (
+            <WeeklyCalendarView 
+              currentDate={currentDate}
+              onEventClick={handleEventClick}
+              onTimeSlotClick={handleTimeSlotClick}
+            />
+          )}
+          {view === 'month' && (
+            <div className="p-4 h-full overflow-auto">
+              <Card className="h-full">
+                <CardContent className="p-4">
+                  {renderMonthView()}
+                </CardContent>
+              </Card>
+            </div>
+          )}
           {view === 'day' && (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="p-4 text-center text-muted-foreground flex items-center justify-center h-full">
               Day view - Coming soon
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Task Dialog */}
+      <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="taskTitle">Task Title</Label>
+              <Input
+                id="taskTitle"
+                placeholder="Enter task title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="taskDescription">Description</Label>
+              <Textarea
+                id="taskDescription"
+                placeholder="Task description (optional)"
+              />
+            </div>
+            <div>
+              <Label htmlFor="taskDue">Due Date</Label>
+              <Input
+                id="taskDue"
+                type="date"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowTaskDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setShowTaskDialog(false)}>
+                Add Task
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Booking Links Dialog */}
       <Dialog open={showSchedulerDialog} onOpenChange={setShowSchedulerDialog}>
