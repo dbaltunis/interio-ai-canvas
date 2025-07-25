@@ -80,6 +80,23 @@ const CalendarView = () => {
     );
   };
 
+  const getWeekDays = () => {
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  };
+
+  const timeSlots = [
+    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
+  ];
+
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -125,6 +142,106 @@ const CalendarView = () => {
             </div>
           );
         })}
+      </div>
+    );
+  };
+
+  const renderWeekView = () => {
+    const weekDays = getWeekDays();
+    
+    return (
+      <div className="h-full flex flex-col">
+        {/* Week header */}
+        <div className="grid grid-cols-8 border-b">
+          <div className="p-4 border-r"></div>
+          {weekDays.map(day => (
+            <div key={day.toString()} className="p-4 text-center border-r">
+              <div className="text-sm font-medium text-muted-foreground">
+                {format(day, 'EEE')}
+              </div>
+              <div className={`text-lg font-semibold ${isToday(day) ? 'text-primary' : ''}`}>
+                {format(day, 'd')}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Time grid */}
+        <div className="flex-1 overflow-auto">
+          <div className="grid grid-cols-8 min-h-full">
+            {/* Time labels */}
+            <div className="border-r">
+              {timeSlots.map(time => (
+                <div key={time} className="h-16 p-2 text-sm text-muted-foreground border-b flex items-start">
+                  {time}
+                </div>
+              ))}
+            </div>
+            
+            {/* Day columns */}
+            {weekDays.map(day => {
+              const dayEvents = getEventsForDate(day);
+              
+              return (
+                <div key={day.toString()} className="border-r relative">
+                  {timeSlots.map((time, index) => (
+                    <div 
+                      key={time} 
+                      className="h-16 border-b hover:bg-accent/30 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedDate(day);
+                        setNewEvent({
+                          ...newEvent,
+                          date: format(day, 'yyyy-MM-dd'),
+                          startTime: time
+                        });
+                        setShowNewEventDialog(true);
+                      }}
+                    />
+                  ))}
+                  
+                  {/* Events */}
+                  {dayEvents.map(event => {
+                    const startTime = new Date(event.start_time);
+                    const endTime = new Date(event.end_time);
+                    const startHour = startTime.getHours();
+                    const endHour = endTime.getHours();
+                    const startMinutes = startTime.getMinutes();
+                    const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+                    
+                    // Calculate position
+                    const startSlotIndex = timeSlots.findIndex(slot => 
+                      parseInt(slot.split(':')[0]) === startHour
+                    );
+                    
+                    if (startSlotIndex === -1) return null;
+                    
+                    const top = startSlotIndex * 64 + (startMinutes / 60) * 64;
+                    const height = duration * 64;
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className="absolute left-1 right-1 bg-primary/80 text-primary-foreground rounded p-1 text-xs overflow-hidden cursor-pointer hover:bg-primary/90 transition-colors"
+                        style={{
+                          top: `${top}px`,
+                          height: `${Math.max(height, 16)}px`,
+                          zIndex: 10
+                        }}
+                        title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`}
+                      >
+                        <div className="font-medium truncate">{event.title}</div>
+                        <div className="text-xs opacity-90">
+                          {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   };
@@ -282,11 +399,7 @@ const CalendarView = () => {
       <Card className="flex-1">
         <CardContent className="p-0">
           {view === 'month' && renderMonthView()}
-          {view === 'week' && (
-            <div className="p-4 text-center text-muted-foreground">
-              Week view - Coming soon
-            </div>
-          )}
+          {view === 'week' && renderWeekView()}
           {view === 'day' && (
             <div className="p-4 text-center text-muted-foreground">
               Day view - Coming soon
