@@ -26,6 +26,8 @@ import { CalendarEventDialog } from "./CalendarEventDialog";
 import { DurationPicker } from "./TimePicker";
 import { CalendarSyncStatus } from "./CalendarSyncStatus";
 import { CalDAVSyncDialog } from "./CalDAVSyncDialog";
+import { CalendarStatusIndicator } from "./CalendarStatusIndicator";
+import { AppointmentEditDialog } from "./AppointmentEditDialog";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -37,7 +39,8 @@ const CalendarView = () => {
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showCalDAVSync, setShowCalDAVSync] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
     userIds: [],
@@ -286,11 +289,15 @@ const CalendarView = () => {
     setShowNewEventDialog(true);
   };
 
+  const handleAppointmentClick = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setShowEditDialog(true);
+  };
+
   const handleEventClick = (eventId: string) => {
     const appointment = appointments?.find(apt => apt.id === eventId);
     if (appointment) {
-      setSelectedAppointment(appointment);
-      setShowEventDetails(true);
+      handleAppointmentClick(appointment);
     }
   };
 
@@ -382,7 +389,10 @@ const CalendarView = () => {
                 </h2>
               </div>
               
-              <CalendarSyncStatus />
+              <div className="flex items-center gap-2">
+                <CalendarStatusIndicator />
+                <CalendarSyncStatus />
+              </div>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -669,6 +679,16 @@ const CalendarView = () => {
         onOpenChange={setShowCalDAVSync}
         appointment={selectedAppointment}
         onSyncComplete={() => setSelectedAppointment(null)}
+      />
+
+      {/* Appointment Edit Dialog */}
+      <AppointmentEditDialog
+        open={showEditDialog}
+        onOpenChange={(open) => {
+          setShowEditDialog(open);
+          if (!open) setSelectedAppointment(null);
+        }}
+        appointment={selectedAppointment}
       />
     </div>
   );
