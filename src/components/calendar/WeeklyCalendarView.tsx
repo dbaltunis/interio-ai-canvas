@@ -7,10 +7,12 @@ interface WeeklyCalendarViewProps {
   currentDate: Date;
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
+  filteredAppointments?: any[];
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
+  const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -40,8 +42,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
 
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
-    if (!appointments) return [];
-    return appointments.filter(appointment => 
+    if (!displayAppointments) return [];
+    return displayAppointments.filter(appointment => 
       isSameDay(new Date(appointment.start_time), date)
     );
   };
@@ -95,11 +97,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
   }, []);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* All-day events section */}
-      <div className="border-b bg-muted/30">
+      <div className="border-b bg-muted/30 flex-shrink-0">
         <div className="grid grid-cols-8 text-xs">
-          <div className="p-2 border-r font-medium text-muted-foreground">All day</div>
+          <div className="p-1 border-r font-medium text-muted-foreground w-16 flex-shrink-0">All day</div>
           {weekDays.map(day => (
             <div key={day.toString()} className="p-2 border-r min-h-8">
               {/* All-day events would go here */}
@@ -109,8 +111,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
       </div>
 
       {/* Week header with dates */}
-      <div className="grid grid-cols-8 border-b bg-background sticky top-0 z-10">
-        <div className="p-3 border-r"></div>
+      <div className="grid grid-cols-8 border-b bg-background sticky top-0 z-10 flex-shrink-0">
+        <div className="p-3 border-r w-16 flex-shrink-0"></div>
         {weekDays.map(day => {
           const isCurrentDay = isToday(day);
           return (
@@ -131,10 +133,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
       </div>
       
       {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto">
-        <div className="grid grid-cols-8 relative">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
+        <div className="grid grid-cols-8 relative min-h-full">
           {/* Time labels column */}
-          <div className="border-r bg-muted/20">
+          <div className="border-r bg-muted/20 w-16 flex-shrink-0">
             {timeSlots.map((time, index) => (
               <div 
                 key={time} 
@@ -226,13 +228,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick 
                       onClick={() => onEventClick?.(event.id)}
                       title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                      <div className="font-medium truncate text-xs leading-tight">
-                        {event.title}
+                      <div className="flex items-center gap-1 mb-1">
+                        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                          {event.user_id ? 'U' : '?'}
+                        </div>
+                        <div className="font-medium truncate text-xs leading-tight flex-1">
+                          {event.title}
+                        </div>
                       </div>
                       <div className="text-xs opacity-90 leading-tight">
                         {format(startTime, 'HH:mm')}
                       </div>
-                      {style.height > 40 && (
+                      {style.height > 60 && (
                         <div className="text-xs opacity-75 leading-tight truncate">
                           {event.location}
                         </div>

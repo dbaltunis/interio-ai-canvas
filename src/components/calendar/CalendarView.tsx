@@ -17,6 +17,9 @@ import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
+import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
+import { EventDetailsModal } from "./EventDetailsModal";
+import { Appointment } from "@/hooks/useAppointments";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -26,6 +29,14 @@ const CalendarView = () => {
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
+  const [showEventDetails, setShowEventDetails] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [filters, setFilters] = useState<CalendarFilterState>({
+    searchTerm: "",
+    userIds: [],
+    eventTypes: [],
+    statuses: []
+  });
   
   // Enable real-time updates
   useRealtimeBookings();
@@ -211,9 +222,46 @@ const CalendarView = () => {
   };
 
   const handleEventClick = (eventId: string) => {
-    // Handle event click - could open edit dialog
-    console.log('Event clicked:', eventId);
+    const appointment = appointments?.find(apt => apt.id === eventId);
+    if (appointment) {
+      setSelectedAppointment(appointment);
+      setShowEventDetails(true);
+    }
   };
+
+  const handleFiltersChange = (newFilters: CalendarFilterState) => {
+    setFilters(newFilters);
+  };
+
+  // Filter appointments based on current filters
+  const filteredAppointments = appointments?.filter(appointment => {
+    // Search term filter
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      const matchesSearch = 
+        appointment.title.toLowerCase().includes(searchLower) ||
+        appointment.description?.toLowerCase().includes(searchLower) ||
+        appointment.location?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+
+    // User filter
+    if (filters.userIds.length > 0 && appointment.user_id) {
+      if (!filters.userIds.includes(appointment.user_id)) return false;
+    }
+
+    // Event type filter
+    if (filters.eventTypes.length > 0 && appointment.appointment_type) {
+      if (!filters.eventTypes.includes(appointment.appointment_type)) return false;
+    }
+
+    // Status filter
+    if (filters.statuses.length > 0 && appointment.status) {
+      if (!filters.statuses.includes(appointment.status)) return false;
+    }
+
+    return true;
+  });
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     if (direction === 'prev') {
@@ -224,7 +272,7 @@ const CalendarView = () => {
   };
 
   return (
-    <div className="h-screen flex">
+    <div className="h-full flex overflow-hidden">
       {/* Sidebar */}
       <CalendarSidebar 
         currentDate={currentDate}
@@ -233,9 +281,9 @@ const CalendarView = () => {
       />
 
       {/* Main Calendar */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
-        <div className="border-b bg-background p-4">
+        <div className="border-b bg-background p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-primary">Calendar</h1>
@@ -281,6 +329,8 @@ const CalendarView = () => {
                   <SelectItem value="day">Day</SelectItem>
                 </SelectContent>
               </Select>
+
+              <CalendarFilters onFiltersChange={handleFiltersChange} />
 
               <Button onClick={() => setShowNewEventDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -377,21 +427,18 @@ const CalendarView = () => {
             </DialogContent>
           </Dialog>
 
-              <Button variant="outline" onClick={() => setShowSchedulerSlider(true)}>
-                <Link2 className="h-4 w-4 mr-2" />
-                Appointment Schedule
-              </Button>
             </div>
           </div>
         </div>
 
         {/* Calendar Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-h-0">
           {view === 'week' && (
             <WeeklyCalendarView 
               currentDate={currentDate}
               onEventClick={handleEventClick}
               onTimeSlotClick={handleTimeSlotClick}
+              filteredAppointments={filteredAppointments}
             />
           )}
           {view === 'month' && (
@@ -414,6 +461,16 @@ const CalendarView = () => {
       <AppointmentSchedulerSlider 
         isOpen={showSchedulerSlider}
         onClose={() => setShowSchedulerSlider(false)}
+      />
+
+      {/* Event Details Modal */}
+      <EventDetailsModal
+        isOpen={showEventDetails}
+        onClose={() => {
+          setShowEventDetails(false);
+          setSelectedAppointment(null);
+        }}
+        appointment={selectedAppointment}
       />
     </div>
   );
