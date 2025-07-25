@@ -48,6 +48,7 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [clientEmail, setClientEmail] = useState("");
   const [selectedJobClient, setSelectedJobClient] = useState("");
+  const [jobClientSearch, setJobClientSearch] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const { data: teamMembers } = useTeamMembers();
@@ -65,7 +66,18 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
     };
     getCurrentUser();
   });
-
+  
+  // Filter projects and clients based on search
+  const filteredProjects = projects?.filter(project => 
+    project.name.toLowerCase().includes(jobClientSearch.toLowerCase()) ||
+    project.status?.toLowerCase().includes(jobClientSearch.toLowerCase())
+  ) || [];
+  
+  const filteredClients = clients?.filter(client => 
+    client.name.toLowerCase().includes(jobClientSearch.toLowerCase()) ||
+    client.email?.toLowerCase().includes(jobClientSearch.toLowerCase()) ||
+    client.company_name?.toLowerCase().includes(jobClientSearch.toLowerCase())
+  ) || [];
   // Event colors - 7 predefined colors
   const eventColors = [
     { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
@@ -410,29 +422,87 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
             )}
 
             {showApplyToJob && (
-              <div className="border rounded-lg p-4 space-y-3">
+              <div className="border rounded-lg p-4 space-y-3 bg-background">
                 <Label className="text-sm font-medium">Select Job/Client</Label>
-                <Select value={selectedJobClient} onValueChange={setSelectedJobClient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose from existing jobs/clients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <optgroup label="Projects">
-                      {projects?.map(project => (
-                        <SelectItem key={`project-${project.id}`} value={`project-${project.id}`}>
-                          {project.name} - {project.status}
-                        </SelectItem>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Clients">
-                      {clients?.map(client => (
-                        <SelectItem key={`client-${client.id}`} value={`client-${client.id}`}>
-                          {client.name} - {client.email}
-                        </SelectItem>
-                      ))}
-                    </optgroup>
-                  </SelectContent>
-                </Select>
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <Input 
+                    placeholder="Search projects or clients..." 
+                    value={jobClientSearch}
+                    onChange={(e) => setJobClientSearch(e.target.value)}
+                    className="pl-4"
+                  />
+                </div>
+
+                {/* Projects and Clients List */}
+                <div className="max-h-64 overflow-y-auto space-y-4 bg-background">
+                  {/* Projects Section */}
+                  {filteredProjects.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+                        Projects ({filteredProjects.length})
+                      </h4>
+                      <div className="space-y-1">
+                        {filteredProjects.map(project => (
+                          <div 
+                            key={`project-${project.id}`} 
+                            className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors hover:bg-accent ${
+                              selectedJobClient === `project-${project.id}` ? 'bg-accent border-primary' : 'hover:border-accent-foreground/20'
+                            }`}
+                            onClick={() => setSelectedJobClient(`project-${project.id}`)}
+                          >
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{project.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Status: {project.status} • Due: {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'No due date'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clients Section */}
+                  {filteredClients.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+                        Clients ({filteredClients.length})
+                      </h4>
+                      <div className="space-y-1">
+                        {filteredClients.map(client => (
+                          <div 
+                            key={`client-${client.id}`} 
+                            className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors hover:bg-accent ${
+                              selectedJobClient === `client-${client.id}` ? 'bg-accent border-primary' : 'hover:border-accent-foreground/20'
+                            }`}
+                            onClick={() => setSelectedJobClient(`client-${client.id}`)}
+                          >
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {client.company_name || client.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {client.email} • {client.funnel_stage}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {jobClientSearch && filteredProjects.length === 0 && filteredClients.length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <p className="text-sm">No projects or clients found for "{jobClientSearch}"</p>
+                    </div>
+                  )}
+                </div>
+
                 <Button size="sm" className="w-full" onClick={handleApplyToJobClient}>
                   Apply to Selected
                 </Button>
