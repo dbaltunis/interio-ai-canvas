@@ -16,6 +16,7 @@ import { CalendarSidebar } from "./CalendarSidebar";
 import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
+import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -25,6 +26,9 @@ const CalendarView = () => {
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
+  
+  // Enable real-time updates
+  useRealtimeBookings();
   
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
