@@ -65,16 +65,24 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   };
 
   // Calculate event position and styling
-  const calculateEventStyle = (startTime: Date, endTime: Date) => {
+  const calculateEventStyle = (startTime: Date, endTime: Date, isExtendedHours: boolean = false) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // Calculate position based on 30-minute slots (20px each - reduced height)
-    const slotHeight = 20; // Each 30-minute slot is 20px (reduced from 30px)
+    // Calculate position based on 30-minute slots (20px each)
+    const slotHeight = 20;
     
-    // Calculate minutes from midnight start
-    const minutesFromStart = startHour * 60 + startMinutes;
-    const top = (minutesFromStart / 30) * slotHeight;
+    // Calculate minutes from visible start time
+    let minutesFromVisibleStart = startHour * 60 + startMinutes;
+    
+    // Adjust for working hours view (6 AM start)
+    if (!isExtendedHours) {
+      minutesFromVisibleStart -= 6 * 60; // Subtract 6 AM offset
+      // If event starts before 6 AM, position it at the top
+      if (minutesFromVisibleStart < 0) minutesFromVisibleStart = 0;
+    }
+    
+    const top = (minutesFromVisibleStart / 30) * slotHeight;
 
     // Calculate duration and height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
@@ -292,14 +300,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const startTime = new Date(event.start_time);
                   const endTime = new Date(event.end_time);
                   
-                  // Adjust event positioning for visible time range
-                  let adjustedStartTime = new Date(startTime);
-                  if (!showExtendedHours) {
-                    // Offset by 6 hours for working hours view
-                    adjustedStartTime = new Date(startTime.getTime() - 6 * 60 * 60 * 1000);
-                  }
-                  
-                  const style = calculateEventStyle(adjustedStartTime, endTime);
+                  const style = calculateEventStyle(startTime, endTime, showExtendedHours);
                   
                   if (!style.visible) return null;
                   
