@@ -59,21 +59,43 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
+    const endHour = endTime.getHours();
+    const endMinutes = endTime.getMinutes();
     
-    // Check if event is within the visible time range (6 AM to 10 PM)
-    if (startHour < 6 || startHour > 22) {
+    // Check if event is completely outside the visible time range (6 AM to 10 PM)
+    // Allow events that start before 6 AM or end after 10 PM, but clip them
+    const viewStartHour = 6;
+    const viewEndHour = 22;
+    
+    // If event ends before 6 AM or starts after 10 PM, don't show it
+    if (endHour < viewStartHour || (endHour === viewStartHour && endMinutes === 0) || 
+        startHour > viewEndHour) {
       return { top: 0, height: 32, visible: false };
     }
 
     // Calculate position based on 30-minute slots
     const slotHeight = 32; // Each 30-minute slot is 32px
     
-    // Calculate minutes from 6 AM start
-    const minutesFromStart = (startHour - 6) * 60 + startMinutes;
+    // Clip start time to visible range
+    const clippedStartHour = Math.max(startHour, viewStartHour);
+    const clippedStartMinutes = startHour < viewStartHour ? 0 : startMinutes;
+    
+    // Clip end time to visible range
+    const clippedEndHour = Math.min(endHour, viewEndHour);
+    const clippedEndMinutes = endHour > viewEndHour ? 0 : endMinutes;
+    
+    // Calculate minutes from 6 AM start for the clipped start time
+    const minutesFromStart = (clippedStartHour - viewStartHour) * 60 + clippedStartMinutes;
     const top = (minutesFromStart / 30) * slotHeight;
 
-    // Calculate duration and height
-    const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+    // Calculate duration using clipped times
+    const clippedStartTime = new Date(startTime);
+    clippedStartTime.setHours(clippedStartHour, clippedStartMinutes, 0, 0);
+    
+    const clippedEndTime = new Date(endTime);
+    clippedEndTime.setHours(clippedEndHour, clippedEndMinutes, 0, 0);
+    
+    const durationInMinutes = (clippedEndTime.getTime() - clippedStartTime.getTime()) / (1000 * 60);
     const height = Math.max((durationInMinutes / 30) * slotHeight, 20);
 
     return { top, height, visible: true };
