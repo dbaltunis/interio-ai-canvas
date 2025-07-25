@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarSidebar } from "./CalendarSidebar";
 import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
+import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -23,7 +24,7 @@ const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
-  const [showSchedulerDialog, setShowSchedulerDialog] = useState(false);
+  const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
@@ -224,7 +225,7 @@ const CalendarView = () => {
       <CalendarSidebar 
         currentDate={currentDate}
         onDateChange={setCurrentDate}
-        onBookingLinks={() => setShowSchedulerDialog(true)}
+        onBookingLinks={() => setShowSchedulerSlider(true)}
       />
 
       {/* Main Calendar */}
@@ -372,7 +373,7 @@ const CalendarView = () => {
             </DialogContent>
           </Dialog>
 
-              <Button variant="outline" onClick={() => setShowSchedulerDialog(true)}>
+              <Button variant="outline" onClick={() => setShowSchedulerSlider(true)}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Appointment Schedule
               </Button>
@@ -405,75 +406,11 @@ const CalendarView = () => {
       </div>
 
 
-      {/* Booking Links Dialog */}
-      <Dialog open={showSchedulerDialog} onOpenChange={setShowSchedulerDialog}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Link2 className="h-5 w-5 mr-2" />
-              Appointment Booking Links
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {schedulers && schedulers.length > 0 ? (
-              <div className="space-y-3">
-                {schedulers.map(scheduler => (
-                  <Card key={scheduler.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium">{scheduler.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {scheduler.duration} min • {scheduler.description}
-                        </p>
-                        <div className="flex items-center mt-2 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {scheduler.duration} minutes
-                          <Users className="h-3 w-3 ml-3 mr-1" />
-                          1-on-1
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const url = `${window.location.origin}/book/${scheduler.slug}`;
-                            navigator.clipboard.writeText(url);
-                            toast({
-                              title: "Link copied!",
-                              description: "Booking link copied to clipboard",
-                            });
-                          }}
-                        >
-                          <Link2 className="h-3 w-3 mr-1" />
-                          Copy Link
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Link2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No booking links yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create appointment schedulers to generate shareable booking links
-                </p>
-                <Button onClick={() => {
-                  setShowSchedulerDialog(false);
-                  // Navigate to scheduler management - you might want to add routing here
-                }}>
-                  Create Booking Link
-                </Button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Appointment Scheduler Slider */}
+      <AppointmentSchedulerSlider 
+        isOpen={showSchedulerSlider}
+        onClose={() => setShowSchedulerSlider(false)}
+      />
     </div>
   );
 };
