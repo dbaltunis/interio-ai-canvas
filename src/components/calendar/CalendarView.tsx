@@ -33,6 +33,8 @@ import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 import { CalendarColorPicker } from "./colors/CalendarColorPicker";
 import { CalendarFilters } from "./filters/CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
+import { useTwoWaySync } from "@/hooks/useTwoWaySync";
+import { ConflictResolutionDialog } from "./sync/ConflictResolutionDialog";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -47,6 +49,8 @@ const CalendarView = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [syncConflicts, setSyncConflicts] = useState<any[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
@@ -63,6 +67,7 @@ const CalendarView = () => {
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
+  const twoWaySync = useTwoWaySync();
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
 
@@ -311,6 +316,21 @@ const CalendarView = () => {
 
   const handleFiltersChange = (newFilters: CalendarFilterState) => {
     setFilters(newFilters);
+  };
+
+  const handleTwoWaySync = async () => {
+    try {
+      // For demo, sync with the first available CalDAV calendar
+      // In real app, user would select which calendar to sync
+      const result = await twoWaySync.mutateAsync('default-calendar-id');
+      
+      if (result.conflicts.length > 0) {
+        setSyncConflicts(result.conflicts);
+        setShowConflictDialog(true);
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
   };
 
   // Filter appointments based on current filters
@@ -729,6 +749,12 @@ const CalendarView = () => {
       <CalendarColorPicker
         open={showColorPicker}
         onOpenChange={setShowColorPicker}
+      />
+
+      <ConflictResolutionDialog
+        open={showConflictDialog}
+        onOpenChange={setShowConflictDialog}
+        conflicts={syncConflicts}
       />
 
       <OfflineIndicator />
