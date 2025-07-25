@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SchedulerManagement } from "./SchedulerManagement";
+import { BookingManagement } from "./BookingManagement";
+import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { format, isToday, addDays } from "date-fns";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3 } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +21,8 @@ interface CalendarSidebarProps {
 
 export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
+  const [showBookingManagement, setShowBookingManagement] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
@@ -128,6 +132,24 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
               <Settings className="h-4 w-4 mr-2" />
               Manage Schedules
             </Button>
+            
+            <Button 
+              onClick={() => setShowBookingManagement(true)}
+              className="w-full"
+              variant="outline"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              View Bookings
+            </Button>
+            
+            <Button 
+              onClick={() => setShowAnalytics(true)}
+              className="w-full"
+              variant="outline"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -139,6 +161,26 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             <DialogTitle>Manage Appointment Schedulers</DialogTitle>
           </DialogHeader>
           <SchedulerManagement />
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Management Dialog */}
+      <Dialog open={showBookingManagement} onOpenChange={setShowBookingManagement}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Booking Management</DialogTitle>
+          </DialogHeader>
+          <BookingManagement />
+        </DialogContent>
+      </Dialog>
+
+      {/* Analytics Dashboard Dialog */}
+      <Dialog open={showAnalytics} onOpenChange={setShowAnalytics}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Analytics Dashboard</DialogTitle>
+          </DialogHeader>
+          <AnalyticsDashboard />
         </DialogContent>
       </Dialog>
     </div>
