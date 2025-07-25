@@ -1,5 +1,6 @@
 import { caldavService } from './caldavService';
 import { supabase } from '@/integrations/supabase/client';
+import { offlineQueueService } from './offlineQueueService';
 
 class BackgroundSyncService {
   private syncInterval: NodeJS.Timeout | null = null;
@@ -10,6 +11,10 @@ class BackgroundSyncService {
   constructor() {
     this.setupNetworkListeners();
     this.startPeriodicSync();
+    // Process any queued operations on startup if online
+    if (this.isOnline) {
+      setTimeout(() => offlineQueueService.processQueue(), 2000);
+    }
   }
 
   private setupNetworkListeners() {
@@ -17,6 +22,8 @@ class BackgroundSyncService {
       this.isOnline = true;
       console.log('Network came online, resuming sync');
       this.startPeriodicSync();
+      // Process queued operations when back online
+      setTimeout(() => offlineQueueService.processQueue(), 1000);
     });
 
     window.addEventListener('offline', () => {
@@ -153,11 +160,13 @@ class BackgroundSyncService {
     isRunning: boolean;
     isOnline: boolean;
     nextSyncIn: number | null;
+    queueStatus: any;
   } {
     return {
       isRunning: !!this.syncInterval,
       isOnline: this.isOnline,
       nextSyncIn: this.syncInterval ? this.SYNC_INTERVAL_MS : null,
+      queueStatus: offlineQueueService.getQueueStatus(),
     };
   }
 }

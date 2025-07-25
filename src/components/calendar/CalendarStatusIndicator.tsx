@@ -6,10 +6,12 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, CheckCircle, XCircle, Clock, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { useCalDAVAccounts } from "@/hooks/useCalDAV";
 import { backgroundSyncService } from "@/services/backgroundSyncService";
+import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { formatDistanceToNow } from "date-fns";
 
 export const CalendarStatusIndicator = () => {
   const { accounts } = useCalDAVAccounts();
+  const { queueStatus } = useOfflineSupport();
   const [syncStatus, setSyncStatus] = useState(backgroundSyncService.getSyncStatus());
   const [isForceSync, setIsForceSync] = useState(false);
 
@@ -135,6 +137,15 @@ export const CalendarStatusIndicator = () => {
                     addSuffix: true 
                   })}
                 </span>
+              </div>
+            )}
+
+            {queueStatus.pendingOperations > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Pending Operations</span>
+                <Badge variant="outline" className="text-orange-600">
+                  {queueStatus.pendingOperations}
+                </Badge>
               </div>
             )}
           </div>

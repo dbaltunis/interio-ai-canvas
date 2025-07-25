@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Clock, MapPin, FileText, Loader2 } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment } from "@/hooks/useAppointments";
 import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
+import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 
 interface QuickEventDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export const QuickEventDialog = ({
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const { syncableCalendars, syncAppointmentToCalDAV } = useAppointmentCalDAVSync();
+  const { isOnline, queueOfflineOperation } = useOfflineSupport();
 
   const handleSubmit = async () => {
     if (!event.title || !event.start_time || !event.end_time) return;
@@ -53,20 +55,29 @@ export const QuickEventDialog = ({
     };
 
     try {
-      if (isEditing) {
-        await updateAppointment.mutateAsync({ 
-          id: appointment.id, 
-          ...appointmentData 
-        });
-      } else {
-        const newAppointment = await createAppointment.mutateAsync(appointmentData);
-        
-        // Auto-sync to selected calendars if enabled
-        if (autoSync && selectedCalendars.length > 0) {
-          await syncAppointmentToCalDAV.mutateAsync({
-            appointment: newAppointment,
-            calendarIds: selectedCalendars
+      if (isOnline) {
+        if (isEditing) {
+          await updateAppointment.mutateAsync({ 
+            id: appointment.id, 
+            ...appointmentData 
           });
+        } else {
+          const newAppointment = await createAppointment.mutateAsync(appointmentData);
+          
+          // Auto-sync to selected calendars if enabled
+          if (autoSync && selectedCalendars.length > 0) {
+            await syncAppointmentToCalDAV.mutateAsync({
+              appointment: newAppointment,
+              calendarIds: selectedCalendars
+            });
+          }
+        }
+      } else {
+        // Queue for offline processing
+        if (isEditing) {
+          queueOfflineOperation('update', 'appointments', { id: appointment.id, ...appointmentData });
+        } else {
+          queueOfflineOperation('create', 'appointments', appointmentData);
         }
       }
 

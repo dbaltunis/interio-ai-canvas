@@ -28,6 +28,7 @@ import { CalendarSyncStatus } from "./CalendarSyncStatus";
 import { CalDAVSyncDialog } from "./CalDAVSyncDialog";
 import { CalendarStatusIndicator } from "./CalendarStatusIndicator";
 import { AppointmentEditDialog } from "./AppointmentEditDialog";
+import { OfflineIndicator } from "./OfflineIndicator";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -690,6 +691,8 @@ const CalendarView = () => {
         }}
         appointment={selectedAppointment}
       />
+
+      <OfflineIndicator />
     </div>
   );
 };
