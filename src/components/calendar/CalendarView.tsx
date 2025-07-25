@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share } from "lucide-react";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
@@ -29,6 +29,7 @@ import { CalDAVSyncDialog } from "./CalDAVSyncDialog";
 import { CalendarStatusIndicator } from "./CalendarStatusIndicator";
 import { AppointmentEditDialog } from "./AppointmentEditDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
+import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -41,6 +42,7 @@ const CalendarView = () => {
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showCalDAVSync, setShowCalDAVSync] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
@@ -410,10 +412,17 @@ const CalendarView = () => {
 
               <CalendarFilters onFiltersChange={handleFiltersChange} />
 
-              <Button onClick={() => setShowNewEventDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Event
-              </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowSharingDialog(true)}
+                >
+                  <Share className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+                <Button onClick={() => setShowNewEventDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Event
+                </Button>
               
               <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -690,6 +699,13 @@ const CalendarView = () => {
           if (!open) setSelectedAppointment(null);
         }}
         appointment={selectedAppointment}
+      />
+
+      <CalendarSharingDialog
+        open={showSharingDialog}
+        onOpenChange={setShowSharingDialog}
+        calendarId="default"
+        calendarName="My Calendar"
       />
 
       <OfflineIndicator />

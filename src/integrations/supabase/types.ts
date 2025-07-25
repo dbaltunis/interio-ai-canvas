@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_shares: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          permission_level: string
+          shared_with_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          permission_level?: string
+          shared_with_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          permission_level?: string
+          shared_with_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_type: string | null
@@ -422,6 +452,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      calendar_shares: {
+        Row: {
+          calendar_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          permission_level: string
+          shared_with_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          calendar_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          permission_level?: string
+          shared_with_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          calendar_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          permission_level?: string
+          shared_with_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       client_measurements: {
         Row: {
@@ -1172,6 +1232,33 @@ export type Database = {
         }
         Relationships: []
       }
+      team_workspaces: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       treatments: {
         Row: {
           calculation_details: Json | null
@@ -1415,6 +1502,36 @@ export type Database = {
           user_id?: string
           website?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          joined_at: string
+          role: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
         }
         Relationships: []
       }

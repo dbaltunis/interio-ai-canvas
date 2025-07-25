@@ -9,8 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, ExternalLink } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, ExternalLink, Share } from "lucide-react";
 import { useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
+import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
 import { format } from "date-fns";
 
@@ -36,6 +37,7 @@ export const AppointmentEditDialog = ({
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
   const [syncToCalendars, setSyncToCalendars] = useState(false);
+  const [showSharingDialog, setShowSharingDialog] = useState(false);
 
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
@@ -280,6 +282,15 @@ export const AppointmentEditDialog = ({
                 'Update Appointment'
               )}
             </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowSharingDialog(true)}
+              disabled={isLoading}
+            >
+              <Share className="w-4 h-4" />
+            </Button>
             
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -311,6 +322,13 @@ export const AppointmentEditDialog = ({
             </Button>
           </div>
         </div>
+
+        <AppointmentSharingDialog
+          open={showSharingDialog}
+          onOpenChange={setShowSharingDialog}
+          appointmentId={appointment?.id || ""}
+          appointmentTitle={editedAppointment?.title || ""}
+        />
       </DialogContent>
     </Dialog>
   );
