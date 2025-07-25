@@ -24,6 +24,8 @@ import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { CalendarEventDialog } from "./CalendarEventDialog";
 import { DurationPicker } from "./TimePicker";
+import { CalendarSyncStatus } from "./CalendarSyncStatus";
+import { CalDAVSyncDialog } from "./CalDAVSyncDialog";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -34,6 +36,7 @@ const CalendarView = () => {
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [showCalDAVSync, setShowCalDAVSync] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
@@ -72,7 +75,7 @@ const CalendarView = () => {
       const startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
       const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
       
-      await createAppointment.mutateAsync({
+      const newAppointment = await createAppointment.mutateAsync({
         title: newEvent.title,
         description: newEvent.description,
         start_time: startDateTime.toISOString(),
@@ -81,6 +84,10 @@ const CalendarView = () => {
         location: newEvent.location,
         status: 'scheduled'
       });
+
+      // Show CalDAV sync dialog for new appointment
+      setSelectedAppointment(newAppointment as any);
+      setShowCalDAVSync(true);
 
       // Show success message with additional features note
       toast({
@@ -374,6 +381,8 @@ const CalendarView = () => {
                   }
                 </h2>
               </div>
+              
+              <CalendarSyncStatus />
             </div>
             
             <div className="flex items-center space-x-2">
@@ -652,6 +661,14 @@ const CalendarView = () => {
         }}
         appointment={selectedAppointment}
         selectedDate={selectedDate}
+      />
+
+      {/* CalDAV Sync Dialog */}
+      <CalDAVSyncDialog
+        open={showCalDAVSync}
+        onOpenChange={setShowCalDAVSync}
+        appointment={selectedAppointment}
+        onSyncComplete={() => setSelectedAppointment(null)}
       />
     </div>
   );

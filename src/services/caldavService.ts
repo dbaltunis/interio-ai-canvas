@@ -170,6 +170,8 @@ class CalDAVService {
       const client = await this.createDAVClient(account);
       // Mock success for testing - replace with actual CalDAV test
       console.log('Testing CalDAV connection for:', account.email);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       return true;
     } catch (error) {
       console.error('CalDAV connection test failed:', error);
@@ -205,7 +207,7 @@ class CalDAVService {
     for (const calendar of mockCalendars) {
       const { data, error } = await supabase
         .from('caldav_calendars')
-        .insert({
+        .upsert({
           account_id: accountId,
           calendar_id: calendar.url,
           display_name: calendar.displayName,
@@ -214,6 +216,8 @@ class CalDAVService {
           timezone: calendar.timezone || 'UTC',
           sync_enabled: true,
           read_only: false,
+        }, { 
+          onConflict: 'account_id,calendar_id' 
         })
         .select()
         .single();
