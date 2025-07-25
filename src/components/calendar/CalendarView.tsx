@@ -21,7 +21,7 @@ import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
-import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
+import { CalendarFilterState } from "./CalendarFilters";
 import { CalendarEventDialog } from "./CalendarEventDialog";
 import { DurationPicker } from "./TimePicker";
 import { CalendarSyncStatus } from "./CalendarSyncStatus";
@@ -30,6 +30,9 @@ import { CalendarStatusIndicator } from "./CalendarStatusIndicator";
 import { AppointmentEditDialog } from "./AppointmentEditDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
 import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
+import { CalendarColorPicker } from "./colors/CalendarColorPicker";
+import { CalendarFilters } from "./filters/CalendarFilters";
+import { useCalendarColors } from "@/hooks/useCalendarColors";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -43,6 +46,7 @@ const CalendarView = () => {
   const [showCalDAVSync, setShowCalDAVSync] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
@@ -58,6 +62,7 @@ const CalendarView = () => {
   const { data: schedulers } = useAppointmentSchedulers();
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
+  const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
 
@@ -410,8 +415,20 @@ const CalendarView = () => {
                 </SelectContent>
               </Select>
 
-              <CalendarFilters onFiltersChange={handleFiltersChange} />
+              
 
+              <div className="flex items-center gap-2">
+                <CalendarFilters onFiltersChange={() => {/* Handle color filter changes */}} />
+                
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowColorPicker(true)}
+                >
+                  <Palette className="h-4 w-4 mr-2" />
+                  Colors
+                </Button>
+                
                 <Button 
                   variant="outline"
                   onClick={() => setShowSharingDialog(true)}
@@ -423,6 +440,7 @@ const CalendarView = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   New Event
                 </Button>
+              </div>
               
               <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -706,6 +724,11 @@ const CalendarView = () => {
         onOpenChange={setShowSharingDialog}
         calendarId="default"
         calendarName="My Calendar"
+      />
+
+      <CalendarColorPicker
+        open={showColorPicker}
+        onOpenChange={setShowColorPicker}
       />
 
       <OfflineIndicator />
