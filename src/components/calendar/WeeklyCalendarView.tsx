@@ -77,12 +77,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   // Auto-scroll to working hours (8 AM) on mount
   useEffect(() => {
     if (scrollContainerRef.current) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      // Scroll to 6 AM initially to show working hours, or 2 hours before current time
-      const targetHour = Math.max(6, Math.min(currentHour - 2, 8));
+      // Scroll to 8 AM to show working hours by default
+      const targetHour = 8;
       const scrollPosition = targetHour * 64; // Each hour is 64px (2 slots * 32px)
-      scrollContainerRef.current.scrollTop = scrollPosition;
+      
+      // Use setTimeout to ensure the DOM is fully rendered
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollPosition;
+        }
+      }, 100);
     }
   }, []);
 
@@ -127,8 +131,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       </div>
       
       {/* Scrollable time grid */}
-      <div className="flex-1 flex overflow-hidden">
-        <div ref={scrollContainerRef} className="flex overflow-y-auto overflow-x-hidden w-full">
+      <div 
+        ref={scrollContainerRef} 
+        className="flex-1 overflow-y-auto overflow-x-hidden"
+      >
+        <div className="flex min-h-full">
           {/* Time labels column */}
           <div className="border-r bg-muted/20 w-16 flex-shrink-0">
             {timeSlots.map((time, index) => (
