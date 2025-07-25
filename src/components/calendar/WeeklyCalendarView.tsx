@@ -16,14 +16,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Generate extended time slots from 6 AM to 10 PM
+  // Generate 24-hour time slots
   const timeSlots = (() => {
     const slots = [];
-    for (let hour = 6; hour <= 22; hour++) {
+    for (let hour = 0; hour < 24; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour < 22) {
-        slots.push(`${hour.toString().padStart(2, '0')}:30`);
-      }
+      slots.push(`${hour.toString().padStart(2, '0')}:30`);
     }
     return slots;
   })();
@@ -55,60 +53,36 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     );
   };
 
-  // Calculate event position and styling
+  // Calculate event position and styling for 24-hour view
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     const endHour = endTime.getHours();
     const endMinutes = endTime.getMinutes();
     
-    // Check if event is completely outside the visible time range (6 AM to 10 PM)
-    // Allow events that start before 6 AM or end after 10 PM, but clip them
-    const viewStartHour = 6;
-    const viewEndHour = 22;
-    
-    // If event ends before 6 AM or starts after 10 PM, don't show it
-    if (endHour < viewStartHour || (endHour === viewStartHour && endMinutes === 0) || 
-        startHour > viewEndHour) {
-      return { top: 0, height: 32, visible: false };
-    }
-
-    // Calculate position based on 30-minute slots
+    // Calculate position based on 30-minute slots (24 hours)
     const slotHeight = 32; // Each 30-minute slot is 32px
     
-    // Clip start time to visible range
-    const clippedStartHour = Math.max(startHour, viewStartHour);
-    const clippedStartMinutes = startHour < viewStartHour ? 0 : startMinutes;
-    
-    // Clip end time to visible range
-    const clippedEndHour = Math.min(endHour, viewEndHour);
-    const clippedEndMinutes = endHour > viewEndHour ? 0 : endMinutes;
-    
-    // Calculate minutes from 6 AM start for the clipped start time
-    const minutesFromStart = (clippedStartHour - viewStartHour) * 60 + clippedStartMinutes;
+    // Calculate minutes from midnight (00:00) start
+    const minutesFromStart = startHour * 60 + startMinutes;
     const top = (minutesFromStart / 30) * slotHeight;
 
-    // Calculate duration using clipped times
-    const clippedStartTime = new Date(startTime);
-    clippedStartTime.setHours(clippedStartHour, clippedStartMinutes, 0, 0);
-    
-    const clippedEndTime = new Date(endTime);
-    clippedEndTime.setHours(clippedEndHour, clippedEndMinutes, 0, 0);
-    
-    const durationInMinutes = (clippedEndTime.getTime() - clippedStartTime.getTime()) / (1000 * 60);
+    // Calculate duration in minutes
+    const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
     const height = Math.max((durationInMinutes / 30) * slotHeight, 20);
 
     return { top, height, visible: true };
   };
 
-  // Auto-scroll to current time on mount
+  // Auto-scroll to working hours (8 AM) on mount
   useEffect(() => {
     if (scrollContainerRef.current) {
       const now = new Date();
       const currentHour = now.getHours();
-      const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
-      const scrollPosition = (scrollToHour - 6) * 64; // Each hour is 64px (2 slots * 32px)
-      scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      // Scroll to 6 AM initially to show working hours, or 2 hours before current time
+      const targetHour = Math.max(6, Math.min(currentHour - 2, 8));
+      const scrollPosition = targetHour * 64; // Each hour is 64px (2 slots * 32px)
+      scrollContainerRef.current.scrollTop = scrollPosition;
     }
   }, []);
 
@@ -199,20 +173,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const currentHour = now.getHours();
                   const currentMinutes = now.getMinutes();
                   
-                  if (currentHour >= 6 && currentHour <= 22) {
-                    const minutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-                    const top = (minutesFromStart / 30) * 32;
-                    
-                    return (
-                      <div 
-                        className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
-                        style={{ top: `${top}px` }}
-                      >
-                        <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                      </div>
-                    );
-                  }
-                  return null;
+                  // Calculate position for 24-hour view
+                  const minutesFromStart = currentHour * 60 + currentMinutes;
+                  const top = (minutesFromStart / 30) * 32;
+                  
+                  return (
+                    <div 
+                      className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
+                      style={{ top: `${top}px` }}
+                    >
+                      <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                  );
                 })()}
                 
                 {/* Events */}
