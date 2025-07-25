@@ -195,7 +195,14 @@ const CalendarView = () => {
                 className={`border border-border cursor-pointer transition-colors p-2 flex flex-col min-h-0 ${
                   isSelected ? 'bg-primary/10 border-primary' : ''
                 } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/10' : 'bg-background'}`}
-                onClick={() => setSelectedDate(day)}
+                onClick={() => {
+                  setSelectedDate(day);
+                  setNewEvent({
+                    ...newEvent,
+                    date: format(day, 'yyyy-MM-dd')
+                  });
+                  setShowNewEventDialog(true);
+                }}
               >
                 {/* Day number */}
                 <div className={`text-sm font-medium mb-1 flex-shrink-0 ${
