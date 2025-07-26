@@ -1,3 +1,4 @@
+
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
@@ -8,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
+import { Calendar, Clock, User } from "lucide-react";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -83,26 +85,36 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   // Get booked appointments for a specific date as events
   const getBookedEventsForDate = (date: Date) => {
     if (!bookedAppointments) return [];
+    
+    console.log('Booked appointments for date:', format(date, 'yyyy-MM-dd'), bookedAppointments);
+    
     return bookedAppointments
-      .filter(booking => isSameDay(new Date(booking.appointment_date), date))
+      .filter(booking => {
+        const bookingDate = new Date(booking.appointment_date);
+        const matches = isSameDay(bookingDate, date);
+        console.log('Checking booking:', booking.appointment_date, 'against', format(date, 'yyyy-MM-dd'), 'matches:', matches);
+        return matches;
+      })
       .map(booking => {
-        // Convert booking to event format
+        // Convert booking to event format with distinct styling
         const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
         const endDateTime = new Date(appointmentDateTime.getTime() + (booking.scheduler.duration * 60 * 1000));
         
         return {
           id: `booking-${booking.id}`,
-          title: `📅 ${booking.customer_name}`,
-          description: `Booked appointment with ${booking.customer_name}`,
+          title: `👤 ${booking.customer_name}`,
+          description: `Booked appointment: ${booking.scheduler.name}`,
           start_time: appointmentDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
-          appointment_type: 'booking',
+          appointment_type: 'booked_appointment',
           status: booking.status,
           location: booking.location_type || 'TBD',
-          color: '#10B981', // Green for bookings
+          color: '#059669', // Emerald-600 for confirmed bookings
           user_id: null, // System booking
           isBooking: true,
-          bookingData: booking
+          bookingData: booking,
+          customer_name: booking.customer_name,
+          scheduler_name: booking.scheduler.name
         };
       });
   };
@@ -111,6 +123,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const getAllEventsForDate = (date: Date) => {
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
+    console.log('All events for', format(date, 'yyyy-MM-dd'), ':', { regularEvents: regularEvents.length, bookedEvents: bookedEvents.length });
     return [...regularEvents, ...bookedEvents];
   };
 
@@ -121,12 +134,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     );
   };
 
-  // Check if a time slot is occupied by booked appointments
+  // Check if a time slot is occupied by booked appointments or events
   const isTimeSlotOccupied = (date: Date, timeString: string) => {
-    const schedulerSlotData = getSchedulerSlotsForDate(date);
-    return schedulerSlotData.some(slot => 
-      slot.isBooked && slot.startTime === timeString
-    );
+    const allEvents = getAllEventsForDate(date);
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const slotTime = new Date(date);
+    slotTime.setHours(hours, minutes, 0, 0);
+    
+    return allEvents.some(event => {
+      const eventStart = new Date(event.start_time);
+      const eventEnd = new Date(event.end_time);
+      return slotTime >= eventStart && slotTime < eventEnd;
+    });
   };
 
   // Calculate event position and styling
@@ -312,17 +331,30 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <div className="grid grid-cols-7">
               {weekDays.map(day => {
                 const isCurrentDay = isToday(day);
+                const dayEvents = getAllEventsForDate(day);
+                const hasBookings = dayEvents.some(event => event.isBooking);
+                const hasRegularEvents = dayEvents.some(event => !event.isBooking);
+                
                 return (
-                  <div key={day.toString()} className="p-2 text-center border-r">
+                  <div key={day.toString()} className="p-2 text-center border-r relative">
                     <div className="text-xs font-medium text-muted-foreground mb-1">
                       {format(day, 'EEE')}
                     </div>
-                    <div className={`text-lg font-semibold ${
+                    <div className={`text-lg font-semibold relative ${
                       isCurrentDay 
                         ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' 
                         : ''
                     }`}>
                       {format(day, 'd')}
+                      {/* Event indicators */}
+                      <div className="absolute -top-1 -right-1 flex gap-1">
+                        {hasRegularEvents && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full" title="Has regular events" />
+                        )}
+                        {hasBookings && (
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full" title="Has booked appointments" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -354,7 +386,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <div className="flex-1">
               <div className="grid grid-cols-7 h-full">
                 {weekDays.map((day, dayIndex) => {
-                  const dayEvents = getAllEventsForDate(day); // Use combined events
+                  const dayEvents = getAllEventsForDate(day);
                   const isCurrentDay = isToday(day);
                   const previewStyle = getEventCreationPreviewStyle();
                   const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
@@ -380,22 +412,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
-                                  ? 'bg-red-100 hover:bg-red-200 cursor-help' 
+                                  ? 'bg-red-50 hover:bg-red-100 cursor-help border-red-200' 
                                   : 'hover:bg-accent/50 cursor-pointer'
                               }`}
-                              onMouseDown={(e) => !isOccupied && handleMouseDown(day, index, e)}
-                              onMouseMove={() => !isOccupied && handleMouseMove(day, index)}
+                              onMouseDown={(e) => !isOccupied && handleMouseDown && handleMouseDown(day, index, e)}
+                              onMouseMove={() => !isOccupied && handleMouseMove && handleMouseMove(day, index)}
                               onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
                               title={
                                 isOccupied 
-                                  ? `${format(day, 'MMM d')} at ${time} - Slot already booked`
-                                  : `${format(day, 'MMM d')} at ${time}`
+                                  ? `${format(day, 'MMM d')} at ${time} - Time slot occupied`
+                                  : `${format(day, 'MMM d')} at ${time} - Click to create event`
                               }
                             >
-                              {/* Booking indicator */}
+                              {/* Occupied slot indicator */}
                               {isOccupied && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full opacity-60"></div>
                                 </div>
                               )}
                             </div>
@@ -408,7 +440,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* Event creation preview */}
                       {showPreview && previewStyle && (
                         <div
-                          className="absolute left-0 right-0 bg-primary/30 border-l-4 border-primary z-15"
+                          className="absolute left-0 right-0 bg-primary/30 border-l-4 border-primary z-15 rounded-r-lg"
                           style={{
                             top: `${previewStyle.top}px`,
                             height: `${previewStyle.height}px`
@@ -463,27 +495,59 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
                         const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
                         
-                        // Color coding by appointment color or type
-                        const getEventColor = (event: any) => {
-                          if (event.color) {
-                            return `text-white border-l-4 backdrop-blur-sm`;
-                          }
-                          
-                          switch (event.appointment_type) {
-                            case 'meeting': return 'bg-blue-500/75 text-white border-blue-400 backdrop-blur-sm';
-                            case 'consultation': return 'bg-green-500/75 text-white border-green-400 backdrop-blur-sm';
-                            case 'call': return 'bg-purple-500/75 text-white border-purple-400 backdrop-blur-sm';
-                            case 'follow-up': return 'bg-orange-500/75 text-white border-orange-400 backdrop-blur-sm';
-                            default: return 'bg-primary/75 text-primary-foreground border-primary/60 backdrop-blur-sm';
+                        // Enhanced color coding and styling for different event types
+                        const getEventStyling = (event: any) => {
+                          if (event.isBooking) {
+                            // Booked appointments have distinct styling
+                            return {
+                              backgroundColor: '#10B981', // Emerald-500
+                              borderColor: '#047857', // Emerald-700
+                              textColor: 'text-white',
+                              icon: '👤',
+                              borderRadius: '8px',
+                              pattern: 'solid'
+                            };
+                          } else {
+                            // Regular events
+                            if (event.color) {
+                              return {
+                                backgroundColor: `${event.color}90`, // 90% opacity
+                                borderColor: event.color,
+                                textColor: 'text-white',
+                                icon: '📅',
+                                borderRadius: '20px 8px 20px 8px', // Water drop corners
+                                pattern: 'gradient'
+                              };
+                            }
+                            
+                            // Default event styling based on type
+                            const typeStyles = {
+                              meeting: { bg: '#3B82F6', border: '#1D4ED8', icon: '🤝' },
+                              consultation: { bg: '#8B5CF6', border: '#7C3AED', icon: '💬' },
+                              call: { bg: '#F59E0B', border: '#D97706', icon: '📞' },
+                              'follow-up': { bg: '#EF4444', border: '#DC2626', icon: '🔄' },
+                              default: { bg: '#6366F1', border: '#4F46E5', icon: '📅' }
+                            };
+                            
+                            const typeStyle = typeStyles[event.appointment_type] || typeStyles.default;
+                            return {
+                              backgroundColor: `${typeStyle.bg}90`,
+                              borderColor: typeStyle.border,
+                              textColor: 'text-white',
+                              icon: typeStyle.icon,
+                              borderRadius: '20px 8px 20px 8px',
+                              pattern: 'gradient'
+                            };
                           }
                         };
                         
-                        // Check if this event belongs to the current user
+                        const eventStyling = getEventStyling(event);
                         const isUserEvent = currentUserId && event.user_id === currentUserId;
                         
                         const DraggableEvent = () => {
                           const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
                             id: event.id,
+                            disabled: event.isBooking, // Disable dragging for booked appointments
                           });
 
                           const eventStyle = {
@@ -492,63 +556,77 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             width: eventWidth,
                             left: eventLeft,
                             zIndex: 10 + eventIndex,
-                            backgroundColor: event.color ? `${event.color}73` : undefined, // 45% opacity for custom colors
-                            borderLeftColor: event.color || undefined,
-                            borderRadius: '20px 8px 20px 8px', // Water drop asymmetric corners
-                            boxShadow: event.color 
-                              ? `0 8px 16px -4px ${event.color}40, 0 4px 8px -2px ${event.color}40, inset 0 1px 0 rgba(255,255,255,0.15)` 
+                            backgroundColor: eventStyling.backgroundColor,
+                            borderLeftColor: eventStyling.borderColor,
+                            borderRadius: eventStyling.borderRadius,
+                            boxShadow: event.isBooking
+                              ? '0 4px 12px -2px rgba(16, 185, 129, 0.3), 0 2px 6px -1px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
                               : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
                             opacity: isDragging ? 0.5 : 1,
+                            cursor: event.isBooking ? 'default' : 'pointer',
                           };
 
                           return (
                             <div
                               ref={setNodeRef}
-                              className={`absolute p-1.5 text-xs overflow-hidden cursor-pointer group
+                              className={`absolute p-1.5 text-xs overflow-hidden group
                                 transition-all duration-200 z-10 shadow-lg border border-white/40
-                                hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
-                                ${getEventColor(event)}`}
+                                ${event.isBooking ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
+                                ${eventStyling.textColor}`}
                               style={eventStyle}
                               onClick={() => onEventClick?.(event.id)}
-                              title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
+                              title={
+                                event.isBooking 
+                                  ? `Booked Appointment\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`
+                                  : `${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`
+                              }
                             >
-                              {/* Drag Handle */}
-                              <div 
-                                {...listeners}
-                                {...attributes}
-                                className="absolute top-1 right-1 w-4 h-4 bg-black/20 rounded-sm cursor-move 
-                                          opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                                          flex items-center justify-center hover:bg-black/30"
-                                onClick={(e) => e.stopPropagation()}
-                                title="Drag to move"
-                              >
-                                <div className="w-2 h-2 bg-white/80 rounded-[1px]"></div>
-                              </div>
+                              {/* Drag Handle - only for regular events */}
+                              {!event.isBooking && (
+                                <div 
+                                  {...listeners}
+                                  {...attributes}
+                                  className="absolute top-1 right-1 w-4 h-4 bg-black/20 rounded-sm cursor-move 
+                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                            flex items-center justify-center hover:bg-black/30"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title="Drag to move"
+                                >
+                                  <div className="w-2 h-2 bg-white/80 rounded-[1px]"></div>
+                                </div>
+                              )}
 
                               <div className="flex items-start gap-1">
-                                {/* Show user avatar only for user's own events */}
-                                {isUserEvent && currentUserProfile && (
-                                  <Avatar className="h-4 w-4 flex-shrink-0 mt-0.5">
+                                {/* Event type indicator */}
+                                <span className="text-xs flex-shrink-0 mt-0.5">
+                                  {eventStyling.icon}
+                                </span>
+                                
+                                {/* Show user avatar only for user's own regular events */}
+                                {!event.isBooking && isUserEvent && currentUserProfile && (
+                                  <Avatar className="h-3 w-3 flex-shrink-0 mt-0.5">
                                     {currentUserProfile.avatar_url ? (
                                       <AvatarImage src={currentUserProfile.avatar_url} />
                                     ) : (
-                                      <AvatarFallback className="text-[8px] bg-white/20 text-black">
+                                      <AvatarFallback className="text-[7px] bg-white/20 text-white">
                                         {currentUserProfile.display_name?.charAt(0) || '?'}
                                       </AvatarFallback>
                                     )}
                                   </Avatar>
                                 )}
-                                <div className="flex-1 min-w-0 pr-6"> {/* Add padding for drag handle */}
-                                  <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
-                                    {event.title}
+                                
+                                <div className="flex-1 min-w-0 pr-6">
+                                  <div className="font-semibold truncate text-xs leading-tight mb-0.5">
+                                    {event.isBooking ? event.customer_name : event.title}
                                   </div>
-                                  <div className="text-[11px] leading-tight text-black/80">
+                                  <div className="text-[11px] leading-tight opacity-90 flex items-center gap-1">
+                                    <Clock className="h-2.5 w-2.5" />
                                     {format(startTime, 'HH:mm')}
                                   </div>
                                   {style.height > 40 && (
-                                    <div className="text-[10px] leading-tight truncate text-black/70">
-                                      {event.location}
+                                    <div className="text-[10px] leading-tight truncate opacity-75 mt-0.5">
+                                      {event.isBooking ? event.scheduler_name : event.location}
                                     </div>
                                   )}
                                 </div>
@@ -569,17 +647,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       </div>
       
       <DragOverlay>
-        {activeEvent && (
+        {activeEvent && !activeEvent.isBooking && (
           <div 
             className="p-2 text-xs border border-white/40 shadow-2xl backdrop-blur-sm transform scale-110"
             style={{
-              backgroundColor: activeEvent.color ? `${activeEvent.color}90` : 'hsl(var(--primary) / 0.9)', // 90% opacity
-              borderRadius: '20px 8px 20px 8px', // Water drop corners
+              backgroundColor: activeEvent.color ? `${activeEvent.color}90` : 'hsl(var(--primary) / 0.9)',
+              borderRadius: '20px 8px 20px 8px',
               borderLeftColor: activeEvent.color || 'hsl(var(--primary))',
               borderLeftWidth: '4px',
-              boxShadow: activeEvent.color 
-                ? `0 20px 40px -8px ${activeEvent.color}60, 0 8px 16px -4px ${activeEvent.color}40, inset 0 1px 0 rgba(255,255,255,0.2)` 
-                : '0 20px 40px -8px hsl(var(--primary) / 0.4), 0 8px 16px -4px hsl(var(--primary) / 0.25), inset 0 1px 0 rgba(255,255,255,0.2)',
+              boxShadow: '0 20px 40px -8px hsl(var(--primary) / 0.4), 0 8px 16px -4px hsl(var(--primary) / 0.25)',
               color: 'white',
               minWidth: '120px',
               zIndex: 1000

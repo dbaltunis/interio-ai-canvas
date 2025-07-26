@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,6 +9,8 @@ export const useRealtimeBookings = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('Setting up realtime listeners for bookings...');
+    
     // Listen for new bookings
     const bookingsChannel = supabase
       .channel('booking-updates')
@@ -25,6 +28,7 @@ export const useRealtimeBookings = () => {
           queryClient.invalidateQueries({ queryKey: ["user-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["booking-analytics"] });
           queryClient.invalidateQueries({ queryKey: ["scheduler-slots"] });
+          queryClient.invalidateQueries({ queryKey: ["booked-appointments"] });
           
           // Show notification for new booking
           toast({
@@ -47,6 +51,7 @@ export const useRealtimeBookings = () => {
           // Invalidate booking-related queries
           queryClient.invalidateQueries({ queryKey: ["user-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["booking-analytics"] });
+          queryClient.invalidateQueries({ queryKey: ["booked-appointments"] });
           
           // Show notification for status changes
           if (payload.old.status !== payload.new.status) {
@@ -71,6 +76,7 @@ export const useRealtimeBookings = () => {
           table: 'appointment_schedulers'
         },
         () => {
+          console.log('Scheduler updated, invalidating queries...');
           // Invalidate scheduler-related queries
           queryClient.invalidateQueries({ queryKey: ["appointment-schedulers"] });
           queryClient.invalidateQueries({ queryKey: ["scheduler-slots"] });
@@ -80,6 +86,7 @@ export const useRealtimeBookings = () => {
 
     // Cleanup subscriptions
     return () => {
+      console.log('Cleaning up realtime subscriptions...');
       supabase.removeChannel(bookingsChannel);
       supabase.removeChannel(schedulersChannel);
     };
