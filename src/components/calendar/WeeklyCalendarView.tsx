@@ -347,11 +347,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             width: eventWidth,
                             left: eventLeft,
                             zIndex: 10 + eventIndex,
-                            backgroundColor: event.color ? `${event.color}A6` : undefined, // 65% opacity for custom colors
+                            backgroundColor: event.color ? `${event.color}73` : undefined, // 45% opacity for custom colors
                             borderLeftColor: event.color || undefined,
                             borderRadius: '20px 8px 20px 8px', // Water drop asymmetric corners
                             boxShadow: event.color 
-                              ? `0 8px 16px -4px ${event.color}30, 0 4px 8px -2px ${event.color}20, inset 0 1px 0 rgba(255,255,255,0.15)` 
+                              ? `0 8px 16px -4px ${event.color}40, 0 4px 8px -2px ${event.color}40, inset 0 1px 0 rgba(255,255,255,0.15)` 
                               : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)'
                           }}
                           onClick={() => onEventClick?.(event.id)}
