@@ -171,9 +171,13 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 
                 if (!style.visible) return null;
                 
-                // Color coding by appointment type
-                const getEventColor = (type: string) => {
-                  switch (type) {
+                // Color coding by appointment color or type
+                const getEventColor = (event: any) => {
+                  if (event.color) {
+                    return `text-white border-l-4`;
+                  }
+                  
+                  switch (event.appointment_type) {
                     case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
                     case 'consultation': return 'bg-green-500/90 text-white border-green-600';
                     case 'call': return 'bg-purple-500/90 text-white border-purple-600';
@@ -186,25 +190,27 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                   <div
                     key={event.id}
                     className={`absolute left-1 right-1 rounded border-l-4 p-2 text-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all z-10 pointer-events-auto ${
-                      getEventColor(event.appointment_type || 'meeting')
+                      getEventColor(event)
                     }`}
                     style={{
                       top: `${style.top}px`,
                       height: `${style.height}px`,
                       marginLeft: `${eventIndex * 4}px`, // Slight offset for overlapping events
-                      zIndex: 10 + eventIndex
+                      zIndex: 10 + eventIndex,
+                      backgroundColor: event.color || undefined,
+                      borderLeftColor: event.color || undefined
                     }}
                     onClick={() => onEventClick?.(event.id)}
                     title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                   >
-                    <div className="font-medium truncate leading-tight">
+                    <div className="font-semibold truncate leading-tight text-base">
                       {event.title}
                     </div>
-                    <div className="text-xs opacity-90 leading-tight">
+                    <div className="text-sm opacity-90 leading-tight">
                       {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
                     </div>
                     {style.height > 60 && event.location && (
-                      <div className="text-xs opacity-75 leading-tight truncate mt-1">
+                      <div className="text-sm opacity-75 leading-tight truncate mt-1">
                         📍 {event.location}
                       </div>
                     )}

@@ -111,18 +111,22 @@ export type Database = {
           caldav_etag: string | null
           caldav_uid: string | null
           client_id: string | null
+          color: string | null
           created_at: string
           description: string | null
           end_time: string
           id: string
+          invited_client_emails: string[] | null
           last_caldav_sync: string | null
           location: string | null
           project_id: string | null
           start_time: string
           status: string | null
+          team_member_ids: string[] | null
           title: string
           updated_at: string
           user_id: string
+          video_meeting_link: string | null
         }
         Insert: {
           appointment_type?: string | null
@@ -130,18 +134,22 @@ export type Database = {
           caldav_etag?: string | null
           caldav_uid?: string | null
           client_id?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
           end_time: string
           id?: string
+          invited_client_emails?: string[] | null
           last_caldav_sync?: string | null
           location?: string | null
           project_id?: string | null
           start_time: string
           status?: string | null
+          team_member_ids?: string[] | null
           title: string
           updated_at?: string
           user_id: string
+          video_meeting_link?: string | null
         }
         Update: {
           appointment_type?: string | null
@@ -149,18 +157,22 @@ export type Database = {
           caldav_etag?: string | null
           caldav_uid?: string | null
           client_id?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
           end_time?: string
           id?: string
+          invited_client_emails?: string[] | null
           last_caldav_sync?: string | null
           location?: string | null
           project_id?: string | null
           start_time?: string
           status?: string | null
+          team_member_ids?: string[] | null
           title?: string
           updated_at?: string
           user_id?: string
+          video_meeting_link?: string | null
         }
         Relationships: [
           {

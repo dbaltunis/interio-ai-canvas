@@ -15,6 +15,10 @@ export interface Appointment {
   location?: string;
   appointment_type?: 'consultation' | 'measurement' | 'installation' | 'follow-up' | 'reminder' | 'meeting' | 'call';
   status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  color?: string;
+  video_meeting_link?: string;
+  team_member_ids?: string[];
+  invited_client_emails?: string[];
   created_at: string;
   updated_at: string;
 }

@@ -9,10 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useClients } from "@/hooks/useClients";
+import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { format } from "date-fns";
 
@@ -33,10 +36,15 @@ export const UnifiedAppointmentDialog = ({
   const [event, setEvent] = useState({
     title: "",
     description: "",
-    start_time: "",
-    end_time: "",
+    date: "",
+    startTime: "",
+    endTime: "",
     location: "",
     appointment_type: "meeting" as "meeting" | "consultation" | "measurement" | "installation" | "follow_up" | "reminder" | "call",
+    color: "",
+    video_meeting_link: "",
+    selectedTeamMembers: [] as string[],
+    inviteClientEmail: ""
   });
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
@@ -48,36 +56,62 @@ export const UnifiedAppointmentDialog = ({
   const deleteAppointment = useDeleteAppointment();
   const { syncableCalendars, syncAppointmentToCalDAV } = useAppointmentCalDAVSync();
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
+  const { data: teamMembers } = useTeamMembers();
+  const { data: clients } = useClients();
+  const { defaultColors } = useCalendarColors();
 
   useEffect(() => {
     if (appointment) {
+      const startDate = new Date(appointment.start_time);
+      const endDate = new Date(appointment.end_time);
+      
       setEvent({
         title: appointment.title || "",
         description: appointment.description || "",
-        start_time: appointment.start_time ? new Date(appointment.start_time).toISOString().slice(0, 16) : "",
-        end_time: appointment.end_time ? new Date(appointment.end_time).toISOString().slice(0, 16) : "",
+        date: format(startDate, 'yyyy-MM-dd'),
+        startTime: format(startDate, 'HH:mm'),
+        endTime: format(endDate, 'HH:mm'),
         location: appointment.location || "",
         appointment_type: appointment.appointment_type || "meeting",
+        color: appointment.color || defaultColors[0],
+        video_meeting_link: appointment.video_meeting_link || "",
+        selectedTeamMembers: appointment.team_member_ids || [],
+        inviteClientEmail: appointment.invited_client_emails?.join(', ') || ""
       });
     } else if (selectedDate) {
       setEvent({
         title: "",
         description: "",
-        start_time: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 9, 0).toISOString().slice(0, 16),
-        end_time: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 10, 0).toISOString().slice(0, 16),
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        startTime: "09:00",
+        endTime: "10:00",
         location: "",
         appointment_type: "meeting",
+        color: defaultColors[0],
+        video_meeting_link: "",
+        selectedTeamMembers: [],
+        inviteClientEmail: ""
       });
     }
-  }, [appointment, selectedDate]);
+  }, [appointment, selectedDate, defaultColors]);
 
   const handleSubmit = async () => {
-    if (!event.title || !event.start_time || !event.end_time) return;
+    if (!event.title || !event.date || !event.startTime || !event.endTime) return;
+
+    const startDateTime = new Date(`${event.date}T${event.startTime}`);
+    const endDateTime = new Date(`${event.date}T${event.endTime}`);
 
     const appointmentData = {
-      ...event,
-      start_time: new Date(event.start_time).toISOString(),
-      end_time: new Date(event.end_time).toISOString(),
+      title: event.title,
+      description: event.description,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      location: event.location,
+      appointment_type: event.appointment_type,
+      color: event.color,
+      video_meeting_link: event.video_meeting_link,
+      team_member_ids: event.selectedTeamMembers,
+      invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : []
     };
 
     try {
@@ -136,10 +170,15 @@ export const UnifiedAppointmentDialog = ({
     setEvent({
       title: "",
       description: "",
-      start_time: "",
-      end_time: "",
+      date: "",
+      startTime: "",
+      endTime: "",
       location: "",
       appointment_type: "meeting",
+      color: defaultColors[0],
+      video_meeting_link: "",
+      selectedTeamMembers: [],
+      inviteClientEmail: ""
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
@@ -153,88 +192,271 @@ export const UnifiedAppointmentDialog = ({
     );
   };
 
+  const handleTeamMemberToggle = (memberId: string, checked: boolean) => {
+    setEvent(prev => ({
+      ...prev,
+      selectedTeamMembers: checked 
+        ? [...prev.selectedTeamMembers, memberId]
+        : prev.selectedTeamMembers.filter(id => id !== memberId)
+    }));
+  };
+
+  const adjustTime = (field: 'startTime' | 'endTime', minutes: number) => {
+    setEvent(prev => {
+      const currentTime = prev[field];
+      const [hours, mins] = currentTime.split(':').map(Number);
+      const totalMinutes = hours * 60 + mins + minutes;
+      const clampedMinutes = Math.max(0, Math.min(1439, totalMinutes)); // 0-1439 minutes in a day
+      const newHours = Math.floor(clampedMinutes / 60);
+      const newMins = clampedMinutes % 60;
+      return {
+        ...prev,
+        [field]: `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`
+      };
+    });
+  };
+
+  const setQuickDuration = (minutes: number) => {
+    if (!event.startTime) return;
+    const [hours, mins] = event.startTime.split(':').map(Number);
+    const startMinutes = hours * 60 + mins;
+    const endMinutes = startMinutes + minutes;
+    const endHours = Math.floor(endMinutes / 60);
+    const endMins = endMinutes % 60;
+    setEvent(prev => ({
+      ...prev,
+      endTime: `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`
+    }));
+  };
+
   const isLoading = createAppointment.isPending || updateAppointment.isPending || deleteAppointment.isPending || syncAppointmentToCalDAV.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5" />
-            {isEditing ? 'Edit Appointment' : 'Create New Appointment'}
+            {isEditing ? 'Edit Appointment' : 'Create New Event'}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Basic Information */}
-          <div>
-            <Label htmlFor="title">Appointment Title *</Label>
-            <Input
-              id="title"
-              placeholder="Enter appointment title"
-              value={event.title}
-              onChange={(e) => setEvent({ ...event, title: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="start_time" className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Start Time *
-              </Label>
+              <Label htmlFor="title">Event Title *</Label>
               <Input
-                id="start_time"
-                type="datetime-local"
-                value={event.start_time}
-                onChange={(e) => setEvent({ ...event, start_time: e.target.value })}
+                id="title"
+                placeholder="What's this event about?"
+                value={event.title}
+                onChange={(e) => setEvent({ ...event, title: e.target.value })}
+                className="text-base"
               />
             </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="date">Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={event.date}
+                  onChange={(e) => setEvent({ ...event, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="startTime" className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Start Time *
+                </Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => adjustTime('startTime', -15)}
+                  >
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={event.startTime}
+                    onChange={(e) => setEvent({ ...event, startTime: e.target.value })}
+                    className="text-center"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => adjustTime('startTime', 15)}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time *</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => adjustTime('endTime', -15)}
+                  >
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={event.endTime}
+                    onChange={(e) => setEvent({ ...event, endTime: e.target.value })}
+                    className="text-center"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => adjustTime('endTime', 15)}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Duration Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Label className="text-sm font-medium w-full">Quick Duration:</Label>
+              {[15, 30, 60, 90, 120].map((minutes) => (
+                <Button
+                  key={minutes}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuickDuration(minutes)}
+                >
+                  {minutes}m
+                </Button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="type">Event Type</Label>
+                <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="consultation">Consultation</SelectItem>
+                    <SelectItem value="measurement">Measurement</SelectItem>
+                    <SelectItem value="installation">Installation</SelectItem>
+                    <SelectItem value="follow_up">Follow-up</SelectItem>
+                    <SelectItem value="reminder">Reminder</SelectItem>
+                    <SelectItem value="call">Call</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="flex items-center gap-1">
+                  <Palette className="w-3 h-3" />
+                  Color
+                </Label>
+                <div className="flex gap-2 pt-2">
+                  {defaultColors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`w-6 h-6 rounded-full border-2 ${
+                        event.color === color ? 'ring-2 ring-offset-2 ring-primary' : ''
+                      }`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setEvent({ ...event, color })}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Location & Video Meeting */}
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="end_time" className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                End Time *
+              <Label htmlFor="location" className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                Location
               </Label>
               <Input
-                id="end_time"
-                type="datetime-local"
-                value={event.end_time}
-                onChange={(e) => setEvent({ ...event, end_time: e.target.value })}
+                id="location"
+                placeholder="Where is this happening?"
+                value={event.location}
+                onChange={(e) => setEvent({ ...event, location: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="videoLink" className="flex items-center gap-1">
+                <Video className="w-3 h-3" />
+                Video Meeting Link
+              </Label>
+              <Input
+                id="videoLink"
+                placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                value={event.video_meeting_link}
+                onChange={(e) => setEvent({ ...event, video_meeting_link: e.target.value })}
               />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="type">Appointment Type</Label>
-            <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="meeting">Meeting</SelectItem>
-                <SelectItem value="consultation">Consultation</SelectItem>
-                <SelectItem value="measurement">Measurement</SelectItem>
-                <SelectItem value="installation">Installation</SelectItem>
-                <SelectItem value="follow_up">Follow-up</SelectItem>
-                <SelectItem value="reminder">Reminder</SelectItem>
-                <SelectItem value="call">Call</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Team Members */}
+          {teamMembers && teamMembers.length > 0 && (
+            <div className="space-y-3">
+              <Label className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                Team Members
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                {teamMembers.map((member) => (
+                  <div key={member.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`member-${member.id}`}
+                      checked={event.selectedTeamMembers.includes(member.id)}
+                      onCheckedChange={(checked) => 
+                        handleTeamMemberToggle(member.id, checked as boolean)
+                      }
+                    />
+                    <Label htmlFor={`member-${member.id}`} className="text-sm">
+                      {member.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
+          {/* Client Invitations */}
           <div>
-            <Label htmlFor="location" className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              Location
+            <Label htmlFor="clientEmails" className="flex items-center gap-1">
+              <UserPlus className="w-3 h-3" />
+              Invite Clients (emails)
             </Label>
             <Input
-              id="location"
-              placeholder="Enter location"
-              value={event.location}
-              onChange={(e) => setEvent({ ...event, location: e.target.value })}
+              id="clientEmails"
+              placeholder="client1@email.com, client2@email.com"
+              value={event.inviteClientEmail}
+              onChange={(e) => setEvent({ ...event, inviteClientEmail: e.target.value })}
             />
           </div>
 
+          {/* Description */}
           <div>
             <Label htmlFor="description" className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
@@ -242,7 +464,7 @@ export const UnifiedAppointmentDialog = ({
             </Label>
             <Textarea
               id="description"
-              placeholder="Enter appointment description"
+              placeholder="Add more details about this event..."
               value={event.description}
               onChange={(e) => setEvent({ ...event, description: e.target.value })}
               rows={3}
@@ -320,11 +542,10 @@ export const UnifiedAppointmentDialog = ({
           )}
 
           {/* Action Buttons */}
-          <Separator />
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={!event.title || !event.start_time || !event.end_time || isLoading}
+              disabled={!event.title || !event.date || !event.startTime || !event.endTime || isLoading}
               className="flex-1"
             >
               {isLoading ? (
@@ -333,7 +554,7 @@ export const UnifiedAppointmentDialog = ({
                   {isEditing ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
-                isEditing ? 'Update Appointment' : 'Create Appointment'
+                isEditing ? 'Update Event' : 'Create Event'
               )}
             </Button>
 
@@ -356,7 +577,7 @@ export const UnifiedAppointmentDialog = ({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+                      <AlertDialogTitle>Delete Event</AlertDialogTitle>
                       <AlertDialogDescription>
                         Are you sure you want to delete "{appointment?.title}"? This action cannot be undone.
                       </AlertDialogDescription>

@@ -350,14 +350,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       onClick={() => onEventClick?.(event.id)}
                       title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                      <div className="font-medium truncate text-[10px] leading-tight mb-0.5">
+                      <div className="font-semibold truncate text-xs leading-tight mb-0.5">
                         {event.title}
                       </div>
-                      <div className="text-[10px] opacity-90 leading-tight">
+                      <div className="text-[11px] opacity-90 leading-tight">
                         {format(startTime, 'HH:mm')}
                       </div>
                       {style.height > 40 && (
-                        <div className="text-[9px] opacity-75 leading-tight truncate">
+                        <div className="text-[10px] opacity-75 leading-tight truncate">
                           {event.location}
                         </div>
                       )}

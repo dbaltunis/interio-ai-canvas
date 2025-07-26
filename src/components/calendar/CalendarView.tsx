@@ -186,9 +186,13 @@ const CalendarView = () => {
       days.push(day);
     }
 
-    // Get color dot for event type
-    const getEventDotColor = (type: string) => {
-      switch (type) {
+    // Get color dot for event type or custom color
+    const getEventDotColor = (event: any) => {
+      if (event.color) {
+        return '';
+      }
+      
+      switch (event.appointment_type) {
         case 'meeting': return 'bg-blue-500';
         case 'consultation': return 'bg-green-500';
         case 'call': return 'bg-purple-500';
@@ -245,7 +249,7 @@ const CalendarView = () => {
                   {events.slice(0, 3).map((event, index) => (
                     <div
                       key={event.id}
-                      className="text-xs cursor-pointer hover:bg-accent/30 transition-colors rounded p-1 group"
+                      className="text-sm cursor-pointer hover:bg-accent/30 transition-colors rounded p-1 group"
                       title={`${event.title}\n${format(new Date(event.start_time), 'HH:mm')} - ${format(new Date(event.end_time), 'HH:mm')}`}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -253,12 +257,17 @@ const CalendarView = () => {
                       }}
                     >
                       <div className="flex items-center gap-1.5">
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getEventDotColor(event.appointment_type || 'meeting')}`} />
+                        <div 
+                          className={`w-3 h-3 rounded-full flex-shrink-0 ${getEventDotColor(event)}`}
+                          style={{
+                            backgroundColor: event.color || undefined
+                          }}
+                        />
                         <div className="truncate text-foreground group-hover:text-foreground/80">
-                          <span className="font-medium">
+                          <span className="font-semibold">
                             {format(new Date(event.start_time), 'HH:mm')}
                           </span>
-                          <span className="ml-1">
+                          <span className="ml-1 font-medium">
                             {event.title}
                           </span>
                         </div>
