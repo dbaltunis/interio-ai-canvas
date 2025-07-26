@@ -9,6 +9,8 @@ import { JobsHeader } from "./JobsHeader";
 import { JobGridView } from "./JobGridView";
 import { JobListView } from "./JobListView";
 import { JobsFilters } from "./JobsFilters";
+import { JobsGridSkeleton } from "./skeleton/JobsGridSkeleton";
+import { JobsListSkeleton } from "./skeleton/JobsListSkeleton";
 
 interface JobsListViewProps {
   onNewJob: () => void;
@@ -129,11 +131,11 @@ export const JobsListView = ({
 
   if (quotesLoading || clientsLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="text-gray-600">Loading jobs...</p>
+      <div className="space-y-6">
+        <div className="h-16">
+          {/* Header skeleton placeholder */}
         </div>
+        {viewMode === 'grid' ? <JobsGridSkeleton /> : <JobsListSkeleton />}
       </div>
     );
   }

@@ -35,6 +35,7 @@ import { JobNotesDialog } from "./JobNotesDialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmailStatusDisplay } from "./EmailStatusDisplay";
 import { JobsPagination } from "./JobsPagination";
+import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -236,15 +237,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   };
 
   if (isLoading) {
-    console.log('JobsTableView: Still loading data...');
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="text-gray-600">Loading jobs...</p>
-        </div>
-      </div>
-    );
+    return <JobsTableSkeleton />;
   }
 
   if (filteredQuotes.length === 0) {
