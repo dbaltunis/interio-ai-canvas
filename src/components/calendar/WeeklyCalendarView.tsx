@@ -46,6 +46,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [resizeEventId, setResizeEventId] = useState<string | null>(null);
   const [resizeType, setResizeType] = useState<'top' | 'bottom' | null>(null);
   const [resizeStartY, setResizeStartY] = useState<number>(0);
+  const [resizeStartTime, setResizeStartTime] = useState<Date | null>(null);
+  const [resizeStartEndTime, setResizeStartEndTime] = useState<Date | null>(null);
 
   // Generate all 24-hour time slots (00:00 to 23:30)
   const allTimeSlots = (() => {
@@ -240,103 +242,120 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const handleResizeStart = (eventId: string, type: 'top' | 'bottom', e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    
+    const eventToResize = displayAppointments?.find(apt => apt.id === eventId);
+    if (!eventToResize) return;
+
     setIsResizing(true);
     setResizeEventId(eventId);
     setResizeType(type);
     setResizeStartY(e.clientY);
+    setResizeStartTime(new Date(eventToResize.start_time));
+    setResizeStartEndTime(new Date(eventToResize.end_time));
   };
 
-  const handleResizeMove = (e: React.MouseEvent) => {
-    if (!isResizing || !resizeEventId || !resizeType) return;
-    
-    e.preventDefault();
-    const deltaY = e.clientY - resizeStartY;
-    const deltaSlots = Math.round(deltaY / 20); // 20px per slot
-    
-    if (deltaSlots === 0) return;
+  // Global mouse move and up handlers for resize
+  useEffect(() => {
+    if (!isResizing) return;
 
-    const eventToResize = displayAppointments?.find(apt => apt.id === resizeEventId);
-    if (!eventToResize) return;
-
-    const startTime = new Date(eventToResize.start_time);
-    const endTime = new Date(eventToResize.end_time);
-    
-    let newStartTime = new Date(startTime);
-    let newEndTime = new Date(endTime);
-
-    if (resizeType === 'top') {
-      // Resize from top - change start time
-      newStartTime = new Date(startTime.getTime() + (deltaSlots * 30 * 60 * 1000));
-      // Ensure minimum duration of 30 minutes
-      if (newStartTime >= endTime) {
-        newStartTime = new Date(endTime.getTime() - 30 * 60 * 1000);
-      }
-    } else {
-      // Resize from bottom - change end time
-      newEndTime = new Date(endTime.getTime() + (deltaSlots * 30 * 60 * 1000));
-      // Ensure minimum duration of 30 minutes
-      if (newEndTime <= startTime) {
-        newEndTime = new Date(startTime.getTime() + 30 * 60 * 1000);
-      }
-    }
-
-    // Optimistic update
-    queryClient.setQueryData(['appointments'], (oldData: any) => {
-      if (!oldData) return oldData;
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !resizeEventId || !resizeType || !resizeStartTime || !resizeStartEndTime) return;
       
-      return oldData.map((appointment: any) => 
-        appointment.id === resizeEventId
-          ? {
-              ...appointment,
-              start_time: newStartTime.toISOString(),
-              end_time: newEndTime.toISOString()
-            }
-          : appointment
-      );
-    });
+      const deltaY = e.clientY - resizeStartY;
+      const deltaSlots = Math.round(deltaY / 20); // 20px per slot
+      
+      if (deltaSlots === 0) return;
 
-    setResizeStartY(e.clientY);
-  };
+      let newStartTime = new Date(resizeStartTime);
+      let newEndTime = new Date(resizeStartEndTime);
 
-  const handleResizeEnd = async () => {
-    if (!isResizing || !resizeEventId) {
-      setIsResizing(false);
-      setResizeEventId(null);
-      setResizeType(null);
-      return;
-    }
+      if (resizeType === 'top') {
+        // Resize from top - change start time
+        newStartTime = new Date(resizeStartTime.getTime() + (deltaSlots * 30 * 60 * 1000));
+        // Ensure minimum duration of 30 minutes
+        if (newStartTime >= resizeStartEndTime) {
+          newStartTime = new Date(resizeStartEndTime.getTime() - 30 * 60 * 1000);
+        }
+      } else {
+        // Resize from bottom - change end time
+        newEndTime = new Date(resizeStartEndTime.getTime() + (deltaSlots * 30 * 60 * 1000));
+        // Ensure minimum duration of 30 minutes
+        if (newEndTime <= resizeStartTime) {
+          newEndTime = new Date(resizeStartTime.getTime() + 30 * 60 * 1000);
+        }
+      }
 
-    const eventToUpdate = displayAppointments?.find(apt => apt.id === resizeEventId);
-    if (!eventToUpdate) {
-      setIsResizing(false);
-      setResizeEventId(null);
-      setResizeType(null);
-      return;
-    }
+      // Optimistic update
+      queryClient.setQueryData(['appointments'], (oldData: any) => {
+        if (!oldData) return oldData;
+        
+        return oldData.map((appointment: any) => 
+          appointment.id === resizeEventId
+            ? {
+                ...appointment,
+                start_time: newStartTime.toISOString(),
+                end_time: newEndTime.toISOString()
+              }
+            : appointment
+        );
+      });
+    };
 
-    // Update in database
-    try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          start_time: eventToUpdate.start_time,
-          end_time: eventToUpdate.end_time
-        })
-        .eq('id', resizeEventId);
+    const handleGlobalMouseUp = async () => {
+      if (!isResizing || !resizeEventId) {
+        setIsResizing(false);
+        setResizeEventId(null);
+        setResizeType(null);
+        setResizeStartTime(null);
+        setResizeStartEndTime(null);
+        return;
+      }
 
-      if (error) {
+      const eventToUpdate = displayAppointments?.find(apt => apt.id === resizeEventId);
+      if (!eventToUpdate) {
+        setIsResizing(false);
+        setResizeEventId(null);
+        setResizeType(null);
+        setResizeStartTime(null);
+        setResizeStartEndTime(null);
+        return;
+      }
+
+      // Update in database
+      try {
+        const { error } = await supabase
+          .from('appointments')
+          .update({
+            start_time: eventToUpdate.start_time,
+            end_time: eventToUpdate.end_time
+          })
+          .eq('id', resizeEventId);
+
+        if (error) {
+          console.error('Error updating appointment:', error);
+          queryClient.invalidateQueries({ queryKey: ['appointments'] });
+        }
+      } catch (error) {
         console.error('Error updating appointment:', error);
         queryClient.invalidateQueries({ queryKey: ['appointments'] });
       }
-    } catch (error) {
-      console.error('Error updating appointment:', error);
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-    }
 
-    setIsResizing(false);
-    setResizeEventId(null);
-    setResizeType(null);
-  };
+      setIsResizing(false);
+      setResizeEventId(null);
+      setResizeType(null);
+      setResizeStartTime(null);
+      setResizeStartEndTime(null);
+    };
+
+    // Add global event listeners
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isResizing, resizeEventId, resizeType, resizeStartY, resizeStartTime, resizeStartEndTime, displayAppointments, queryClient]);
 
   // Auto-scroll to earliest event or 8 AM (but not during event creation)
   useEffect(() => {
@@ -370,11 +389,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div 
         className="h-full max-h-screen flex flex-col overflow-hidden" 
-        onMouseUp={() => {
-          handleMouseUp();
-          handleResizeEnd();
-        }}
-        onMouseMove={handleResizeMove}
+        onMouseUp={handleMouseUp}
       >
         {/* Week header with dates */}
         <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
