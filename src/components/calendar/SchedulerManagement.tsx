@@ -1,484 +1,189 @@
-import { useState } from "react";
-import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
-import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, Settings, Plus, Edit, Trash2, ExternalLink } from "lucide-react";
+import { useAppointmentSchedulers, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-
-interface SchedulerFormData {
-  name: string;
-  description: string;
-  duration: number;
-  max_advance_booking: number;
-  buffer_time: number;
-  active: boolean;
-  availability: any;
-  google_meet_link?: string;
-}
-
-const initialFormData: SchedulerFormData = {
-  name: "",
-  description: "",
-  duration: 30,
-  max_advance_booking: 30,
-  buffer_time: 15,
-  active: true,
-  availability: {},
-  google_meet_link: "",
-};
-
-const defaultAvailability = {
-  monday: { enabled: true, timeSlots: [{ start: "09:00", end: "17:00" }] },
-  tuesday: { enabled: true, timeSlots: [{ start: "09:00", end: "17:00" }] },
-  wednesday: { enabled: true, timeSlots: [{ start: "09:00", end: "17:00" }] },
-  thursday: { enabled: true, timeSlots: [{ start: "09:00", end: "17:00" }] },
-  friday: { enabled: true, timeSlots: [{ start: "09:00", end: "17:00" }] },
-  saturday: { enabled: false, timeSlots: [] },
-  sunday: { enabled: false, timeSlots: [] },
-};
-
-// Function to generate a URL-friendly slug
-const generateSlug = (name: string) => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-};
+import { Copy, Edit, Trash2, ExternalLink, Users, Clock, Globe } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 export const SchedulerManagement = () => {
   const { data: schedulers, isLoading } = useAppointmentSchedulers();
-  const { data: bookings } = useAppointmentBookings();
-  const createScheduler = useCreateScheduler();
-  const updateScheduler = useUpdateScheduler();
   const deleteScheduler = useDeleteScheduler();
   const { toast } = useToast();
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedScheduler, setSelectedScheduler] = useState<any>(null);
-  const [formData, setFormData] = useState<SchedulerFormData>(initialFormData);
+  // Get booking counts for each scheduler
+  const { data: bookingCounts } = useQuery({
+    queryKey: ["booking-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments_booked")
+        .select("scheduler_id, status")
+        .in("status", ["confirmed", "completed"]);
 
-  const handleCreateScheduler = async () => {
-    try {
-      const slug = generateSlug(formData.name);
-      await createScheduler.mutateAsync({
-        ...formData,
-        slug,
-        min_advance_notice: 24, // Default 24 hours notice
-        locations: {}, // Default empty locations
-        availability: formData.availability || defaultAvailability,
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      data?.forEach(booking => {
+        counts[booking.scheduler_id] = (counts[booking.scheduler_id] || 0) + 1;
       });
-      setIsCreateDialogOpen(false);
-      setFormData(initialFormData);
+
+      return counts;
+    }
+  });
+
+  const copyBookingLink = async (slug: string) => {
+    const link = `${window.location.origin}/schedule/${slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
       toast({
-        title: "Success",
-        description: "Scheduler created successfully",
+        title: "Link copied!",
+        description: "Booking link copied to clipboard",
       });
     } catch (error) {
-      console.error("Error creating scheduler:", error);
+      toast({
+        title: "Error",
+        description: "Failed to copy link",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleUpdateScheduler = async () => {
-    if (!selectedScheduler) return;
-    
-    try {
-      await updateScheduler.mutateAsync({
-        id: selectedScheduler.id,
-        ...formData,
-        slug: formData.name ? generateSlug(formData.name) : selectedScheduler.slug,
-        min_advance_notice: 24, // Keep default for now
-        locations: {}, // Keep default for now
-      });
-      setIsEditDialogOpen(false);
-      setSelectedScheduler(null);
-      setFormData(initialFormData);
-      toast({
-        title: "Success",
-        description: "Scheduler updated successfully",
-      });
-    } catch (error) {
-      console.error("Error updating scheduler:", error);
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      try {
+        await deleteScheduler.mutateAsync(id);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete scheduler",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDeleteScheduler = async (id: string) => {
-    try {
-      await deleteScheduler.mutateAsync(id);
-      toast({
-        title: "Success",
-        description: "Scheduler deleted successfully",
-      });
-    } catch (error) {
-      console.error("Error deleting scheduler:", error);
-    }
-  };
-
-  const getBookingCountForScheduler = (schedulerId: string) => {
-    return bookings?.filter(booking => booking.scheduler_id === schedulerId).length || 0;
-  };
-
-  const getRecentBookingsForScheduler = (schedulerId: string) => {
-    return bookings?.filter(booking => booking.scheduler_id === schedulerId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 3) || [];
+  const openBookingPage = (slug: string) => {
+    window.open(`/schedule/${slug}`, '_blank');
   };
 
   if (isLoading) {
+    return <div className="flex items-center justify-center p-8">Loading schedulers...</div>;
+  }
+
+  if (!schedulers?.length) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="text-muted-foreground">Loading schedulers...</div>
-      </div>
+      <Card>
+        <CardContent className="text-center py-8">
+          <h3 className="text-lg font-semibold mb-2">No appointment schedulers yet</h3>
+          <p className="text-muted-foreground mb-4">Create your first appointment scheduler to start accepting bookings</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Create Button */}
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Appointment Schedulers</h2>
-          <p className="text-muted-foreground">
-            Manage your public booking pages and availability
-          </p>
-        </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Scheduler
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Scheduler</DialogTitle>
-              <DialogDescription>
-                Set up a new public booking page for appointments
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Scheduler Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., 30-min consultation"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Select
-                    value={formData.duration.toString()}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, duration: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="45">45 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe what this appointment is for..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="max_advance_booking">Max Advance Booking (days)</Label>
-                  <Input
-                    id="max_advance_booking"
-                    type="number"
-                    value={formData.max_advance_booking}
-                    onChange={(e) => setFormData(prev => ({ ...prev, max_advance_booking: parseInt(e.target.value) }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="buffer_time">Buffer Time (minutes)</Label>
-                  <Input
-                    id="buffer_time"
-                    type="number"
-                    value={formData.buffer_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, buffer_time: parseInt(e.target.value) }))}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="google_meet_link">Google Meet Link (optional)</Label>
-                <Input
-                  id="google_meet_link"
-                  value={formData.google_meet_link || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, google_meet_link: e.target.value }))}
-                  placeholder="https://meet.google.com/..."
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
-                />
-                <Label htmlFor="active">Active (available for booking)</Label>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateDialogOpen(false);
-                  setFormData(initialFormData);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreateScheduler} disabled={createScheduler.isPending}>
-                {createScheduler.isPending ? "Creating..." : "Create Scheduler"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <h2 className="text-2xl font-bold">Appointment Schedulers</h2>
+        <Badge variant="secondary">{schedulers.length} scheduler{schedulers.length !== 1 ? 's' : ''}</Badge>
       </div>
 
-      {/* Schedulers Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {schedulers?.map((scheduler) => {
-          const bookingCount = getBookingCountForScheduler(scheduler.id);
-          const recentBookings = getRecentBookingsForScheduler(scheduler.id);
-          
-          return (
-            <Card key={scheduler.id} className="relative">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+      <div className="grid gap-4">
+        {schedulers.map((scheduler) => (
+          <Card key={scheduler.id} className={`transition-all ${scheduler.active ? 'border-green-200' : 'border-gray-200'}`}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
                     <CardTitle className="text-lg">{scheduler.name}</CardTitle>
-                    <CardDescription>{scheduler.description}</CardDescription>
+                    <Badge variant={scheduler.active ? "default" : "secondary"}>
+                      {scheduler.active ? "Active" : "Inactive"}
+                    </Badge>
                   </div>
-                  <Badge variant={scheduler.active ? "default" : "secondary"}>
-                    {scheduler.active ? "Active" : "Inactive"}
-                  </Badge>
+                  {scheduler.description && (
+                    <p className="text-sm text-muted-foreground">{scheduler.description}</p>
+                  )}
                 </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{scheduler.duration} min</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Users className="h-4 w-4" />
-                    <span>{bookingCount} bookings</span>
-                  </div>
+                {scheduler.image_url && (
+                  <img 
+                    src={scheduler.image_url} 
+                    alt={scheduler.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                )}
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{scheduler.duration} min</span>
                 </div>
-
-                {recentBookings.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Recent Bookings</h4>
-                    <div className="space-y-1">
-                      {recentBookings.map((booking) => (
-                        <div key={booking.id} className="text-xs text-muted-foreground border-l-2 border-primary/20 pl-2">
-                          <div className="font-medium text-foreground">{booking.customer_name}</div>
-                          <div>{format(new Date(booking.appointment_date), 'MMM d')} at {booking.appointment_time}</div>
-                        </div>
-                      ))}
-                    </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{bookingCounts?.[scheduler.id] || 0} bookings</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">/schedule/{scheduler.slug}</span>
+                </div>
+                {scheduler.user_email && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{scheduler.user_email}</span>
                   </div>
                 )}
+              </div>
 
-                <div className="flex space-x-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      setSelectedScheduler(scheduler);
-                      setFormData({
-                        name: scheduler.name,
-                        description: scheduler.description,
-                        duration: scheduler.duration,
-                        max_advance_booking: scheduler.max_advance_booking || 30,
-                        buffer_time: scheduler.buffer_time || 15,
-                        active: scheduler.active,
-                        availability: scheduler.availability || defaultAvailability,
-                        google_meet_link: scheduler.google_meet_link || "",
-                      });
-                      setIsEditDialogOpen(true);
-                    }}
+              {scheduler.google_meet_link && (
+                <div className="mb-4 p-2 bg-blue-50 rounded border">
+                  <span className="text-sm font-medium">Google Meet: </span>
+                  <a 
+                    href={scheduler.google_meet_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
                   >
-                    <Edit className="mr-1 h-3 w-3" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const url = `${window.location.origin}/book/${scheduler.slug}`;
-                      navigator.clipboard.writeText(url);
-                      toast({
-                        title: "Link copied!",
-                        description: "Booking link has been copied to clipboard",
-                      });
-                    }}
-                  >
-                    <ExternalLink className="mr-1 h-3 w-3" />
-                    Share
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteScheduler(scheduler.id)}
-                  >
-                    <Trash2 className="mr-1 h-3 w-3" />
-                    Delete
-                  </Button>
+                    {scheduler.google_meet_link}
+                  </a>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              )}
 
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Scheduler</DialogTitle>
-            <DialogDescription>
-              Update your scheduler settings
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {/* Same form fields as create dialog */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Scheduler Name</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., 30-min consultation"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-duration">Duration (minutes)</Label>
-                <Select
-                  value={formData.duration.toString()}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, duration: parseInt(value) }))}
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyBookingLink(scheduler.slug)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="45">45 minutes</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="90">1.5 hours</SelectItem>
-                    <SelectItem value="120">2 hours</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Link
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openBookingPage(scheduler.slug)}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Page
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(scheduler.id, scheduler.name)}
+                  disabled={deleteScheduler.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe what this appointment is for..."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-max-advance">Max Advance Booking (days)</Label>
-                <Input
-                  id="edit-max-advance"
-                  type="number"
-                  value={formData.max_advance_booking}
-                  onChange={(e) => setFormData(prev => ({ ...prev, max_advance_booking: parseInt(e.target.value) }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-buffer">Buffer Time (minutes)</Label>
-                <Input
-                  id="edit-buffer"
-                  type="number"
-                  value={formData.buffer_time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, buffer_time: parseInt(e.target.value) }))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-google-meet">Google Meet Link (optional)</Label>
-              <Input
-                id="edit-google-meet"
-                value={formData.google_meet_link || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, google_meet_link: e.target.value }))}
-                placeholder="https://meet.google.com/..."
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-active"
-                checked={formData.active}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
-              />
-              <Label htmlFor="edit-active">Active (available for booking)</Label>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditDialogOpen(false);
-                setSelectedScheduler(null);
-                setFormData(initialFormData);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateScheduler} disabled={updateScheduler.isPending}>
-              {updateScheduler.isPending ? "Updating..." : "Update Scheduler"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
