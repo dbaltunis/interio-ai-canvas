@@ -49,7 +49,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
 
   if (isCollapsed) {
     return (
-      <div className="w-12 border-r bg-background flex flex-col h-full">
+      <div className="w-16 min-w-16 border-r bg-background flex flex-col h-full flex-shrink-0">
         <div className="p-2 border-b">
           <Button
             variant="ghost"
@@ -65,7 +65,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   }
 
   return (
-    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full">
+    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0">
       <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
           {/* Collapse Button */}
