@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Settings, Trash2, Calendar, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { Settings, Trash2, Calendar, RefreshCw, CheckCircle, XCircle, Zap } from "lucide-react";
+import { CalendarProviderPresets, CalendarProvider } from "./CalendarProviderPresets";
+import { CalendarSetupWizard } from "./CalendarSetupWizard";
+import { GoogleCalendarSetup } from "./GoogleCalendarSetup";
 import { 
   useCalDAVAccounts, 
   useCalDAVCalendars, 
@@ -21,46 +22,27 @@ import {
 
 export const CalDAVAccountManager = () => {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState({
-    account_name: "",
-    email: "",
-    username: "",
-    password: "",
-    server_url: "",
-  });
+  const [showProviderSelection, setShowProviderSelection] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<CalendarProvider | null>(null);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
 
   const { accounts, isLoading: accountsLoading } = useCalDAVAccounts();
   const { calendars, isLoading: calendarsLoading } = useCalDAVCalendars(selectedAccountId);
-  const addAccount = useAddCalDAVAccount();
-  const testConnection = useTestCalDAVConnection();
   const syncCalendar = useSyncCalDAVCalendar();
   const removeAccount = useRemoveCalDAVAccount();
   const updateCalendar = useUpdateCalDAVCalendar();
 
-  const handleAddAccount = async () => {
-    if (!newAccount.account_name || !newAccount.email || !newAccount.username || !newAccount.password) {
-      return;
-    }
-
-    try {
-      await addAccount.mutateAsync(newAccount);
-      setNewAccount({
-        account_name: "",
-        email: "",
-        username: "",
-        password: "",
-        server_url: "",
-      });
-      setShowAddAccount(false);
-    } catch (error) {
-      console.error("Failed to add account:", error);
-    }
+  const handleSelectProvider = (provider: CalendarProvider) => {
+    setSelectedProvider(provider);
+    setShowProviderSelection(false);
+    setShowSetupWizard(true);
   };
 
-  const handleTestConnection = async (account: any) => {
-    await testConnection.mutateAsync(account);
+  const handleSetupSuccess = () => {
+    setShowSetupWizard(false);
+    setSelectedProvider(null);
   };
+
 
   const handleSyncCalendar = async (calendarId: string) => {
     await syncCalendar.mutateAsync(calendarId);
@@ -84,86 +66,47 @@ export const CalDAVAccountManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Calendar Accounts</h2>
+          <h2 className="text-2xl font-bold">Calendar Integration</h2>
           <p className="text-muted-foreground">
             Connect your calendar accounts to sync events automatically
           </p>
         </div>
-        <Dialog open={showAddAccount} onOpenChange={setShowAddAccount}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Account
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Calendar Account</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="account_name">Account Name</Label>
-                <Input
-                  id="account_name"
-                  placeholder="My Gmail Calendar"
-                  value={newAccount.account_name}
-                  onChange={(e) => setNewAccount({ ...newAccount, account_name: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@gmail.com"
-                  value={newAccount.email}
-                  onChange={(e) => setNewAccount({ ...newAccount, email: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="Usually your email address"
-                  value={newAccount.username}
-                  onChange={(e) => setNewAccount({ ...newAccount, username: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="App password or account password"
-                  value={newAccount.password}
-                  onChange={(e) => setNewAccount({ ...newAccount, password: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="server_url">Server URL (Optional)</Label>
-                <Input
-                  id="server_url"
-                  placeholder="https://caldav.example.com (auto-detected if empty)"
-                  value={newAccount.server_url}
-                  onChange={(e) => setNewAccount({ ...newAccount, server_url: e.target.value })}
-                />
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  onClick={handleAddAccount}
-                  disabled={addAccount.isPending}
-                  className="flex-1"
-                >
-                  {addAccount.isPending ? "Connecting..." : "Add Account"}
-                </Button>
-                <Button variant="outline" onClick={() => setShowAddAccount(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setShowProviderSelection(true)}>
+          <Zap className="w-4 h-4 mr-2" />
+          Add Calendar
+        </Button>
       </div>
+
+      {/* Google Calendar Setup */}
+      <GoogleCalendarSetup />
+
+      {/* Provider Selection Dialog */}
+      {showProviderSelection && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Add Calendar Account</h2>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowProviderSelection(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              <CalendarProviderPresets onSelectProvider={handleSelectProvider} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Setup Wizard */}
+      <CalendarSetupWizard 
+        provider={selectedProvider}
+        open={showSetupWizard}
+        onOpenChange={setShowSetupWizard}
+        onSuccess={handleSetupSuccess}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Accounts List */}
@@ -213,17 +156,6 @@ export const CalDAVAccountManager = () => {
                           </Badge>
                         )}
                         <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTestConnection(account);
-                            }}
-                            disabled={testConnection.isPending}
-                          >
-                            Test
-                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
