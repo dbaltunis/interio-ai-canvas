@@ -103,7 +103,10 @@ const CalendarView = () => {
         end_time: endDateTime.toISOString(),
         appointment_type: newEvent.appointmentType,
         location: newEvent.location,
-        status: 'scheduled'
+        status: 'scheduled',
+        color: newEvent.color || undefined,
+        team_member_ids: newEvent.selectedTeamMembers.length > 0 ? newEvent.selectedTeamMembers : undefined,
+        invited_client_emails: newEvent.inviteClientEmail ? [newEvent.inviteClientEmail] : undefined
       });
 
       // Show CalDAV sync dialog for new appointment
