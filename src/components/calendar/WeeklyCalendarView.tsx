@@ -33,9 +33,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     return slots;
   })();
 
-  // Show all 24 hours by default, with option to show only working hours
-  const [showExtendedHours, setShowExtendedHours] = useState(true);
-  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // All hours or 6 AM to 10 PM
+  // Default working hours (can be expanded to show all 24 hours)
+  const [showExtendedHours, setShowExtendedHours] = useState(false);
+  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // 6 AM to 10 PM
 
   // Get week days starting from Sunday
   const getWeekDays = () => {
