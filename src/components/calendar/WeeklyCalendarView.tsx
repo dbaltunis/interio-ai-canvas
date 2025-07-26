@@ -535,107 +535,112 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Check if this event belongs to the current user
                         const isUserEvent = currentUserId && event.user_id === currentUserId;
                         
-                          const DraggableEvent = () => {
-                            const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-                              id: event.id,
-                              disabled: isResizing, // Disable dragging when resizing
-                            });
+                        const DraggableEvent = () => {
+                          const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+                            id: event.id,
+                            disabled: isResizing, // Disable dragging when resizing
+                          });
 
-                            const eventStyle = {
-                              top: `${style.top}px`,
-                              height: `${style.height}px`,
-                              width: eventWidth,
-                              left: eventLeft,
-                              zIndex: 10 + eventIndex,
-                              backgroundColor: event.color ? `${event.color}73` : undefined, // 45% opacity for custom colors
-                              borderLeftColor: event.color || undefined,
-                              borderRadius: '20px 8px 20px 8px', // Water drop asymmetric corners
-                              boxShadow: event.color 
-                                ? `0 8px 16px -4px ${event.color}40, 0 4px 8px -2px ${event.color}40, inset 0 1px 0 rgba(255,255,255,0.15)` 
-                                : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
-                              transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-                              opacity: isDragging ? 0.5 : 1,
-                            };
+                          const eventStyle = {
+                            top: `${style.top}px`,
+                            height: `${style.height}px`,
+                            width: eventWidth,
+                            left: eventLeft,
+                            zIndex: 10 + eventIndex,
+                            backgroundColor: event.color ? `${event.color}73` : undefined, // 45% opacity for custom colors
+                            borderLeftColor: event.color || undefined,
+                            borderRadius: '20px 8px 20px 8px', // Water drop asymmetric corners
+                            boxShadow: event.color 
+                              ? `0 8px 16px -4px ${event.color}40, 0 4px 8px -2px ${event.color}40, inset 0 1px 0 rgba(255,255,255,0.15)` 
+                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
+                            transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+                            opacity: isDragging ? 0.5 : 1,
+                          };
 
-                            return (
+                          return (
+                            <div
+                              ref={setNodeRef}
+                              className={`absolute p-1.5 text-xs overflow-visible group
+                                transition-all duration-200 z-10 shadow-lg border border-white/40
+                                hover:shadow-xl
+                                ${getEventColor(event)} ${isResizing ? '' : 'cursor-move'}`}
+                              style={eventStyle}
+                              onClick={() => !isResizing && onEventClick?.(event.id)}
+                              title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
+                              {...(!isResizing ? listeners : {})} // Only apply drag listeners when not resizing
+                              {...attributes}
+                            >
+                              {/* Top resize edge - spans full width */}
                               <div
-                                ref={setNodeRef}
-                                className={`absolute p-1.5 text-xs overflow-hidden group
-                                  transition-all duration-200 z-10 shadow-lg border border-white/40
-                                  hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
-                                  ${getEventColor(event)} ${isResizing ? 'cursor-ns-resize' : 'cursor-move'}`}
-                                style={eventStyle}
-                                onClick={() => !isResizing && onEventClick?.(event.id)}
-                                title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
-                                {...(!isResizing ? listeners : {})} // Only apply drag listeners when not resizing
-                                {...attributes}
+                                className="absolute -top-1 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleResizeStart(event.id, 'top', e);
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
                               >
-                                {/* Top resize handle */}
-                                {style.height > 30 && (
-                                  <div
-                                    className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-4 h-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-ns-resize flex items-center justify-center z-50"
-                                    onMouseDown={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleResizeStart(event.id, 'top', e);
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    }}
-                                  >
-                                    <div className="w-2 h-2 bg-white border border-gray-400 rounded-full shadow-md hover:bg-gray-100"></div>
-                                  </div>
-                                )}
+                                <div className="w-full h-1 bg-blue-400/60 rounded-full border border-blue-500/40 shadow-sm"></div>
+                              </div>
 
-                                <div className="flex items-start gap-1">
-                                  {/* Show user avatar only for user's own events */}
-                                  {isUserEvent && currentUserProfile && (
-                                    <Avatar className="h-4 w-4 flex-shrink-0 mt-0.5">
-                                      {currentUserProfile.avatar_url ? (
-                                        <AvatarImage src={currentUserProfile.avatar_url} />
-                                      ) : (
-                                        <AvatarFallback className="text-[8px] bg-white/20 text-black">
-                                          {currentUserProfile.display_name?.charAt(0) || '?'}
-                                        </AvatarFallback>
-                                      )}
-                                    </Avatar>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
-                                      {event.title}
-                                    </div>
-                                    <div className="text-[11px] leading-tight text-black/80">
-                                      {format(startTime, 'HH:mm')}
-                                    </div>
-                                    {style.height > 40 && (
-                                      <div className="text-[10px] leading-tight truncate text-black/70">
-                                        {event.location}
-                                      </div>
+                              <div className="flex items-start gap-1 relative z-10">
+                                {/* Show user avatar only for user's own events */}
+                                {isUserEvent && currentUserProfile && (
+                                  <Avatar className="h-4 w-4 flex-shrink-0 mt-0.5">
+                                    {currentUserProfile.avatar_url ? (
+                                      <AvatarImage src={currentUserProfile.avatar_url} />
+                                    ) : (
+                                      <AvatarFallback className="text-[8px] bg-white/20 text-black">
+                                        {currentUserProfile.display_name?.charAt(0) || '?'}
+                                      </AvatarFallback>
                                     )}
+                                  </Avatar>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
+                                    {event.title}
+                                  </div>
+                                  <div className="text-[11px] leading-tight text-black/80">
+                                    {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                                  </div>
+                                  {style.height > 40 && (
+                                    <div className="text-[10px] leading-tight truncate text-black/70">
+                                      {event.location}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Bottom resize edge - spans full width */}
+                              <div
+                                className="absolute -bottom-1 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleResizeStart(event.id, 'bottom', e);
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                              >
+                                <div className="w-full h-1 bg-blue-400/60 rounded-full border border-blue-500/40 shadow-sm"></div>
+                              </div>
+
+                              {/* Resize visual indicator when resizing */}
+                              {isResizing && resizeEventId === event.id && (
+                                <div className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none">
+                                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                                    {resizeType === 'top' ? 'Drag to change start time' : 'Drag to change end time'}
                                   </div>
                                 </div>
-
-                                {/* Bottom resize handle */}
-                                {style.height > 30 && (
-                                  <div
-                                    className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-4 h-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-ns-resize flex items-center justify-center z-50"
-                                    onMouseDown={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleResizeStart(event.id, 'bottom', e);
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    }}
-                                  >
-                                    <div className="w-2 h-2 bg-white border border-gray-400 rounded-full shadow-md hover:bg-gray-100"></div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          };
+                              )}
+                            </div>
+                          );
+                        };
                         
                         return <DraggableEvent key={event.id} />;
                       })}
