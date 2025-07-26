@@ -320,8 +320,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       return (
                         <div
                           key={event.id}
-                          className={`absolute rounded-lg border-l-4 p-1.5 text-xs overflow-hidden cursor-pointer 
-                            transition-all duration-200 z-10 shadow-lg 
+                          className={`absolute rounded-xl border-l-4 p-1.5 text-xs overflow-hidden cursor-pointer 
+                            transition-all duration-200 z-10 shadow-lg border border-white/30
                             hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
                             ${getEventColor(event)}`}
                           style={{
@@ -332,21 +332,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             zIndex: 10 + eventIndex,
                             backgroundColor: event.color ? `${event.color}CC` : undefined, // 80% opacity for custom colors
                             borderLeftColor: event.color || undefined,
+                            borderRadius: '12px',
                             boxShadow: event.color 
-                              ? `0 4px 8px -2px ${event.color}40, 0 2px 4px -1px ${event.color}20` 
-                              : '0 4px 8px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                              ? `0 8px 16px -4px ${event.color}30, 0 4px 8px -2px ${event.color}20, inset 0 1px 0 rgba(255,255,255,0.2)` 
+                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.2)'
                           }}
                           onClick={() => onEventClick?.(event.id)}
                           title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                         >
-                          <div className="font-semibold truncate text-xs leading-tight mb-0.5">
+                          <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
                             {event.title}
                           </div>
-                          <div className="text-[11px] opacity-90 leading-tight">
+                          <div className="text-[11px] leading-tight text-black/80">
                             {format(startTime, 'HH:mm')}
                           </div>
                           {style.height > 40 && (
-                            <div className="text-[10px] opacity-75 leading-tight truncate">
+                            <div className="text-[10px] leading-tight truncate text-black/70">
                               {event.location}
                             </div>
                           )}
