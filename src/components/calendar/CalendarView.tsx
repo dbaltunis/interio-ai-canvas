@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
@@ -41,6 +42,7 @@ import { TimezoneUtils } from "@/utils/timezoneUtils";
 type CalendarView = 'month' | 'week' | 'day';
 
 const CalendarView = () => {
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
@@ -411,22 +413,25 @@ const CalendarView = () => {
       {/* Main Calendar */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 z-10 border-b bg-background p-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-primary">Calendar</h1>
-              <div className="flex items-center space-x-2">
+        <div className="sticky top-0 z-10 border-b bg-background p-2 md:p-4 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 overflow-hidden">
+            {/* Left section */}
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold text-primary truncate">Calendar</h1>
+              <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size={isMobile ? "sm" : "sm"}
                   onClick={() => setCurrentDate(new Date())}
+                  className={isMobile ? "px-2" : ""}
                 >
-                  Today
+                  {isMobile ? <Clock className="h-4 w-4" /> : "Today"}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => navigateWeek('prev')}
+                  className="px-2"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -434,26 +439,29 @@ const CalendarView = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => navigateWeek('next')}
+                  className="px-2"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <h2 className="text-lg font-semibold ml-4">
-                  {view === 'week' 
-                    ? format(currentDate, 'MMMM yyyy')
-                    : format(currentDate, 'MMMM yyyy')
-                  }
-                </h2>
+                {!isMobile && (
+                  <h2 className="text-lg font-semibold ml-2 truncate">
+                    {format(currentDate, 'MMMM yyyy')}
+                  </h2>
+                )}
               </div>
               
-              <div className="flex items-center gap-2">
-                <CalendarStatusIndicator />
-                <CalendarSyncStatus />
-              </div>
+              {!isMobile && (
+                <div className="flex items-center gap-2">
+                  <CalendarStatusIndicator />
+                  <CalendarSyncStatus />
+                </div>
+              )}
             </div>
             
-            <div className="flex items-center space-x-2">
+            {/* Right section */}
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className={isMobile ? "w-20" : "w-32"}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -463,30 +471,36 @@ const CalendarView = () => {
                 </SelectContent>
               </Select>
 
-              
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <CalendarFilters onFiltersChange={() => {/* Handle color filter changes */}} />
                 
                 <Button 
                   variant="outline"
                   size="sm"
                   onClick={() => setShowColorPicker(true)}
+                  className={isMobile ? "px-2" : ""}
                 >
-                  <Palette className="h-4 w-4 mr-2" />
-                  Colors
+                  <Palette className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">Colors</span>}
                 </Button>
                 
                 <Button 
                   variant="outline"
+                  size="sm"
                   onClick={() => setShowSharingDialog(true)}
+                  className={isMobile ? "px-2" : ""}
                 >
-                  <Share className="h-4 w-4 mr-2" />
-                  Share
+                  <Share className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">Share</span>}
                 </Button>
-                <Button onClick={() => setShowNewEventDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Event
+                
+                <Button 
+                  onClick={() => setShowNewEventDialog(true)}
+                  size="sm"
+                  className={isMobile ? "px-2" : ""}
+                >
+                  <Plus className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">New Event</span>}
                 </Button>
               </div>
               
