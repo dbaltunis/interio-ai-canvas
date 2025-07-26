@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GoogleCalendarIntegration {
   id: string;
@@ -14,9 +15,6 @@ interface GoogleCalendarIntegration {
   updated_at: string;
 }
 
-// Mock data store
-let mockIntegration: GoogleCalendarIntegration | null = null;
-
 export const useGoogleCalendarIntegration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -24,39 +22,63 @@ export const useGoogleCalendarIntegration = () => {
   const { data: integration, isLoading } = useQuery({
     queryKey: ['google-calendar-integration'],
     queryFn: async () => {
-      // Mock implementation
-      return mockIntegration;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('integration_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('integration_type', 'google_calendar')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (!data) return null;
+      
+      // Map integration_settings to GoogleCalendarIntegration format
+      const credentials = data.api_credentials as any;
+      const config = data.configuration as any;
+      
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        access_token: credentials?.access_token || '',
+        refresh_token: credentials?.refresh_token || null,
+        calendar_id: config?.calendar_id || null,
+        sync_enabled: config?.sync_enabled || false,
+        token_expires_at: credentials?.expires_at || null,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      } as GoogleCalendarIntegration;
     },
   });
 
   const connect = useMutation({
     mutationFn: async () => {
-      // Mock implementation
-      mockIntegration = {
-        id: 'integration-1',
-        user_id: 'mock-user',
-        access_token: 'mock-token',
-        refresh_token: 'mock-refresh',
-        calendar_id: 'mock-calendar',
-        sync_enabled: true,
-        token_expires_at: new Date(Date.now() + 3600000).toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // Real Google OAuth flow - would redirect to Google
+      const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        throw new Error('Google Client ID not configured');
+      }
+
+      const redirectUri = `${window.location.origin}/auth/google/callback`;
+      const scope = 'https://www.googleapis.com/auth/calendar';
       
-      return mockIntegration;
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `response_type=code&` +
+        `access_type=offline&` +
+        `prompt=consent`;
+
+      window.location.href = googleAuthUrl;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
-      toast({
-        title: "Success",
-        description: "Google Calendar connected successfully",
-      });
-    },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to connect Google Calendar",
+        description: error.message || "Failed to connect Google Calendar",
         variant: "destructive",
       });
     },
@@ -64,8 +86,16 @@ export const useGoogleCalendarIntegration = () => {
 
   const disconnect = useMutation({
     mutationFn: async () => {
-      // Mock implementation
-      mockIntegration = null;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('integration_settings')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('integration_type', 'google_calendar');
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
@@ -74,7 +104,7 @@ export const useGoogleCalendarIntegration = () => {
         description: "Google Calendar disconnected successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to disconnect Google Calendar",
@@ -85,11 +115,19 @@ export const useGoogleCalendarIntegration = () => {
 
   const toggleSync = useMutation({
     mutationFn: async (enabled: boolean) => {
-      // Mock implementation
-      if (mockIntegration) {
-        mockIntegration.sync_enabled = enabled;
-        mockIntegration.updated_at = new Date().toISOString();
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('integration_settings')
+        .update({ 
+          configuration: { sync_enabled: enabled },
+          updated_at: new Date().toISOString() 
+        })
+        .eq('user_id', user.id)
+        .eq('integration_type', 'google_calendar');
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
@@ -113,9 +151,13 @@ export const useGoogleCalendarSync = () => {
 
   const syncToGoogle = useMutation({
     mutationFn: async (appointmentId: string) => {
-      // Mock implementation
-      console.log('Mock sync to Google:', appointmentId);
-      return { success: true };
+      // Call Supabase edge function to sync to Google Calendar
+      const { data, error } = await supabase.functions.invoke('sync-to-google-calendar', {
+        body: { appointmentId }
+      });
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({
@@ -123,7 +165,7 @@ export const useGoogleCalendarSync = () => {
         description: "Event synced to Google Calendar",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to sync to Google Calendar",
@@ -134,9 +176,11 @@ export const useGoogleCalendarSync = () => {
 
   const syncFromGoogle = useMutation({
     mutationFn: async () => {
-      // Mock implementation
-      console.log('Mock sync from Google');
-      return { success: true };
+      // Call Supabase edge function to sync from Google Calendar
+      const { data, error } = await supabase.functions.invoke('sync-from-google-calendar');
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({
@@ -144,7 +188,7 @@ export const useGoogleCalendarSync = () => {
         description: "Events synced from Google Calendar",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to sync from Google Calendar",

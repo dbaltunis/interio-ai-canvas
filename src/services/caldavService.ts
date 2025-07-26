@@ -92,7 +92,7 @@ class CalDAVService {
     return null;
   }
 
-  // Create DAV client (simplified mock for now)
+  // Create real DAV client using tsdav
   private async createDAVClient(account: CalDAVAccount): Promise<any> {
     const password = this.decryptPassword(account.password_encrypted);
     let serverUrl = account.server_url;
@@ -105,19 +105,21 @@ class CalDAVService {
       }
     }
 
-    // Mock client for now - replace with actual CalDAV implementation
-    const mockClient = {
+    // Import tsdav dynamically
+    const { createDAVClient } = await import('tsdav');
+    
+    const client = await createDAVClient({
       serverUrl,
       credentials: {
         username: account.username,
         password,
       },
       authMethod: 'Basic',
-      accountType: 'caldav',
-    };
+      defaultAccountType: 'caldav',
+    });
 
-    this.clients.set(account.id, mockClient);
-    return mockClient;
+    this.clients.set(account.id, client);
+    return client;
   }
 
   // Simple encryption/decryption (in production, use proper encryption)
@@ -179,7 +181,7 @@ class CalDAVService {
     }
   }
 
-  // Discover and save calendars
+  // Discover and save calendars using real CalDAV protocol
   async discoverCalendars(accountId: string): Promise<CalDAVCalendar[]> {
     const { data: account } = await supabase
       .from('caldav_accounts')
@@ -191,32 +193,36 @@ class CalDAVService {
 
     const client = await this.createDAVClient(account);
     
-    // Mock calendar discovery - replace with actual CalDAV discovery
-    const mockCalendars = [
-      {
-        url: `${client.serverUrl}/calendars/${account.username}/calendar/`,
-        displayName: 'My Calendar',
-        description: 'Default calendar',
-        calendarColor: '#3B82F6',
-        timezone: 'UTC'
-      }
-    ];
+    // Real CalDAV calendar discovery
+    const { fetchCalendars } = await import('tsdav');
+    const calendars = await fetchCalendars({
+      account: client.account,
+      props: {
+        displayName: {},
+        description: {},
+        calendarColor: {},
+        calendarTimezone: {},
+        supportedCalendarComponentSet: {},
+      },
+    });
 
     const caldavCalendars: CalDAVCalendar[] = [];
 
-    for (const calendar of mockCalendars) {
+    for (const calendar of calendars) {
       const { data, error } = await supabase
         .from('caldav_calendars')
-        .upsert({
+        .upsert([{
           account_id: accountId,
           calendar_id: calendar.url,
-          display_name: calendar.displayName,
-          description: calendar.description,
-          color: calendar.calendarColor,
-          timezone: calendar.timezone || 'UTC',
+          display_name: String(calendar.displayName || 'Unnamed Calendar'),
+          description: String(calendar.description || ''),
+          color: String((calendar as any).calendarColor || '#3B82F6'),
+          timezone: String((calendar as any).timezone || 'UTC'),
           sync_enabled: true,
-          read_only: false,
-        }, { 
+          read_only: false, // Will be determined by actual CalDAV capabilities
+          caldav_url: calendar.url,
+          etag: String((calendar as any).ctag || ''),
+        }], {
           onConflict: 'account_id,calendar_id' 
         })
         .select()
@@ -270,14 +276,45 @@ class CalDAVService {
 
     const client = await this.createDAVClient(calendar.caldav_accounts);
     
-    // Mock sync for now - replace with actual CalDAV sync
-    console.log(`Syncing events from CalDAV calendar: ${calendar.display_name}`);
-    
-    // Update last sync time
-    await supabase
-      .from('caldav_calendars')
-      .update({ last_sync_at: new Date().toISOString() })
-      .eq('id', calendarId);
+    try {
+      // Real CalDAV event fetching
+      const { fetchCalendarObjects } = await import('tsdav');
+      const calendarObjects = await fetchCalendarObjects({
+        calendar: {
+          url: calendar.caldav_url || calendar.calendar_id,
+          ctag: calendar.etag || '',
+        },
+        objectUrls: [],
+        timeRange: {
+          start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+          end: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ahead
+        },
+      });
+
+      console.log(`Synced ${calendarObjects.length} events from CalDAV calendar: ${calendar.display_name}`);
+
+      // Parse and save events to appointments table
+      for (const calendarObject of calendarObjects) {
+        if (calendarObject.data) {
+          const event = this.parseSimpleVEvent(calendarObject.data);
+          if (event) {
+            await this.saveEventAsAppointment(event, calendar);
+          }
+        }
+      }
+      
+      // Update last sync time
+      await supabase
+        .from('caldav_calendars')
+        .update({ 
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq('id', calendarId);
+        
+    } catch (error) {
+      console.error('CalDAV sync error:', error);
+      throw error;
+    }
   }
 
   // Sync appointment to CalDAV calendar
@@ -292,8 +329,87 @@ class CalDAVService {
 
     const client = await this.createDAVClient(calendar.caldav_accounts);
 
-    // Mock sync for now - replace with actual CalDAV sync
-    console.log(`Syncing appointment ${appointment.id} to CalDAV calendar: ${calendar.display_name}`);
+    try {
+      // Create iCalendar data for the appointment
+      const vEventData = this.createSimpleVEvent(appointment);
+      
+      // Real CalDAV event creation/update
+      const { createCalendarObject, updateCalendarObject } = await import('tsdav');
+      
+      const objectUrl = `${calendar.caldav_url || calendar.calendar_id}${appointment.id}.ics`;
+      
+      if (appointment.caldav_uid) {
+        // Update existing event
+        await updateCalendarObject({
+          calendarObject: {
+            url: objectUrl,
+            data: vEventData,
+            etag: appointment.caldav_etag,
+          },
+        });
+      } else {
+        // Create new event
+        const result = await createCalendarObject({
+          calendar: {
+            url: calendar.caldav_url || calendar.calendar_id,
+          },
+          filename: `${appointment.id}.ics`,
+          iCalString: vEventData,
+        });
+        
+        // Update appointment with CalDAV metadata
+        await supabase
+          .from('appointments')
+          .update({
+            caldav_uid: `${appointment.id}@interiorapp.com`,
+            caldav_etag: (result as any).etag || '',
+            last_caldav_sync: new Date().toISOString(),
+          })
+          .eq('id', appointment.id);
+      }
+      
+      console.log(`Successfully synced appointment ${appointment.id} to CalDAV calendar: ${calendar.display_name}`);
+      
+    } catch (error) {
+      console.error('CalDAV appointment sync error:', error);
+      throw error;
+    }
+  }
+
+  // Save CalDAV event as local appointment
+  private async saveEventAsAppointment(event: CalDAVEvent, calendar: any): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      // Check if appointment already exists
+      const { data: existingAppointment } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('caldav_uid', event.uid)
+        .single();
+
+      if (!existingAppointment) {
+        // Create new appointment from CalDAV event
+        await supabase
+          .from('appointments')
+          .insert({
+            user_id: user.id,
+            title: event.summary,
+            description: event.description || '',
+            location: event.location || '',
+            start_time: event.start,
+            end_time: event.end,
+            caldav_uid: event.uid,
+            caldav_calendar_id: calendar.id,
+            last_caldav_sync: new Date().toISOString(),
+            appointment_type: 'meeting',
+            status: 'scheduled',
+          });
+      }
+    } catch (error) {
+      console.error('Failed to save CalDAV event as appointment:', error);
+    }
   }
 
   // Simple iCalendar parser (replace with proper iCal library in production)
