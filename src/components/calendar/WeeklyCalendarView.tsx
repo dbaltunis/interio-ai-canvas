@@ -21,7 +21,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
   const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
 
-  // Generate working hours time slots (6 AM to 10 PM by default, but 24 hours available)
+  // Generate all 24-hour time slots (00:00 to 23:30)
   const allTimeSlots = (() => {
     const slots = [];
     for (let hour = 0; hour <= 23; hour++) {
@@ -33,9 +33,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     return slots;
   })();
 
-  // Default working hours (can be expanded to show all 24 hours)
-  const [showExtendedHours, setShowExtendedHours] = useState(false);
-  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // 6 AM to 10 PM
+  // Default to full 24-hour view, with toggle for working hours
+  const [showExtendedHours, setShowExtendedHours] = useState(true);
+  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // Working hours: 6 AM to 10 PM
 
   // Get week days starting from Sunday
   const getWeekDays = () => {
@@ -237,27 +237,27 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       </div>
       
       {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
-        <div className="flex relative min-h-full">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex min-h-full">
+          {/* Fixed time labels column - outside horizontal scroll */}
+          <div className="border-r bg-muted/20 w-12 flex-shrink-0">
+            {timeSlots.map((time, index) => (
+              <div 
+                key={time} 
+                className={`h-[20px] px-1 text-xs text-muted-foreground flex items-center justify-end ${
+                  index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
+                }`}
+              >
+                {time.endsWith(':00') && (
+                  <span className="font-medium text-[10px]">{time}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          
           {/* Horizontally scrollable days container */}
           <div className="flex-1 overflow-x-auto">
-            <div className="flex min-w-[760px] relative min-h-full">
-              {/* Time labels column - now inside the scrollable container */}
-              <div className="border-r bg-muted/20 w-12 flex-shrink-0">
-                {timeSlots.map((time, index) => (
-                  <div 
-                    key={time} 
-                    className={`h-[20px] px-1 text-xs text-muted-foreground flex items-center justify-end ${
-                      index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
-                    }`}
-                  >
-                    {time.endsWith(':00') && (
-                      <span className="font-medium text-[10px]">{time}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-          
+            <div className="grid grid-cols-7 min-w-[700px] relative min-h-full">
               {/* Day columns */}
               {weekDays.map((day, dayIndex) => {
                 const dayEvents = getEventsForDate(day);
@@ -266,129 +266,129 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
                 
                 return (
-                  <div key={day.toString()} className={`border-r relative flex-1 ${
+                  <div key={day.toString()} className={`border-r relative ${
                     isCurrentDay ? 'bg-primary/5' : ''
                   }`}>
-                {/* Time slot grid */}
-                {timeSlots.map((time, index) => (
-                  <div 
-                    key={time} 
-                    className={`h-[20px] hover:bg-accent/50 cursor-pointer transition-colors ${
-                      index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
-                    }`}
-                    onMouseDown={(e) => handleMouseDown(day, index, e)}
-                    onMouseMove={() => handleMouseMove(day, index)}
-                    onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
-                    title={`${format(day, 'MMM d')} at ${time}`}
-                  />
-                ))}
+                    {/* Time slot grid */}
+                    {timeSlots.map((time, index) => (
+                      <div 
+                        key={time} 
+                        className={`h-[20px] hover:bg-accent/50 cursor-pointer transition-colors ${
+                          index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
+                        }`}
+                        onMouseDown={(e) => handleMouseDown(day, index, e)}
+                        onMouseMove={() => handleMouseMove(day, index)}
+                        onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
+                        title={`${format(day, 'MMM d')} at ${time}`}
+                      />
+                    ))}
 
-                {/* Event creation preview */}
-                {showPreview && previewStyle && (
-                  <div
-                    className="absolute left-0 right-0 bg-primary/30 border-l-4 border-primary z-15"
-                    style={{
-                      top: `${previewStyle.top}px`,
-                      height: `${previewStyle.height}px`
-                    }}
-                  />
-                )}
-                
-                {/* Current time indicator */}
-                {isCurrentDay && (() => {
-                  const now = new Date();
-                  const currentHour = now.getHours();
-                  const currentMinutes = now.getMinutes();
-                  
-                  // Calculate position based on visible time range
-                  let minutesFromStart = currentHour * 60 + currentMinutes;
-                  if (!showExtendedHours) {
-                    minutesFromStart -= 6 * 60; // Subtract 6 AM offset for working hours view
-                  }
-                  const top = (minutesFromStart / 30) * 20; // Adjusted for 20px slot height
-                  
-                  return (
-                    <div 
-                      className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
-                      style={{ top: `${top}px` }}
-                    >
-                      <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                    </div>
-                  );
-                })()}
-                
-                {/* Events */}
-                {dayEvents.map((event, eventIndex) => {
-                  const startTime = new Date(event.start_time);
-                  const endTime = new Date(event.end_time);
-                  
-                  const style = calculateEventStyle(startTime, endTime, showExtendedHours);
-                  
-                  if (!style.visible) return null;
-                  
-                  // Calculate overlapping events positioning
-                  const overlappingEvents = dayEvents.filter(otherEvent => {
-                    const otherStart = new Date(otherEvent.start_time);
-                    const otherEnd = new Date(otherEvent.end_time);
-                    return (
-                      (startTime < otherEnd && endTime > otherStart) || 
-                      (otherStart < endTime && otherEnd > startTime)
-                    );
-                  });
-                  
-                  const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
-                  const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
-                  
-                  // Color coding by appointment color or type
-                  const getEventColor = (event: any) => {
-                    if (event.color) {
-                      return `text-white border-l-4`;
-                    }
+                    {/* Event creation preview */}
+                    {showPreview && previewStyle && (
+                      <div
+                        className="absolute left-0 right-0 bg-primary/30 border-l-4 border-primary z-15"
+                        style={{
+                          top: `${previewStyle.top}px`,
+                          height: `${previewStyle.height}px`
+                        }}
+                      />
+                    )}
                     
-                    switch (event.appointment_type) {
-                      case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
-                      case 'consultation': return 'bg-green-500/90 text-white border-green-600';
-                      case 'call': return 'bg-purple-500/90 text-white border-purple-600';
-                      case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
-                      default: return 'bg-primary/90 text-primary-foreground border-primary';
-                    }
-                  };
-                  
-                  return (
-                    <div
-                      key={event.id}
-                      className={`absolute rounded border-l-4 p-0.5 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
-                        getEventColor(event)
-                      }`}
-                      style={{
-                        top: `${style.top}px`,
-                        height: `${style.height}px`,
-                        width: eventWidth,
-                        left: eventLeft,
-                        zIndex: 10 + eventIndex,
-                        backgroundColor: event.color || undefined,
-                        borderLeftColor: event.color || undefined
-                      }}
-                      onClick={() => onEventClick?.(event.id)}
-                      title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
-                    >
-                      <div className="font-semibold truncate text-xs leading-tight mb-0.5">
-                        {event.title}
-                      </div>
-                      <div className="text-[11px] opacity-90 leading-tight">
-                        {format(startTime, 'HH:mm')}
-                      </div>
-                      {style.height > 40 && (
-                        <div className="text-[10px] opacity-75 leading-tight truncate">
-                          {event.location}
+                    {/* Current time indicator */}
+                    {isCurrentDay && (() => {
+                      const now = new Date();
+                      const currentHour = now.getHours();
+                      const currentMinutes = now.getMinutes();
+                      
+                      // Calculate position based on visible time range
+                      let minutesFromStart = currentHour * 60 + currentMinutes;
+                      if (!showExtendedHours) {
+                        minutesFromStart -= 6 * 60; // Subtract 6 AM offset for working hours view
+                      }
+                      const top = (minutesFromStart / 30) * 20; // Adjusted for 20px slot height
+                      
+                      return (
+                        <div 
+                          className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
+                          style={{ top: `${top}px` }}
+                        >
+                          <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-                </div>
-              );
-            })}
+                      );
+                    })()}
+                    
+                    {/* Events */}
+                    {dayEvents.map((event, eventIndex) => {
+                      const startTime = new Date(event.start_time);
+                      const endTime = new Date(event.end_time);
+                      
+                      const style = calculateEventStyle(startTime, endTime, showExtendedHours);
+                      
+                      if (!style.visible) return null;
+                      
+                      // Calculate overlapping events positioning
+                      const overlappingEvents = dayEvents.filter(otherEvent => {
+                        const otherStart = new Date(otherEvent.start_time);
+                        const otherEnd = new Date(otherEvent.end_time);
+                        return (
+                          (startTime < otherEnd && endTime > otherStart) || 
+                          (otherStart < endTime && otherEnd > startTime)
+                        );
+                      });
+                      
+                      const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
+                      const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
+                      
+                      // Color coding by appointment color or type
+                      const getEventColor = (event: any) => {
+                        if (event.color) {
+                          return `text-white border-l-4`;
+                        }
+                        
+                        switch (event.appointment_type) {
+                          case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
+                          case 'consultation': return 'bg-green-500/90 text-white border-green-600';
+                          case 'call': return 'bg-purple-500/90 text-white border-purple-600';
+                          case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
+                          default: return 'bg-primary/90 text-primary-foreground border-primary';
+                        }
+                      };
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className={`absolute rounded border-l-4 p-0.5 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
+                            getEventColor(event)
+                          }`}
+                          style={{
+                            top: `${style.top}px`,
+                            height: `${style.height}px`,
+                            width: eventWidth,
+                            left: eventLeft,
+                            zIndex: 10 + eventIndex,
+                            backgroundColor: event.color || undefined,
+                            borderLeftColor: event.color || undefined
+                          }}
+                          onClick={() => onEventClick?.(event.id)}
+                          title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
+                        >
+                          <div className="font-semibold truncate text-xs leading-tight mb-0.5">
+                            {event.title}
+                          </div>
+                          <div className="text-[11px] opacity-90 leading-tight">
+                            {format(startTime, 'HH:mm')}
+                          </div>
+                          {style.height > 40 && (
+                            <div className="text-[10px] opacity-75 leading-tight truncate">
+                              {event.location}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
