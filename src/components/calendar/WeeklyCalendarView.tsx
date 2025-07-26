@@ -21,21 +21,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
   const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
 
-  // Generate all time slots for 24 hours (00:00 to 24:00)
+  // Generate working hours time slots (6 AM to 10 PM by default, but 24 hours available)
   const allTimeSlots = (() => {
     const slots = [];
     for (let hour = 0; hour <= 23; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      if (hour < 23) {
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
     }
-    // Add 24:00 to complete the day
-    slots.push('24:00');
     return slots;
   })();
 
-  // Default to 24-hour view (can be toggled to working hours)
-  const [showExtendedHours, setShowExtendedHours] = useState(true);
-  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // Working hours: 6 AM to 10 PM
+  // Default working hours (can be expanded to show all 24 hours)
+  const [showExtendedHours, setShowExtendedHours] = useState(false);
+  const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // 6 AM to 10 PM
 
   // Get week days starting from Sunday
   const getWeekDays = () => {
@@ -190,7 +190,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           {showExtendedHours ? 'Show Working Hours' : 'Show 24 Hours'}
         </button>
         <div className="text-xs text-muted-foreground">
-          {showExtendedHours ? '00:00 - 24:00' : '06:00 - 22:00'}
+          {showExtendedHours ? '00:00 - 23:30' : '06:00 - 22:00'}
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         <div className="flex text-xs">
           <div className="p-1 border-r font-medium text-muted-foreground w-12 flex-shrink-0 text-center">All day</div>
           <div className="flex-1 overflow-x-auto">
-            <div className="grid grid-cols-7 min-w-[728px]">
+            <div className="grid grid-cols-7 min-w-[700px]">
               {weekDays.map(day => (
                 <div key={day.toString()} className="p-1 border-r min-h-6">
                   {/* All-day events would go here */}
@@ -214,7 +214,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
         <div className="p-2 border-r w-12 flex-shrink-0"></div>
         <div className="flex-1 overflow-x-auto">
-          <div className="grid grid-cols-7 min-w-[728px]">
+          <div className="grid grid-cols-7 min-w-[700px]">
             {weekDays.map(day => {
               const isCurrentDay = isToday(day);
               return (
@@ -238,12 +238,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       
       {/* Scrollable time grid */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
-        <div className="relative" style={{ minHeight: `${timeSlots.length * 20}px` }}>
+        <div className="flex relative min-h-full">
           {/* Horizontally scrollable days container */}
-          <div className="overflow-x-auto">
-            <div className="grid grid-cols-8 min-w-[832px] relative" style={{ minHeight: `${timeSlots.length * 20}px` }}>
+          <div className="flex-1 overflow-x-auto">
+            <div className="grid grid-cols-8 min-w-[760px] relative min-h-full">
               {/* Time labels column - now inside the scrollable container */}
-              <div className="border-r bg-muted/20 w-16 flex-shrink-0">
+              <div className="border-r bg-muted/20 w-12 flex-shrink-0">
                 {timeSlots.map((time, index) => (
                   <div 
                     key={time} 
