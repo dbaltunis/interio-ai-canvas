@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarSidebar } from "./CalendarSidebar";
-import { WeeklyCalendarView } from "./WeeklyCalendarView";
+import { ScrollableWeeklyCalendarView } from "./ScrollableWeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
@@ -411,20 +411,24 @@ const CalendarView = () => {
                 >
                   Today
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateWeek('prev')}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateWeek('next')}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                {view !== 'week' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigateWeek('prev')}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigateWeek('next')}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
                 <h2 className="text-lg font-semibold ml-4">
                   {view === 'week' 
                     ? format(currentDate, 'MMMM yyyy')
@@ -697,7 +701,7 @@ const CalendarView = () => {
         {/* Calendar Content */}
         <div className="flex-1 overflow-hidden min-h-0">
           {view === 'week' && (
-            <WeeklyCalendarView 
+            <ScrollableWeeklyCalendarView 
               currentDate={currentDate}
               onEventClick={handleEventClick}
               onTimeSlotClick={handleTimeSlotClick}
