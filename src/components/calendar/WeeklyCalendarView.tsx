@@ -320,8 +320,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       return (
                         <div
                           key={event.id}
-                          className={`absolute rounded-xl border-l-4 p-1.5 text-xs overflow-hidden cursor-pointer 
-                            transition-all duration-200 z-10 shadow-lg border border-white/30
+                          className={`absolute p-1.5 text-xs overflow-hidden cursor-pointer 
+                            transition-all duration-200 z-10 shadow-lg border border-white/40
                             hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
                             ${getEventColor(event)}`}
                           style={{
@@ -330,12 +330,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             width: eventWidth,
                             left: eventLeft,
                             zIndex: 10 + eventIndex,
-                            backgroundColor: event.color ? `${event.color}CC` : undefined, // 80% opacity for custom colors
+                            backgroundColor: event.color ? `${event.color}A6` : undefined, // 65% opacity for custom colors
                             borderLeftColor: event.color || undefined,
-                            borderRadius: '12px',
+                            borderRadius: '20px 8px 20px 8px', // Water drop asymmetric corners
                             boxShadow: event.color 
-                              ? `0 8px 16px -4px ${event.color}30, 0 4px 8px -2px ${event.color}20, inset 0 1px 0 rgba(255,255,255,0.2)` 
-                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.2)'
+                              ? `0 8px 16px -4px ${event.color}30, 0 4px 8px -2px ${event.color}20, inset 0 1px 0 rgba(255,255,255,0.15)` 
+                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)'
                           }}
                           onClick={() => onEventClick?.(event.id)}
                           title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
