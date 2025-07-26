@@ -598,11 +598,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     {event.isBooking ? event.customer_name : event.title}
                                   </div>
                                   
-                                  {/* Time display */}
-                                  <div className="text-[11px] leading-tight opacity-90 flex items-center gap-1">
-                                    <Clock className="h-2.5 w-2.5" />
-                                    {format(startTime, 'HH:mm')}
-                                  </div>
+                                   {/* Time display */}
+                                   <div className="text-[11px] leading-tight opacity-90">
+                                     {format(startTime, 'HH:mm')}
+                                   </div>
                                   
                                   {/* Additional info if space allows */}
                                   {style.height > 50 && (
