@@ -55,6 +55,7 @@ const CalendarView = () => {
   const [showTimezoneDialog, setShowTimezoneDialog] = useState(false);
   const [syncConflicts, setSyncConflicts] = useState<any[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
     userIds: [],
@@ -385,12 +386,14 @@ const CalendarView = () => {
   };
 
   return (
-    <div className="h-full flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden">
       {/* Sidebar */}
       <CalendarSidebar 
         currentDate={currentDate}
         onDateChange={setCurrentDate}
         onBookingLinks={() => setShowSchedulerSlider(true)}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
       {/* Main Calendar */}

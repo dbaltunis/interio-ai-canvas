@@ -1,5 +1,5 @@
 
-import { CalendarDays, Link2, Settings } from "lucide-react";
+import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,11 @@ interface CalendarSidebarProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onBookingLinks: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
+export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isCollapsed = false, onToggleCollapse }: CalendarSidebarProps) => {
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -45,10 +47,38 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     }
   };
 
+  if (isCollapsed) {
+    return (
+      <div className="w-12 border-r bg-background flex flex-col h-full">
+        <div className="p-2 border-b">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleCollapse}
+            className="w-full h-8"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full">
       <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
+          {/* Collapse Button */}
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleCollapse}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
           {/* Mini Calendar */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
