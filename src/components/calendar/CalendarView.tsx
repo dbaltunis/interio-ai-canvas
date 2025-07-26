@@ -414,14 +414,14 @@ const CalendarView = () => {
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
         <div className="sticky top-0 z-10 border-b bg-background p-2 md:p-4 flex-shrink-0">
-          <div className="flex items-center justify-between gap-2 overflow-hidden">
-            {/* Left section */}
-            <div className="flex items-center gap-2 md:gap-4 min-w-0">
-              <h1 className="text-lg md:text-2xl font-bold text-primary truncate">Calendar</h1>
+          <div className="flex items-center justify-between gap-2">
+            {/* Left section - Title and Navigation */}
+            <div className="flex items-center gap-2 md:gap-4">
+              <h1 className="text-lg md:text-2xl font-bold text-primary">Calendar</h1>
               <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   variant="outline"
-                  size={isMobile ? "sm" : "sm"}
+                  size="sm"
                   onClick={() => setCurrentDate(new Date())}
                   className={isMobile ? "px-2" : ""}
                 >
@@ -444,22 +444,15 @@ const CalendarView = () => {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 {!isMobile && (
-                  <h2 className="text-lg font-semibold ml-2 truncate">
+                  <h2 className="text-lg font-semibold ml-2">
                     {format(currentDate, 'MMMM yyyy')}
                   </h2>
                 )}
               </div>
-              
-              {!isMobile && (
-                <div className="flex items-center gap-2">
-                  <CalendarStatusIndicator />
-                  <CalendarSyncStatus />
-                </div>
-              )}
             </div>
             
-            {/* Right section */}
-            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+            {/* Right section - View selector */}
+            <div className="flex items-center">
               <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
                 <SelectTrigger className={isMobile ? "w-20" : "w-32"}>
                   <SelectValue />
@@ -470,252 +463,6 @@ const CalendarView = () => {
                   <SelectItem value="day">Day</SelectItem>
                 </SelectContent>
               </Select>
-
-              <div className="flex items-center gap-1 md:gap-2">
-                <CalendarFilters onFiltersChange={() => {/* Handle color filter changes */}} />
-                
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowColorPicker(true)}
-                  className={isMobile ? "px-2" : ""}
-                >
-                  <Palette className="h-4 w-4" />
-                  {!isMobile && <span className="ml-2">Colors</span>}
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSharingDialog(true)}
-                  className={isMobile ? "px-2" : ""}
-                >
-                  <Share className="h-4 w-4" />
-                  {!isMobile && <span className="ml-2">Share</span>}
-                </Button>
-                
-                <Button 
-                  onClick={() => setShowNewEventDialog(true)}
-                  size="sm"
-                  className={isMobile ? "px-2" : ""}
-                >
-                  <Plus className="h-4 w-4" />
-                  {!isMobile && <span className="ml-2">New Event</span>}
-                </Button>
-              </div>
-              
-              <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  Create New Event
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                {/* Event Details */}
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Event Title</Label>
-                    <Input
-                      id="title"
-                      value={newEvent.title}
-                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                      placeholder="Enter event title"
-                      className="text-lg"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="date" className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4" />
-                        Date
-                      </Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={newEvent.date}
-                        onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="type">Event Type</Label>
-                      <Select value={newEvent.appointmentType} onValueChange={(value: any) => setNewEvent({ ...newEvent, appointmentType: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="meeting">Meeting</SelectItem>
-                          <SelectItem value="consultation">Consultation</SelectItem>
-                          <SelectItem value="call">Call</SelectItem>
-                          <SelectItem value="follow-up">Follow-up</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <DurationPicker
-                    startTime={newEvent.startTime}
-                    endTime={newEvent.endTime}
-                    onStartTimeChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
-                    onEndTimeChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
-                  />
-
-                  <div>
-                    <Label htmlFor="location" className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      Location
-                    </Label>
-                    <Input
-                      id="location"
-                      value={newEvent.location}
-                      onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                      placeholder="Enter meeting location"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={newEvent.description}
-                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                      placeholder="Enter event description"
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Event Color Selection */}
-                  <div>
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <Palette className="h-4 w-4" />
-                      Event Color
-                    </Label>
-                    <div className="flex gap-2 mt-2">
-                      {[
-                        { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
-                        { name: 'Green', value: '#10B981', bg: 'bg-green-500' },
-                        { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-500' },
-                        { name: 'Orange', value: '#F59E0B', bg: 'bg-orange-500' },
-                        { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
-                        { name: 'Pink', value: '#EC4899', bg: 'bg-pink-500' },
-                        { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
-                      ].map((color) => (
-                        <button
-                          key={color.value}
-                          type="button"
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${
-                            newEvent.color === color.value 
-                              ? 'border-foreground scale-110' 
-                              : 'border-muted hover:border-muted-foreground'
-                          } ${color.bg}`}
-                          onClick={() => setNewEvent({ ...newEvent, color: color.value })}
-                          title={color.name}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Video Meeting Link */}
-                  <div>
-                    <Label htmlFor="videoMeetingLink" className="flex items-center gap-2">
-                      <Video className="h-4 w-4 text-muted-foreground" />
-                      Video Meeting Link
-                    </Label>
-                    <Input
-                      id="videoMeetingLink"
-                      value={newEvent.videoMeetingLink}
-                      onChange={(e) => setNewEvent({ ...newEvent, videoMeetingLink: e.target.value })}
-                      placeholder="https://meet.google.com/... or https://zoom.us/..."
-                    />
-                  </div>
-                </div>
-
-                {/* Team Members and Client Invitation */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Attendees
-                  </h3>
-
-                  {/* Team Members Selection */}
-                  {teamMembers && teamMembers.length > 0 && (
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Invite Team Members</Label>
-                      <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-3">
-                        {teamMembers.map(member => (
-                          <div key={member.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded cursor-pointer"
-                               onClick={() => {
-                                 const isSelected = newEvent.selectedTeamMembers.includes(member.id);
-                                 setNewEvent({
-                                   ...newEvent,
-                                   selectedTeamMembers: isSelected 
-                                     ? newEvent.selectedTeamMembers.filter(id => id !== member.id)
-                                     : [...newEvent.selectedTeamMembers, member.id]
-                                 });
-                               }}>
-                            <Checkbox 
-                              checked={newEvent.selectedTeamMembers.includes(member.id)}
-                              onChange={() => {}}
-                            />
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs">
-                                {member.name.slice(0, 2).toUpperCase()}
-                              </div>
-                              <span className="text-sm flex-1">{member.name}</span>
-                              <Badge variant="outline" className="text-xs">{member.role}</Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Client Invitation */}
-                  <div>
-                    <Label htmlFor="inviteClientEmail" className="text-sm font-medium mb-2 block">Invite Client</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="inviteClientEmail"
-                        value={newEvent.inviteClientEmail}
-                        onChange={(e) => setNewEvent({ ...newEvent, inviteClientEmail: e.target.value })}
-                        placeholder="client@example.com"
-                        className="flex-1"
-                      />
-                      {clients && clients.length > 0 && (
-                        <Select onValueChange={(email) => setNewEvent({ ...newEvent, inviteClientEmail: email })}>
-                          <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Select client" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {clients
-                              .filter(client => client.email && client.email.trim() !== '')
-                              .map(client => (
-                                <SelectItem key={client.id} value={client.email!}>
-                                  {client.name}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-end space-x-2 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setShowNewEventDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateEvent} disabled={!newEvent.title}>
-                    Create Event
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
             </div>
           </div>
         </div>
@@ -744,6 +491,219 @@ const CalendarView = () => {
           )}
         </div>
       </div>
+
+      {/* New Event Dialog */}
+      <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-primary" />
+              Create New Event
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Event Details */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">Event Title</Label>
+                <Input
+                  id="title"
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                  placeholder="Enter event title"
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date" className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    Date
+                  </Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type">Event Type</Label>
+                  <Select value={newEvent.appointmentType} onValueChange={(value: any) => setNewEvent({ ...newEvent, appointmentType: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="consultation">Consultation</SelectItem>
+                      <SelectItem value="call">Call</SelectItem>
+                      <SelectItem value="follow-up">Follow-up</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <DurationPicker
+                startTime={newEvent.startTime}
+                endTime={newEvent.endTime}
+                onStartTimeChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
+                onEndTimeChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
+              />
+
+              <div>
+                <Label htmlFor="location" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  Location
+                </Label>
+                <Input
+                  id="location"
+                  value={newEvent.location}
+                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                  placeholder="Enter meeting location"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  placeholder="Enter event description"
+                  rows={3}
+                />
+              </div>
+
+              {/* Event Color Selection */}
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Event Color
+                </Label>
+                <div className="flex gap-2 mt-2">
+                  {[
+                    { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
+                    { name: 'Green', value: '#10B981', bg: 'bg-green-500' },
+                    { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-500' },
+                    { name: 'Orange', value: '#F59E0B', bg: 'bg-orange-500' },
+                    { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
+                    { name: 'Pink', value: '#EC4899', bg: 'bg-pink-500' },
+                    { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
+                  ].map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        newEvent.color === color.value 
+                          ? 'border-foreground scale-110' 
+                          : 'border-muted hover:border-muted-foreground'
+                      } ${color.bg}`}
+                      onClick={() => setNewEvent({ ...newEvent, color: color.value })}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Video Meeting Link */}
+              <div>
+                <Label htmlFor="videoMeetingLink" className="flex items-center gap-2">
+                  <Video className="h-4 w-4 text-muted-foreground" />
+                  Video Meeting Link
+                </Label>
+                <Input
+                  id="videoMeetingLink"
+                  value={newEvent.videoMeetingLink}
+                  onChange={(e) => setNewEvent({ ...newEvent, videoMeetingLink: e.target.value })}
+                  placeholder="https://meet.google.com/... or https://zoom.us/..."
+                />
+              </div>
+            </div>
+
+            {/* Team Members and Client Invitation */}
+            <div className="space-y-4 border-t pt-6">
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Attendees
+              </h3>
+
+              {/* Team Members Selection */}
+              {teamMembers && teamMembers.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Invite Team Members</Label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-3">
+                    {teamMembers.map(member => (
+                      <div key={member.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded cursor-pointer"
+                           onClick={() => {
+                             const isSelected = newEvent.selectedTeamMembers.includes(member.id);
+                             setNewEvent({
+                               ...newEvent,
+                               selectedTeamMembers: isSelected 
+                                 ? newEvent.selectedTeamMembers.filter(id => id !== member.id)
+                                 : [...newEvent.selectedTeamMembers, member.id]
+                             });
+                           }}>
+                        <Checkbox 
+                          checked={newEvent.selectedTeamMembers.includes(member.id)}
+                          onChange={() => {}}
+                        />
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs">
+                            {member.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="text-sm flex-1">{member.name}</span>
+                          <Badge variant="outline" className="text-xs">{member.role}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Client Invitation */}
+              <div>
+                <Label htmlFor="inviteClientEmail" className="text-sm font-medium mb-2 block">Invite Client</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="inviteClientEmail"
+                    value={newEvent.inviteClientEmail}
+                    onChange={(e) => setNewEvent({ ...newEvent, inviteClientEmail: e.target.value })}
+                    placeholder="client@example.com"
+                    className="flex-1"
+                  />
+                  {clients && clients.length > 0 && (
+                    <Select onValueChange={(email) => setNewEvent({ ...newEvent, inviteClientEmail: email })}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Select client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients
+                          .filter(client => client.email && client.email.trim() !== '')
+                          .map(client => (
+                            <SelectItem key={client.id} value={client.email!}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowNewEventDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateEvent} disabled={!newEvent.title}>
+                Create Event
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
 
       {/* Appointment Scheduler Slider */}
