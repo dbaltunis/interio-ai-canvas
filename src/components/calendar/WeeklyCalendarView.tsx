@@ -246,6 +246,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const eventToResize = displayAppointments?.find(apt => apt.id === eventId);
     if (!eventToResize) return;
 
+    console.log('🎯 Resize started:', { eventId, type, originalStart: eventToResize.start_time, originalEnd: eventToResize.end_time });
+
     setIsResizing(true);
     setResizeEventId(eventId);
     setResizeType(type);
@@ -263,6 +265,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       
       const deltaY = e.clientY - resizeStartY;
       const deltaSlots = Math.round(deltaY / 20); // 20px per slot
+      
+      console.log('🔄 Mouse move:', { deltaY, deltaSlots, clientY: e.clientY, startY: resizeStartY });
       
       if (deltaSlots === 0) return;
 
@@ -285,11 +289,19 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         }
       }
 
+      console.log('⏰ Time changes:', { 
+        type: resizeType,
+        originalStart: resizeStartTime.toISOString(),
+        originalEnd: resizeStartEndTime.toISOString(),
+        newStart: newStartTime.toISOString(),
+        newEnd: newEndTime.toISOString()
+      });
+
       // Optimistic update
       queryClient.setQueryData(['appointments'], (oldData: any) => {
         if (!oldData) return oldData;
         
-        return oldData.map((appointment: any) => 
+        const updatedData = oldData.map((appointment: any) => 
           appointment.id === resizeEventId
             ? {
                 ...appointment,
@@ -298,6 +310,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
               }
             : appointment
         );
+        
+        console.log('💾 Updated query cache');
+        return updatedData;
       });
     };
 
