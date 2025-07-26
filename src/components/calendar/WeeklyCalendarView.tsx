@@ -260,10 +260,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div 
-        className="h-full max-h-screen flex flex-col overflow-hidden" 
-        onMouseUp={handleMouseUp}
-      >
+      <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
         {/* Week header with dates */}
         <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
           <div className="w-16 border-r flex-shrink-0"></div>
