@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -15,12 +16,13 @@ interface WeeklyCalendarViewProps {
 }
 
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
-  const { data: appointments, refetch: refetchAppointments } = useAppointments();
+  const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   
   // Get current user ID
   useEffect(() => {
@@ -191,7 +193,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     
     const newEndTime = new Date(newStartTime.getTime() + originalDuration);
 
-    // Update the appointment in Supabase
+    // Optimistic update - update cache immediately
+    queryClient.setQueryData(['appointments'], (oldData: any) => {
+      if (!oldData) return oldData;
+      
+      return oldData.map((appointment: any) => 
+        appointment.id === eventId
+          ? {
+              ...appointment,
+              start_time: newStartTime.toISOString(),
+              end_time: newEndTime.toISOString()
+            }
+          : appointment
+      );
+    });
+
+    // Update the appointment in Supabase in the background
     try {
       const { error } = await supabase
         .from('appointments')
@@ -203,12 +220,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
       if (error) {
         console.error('Error updating appointment:', error);
-      } else {
-        // Refetch appointments to update the UI
-        await refetchAppointments();
+        // Revert optimistic update on error
+        queryClient.invalidateQueries({ queryKey: ['appointments'] });
       }
     } catch (error) {
       console.error('Error updating appointment:', error);
+      // Revert optimistic update on error
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
     }
   };
 
