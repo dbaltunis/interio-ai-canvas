@@ -320,7 +320,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       return (
                         <div
                           key={event.id}
-                          className={`absolute border-l-4 p-1.5 text-xs overflow-hidden cursor-pointer 
+                          className={`absolute rounded-xl border-l-4 p-1.5 text-xs overflow-hidden cursor-pointer 
                             transition-all duration-200 z-10 shadow-lg border border-white/30
                             hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
                             ${getEventColor(event)}`}
@@ -330,12 +330,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             width: eventWidth,
                             left: eventLeft,
                             zIndex: 10 + eventIndex,
-                            backgroundColor: event.color ? `${event.color}20` : undefined, // 12% opacity for more transparency
+                            backgroundColor: event.color ? `${event.color}CC` : undefined, // 80% opacity for custom colors
                             borderLeftColor: event.color || undefined,
-                            borderRadius: '16px 12px 16px 8px', // Asymmetric water drop shape
+                            borderRadius: '12px',
                             boxShadow: event.color 
-                              ? `0 8px 16px -4px ${event.color}25, 0 4px 8px -2px ${event.color}15, inset 0 1px 0 rgba(255,255,255,0.3)` 
-                              : '0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255,255,255,0.3)'
+                              ? `0 8px 16px -4px ${event.color}30, 0 4px 8px -2px ${event.color}20, inset 0 1px 0 rgba(255,255,255,0.2)` 
+                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.2)'
                           }}
                           onClick={() => onEventClick?.(event.id)}
                           title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
