@@ -195,27 +195,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         </div>
       </div>
 
-      {/* All-day events section */}
-      <div className="border-b bg-muted/30 flex-shrink-0">
-        <div className="flex text-xs">
-          <div className="p-1 border-r font-medium text-muted-foreground w-12 flex-shrink-0 text-center">All day</div>
-          <div className="flex-1 overflow-x-auto">
-            <div className="grid grid-cols-7 min-w-[700px]">
-              {weekDays.map(day => (
-                <div key={day.toString()} className="p-1 border-r min-h-6">
-                  {/* All-day events would go here */}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Week header with dates */}
       <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
-        <div className="p-2 border-r w-12 flex-shrink-0"></div>
-        <div className="flex-1 overflow-x-auto">
-          <div className="grid grid-cols-7 min-w-[700px]">
+        <div className="w-16 border-r flex-shrink-0"></div>
+        <div className="flex-1">
+          <div className="grid grid-cols-7">
             {weekDays.map(day => {
               const isCurrentDay = isToday(day);
               return (
@@ -239,14 +223,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       
       {/* Scrollable time grid */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="flex min-h-full">
-          {/* Fixed time labels column - outside horizontal scroll */}
-          <div className="border-r bg-muted/20 w-12 flex-shrink-0">
+        <div className="flex">
+          {/* Fixed time labels column */}
+          <div className="w-16 border-r bg-muted/20 flex-shrink-0">
             {timeSlots.map((time, index) => (
               <div 
                 key={time} 
-                className={`h-[20px] px-1 text-xs text-muted-foreground flex items-center justify-end ${
-                  index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
+                className={`h-[20px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
+                  index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                 }`}
               >
                 {time.endsWith(':00') && (
@@ -256,10 +240,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             ))}
           </div>
           
-          {/* Horizontally scrollable days container */}
-          <div className="flex-1 overflow-x-auto">
-            <div className="grid grid-cols-7 min-w-[700px] relative min-h-full">
-              {/* Day columns */}
+          {/* Day columns */}
+          <div className="flex-1">
+            <div className="grid grid-cols-7 h-full">
               {weekDays.map((day, dayIndex) => {
                 const dayEvents = getEventsForDate(day);
                 const isCurrentDay = isToday(day);
@@ -269,13 +252,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 return (
                   <div key={day.toString()} className={`border-r relative ${
                     isCurrentDay ? 'bg-primary/5' : ''
-                  }`}>
+                  }`} style={{ height: `${timeSlots.length * 20}px` }}>
                     {/* Time slot grid */}
                     {timeSlots.map((time, index) => (
                       <div 
                         key={time} 
                         className={`h-[20px] hover:bg-accent/50 cursor-pointer transition-colors ${
-                          index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
+                          index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                         }`}
                         onMouseDown={(e) => handleMouseDown(day, index, e)}
                         onMouseMove={() => handleMouseMove(day, index)}
@@ -301,12 +284,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       const currentHour = now.getHours();
                       const currentMinutes = now.getMinutes();
                       
-                      // Calculate position based on visible time range
+                      // Calculate position from start of visible time range
                       let minutesFromStart = currentHour * 60 + currentMinutes;
                       if (!showExtendedHours) {
-                        minutesFromStart -= 6 * 60; // Subtract 6 AM offset for working hours view
+                        minutesFromStart -= 6 * 60; // Subtract 6 AM offset for working hours
+                        if (minutesFromStart < 0) return null; // Don't show if before visible hours
                       }
-                      const top = (minutesFromStart / 30) * 20; // Adjusted for 20px slot height
+                      
+                      const top = (minutesFromStart / 30) * 20;
                       
                       return (
                         <div 
