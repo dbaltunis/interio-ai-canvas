@@ -444,9 +444,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div
                               ref={setNodeRef}
-                              {...listeners}
-                              {...attributes}
-                              className={`absolute p-1.5 text-xs overflow-hidden cursor-move 
+                              className={`absolute p-1.5 text-xs overflow-hidden cursor-pointer group
                                 transition-all duration-200 z-10 shadow-lg border border-white/40
                                 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
                                 ${getEventColor(event)}`}
@@ -454,6 +452,19 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               onClick={() => onEventClick?.(event.id)}
                               title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                             >
+                              {/* Drag Handle */}
+                              <div 
+                                {...listeners}
+                                {...attributes}
+                                className="absolute top-1 right-1 w-4 h-4 bg-black/20 rounded-sm cursor-move 
+                                          opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                          flex items-center justify-center hover:bg-black/30"
+                                onClick={(e) => e.stopPropagation()}
+                                title="Drag to move"
+                              >
+                                <div className="w-2 h-2 bg-white/80 rounded-[1px]"></div>
+                              </div>
+
                               <div className="flex items-start gap-1">
                                 {/* Show user avatar only for user's own events */}
                                 {isUserEvent && currentUserProfile && (
@@ -467,7 +478,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     )}
                                   </Avatar>
                                 )}
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 pr-6"> {/* Add padding for drag handle */}
                                   <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
                                     {event.title}
                                   </div>
