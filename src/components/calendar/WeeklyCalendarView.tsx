@@ -182,19 +182,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   return (
     <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
-      {/* Time range controls */}
-      <div className="flex items-center justify-between p-2 border-b bg-muted/20">
-        <button
-          onClick={() => setShowExtendedHours(!showExtendedHours)}
-          className="text-xs px-2 py-1 bg-background border rounded hover:bg-accent transition-colors"
-        >
-          {showExtendedHours ? 'Show Working Hours' : 'Show 24 Hours'}
-        </button>
-        <div className="text-xs text-muted-foreground">
-          {showExtendedHours ? '00:00 - 23:30' : '06:00 - 22:00'}
-        </div>
-      </div>
-
       {/* Week header with dates */}
       <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
         <div className="w-16 border-r flex-shrink-0"></div>
