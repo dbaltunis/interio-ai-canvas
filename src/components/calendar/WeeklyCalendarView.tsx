@@ -332,7 +332,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               ref={setNodeRef}
                               className={`h-[20px] hover:bg-accent/50 cursor-pointer transition-colors ${
                                 index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
-                              } ${isOver ? 'bg-primary/20' : ''}`}
+                              } ${isOver ? 'bg-primary/30 border-primary border-2' : ''}`}
                               onMouseDown={(e) => handleMouseDown(day, index, e)}
                               onMouseMove={() => handleMouseMove(day, index)}
                               onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
@@ -498,9 +498,30 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       
       <DragOverlay>
         {activeEvent && (
-          <div className="p-1.5 text-xs bg-primary/75 text-primary-foreground border border-white/40 rounded shadow-lg">
-            <div className="font-semibold">{activeEvent.title}</div>
-            <div className="text-xs">{format(new Date(activeEvent.start_time), 'HH:mm')}</div>
+          <div 
+            className="p-2 text-xs border border-white/40 shadow-2xl backdrop-blur-sm transform scale-110"
+            style={{
+              backgroundColor: activeEvent.color ? `${activeEvent.color}90` : 'hsl(var(--primary) / 0.9)', // 90% opacity
+              borderRadius: '20px 8px 20px 8px', // Water drop corners
+              borderLeftColor: activeEvent.color || 'hsl(var(--primary))',
+              borderLeftWidth: '4px',
+              boxShadow: activeEvent.color 
+                ? `0 20px 40px -8px ${activeEvent.color}60, 0 8px 16px -4px ${activeEvent.color}40, inset 0 1px 0 rgba(255,255,255,0.2)` 
+                : '0 20px 40px -8px hsl(var(--primary) / 0.4), 0 8px 16px -4px hsl(var(--primary) / 0.25), inset 0 1px 0 rgba(255,255,255,0.2)',
+              color: 'white',
+              minWidth: '120px',
+              zIndex: 1000
+            }}
+          >
+            <div className="font-semibold text-white text-sm mb-1">
+              📅 {activeEvent.title}
+            </div>
+            <div className="text-white/90 text-xs">
+              🕐 {format(new Date(activeEvent.start_time), 'HH:mm')}
+            </div>
+            <div className="text-white/70 text-xs mt-1">
+              ↻ Drop to reschedule
+            </div>
           </div>
         )}
       </DragOverlay>
