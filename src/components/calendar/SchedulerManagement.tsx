@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAppointmentSchedulers, useCreateScheduler, useUpdateScheduler, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
@@ -47,6 +46,16 @@ const defaultAvailability = {
   sunday: { enabled: false, timeSlots: [] },
 };
 
+// Function to generate a URL-friendly slug
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+};
+
 export const SchedulerManagement = () => {
   const { data: schedulers, isLoading } = useAppointmentSchedulers();
   const { data: bookings } = useAppointmentBookings();
@@ -62,8 +71,12 @@ export const SchedulerManagement = () => {
 
   const handleCreateScheduler = async () => {
     try {
+      const slug = generateSlug(formData.name);
       await createScheduler.mutateAsync({
         ...formData,
+        slug,
+        min_advance_notice: 24, // Default 24 hours notice
+        locations: {}, // Default empty locations
         availability: formData.availability || defaultAvailability,
       });
       setIsCreateDialogOpen(false);
@@ -83,7 +96,10 @@ export const SchedulerManagement = () => {
     try {
       await updateScheduler.mutateAsync({
         id: selectedScheduler.id,
-        updates: formData,
+        ...formData,
+        slug: formData.name ? generateSlug(formData.name) : selectedScheduler.slug,
+        min_advance_notice: 24, // Keep default for now
+        locations: {}, // Keep default for now
       });
       setIsEditDialogOpen(false);
       setSelectedScheduler(null);
