@@ -181,7 +181,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   }, [showExtendedHours, displayAppointments, weekDays]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
+    <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
       {/* Time range controls */}
       <div className="flex items-center justify-between p-2 border-b bg-muted/20">
         <button
