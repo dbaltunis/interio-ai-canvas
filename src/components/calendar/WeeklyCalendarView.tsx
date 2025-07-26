@@ -118,12 +118,37 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       });
   };
 
-  // Combine regular events and booked appointments
+  // Get available appointment slots for a specific date
+  const getAvailableSlotsForDate = (date: Date) => {
+    if (!schedulerSlots?.length) return [];
+    
+    return schedulerSlots
+      .filter(slot => isSameDay(slot.date, date) && !slot.isBooked)
+      .map(slot => ({
+        id: slot.id,
+        title: `Available: ${slot.schedulerName}`,
+        start_time: `${format(date, 'yyyy-MM-dd')}T${slot.startTime}:00`,
+        end_time: `${format(date, 'yyyy-MM-dd')}T${slot.endTime}:00`,
+        date: format(date, 'yyyy-MM-dd'),
+        isAvailableSlot: true,
+        schedulerName: slot.schedulerName,
+        duration: slot.duration,
+        color: '#6B7280', // Gray-500
+        user_id: null
+      }));
+  };
+
+  // Combine regular events, booked appointments, and available slots
   const getAllEventsForDate = (date: Date) => {
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
-    console.log('All events for', format(date, 'yyyy-MM-dd'), ':', { regularEvents: regularEvents.length, bookedEvents: bookedEvents.length });
-    return [...regularEvents, ...bookedEvents];
+    const availableSlots = getAvailableSlotsForDate(date);
+    console.log('All events for', format(date, 'yyyy-MM-dd'), ':', { 
+      regularEvents: regularEvents.length, 
+      bookedEvents: bookedEvents.length,
+      availableSlots: availableSlots.length 
+    });
+    return [...regularEvents, ...bookedEvents, ...availableSlots];
   };
 
   const getSchedulerSlotsForDate = (date: Date) => {
@@ -497,9 +522,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
                         const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
                         
-                        // Clear visual distinction between events and bookings
+                        // Clear visual distinction between events, bookings, and available slots
                         const getEventStyling = (event: any) => {
-                          if (event.isBooking) {
+                          if (event.isAvailableSlot) {
+                            // AVAILABLE APPOINTMENT SLOTS: Light gray, dashed border, demo-like
+                            return {
+                              backgroundColor: 'rgba(107, 114, 128, 0.15)', // Gray-500 with low opacity
+                              borderColor: '#6B7280', // Gray-500
+                              textColor: 'text-gray-700',
+                              icon: <Calendar className="h-3 w-3" />,
+                              label: 'AVAILABLE',
+                              borderRadius: '6px',
+                              pattern: 'dashed',
+                              isDashed: true
+                            };
+                          } else if (event.isBooking) {
                             // BOOKED APPOINTMENTS: Green, solid, rounded corners
                             return {
                               backgroundColor: '#10B981', // Emerald-500
@@ -531,7 +568,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const DraggableEvent = () => {
                           const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
                             id: event.id,
-                            disabled: event.isBooking, // Disable dragging for booked appointments
+                            disabled: event.isBooking || event.isAvailableSlot, // Disable dragging for booked appointments and available slots
                           });
 
                           const eventStyle = {
@@ -539,35 +576,43 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             height: `${style.height}px`,
                             width: eventWidth,
                             left: eventLeft,
-                            zIndex: 10 + eventIndex,
+                            zIndex: event.isAvailableSlot ? 5 + eventIndex : 10 + eventIndex, // Lower z-index for available slots
                             backgroundColor: eventStyling.backgroundColor,
                             borderLeftColor: eventStyling.borderColor,
                             borderRadius: eventStyling.borderRadius,
-                            boxShadow: event.isBooking
+                            borderStyle: eventStyling.isDashed ? 'dashed' : 'solid',
+                            borderWidth: eventStyling.isDashed ? '1px' : '1px 1px 1px 4px',
+                            boxShadow: event.isAvailableSlot
+                              ? '0 1px 3px rgba(0, 0, 0, 0.1)'
+                              : event.isBooking
                               ? '0 4px 12px -2px rgba(16, 185, 129, 0.3), 0 2px 6px -1px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
                               : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-                            opacity: isDragging ? 0.5 : 1,
-                            cursor: event.isBooking ? 'default' : 'pointer',
+                            opacity: isDragging ? 0.5 : (event.isAvailableSlot ? 0.8 : 1),
+                            cursor: (event.isBooking || event.isAvailableSlot) ? 'default' : 'pointer',
                           };
 
                           return (
                             <div
                               ref={setNodeRef}
                               className={`absolute p-2 text-xs overflow-hidden group
-                                transition-all duration-200 z-10 shadow-lg border border-white/40
-                                ${event.isBooking ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
+                                transition-all duration-200 z-10 border
+                                ${event.isAvailableSlot ? 'border-gray-400' : 'border-white/40'}
+                                ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
+                                ${event.isAvailableSlot ? 'hover:bg-gray-100/20' : ''}
                                 ${eventStyling.textColor}`}
                               style={eventStyle}
                               onClick={() => onEventClick?.(event.id)}
                               title={
-                                event.isBooking 
+                                event.isAvailableSlot
+                                  ? `AVAILABLE APPOINTMENT SLOT\n${event.schedulerName}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to book or manage`
+                                  : event.isBooking 
                                   ? `CUSTOMER BOOKING\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`
                                   : `PERSONAL EVENT\n${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`
                               }
                             >
                               {/* Drag Handle - only for personal events */}
-                              {!event.isBooking && (
+                              {!event.isBooking && !event.isAvailableSlot && (
                                 <div 
                                   {...listeners}
                                   {...attributes}
@@ -595,7 +640,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   
                                   {/* Main title - CLEAR distinction */}
                                   <div className="font-bold text-xs leading-tight mb-1 truncate">
-                                    {event.isBooking ? event.customer_name : event.title}
+                                    {event.isAvailableSlot 
+                                      ? event.schedulerName 
+                                      : event.isBooking 
+                                      ? event.customer_name 
+                                      : event.title
+                                    }
                                   </div>
                                   
                                    {/* Time display */}
@@ -606,7 +656,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   {/* Additional info if space allows */}
                                   {style.height > 50 && (
                                     <div className="text-[10px] leading-tight truncate opacity-75 mt-1">
-                                      {event.isBooking ? event.scheduler_name : (event.location || event.description)}
+                                      {event.isAvailableSlot 
+                                        ? 'Click to book'
+                                        : event.isBooking 
+                                        ? event.scheduler_name 
+                                        : (event.location || event.description)
+                                      }
                                     </div>
                                   )}
                                 </div>
