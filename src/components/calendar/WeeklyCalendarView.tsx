@@ -305,32 +305,36 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       // Color coding by appointment color or type
                       const getEventColor = (event: any) => {
                         if (event.color) {
-                          return `text-white border-l-4`;
+                          return `text-white border-l-4 backdrop-blur-sm`;
                         }
                         
                         switch (event.appointment_type) {
-                          case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
-                          case 'consultation': return 'bg-green-500/90 text-white border-green-600';
-                          case 'call': return 'bg-purple-500/90 text-white border-purple-600';
-                          case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
-                          default: return 'bg-primary/90 text-primary-foreground border-primary';
+                          case 'meeting': return 'bg-blue-500/75 text-white border-blue-400 backdrop-blur-sm';
+                          case 'consultation': return 'bg-green-500/75 text-white border-green-400 backdrop-blur-sm';
+                          case 'call': return 'bg-purple-500/75 text-white border-purple-400 backdrop-blur-sm';
+                          case 'follow-up': return 'bg-orange-500/75 text-white border-orange-400 backdrop-blur-sm';
+                          default: return 'bg-primary/75 text-primary-foreground border-primary/60 backdrop-blur-sm';
                         }
                       };
                       
                       return (
                         <div
                           key={event.id}
-                          className={`absolute rounded border-l-4 p-0.5 text-xs overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 ${
-                            getEventColor(event)
-                          }`}
+                          className={`absolute rounded-lg border-l-4 p-1.5 text-xs overflow-hidden cursor-pointer 
+                            transition-all duration-200 z-10 shadow-lg 
+                            hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
+                            ${getEventColor(event)}`}
                           style={{
                             top: `${style.top}px`,
                             height: `${style.height}px`,
                             width: eventWidth,
                             left: eventLeft,
                             zIndex: 10 + eventIndex,
-                            backgroundColor: event.color || undefined,
-                            borderLeftColor: event.color || undefined
+                            backgroundColor: event.color ? `${event.color}CC` : undefined, // 80% opacity for custom colors
+                            borderLeftColor: event.color || undefined,
+                            boxShadow: event.color 
+                              ? `0 4px 8px -2px ${event.color}40, 0 2px 4px -1px ${event.color}20` 
+                              : '0 4px 8px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                           }}
                           onClick={() => onEventClick?.(event.id)}
                           title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
