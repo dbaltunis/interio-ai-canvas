@@ -40,14 +40,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   
   // Drag and drop state
   const [activeEvent, setActiveEvent] = useState<any>(null);
-  
-  // Resize state
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeEventId, setResizeEventId] = useState<string | null>(null);
-  const [resizeType, setResizeType] = useState<'top' | 'bottom' | null>(null);
-  const [resizeStartY, setResizeStartY] = useState<number>(0);
-  const [resizeStartTime, setResizeStartTime] = useState<Date | null>(null);
-  const [resizeStartEndTime, setResizeStartEndTime] = useState<Date | null>(null);
 
   // Generate all 24-hour time slots (00:00 to 23:30)
   const allTimeSlots = (() => {
@@ -237,140 +229,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     }
   };
-
-  // Handle resize events
-  const handleResizeStart = (eventId: string, type: 'top' | 'bottom', e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    const eventToResize = displayAppointments?.find(apt => apt.id === eventId);
-    if (!eventToResize) return;
-
-    console.log('🎯 Resize started:', { eventId, type, originalStart: eventToResize.start_time, originalEnd: eventToResize.end_time });
-
-    setIsResizing(true);
-    setResizeEventId(eventId);
-    setResizeType(type);
-    setResizeStartY(e.clientY);
-    setResizeStartTime(new Date(eventToResize.start_time));
-    setResizeStartEndTime(new Date(eventToResize.end_time));
-  };
-
-  // Global mouse move and up handlers for resize
-  useEffect(() => {
-    if (!isResizing) return;
-
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!isResizing || !resizeEventId || !resizeType || !resizeStartTime || !resizeStartEndTime) return;
-      
-      const deltaY = e.clientY - resizeStartY;
-      const deltaSlots = Math.round(deltaY / 20); // 20px per slot
-      
-      console.log('🔄 Mouse move:', { deltaY, deltaSlots, clientY: e.clientY, startY: resizeStartY });
-      
-      if (deltaSlots === 0) return;
-
-      let newStartTime = new Date(resizeStartTime);
-      let newEndTime = new Date(resizeStartEndTime);
-
-      if (resizeType === 'top') {
-        // Resize from top - change start time
-        newStartTime = new Date(resizeStartTime.getTime() + (deltaSlots * 30 * 60 * 1000));
-        // Ensure minimum duration of 30 minutes
-        if (newStartTime >= resizeStartEndTime) {
-          newStartTime = new Date(resizeStartEndTime.getTime() - 30 * 60 * 1000);
-        }
-      } else {
-        // Resize from bottom - change end time
-        newEndTime = new Date(resizeStartEndTime.getTime() + (deltaSlots * 30 * 60 * 1000));
-        // Ensure minimum duration of 30 minutes
-        if (newEndTime <= resizeStartTime) {
-          newEndTime = new Date(resizeStartTime.getTime() + 30 * 60 * 1000);
-        }
-      }
-
-      console.log('⏰ Time changes:', { 
-        type: resizeType,
-        originalStart: resizeStartTime.toISOString(),
-        originalEnd: resizeStartEndTime.toISOString(),
-        newStart: newStartTime.toISOString(),
-        newEnd: newEndTime.toISOString()
-      });
-
-      // Optimistic update
-      queryClient.setQueryData(['appointments'], (oldData: any) => {
-        if (!oldData) return oldData;
-        
-        const updatedData = oldData.map((appointment: any) => 
-          appointment.id === resizeEventId
-            ? {
-                ...appointment,
-                start_time: newStartTime.toISOString(),
-                end_time: newEndTime.toISOString()
-              }
-            : appointment
-        );
-        
-        console.log('💾 Updated query cache');
-        return updatedData;
-      });
-    };
-
-    const handleGlobalMouseUp = async () => {
-      if (!isResizing || !resizeEventId) {
-        setIsResizing(false);
-        setResizeEventId(null);
-        setResizeType(null);
-        setResizeStartTime(null);
-        setResizeStartEndTime(null);
-        return;
-      }
-
-      const eventToUpdate = displayAppointments?.find(apt => apt.id === resizeEventId);
-      if (!eventToUpdate) {
-        setIsResizing(false);
-        setResizeEventId(null);
-        setResizeType(null);
-        setResizeStartTime(null);
-        setResizeStartEndTime(null);
-        return;
-      }
-
-      // Update in database
-      try {
-        const { error } = await supabase
-          .from('appointments')
-          .update({
-            start_time: eventToUpdate.start_time,
-            end_time: eventToUpdate.end_time
-          })
-          .eq('id', resizeEventId);
-
-        if (error) {
-          console.error('Error updating appointment:', error);
-          queryClient.invalidateQueries({ queryKey: ['appointments'] });
-        }
-      } catch (error) {
-        console.error('Error updating appointment:', error);
-        queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      }
-
-      setIsResizing(false);
-      setResizeEventId(null);
-      setResizeType(null);
-      setResizeStartTime(null);
-      setResizeStartEndTime(null);
-    };
-
-    // Add global event listeners
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [isResizing, resizeEventId, resizeType, resizeStartY, resizeStartTime, resizeStartEndTime, displayAppointments, queryClient]);
 
   // Auto-scroll to earliest event or 8 AM (but not during event creation)
   useEffect(() => {
@@ -568,7 +426,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const DraggableEvent = () => {
                           const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
                             id: event.id,
-                            disabled: isResizing, // Disable dragging when resizing
                           });
 
                           const eventStyle = {
@@ -590,33 +447,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div
                               ref={setNodeRef}
-                              className={`absolute p-1.5 text-xs overflow-visible group
-                                transition-all duration-200 z-10 shadow-lg border border-white/40
-                                hover:shadow-xl
-                                ${getEventColor(event)} ${isResizing ? '' : 'cursor-move'}`}
-                              style={eventStyle}
-                              onClick={() => !isResizing && onEventClick?.(event.id)}
-                              title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
-                              {...(!isResizing ? listeners : {})} // Only apply drag listeners when not resizing
+                              {...listeners}
                               {...attributes}
+                              className={`absolute p-1.5 text-xs overflow-hidden cursor-move 
+                                transition-all duration-200 z-10 shadow-lg border border-white/40
+                                hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5
+                                ${getEventColor(event)}`}
+                              style={eventStyle}
+                              onClick={() => onEventClick?.(event.id)}
+                              title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                             >
-                              {/* Top resize edge - spans full width */}
-                              <div
-                                className="absolute -top-1 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handleResizeStart(event.id, 'top', e);
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                }}
-                              >
-                                <div className="w-full h-1 bg-blue-400/60 rounded-full border border-blue-500/40 shadow-sm"></div>
-                              </div>
-
-                              <div className="flex items-start gap-1 relative z-10">
+                              <div className="flex items-start gap-1">
                                 {/* Show user avatar only for user's own events */}
                                 {isUserEvent && currentUserProfile && (
                                   <Avatar className="h-4 w-4 flex-shrink-0 mt-0.5">
@@ -634,7 +475,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     {event.title}
                                   </div>
                                   <div className="text-[11px] leading-tight text-black/80">
-                                    {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                                    {format(startTime, 'HH:mm')}
                                   </div>
                                   {style.height > 40 && (
                                     <div className="text-[10px] leading-tight truncate text-black/70">
@@ -643,31 +484,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   )}
                                 </div>
                               </div>
-
-                              {/* Bottom resize edge - spans full width */}
-                              <div
-                                className="absolute -bottom-1 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handleResizeStart(event.id, 'bottom', e);
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                }}
-                              >
-                                <div className="w-full h-1 bg-blue-400/60 rounded-full border border-blue-500/40 shadow-sm"></div>
-                              </div>
-
-                              {/* Resize visual indicator when resizing */}
-                              {isResizing && resizeEventId === event.id && (
-                                <div className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none">
-                                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
-                                    {resizeType === 'top' ? 'Drag to change start time' : 'Drag to change end time'}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           );
                         };
