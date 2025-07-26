@@ -30,6 +30,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         slots.push(`${hour.toString().padStart(2, '0')}:30`);
       }
     }
+    slots.push('23:30');
     return slots;
   })();
 
