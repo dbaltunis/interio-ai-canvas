@@ -1,7 +1,10 @@
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useState, useRef, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -14,7 +17,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
+  const { data: currentUserProfile } = useCurrentUserProfile();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
   
   // Event creation state
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
@@ -317,6 +331,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         }
                       };
                       
+                      // Check if this event belongs to the current user
+                      const isUserEvent = currentUserId && event.user_id === currentUserId;
+                      
                       return (
                         <div
                           key={event.id}
@@ -340,17 +357,33 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           onClick={() => onEventClick?.(event.id)}
                           title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                         >
-                          <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
-                            {event.title}
-                          </div>
-                          <div className="text-[11px] leading-tight text-black/80">
-                            {format(startTime, 'HH:mm')}
-                          </div>
-                          {style.height > 40 && (
-                            <div className="text-[10px] leading-tight truncate text-black/70">
-                              {event.location}
+                          <div className="flex items-start gap-1">
+                            {/* Show user avatar only for user's own events */}
+                            {isUserEvent && currentUserProfile && (
+                              <Avatar className="h-4 w-4 flex-shrink-0 mt-0.5">
+                                {currentUserProfile.avatar_url ? (
+                                  <AvatarImage src={currentUserProfile.avatar_url} />
+                                ) : (
+                                  <AvatarFallback className="text-[8px] bg-white/20 text-black">
+                                    {currentUserProfile.display_name?.charAt(0) || '?'}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold truncate text-xs leading-tight mb-0.5 text-black">
+                                {event.title}
+                              </div>
+                              <div className="text-[11px] leading-tight text-black/80">
+                                {format(startTime, 'HH:mm')}
+                              </div>
+                              {style.height > 40 && (
+                                <div className="text-[10px] leading-tight truncate text-black/70">
+                                  {event.location}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       );
                     })}
