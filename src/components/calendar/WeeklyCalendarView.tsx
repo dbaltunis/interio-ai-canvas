@@ -142,9 +142,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     return { top, height };
   };
 
-  // Auto-scroll to earliest event or 8 AM
+  // Auto-scroll to earliest event or 8 AM (but not during event creation)
   useEffect(() => {
-    if (scrollContainerRef.current && displayAppointments) {
+    if (scrollContainerRef.current && displayAppointments && !isCreatingEvent) {
       let scrollPosition = 0;
       
       // Find earliest event in the current week
@@ -159,26 +159,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         });
         
         const eventHour = new Date(earliestEvent.start_time).getHours();
-        const scrollToHour = Math.max(eventHour - 1, showExtendedHours ? 0 : 6); // 1 hour before event, but not before visible range
-        
-        if (showExtendedHours) {
-          scrollPosition = (scrollToHour * 60 / 30) * 20; // Each 30-minute slot is 20px
-        } else {
-          const relativeHour = scrollToHour - 6; // Relative to 6 AM start
-          scrollPosition = Math.max(relativeHour * 2 * 20, 0); // 2 slots per hour * 20px
-        }
+        const scrollToHour = Math.max(eventHour - 1, 0); // 1 hour before event
+        scrollPosition = (scrollToHour * 60 / 30) * 20; // Each 30-minute slot is 20px
       } else {
         // Default to 8 AM if no events
-        if (showExtendedHours) {
-          scrollPosition = (8 * 60 / 30) * 20;
-        } else {
-          scrollPosition = 4 * 20; // 4 slots from 6 AM to 8 AM
-        }
+        scrollPosition = (8 * 60 / 30) * 20;
       }
       
       scrollContainerRef.current.scrollTop = scrollPosition;
     }
-  }, [showExtendedHours, displayAppointments, weekDays]);
+  }, [showExtendedHours, displayAppointments, weekDays, isCreatingEvent]);
 
   return (
     <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
