@@ -1,6 +1,7 @@
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
+import { useBookedAppointments } from "@/hooks/useBookedAppointments";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,6 +20,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
+  const { data: bookedAppointments } = useBookedAppointments(currentDate);
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -78,10 +80,52 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     );
   };
 
+  // Get booked appointments for a specific date as events
+  const getBookedEventsForDate = (date: Date) => {
+    if (!bookedAppointments) return [];
+    return bookedAppointments
+      .filter(booking => isSameDay(new Date(booking.appointment_date), date))
+      .map(booking => {
+        // Convert booking to event format
+        const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
+        const endDateTime = new Date(appointmentDateTime.getTime() + (booking.scheduler.duration * 60 * 1000));
+        
+        return {
+          id: `booking-${booking.id}`,
+          title: `📅 ${booking.customer_name}`,
+          description: `Booked appointment with ${booking.customer_name}`,
+          start_time: appointmentDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          appointment_type: 'booking',
+          status: booking.status,
+          location: booking.location_type || 'TBD',
+          color: '#10B981', // Green for bookings
+          user_id: null, // System booking
+          isBooking: true,
+          bookingData: booking
+        };
+      });
+  };
+
+  // Combine regular events and booked appointments
+  const getAllEventsForDate = (date: Date) => {
+    const regularEvents = getEventsForDate(date);
+    const bookedEvents = getBookedEventsForDate(date);
+    return [...regularEvents, ...bookedEvents];
+  };
+
   const getSchedulerSlotsForDate = (date: Date) => {
     if (!schedulerSlots) return [];
     return schedulerSlots.filter(slot => 
       isSameDay(slot.date, date)
+    );
+  };
+
+  // Check if a time slot is occupied by booked appointments
+  const isTimeSlotOccupied = (date: Date, timeString: string) => {
+    const schedulerSlotData = getSchedulerSlotsForDate(date);
+    return schedulerSlotData.some(slot => 
+      slot.isBooked && slot.startTime === timeString
     );
   };
 
@@ -310,7 +354,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <div className="flex-1">
               <div className="grid grid-cols-7 h-full">
                 {weekDays.map((day, dayIndex) => {
-                  const dayEvents = getEventsForDate(day);
+                  const dayEvents = getAllEventsForDate(day); // Use combined events
                   const isCurrentDay = isToday(day);
                   const previewStyle = getEventCreationPreviewStyle();
                   const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
@@ -321,6 +365,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     }`} style={{ height: `${timeSlots.length * 20}px` }}>
                       {/* Time slot grid with droppable areas */}
                       {timeSlots.map((time, index) => {
+                        const isOccupied = isTimeSlotOccupied(day, time);
+                        
                         const DroppableTimeSlot = () => {
                           const { setNodeRef, isOver } = useDroppable({
                             id: `${day.toISOString()}-${index}`,
@@ -330,14 +376,29 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div 
                               ref={setNodeRef}
-                              className={`h-[20px] hover:bg-accent/50 cursor-pointer transition-colors ${
+                              className={`h-[20px] transition-colors relative ${
                                 index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
-                              } ${isOver ? 'bg-primary/30 border-primary border-2' : ''}`}
-                              onMouseDown={(e) => handleMouseDown(day, index, e)}
-                              onMouseMove={() => handleMouseMove(day, index)}
+                              } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
+                                isOccupied 
+                                  ? 'bg-red-100 hover:bg-red-200 cursor-help' 
+                                  : 'hover:bg-accent/50 cursor-pointer'
+                              }`}
+                              onMouseDown={(e) => !isOccupied && handleMouseDown(day, index, e)}
+                              onMouseMove={() => !isOccupied && handleMouseMove(day, index)}
                               onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
-                              title={`${format(day, 'MMM d')} at ${time}`}
-                            />
+                              title={
+                                isOccupied 
+                                  ? `${format(day, 'MMM d')} at ${time} - Slot already booked`
+                                  : `${format(day, 'MMM d')} at ${time}`
+                              }
+                            >
+                              {/* Booking indicator */}
+                              {isOccupied && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                                </div>
+                              )}
+                            </div>
                           );
                         };
 

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
+import { useBookedAppointments } from "@/hooks/useBookedAppointments";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,6 +36,7 @@ import { CalendarFilters } from "./filters/CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useTwoWaySync } from "@/hooks/useTwoWaySync";
 import { ConflictResolutionDialog } from "./sync/ConflictResolutionDialog";
+import { ConflictDialog } from "./ConflictDialog";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
@@ -54,8 +56,13 @@ const CalendarView = () => {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [showSlotConflictDialog, setShowSlotConflictDialog] = useState(false);
   const [showTimezoneDialog, setShowTimezoneDialog] = useState(false);
   const [syncConflicts, setSyncConflicts] = useState<any[]>([]);
+  const [conflictData, setConflictData] = useState<{
+    conflictingEvents: any[];
+    proposedSlot: { date: Date; time: string };
+  } | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [filters, setFilters] = useState<CalendarFilterState>({
@@ -304,6 +311,30 @@ const CalendarView = () => {
   };
 
   const handleTimeSlotClick = (date: Date, time: string) => {
+    // Check if there are existing events or booked slots at this time
+    const existingEvents = getEventsForDate(date);
+    const clickDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${time.split('-')[0]}:00`);
+    
+    const hasConflict = existingEvents.some(event => {
+      const eventStart = new Date(event.start_time);
+      const eventEnd = new Date(event.end_time);
+      return clickDateTime >= eventStart && clickDateTime < eventEnd;
+    });
+
+    // If there's a conflict, show a dialog asking what to do
+    if (hasConflict) {
+      if (confirm("There's already an event at this time. Do you want to create an overlapping event anyway? Click OK to proceed or Cancel to choose a different time.")) {
+        // Proceed with creating the event
+        proceedWithEventCreation(date, time);
+      }
+      return;
+    }
+
+    // No conflict, proceed normally
+    proceedWithEventCreation(date, time);
+  };
+
+  const proceedWithEventCreation = (date: Date, time: string) => {
     setSelectedDate(date);
     
     // Parse time range if it contains a dash (from drag creation)
@@ -749,6 +780,34 @@ const CalendarView = () => {
         onOpenChange={setShowConflictDialog}
         conflicts={syncConflicts}
       />
+
+      {/* Slot Conflict Dialog */}
+      {conflictData && (
+        <ConflictDialog
+          open={showSlotConflictDialog}
+          onOpenChange={setShowSlotConflictDialog}
+          conflictingEvents={conflictData.conflictingEvents}
+          proposedSlot={conflictData.proposedSlot}
+          onCreateAnyway={() => {
+            setShowSlotConflictDialog(false);
+            proceedWithEventCreation(conflictData.proposedSlot.date, conflictData.proposedSlot.time);
+          }}
+          onMarkAsBusy={() => {
+            setShowSlotConflictDialog(false);
+            // Create a "Busy" event
+            setNewEvent({
+              ...newEvent,
+              title: 'Busy',
+              description: 'Time slot marked as busy',
+              date: format(conflictData.proposedSlot.date, 'yyyy-MM-dd'),
+              startTime: conflictData.proposedSlot.time,
+              endTime: `${(parseInt(conflictData.proposedSlot.time.split(':')[0]) + 1).toString().padStart(2, '0')}:${conflictData.proposedSlot.time.split(':')[1]}`
+            });
+            setShowNewEventDialog(true);
+          }}
+          onCancel={() => setShowSlotConflictDialog(false)}
+        />
+      )}
 
       <TimezoneSettingsDialog
         open={showTimezoneDialog}
