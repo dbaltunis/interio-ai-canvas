@@ -241,7 +241,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         <div className="flex relative min-h-full">
           {/* Horizontally scrollable days container */}
           <div className="flex-1 overflow-x-auto">
-            <div className="grid grid-cols-8 min-w-[760px] relative min-h-full">
+            <div className="flex min-w-[760px] relative min-h-full">
               {/* Time labels column - now inside the scrollable container */}
               <div className="border-r bg-muted/20 w-12 flex-shrink-0">
                 {timeSlots.map((time, index) => (
@@ -266,7 +266,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
                 
                 return (
-                  <div key={day.toString()} className={`border-r relative ${
+                  <div key={day.toString()} className={`border-r relative flex-1 ${
                     isCurrentDay ? 'bg-primary/5' : ''
                   }`}>
                 {/* Time slot grid */}
