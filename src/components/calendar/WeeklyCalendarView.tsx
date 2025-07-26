@@ -22,6 +22,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const { data: bookedAppointments } = useBookedAppointments(currentDate);
+  
+  // Debug logging
+  console.log('WeeklyCalendarView render:');
+  console.log('- Current date:', currentDate);
+  console.log('- Scheduler slots data:', schedulerSlots);
+  console.log('- Booked appointments:', bookedAppointments);
+  console.log('- Display appointments:', displayAppointments?.length || 0);
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);

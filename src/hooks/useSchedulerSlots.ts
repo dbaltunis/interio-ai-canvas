@@ -21,7 +21,11 @@ export const useSchedulerSlots = (date?: Date) => {
   return useQuery({
     queryKey: ["scheduler-slots", date ? format(date, 'yyyy-MM-dd') : 'all'],
     queryFn: async () => {
-      if (!schedulers?.length) return [];
+      console.log('useSchedulerSlots queryFn called with schedulers:', schedulers?.length, 'date:', date);
+      if (!schedulers?.length) {
+        console.log('No schedulers found, returning empty array');
+        return [];
+      }
 
       // Get booked appointments
       const { data: bookedAppointments } = await supabase
@@ -45,13 +49,17 @@ export const useSchedulerSlots = (date?: Date) => {
 
         // Generate slots for the next 30 days (or specific date)
         const startDate = date || new Date();
-        const endDate = date || addDays(new Date(), 30);
+        const endDate = date ? new Date(date) : addDays(new Date(), 30);
         
         for (let d = new Date(startDate); d <= endDate; d = addDays(d, 1)) {
           const dayName = format(d, 'EEEE').toLowerCase();
+          console.log('Processing date:', format(d, 'yyyy-MM-dd'), 'dayName:', dayName);
+          
           const dayAvailability = availabilityArray.find(day => 
             day.day.toLowerCase() === dayName
           );
+          
+          console.log('Day availability for', dayName, ':', dayAvailability);
 
           if (dayAvailability?.enabled && dayAvailability.timeSlots?.length) {
             for (const timeSlot of dayAvailability.timeSlots) {
@@ -82,6 +90,7 @@ export const useSchedulerSlots = (date?: Date) => {
         }
       }
 
+      console.log('Generated slots:', slots.length, slots);
       return slots;
     },
     enabled: !!schedulers?.length,
