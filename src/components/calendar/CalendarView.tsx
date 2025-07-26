@@ -96,6 +96,15 @@ const CalendarView = () => {
       const startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
       const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
       
+      // Helper function to check if a string is a valid UUID
+      const isValidUUID = (str: string) => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+      };
+
+      // Filter out invalid UUIDs for team members (since we're using mock data)
+      const validTeamMemberIds = newEvent.selectedTeamMembers.filter(isValidUUID);
+      
       const newAppointment = await createAppointment.mutateAsync({
         title: newEvent.title,
         description: newEvent.description,
@@ -105,7 +114,7 @@ const CalendarView = () => {
         location: newEvent.location,
         status: 'scheduled',
         color: newEvent.color || undefined,
-        team_member_ids: newEvent.selectedTeamMembers.length > 0 ? newEvent.selectedTeamMembers : undefined,
+        team_member_ids: validTeamMemberIds.length > 0 ? validTeamMemberIds : undefined,
         invited_client_emails: newEvent.inviteClientEmail ? [newEvent.inviteClientEmail] : undefined
       });
 
