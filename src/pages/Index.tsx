@@ -13,12 +13,11 @@ const ClientManagement = lazy(() => import("@/components/jobs/ClientManagement")
 const EmailManagement = lazy(() => import("@/components/jobs/EmailManagement"));
 const CalendarView = lazy(() => import("@/components/calendar/CalendarView"));
 
-// Simple loading component
-const PageLoader = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="text-lg text-brand-neutral">Loading...</div>
-  </div>
-);
+// Skeleton loading components
+import { DashboardSkeleton } from "@/components/dashboard/skeleton/DashboardSkeleton";
+import { JobsPageSkeleton } from "@/components/jobs/skeleton/JobsPageSkeleton";
+import { ClientManagementSkeleton } from "@/components/clients/skeleton/ClientManagementSkeleton";
+import { GenericPageSkeleton } from "@/components/skeleton/GenericPageSkeleton";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,43 +47,43 @@ const Index = () => {
     switch (activeTab) {
       case "dashboard":
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<DashboardSkeleton />}>
             <Dashboard />
           </Suspense>
         );
       case "projects":
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<JobsPageSkeleton />}>
             <JobsPage />
           </Suspense>
         );
       case "clients":
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<ClientManagementSkeleton />}>
             <ClientManagement />
           </Suspense>
         );
       case "quotes":
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <EmailManagement />
           </Suspense>
         );
       case "inventory":
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <LibraryPage />
           </Suspense>
         );
       case 'calendar':
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<GenericPageSkeleton />}>
             <CalendarView />
           </Suspense>
         );
       default:
         return (
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<JobsPageSkeleton />}>
             <JobsPage />
           </Suspense>
         );
