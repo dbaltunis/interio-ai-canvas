@@ -83,22 +83,33 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   // Get booked appointments for a specific date as events
   const getBookedEventsForDate = (date: Date) => {
     if (!bookedAppointments) return [];
+    
+    console.log("📅 Getting booked events for date:", format(date, 'yyyy-MM-dd'));
+    console.log("📋 All booked appointments:", bookedAppointments);
+    
     return bookedAppointments
-      .filter(booking => isSameDay(new Date(booking.appointment_date), date))
+      .filter(booking => {
+        const bookingDate = booking.appointment_date;
+        const targetDate = format(date, 'yyyy-MM-dd');
+        console.log(`🔍 Comparing booking date: ${bookingDate} with target: ${targetDate}`);
+        return bookingDate === targetDate;
+      })
       .map(booking => {
         // Convert booking to event format
         const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
         const endDateTime = new Date(appointmentDateTime.getTime() + (booking.scheduler.duration * 60 * 1000));
         
+        console.log(`📌 Creating booked event: ${booking.customer_name} on ${booking.appointment_date} at ${booking.appointment_time}`);
+        
         return {
           id: `booking-${booking.id}`,
           title: `📅 ${booking.customer_name}`,
-          description: `Booked appointment with ${booking.customer_name}`,
+          description: `Scheduled: ${booking.scheduler.name}`,
           start_time: appointmentDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
           appointment_type: 'booking',
           status: booking.status,
-          location: booking.location_type || 'TBD',
+          location: booking.location_type || 'Online',
           color: '#10B981', // Green for bookings
           user_id: null, // System booking
           isBooking: true,
@@ -124,9 +135,27 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   // Check if a time slot is occupied by booked appointments
   const isTimeSlotOccupied = (date: Date, timeString: string) => {
     const schedulerSlotData = getSchedulerSlotsForDate(date);
-    return schedulerSlotData.some(slot => 
+    const bookedEvents = getBookedEventsForDate(date);
+    
+    console.log(`🔍 Checking if ${format(date, 'yyyy-MM-dd')} ${timeString} is occupied`);
+    console.log("📋 Scheduler slots:", schedulerSlotData);
+    console.log("📅 Booked events:", bookedEvents);
+    
+    // Check scheduler slots
+    const hasSchedulerBooking = schedulerSlotData.some(slot => 
       slot.isBooked && slot.startTime === timeString
     );
+    
+    // Check booked appointments
+    const hasDirectBooking = bookedEvents.some(event => {
+      const eventTime = format(new Date(event.start_time), 'HH:mm');
+      return eventTime === timeString;
+    });
+    
+    const isOccupied = hasSchedulerBooking || hasDirectBooking;
+    console.log(`🎯 Time slot ${timeString} occupied:`, isOccupied);
+    
+    return isOccupied;
   };
 
   // Calculate event position and styling
@@ -354,10 +383,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <div className="flex-1">
               <div className="grid grid-cols-7 h-full">
                 {weekDays.map((day, dayIndex) => {
-                  const dayEvents = getAllEventsForDate(day); // Use combined events
+                  const dayEvents = getAllEventsForDate(day);
                   const isCurrentDay = isToday(day);
                   const previewStyle = getEventCreationPreviewStyle();
                   const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
+                  
+                  console.log(`📅 Day ${format(day, 'yyyy-MM-dd')} has ${dayEvents.length} events:`, dayEvents.map(e => e.title));
                   
                   return (
                     <div key={day.toString()} className={`border-r relative ${
@@ -380,7 +411,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
-                                  ? 'bg-red-100 hover:bg-red-200 cursor-help' 
+                                  ? 'bg-red-100/80 hover:bg-red-200/80 cursor-help border-l-2 border-red-400' 
                                   : 'hover:bg-accent/50 cursor-pointer'
                               }`}
                               onMouseDown={(e) => !isOccupied && handleMouseDown(day, index, e)}
@@ -388,14 +419,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
                               title={
                                 isOccupied 
-                                  ? `${format(day, 'MMM d')} at ${time} - Slot already booked`
-                                  : `${format(day, 'MMM d')} at ${time}`
+                                  ? `${format(day, 'MMM d')} at ${time} - Time slot is booked`
+                                  : `${format(day, 'MMM d')} at ${time} - Click to create event`
                               }
                             >
-                              {/* Booking indicator */}
+                              {/* Enhanced booking indicator */}
                               {isOccupied && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                                  <div className="flex items-center space-x-1">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                                    <div className="text-[8px] font-medium text-red-600">BOOKED</div>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -441,7 +475,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         );
                       })()}
                       
-                      {/* Events */}
+                      {/* Events with enhanced booking display */}
                       {dayEvents.map((event, eventIndex) => {
                         const startTime = new Date(event.start_time);
                         const endTime = new Date(event.end_time);
@@ -463,8 +497,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
                         const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
                         
-                        // Color coding by appointment color or type
+                        // Enhanced color coding for bookings
                         const getEventColor = (event: any) => {
+                          if (event.isBooking) {
+                            return 'bg-green-500/85 text-white border-green-400 backdrop-blur-sm shadow-lg';
+                          }
+                          
                           if (event.color) {
                             return `text-white border-l-4 backdrop-blur-sm`;
                           }
