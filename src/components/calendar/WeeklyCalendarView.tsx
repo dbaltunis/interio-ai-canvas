@@ -141,20 +141,43 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     return { top, height };
   };
 
-  // Auto-scroll to 8 AM on mount (or start of visible hours)
+  // Auto-scroll to earliest event or 8 AM
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      if (showExtendedHours) {
-        const scrollTo8AM = 8 * 60; // 8 AM in minutes from midnight
-        const scrollPosition = (scrollTo8AM / 30) * 20; // Each 30-minute slot is 20px
-        scrollContainerRef.current.scrollTop = scrollPosition;
+    if (scrollContainerRef.current && displayAppointments) {
+      let scrollPosition = 0;
+      
+      // Find earliest event in the current week
+      const weekEvents = displayAppointments.filter(appointment => {
+        const eventDate = new Date(appointment.start_time);
+        return weekDays.some(day => isSameDay(eventDate, day));
+      });
+      
+      if (weekEvents.length > 0) {
+        const earliestEvent = weekEvents.reduce((earliest, current) => {
+          return new Date(current.start_time) < new Date(earliest.start_time) ? current : earliest;
+        });
+        
+        const eventHour = new Date(earliestEvent.start_time).getHours();
+        const scrollToHour = Math.max(eventHour - 1, showExtendedHours ? 0 : 6); // 1 hour before event, but not before visible range
+        
+        if (showExtendedHours) {
+          scrollPosition = (scrollToHour * 60 / 30) * 20; // Each 30-minute slot is 20px
+        } else {
+          const relativeHour = scrollToHour - 6; // Relative to 6 AM start
+          scrollPosition = Math.max(relativeHour * 2 * 20, 0); // 2 slots per hour * 20px
+        }
       } else {
-        // Scroll to 8 AM within the working hours view (8 AM = 4 slots from 6 AM start)
-        const scrollTo8AM = 4 * 20; // 4 slots * 20px
-        scrollContainerRef.current.scrollTop = scrollTo8AM;
+        // Default to 8 AM if no events
+        if (showExtendedHours) {
+          scrollPosition = (8 * 60 / 30) * 20;
+        } else {
+          scrollPosition = 4 * 20; // 4 slots from 6 AM to 8 AM
+        }
       }
+      
+      scrollContainerRef.current.scrollTop = scrollPosition;
     }
-  }, [showExtendedHours]);
+  }, [showExtendedHours, displayAppointments, weekDays]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
@@ -216,25 +239,24 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       {/* Scrollable time grid */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
         <div className="flex relative min-h-full">
-          {/* Time labels column */}
-          <div className="border-r bg-muted/20 w-12 flex-shrink-0">
-            {timeSlots.map((time, index) => (
-              <div 
-                key={time} 
-                className={`h-[20px] px-1 text-xs text-muted-foreground flex items-center justify-end ${
-                  index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
-                }`}
-              >
-                {index % 2 === 0 && (
-                  <span className="font-medium text-[10px]">{time}</span>
-                )}
-              </div>
-            ))}
-          </div>
-          
           {/* Horizontally scrollable days container */}
           <div className="flex-1 overflow-x-auto">
-            <div className="grid grid-cols-7 min-w-[700px] relative min-h-full">
+            <div className="grid grid-cols-8 min-w-[760px] relative min-h-full">
+              {/* Time labels column - now inside the scrollable container */}
+              <div className="border-r bg-muted/20 w-12 flex-shrink-0">
+                {timeSlots.map((time, index) => (
+                  <div 
+                    key={time} 
+                    className={`h-[20px] px-1 text-xs text-muted-foreground flex items-center justify-end ${
+                      index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted'
+                    }`}
+                  >
+                    {time.endsWith(':00') && (
+                      <span className="font-medium text-[10px]">{time}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
           
               {/* Day columns */}
               {weekDays.map((day, dayIndex) => {
