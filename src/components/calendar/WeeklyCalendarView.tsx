@@ -15,7 +15,7 @@ interface WeeklyCalendarViewProps {
 }
 
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
-  const { data: appointments } = useAppointments();
+  const { data: appointments, refetch: refetchAppointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const { data: currentUserProfile } = useCurrentUserProfile();
@@ -203,6 +203,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
       if (error) {
         console.error('Error updating appointment:', error);
+      } else {
+        // Refetch appointments to update the UI
+        await refetchAppointments();
       }
     } catch (error) {
       console.error('Error updating appointment:', error);
