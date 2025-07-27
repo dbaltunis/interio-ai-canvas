@@ -10,11 +10,14 @@ import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
 import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
+import { AddInventoryDialog } from "./AddInventoryDialog";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("overview");
+  const { data: inventory, refetch } = useEnhancedInventory();
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -31,10 +34,15 @@ export const ModernInventoryDashboard = () => {
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
+          <AddInventoryDialog 
+            trigger={
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            }
+            onSuccess={() => refetch()}
+          />
         </div>
       </div>
 
@@ -109,7 +117,7 @@ export const ModernInventoryDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary">245 Items</Badge>
+                  <Badge variant="secondary">{inventory?.filter(i => i.category === 'fabric' || i.category === 'curtain_fabric' || i.category === 'blind_fabric').length || 0} Items</Badge>
                   <Button variant="ghost" size="sm">View All</Button>
                 </div>
               </CardContent>
@@ -127,7 +135,7 @@ export const ModernInventoryDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary">156 Items</Badge>
+                  <Badge variant="secondary">{inventory?.filter(i => i.category === 'track' || i.category === 'rod' || i.category === 'bracket' || i.category === 'motor' || i.category === 'accessory').length || 0} Items</Badge>
                   <Button variant="ghost" size="sm">View All</Button>
                 </div>
               </CardContent>
