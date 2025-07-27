@@ -174,11 +174,7 @@ export const EmailManagement = () => {
         />
 
         {/* Dashboard Content */}
-        <div className="bg-white border border-gray-200 rounded-lg w-full">
-          <div className="p-6">
-            <EmailDashboard showFilters={showFilters} setShowFilters={setShowFilters} />
-          </div>
-        </div>
+        <EmailDashboard showFilters={showFilters} setShowFilters={setShowFilters} />
       </div>
     </div>
   );
