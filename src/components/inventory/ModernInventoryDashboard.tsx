@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Shirt, Wrench, Palette } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Shirt, Wrench, Palette, Upload, Download } from "lucide-react";
 import { InventoryStats } from "./InventoryStats";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -36,6 +36,14 @@ export const ModernInventoryDashboard = () => {
           <Button variant="outline" size="sm">
             <Filter className="h-4 w-4 mr-2" />
             Filters
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setActiveTab("analytics")}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setActiveTab("analytics")}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
           </Button>
           <AddInventoryDialog 
             trigger={
