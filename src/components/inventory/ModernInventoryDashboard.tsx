@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Shirt, Wrench, Palette, Upload, Download } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Shirt, Wrench, Palette, ArrowRightLeft } from "lucide-react";
 import { InventoryStats } from "./InventoryStats";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -37,13 +37,19 @@ export const ModernInventoryDashboard = () => {
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setActiveTab("analytics")}>
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setActiveTab("analytics")}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setActiveTab("analytics");
+              setTimeout(() => {
+                const importExportElement = document.querySelector('[data-import-export]');
+                importExportElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            }}
+            title="Import/Export Inventory"
+          >
+            <ArrowRightLeft className="h-4 w-4" />
           </Button>
           <AddInventoryDialog 
             trigger={
@@ -196,7 +202,9 @@ export const ModernInventoryDashboard = () => {
           <InventoryAnalytics />
           
           {/* Import/Export Tools */}
-          <InventoryImportExport />
+          <div data-import-export>
+            <InventoryImportExport />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

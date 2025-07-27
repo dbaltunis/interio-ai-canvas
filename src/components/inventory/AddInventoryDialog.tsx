@@ -44,7 +44,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     fabric_width: 0,
     pattern_repeat_vertical: 0,
     pattern_repeat_horizontal: 0,
-    fullness_ratio: 2.5,
+    // No fullness_ratio for fabrics
     composition: "",
     care_instructions: "",
     roll_direction: "either",
@@ -108,7 +108,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         fabric_width: 0,
         pattern_repeat_vertical: 0,
         pattern_repeat_horizontal: 0,
-        fullness_ratio: 2.5,
+        // No fullness_ratio for fabrics
         composition: "",
         care_instructions: "",
         roll_direction: "either",
@@ -270,17 +270,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         />
                       </div>
 
-                      <div>
-                        <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
-                        <Input
-                          id="fullness_ratio"
-                          type="number"
-                          step="0.1"
-                          value={formData.fullness_ratio}
-                          onChange={(e) => setFormData({ ...formData, fullness_ratio: parseFloat(e.target.value) })}
-                          placeholder="2.5"
-                        />
-                      </div>
+                      {/* Fullness ratio only belongs to headings, not fabrics */}
 
                       <div>
                         <Label htmlFor="pattern_repeat_vertical">Vertical Pattern Repeat (cm)</Label>
