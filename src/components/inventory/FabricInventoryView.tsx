@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Ruler, Palette, Package, AlertTriangle, Edit, Eye } from "lucide-react";
-import { useInventory } from "@/hooks/useInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { EditInventoryDialog } from "./EditInventoryDialog";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -14,7 +15,7 @@ interface FabricInventoryViewProps {
 }
 
 export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryViewProps) => {
-  const { data: inventory, isLoading } = useInventory();
+  const { data: inventory, isLoading } = useEnhancedInventory();
   const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [widthFilter, setWidthFilter] = useState<string>("all");
@@ -166,9 +167,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                       <Button size="sm" variant="outline">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <EditInventoryDialog item={item} />
                     </div>
                   </div>
 
@@ -219,7 +218,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                       {item.quantity <= (item.reorder_point || 5) && (
                         <Badge variant="destructive" className="text-xs">Low Stock</Badge>
                       )}
-                      <Button size="sm" variant="outline">Edit</Button>
+                      <EditInventoryDialog item={item} />
                     </div>
                   </div>
                 </div>

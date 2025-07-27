@@ -2,10 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Package, AlertTriangle, DollarSign, BarChart3 } from "lucide-react";
-import { useInventory } from "@/hooks/useInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 
 export const InventoryStats = () => {
-  const { data: inventory, isLoading } = useInventory();
+  const { data: inventory, isLoading } = useEnhancedInventory();
 
   if (isLoading) {
     return (
