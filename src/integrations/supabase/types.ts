@@ -836,6 +836,48 @@ export type Database = {
           },
         ]
       }
+      hardware_assemblies: {
+        Row: {
+          active: boolean | null
+          assembly_type: string
+          components: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          selling_price: number | null
+          total_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          assembly_type: string
+          components?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          selling_price?: number | null
+          total_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          assembly_type?: string
+          components?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          selling_price?: number | null
+          total_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           active: boolean | null
@@ -874,54 +916,237 @@ export type Database = {
       }
       inventory: {
         Row: {
+          care_instructions: string | null
           category: string | null
+          category_id: string | null
+          collection_name: string | null
+          color_code: string | null
+          compatibility_tags: string[] | null
+          composition: string | null
           created_at: string
           description: string | null
+          fabric_width: number | null
+          fire_rating: string | null
+          fullness_ratio: number | null
+          hardware_type: string | null
           id: string
+          images: string[] | null
+          installation_type: string | null
+          last_ordered_date: string | null
           location: string | null
+          material_finish: string | null
+          max_length: number | null
           min_stock_level: number | null
           name: string
+          pattern_direction: string | null
+          pattern_repeat_horizontal: number | null
+          pattern_repeat_vertical: number | null
+          pricing_grid: Json | null
+          pricing_method: string | null
           quantity: number | null
+          reorder_point: number | null
+          reorder_quantity: number | null
+          roll_direction: string | null
           sku: string | null
+          specifications: Json | null
           supplier: string | null
+          transparency_level: string | null
           unit: string | null
           unit_price: number | null
           updated_at: string
           user_id: string
+          vendor_id: string | null
+          weight_capacity: number | null
         }
         Insert: {
+          care_instructions?: string | null
           category?: string | null
+          category_id?: string | null
+          collection_name?: string | null
+          color_code?: string | null
+          compatibility_tags?: string[] | null
+          composition?: string | null
           created_at?: string
           description?: string | null
+          fabric_width?: number | null
+          fire_rating?: string | null
+          fullness_ratio?: number | null
+          hardware_type?: string | null
           id?: string
+          images?: string[] | null
+          installation_type?: string | null
+          last_ordered_date?: string | null
           location?: string | null
+          material_finish?: string | null
+          max_length?: number | null
           min_stock_level?: number | null
           name: string
+          pattern_direction?: string | null
+          pattern_repeat_horizontal?: number | null
+          pattern_repeat_vertical?: number | null
+          pricing_grid?: Json | null
+          pricing_method?: string | null
           quantity?: number | null
+          reorder_point?: number | null
+          reorder_quantity?: number | null
+          roll_direction?: string | null
           sku?: string | null
+          specifications?: Json | null
           supplier?: string | null
+          transparency_level?: string | null
           unit?: string | null
           unit_price?: number | null
           updated_at?: string
           user_id: string
+          vendor_id?: string | null
+          weight_capacity?: number | null
         }
         Update: {
+          care_instructions?: string | null
           category?: string | null
+          category_id?: string | null
+          collection_name?: string | null
+          color_code?: string | null
+          compatibility_tags?: string[] | null
+          composition?: string | null
           created_at?: string
           description?: string | null
+          fabric_width?: number | null
+          fire_rating?: string | null
+          fullness_ratio?: number | null
+          hardware_type?: string | null
           id?: string
+          images?: string[] | null
+          installation_type?: string | null
+          last_ordered_date?: string | null
           location?: string | null
+          material_finish?: string | null
+          max_length?: number | null
           min_stock_level?: number | null
           name?: string
+          pattern_direction?: string | null
+          pattern_repeat_horizontal?: number | null
+          pattern_repeat_vertical?: number | null
+          pricing_grid?: Json | null
+          pricing_method?: string | null
           quantity?: number | null
+          reorder_point?: number | null
+          reorder_quantity?: number | null
+          roll_direction?: string | null
           sku?: string | null
+          specifications?: Json | null
           supplier?: string | null
+          transparency_level?: string | null
           unit?: string | null
           unit_price?: number | null
           updated_at?: string
           user_id?: string
+          vendor_id?: string | null
+          weight_capacity?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_categories: {
+        Row: {
+          active: boolean | null
+          category_type: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parent_category_id: string | null
+          sort_order: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          category_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parent_category_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          category_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parent_category_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_id: string
+          movement_date: string | null
+          movement_type: string
+          notes: string | null
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_id: string
+          movement_date?: string | null
+          movement_type: string
+          notes?: string | null
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_id?: string
+          movement_date?: string | null
+          movement_type?: string
+          notes?: string | null
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_attachments: {
         Row: {
