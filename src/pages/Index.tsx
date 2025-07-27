@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 const Dashboard = lazy(() => import("@/components/dashboard/Dashboard"));
 const JobsPage = lazy(() => import("@/components/jobs/JobsPage"));
 const LibraryPage = lazy(() => import("@/components/library/LibraryPage"));
+const ModernInventoryManagement = lazy(() => import("@/components/inventory/ModernInventoryManagement").then(module => ({ default: module.ModernInventoryManagement })));
 const ClientManagement = lazy(() => import("@/components/jobs/ClientManagement"));
 const EmailManagement = lazy(() => import("@/components/jobs/EmailManagement"));
 const CalendarView = lazy(() => import("@/components/calendar/CalendarView"));
@@ -72,7 +73,7 @@ const Index = () => {
       case "inventory":
         return (
           <Suspense fallback={<GenericPageSkeleton />}>
-            <LibraryPage />
+            <ModernInventoryManagement />
           </Suspense>
         );
       case 'calendar':
