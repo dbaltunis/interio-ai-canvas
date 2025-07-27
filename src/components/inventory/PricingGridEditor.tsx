@@ -105,24 +105,63 @@ Luxury,Premium,45.00`;
   };
 
   const downloadTemplate = () => {
-    const template = getCSVTemplate();
-    const blob = new Blob([template], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${itemType}_pricing_template.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    try {
+      const template = getCSVTemplate();
+      const blob = new Blob([template], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${itemType}_pricing_template.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Template Downloaded",
+        description: `${itemType} pricing template downloaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download template. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const uploadCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (!file.type.includes('csv') && !file.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid File",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = (e) => {
-        const csv = e.target?.result as string;
-        setCsvData(csv);
-        parseCsvData(csv);
+        try {
+          const csv = e.target?.result as string;
+          setCsvData(csv);
+          parseCsvData(csv);
+        } catch (error) {
+          toast({
+            title: "Upload Failed",
+            description: "Failed to read the CSV file",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Upload Failed",
+          description: "Failed to read the CSV file",
+          variant: "destructive",
+        });
       };
       reader.readAsText(file);
     }
