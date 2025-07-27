@@ -12,6 +12,7 @@ import { EmailSettings } from "./email/EmailSettings";
 import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useEmailSettings } from "@/hooks/useEmailSettings";
+import { useEmails } from "@/hooks/useEmails";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -19,6 +20,7 @@ export const EmailManagement = () => {
   const [showFilters, setShowFilters] = useState(false);
   const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
   const { data: emailSettings } = useEmailSettings();
+  const { data: emails = [] } = useEmails();
 
   const handleEmailSettingsClick = () => {
     setActiveTab("settings");
@@ -53,12 +55,12 @@ export const EmailManagement = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-primary">
-              Email Management
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              Emails
+              <span className="text-lg font-normal text-gray-500">
+                ({emails?.length || 0})
+              </span>
             </h1>
-            <p className="text-gray-600 text-sm mt-1">
-              Manage your email campaigns and communications
-            </p>
           </div>
           <div className="flex items-center space-x-3">
             {activeTab === "dashboard" && (
