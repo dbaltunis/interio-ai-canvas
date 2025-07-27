@@ -54,14 +54,75 @@ export const EmailManagement = () => {
   if (showCampaigns) {
     return (
       <div className="min-h-screen bg-white w-full">
-        <div className="w-full px-6 py-6">
+        <div className="w-full px-6 py-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                Emails
+                <span className="text-lg font-normal text-gray-500">
+                  ({emails?.length || 0})
+                </span>
+              </h1>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-gray-300 px-4"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => setShowSettings(true)}
+                className="border-gray-300 p-2"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => setShowAnalytics(true)}
+                className="border-gray-300 p-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className="bg-brand-primary hover:bg-brand-accent text-white"
+                    disabled={!hasSendGridIntegration || !emailSettings}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Compose Email
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setShowComposer(true)}>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Compose Email
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowCampaigns(true)}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Go to Campaigns
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          
           <EmailCampaigns />
           <Button 
             onClick={() => setShowCampaigns(false)}
             variant="outline"
             className="mt-4"
           >
-            Back to Emails
+            Back to Dashboard
           </Button>
         </div>
       </div>
@@ -71,14 +132,75 @@ export const EmailManagement = () => {
   if (showAnalytics) {
     return (
       <div className="min-h-screen bg-white w-full">
-        <div className="w-full px-6 py-6">
+        <div className="w-full px-6 py-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                Emails
+                <span className="text-lg font-normal text-gray-500">
+                  ({emails?.length || 0})
+                </span>
+              </h1>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-gray-300 px-4"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => setShowSettings(true)}
+                className="border-gray-300 p-2"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => setShowAnalytics(true)}
+                className="border-gray-300 p-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className="bg-brand-primary hover:bg-brand-accent text-white"
+                    disabled={!hasSendGridIntegration || !emailSettings}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Compose Email
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setShowComposer(true)}>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Compose Email
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowCampaigns(true)}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Go to Campaigns
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          
           <EmailAnalytics />
           <Button 
             onClick={() => setShowAnalytics(false)}
             variant="outline"
             className="mt-4"
           >
-            Back to Emails
+            Back to Dashboard
           </Button>
         </div>
       </div>
@@ -88,14 +210,75 @@ export const EmailManagement = () => {
   if (showSettings) {
     return (
       <div className="min-h-screen bg-white w-full">
-        <div className="w-full px-6 py-6">
+        <div className="w-full px-6 py-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                Emails
+                <span className="text-lg font-normal text-gray-500">
+                  ({emails?.length || 0})
+                </span>
+              </h1>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-gray-300 px-4"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => setShowSettings(true)}
+                className="border-gray-300 p-2"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => setShowAnalytics(true)}
+                className="border-gray-300 p-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className="bg-brand-primary hover:bg-brand-accent text-white"
+                    disabled={!hasSendGridIntegration || !emailSettings}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Compose Email
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setShowComposer(true)}>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Compose Email
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowCampaigns(true)}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Go to Campaigns
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          
           <EmailSettings />
           <Button 
             onClick={() => setShowSettings(false)}
             variant="outline"
             className="mt-4"
           >
-            Back to Emails
+            Back to Dashboard
           </Button>
         </div>
       </div>
