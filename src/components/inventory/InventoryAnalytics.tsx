@@ -1,49 +1,85 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, TrendingDown, Package, AlertTriangle, DollarSign, RotateCcw } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Package, AlertTriangle, DollarSign, RotateCcw } from "lucide-react";
+import { useEnhancedInventory, useInventoryValuation, useLowStockEnhancedItems } from "@/hooks/useEnhancedInventory";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const InventoryAnalytics = () => {
-  // Mock data for charts
-  const stockLevelData = [
-    { category: "Curtain Fabrics", inStock: 85, lowStock: 12, outOfStock: 3 },
-    { category: "Blind Materials", inStock: 92, lowStock: 6, outOfStock: 2 },
-    { category: "Tracks", inStock: 78, lowStock: 18, outOfStock: 4 },
-    { category: "Rods", inStock: 88, lowStock: 10, outOfStock: 2 },
-    { category: "Motors", inStock: 45, lowStock: 35, outOfStock: 20 },
-    { category: "Accessories", inStock: 95, lowStock: 4, outOfStock: 1 },
-  ];
+  const { data: inventory, isLoading: inventoryLoading } = useEnhancedInventory();
+  const { data: valuation, isLoading: valuationLoading } = useInventoryValuation();
+  const { data: lowStockItems, isLoading: lowStockLoading } = useLowStockEnhancedItems();
 
-  const turnoverData = [
-    { month: "Jan", turnover: 2.4 },
-    { month: "Feb", turnover: 2.8 },
-    { month: "Mar", turnover: 3.2 },
-    { month: "Apr", turnover: 2.9 },
-    { month: "May", turnover: 3.5 },
-    { month: "Jun", turnover: 3.8 },
-  ];
+  const isLoading = inventoryLoading || valuationLoading || lowStockLoading;
 
-  const categoryValueData = [
-    { name: "Fabrics", value: 45000, color: "#3b82f6" },
-    { name: "Hardware", value: 28000, color: "#10b981" },
-    { name: "Motors", value: 15000, color: "#f59e0b" },
-    { name: "Accessories", value: 8000, color: "#ef4444" },
-  ];
+  // Calculate real metrics from inventory data
+  const totalItems = inventory?.length || 0;
+  const totalValue = valuation?.totalValue || 0;
+  const lowStockCount = lowStockItems?.length || 0;
+  
+  // Calculate items by category
+  const categoryStats = inventory?.reduce((acc, item) => {
+    const category = item.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = { total: 0, value: 0, lowStock: 0, outOfStock: 0 };
+    }
+    acc[category].total += 1;
+    acc[category].value += (item.quantity || 0) * (item.unit_price || 0);
+    
+    if ((item.quantity || 0) <= (item.reorder_point || 0)) {
+      acc[category].lowStock += 1;
+    }
+    if ((item.quantity || 0) === 0) {
+      acc[category].outOfStock += 1;
+    }
+    
+    return acc;
+  }, {} as Record<string, { total: number; value: number; lowStock: number; outOfStock: number }>);
 
-  const topMovingItems = [
-    { name: "Luxury Velvet Navy", category: "Fabric", sold: 145, revenue: 7250 },
-    { name: "Chrome Track 2m", category: "Hardware", sold: 89, revenue: 4005 },
-    { name: "Somfy Motor RTS", category: "Motor", sold: 34, revenue: 9690 },
-    { name: "Blackout Roller White", category: "Fabric", sold: 76, revenue: 3800 },
-    { name: "Wall Brackets Steel", category: "Hardware", sold: 156, revenue: 1950 },
-  ];
+  // Prepare chart data from real inventory
+  const stockLevelData = categoryStats ? Object.entries(categoryStats).map(([category, stats]) => ({
+    category,
+    inStock: stats.total - stats.lowStock - stats.outOfStock,
+    lowStock: stats.lowStock - stats.outOfStock,
+    outOfStock: stats.outOfStock
+  })) : [];
 
-  const deadStockItems = [
-    { name: "Vintage Lace Pattern", category: "Fabric", daysStagnant: 180, value: 890 },
-    { name: "Brass Rod Ornate", category: "Hardware", daysStagnant: 145, value: 450 },
-    { name: "Old Motor Model", category: "Motor", daysStagnant: 220, value: 1200 },
-  ];
+  const categoryValueData = categoryStats ? Object.entries(categoryStats)
+    .filter(([_, stats]) => stats.value > 0)
+    .map(([category, stats], index) => ({
+      name: category,
+      value: Math.round(stats.value),
+      color: `hsl(${(index * 60) % 360}, 70%, 50%)`
+    })) : [];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -54,10 +90,9 @@ export const InventoryAnalytics = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Inventory Value</p>
-                <p className="text-2xl font-bold">$96,000</p>
-                <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +5.2% from last month
+                <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Real-time calculation
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-muted-foreground" />
@@ -69,14 +104,13 @@ export const InventoryAnalytics = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Average Turnover</p>
-                <p className="text-2xl font-bold">3.2x</p>
-                <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +0.3x from last quarter
+                <p className="text-sm font-medium text-muted-foreground">Total Items</p>
+                <p className="text-2xl font-bold">{totalItems}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  In inventory
                 </p>
               </div>
-              <RotateCcw className="h-8 w-8 text-muted-foreground" />
+              <Package className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -86,10 +120,9 @@ export const InventoryAnalytics = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Low Stock Items</p>
-                <p className="text-2xl font-bold">23</p>
-                <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +8 from last week
+                <p className="text-2xl font-bold">{lowStockCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Need attention
                 </p>
               </div>
               <AlertTriangle className="h-8 w-8 text-muted-foreground" />
@@ -101,14 +134,13 @@ export const InventoryAnalytics = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Dead Stock Value</p>
-                <p className="text-2xl font-bold">$2,540</p>
-                <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
-                  <TrendingDown className="h-3 w-3" />
-                  Action required
+                <p className="text-sm font-medium text-muted-foreground">Categories</p>
+                <p className="text-2xl font-bold">{Object.keys(categoryStats || {}).length}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Product categories
                 </p>
               </div>
-              <Package className="h-8 w-8 text-muted-foreground" />
+              <RotateCcw className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -138,30 +170,42 @@ export const InventoryAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Inventory Turnover Trend */}
+        {/* Low Stock Items List */}
         <Card>
           <CardHeader>
-            <CardTitle>Inventory Turnover Trend</CardTitle>
+            <CardTitle>Low Stock Items</CardTitle>
             <CardDescription>
-              Monthly inventory turnover rate
+              Items that need reordering
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={turnoverData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="turnover" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
-                  dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {lowStockItems && lowStockItems.length > 0 ? (
+              <div className="space-y-3">
+                {lowStockItems.slice(0, 5).map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50/50">
+                    <div>
+                      <h4 className="font-medium">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {item.quantity} remaining • Reorder at {item.reorder_point}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                      Low Stock
+                    </Badge>
+                  </div>
+                ))}
+                {lowStockItems.length > 5 && (
+                  <p className="text-sm text-muted-foreground text-center pt-2">
+                    +{lowStockItems.length - 5} more items need attention
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>All items are well stocked</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -198,80 +242,49 @@ export const InventoryAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Top Moving Items */}
+        {/* Recent Items */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Moving Items</CardTitle>
+            <CardTitle>Recent Items</CardTitle>
             <CardDescription>
-              Best performing products by revenue
+              Recently added inventory items
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topMovingItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-semibold text-sm">
-                      {index + 1}
+            {inventory && inventory.length > 0 ? (
+              <div className="space-y-4">
+                {inventory
+                  .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+                  .slice(0, 5)
+                  .map((item, index) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-semibold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">{item.name}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {item.category || 'Uncategorized'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">${((item.quantity || 0) * (item.unit_price || 0)).toLocaleString()}</div>
+                        <div className="text-xs text-muted-foreground">{item.quantity} in stock</div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-sm">{item.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {item.category}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold">${item.revenue.toLocaleString()}</div>
-                    <div className="text-xs text-muted-foreground">{item.sold} sold</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No inventory items found</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Dead Stock Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            Dead Stock Analysis
-          </CardTitle>
-          <CardDescription>
-            Items that haven't moved in over 90 days - consider promotions or liquidation
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {deadStockItems.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                    <Package className="h-6 w-6 text-red-500" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{item.name}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {item.category}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        Stagnant for {item.daysStagnant} days
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold text-red-600">${item.value}</div>
-                  <div className="text-xs text-muted-foreground">Value at risk</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
