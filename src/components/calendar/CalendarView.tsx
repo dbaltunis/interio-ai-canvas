@@ -64,7 +64,10 @@ const CalendarView = () => {
     proposedSlot: { date: Date; time: string };
   } | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('calendar-sidebar-collapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
     userIds: [],
@@ -438,7 +441,11 @@ const CalendarView = () => {
         onDateChange={setCurrentDate}
         onBookingLinks={() => setShowSchedulerSlider(true)}
         isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggleCollapse={() => {
+          const newState = !sidebarCollapsed;
+          setSidebarCollapsed(newState);
+          localStorage.setItem('calendar-sidebar-collapsed', JSON.stringify(newState));
+        }}
       />
 
       {/* Main Calendar */}
