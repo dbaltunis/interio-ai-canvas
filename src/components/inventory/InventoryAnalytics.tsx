@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Package, AlertTriangle, DollarSign, RotateCcw } from "lucide-react";
+import { Package, AlertTriangle, DollarSign, RotateCcw, TrendingUp } from "lucide-react";
 import { useEnhancedInventory, useInventoryValuation, useLowStockEnhancedItems } from "@/hooks/useEnhancedInventory";
 import { Skeleton } from "@/components/ui/skeleton";
 
