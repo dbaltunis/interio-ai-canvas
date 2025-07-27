@@ -103,10 +103,21 @@ export const useDeleteEnhancedInventoryItem = () => {
         .eq("id", id);
 
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enhanced_inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    onSuccess: (deletedId) => {
+      // Use more specific query invalidation to prevent race conditions
+      queryClient.invalidateQueries({ 
+        queryKey: ["enhanced_inventory"],
+        exact: false 
+      });
+      
+      // Remove the item from cache immediately for better UX
+      queryClient.setQueryData(["enhanced_inventory"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.filter((item: any) => item.id !== deletedId);
+      });
+
       toast({
         title: "Success",
         description: "Inventory item deleted successfully",
