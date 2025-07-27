@@ -9,6 +9,8 @@ interface JobsPageActionsProps {
   onNewJob: () => void;
   onNewClient: () => void;
   onNewEmail?: () => void;
+  showEmailFilters?: boolean;
+  setShowEmailFilters?: (show: boolean) => void;
 }
 
 export const JobsPageActions = ({
@@ -17,7 +19,9 @@ export const JobsPageActions = ({
   setShowFilters,
   onNewJob,
   onNewClient,
-  onNewEmail
+  onNewEmail,
+  showEmailFilters,
+  setShowEmailFilters
 }: JobsPageActionsProps) => {
   return (
     <div className="flex items-center space-x-3">
@@ -31,12 +35,22 @@ export const JobsPageActions = ({
       )}
       
       {activeTab === "emails" && (
-        <Button 
-          className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium"
-          onClick={onNewEmail}
-        >
-          New Email
-        </Button>
+        <>
+          <Button 
+            variant="outline" 
+            className="border-gray-300 px-4"
+            onClick={() => setShowEmailFilters?.(!showEmailFilters)}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filters
+          </Button>
+          <Button 
+            className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium"
+            onClick={onNewEmail}
+          >
+            New Email
+          </Button>
+        </>
       )}
       
       {activeTab === "jobs" && (

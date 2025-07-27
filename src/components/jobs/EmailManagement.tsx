@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Plus, Settings, BarChart3, Send, History } from "lucide-react";
+import { Mail, Plus, Settings, BarChart3, Send, History, Filter } from "lucide-react";
 import { EmailDashboard } from "./email/EmailDashboard";
 import { EmailComposer } from "./email/EmailComposer";
 import { EmailCampaigns } from "./email/EmailCampaigns";
@@ -16,6 +16,7 @@ import { useEmailSettings } from "@/hooks/useEmailSettings";
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showComposer, setShowComposer] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
   const { data: emailSettings } = useEmailSettings();
 
@@ -59,14 +60,26 @@ export const EmailManagement = () => {
               Manage your email campaigns and communications
             </p>
           </div>
-          <Button 
-            onClick={() => setShowComposer(true)}
-            className="bg-brand-primary hover:bg-brand-accent text-white"
-            disabled={!hasSendGridIntegration || !emailSettings}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Compose Email
-          </Button>
+          <div className="flex items-center space-x-3">
+            {activeTab === "dashboard" && (
+              <Button 
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-gray-300 px-4"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+            )}
+            <Button 
+              onClick={() => setShowComposer(true)}
+              className="bg-brand-primary hover:bg-brand-accent text-white"
+              disabled={!hasSendGridIntegration || !emailSettings}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Compose Email
+            </Button>
+          </div>
         </div>
 
         {/* Integration Status Banners */}
@@ -114,7 +127,7 @@ export const EmailManagement = () => {
 
             <div className="p-6">
               <TabsContent value="dashboard" className="mt-0 space-y-0">
-                <EmailDashboard />
+                <EmailDashboard showFilters={showFilters} setShowFilters={setShowFilters} />
               </TabsContent>
 
               <TabsContent value="campaigns" className="mt-0 space-y-0">
