@@ -17,6 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Mail, 
   Calendar, 
@@ -32,7 +42,7 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { useUpdateClientStage } from "@/hooks/useClients";
+import { useUpdateClientStage, useDeleteClient } from "@/hooks/useClients";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import type { MenuItem } from "@/components/ui/three-dot-menu";
@@ -62,7 +72,28 @@ export const ClientListView = ({
 }: ClientListViewProps) => {
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [clientToDelete, setClientToDelete] = useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
   const updateClientStage = useUpdateClientStage();
+  const deleteClient = useDeleteClient();
+
+  const handleDeleteClick = (client: any) => {
+    setClientToDelete(client);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!clientToDelete) return;
+    
+    try {
+      await deleteClient.mutateAsync(clientToDelete.id);
+      setShowDeleteDialog(false);
+      setClientToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete client:', error);
+    }
+  };
 
   const getStageConfig = (stage: string) => {
     return FUNNEL_STAGES.find(s => s.key === stage) || FUNNEL_STAGES[0];
@@ -123,7 +154,7 @@ export const ClientListView = ({
     {
       label: "Delete Client",
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: () => console.log("Delete client:", client.id),
+      onClick: () => handleDeleteClick(client),
       variant: "destructive" as const
     }
   ];
@@ -318,6 +349,29 @@ export const ClientListView = ({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{clientToDelete?.client_type === 'B2B' ? clientToDelete?.company_name : clientToDelete?.name}"? 
+              This action cannot be undone. Any associated projects will remain but will no longer be linked to this client.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteClient.isPending}
+            >
+              {deleteClient.isPending ? "Deleting..." : "Delete Client"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

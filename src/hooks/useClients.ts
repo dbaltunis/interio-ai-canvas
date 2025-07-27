@@ -125,6 +125,18 @@ export const useDeleteClient = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // First, update all projects that reference this client to remove the client reference
+      const { error: projectUpdateError } = await supabase
+        .from("projects")
+        .update({ client_id: null })
+        .eq("client_id", id);
+
+      if (projectUpdateError) {
+        console.error("Failed to update projects:", projectUpdateError);
+        // Continue with client deletion even if project update fails
+      }
+
+      // Then delete the client
       const { data, error } = await supabase
         .from("clients")
         .delete()
