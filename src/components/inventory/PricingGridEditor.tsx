@@ -47,7 +47,7 @@ export const PricingGridEditor = ({ itemType, onGridChange }: PricingGridEditorP
       // Traditional matrix format - like the user's example
       switch (itemType) {
         case "blind_fabric":
-          return `,60,80,100,120,140,160,180,200
+          return `Drop\\Width (cm),60,80,100,120,140,160,180,200
 60,25.00,24.80,24.60,24.40,24.20,24.00,23.80,23.60
 80,24.80,24.60,24.40,24.20,24.00,23.80,23.60,23.40
 100,24.60,24.40,24.20,24.00,23.80,23.60,23.40,23.20
@@ -59,13 +59,13 @@ export const PricingGridEditor = ({ itemType, onGridChange }: PricingGridEditorP
         
         case "track":
         case "rod":
-          return `,1.0,1.5,2.0,2.5,3.0,4.0,5.0,6.0
+          return `Type\\Length (m),1.0,1.5,2.0,2.5,3.0,4.0,5.0,6.0
 Standard,45.00,52.50,60.00,67.50,75.00,95.00,115.00,135.00
 Premium,55.00,62.50,70.00,77.50,85.00,105.00,125.00,145.00
 Deluxe,65.00,72.50,80.00,87.50,95.00,115.00,135.00,155.00`;
 
         default:
-          return `,Option 1,Option 2,Option 3,Option 4
+          return `Size\\Option,Option 1,Option 2,Option 3,Option 4
 Size S,25.00,28.00,32.00,36.00
 Size M,30.00,33.00,37.00,41.00
 Size L,35.00,38.00,42.00,46.00
@@ -176,8 +176,9 @@ Luxury,Premium,45.00`;
       const lines = csv.trim().split('\n');
       const firstLine = lines[0].split(',');
       
-      // If first cell is empty and rest are numbers, likely traditional matrix
-      const isTraditionalMatrix = firstLine[0].trim() === '' && 
+      // Check for traditional matrix format: first cell empty OR contains backslash (Drop\Width), rest are numbers
+      const firstCell = firstLine[0].trim();
+      const isTraditionalMatrix = (firstCell === '' || firstCell.includes('\\')) && 
                                   firstLine.slice(1).some(cell => !isNaN(parseFloat(cell.trim())));
 
       const grid = isTraditionalMatrix ? 
@@ -519,7 +520,7 @@ Luxury,Premium,45.00`;
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Matrix format: First row = width columns, first column = drop rows, intersections = prices
+                  Matrix format: Header row = width dimensions (cm), left column = drop dimensions (cm), intersections = prices ($)
                 </p>
               </div>
             </TabsContent>
