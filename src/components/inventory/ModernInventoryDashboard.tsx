@@ -11,6 +11,9 @@ import { HardwareInventoryView } from "./HardwareInventoryView";
 import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
+import { InventoryDemoData } from "./InventoryDemoData";
+import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
+import { InventoryImportExport } from "./InventoryImportExport";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 
 export const ModernInventoryDashboard = () => {
@@ -103,6 +106,11 @@ export const ModernInventoryDashboard = () => {
         <TabsContent value="overview" className="space-y-6">
           <InventoryStats />
           
+          {/* Demo Data Loader */}
+          {(!inventory || inventory.length === 0) && (
+            <InventoryDemoData />
+          )}
+          
           {/* Quick Actions */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
@@ -159,6 +167,9 @@ export const ModernInventoryDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Reorder Notifications */}
+          <ReorderNotificationSystem />
         </TabsContent>
 
         <TabsContent value="fabrics" className="space-y-6">
@@ -175,6 +186,9 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="analytics" className="space-y-6">
           <InventoryAnalytics />
+          
+          {/* Import/Export Tools */}
+          <InventoryImportExport />
         </TabsContent>
       </Tabs>
     </div>
