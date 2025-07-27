@@ -148,11 +148,14 @@ export const useDeleteClient = () => {
       return data;
     },
     onSuccess: () => {
+      console.log("Client deletion successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      console.log("Queries invalidated, showing toast");
       toast({
         title: "Success",
         description: "Client deleted successfully",
       });
+      console.log("Toast shown, deletion complete");
     },
     onError: (error: any) => {
       console.error("Failed to delete client:", error);

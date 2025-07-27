@@ -86,10 +86,13 @@ export const ClientListView = ({
   const handleConfirmDelete = async () => {
     if (!clientToDelete) return;
     
+    console.log("Starting client deletion for:", clientToDelete.id);
     try {
       await deleteClient.mutateAsync(clientToDelete.id);
+      console.log("Delete mutation completed successfully");
       setShowDeleteDialog(false);
       setClientToDelete(null);
+      console.log("Dialog closed and state cleared");
     } catch (error) {
       console.error('Failed to delete client:', error);
     }
