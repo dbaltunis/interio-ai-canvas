@@ -127,60 +127,6 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Mail className="w-4 h-4 mr-2" />
-              Total Sent
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{totalEmails}</div>
-            <p className="text-xs text-gray-500 mt-1">All emails</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Eye className="w-4 h-4 mr-2" />
-              Open Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{openRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">{openedEmails} of {deliveredEmails} delivered</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Download className="w-4 h-4 mr-2" />
-              Click Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{clickRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">{clickedEmails} clicks</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Archive className="w-4 h-4 mr-2" />
-              Bounce Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{bounceRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">{bouncedEmails} bounced/failed</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Filters */}
       {showFilters && (
