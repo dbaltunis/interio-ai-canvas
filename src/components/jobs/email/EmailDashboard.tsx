@@ -199,12 +199,6 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
 
       {/* Email List */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Email History
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           {filteredEmails.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
