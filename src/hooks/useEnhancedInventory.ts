@@ -126,14 +126,18 @@ export const useLowStockEnhancedItems = () => {
   return useQuery({
     queryKey: ["enhanced_inventory", "low-stock"],
     queryFn: async () => {
+      // Get all inventory and filter client-side to avoid SQL comparison issues
       const { data, error } = await supabase
         .from("inventory")
         .select("*")
-        .filter("quantity", "lte", "reorder_point")
         .order("quantity", { ascending: true });
-
+      
       if (error) throw error;
-      return data;
+      
+      // Filter items where quantity is less than or equal to reorder_point
+      return data.filter(item => 
+        (item.quantity || 0) <= (item.reorder_point || 0)
+      );
     },
   });
 };

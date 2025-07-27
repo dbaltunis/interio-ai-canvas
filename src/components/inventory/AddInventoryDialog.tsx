@@ -51,7 +51,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     collection_name: "",
     color_code: "",
     pattern_direction: "straight",
-    transparency_level: "",
+    transparency_level: "screen",
     fire_rating: "",
     
     // Hardware-specific
@@ -82,6 +82,11 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         delete cleanData.hardware_type;
       }
       
+      // Only include transparency_level for blind fabrics
+      if (itemType !== "blind_fabric") {
+        delete cleanData.transparency_level;
+      }
+      
       await createInventoryItem.mutateAsync(cleanData);
       
       setOpen(false);
@@ -110,7 +115,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         collection_name: "",
         color_code: "",
         pattern_direction: "straight",
-        transparency_level: "",
+        transparency_level: "screen",
         fire_rating: "",
         hardware_type: "" as "track" | "rod" | "bracket" | "motor" | "accessory" | "",
         material_finish: "",
