@@ -3,7 +3,7 @@ import React from 'react';
 
 interface BrandHeaderProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showTagline?: boolean;
 }
 
@@ -11,13 +11,15 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
   const sizeClasses = {
     sm: "h-8 sm:h-10 md:h-12", 
     md: "h-12 sm:h-14 md:h-16",  
-    lg: "h-16 sm:h-18 md:h-20"  
+    lg: "h-16 sm:h-18 md:h-20",
+    xl: "h-20 sm:h-22 md:h-24"  
   };
 
   const sloganSizeClasses = {
-    sm: "text-[10px] sm:text-xs", // Made 6px smaller (was text-xs sm:text-sm)
-    md: "text-xs sm:text-sm", // Made 6px smaller (was text-sm sm:text-base)  
-    lg: "text-sm sm:text-base" // Made 6px smaller (was text-base sm:text-lg)
+    sm: "text-[8px] sm:text-[10px]", // Made smaller
+    md: "text-[10px] sm:text-xs", // Made smaller  
+    lg: "text-xs sm:text-sm", // Made smaller
+    xl: "text-[10px] sm:text-xs" // Made even smaller for xl
   };
 
   return (

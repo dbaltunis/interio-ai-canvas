@@ -41,7 +41,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Left side - Logo (made twice bigger) */}
             <div className="flex items-center">
-              <BrandHeader size="lg" showTagline={true} />
+              <BrandHeader size="xl" showTagline={true} />
             </div>
             
             {/* Right side - Navigation, User Profile, and Mobile Menu */}
@@ -64,7 +64,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                           : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
                       )}
                     >
-                      <Icon className="h-4.5 w-4.5 mr-1.5" />
+                      <Icon className="h-5 w-5 mr-1.5" />
                       {item.label}
                       {isActive && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
@@ -80,7 +80,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 size="sm"
                 className="hidden md:flex text-brand-neutral hover:text-brand-primary p-2"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-5.5 w-5.5" />
               </Button>
               
               {/* User Profile */}
@@ -94,9 +94,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
-                  <X className="h-5 w-5" />
+                  <X className="h-5.5 w-5.5" />
                 ) : (
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-5.5 w-5.5" />
                 )}
               </Button>
             </div>
