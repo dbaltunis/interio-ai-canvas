@@ -455,29 +455,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   : `${format(day, 'MMM d')} at ${time} - Click to create personal event`
                               }
                             >
-                              {/* Show overlap indicator only when personal events overlap with appointments */}
-                              {isOccupied && (() => {
-                                const allEventsAtTime = getAllEventsForDate(day);
-                                const [hours, minutes] = time.split(':').map(Number);
-                                const slotTime = new Date(day);
-                                slotTime.setHours(hours, minutes, 0, 0);
-                                
-                                const overlappingEvents = allEventsAtTime.filter(event => {
-                                  const eventStart = new Date(event.start_time);
-                                  const eventEnd = new Date(event.end_time);
-                                  return slotTime >= eventStart && slotTime < eventEnd;
-                                });
-                                
-                                const hasPersonalEvent = overlappingEvents.some(event => !event.isBooking && !event.isAvailableSlot);
-                                const hasAppointment = overlappingEvents.some(event => event.isBooking || event.isAvailableSlot);
-                                
-                                // Only show dot when personal event overlaps with appointment
-                                return hasPersonalEvent && hasAppointment ? (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full opacity-80" title="Event overlaps with appointment"></div>
-                                  </div>
-                                ) : null;
-                              })()}
+                              {/* Occupied slot indicator */}
+                              {isOccupied && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full opacity-60"></div>
+                                </div>
+                              )}
                             </div>
                           );
                         };
@@ -549,42 +532,39 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction between events, bookings, and available slots
                         const getEventStyling = (event: any) => {
                           if (event.isAvailableSlot) {
-                            // AVAILABLE APPOINTMENT SLOTS: Professional card-like appearance
+                            // AVAILABLE APPOINTMENT SLOTS: Light gray, dashed border, demo-like
                             return {
-                              backgroundColor: 'hsl(210 40% 98%)', // Very light blue-gray
-                              borderColor: 'hsl(214 32% 91%)', // Light blue-gray border
-                              textColor: 'text-slate-600',
-                              icon: <Clock className="h-4 w-4" />,
-                              label: event.schedulerName || 'Available Slot',
-                              borderRadius: '12px',
+                              backgroundColor: 'rgba(107, 114, 128, 0.15)', // Gray-500 with low opacity
+                              borderColor: '#6B7280', // Gray-500
+                              textColor: 'text-gray-700',
+                              icon: <Calendar className="h-3 w-3" />,
+                              label: 'AVAILABLE',
+                              borderRadius: '6px',
                               pattern: 'dashed',
-                              isDashed: true,
-                              shadow: '0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                              isDashed: true
                             };
                           } else if (event.isBooking) {
-                            // BOOKED APPOINTMENTS: Distinct professional green
+                            // BOOKED APPOINTMENTS: Green, solid, rounded corners
                             return {
-                              backgroundColor: 'hsl(158 64% 52%)', // Professional green
-                              borderColor: 'hsl(158 64% 42%)',
+                              backgroundColor: '#10B981', // Emerald-500
+                              borderColor: '#047857', // Emerald-700
                               textColor: 'text-white',
-                              icon: <User className="h-4 w-4" />,
-                              label: event.customer_name || 'Booked',
+                              icon: <UserCheck className="h-3 w-3" />,
+                              label: 'BOOKING',
                               borderRadius: '8px',
-                              pattern: 'solid',
-                              shadow: '0 4px 12px -2px rgba(16, 185, 129, 0.25)'
+                              pattern: 'solid'
                             };
                           } else {
-                            // PERSONAL EVENTS: Clean modern appearance
-                            const color = event.color || 'hsl(217 91% 60%)'; // Default blue
+                            // PERSONAL EVENTS: Blue, gradient, water-drop corners
+                            const color = event.color || '#3B82F6';
                             return {
-                              backgroundColor: color.includes('hsl') ? color : `${color}E6`, // High opacity
-                              borderColor: color.includes('hsl') ? color : color,
+                              backgroundColor: `${color}90`, // 90% opacity
+                              borderColor: color,
                               textColor: 'text-white',
-                              icon: <CalendarCheck className="h-4 w-4" />,
-                              label: event.title || 'Event',
-                              borderRadius: '10px',
-                              pattern: 'solid',
-                              shadow: '0 6px 16px -4px rgba(0, 0, 0, 0.1)'
+                              icon: <CalendarCheck className="h-3 w-3" />,
+                              label: 'EVENT',
+                              borderRadius: '20px 8px 20px 8px', // Water drop corners
+                              pattern: 'gradient'
                             };
                           }
                         };
@@ -660,22 +640,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 </div>
                                 
                                 <div className="flex-1 min-w-0 pr-6">
-                                   {/* Main title - CLEAR distinction */}
-                                   <div className="font-semibold text-sm leading-tight mb-1 truncate">
-                                     {event.isAvailableSlot 
-                                       ? event.schedulerName 
-                                       : event.isBooking 
-                                       ? event.customer_name 
-                                       : event.title
-                                     }
-                                   </div>
-                                   
-                                   {/* Subtle type indicator for available slots only */}
-                                   {event.isAvailableSlot && (
-                                     <div className="text-[9px] font-medium opacity-60 mb-1 tracking-wide">
-                                       AVAILABLE
-                                     </div>
-                                   )}
+                                  {/* Clear type label */}
+                                  <div className="text-[9px] font-bold opacity-75 mb-1 tracking-wide">
+                                    {eventStyling.label}
+                                  </div>
+                                  
+                                  {/* Main title - CLEAR distinction */}
+                                  <div className="font-bold text-xs leading-tight mb-1 truncate">
+                                    {event.isAvailableSlot 
+                                      ? event.schedulerName 
+                                      : event.isBooking 
+                                      ? event.customer_name 
+                                      : event.title
+                                    }
+                                  </div>
                                   
                                    {/* Time display */}
                                    <div className="text-[11px] leading-tight opacity-90">
