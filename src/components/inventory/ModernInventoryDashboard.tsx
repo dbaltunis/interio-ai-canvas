@@ -120,10 +120,6 @@ export const ModernInventoryDashboard = () => {
         <TabsContent value="overview" className="space-y-6">
           <InventoryStats />
           
-          {/* Demo Data Loader */}
-          {(!inventory || inventory.length === 0) && (
-            <InventoryDemoData />
-          )}
           
           {/* Quick Actions */}
           <div className="grid gap-4 md:grid-cols-3">
