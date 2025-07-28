@@ -16,10 +16,9 @@ interface WeeklyCalendarViewProps {
   onEventClick?: (eventId: string) => void;
   onTimeSlotClick?: (date: Date, time: string) => void;
   filteredAppointments?: any[];
-  sidebarCollapsed?: boolean;
 }
 
-export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments, sidebarCollapsed = false }: WeeklyCalendarViewProps) => {
+export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
@@ -369,10 +368,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
-        {/* Week header with dates - FIXED POSITION */}
-        <div className={`flex border-b bg-background fixed z-40 flex-shrink-0 h-16 ${
-          sidebarCollapsed ? 'lg:left-16' : 'lg:left-80'
-        } left-0 right-0 top-16 lg:top-20`}>
+        {/* Week header with dates */}
+        <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
           <div className="w-16 border-r flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">
@@ -411,7 +408,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         </div>
         
         {/* Scrollable time grid */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden pt-16">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="flex">
             {/* Fixed time labels column */}
             <div className="w-16 border-r bg-muted/20 flex-shrink-0">

@@ -435,27 +435,23 @@ const CalendarView = () => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Sidebar - Hidden on mobile and tablet */}
-      <div className="hidden lg:block">
-        <CalendarSidebar 
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
-          onBookingLinks={() => setShowSchedulerSlider(true)}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => {
-            const newState = !sidebarCollapsed;
-            setSidebarCollapsed(newState);
-            localStorage.setItem('calendar-sidebar-collapsed', JSON.stringify(newState));
-          }}
-        />
-      </div>
+      {/* Sidebar */}
+      <CalendarSidebar 
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
+        onBookingLinks={() => setShowSchedulerSlider(true)}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => {
+          const newState = !sidebarCollapsed;
+          setSidebarCollapsed(newState);
+          localStorage.setItem('calendar-sidebar-collapsed', JSON.stringify(newState));
+        }}
+      />
 
-      {/* Main Calendar Area */}
+      {/* Main Calendar */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Fixed Header */}
-        <div className={`fixed top-0 z-50 border-b bg-background p-2 md:p-4 flex-shrink-0 ${
-          sidebarCollapsed ? 'lg:left-16' : 'lg:left-80'
-        } left-0 right-0`}>
+        {/* Header */}
+        <div className="sticky top-0 z-10 border-b bg-background p-2 md:p-4 flex-shrink-0">
           <div className="flex items-center justify-between gap-2">
             {/* Left section - Title and Navigation */}
             <div className="flex items-center gap-2 md:gap-4">
@@ -510,16 +506,15 @@ const CalendarView = () => {
         </div>
 
         {/* Calendar Content */}
-        <div className="flex-1 overflow-hidden min-h-0 pt-20 lg:pt-24">
-            {view === 'week' && (
-              <WeeklyCalendarView 
-                currentDate={currentDate}
-                onEventClick={handleEventClick}
-                onTimeSlotClick={handleTimeSlotClick}
-                filteredAppointments={filteredAppointments}
-                sidebarCollapsed={sidebarCollapsed}
-              />
-            )}
+        <div className="flex-1 overflow-hidden min-h-0">
+          {view === 'week' && (
+            <WeeklyCalendarView 
+              currentDate={currentDate}
+              onEventClick={handleEventClick}
+              onTimeSlotClick={handleTimeSlotClick}
+              filteredAppointments={filteredAppointments}
+            />
+          )}
           {view === 'month' && (
             <div className="h-full flex flex-col overflow-hidden">
               {renderMonthView()}
