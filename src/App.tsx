@@ -8,6 +8,7 @@ import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
+import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -33,50 +34,52 @@ const queryClient = new QueryClient({
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              {/* Public booking routes */}
-              <Route path="/book/:slug" element={
-                <ErrorBoundary>
-                  <PublicBookingPage />
-                </ErrorBoundary>
-              } />
-              
-              {/* Authentication route */}
-              <Route path="/auth" element={
-                <ErrorBoundary>
-                  <AuthPage />
-                </ErrorBoundary>
-              } />
-              
-              {/* Settings page - requires authentication */}
-              <Route path="/settings" element={
-                <ProtectedRoute>
+      <EmailRealtimeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                {/* Public booking routes */}
+                <Route path="/book/:slug" element={
                   <ErrorBoundary>
-                    <Settings />
+                    <PublicBookingPage />
                   </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              
-              {/* Main application - all functionality handled through tabs */}
-              <Route path="/" element={
-                <ProtectedRoute>
+                } />
+                
+                {/* Authentication route */}
+                <Route path="/auth" element={
                   <ErrorBoundary>
-                    <Index />
+                    <AuthPage />
                   </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              
-              {/* Catch all other routes */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+                } />
+                
+                {/* Settings page - requires authentication */}
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Settings />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                
+                {/* Main application - all functionality handled through tabs */}
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Index />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                
+                {/* Catch all other routes */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </EmailRealtimeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

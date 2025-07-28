@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type Email = Tables<"emails">;
@@ -10,32 +9,6 @@ type EmailInsert = TablesInsert<"emails">;
 type EmailUpdate = TablesUpdate<"emails">;
 
 export const useEmails = () => {
-  const queryClient = useQueryClient();
-
-  // Set up real-time subscription to automatically update when email statuses change
-  useEffect(() => {
-    const subscription = supabase
-      .channel('emails_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'emails'
-        },
-        () => {
-          // Invalidate and refetch emails when any email changes
-          queryClient.invalidateQueries({ queryKey: ["emails"] });
-          queryClient.invalidateQueries({ queryKey: ["email-kpis"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [queryClient]);
-
   return useQuery({
     queryKey: ["emails"],
     queryFn: async () => {
