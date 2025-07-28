@@ -447,12 +447,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
-                  className={`h-[20px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
+                  className={`h-[20px] px-2 text-xs text-muted-foreground relative ${
                     index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                   }`}
                 >
                   {time.endsWith(':00') && (
-                    <span className="font-medium text-[10px]">{time}</span>
+                    <span className="font-medium text-[10px] absolute -top-2 right-2">{time}</span>
                   )}
                 </div>
               ))}

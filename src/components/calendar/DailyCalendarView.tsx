@@ -118,9 +118,9 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 }`}
               >
                 {/* Time label */}
-                <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r">
+                <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r relative">
                   {isHourSlot && (
-                    <span className="font-medium">{time}</span>
+                    <span className="font-medium absolute -top-1 left-2">{time}</span>
                   )}
                 </div>
                 
