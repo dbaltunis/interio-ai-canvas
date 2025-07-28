@@ -326,6 +326,68 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Sending email via SendGrid...");
+    console.log("Attachments to include:", attachments.length);
+    if (attachments.length > 0) {
+      console.log("Attachment details:", attachments.map(a => ({ filename: a.filename, type: a.type, size: a.content.length })));
+    }
+
+    // Build SendGrid payload with proper email authentication for deliverability
+    const sendGridPayload = {
+      personalizations: [
+        {
+          to: [{ email: to }],
+          subject: subject,
+          custom_args: emailData ? {
+            email_id: emailData.id,
+            user_id: user_id || 'unknown'
+          } : {}
+        },
+      ],
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
+      reply_to: {
+        email: fromEmail,
+        name: fromName
+      },
+      content: [
+        {
+          type: "text/html",
+          value: finalContent.replace(/\n/g, '<br>'),
+        },
+      ],
+      // CRITICAL: Proper attachment handling
+      attachments: attachments,
+      // Enhanced tracking and deliverability settings
+      tracking_settings: {
+        click_tracking: {
+          enable: true,
+          enable_text: false
+        },
+        open_tracking: {
+          enable: true,
+          substitution_tag: "%open-track%"
+        },
+        subscription_tracking: {
+          enable: true,
+          text: "If you'd like to unsubscribe and stop receiving these emails",
+          html: "<p>If you'd like to unsubscribe and stop receiving these emails <a href=\"%unsubscribe%\">click here</a>.</p>"
+        }
+      },
+      // Email authentication for better deliverability
+      mail_settings: {
+        spam_check: {
+          enable: true,
+          threshold: 1
+        },
+        sandbox_mode: {
+          enable: false
+        }
+      },
+      // Add categories for better organization
+      categories: ["business-email", "quotes"]
+    };
 
     // Send email using SendGrid API
     const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -334,40 +396,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${sendGridApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: to }],
-            subject: subject,
-            custom_args: emailData ? {
-              email_id: emailData.id,
-              user_id: user_id || 'unknown'
-            } : {}
-          },
-        ],
-        from: {
-          email: fromEmail,
-          name: fromName,
-        },
-        content: [
-          {
-            type: "text/html",
-            value: finalContent.replace(/\n/g, '<br>'),
-          },
-        ],
-        // Include attachments if any
-        ...(attachments.length > 0 ? { attachments: attachments } : {}),
-        tracking_settings: {
-          click_tracking: {
-            enable: true,
-            enable_text: false
-          },
-          open_tracking: {
-            enable: true,
-            substitution_tag: "%open-track%"
-          }
-        }
-      }),
+      body: JSON.stringify(sendGridPayload),
     });
 
     console.log("SendGrid response status:", sendGridResponse.status);
