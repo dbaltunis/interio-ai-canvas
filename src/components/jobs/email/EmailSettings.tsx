@@ -11,6 +11,8 @@ import { Settings, Mail, Key, Bell, Shield, Check, X, AlertTriangle } from "luci
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
+import { EmailSetupStatusCard } from "@/components/email-setup/EmailSetupStatusCard";
+import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
 
 export const EmailSettings = () => {
   const { data: emailSettings } = useEmailSettings();
@@ -110,74 +112,8 @@ export const EmailSettings = () => {
         </Alert>
       </div>
 
-      {/* Integration Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Email Service Integration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Mail className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium">SendGrid</p>
-                <p className="text-sm text-gray-600">
-                  {hasSendGridIntegration 
-                    ? "Connected and ready to send emails" 
-                    : "Not connected"
-                  }
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={hasSendGridIntegration ? "default" : "destructive"}>
-                {hasSendGridIntegration ? (
-                  <>
-                    <Check className="h-3 w-3 mr-1" />
-                    Connected
-                  </>
-                ) : (
-                  <>
-                    <X className="h-3 w-3 mr-1" />
-                    Not Connected
-                  </>
-                )}
-              </Badge>
-              {!hasSendGridIntegration && (
-                <Button 
-                  size="sm"
-                  onClick={() => window.location.href = '/settings?tab=integrations'}
-                >
-                  Configure
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {hasSendGridIntegration && integrationData?.configuration && (
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Webhook URL:</span>
-                <span className="font-mono text-xs">{getConfigurationValue('webhook_url') || 'Not configured'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Last Sync:</span>
-                <span>
-                  {getConfigurationValue('configured_at') 
-                    ? new Date(getConfigurationValue('configured_at')!).toLocaleDateString() 
-                    : 'Never'
-                  }
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Email Setup Status */}
+      <EmailSetupStatusCard />
 
       {/* Sender Information */}
       <Card>
@@ -272,10 +208,14 @@ export const EmailSettings = () => {
             <Button 
               onClick={handleSave}
               disabled={updateEmailSettings.isPending}
-              className="w-full md:w-auto"
+              className="flex-1 md:flex-none md:w-auto"
             >
               {updateEmailSettings.isPending ? "Saving..." : "Save Settings"}
             </Button>
+            <TestEmailButton 
+              variant="outline"
+              className="flex-1 md:flex-none md:w-auto"
+            />
             <Button 
               variant="outline"
               onClick={() => window.location.href = '/settings?tab=email'}

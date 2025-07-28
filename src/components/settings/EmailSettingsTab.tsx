@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, Save, Loader2 } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useToast } from "@/hooks/use-toast";
+import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
 
 export const EmailSettingsTab = () => {
   const { data: emailSettings, isLoading } = useEmailSettings();
@@ -130,23 +130,26 @@ export const EmailSettingsTab = () => {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            disabled={updateEmailSettings.isPending}
-            className="w-full md:w-auto"
-          >
-            {updateEmailSettings.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Email Settings
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              type="submit" 
+              disabled={updateEmailSettings.isPending}
+              className="flex-1"
+            >
+              {updateEmailSettings.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Email Settings
+                </>
+              )}
+            </Button>
+            <TestEmailButton variant="outline" />
+          </div>
         </form>
 
         <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
