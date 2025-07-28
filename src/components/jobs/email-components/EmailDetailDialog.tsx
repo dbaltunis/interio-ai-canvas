@@ -10,6 +10,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmailAnalytics } from "@/hooks/useEmailAnalytics";
 import type { Email } from "@/hooks/useEmails";
 
 interface EmailDetailDialogProps {
@@ -25,6 +26,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const { data: projects = [] } = useProjects();
   const navigate = useNavigate();
   const [refreshedEmail, setRefreshedEmail] = useState<Email | null>(email);
+  const { data: emailAnalytics = [] } = useEmailAnalytics(email?.id || "");
 
   // Auto-refresh email data every 10 seconds
   useEffect(() => {
@@ -278,29 +280,40 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                    </div>
                  )}
 
-                 {currentEmail.open_count > 0 && (
-                   <div className="flex items-center gap-3">
-                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                     <div>
-                       <div className="font-medium">Email Opened</div>
-                       <div className="text-sm text-muted-foreground">
-                         Opened {currentEmail.open_count} time{currentEmail.open_count > 1 ? 's' : ''}
-                       </div>
-                     </div>
-                   </div>
-                 )}
+                  {/* Individual Open Events */}
+                  {emailAnalytics
+                    .filter(event => event.event_type === 'open')
+                    .map((openEvent, index) => (
+                      <div key={openEvent.id} className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div>
+                          <div className="font-medium">
+                            Email Opened {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(openEvent.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
 
-                 {currentEmail.click_count > 0 && (
-                   <div className="flex items-center gap-3">
-                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                     <div>
-                       <div className="font-medium">Links Clicked</div>
-                       <div className="text-sm text-muted-foreground">
-                         Clicked {currentEmail.click_count} time{currentEmail.click_count > 1 ? 's' : ''}
-                       </div>
-                     </div>
-                   </div>
-                 )}
+                  {/* Individual Click Events */}
+                  {emailAnalytics
+                    .filter(event => event.event_type === 'click')
+                    .map((clickEvent, index) => (
+                      <div key={clickEvent.id} className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <div>
+                          <div className="font-medium">
+                            Link Clicked {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(clickEvent.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
 
                  {currentEmail.status === 'bounced' && (
                    <div className="flex items-center gap-3">
