@@ -30,12 +30,12 @@ export const JobsFilter = ({
       <PopoverTrigger asChild>
         <Button 
           variant="outline"
-          className="flex items-center gap-2"
+          className="p-2 relative"
+          title="Filters"
         >
           <Filter className="h-4 w-4" />
-          Filters
           {hasActiveFilters && (
-            <span className="bg-brand-primary text-white rounded-full text-xs px-2 py-0.5 ml-1">
+            <span className="absolute -top-1 -right-1 bg-brand-primary text-white rounded-full text-xs px-1.5 py-0.5">
               {(searchTerm ? 1 : 0) + (statusFilter !== "all" ? 1 : 0)}
             </span>
           )}
