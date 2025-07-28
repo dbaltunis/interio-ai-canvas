@@ -26,12 +26,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: bookedAppointments } = useAppointmentBookings(); // Remove currentDate parameter
   const { data: schedulers } = useAppointmentSchedulers();
   
-  // Debug logging
-  console.log('WeeklyCalendarView render:');
-  console.log('- Current date:', currentDate);
-  console.log('- Scheduler slots data:', schedulerSlots);
-  console.log('- Booked appointments:', bookedAppointments);
-  console.log('- Display appointments:', displayAppointments?.length || 0);
+  // Removed excessive debug logging to prevent infinite re-renders
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -107,14 +102,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const getBookedEventsForDate = (date: Date) => {
     if (!bookedAppointments) return [];
     
-    console.log('Booked appointments for date:', format(date, 'yyyy-MM-dd'), bookedAppointments);
-    
     return bookedAppointments
       .filter(booking => {
         const bookingDate = new Date(booking.appointment_date);
-        const matches = isSameDay(bookingDate, date);
-        console.log('Checking booking:', booking.appointment_date, 'against', format(date, 'yyyy-MM-dd'), 'matches:', matches);
-        return matches;
+        return isSameDay(bookingDate, date);
       })
       .map(booking => {
         // Find the scheduler to get duration
