@@ -40,16 +40,63 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "sent":
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      case "queued":
-        return "bg-blue-100 text-blue-800";
-      case "failed":
-      case "bounced":
-        return "bg-red-100 text-red-800";
+      case 'queued':
+        return "bg-gray-100 text-gray-700";
+      case 'sent':
+        return "bg-blue-100 text-blue-700";
+      case 'processed':
+        return "bg-indigo-100 text-indigo-700";
+      case 'delivered':
+        return "bg-green-100 text-green-700";
+      case 'opened':
+        return "bg-purple-100 text-purple-700";
+      case 'clicked':
+        return "bg-cyan-100 text-cyan-700";
+      case 'bounced':
+        return "bg-red-100 text-red-700";
+      case 'dropped':
+        return "bg-orange-100 text-orange-700";
+      case 'spam_reported':
+        return "bg-red-100 text-red-700";
+      case 'unsubscribed':
+        return "bg-yellow-100 text-yellow-700";
+      case 'deferred':
+        return "bg-amber-100 text-amber-700";
+      case 'failed':
+        return "bg-red-100 text-red-700";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'queued':
+        return "⏳ Queued";
+      case 'sent':
+        return "📤 Sent";
+      case 'processed':
+        return "⚙️ Processing";
+      case 'delivered':
+        return "✅ Delivered";
+      case 'opened':
+        return "👀 Opened";
+      case 'clicked':
+        return "👆 Clicked";
+      case 'bounced':
+        return "↩️ Bounced";
+      case 'dropped':
+        return "🚫 Dropped/Spam";
+      case 'spam_reported':
+        return "⚠️ Spam Report";
+      case 'unsubscribed':
+        return "🚪 Unsubscribed";
+      case 'deferred':
+        return "⏸️ Deferred";
+      case 'failed':
+        return "❌ Failed";
+      default:
+        return status;
     }
   };
 
@@ -151,19 +198,25 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                 </div>
               </div>
               
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="queued">Queued</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="bounced">Bounced</SelectItem>
-                </SelectContent>
-              </Select>
+               <Select value={statusFilter} onValueChange={setStatusFilter}>
+                 <SelectTrigger className="w-[140px]">
+                   <SelectValue placeholder="Status" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">All Status</SelectItem>
+                   <SelectItem value="queued">⏳ Queued</SelectItem>
+                   <SelectItem value="sent">📤 Sent</SelectItem>
+                   <SelectItem value="processed">⚙️ Processing</SelectItem>
+                   <SelectItem value="delivered">✅ Delivered</SelectItem>
+                   <SelectItem value="opened">👀 Opened</SelectItem>
+                   <SelectItem value="clicked">👆 Clicked</SelectItem>
+                   <SelectItem value="bounced">↩️ Bounced</SelectItem>
+                   <SelectItem value="dropped">🚫 Dropped/Spam</SelectItem>
+                   <SelectItem value="failed">❌ Failed</SelectItem>
+                   <SelectItem value="deferred">⏸️ Deferred</SelectItem>
+                   <SelectItem value="unsubscribed">🚪 Unsubscribed</SelectItem>
+                 </SelectContent>
+               </Select>
 
               <Select value={clientFilter} onValueChange={setClientFilter}>
                 <SelectTrigger className="w-[140px]">
@@ -246,11 +299,11 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                         )}
                       </button>
                     </TableCell>
-                    <TableCell>
-                      <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
-                        {email.status}
-                      </Badge>
-                    </TableCell>
+                     <TableCell>
+                       <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
+                         {getStatusLabel(email.status)}
+                       </Badge>
+                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-gray-600">
                         {email.sent_at ? format(new Date(email.sent_at), 'MMM d, yyyy HH:mm') : '-'}
