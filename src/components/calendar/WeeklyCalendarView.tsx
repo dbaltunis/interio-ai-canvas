@@ -8,7 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Share2 } from "lucide-react";
+import { AvailableSlotDialog } from "./AvailableSlotDialog";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -33,6 +34,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  
+  // Available slot dialog state
+  const [selectedSlot, setSelectedSlot] = useState<{
+    id: string;
+    schedulerName: string;
+    schedulerSlug?: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    duration: number;
+  } | null>(null);
+  const [showSlotDialog, setShowSlotDialog] = useState(false);
   
   // Get current user ID
   useEffect(() => {
@@ -609,13 +622,28 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 ${event.isAvailableSlot ? 'hover:bg-gray-100/20' : ''}
                                 ${eventStyling.textColor}`}
                               style={eventStyle}
-                              onClick={() => onEventClick?.(event.id)}
+                              onClick={() => {
+                                if (event.isAvailableSlot) {
+                                  // Handle available slot click - open booking dialog
+                                  setSelectedSlot({
+                                    id: event.id,
+                                    schedulerName: event.schedulerName,
+                                    date: event.date,
+                                    startTime: format(startTime, 'HH:mm'),
+                                    endTime: format(endTime, 'HH:mm'),
+                                    duration: event.duration
+                                  });
+                                  setShowSlotDialog(true);
+                                } else {
+                                  onEventClick?.(event.id);
+                                }
+                              }}
                               title={
-                                event.isAvailableSlot
-                                  ? `AVAILABLE APPOINTMENT SLOT\n${event.schedulerName}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to book or manage`
-                                  : event.isBooking 
-                                  ? `CUSTOMER BOOKING\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`
-                                  : `PERSONAL EVENT\n${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`
+                                 event.isAvailableSlot
+                                   ? `SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to get booking link and share`
+                                   : event.isBooking 
+                                   ? `CUSTOMER BOOKING\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`
+                                   : `PERSONAL EVENT\n${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`
                               }
                             >
                               {/* Drag Handle - only for personal events */}
@@ -662,14 +690,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   
                                   {/* Additional info if space allows */}
                                   {style.height > 50 && (
-                                    <div className="text-[10px] leading-tight truncate opacity-75 mt-1">
-                                      {event.isAvailableSlot 
-                                        ? 'Click to book'
-                                        : event.isBooking 
-                                        ? event.scheduler_name 
-                                        : (event.location || event.description)
-                                      }
-                                    </div>
+                                     <div className="text-[10px] leading-tight truncate opacity-75 mt-1">
+                                       {event.isAvailableSlot 
+                                         ? '📤 Click to share'
+                                         : event.isBooking 
+                                         ? event.scheduler_name 
+                                         : (event.location || event.description)
+                                       }
+                                     </div>
                                   )}
                                 </div>
                               </div>
@@ -715,6 +743,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           </div>
         )}
       </DragOverlay>
+      
+      {/* Available Slot Sharing Dialog */}
+      <AvailableSlotDialog
+        isOpen={showSlotDialog}
+        onClose={() => {
+          setShowSlotDialog(false);
+          setSelectedSlot(null);
+        }}
+        slot={selectedSlot}
+      />
     </DndContext>
   );
 };
