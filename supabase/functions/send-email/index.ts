@@ -258,9 +258,6 @@ const handler = async (req: Request): Promise<Response> => {
           
           const mimeType = mimeTypes[extension] || 'application/octet-stream';
           
-          // Create tracked download URL for attachment
-          const trackedDownloadUrl = `${supabaseUrl}/functions/v1/track-email-enhanced?id=${emailData.id}&type=download&attachment=${encodeURIComponent(filename)}&url=${encodeURIComponent(supabaseUrl + '/storage/v1/object/public/email-attachments/' + attachmentPath)}`;
-          
           attachments.push({
             content: base64Content,
             filename: filename,
@@ -305,7 +302,7 @@ const handler = async (req: Request): Promise<Response> => {
         content: [
           {
             type: "text/html",
-            value: finalContent,
+            value: finalContent.replace(/\n/g, '<br>'),
           },
         ],
         // Include attachments if any
