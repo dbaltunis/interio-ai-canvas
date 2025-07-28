@@ -326,22 +326,24 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", emailData.id);
     }
 
-    // Get user's email settings or use defaults
+    // Get user's email settings with signature
     let fromEmail = "darius@curtainscalculator.com";
     let fromName = "Darius from Curtains Calculator";
+    let emailSettings = null;
     
     if (user_id) {
-      const { data: emailSettings } = await supabase
+      const { data: settings } = await supabase
         .from("email_settings")
-        .select("from_email, from_name, active")
+        .select("from_email, from_name, signature, active")
         .eq("user_id", user_id)
         .eq("active", true)
         .single();
       
-      if (emailSettings?.from_email) {
-        fromEmail = emailSettings.from_email;
-        fromName = emailSettings.from_name || fromName;
-        console.log("Using user email settings:", { fromEmail, fromName });
+      if (settings?.from_email) {
+        fromEmail = settings.from_email;
+        fromName = settings.from_name || fromName;
+        emailSettings = settings;
+        console.log("Using user email settings:", { fromEmail, fromName, hasSignature: !!settings.signature });
       }
     }
 
@@ -422,6 +424,29 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Attachment details:", attachments.map(a => ({ filename: a.filename, type: a.type, size: a.content.length })));
     }
 
+    // Add signature to content if available
+    let contentWithSignature = finalContent;
+    if (emailSettings?.signature) {
+      const formattedSignature = `
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; font-family: Arial, sans-serif;">
+          ${emailSettings.signature.replace(/\n/g, '<br>')}
+        </div>
+      `;
+      
+      if (contentWithSignature.includes('</body>')) {
+        contentWithSignature = contentWithSignature.replace('</body>', `${formattedSignature}</body>`);
+      } else {
+        contentWithSignature += formattedSignature;
+      }
+    }
+
+    // Create attachment metadata for storage
+    const attachmentInfo = attachments.map(att => ({
+      filename: att.filename,
+      type: att.type,
+      size: Math.round(att.content.length * 0.75) // Approximate original size from base64
+    }));
+
     // Build SendGrid payload with proper email authentication for deliverability
     const sendGridPayload = {
       personalizations: [
@@ -445,7 +470,7 @@ const handler = async (req: Request): Promise<Response> => {
       content: [
         {
           type: "text/html",
-          value: finalContent.replace(/\n/g, '<br>'),
+          value: contentWithSignature,
         },
       ],
       // CRITICAL: Always include attachments array (empty or populated)
@@ -512,14 +537,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully via SendGrid");
 
-    // Update email status to sent (only if we have emailData)
+    // Update email status to sent with attachment info (only if we have emailData)
     if (emailData) {
       const { error: updateError } = await supabase
         .from("emails")
         .update({
           status: 'sent',
           sent_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          attachment_info: attachmentInfo
         })
         .eq("id", emailData.id);
 

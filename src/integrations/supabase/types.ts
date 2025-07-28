@@ -809,6 +809,7 @@ export type Database = {
       }
       emails: {
         Row: {
+          attachment_info: Json | null
           bounce_reason: string | null
           campaign_id: string | null
           click_count: number | null
@@ -827,6 +828,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_info?: Json | null
           bounce_reason?: string | null
           campaign_id?: string | null
           click_count?: number | null
@@ -845,6 +847,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_info?: Json | null
           bounce_reason?: string | null
           campaign_id?: string | null
           click_count?: number | null

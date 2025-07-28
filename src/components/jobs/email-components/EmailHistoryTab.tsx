@@ -9,6 +9,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Mail, RefreshCw, Loader2, Plus, Search, Filter, X, Eye, MousePointer } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import { EmailDetailDialog } from "./EmailDetailDialog";
+import { AttachmentInfo } from "./AttachmentInfo";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Email } from "@/hooks/useEmails";
 
@@ -222,6 +223,7 @@ export const EmailHistoryTab = ({
                     <TableHead>Subject</TableHead>
                     <TableHead>Recipient</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Attachments</TableHead>
                     <TableHead>Sent</TableHead>
                     <TableHead>Opens</TableHead>
                   </TableRow>
@@ -241,6 +243,12 @@ export const EmailHistoryTab = ({
                       </TableCell>
                       <TableCell>
                         <EmailStatusBadge status={email.status || 'queued'} />
+                      </TableCell>
+                      <TableCell>
+                        <AttachmentInfo 
+                          attachments={(email as any).attachment_info || []} 
+                          className="max-w-[150px]"
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
