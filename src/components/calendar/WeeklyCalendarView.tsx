@@ -444,18 +444,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           <div className="flex">
             {/* Fixed time labels column */}
             <div className="w-16 border-r bg-muted/20 flex-shrink-0">
-              {timeSlots.map((time, index) => (
-                <div 
-                  key={time} 
-                  className={`h-[20px] px-2 text-xs text-muted-foreground relative ${
-                    index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
-                  }`}
-                >
-                  {time.endsWith(':00') && (
-                    <span className="font-medium text-[10px] absolute -bottom-2 right-2">{time}</span>
-                  )}
-                </div>
-              ))}
+              {timeSlots.map((time, index) => {
+                const isHourSlot = time.endsWith(':00');
+                const isNextSlotHour = index < timeSlots.length - 1 && timeSlots[index + 1].endsWith(':00');
+                
+                return (
+                  <div 
+                    key={time} 
+                    className={`h-[20px] px-2 text-xs text-muted-foreground relative ${
+                      index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
+                    }`}
+                  >
+                    {isNextSlotHour && (
+                      <span className="font-medium text-[10px] absolute bottom-0 right-2 transform translate-y-full">{timeSlots[index + 1]}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             {/* Day columns */}

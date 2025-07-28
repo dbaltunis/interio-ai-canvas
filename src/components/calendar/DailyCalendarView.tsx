@@ -109,6 +109,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
+            const isNextSlotHour = index < timeSlots.length - 1 && (index + 1) % 2 === 0;
             
             return (
               <div 
@@ -119,8 +120,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
               >
                 {/* Time label */}
                 <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r relative">
-                  {isHourSlot && (
-                    <span className="font-medium absolute -bottom-1 left-2">{time}</span>
+                  {isNextSlotHour && index < timeSlots.length - 1 && (
+                    <span className="font-medium absolute bottom-0 left-2 transform translate-y-full">{timeSlots[index + 1]}</span>
                   )}
                 </div>
                 
