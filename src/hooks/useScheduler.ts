@@ -11,7 +11,9 @@ export const useScheduler = (schedulerName: string) => {
         .from("appointment_schedulers")
         .select("*")
         .eq("name", schedulerName)
-        .single();
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching scheduler:", error);
