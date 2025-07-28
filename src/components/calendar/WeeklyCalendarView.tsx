@@ -620,6 +620,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 ${event.isAvailableSlot ? 'border-gray-400' : 'border-white/40'}
                                 ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
                                 ${event.isAvailableSlot ? 'hover:bg-gray-100/20' : ''}
+                                ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
                                 ${eventStyling.textColor}`}
                               style={eventStyle}
                               onClick={() => {
@@ -634,7 +635,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     duration: event.duration
                                   });
                                   setShowSlotDialog(true);
+                                } else if (event.isBooking) {
+                                  // Handle customer booking click - show booking details (read-only)
+                                  console.log('Customer booking clicked:', event);
                                 } else {
+                                  // Handle personal event click - open edit dialog
+                                  console.log('Personal event clicked:', event.id);
                                   onEventClick?.(event.id);
                                 }
                               }}
@@ -642,8 +648,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                  event.isAvailableSlot
                                    ? `SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to get booking link and share`
                                    : event.isBooking 
-                                   ? `CUSTOMER BOOKING\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`
-                                   : `PERSONAL EVENT\n${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`
+                                   ? `CUSTOMER BOOKING\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to view details`
+                                   : `PERSONAL EVENT\n${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\nClick to edit`
                               }
                             >
                               {/* Drag Handle - only for personal events */}
