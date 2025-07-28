@@ -141,18 +141,25 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     
     return schedulerSlots
       .filter(slot => isSameDay(slot.date, date) && !slot.isBooked)
-      .map(slot => ({
-        id: slot.id,
-        title: `Available: ${slot.schedulerName}`,
-        start_time: `${format(date, 'yyyy-MM-dd')}T${slot.startTime}:00`,
-        end_time: `${format(date, 'yyyy-MM-dd')}T${slot.endTime}:00`,
-        date: format(date, 'yyyy-MM-dd'),
-        isAvailableSlot: true,
-        schedulerName: slot.schedulerName,
-        duration: slot.duration,
-        color: '#6B7280', // Gray-500
-        user_id: null
-      }));
+      .map(slot => {
+        // Calculate accurate end time based on duration
+        const startDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${slot.startTime}:00`);
+        const endDateTime = new Date(startDateTime.getTime() + (slot.duration * 60 * 1000));
+        
+        return {
+          id: slot.id,
+          title: `Available: ${slot.schedulerName}`,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          date: format(date, 'yyyy-MM-dd'),
+          isAvailableSlot: true,
+          schedulerName: slot.schedulerName,
+          schedulerSlug: schedulers?.find(s => s.id === slot.schedulerId)?.slug,
+          duration: slot.duration,
+          color: '#6B7280', // Gray-500
+          user_id: null
+        };
+      });
   };
 
   // Combine regular events, booked appointments, and available slots
@@ -542,16 +549,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction between events, bookings, and available slots
                         const getEventStyling = (event: any) => {
                           if (event.isAvailableSlot) {
-                            // AVAILABLE APPOINTMENT SLOTS: Light gray, dashed border, demo-like
+                            // AVAILABLE APPOINTMENT SLOTS: Google Calendar style - clean, minimal
                             return {
-                              backgroundColor: 'rgba(107, 114, 128, 0.15)', // Gray-500 with low opacity
-                              borderColor: '#6B7280', // Gray-500
-                              textColor: 'text-gray-700',
-                              icon: <Calendar className="h-3 w-3" />,
-                              label: 'AVAILABLE',
-                              borderRadius: '6px',
+                              backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue with very low opacity
+                              borderColor: '#3B82F6', // Blue-500
+                              textColor: 'text-blue-700',
+                              icon: <Share2 className="h-3 w-3" />,
+                              label: '',
+                              borderRadius: '4px',
                               pattern: 'dashed',
-                              isDashed: true
+                              isDashed: true,
+                              isCompact: true
                             };
                           } else if (event.isBooking) {
                             // BOOKED APPOINTMENTS: Green, solid, rounded corners
@@ -560,8 +568,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               borderColor: '#047857', // Emerald-700
                               textColor: 'text-white',
                               icon: <UserCheck className="h-3 w-3" />,
-                              label: 'BOOKING',
-                              borderRadius: '8px',
+                              label: '',
+                              borderRadius: '6px',
                               pattern: 'solid'
                             };
                           } else {
@@ -572,8 +580,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               borderColor: color,
                               textColor: 'text-white',
                               icon: <CalendarCheck className="h-3 w-3" />,
-                              label: 'EVENT',
-                              borderRadius: '20px 8px 20px 8px', // Water drop corners
+                              label: '',
+                              borderRadius: '6px',
                               pattern: 'gradient'
                             };
                           }
@@ -609,16 +617,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             cursor: (event.isBooking || event.isAvailableSlot) ? 'default' : 'pointer',
                           };
 
-                          return (
-                            <div
-                              ref={setNodeRef}
-                              className={`absolute p-2 text-xs overflow-hidden group
-                                transition-all duration-200 z-10 border
-                                ${event.isAvailableSlot ? 'border-gray-400' : 'border-white/40'}
-                                ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
-                                ${event.isAvailableSlot ? 'hover:bg-gray-100/20' : ''}
-                                ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
-                                ${eventStyling.textColor}`}
+                           return (
+                             <div
+                               ref={setNodeRef}
+                               className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
+                                 transition-all duration-200 z-10 border
+                                 ${event.isAvailableSlot ? 'border-blue-300' : 'border-white/40'}
+                                 ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
+                                 ${event.isAvailableSlot ? 'hover:bg-blue-50/30 hover:border-blue-400' : ''}
+                                 ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
+                                 ${eventStyling.textColor}`}
                               style={eventStyle}
                               onClick={() => {
                                 if (event.isAvailableSlot) {

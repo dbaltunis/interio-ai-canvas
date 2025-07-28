@@ -3,10 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, Mail, Phone, User, Check } from "lucide-react";
-import { useCreateBooking } from "@/hooks/useAppointmentBookings";
+import { Calendar, Clock, Copy, Share2, ExternalLink, Code, Check, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -26,133 +24,68 @@ interface AvailableSlotDialogProps {
 
 export const AvailableSlotDialog = ({ isOpen, onClose, slot }: AvailableSlotDialogProps) => {
   const { toast } = useToast();
-  const createBooking = useCreateBooking();
+  const [shareMode, setShareMode] = useState<'link' | 'embed'>('link');
+  const [copied, setCopied] = useState(false);
+
+  if (!slot) return null;
+
+  // Generate booking link (for demo purposes)
+  const bookingLink = `${window.location.origin}/book/${slot.schedulerSlug || 'demo'}?date=${slot.date}&time=${slot.startTime}`;
   
-  const [clientInfo, setClientInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    notes: ""
-  });
-  const [step, setStep] = useState(1); // 1: form, 2: confirmation
+  // Generate embed code for websites
+  const embedCode = `<iframe src="${bookingLink}" width="100%" height="600" frameborder="0"></iframe>`;
 
-  const handleSubmitBooking = async () => {
-    if (!slot || !clientInfo.name || !clientInfo.email) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleCopyToClipboard = async (text: string) => {
     try {
-      // Extract scheduler ID from slot ID (format: schedulerId-date-time)
-      const schedulerId = slot.id.split('-')[0];
-      
-      await createBooking.mutateAsync({
-        scheduler_id: schedulerId,
-        appointment_date: slot.date,
-        appointment_time: slot.startTime,
-        customer_name: clientInfo.name,
-        customer_email: clientInfo.email,
-        customer_phone: clientInfo.phone || undefined,
-        notes: clientInfo.notes || undefined,
-        location_type: 'video_call',
-        customer_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        appointment_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        status: 'confirmed'
-      });
-
-      setStep(2);
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
       toast({
-        title: "Booking Confirmed! 🎉",
-        description: "You will receive a confirmation email shortly.",
-        duration: 5000,
+        title: "Copied!",
+        description: "Booking link copied to clipboard",
+        duration: 2000,
       });
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error("Booking error:", error);
+      console.error('Failed to copy to clipboard:', error);
       toast({
-        title: "Booking Failed",
-        description: "Please try again or contact support.",
+        title: "Copy Failed",
+        description: "Unable to copy to clipboard",
         variant: "destructive",
       });
     }
   };
 
-  const handleClose = () => {
-    setStep(1);
-    setClientInfo({ name: "", email: "", phone: "", notes: "" });
-    onClose();
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Book an appointment: ${slot.schedulerName}`,
+          text: `Schedule an appointment for ${slot.schedulerName} on ${format(new Date(slot.date), 'PPPP')} at ${slot.startTime}`,
+          url: bookingLink,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback to copying link
+      handleCopyToClipboard(bookingLink);
+    }
   };
 
-  if (!slot) return null;
-
-  if (step === 2) {
-    return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md">
-          <DialogHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <DialogTitle className="text-2xl text-green-800">Booking Confirmed!</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h3 className="font-semibold text-green-800 mb-3">Your Appointment Details</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-green-600" />
-                  <span><strong>Service:</strong> {slot.schedulerName}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-green-600" />
-                  <span><strong>Date & Time:</strong> {format(new Date(slot.date), 'PPPP')} at {slot.startTime}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-green-600" />
-                  <span><strong>Duration:</strong> {slot.duration} minutes</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-green-600" />
-                  <span><strong>Customer:</strong> {clientInfo.name} ({clientInfo.email})</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center text-sm text-muted-foreground">
-              <p>A confirmation email has been sent to <strong>{clientInfo.email}</strong></p>
-              <p className="mt-2">If you need to reschedule or cancel, please contact us directly.</p>
-            </div>
-
-            <div className="flex justify-center">
-              <Button onClick={handleClose} className="flex items-center gap-2">
-                <Check className="h-4 w-4" />
-                Close
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Book Appointment
+            <Share2 className="h-5 w-5" />
+            Share your booking page
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           {/* Appointment Details */}
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-800 mb-3">Appointment Details</h3>
+            <h3 className="font-semibold text-blue-800 mb-3">Bookable Appointment Schedule</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-blue-600" />
@@ -160,88 +93,113 @@ export const AvailableSlotDialog = ({ isOpen, onClose, slot }: AvailableSlotDial
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-blue-600" />
-                <span><strong>Date & Time:</strong> {format(new Date(slot.date), 'PPPP')} at {slot.startTime}</span>
+                <span><strong>Duration:</strong> {slot.duration} min appointments</span>
               </div>
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-blue-600" />
-                <span><strong>Duration:</strong> {slot.duration} minutes</span>
+                <Globe className="h-4 w-4 text-blue-600" />
+                <span><strong>Timezone:</strong> {Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
               </div>
             </div>
           </div>
 
-          {/* Client Information Form */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                id="name"
-                value={clientInfo.name}
-                onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })}
-                placeholder="Enter your full name"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="email">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={clientInfo.email}
-                onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                placeholder="your@email.com"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={clientInfo.phone}
-                onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
-                placeholder="+1 (555) 123-4567"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea
-                id="notes"
-                value={clientInfo.notes}
-                onChange={(e) => setClientInfo({ ...clientInfo, notes: e.target.value })}
-                placeholder="Any additional information or questions..."
-                rows={3}
-              />
+          {/* Share Mode Selector */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">What would you like to share?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={shareMode === 'link' ? 'default' : 'outline'}
+                onClick={() => setShareMode('link')}
+                className="flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Link
+              </Button>
+              <Button
+                variant={shareMode === 'embed' ? 'default' : 'outline'}
+                onClick={() => setShareMode('embed')}
+                className="flex items-center gap-2"
+              >
+                <Code className="h-4 w-4" />
+                Website embed
+              </Button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitBooking}
-              disabled={!clientInfo.name || !clientInfo.email || createBooking.isPending}
-              className="flex-1"
-            >
-              {createBooking.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Booking...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Book Now
-                </>
-              )}
+          {shareMode === 'link' ? (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Booking page link</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={bookingLink}
+                    readOnly
+                    className="flex-1 font-mono text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleCopyToClipboard(bookingLink)}
+                    className="flex items-center gap-1"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                <p><strong>Share this page with others by sending them this link.</strong></p>
+                <p className="mt-1">Anyone with the link can book an appointment.</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleShare}
+                  className="flex-1 flex items-center gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share Link
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(bookingLink, '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Preview
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Website embed code</Label>
+                <div className="space-y-2">
+                  <textarea
+                    value={embedCode}
+                    readOnly
+                    className="w-full h-24 p-3 text-xs font-mono border rounded-md resize-none bg-muted/50"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleCopyToClipboard(embedCode)}
+                    className="flex items-center gap-1"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? 'Copied' : 'Copy Code'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                <p><strong>Add this iframe to your website.</strong></p>
+                <p className="mt-1">Customers can book appointments directly from your site.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Done
             </Button>
           </div>
         </div>
