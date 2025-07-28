@@ -8,6 +8,8 @@ import { EmailStatusBadge } from "./EmailStatusBadge";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { Email } from "@/hooks/useEmails";
 
 interface EmailDetailDialogProps {
@@ -22,10 +24,47 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
   const navigate = useNavigate();
+  const [refreshedEmail, setRefreshedEmail] = useState<Email | null>(email);
 
-  if (!email) return null;
+  // Auto-refresh email data every 10 seconds
+  useEffect(() => {
+    if (!email?.id || !open) return;
 
-  const client = email.client_id ? clients.find(c => c.id === email.client_id) : null;
+    const refreshEmailData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('emails')
+          .select('*')
+          .eq('id', email.id)
+          .single();
+        
+        if (!error && data) {
+          setRefreshedEmail(data as Email);
+        }
+      } catch (error) {
+        console.error('Error refreshing email data:', error);
+      }
+    };
+
+    // Initial refresh
+    refreshEmailData();
+
+    // Set up interval for auto-refresh every 10 seconds
+    const interval = setInterval(refreshEmailData, 10000);
+
+    return () => clearInterval(interval);
+  }, [email?.id, open]);
+
+  // Reset refreshed email when email prop changes
+  useEffect(() => {
+    setRefreshedEmail(email);
+  }, [email]);
+
+  const currentEmail = refreshedEmail || email;
+  
+  if (!currentEmail) return null;
+
+  const client = currentEmail.client_id ? clients.find(c => c.id === currentEmail.client_id) : null;
   const clientProjects = client ? projects.filter(p => p.client_id === client.id) : [];
   const activeProjects = clientProjects.filter(p => !['completed', 'cancelled'].includes(p.status));
 
@@ -53,19 +92,19 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
         
         <div className="space-y-6">
           {/* Email Header */}
-          <Card>
+            <Card>
             <CardHeader>
-              <CardTitle className="text-lg">{email.subject}</CardTitle>
+              <CardTitle className="text-lg">{currentEmail.subject}</CardTitle>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Mail className="h-4 w-4" />
-                  <span>To: {email.recipient_email}</span>
+                  <span>To: {currentEmail.recipient_email}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>Sent: {email.sent_at ? new Date(email.sent_at).toLocaleString() : 'Not sent'}</span>
+                  <span>Sent: {currentEmail.sent_at ? new Date(currentEmail.sent_at).toLocaleString() : 'Not sent'}</span>
                 </div>
-                <EmailStatusBadge status={email.status || 'queued'} />
+                <EmailStatusBadge status={currentEmail.status || 'queued'} />
               </div>
             </CardHeader>
           </Card>
@@ -167,10 +206,10 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <Eye className="h-4 w-4 text-purple-600" />
-                  <span className="text-2xl font-bold text-purple-600">{email.open_count || 0}</span>
+                  <span className="text-2xl font-bold text-purple-600">{currentEmail.open_count || 0}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">Opens</div>
-                {email.open_count > 0 && (
+                {currentEmail.open_count > 0 && (
                   <div className="text-xs text-green-600 mt-1">Email was opened</div>
                 )}
               </CardContent>
@@ -180,10 +219,10 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <MousePointer className="h-4 w-4 text-orange-600" />
-                  <span className="text-2xl font-bold text-orange-600">{email.click_count || 0}</span>
+                  <span className="text-2xl font-bold text-orange-600">{currentEmail.click_count || 0}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">Clicks</div>
-                {email.click_count > 0 && (
+                {currentEmail.click_count > 0 && (
                   <div className="text-xs text-green-600 mt-1">Links were clicked</div>
                 )}
               </CardContent>
@@ -193,7 +232,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="text-2xl font-bold text-blue-600">{email.time_spent_seconds || 0}s</span>
+                  <span className="text-2xl font-bold text-blue-600">{currentEmail.time_spent_seconds || 0}s</span>
                 </div>
                 <div className="text-sm text-muted-foreground">Time Spent</div>
               </CardContent>
@@ -211,126 +250,126 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <div>
                     <div className="font-medium">Email Created</div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(email.created_at).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-                
-                {email.sent_at && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium">Email Sent</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(email.sent_at).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                     <div className="text-sm text-muted-foreground">
+                       {new Date(currentEmail.created_at).toLocaleString()}
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {currentEmail.sent_at && (
+                   <div className="flex items-center gap-3">
+                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                     <div>
+                       <div className="font-medium">Email Sent</div>
+                       <div className="text-sm text-muted-foreground">
+                         {new Date(currentEmail.sent_at).toLocaleString()}
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
-                {email.status === 'delivered' && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium">Email Delivered</div>
-                      <div className="text-sm text-muted-foreground">Successfully delivered to recipient</div>
-                    </div>
-                  </div>
-                )}
+                 {currentEmail.status === 'delivered' && (
+                   <div className="flex items-center gap-3">
+                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                     <div>
+                       <div className="font-medium">Email Delivered</div>
+                       <div className="text-sm text-muted-foreground">Successfully delivered to recipient</div>
+                     </div>
+                   </div>
+                 )}
 
-                {email.open_count > 0 && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium">Email Opened</div>
-                      <div className="text-sm text-muted-foreground">
-                        Opened {email.open_count} time{email.open_count > 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                 {currentEmail.open_count > 0 && (
+                   <div className="flex items-center gap-3">
+                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                     <div>
+                       <div className="font-medium">Email Opened</div>
+                       <div className="text-sm text-muted-foreground">
+                         Opened {currentEmail.open_count} time{currentEmail.open_count > 1 ? 's' : ''}
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
-                {email.click_count > 0 && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium">Links Clicked</div>
-                      <div className="text-sm text-muted-foreground">
-                        Clicked {email.click_count} time{email.click_count > 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                 {currentEmail.click_count > 0 && (
+                   <div className="flex items-center gap-3">
+                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                     <div>
+                       <div className="font-medium">Links Clicked</div>
+                       <div className="text-sm text-muted-foreground">
+                         Clicked {currentEmail.click_count} time{currentEmail.click_count > 1 ? 's' : ''}
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
-                {email.status === 'bounced' && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium">Email Bounced</div>
-                      <div className="text-sm text-muted-foreground">
-                        {email.bounce_reason || 'Email bounced'}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                 {currentEmail.status === 'bounced' && (
+                   <div className="flex items-center gap-3">
+                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                     <div>
+                       <div className="font-medium">Email Bounced</div>
+                       <div className="text-sm text-muted-foreground">
+                         {currentEmail.bounce_reason || 'Email bounced'}
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
-                {email.status === 'failed' && (
+                 {currentEmail.status === 'failed' && (
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                     <div>
                       <div className="font-medium">Email Failed</div>
-                      <div className="text-sm text-muted-foreground">
-                        {email.bounce_reason || 'Email failed to send'}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                       <div className="text-sm text-muted-foreground">
+                         {currentEmail.bounce_reason || 'Email failed to send'}
+                       </div>
+                     </div>
+                   </div>
+                 )}
+               </div>
+             </CardContent>
+           </Card>
 
-          {/* Email Content */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Content</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div 
-                className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: email.content || 'No content available' }}
-              />
-            </CardContent>
-          </Card>
+           {/* Email Content */}
+           <Card>
+             <CardHeader>
+               <CardTitle>Email Content</CardTitle>
+             </CardHeader>
+             <CardContent>
+               <div 
+                 className="prose max-w-none"
+                 dangerouslySetInnerHTML={{ __html: currentEmail.content || 'No content available' }}
+               />
+             </CardContent>
+           </Card>
 
-          {/* Actions */}
-          <div className="flex justify-between">
-            <div className="flex gap-2">
-              {client && (
-                <Button variant="outline" onClick={handleViewClient}>
-                  <User className="h-4 w-4 mr-2" />
-                  View Client Profile
-                </Button>
-              )}
-              {activeProjects.length > 0 && (
-                <Button variant="outline" onClick={() => handleViewProject(activeProjects[0].id)}>
-                  <Building className="h-4 w-4 mr-2" />
-                  View Active Project
-                </Button>
-              )}
-            </div>
-            
-            {onResendEmail && email.status !== 'sent' && email.status !== 'delivered' && (
-              <Button 
-                onClick={() => onResendEmail(email)}
-                disabled={isResending}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
-                {isResending ? 'Resending...' : 'Resend Email'}
-              </Button>
-            )}
-          </div>
+           {/* Actions */}
+           <div className="flex justify-between">
+             <div className="flex gap-2">
+               {client && (
+                 <Button variant="outline" onClick={handleViewClient}>
+                   <User className="h-4 w-4 mr-2" />
+                   View Client Profile
+                 </Button>
+               )}
+               {activeProjects.length > 0 && (
+                 <Button variant="outline" onClick={() => handleViewProject(activeProjects[0].id)}>
+                   <Building className="h-4 w-4 mr-2" />
+                   View Active Project
+                 </Button>
+               )}
+             </div>
+             
+             {onResendEmail && currentEmail.status !== 'sent' && currentEmail.status !== 'delivered' && (
+               <Button 
+                 onClick={() => onResendEmail(currentEmail)}
+                 disabled={isResending}
+                 className="flex items-center gap-2"
+               >
+                 <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
+                 {isResending ? 'Resending...' : 'Resend Email'}
+               </Button>
+             )}
+           </div>
         </div>
       </DialogContent>
     </Dialog>
