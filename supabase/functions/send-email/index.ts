@@ -368,9 +368,16 @@ const handler = async (req: Request): Promise<Response> => {
             continue; // Skip this attachment and continue with others
           }
           
-          // Convert file to base64
-          const arrayBuffer = await fileData.arrayBuffer();
-          const base64Content = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+           // Convert file to base64 more efficiently 
+           const arrayBuffer = await fileData.arrayBuffer();
+           const bytes = new Uint8Array(arrayBuffer);
+           let binary = '';
+           const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
+           for (let i = 0; i < bytes.length; i += chunkSize) {
+             const chunk = bytes.subarray(i, i + chunkSize);
+             binary += String.fromCharCode.apply(null, Array.from(chunk));
+           }
+           const base64Content = btoa(binary);
           
           // Get filename from path
           const filename = attachmentPath.split('/').pop() || 'attachment';
