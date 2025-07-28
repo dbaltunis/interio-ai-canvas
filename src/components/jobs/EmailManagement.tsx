@@ -50,13 +50,11 @@ export const EmailManagement = () => {
 
   const renderHeader = () => (
     <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          Emails
-          <span className="text-lg font-normal text-gray-500">
-            ({emails?.length || 0})
-          </span>
-        </h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-gray-900">Emails</h1>
+        <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+          {emails?.length || 0}
+        </div>
       </div>
       <div className="flex items-center space-x-3">
         <Button 
@@ -89,10 +87,10 @@ export const EmailManagement = () => {
         <Button 
           variant="outline"
           onClick={() => setShowFilters(!showFilters)}
-          className="border-gray-300 px-4"
+          className="border-gray-300 p-2"
+          title="Filters"
         >
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
+          <Filter className="w-4 h-4" />
         </Button>
         
         <DropdownMenu>
