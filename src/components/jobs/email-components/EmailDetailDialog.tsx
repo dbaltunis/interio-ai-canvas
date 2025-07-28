@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink } from "lucide-react";
+import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink, Download, Camera, Smartphone, Activity, Globe, Monitor } from "lucide-react";
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
@@ -202,18 +202,18 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             </Card>
           )}
 
-          {/* Email Analytics */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Email Analytics KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <Eye className="h-4 w-4 text-purple-600" />
-                  <span className="text-2xl font-bold text-purple-600">{currentEmail.open_count || 0}</span>
+                  <span className="text-sm font-medium text-purple-600">Opens</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Opens</div>
-                {currentEmail.open_count > 0 && (
-                  <div className="text-xs text-green-600 mt-1">Email was opened</div>
-                )}
+                <div className="text-2xl font-bold">{currentEmail.open_count || 0}</div>
+                <div className="text-sm text-muted-foreground">
+                  {emailAnalytics.filter(e => e.event_type === 'open').length} unique
+                </div>
               </CardContent>
             </Card>
             
@@ -221,12 +221,12 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <MousePointer className="h-4 w-4 text-orange-600" />
-                  <span className="text-2xl font-bold text-orange-600">{currentEmail.click_count || 0}</span>
+                  <span className="text-sm font-medium text-orange-600">Clicks</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Clicks</div>
-                {currentEmail.click_count > 0 && (
-                  <div className="text-xs text-green-600 mt-1">Links were clicked</div>
-                )}
+                <div className="text-2xl font-bold">{currentEmail.click_count || 0}</div>
+                <div className="text-sm text-muted-foreground">
+                  {emailAnalytics.filter(e => e.event_type === 'click').length} events
+                </div>
               </CardContent>
             </Card>
             
@@ -234,9 +234,89 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="text-2xl font-bold text-blue-600">{currentEmail.time_spent_seconds || 0}s</span>
+                  <span className="text-sm font-medium text-blue-600">Time Spent</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Time Spent</div>
+                <div className="text-2xl font-bold">{Math.floor((currentEmail.time_spent_seconds || 0) / 60)}m</div>
+                <div className="text-sm text-muted-foreground">
+                  {currentEmail.time_spent_seconds || 0}s total
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Download className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600">Downloads</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {emailAnalytics.filter(e => e.event_type === 'download').length}
+                </div>
+                <div className="text-sm text-muted-foreground">attachments</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Additional KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Camera className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium text-red-600">Screenshots</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {emailAnalytics.filter(e => e.event_type === 'screenshot').length}
+                </div>
+                <div className="text-sm text-muted-foreground">captured</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Smartphone className="h-4 w-4 text-indigo-600" />
+                  <span className="text-sm font-medium text-indigo-600">Devices</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {(() => {
+                    const devices = emailAnalytics.map(e => {
+                      const ua = e.user_agent || '';
+                      if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
+                      if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
+                      return 'Desktop';
+                    });
+                    return new Set(devices).size;
+                  })()}
+                </div>
+                <div className="text-sm text-muted-foreground">types</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Activity className="h-4 w-4 text-teal-600" />
+                  <span className="text-sm font-medium text-teal-600">Engagement</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {emailAnalytics.length > 0 ? 
+                    Math.round(((currentEmail.open_count || 0) + (currentEmail.click_count || 0)) / Math.max(emailAnalytics.length, 1) * 100) : 0}%
+                </div>
+                <div className="text-sm text-muted-foreground">score</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Globe className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-600">Locations</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {new Set(emailAnalytics.map(e => e.ip_address || 'Unknown')).size}
+                </div>
+                <div className="text-sm text-muted-foreground">unique IPs</div>
               </CardContent>
             </Card>
           </div>
@@ -292,11 +372,34 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {new Date(openEvent.created_at).toLocaleString()}
-                            {openEvent.event_data?.screen_resolution && (
-                              <span className="ml-2 text-xs text-gray-400">
-                                ({openEvent.event_data.screen_resolution})
-                              </span>
-                            )}
+                            <div className="flex items-center gap-4 mt-1 text-xs">
+                              {openEvent.event_data?.screen_resolution && (
+                                <span className="flex items-center gap-1">
+                                  <Monitor className="h-3 w-3" />
+                                  {openEvent.event_data.screen_resolution}
+                                </span>
+                              )}
+                              {openEvent.user_agent && (
+                                <span className="flex items-center gap-1">
+                                  <Smartphone className="h-3 w-3" />
+                                  {(() => {
+                                    const ua = openEvent.user_agent;
+                                    if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
+                                    if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
+                                    if (ua.includes('Chrome')) return 'Chrome Desktop';
+                                    if (ua.includes('Firefox')) return 'Firefox Desktop';
+                                    if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari Desktop';
+                                    return 'Desktop';
+                                  })()}
+                                </span>
+                              )}
+                              {openEvent.ip_address && openEvent.ip_address !== 'unknown' && (
+                                <span className="flex items-center gap-1">
+                                  <Globe className="h-3 w-3" />
+                                  {openEvent.ip_address}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -315,10 +418,32 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                           <div className="text-sm text-muted-foreground">
                             {new Date(clickEvent.created_at).toLocaleString()}
                             {clickEvent.event_data?.targetUrl && (
-                              <div className="text-xs text-gray-400 truncate max-w-xs">
+                              <div className="text-xs text-gray-400 truncate max-w-xs mt-1">
                                 → {clickEvent.event_data.targetUrl}
                               </div>
                             )}
+                            <div className="flex items-center gap-4 mt-1 text-xs">
+                              {clickEvent.user_agent && (
+                                <span className="flex items-center gap-1">
+                                  <Smartphone className="h-3 w-3" />
+                                  {(() => {
+                                    const ua = clickEvent.user_agent;
+                                    if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
+                                    if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
+                                    if (ua.includes('Chrome')) return 'Chrome Desktop';
+                                    if (ua.includes('Firefox')) return 'Firefox Desktop';
+                                    if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari Desktop';
+                                    return 'Desktop';
+                                  })()}
+                                </span>
+                              )}
+                              {clickEvent.ip_address && clickEvent.ip_address !== 'unknown' && (
+                                <span className="flex items-center gap-1">
+                                  <Globe className="h-3 w-3" />
+                                  {clickEvent.ip_address}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
