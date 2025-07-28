@@ -16,9 +16,11 @@ interface EmailRequest {
   subject: string;
   content?: string;
   html?: string;
+  message?: string;
   client_id?: string;
   user_id?: string;
   bookingId?: string;
+  emailId?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,16 +29,32 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, subject, content, html, client_id, user_id, bookingId }: EmailRequest = await req.json();
+    const requestBody = await req.json();
+    const { to, subject, content, html, client_id, user_id, bookingId, emailId, message }: EmailRequest = requestBody;
 
-    console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId });
+    console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId, emailId });
     
-    // Use html if provided, otherwise use content
-    const emailContent = html || content;
+    // Use html if provided, otherwise use content, then use message as fallback
+    const emailContent = html || content || message;
 
-    // First, save the email to database (only if user_id is provided)
+    // Handle email record - either use existing or create new
     let emailData = null;
-    if (user_id) {
+    if (emailId) {
+      // If emailId is provided, fetch the existing record
+      const { data, error: fetchError } = await supabase
+        .from("emails")
+        .select("*")
+        .eq("id", emailId)
+        .single();
+      
+      if (fetchError) {
+        console.error("Error fetching email record:", fetchError);
+        throw new Error("Failed to fetch existing email record");
+      }
+      emailData = data;
+      console.log("Using existing email record with ID:", emailData.id);
+    } else if (user_id) {
+      // Only create new record if no emailId provided
       const { data, error: insertError } = await supabase
         .from("emails")
         .insert({
