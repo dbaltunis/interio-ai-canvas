@@ -30,6 +30,7 @@ const Index = () => {
   const { signOut, user } = useAuth();
 
   console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
+  console.log('Index: Render time =', new Date().toISOString());
 
   // Update URL when active tab changes, but only if it's different from current URL
   useEffect(() => {

@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email || 'no user');
+        console.log('Auth state change time:', new Date().toISOString());
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error('AuthProvider: Error getting session:', error);
       }
       console.log('Initial session:', session?.user?.email || 'no user', 'Error:', error);
+      console.log('Initial session time:', new Date().toISOString());
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

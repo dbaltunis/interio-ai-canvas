@@ -11,6 +11,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
 
   console.log('ProtectedRoute: loading =', loading, 'user =', user?.email || 'no user');
+  console.log('ProtectedRoute: Current time =', new Date().toISOString());
 
   if (loading) {
     console.log('ProtectedRoute: Showing loading screen');
