@@ -451,7 +451,7 @@ const CalendarView = () => {
       {/* Main Calendar */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Fixed Header */}
-        <div className="fixed top-16 left-80 right-0 z-30 border-b bg-background/95 backdrop-blur-sm p-2 md:p-4 flex-shrink-0">
+        <div className={`fixed top-16 right-0 z-30 border-b bg-background/95 backdrop-blur-sm p-2 md:p-4 flex-shrink-0 ${sidebarCollapsed ? 'left-16' : 'left-80'}`}>
           <div className="flex items-center justify-between gap-2">
             {/* Left section - Title and Navigation */}
             <div className="flex items-center gap-2 md:gap-4">
