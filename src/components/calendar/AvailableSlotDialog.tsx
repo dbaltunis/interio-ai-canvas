@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, MapPin, Mail, Phone, User, Check } from "lucide-react";
+import { useCreateBooking } from "@/hooks/useAppointmentBookings";
 import { useToast } from "@/hooks/use-toast";
-import { useScheduler } from "@/hooks/useScheduler";
-import { Copy, ExternalLink, Calendar, Clock, User, MapPin, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface AvailableSlotDialogProps {
@@ -24,148 +26,224 @@ interface AvailableSlotDialogProps {
 
 export const AvailableSlotDialog = ({ isOpen, onClose, slot }: AvailableSlotDialogProps) => {
   const { toast } = useToast();
-  const { data: scheduler, isLoading } = useScheduler(slot?.schedulerName || "");
+  const createBooking = useCreateBooking();
+  
+  const [clientInfo, setClientInfo] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    notes: ""
+  });
+  const [step, setStep] = useState(1); // 1: form, 2: confirmation
+
+  const handleSubmitBooking = async () => {
+    if (!slot || !clientInfo.name || !clientInfo.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Extract scheduler ID from slot ID (format: schedulerId-date-time)
+      const schedulerId = slot.id.split('-')[0];
+      
+      await createBooking.mutateAsync({
+        scheduler_id: schedulerId,
+        appointment_date: slot.date,
+        appointment_time: slot.startTime,
+        customer_name: clientInfo.name,
+        customer_email: clientInfo.email,
+        customer_phone: clientInfo.phone || undefined,
+        notes: clientInfo.notes || undefined,
+        location_type: 'video_call',
+        customer_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        appointment_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        status: 'confirmed'
+      });
+
+      setStep(2);
+      toast({
+        title: "Booking Confirmed! 🎉",
+        description: "You will receive a confirmation email shortly.",
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast({
+        title: "Booking Failed",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleClose = () => {
+    setStep(1);
+    setClientInfo({ name: "", email: "", phone: "", notes: "" });
+    onClose();
+  };
 
   if (!slot) return null;
 
-  // Generate booking URL using the actual scheduler slug from database
-  // Use current domain instead of hardcoded lovableprojects.com
-  const currentDomain = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5173' 
-    : `https://${window.location.hostname}`;
-  const baseBookingUrl = scheduler?.slug 
-    ? `${currentDomain}/book/${scheduler.slug}`
-    : `${currentDomain}/book/scheduler`;
-  
-  const copyBookingLink = () => {
-    navigator.clipboard.writeText(baseBookingUrl);
-    toast({
-      title: "Link Copied",
-      description: "Booking link copied to clipboard",
-    });
-  };
+  if (step === 2) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <Check className="h-8 w-8 text-green-600" />
+            </div>
+            <DialogTitle className="text-2xl text-green-800">Booking Confirmed!</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h3 className="font-semibold text-green-800 mb-3">Your Appointment Details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-green-600" />
+                  <span><strong>Service:</strong> {slot.schedulerName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-600" />
+                  <span><strong>Date & Time:</strong> {format(new Date(slot.date), 'PPPP')} at {slot.startTime}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-green-600" />
+                  <span><strong>Duration:</strong> {slot.duration} minutes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-green-600" />
+                  <span><strong>Customer:</strong> {clientInfo.name} ({clientInfo.email})</span>
+                </div>
+              </div>
+            </div>
 
-  const shareViaEmail = () => {
-    const subject = `Book an appointment: ${slot.schedulerName}`;
-    const body = `Hi,
+            <div className="text-center text-sm text-muted-foreground">
+              <p>A confirmation email has been sent to <strong>{clientInfo.email}</strong></p>
+              <p className="mt-2">If you need to reschedule or cancel, please contact us directly.</p>
+            </div>
 
-I'd like to share this appointment booking link with you:
-
-📅 ${slot.schedulerName}
-🕐 ${slot.duration} minutes
-📍 Available slots starting ${format(new Date(slot.date), 'EEEE, MMMM d, yyyy')}
-
-You can book directly at: ${baseBookingUrl}
-
-Best regards`;
-    
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-  };
-
-  const openBookingPage = () => {
-    window.open(baseBookingUrl, '_blank');
-  };
+            <div className="flex justify-center">
+              <Button onClick={handleClose} className="flex items-center gap-2">
+                <Check className="h-4 w-4" />
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            Available Appointment Slot
+            <Calendar className="h-5 w-5" />
+            Book Appointment
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">Loading scheduler details...</span>
-            </div>
-          )}
-          
-          {/* Slot Details */}
-          {!isLoading && (
-            <>
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">{slot.schedulerName}</span>
-                  {scheduler?.description && (
-                    <span className="text-sm text-muted-foreground">- {scheduler.description}</span>
-                  )}
-                </div>
-            
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span>{format(new Date(slot.date), 'EEEE, MMMM d, yyyy')}</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span>{slot.startTime} - {slot.endTime} ({slot.duration} min)</span>
+          {/* Appointment Details */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-3">Appointment Details</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span><strong>Service:</strong> {slot.schedulerName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span><strong>Date & Time:</strong> {format(new Date(slot.date), 'PPPP')} at {slot.startTime}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-blue-600" />
+                <span><strong>Duration:</strong> {slot.duration} minutes</span>
+              </div>
             </div>
           </div>
 
-          {/* Booking Link */}
-          <div className="space-y-3">
-            <Label>Public Booking Link</Label>
-            <div className="flex gap-2">
-              <Input 
-                value={baseBookingUrl} 
-                readOnly 
-                className="text-sm"
+          {/* Client Information Form */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={clientInfo.name}
+                onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })}
+                placeholder="Enter your full name"
+                required
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={copyBookingLink}
-                className="flex-shrink-0"
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Share this link with anyone to let them book "{slot.schedulerName}" appointments
-            </p>
+            
+            <div>
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={clientInfo.email}
+                onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={clientInfo.phone}
+                onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                value={clientInfo.notes}
+                onChange={(e) => setClientInfo({ ...clientInfo, notes: e.target.value })}
+                placeholder="Any additional information or questions..."
+                rows={3}
+              />
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-2">
-            <Button 
-              onClick={openBookingPage}
-              className="w-full"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open Booking Page
-            </Button>
-            
-            <Button 
+          <div className="flex gap-3">
+            <Button
               variant="outline"
-              onClick={shareViaEmail}
-              className="w-full"
+              onClick={handleClose}
+              className="flex-1"
             >
-              Share via Email
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitBooking}
+              disabled={!clientInfo.name || !clientInfo.email || createBooking.isPending}
+              className="flex-1"
+            >
+              {createBooking.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Booking...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Book Now
+                </>
+              )}
             </Button>
           </div>
-
-          {/* Multiple Schedulers Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm text-blue-800">
-              <strong>💡 About this appointment type:</strong> "{slot.schedulerName}" has its own dedicated booking page. 
-              Customers can see all available time slots and book directly through the shared link.
-            </p>
-            {scheduler && (
-              <div className="mt-2 text-xs text-blue-700">
-                <p>• Duration: {scheduler.duration} minutes</p>
-                <p>• Buffer time: {scheduler.buffer_time} minutes</p>
-                <p>• Advance booking: up to {scheduler.max_advance_booking} days</p>
-              </div>
-            )}
-          </div>
-            </>
-          )}
         </div>
       </DialogContent>
     </Dialog>

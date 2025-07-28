@@ -635,7 +635,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   setSelectedSlot({
                                     id: event.id,
                                     schedulerName: event.schedulerName,
-                                    date: event.date,
+                                    schedulerSlug: event.schedulerSlug,
+                                    date: format(day, 'yyyy-MM-dd'),
                                     startTime: format(startTime, 'HH:mm'),
                                     endTime: format(endTime, 'HH:mm'),
                                     duration: event.duration
