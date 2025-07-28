@@ -51,12 +51,11 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
     setTestResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data, error } = await supabase.functions.invoke('send-test-email', {
         body: {
           to_email: testEmail,
           subject: customSubject,
-          message: customMessage,
-          is_test: true
+          message: customMessage
         }
       });
 
@@ -168,7 +167,6 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
                 placeholder="recipient@example.com"
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
-                defaultValue={defaultTestEmail}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Enter the email address where you want to receive the test email
