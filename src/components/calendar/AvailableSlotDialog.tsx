@@ -29,9 +29,13 @@ export const AvailableSlotDialog = ({ isOpen, onClose, slot }: AvailableSlotDial
   if (!slot) return null;
 
   // Generate booking URL using the actual scheduler slug from database
+  // Use current domain instead of hardcoded lovableprojects.com
+  const currentDomain = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5173' 
+    : `https://${window.location.hostname}`;
   const baseBookingUrl = scheduler?.slug 
-    ? `${window.location.origin}/book/${scheduler.slug}`
-    : `${window.location.origin}/book/scheduler`;
+    ? `${currentDomain}/book/${scheduler.slug}`
+    : `${currentDomain}/book/scheduler`;
   
   const copyBookingLink = () => {
     navigator.clipboard.writeText(baseBookingUrl);
