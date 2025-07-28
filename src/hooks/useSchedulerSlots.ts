@@ -74,6 +74,7 @@ export const useSchedulerSlots = (date?: Date) => {
               const now = new Date();
               const isToday = isSameDay(d, now);
               if (isToday && slotDateTime <= now) {
+                console.log('Skipping past slot:', timeSlot.start, 'for today');
                 continue;
               }
               
@@ -82,6 +83,13 @@ export const useSchedulerSlots = (date?: Date) => {
                 booking.appointment_date === slotDate &&
                 booking.appointment_time === timeSlot.start
               );
+
+              console.log('Adding slot:', {
+                schedulerId: scheduler.id,
+                date: slotDate,
+                time: timeSlot.start,
+                isBooked
+              });
 
               slots.push({
                 id: `${scheduler.id}-${slotDate}-${timeSlot.start}`,
