@@ -115,8 +115,10 @@ async function trackEvent(event: TrackingEvent) {
         break;
       
       case 'time_spent':
-        if (eventData.timeSpent) {
-          updateData.time_spent_seconds = (emailData.time_spent_seconds || 0) + eventData.timeSpent;
+        if (timeSpent) {
+          const timeSpentNumber = parseInt(timeSpent);
+          updateData.time_spent_seconds = (emailData.time_spent_seconds || 0) + timeSpentNumber;
+          console.log(`Updating time spent: adding ${timeSpentNumber}s to existing ${emailData.time_spent_seconds || 0}s`);
         }
         break;
       
