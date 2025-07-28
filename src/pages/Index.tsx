@@ -45,58 +45,76 @@ const Index = () => {
   };
 
   const renderActiveComponent = () => {
+    const ComponentWrapper = ({ children }: { children: React.ReactNode }) => (
+      <div className="animate-fade-in">{children}</div>
+    );
+
     switch (activeTab) {
       case "dashboard":
         return (
           <Suspense fallback={<DashboardSkeleton />}>
-            <Dashboard />
+            <ComponentWrapper>
+              <Dashboard />
+            </ComponentWrapper>
           </Suspense>
         );
       case "projects":
         return (
           <Suspense fallback={<JobsPageSkeleton />}>
-            <JobsPage />
+            <ComponentWrapper>
+              <JobsPage />
+            </ComponentWrapper>
           </Suspense>
         );
       case "clients":
         return (
           <Suspense fallback={<ClientManagementSkeleton />}>
-            <ClientManagement />
+            <ComponentWrapper>
+              <ClientManagement />
+            </ComponentWrapper>
           </Suspense>
         );
       case "quotes":
         return (
           <Suspense fallback={<GenericPageSkeleton />}>
-            <EmailManagement />
+            <ComponentWrapper>
+              <EmailManagement />
+            </ComponentWrapper>
           </Suspense>
         );
       case "inventory":
         return (
           <Suspense fallback={<GenericPageSkeleton />}>
-            <LibraryPage />
+            <ComponentWrapper>
+              <LibraryPage />
+            </ComponentWrapper>
           </Suspense>
         );
       case 'calendar':
         return (
           <Suspense fallback={<GenericPageSkeleton />}>
-            <CalendarView />
+            <ComponentWrapper>
+              <CalendarView />
+            </ComponentWrapper>
           </Suspense>
         );
       default:
         return (
           <Suspense fallback={<JobsPageSkeleton />}>
-            <JobsPage />
+            <ComponentWrapper>
+              <JobsPage />
+            </ComponentWrapper>
           </Suspense>
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="min-h-screen bg-background w-full">
       {/* Use the new ResponsiveHeader */}
       <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* Main Content - Full Width */}
+      {/* Main Content - Full Width with smooth transitions */}
       <main className="w-full">
         {renderActiveComponent()}
       </main>
