@@ -21,6 +21,7 @@ interface EmailRequest {
   user_id?: string;
   bookingId?: string;
   emailId?: string;
+  attachmentPaths?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -30,9 +31,9 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const requestBody = await req.json();
-    const { to, subject, content, html, client_id, user_id, bookingId, emailId, message }: EmailRequest = requestBody;
+    const { to, subject, content, html, client_id, user_id, bookingId, emailId, message, attachmentPaths }: EmailRequest = requestBody;
 
-    console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId, emailId });
+    console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId, emailId, attachments: attachmentPaths?.length || 0 });
     
     // Use html if provided, otherwise use content, then use message as fallback
     const emailContent = html || content || message;
@@ -145,6 +146,65 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("SENDGRID_API_KEY is not configured");
     }
 
+    // Process attachments if any
+    let attachments: any[] = [];
+    if (attachmentPaths && attachmentPaths.length > 0) {
+      console.log("Processing attachments:", attachmentPaths.length);
+      
+      for (const attachmentPath of attachmentPaths) {
+        try {
+          // Download file from Supabase storage
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('email-attachments')
+            .download(attachmentPath);
+          
+          if (downloadError) {
+            console.error("Error downloading attachment:", downloadError);
+            continue; // Skip this attachment and continue with others
+          }
+          
+          // Convert file to base64
+          const arrayBuffer = await fileData.arrayBuffer();
+          const base64Content = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          
+          // Get filename from path
+          const filename = attachmentPath.split('/').pop() || 'attachment';
+          
+          // Get MIME type based on file extension
+          const extension = filename.split('.').pop()?.toLowerCase() || '';
+          const mimeTypes: Record<string, string> = {
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'txt': 'text/plain',
+            'csv': 'text/csv'
+          };
+          
+          const mimeType = mimeTypes[extension] || 'application/octet-stream';
+          
+          attachments.push({
+            content: base64Content,
+            filename: filename,
+            type: mimeType,
+            disposition: 'attachment'
+          });
+          
+          console.log("Processed attachment:", filename, "Type:", mimeType);
+        } catch (error) {
+          console.error("Error processing attachment:", attachmentPath, error);
+          // Continue with other attachments
+        }
+      }
+      
+      console.log("Successfully processed attachments:", attachments.length);
+    }
+
     console.log("Sending email via SendGrid...");
 
     // Send email using SendGrid API
@@ -175,6 +235,8 @@ const handler = async (req: Request): Promise<Response> => {
             value: finalContent,
           },
         ],
+        // Include attachments if any
+        ...(attachments.length > 0 ? { attachments: attachments } : {}),
         tracking_settings: {
           click_tracking: {
             enable: true,
