@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Clock, MapPin, User, Phone, Mail, Video, Calendar as CalendarIcon, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { useAppointmentBooking } from "@/hooks/useAppointmentBooking";
+import { useCreateBooking } from "@/hooks/useAppointmentBookings";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ interface PublicBookingFormProps {
 
 export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
   const { scheduler, isLoading, generateAvailableSlots, getAvailableDates } = useAppointmentBooking(slug);
+  const createBooking = useCreateBooking();
   const { toast } = useToast();
   
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -30,6 +32,7 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
     phone: '',
     notes: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isLoading) {
     return (
@@ -73,7 +76,7 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
   };
 
   const handleBooking = async () => {
-    if (!selectedDate || !selectedTime || !clientInfo.name || !clientInfo.email) {
+    if (!selectedDate || !selectedTime || !clientInfo.name || !clientInfo.email || !scheduler) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -82,11 +85,39 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
       return;
     }
 
-    // TODO: Implement actual booking submission
-    toast({
-      title: "Booking Submitted",
-      description: "Your appointment request has been submitted successfully!",
-    });
+    setIsSubmitting(true);
+    try {
+      await createBooking.mutateAsync({
+        scheduler_id: scheduler.id,
+        customer_name: clientInfo.name,
+        customer_email: clientInfo.email,
+        customer_phone: clientInfo.phone || undefined,
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        appointment_time: selectedTime,
+        location_type: 'video_call', // Default for now
+        notes: clientInfo.notes || undefined,
+        status: 'confirmed'
+      });
+
+      // Reset form
+      setSelectedDate(undefined);
+      setSelectedTime(undefined);
+      setClientInfo({ name: '', email: '', phone: '', notes: '' });
+      
+      toast({
+        title: "Booking Confirmed!",
+        description: "You will receive a confirmation email shortly.",
+      });
+    } catch (error) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Booking Failed",
+        description: "Please try again or contact support.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -321,9 +352,9 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
               <Button 
                 onClick={handleBooking}
                 className="w-full h-14 text-lg font-semibold shadow-lg"
-                disabled={!selectedDate || !selectedTime || !clientInfo.name || !clientInfo.email}
+                disabled={!selectedDate || !selectedTime || !clientInfo.name || !clientInfo.email || isSubmitting}
               >
-                {selectedDate && selectedTime ? "Confirm Booking" : "Complete Selection"}
+                {isSubmitting ? "Confirming..." : selectedDate && selectedTime ? "Confirm Booking" : "Complete Selection"}
               </Button>
             </CardContent>
           </Card>
