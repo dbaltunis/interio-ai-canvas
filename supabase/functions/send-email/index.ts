@@ -79,10 +79,25 @@ const handler = async (req: Request): Promise<Response> => {
     // Add tracking pixel and wrap links only if we have an emailData record
     let finalContent = emailContent;
     if (emailData) {
+      console.log("Adding tracking to email content for email ID:", emailData.id);
+      
       const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${emailData.id}" width="1" height="1" style="display: none;" />`;
       
-      // Wrap links with tracking
-      const contentWithTracking = emailContent.replace(
+      // Convert plain text to HTML if needed and wrap links with tracking
+      let processedContent = emailContent;
+      
+      // Check if content contains HTML tags
+      const isHtml = /<[a-z][\s\S]*>/i.test(emailContent);
+      
+      if (!isHtml) {
+        // Convert plain text to HTML, preserving line breaks
+        processedContent = emailContent.replace(/\n/g, '<br>');
+        // Wrap the content in basic HTML structure
+        processedContent = `<html><body>${processedContent}</body></html>`;
+      }
+      
+      // Wrap existing links with tracking URLs
+      const contentWithTracking = processedContent.replace(
         /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>/gi,
         (match, url) => {
           const trackingUrl = `${supabaseUrl}/functions/v1/track-email-click?id=${emailData.id}&url=${encodeURIComponent(url)}`;
@@ -90,7 +105,19 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
 
-      finalContent = contentWithTracking + trackingPixel;
+      // Add tracking pixel to the end of the email content
+      finalContent = contentWithTracking.replace('</body>', `${trackingPixel}</body>`);
+      
+      console.log("Enhanced email content with tracking");
+      
+      // Update the email record with the enhanced content
+      await supabase
+        .from("emails")
+        .update({
+          content: finalContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", emailData.id);
     }
 
     // Get user's email settings or use defaults
