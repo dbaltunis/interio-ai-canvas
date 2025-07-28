@@ -209,13 +209,13 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Recipient</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Sent</TableHead>
-                  <TableHead className="font-semibold">Engagement</TableHead>
-                  <TableHead className="font-semibold w-12">Actions</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Subject</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Recipient</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Status</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Sent</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Engagement</TableHead>
+                  <TableHead className="w-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
