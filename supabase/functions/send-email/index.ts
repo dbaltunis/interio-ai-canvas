@@ -80,9 +80,70 @@ const handler = async (req: Request): Promise<Response> => {
     // Add tracking pixel and wrap links only if we have an emailData record
     let finalContent = emailContent;
     if (emailData) {
-      console.log("Adding tracking to email content for email ID:", emailData.id);
+      console.log("Adding enhanced tracking to email content for email ID:", emailData.id);
       
-      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${emailData.id}" width="1" height="1" style="display: none;" />`;
+      // Create enhanced tracking pixel with JavaScript for advanced tracking
+      const enhancedTrackingScript = `
+        <script>
+          (function() {
+            const emailId = "${emailData.id}";
+            const trackingBaseUrl = "${supabaseUrl}/functions/v1/track-email-enhanced";
+            let startTime = Date.now();
+            let isVisible = true;
+            
+            // Track email open
+            fetch(trackingBaseUrl + "?id=" + emailId + "&type=open&screen_resolution=" + screen.width + "x" + screen.height);
+            
+            // Track time spent
+            function trackTimeSpent() {
+              if (isVisible) {
+                const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+                if (timeSpent > 5) { // Only track if viewed for more than 5 seconds
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=time_spent&time_spent=" + timeSpent);
+                }
+              }
+            }
+            
+            // Track visibility changes
+            document.addEventListener('visibilitychange', function() {
+              if (document.hidden) {
+                isVisible = false;
+                trackTimeSpent();
+              } else {
+                isVisible = true;
+                startTime = Date.now();
+                // Track additional open
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=open");
+              }
+            });
+            
+            // Track when user leaves or closes
+            window.addEventListener('beforeunload', trackTimeSpent);
+            window.addEventListener('unload', trackTimeSpent);
+            
+            // Detect screenshots (works in some browsers)
+            if ('permissions' in navigator) {
+              navigator.permissions.query({name: 'screen-wake-lock'}).then(function(result) {
+                if (result.state === 'denied') {
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot");
+                }
+              });
+            }
+            
+            // Alternative screenshot detection
+            document.addEventListener('keydown', function(e) {
+              if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.keyCode === 83)) {
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot");
+              }
+              if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot");
+              }
+            });
+          })();
+        </script>
+      `;
+      
+      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-enhanced?id=${emailData.id}&type=open" width="1" height="1" style="display: none;" />`;
       
       // Convert plain text to HTML if needed and wrap links with tracking
       let processedContent = emailContent;
@@ -94,14 +155,23 @@ const handler = async (req: Request): Promise<Response> => {
         // Convert plain text to HTML, preserving line breaks
         processedContent = emailContent.replace(/\n/g, '<br>');
         // Wrap the content in basic HTML structure
-        processedContent = `<html><body>${processedContent}</body></html>`;
+        processedContent = `<html><head>${enhancedTrackingScript}</head><body>${processedContent}</body></html>`;
+      } else {
+        // Insert tracking script into existing HTML
+        if (processedContent.includes('</head>')) {
+          processedContent = processedContent.replace('</head>', `${enhancedTrackingScript}</head>`);
+        } else if (processedContent.includes('<body>')) {
+          processedContent = processedContent.replace('<body>', `<body>${enhancedTrackingScript}`);
+        } else {
+          processedContent = `${enhancedTrackingScript}${processedContent}`;
+        }
       }
       
       // Wrap existing links with tracking URLs
       const contentWithTracking = processedContent.replace(
         /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>/gi,
         (match, url) => {
-          const trackingUrl = `${supabaseUrl}/functions/v1/track-email-click?id=${emailData.id}&url=${encodeURIComponent(url)}`;
+          const trackingUrl = `${supabaseUrl}/functions/v1/track-email-enhanced?id=${emailData.id}&type=click&url=${encodeURIComponent(url)}`;
           return match.replace(url, trackingUrl);
         }
       );
@@ -109,7 +179,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Add tracking pixel to the end of the email content
       finalContent = contentWithTracking.replace('</body>', `${trackingPixel}</body>`);
       
-      console.log("Enhanced email content with tracking");
+      console.log("Enhanced email content with advanced tracking");
       
       // Update the email record with the enhanced content
       await supabase
@@ -187,6 +257,9 @@ const handler = async (req: Request): Promise<Response> => {
           };
           
           const mimeType = mimeTypes[extension] || 'application/octet-stream';
+          
+          // Create tracked download URL for attachment
+          const trackedDownloadUrl = `${supabaseUrl}/functions/v1/track-email-enhanced?id=${emailData.id}&type=download&attachment=${encodeURIComponent(filename)}&url=${encodeURIComponent(supabaseUrl + '/storage/v1/object/public/email-attachments/' + attachmentPath)}`;
           
           attachments.push({
             content: base64Content,

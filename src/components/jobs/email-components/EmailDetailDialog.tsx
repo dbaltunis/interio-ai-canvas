@@ -292,6 +292,11 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {new Date(openEvent.created_at).toLocaleString()}
+                            {openEvent.event_data?.screen_resolution && (
+                              <span className="ml-2 text-xs text-gray-400">
+                                ({openEvent.event_data.screen_resolution})
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -309,6 +314,72 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {new Date(clickEvent.created_at).toLocaleString()}
+                            {clickEvent.event_data?.targetUrl && (
+                              <div className="text-xs text-gray-400 truncate max-w-xs">
+                                → {clickEvent.event_data.targetUrl}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {/* Download Events */}
+                  {emailAnalytics
+                    .filter(event => event.event_type === 'download')
+                    .map((downloadEvent, index) => (
+                      <div key={downloadEvent.id} className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div>
+                          <div className="font-medium">
+                            Attachment Downloaded {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(downloadEvent.created_at).toLocaleString()}
+                            {downloadEvent.event_data?.attachmentName && (
+                              <div className="text-xs text-gray-400">
+                                📎 {downloadEvent.event_data.attachmentName}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {/* Screenshot Events */}
+                  {emailAnalytics
+                    .filter(event => event.event_type === 'screenshot')
+                    .map((screenshotEvent, index) => (
+                      <div key={screenshotEvent.id} className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div>
+                          <div className="font-medium">
+                            Screenshot Detected {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(screenshotEvent.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {/* Time Spent Events */}
+                  {emailAnalytics
+                    .filter(event => event.event_type === 'time_spent')
+                    .map((timeEvent, index) => (
+                      <div key={timeEvent.id} className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div>
+                          <div className="font-medium">
+                            Time Spent Reading
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(timeEvent.created_at).toLocaleString()}
+                            {timeEvent.event_data?.timeSpent && (
+                              <span className="ml-2 text-xs font-medium text-blue-600">
+                                ⏱️ {Math.floor(timeEvent.event_data.timeSpent / 60)}m {timeEvent.event_data.timeSpent % 60}s
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
