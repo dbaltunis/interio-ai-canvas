@@ -282,12 +282,12 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                 </div>
                 <div className="text-2xl font-bold">
                   {(() => {
-                    const devices = emailAnalytics.map(e => {
-                      const ua = e.user_agent || '';
-                      if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
-                      if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
-                      return 'Desktop';
-                    });
+                     const devices = emailAnalytics.map(e => {
+                       const ua = e.user_agent || '';
+                       if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod') || ua.includes('BlackBerry') || ua.includes('Windows Phone')) return 'Mobile';
+                       if (ua.includes('Tablet')) return 'Tablet';
+                       return 'Desktop';
+                     });
                     return new Set(devices).size;
                   })()}
                 </div>
