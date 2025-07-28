@@ -114,6 +114,6 @@ export const useSchedulerSlots = (date?: Date) => {
       console.log('Generated slots:', slots.length, slots);
       return slots;
     },
-    enabled: !!schedulers?.length,
+    enabled: !!schedulers?.length, // Only run when we have schedulers
   });
 };

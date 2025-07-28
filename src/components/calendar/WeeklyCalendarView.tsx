@@ -22,8 +22,8 @@ interface WeeklyCalendarViewProps {
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
-  const { data: schedulerSlots } = useSchedulerSlots(currentDate);
-  const { data: bookedAppointments } = useAppointmentBookings();
+  const { data: schedulerSlots } = useSchedulerSlots(); // Remove currentDate parameter
+  const { data: bookedAppointments } = useAppointmentBookings(); // Remove currentDate parameter
   const { data: schedulers } = useAppointmentSchedulers();
   
   // Debug logging
