@@ -3,23 +3,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, addDays, parseISO } from "date-fns";
-import { Calendar, Clock, MapPin, Mail, Phone, User, Check, ArrowLeft } from "lucide-react";
-import { useAppointmentBooking } from "@/hooks/useAppointmentBooking";
+import { format, addDays, parseISO, isAfter, startOfDay, isSameDay } from "date-fns";
+import { Calendar, Clock, MapPin, Mail, Phone, User, Check, ArrowLeft, ChevronRight } from "lucide-react";
+import { usePublicScheduler } from "@/hooks/useAppointmentSchedulers";
+import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
+import { useCreateBooking } from "@/hooks/useAppointmentBookings";
+import { cn } from "@/lib/utils";
 
 interface BookingConfirmationProps {
   slug: string;
 }
 
 export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
-  const { scheduler, isLoading: schedulerLoading } = useAppointmentBooking(slug);
+  const { data: scheduler, isLoading: schedulerLoading } = usePublicScheduler(slug);
+  const { data: allSlots } = useSchedulerSlots();
+  const createBooking = useCreateBooking();
   const { toast } = useToast();
+
+  // Helper function to get available slots for a specific date
+  const getAvailableSlotsForDate = (date: Date) => {
+    if (!allSlots) return [];
+    
+    return allSlots.filter(slot => 
+      isSameDay(slot.date, date) && 
+      slot.schedulerId === scheduler?.id
+    );
+  };
   const [step, setStep] = useState(1); // 1: booking, 2: confirmation
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>();
@@ -32,46 +48,45 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   });
 
   // Submit booking
-  const submitBooking = useMutation({
-    mutationFn: async () => {
-      if (!selectedDate || !selectedTime || !scheduler) {
-        throw new Error("Missing required booking information");
-      }
+  const handleSubmitBooking = async () => {
+    if (!selectedDate || !selectedTime || !scheduler) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      const { error } = await supabase
-        .from("appointments_booked")
-        .insert({
-          scheduler_id: scheduler.id,
-          appointment_date: format(selectedDate, 'yyyy-MM-dd'),
-          appointment_time: selectedTime,
-          customer_name: clientInfo.name,
-          customer_email: clientInfo.email,
-          customer_phone: clientInfo.phone || null,
-          notes: clientInfo.notes || null,
-          customer_timezone: clientInfo.timezone,
-          appointment_timezone: clientInfo.timezone,
-          status: 'confirmed'
-        });
+    try {
+      await createBooking.mutateAsync({
+        scheduler_id: scheduler.id,
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        appointment_time: selectedTime,
+        customer_name: clientInfo.name,
+        customer_email: clientInfo.email,
+        customer_phone: clientInfo.phone || undefined,
+        notes: clientInfo.notes || undefined,
+        customer_timezone: clientInfo.timezone,
+        appointment_timezone: clientInfo.timezone,
+        status: 'confirmed'
+      });
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
       setStep(2);
       toast({
         title: "Booking Confirmed! 🎉",
         description: "You will receive a confirmation email shortly.",
         duration: 5000,
       });
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error("Booking error:", error);
       toast({
         title: "Booking Failed",
         description: "Please try again or contact support.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
   if (schedulerLoading) {
     return (
@@ -202,11 +217,85 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
                 Select Date & Time
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {/* Date selection would go here - using existing PublicBookingForm logic */}
-              <div className="text-center text-muted-foreground py-8">
-                Date and time selection interface would be integrated here from the existing PublicBookingForm component.
+            <CardContent className="space-y-6">
+              {/* Date Selection */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">Choose Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-between text-left font-normal h-12",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "EEEE, MMMM d") : "Select a date"}
+                      </div>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => {
+                        const today = startOfDay(new Date());
+                        if (!isAfter(date, today) && !isSameDay(date, today)) return true;
+                        
+                        // Check if date has available slots
+                        const dateSlots = getAvailableSlotsForDate(date);
+                        return dateSlots.length === 0;
+                      }}
+                      className="rounded-md border"
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* Time Selection */}
+              {selectedDate && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Available Times</Label>
+                  {(() => {
+                    const availableSlots = getAvailableSlotsForDate(selectedDate);
+                    
+                    if (availableSlots.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>No available times for this date</p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {availableSlots.map(slot => (
+                          <Button
+                            key={slot.startTime}
+                            variant={selectedTime === slot.startTime ? "default" : "outline"}
+                            size="lg"
+                            disabled={slot.isBooked}
+                            onClick={() => setSelectedTime(slot.startTime)}
+                            className={cn(
+                              "h-12 text-sm font-medium",
+                              slot.isBooked && "opacity-50 cursor-not-allowed",
+                              selectedTime === slot.startTime && "shadow-md"
+                            )}
+                          >
+                            {slot.startTime}
+                          </Button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -265,12 +354,12 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
               </div>
 
               <Button
-                onClick={() => submitBooking.mutate()}
-                disabled={!clientInfo.name || !clientInfo.email || !selectedDate || !selectedTime || submitBooking.isPending}
+                onClick={handleSubmitBooking}
+                disabled={!clientInfo.name || !clientInfo.email || !selectedDate || !selectedTime || createBooking.isPending}
                 className="w-full"
                 size="lg"
               >
-                {submitBooking.isPending ? (
+                {createBooking.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Confirming Booking...

@@ -55,15 +55,28 @@ export const useSchedulerSlots = (date?: Date) => {
           const dayName = format(d, 'EEEE').toLowerCase();
           console.log('Processing date:', format(d, 'yyyy-MM-dd'), 'dayName:', dayName);
           
-          const dayAvailability = availabilityArray.find(day => 
-            day.day.toLowerCase() === dayName
-          );
+          // More flexible day matching - try both full name and short versions
+          const dayAvailability = availabilityArray.find(day => {
+            const dayKey = day.day.toLowerCase();
+            return dayKey === dayName || 
+                   dayKey === dayName.substring(0, 3) || // "mon", "tue", etc.
+                   dayKey === dayName.substring(0, 4);   // "mond", "tues", etc.
+          });
           
           console.log('Day availability for', dayName, ':', dayAvailability);
 
           if (dayAvailability?.enabled && dayAvailability.timeSlots?.length) {
             for (const timeSlot of dayAvailability.timeSlots) {
               const slotDate = format(d, 'yyyy-MM-dd');
+              const slotDateTime = new Date(`${slotDate}T${timeSlot.start}:00`);
+              
+              // Skip past time slots (only for today)
+              const now = new Date();
+              const isToday = isSameDay(d, now);
+              if (isToday && slotDateTime <= now) {
+                continue;
+              }
+              
               const isBooked = bookedAppointments?.some(booking => 
                 booking.scheduler_id === scheduler.id &&
                 booking.appointment_date === slotDate &&
@@ -74,7 +87,7 @@ export const useSchedulerSlots = (date?: Date) => {
                 id: `${scheduler.id}-${slotDate}-${timeSlot.start}`,
                 schedulerId: scheduler.id,
                 schedulerName: scheduler.name,
-                date: d,
+                date: new Date(d), // Create new date object to avoid reference issues
                 startTime: timeSlot.start,
                 endTime: timeSlot.end,
                 duration: scheduler.duration,

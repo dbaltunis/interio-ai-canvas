@@ -53,6 +53,8 @@ export const useCreateBooking = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointment-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler-slots"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast({
         title: "Success",
         description: "Booking created successfully",

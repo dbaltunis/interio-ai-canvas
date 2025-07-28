@@ -1,7 +1,8 @@
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
-import { useBookedAppointments } from "@/hooks/useBookedAppointments";
+import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
+import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,7 +23,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
   const { data: schedulerSlots } = useSchedulerSlots(currentDate);
-  const { data: bookedAppointments } = useBookedAppointments(currentDate);
+  const { data: bookedAppointments } = useAppointmentBookings();
+  const { data: schedulers } = useAppointmentSchedulers();
   
   // Debug logging
   console.log('WeeklyCalendarView render:');
@@ -115,14 +117,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         return matches;
       })
       .map(booking => {
+        // Find the scheduler to get duration
+        const scheduler = schedulers?.find(s => s.id === booking.scheduler_id);
+        const duration = scheduler?.duration || 60; // Default to 60 minutes if not found
+        
         // Convert booking to event format with distinct styling
         const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
-        const endDateTime = new Date(appointmentDateTime.getTime() + (booking.scheduler.duration * 60 * 1000));
+        const endDateTime = new Date(appointmentDateTime.getTime() + (duration * 60 * 1000));
         
         return {
           id: `booking-${booking.id}`,
           title: `${booking.customer_name}`, // Clear customer name only
-          description: `${booking.scheduler.name}`, // Scheduler name as description
+          description: scheduler?.name || 'Appointment', // Scheduler name as description
           start_time: appointmentDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
           appointment_type: 'booked_appointment',
@@ -133,7 +139,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           isBooking: true,
           bookingData: booking,
           customer_name: booking.customer_name,
-          scheduler_name: booking.scheduler.name
+          scheduler_name: scheduler?.name || 'Unknown'
         };
       });
   };
