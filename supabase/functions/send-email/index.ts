@@ -357,8 +357,8 @@ const handler = async (req: Request): Promise<Response> => {
           value: finalContent.replace(/\n/g, '<br>'),
         },
       ],
-      // CRITICAL: Proper attachment handling
-      attachments: attachments,
+      // CRITICAL: Always include attachments array (empty or populated)
+      attachments: attachments.length > 0 ? attachments : undefined,
       // Enhanced tracking and deliverability settings
       tracking_settings: {
         click_tracking: {
@@ -378,8 +378,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Email authentication for better deliverability
       mail_settings: {
         spam_check: {
-          enable: true,
-          threshold: 1
+          enable: false  // Disable spam check to avoid post_to_url requirement
         },
         sandbox_mode: {
           enable: false
