@@ -451,8 +451,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                   }`}
                 >
-                  {time.endsWith(':00') && (
-                    <span className="font-medium text-[10px] absolute -top-2 right-2">{time}</span>
+                  {time.endsWith(':00') && index > 0 && (
+                    <span className="font-medium text-[10px] absolute -top-5 right-2">{time}</span>
                   )}
                 </div>
               ))}
