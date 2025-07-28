@@ -511,6 +511,7 @@ const CalendarView = () => {
             <WeeklyCalendarView 
               currentDate={currentDate}
               onEventClick={handleEventClick}
+              sidebarCollapsed={sidebarCollapsed}
               onTimeSlotClick={handleTimeSlotClick}
               filteredAppointments={filteredAppointments}
             />
