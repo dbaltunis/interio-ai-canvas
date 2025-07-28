@@ -268,8 +268,16 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                             {email.click_count} clicks
                           </Badge>
                         )}
-                        {email.open_count === 0 && email.click_count === 0 && email.status === 'delivered' && (
-                          <span className="text-gray-400">No activity</span>
+                        {email.open_count === 0 && email.click_count === 0 && ['sent', 'delivered'].includes(email.status) && (
+                          <Badge variant="outline" className="text-orange-500 border-orange-300">
+                            📊 Tracking active
+                          </Badge>
+                        )}
+                        {email.open_count === 0 && email.click_count === 0 && email.status === 'failed' && (
+                          <span className="text-red-500">❌ Tracking unavailable</span>
+                        )}
+                        {email.open_count === 0 && email.click_count === 0 && email.status === 'queued' && (
+                          <span className="text-gray-400">⏳ Pending send</span>
                         )}
                       </div>
                     </TableCell>
