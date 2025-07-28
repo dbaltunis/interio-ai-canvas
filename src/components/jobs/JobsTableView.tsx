@@ -250,7 +250,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-lg border bg-card">`
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
