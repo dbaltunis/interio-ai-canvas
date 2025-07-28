@@ -75,6 +75,25 @@ const handler = async (req: Request): Promise<Response> => {
       finalContent = contentWithTracking + trackingPixel;
     }
 
+    // Get user's email settings or use defaults
+    let fromEmail = "darius@curtainscalculator.com";
+    let fromName = "Darius from Curtains Calculator";
+    
+    if (user_id) {
+      const { data: emailSettings } = await supabase
+        .from("email_settings")
+        .select("from_email, from_name, active")
+        .eq("user_id", user_id)
+        .eq("active", true)
+        .single();
+      
+      if (emailSettings?.from_email) {
+        fromEmail = emailSettings.from_email;
+        fromName = emailSettings.from_name || fromName;
+        console.log("Using user email settings:", { fromEmail, fromName });
+      }
+    }
+
     // Get SendGrid API key
     const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
     if (!sendGridApiKey) {
@@ -98,8 +117,8 @@ const handler = async (req: Request): Promise<Response> => {
           },
         ],
         from: {
-          email: "darius@curtainscalculator.com",
-          name: "Darius from Curtains Calculator",
+          email: fromEmail,
+          name: fromName,
         },
         content: [
           {
