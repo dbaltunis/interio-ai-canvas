@@ -24,7 +24,14 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useEmails } from "@/hooks/useEmails";
+import { AttachmentInfo } from "../email-components/AttachmentInfo";
 import { format } from "date-fns";
+
+interface AttachmentData {
+  filename: string;
+  type: string;
+  size: number;
+}
 
 interface ProjectEmailHistoryProps {
   projectId: string;
@@ -280,6 +287,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                     <TableHead>Status</TableHead>
                     <TableHead>Sent</TableHead>
                     <TableHead>Engagement</TableHead>
+                    <TableHead>Attachments</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -317,6 +325,12 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                             </Badge>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <AttachmentInfo 
+                          attachments={(email.attachment_info as unknown as AttachmentData[]) || []} 
+                          className="max-w-[150px]"
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
