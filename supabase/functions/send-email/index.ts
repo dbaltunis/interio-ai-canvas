@@ -139,42 +139,127 @@ const handler = async (req: Request): Promise<Response> => {
               }
             });
             
+            
             // Enhanced screenshot detection
             let screenshotAttempts = 0;
+            let lastVisibilityChange = 0;
             
-            // Keyboard shortcuts for screenshots
+            // Comprehensive keyboard shortcuts for screenshots
             document.addEventListener('keydown', function(e) {
               let isScreenshot = false;
               
-              // Windows/Linux: Ctrl+Shift+S, Alt+PrintScreen, PrintScreen
+              // Windows/Linux screenshot shortcuts
               if ((e.ctrlKey && e.shiftKey && e.key === 'S') || 
                   (e.altKey && e.key === 'PrintScreen') || 
                   e.key === 'PrintScreen' || 
-                  e.keyCode === 44) {
+                  e.keyCode === 44 ||
+                  e.key === 'F12' || // Developer tools (often used before screenshots)
+                  (e.ctrlKey && e.shiftKey && e.key === 'I')) { // Developer tools
                 isScreenshot = true;
               }
               
-              // Mac: Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5
-              if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
+              // Mac screenshot shortcuts
+              if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5' || e.key === '6')) {
+                isScreenshot = true;
+              }
+              
+              // Browser extensions screenshot shortcuts
+              if ((e.ctrlKey && e.shiftKey && e.key === 'X') || // Common extension shortcut
+                  (e.altKey && e.shiftKey && e.key === 'S') || // Another common shortcut
+                  (e.ctrlKey && e.key === 'F12')) { // Developer tools
                 isScreenshot = true;
               }
               
               if (isScreenshot) {
                 screenshotAttempts++;
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&attempt=" + screenshotAttempts);
+                const timestamp = Date.now();
+                const deviceInfo = {
+                  userAgent: navigator.userAgent,
+                  platform: navigator.platform,
+                  language: navigator.language,
+                  screenRes: screen.width + "x" + screen.height,
+                  timestamp: timestamp
+                };
+                
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&attempt=" + screenshotAttempts + 
+                      "&device=" + encodeURIComponent(deviceInfo.platform) + 
+                      "&screen_res=" + deviceInfo.screenRes +
+                      "&timestamp=" + timestamp);
+                
+                console.log('Screenshot detected via keyboard:', e.key, 'Platform:', deviceInfo.platform);
               }
             });
             
-            // Mobile screenshot detection (volume down + power button simulation)
-            let volumePressed = false;
+            // Enhanced mobile screenshot detection
+            let isAppInBackground = false;
+            let lastBlurTime = 0;
+            
+            // Detect app going to background (mobile screenshot behavior)
             window.addEventListener('blur', function() {
+              lastBlurTime = Date.now();
+              isAppInBackground = true;
+              
               setTimeout(function() {
-                if (document.hidden) {
+                if (isAppInBackground && document.hidden) {
                   screenshotAttempts++;
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&mobile=true&attempt=" + screenshotAttempts);
+                  const timestamp = Date.now();
+                  
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&mobile=true&attempt=" + screenshotAttempts + 
+                        "&blur_duration=" + (timestamp - lastBlurTime) + 
+                        "&timestamp=" + timestamp);
+                  
+                  console.log('Mobile screenshot detected via blur/hidden');
                 }
+              }, 200);
+            });
+            
+            window.addEventListener('focus', function() {
+              isAppInBackground = false;
+            });
+            
+            // Detect visibility changes that might indicate screenshots
+            document.addEventListener('visibilitychange', function() {
+              const now = Date.now();
+              const timeSinceLastChange = now - lastVisibilityChange;
+              lastVisibilityChange = now;
+              
+              // Quick visibility changes often indicate screenshot activity
+              if (document.hidden && timeSinceLastChange < 300) {
+                screenshotAttempts++;
+                
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&visibility_change=true&attempt=" + screenshotAttempts + 
+                      "&change_speed=" + timeSinceLastChange + 
+                      "&timestamp=" + now);
+                
+                console.log('Screenshot detected via rapid visibility change:', timeSinceLastChange + 'ms');
+              }
+            });
+            
+            // Detect context menu (right-click) which might precede screenshot
+            document.addEventListener('contextmenu', function(e) {
+              setTimeout(function() {
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=context_menu&timestamp=" + Date.now());
+                console.log('Context menu detected - potential screenshot preparation');
               }, 100);
             });
+            
+            // Detect developer tools opening (often used before screenshots)
+            let devtools = {
+              open: false,
+              orientation: null
+            };
+            
+            setInterval(function() {
+              if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
+                if (!devtools.open) {
+                  devtools.open = true;
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=devtools_opened&timestamp=" + Date.now());
+                  console.log('Developer tools opened - potential screenshot activity');
+                }
+              } else {
+                devtools.open = false;
+              }
+            }, 1000);
             
             // Track when user leaves
             window.addEventListener('beforeunload', function() {
