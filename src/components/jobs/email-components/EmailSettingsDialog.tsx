@@ -58,13 +58,18 @@ export const EmailSettingsDialog = ({
             />
           </div>
           <div>
-            <Label htmlFor="signature">Email Signature (Optional)</Label>
+            <Label htmlFor="signature">Email Signature</Label>
             <Textarea
               id="signature"
-              placeholder="Best regards,&#10;Your Name&#10;Your Company"
+              placeholder="Best regards,&#10;Your Name&#10;Your Company&#10;&#10;📧 your@email.com | 📞 +1 (555) 123-4567&#10;🌐 www.yourcompany.com"
               value={emailSettings.signature}
               onChange={(e) => onSave({ ...emailSettings, signature: e.target.value })}
+              className="min-h-[120px]"
             />
+            <div className="mt-2 text-sm text-muted-foreground">
+              <p>Pro tip: Use emojis and formatting to make your signature stand out!</p>
+              <p>Example: 📧 email | 📞 phone | 🌐 website | 📍 location</p>
+            </div>
           </div>
           <Button onClick={() => onOpenChange(false)} className="w-full">
             Save Settings
