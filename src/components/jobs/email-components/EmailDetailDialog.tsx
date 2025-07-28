@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink, Download, Camera, Smartphone, Activity, Globe, Monitor } from "lucide-react";
+import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink, Download, Camera, Smartphone, Activity, Globe, Monitor, Circle, CheckCircle, XCircle, LogOut } from "lucide-react";
+import { format } from "date-fns";
 import { EmailStatusBadge } from "./EmailStatusBadge";
+import { EmailAnalyticsDetail } from "./EmailAnalyticsDetail";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
@@ -369,11 +371,14 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             </Card>
           )}
 
-          {/* Email Activity Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Activity Timeline</CardTitle>
-            </CardHeader>
+            {/* Enhanced Email Analytics */}
+            <EmailAnalyticsDetail analytics={emailAnalytics} />
+
+            {/* Email Activity Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Email Activity Timeline</CardTitle>
+              </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">

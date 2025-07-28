@@ -16,7 +16,7 @@ const corsHeaders = {
 
 interface TrackingEvent {
   emailId: string;
-  eventType: 'open' | 'click' | 'download' | 'screenshot' | 'time_spent';
+  eventType: 'open' | 'click' | 'download' | 'screenshot' | 'time_spent' | 'engagement' | 'session_end' | 'delete';
   eventData?: any;
   userAgent?: string;
   ipAddress?: string;
@@ -38,6 +38,10 @@ serve(async (req: Request) => {
     const targetUrl = url.searchParams.get("url");
     const attachmentName = url.searchParams.get("attachment");
     const timeSpent = url.searchParams.get("time_spent");
+    const scrollPercent = url.searchParams.get("scroll_percent");
+    const platform = url.searchParams.get("platform");
+    const language = url.searchParams.get("language");
+    const screenResolution = url.searchParams.get("screen_resolution");
 
     console.log("Tracking event:", { emailId, eventType, targetUrl, attachmentName, timeSpent });
 
@@ -58,8 +62,11 @@ serve(async (req: Request) => {
         targetUrl,
         attachmentName,
         timeSpent: timeSpent ? parseInt(timeSpent) : undefined,
+        scrollPercent: scrollPercent ? parseInt(scrollPercent) : undefined,
+        platform,
+        language,
         referrer: req.headers.get("referer"),
-        screenResolution: url.searchParams.get("screen_resolution"),
+        screenResolution,
       },
       userAgent,
       ipAddress,
@@ -111,6 +118,13 @@ async function trackEvent(event: TrackingEvent) {
         if (eventData.timeSpent) {
           updateData.time_spent_seconds = (emailData.time_spent_seconds || 0) + eventData.timeSpent;
         }
+        break;
+      
+      case 'engagement':
+      case 'screenshot':
+      case 'session_end':
+      case 'delete':
+        // These events don't update email counters but are tracked in analytics
         break;
     }
 
