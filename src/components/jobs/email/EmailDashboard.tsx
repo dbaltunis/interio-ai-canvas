@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { EmailDetailDialog } from "../email-components/EmailDetailDialog";
 import { EmailRowActions } from "../email-components/EmailRowActions";
 import { FollowUpComposer } from "../email-components/FollowUpComposer";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EmailDashboardProps {
   showFilters?: boolean;
@@ -37,6 +39,47 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const { data: projects = [] } = useProjects();
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscriptions for email updates
+  useEffect(() => {
+    const emailChannel = supabase
+      .channel('email-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'emails'
+        },
+        (payload) => {
+          console.log('Email table change detected:', payload);
+          // Invalidate email queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['emails'] });
+          queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'email_analytics'
+        },
+        (payload) => {
+          console.log('Email analytics change detected:', payload);
+          // Invalidate all email-related queries
+          queryClient.invalidateQueries({ queryKey: ['emails'] });
+          queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+          queryClient.invalidateQueries({ queryKey: ['email-analytics'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(emailChannel);
+    };
+  }, [queryClient]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
