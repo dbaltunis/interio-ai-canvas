@@ -22,9 +22,18 @@ interface WeeklyCalendarViewProps {
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
-  const { data: schedulerSlots } = useSchedulerSlots(); // Remove currentDate parameter
-  const { data: bookedAppointments } = useAppointmentBookings(); // Remove currentDate parameter
-  const { data: schedulers } = useAppointmentSchedulers();
+  const { data: schedulerSlots, isLoading: slotsLoading } = useSchedulerSlots(); 
+  const { data: bookedAppointments, isLoading: bookingsLoading } = useAppointmentBookings(); 
+  const { data: schedulers, isLoading: schedulersLoading } = useAppointmentSchedulers();
+  
+  // Debug logging for data fetching
+  console.log('Calendar data status:', { 
+    appointments: displayAppointments?.length, 
+    schedulerSlots: schedulerSlots?.length, 
+    bookedAppointments: bookedAppointments?.length,
+    schedulers: schedulers?.length,
+    loading: { slotsLoading, bookingsLoading, schedulersLoading }
+  });
   
   // Removed excessive debug logging to prevent infinite re-renders
   const { data: currentUserProfile } = useCurrentUserProfile();
@@ -137,9 +146,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   // Get available appointment slots for a specific date
   const getAvailableSlotsForDate = (date: Date) => {
-    if (!schedulerSlots?.length) return [];
+    if (!schedulerSlots?.length) {
+      console.log('No scheduler slots available for date:', format(date, 'yyyy-MM-dd'));
+      return [];
+    }
     
-    return schedulerSlots
+    const availableSlots = schedulerSlots
       .filter(slot => isSameDay(slot.date, date) && !slot.isBooked)
       .map(slot => {
         // Calculate accurate end time based on duration
@@ -160,6 +172,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           user_id: null
         };
       });
+    
+    console.log('Available slots for', format(date, 'yyyy-MM-dd'), ':', availableSlots.length);
+    return availableSlots;
   };
 
   // Combine regular events, booked appointments, and available slots
@@ -196,10 +211,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     });
   };
 
-  // Calculate event position and styling with accurate time positioning
+  // Calculate event position and styling with accurate time positioning and validation
   const calculateEventStyle = (startTime: Date, endTime: Date, isExtendedHours: boolean = false) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
+    
+    // CRITICAL FIX: Validate that end time is after start time
+    if (endTime <= startTime) {
+      console.warn('Invalid appointment: end time before start time', { 
+        start: startTime.toISOString(), 
+        end: endTime.toISOString() 
+      });
+      // Default to 1-hour duration for invalid appointments
+      endTime = new Date(startTime.getTime() + (60 * 60 * 1000));
+    }
     
     // Calculate position based on 30-minute slots (20px each)
     const slotHeight = 20;
@@ -220,7 +245,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const top = (totalMinutesFromMidnight * 20) / 30;
 
     // Calculate duration and height with accurate minute conversion
-    const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+    const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
     const height = Math.max((durationInMinutes * 20) / 30, 15); // Minimum 15px height
 
     return { top, height, visible: true };
@@ -502,20 +527,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         </div>
                       )}
                       
-                      {/* Current time indicator */}
+                      {/* Current time indicator with improved accuracy */}
                       {isCurrentDay && (() => {
                         const now = new Date();
                         const currentHour = now.getHours();
                         const currentMinutes = now.getMinutes();
                         
-                        // Calculate position from start of visible time range
-                        let minutesFromStart = currentHour * 60 + currentMinutes;
+                        // Calculate exact position from start of visible time range
+                        let totalMinutesFromMidnight = currentHour * 60 + currentMinutes;
                         if (!showExtendedHours) {
-                          minutesFromStart -= 6 * 60; // Subtract 6 AM offset for working hours
-                          if (minutesFromStart < 0) return null; // Don't show if before visible hours
+                          totalMinutesFromMidnight -= 6 * 60; // Subtract 6 AM offset for working hours
+                          if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
                         }
                         
-                        const top = (minutesFromStart / 30) * 20;
+                        // Use the same calculation as events for consistency
+                        const top = (totalMinutesFromMidnight * 20) / 30;
                         
                         return (
                           <div 
@@ -523,14 +549,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             style={{ top: `${top}px` }}
                           >
                             <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                            <div className="absolute right-2 -top-2 text-[10px] text-red-500 font-medium bg-white px-1 rounded">
+                              {format(now, 'HH:mm')}
+                            </div>
                           </div>
                         );
                       })()}
                       
-                      {/* Events and Appointments */}
+                      {/* Events and Appointments with validation */}
                       {dayEvents.map((event, eventIndex) => {
                         const startTime = new Date(event.start_time);
                         const endTime = new Date(event.end_time);
+                        
+                        // Skip events with completely invalid times
+                        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                          console.warn('Skipping event with invalid date:', event);
+                          return null;
+                        }
                         
                         const style = calculateEventStyle(startTime, endTime, showExtendedHours);
                         
