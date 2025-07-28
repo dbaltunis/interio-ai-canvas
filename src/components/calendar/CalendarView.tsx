@@ -507,14 +507,15 @@ const CalendarView = () => {
 
         {/* Calendar Content */}
         <div className="flex-1 overflow-hidden min-h-0">
-          {view === 'week' && (
-            <WeeklyCalendarView 
-              currentDate={currentDate}
-              onEventClick={handleEventClick}
-              onTimeSlotClick={handleTimeSlotClick}
-              filteredAppointments={filteredAppointments}
-            />
-          )}
+            {view === 'week' && (
+              <WeeklyCalendarView 
+                currentDate={currentDate}
+                onEventClick={handleEventClick}
+                onTimeSlotClick={handleTimeSlotClick}
+                filteredAppointments={filteredAppointments}
+                sidebarCollapsed={sidebarCollapsed}
+              />
+            )}
           {view === 'month' && (
             <div className="h-full flex flex-col overflow-hidden">
               {renderMonthView()}
