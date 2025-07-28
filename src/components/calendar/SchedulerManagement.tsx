@@ -173,6 +173,18 @@ export const SchedulerManagement = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => {
+                    // TODO: Implement edit functionality
+                    console.log('Edit scheduler:', scheduler.id);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleDelete(scheduler.id, scheduler.name)}
                   disabled={deleteScheduler.isPending}
                 >
