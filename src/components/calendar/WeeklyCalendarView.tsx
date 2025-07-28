@@ -196,7 +196,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     });
   };
 
-  // Calculate event position and styling
+  // Calculate event position and styling with accurate time positioning
   const calculateEventStyle = (startTime: Date, endTime: Date, isExtendedHours: boolean = false) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
@@ -204,21 +204,24 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     // Calculate position based on 30-minute slots (20px each)
     const slotHeight = 20;
     
-    // Calculate minutes from start of day (00:00)
-    let minutesFromStart = startHour * 60 + startMinutes;
+    // Calculate total minutes from midnight (00:00)
+    let totalMinutesFromMidnight = startHour * 60 + startMinutes;
     
-    // For working hours view, adjust the offset
+    // For working hours view (6 AM to 10 PM), adjust the offset
     if (!isExtendedHours) {
-      minutesFromStart -= 6 * 60; // Subtract 6 AM offset
+      const workingHoursStartOffset = 6 * 60; // 6 AM in minutes
+      totalMinutesFromMidnight -= workingHoursStartOffset;
       // If event starts before 6 AM, position it at the top
-      if (minutesFromStart < 0) minutesFromStart = 0;
+      if (totalMinutesFromMidnight < 0) totalMinutesFromMidnight = 0;
     }
     
-    const top = (minutesFromStart / 30) * slotHeight;
+    // Convert minutes to pixels: each 30-minute slot = 20px
+    // So each minute = 20/30 = 0.6667px
+    const top = (totalMinutesFromMidnight * 20) / 30;
 
-    // Calculate duration and height
+    // Calculate duration and height with accurate minute conversion
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * slotHeight, 15);
+    const height = Math.max((durationInMinutes * 20) / 30, 15); // Minimum 15px height
 
     return { top, height, visible: true };
   };
@@ -549,38 +552,39 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction between events, bookings, and available slots
                         const getEventStyling = (event: any) => {
                           if (event.isAvailableSlot) {
-                            // AVAILABLE APPOINTMENT SLOTS: Google Calendar style - clean, minimal
+                            // AVAILABLE APPOINTMENT SLOTS: Compact Google Calendar style
                             return {
-                              backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue with very low opacity
+                              backgroundColor: 'rgba(59, 130, 246, 0.08)', // Very subtle blue
                               borderColor: '#3B82F6', // Blue-500
-                              textColor: 'text-blue-700',
+                              textColor: 'text-blue-600',
                               icon: <Share2 className="h-3 w-3" />,
-                              label: '',
+                              label: 'Available',
                               borderRadius: '4px',
                               pattern: 'dashed',
                               isDashed: true,
-                              isCompact: true
+                              isCompact: true,
+                              minHeight: 24 // Minimum compact height
                             };
                           } else if (event.isBooking) {
-                            // BOOKED APPOINTMENTS: Green, solid, rounded corners
+                            // BOOKED APPOINTMENTS: Green, solid, professional
                             return {
                               backgroundColor: '#10B981', // Emerald-500
                               borderColor: '#047857', // Emerald-700
                               textColor: 'text-white',
                               icon: <UserCheck className="h-3 w-3" />,
-                              label: '',
+                              label: 'Booked',
                               borderRadius: '6px',
                               pattern: 'solid'
                             };
                           } else {
-                            // PERSONAL EVENTS: Blue, gradient, water-drop corners
+                            // PERSONAL EVENTS: Blue, gradient, rounded
                             const color = event.color || '#3B82F6';
                             return {
                               backgroundColor: `${color}90`, // 90% opacity
                               borderColor: color,
                               textColor: 'text-white',
                               icon: <CalendarCheck className="h-3 w-3" />,
-                              label: '',
+                              label: 'Event',
                               borderRadius: '6px',
                               pattern: 'gradient'
                             };
@@ -596,25 +600,30 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             disabled: event.isBooking || event.isAvailableSlot, // Disable dragging for booked appointments and available slots
                           });
 
+                          // Apply compact styling for available slots
+                          const finalHeight = event.isAvailableSlot && eventStyling.isCompact 
+                            ? Math.max(style.height, eventStyling.minHeight || 24)
+                            : style.height;
+
                           const eventStyle = {
                             top: `${style.top}px`,
-                            height: `${style.height}px`,
+                            height: `${finalHeight}px`,
                             width: eventWidth,
                             left: eventLeft,
-                            zIndex: event.isAvailableSlot ? 5 + eventIndex : 10 + eventIndex, // Lower z-index for available slots
+                            zIndex: event.isAvailableSlot ? 5 + eventIndex : 10 + eventIndex,
                             backgroundColor: eventStyling.backgroundColor,
                             borderLeftColor: eventStyling.borderColor,
                             borderRadius: eventStyling.borderRadius,
                             borderStyle: eventStyling.isDashed ? 'dashed' : 'solid',
                             borderWidth: eventStyling.isDashed ? '1px' : '1px 1px 1px 4px',
                             boxShadow: event.isAvailableSlot
-                              ? '0 1px 3px rgba(0, 0, 0, 0.1)'
+                              ? '0 1px 2px rgba(59, 130, 246, 0.1)'
                               : event.isBooking
-                              ? '0 4px 12px -2px rgba(16, 185, 129, 0.3), 0 2px 6px -1px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
-                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
+                              ? '0 4px 12px -2px rgba(16, 185, 129, 0.3), 0 2px 6px -1px rgba(16, 185, 129, 0.2)'
+                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-                            opacity: isDragging ? 0.5 : (event.isAvailableSlot ? 0.8 : 1),
-                            cursor: (event.isBooking || event.isAvailableSlot) ? 'default' : 'pointer',
+                            opacity: isDragging ? 0.5 : (event.isAvailableSlot ? 0.9 : 1),
+                            cursor: (event.isBooking || event.isAvailableSlot) ? 'pointer' : 'grab',
                           };
 
                            return (
@@ -650,13 +659,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   onEventClick?.(event.id);
                                 }
                               }}
-                              title={
-                                 event.isAvailableSlot
-                                   ? `SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to get booking link and share`
-                                   : event.isBooking 
-                                   ? `CUSTOMER BOOKING\n${event.customer_name}\n${event.scheduler_name}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\nClick to view details`
-                                   : `PERSONAL EVENT\n${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\nClick to edit`
-                              }
+                               title={
+                                  event.isAvailableSlot
+                                    ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
+                                    : event.isBooking 
+                                    ? `👤 CUSTOMER BOOKING\n${event.customer_name}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details`
+                                    : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
+                               }
                             >
                               {/* Drag Handle - only for personal events */}
                               {!event.isBooking && !event.isAvailableSlot && (
@@ -695,9 +704,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     }
                                   </div>
                                   
-                                   {/* Time display */}
-                                   <div className="text-[11px] leading-tight opacity-90">
-                                     {format(startTime, 'HH:mm')}
+                                   {/* Time display with precise range */}
+                                   <div className="text-[11px] leading-tight opacity-90 font-medium">
+                                     {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
                                    </div>
                                   
                                   {/* Additional info if space allows */}
