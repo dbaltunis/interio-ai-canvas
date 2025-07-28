@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Search, Filter, Eye, Archive, Download } from "lucide-react";
+import { Mail, Search, Filter, Eye, Archive, Download, MousePointer } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
@@ -258,26 +258,35 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2 text-xs">
-                        {email.open_count > 0 && (
-                          <Badge variant="outline" className="text-green-600 border-green-300">
-                            {email.open_count} opens
-                          </Badge>
+                        {/* Always show open count for sent/delivered emails */}
+                        {['sent', 'delivered', 'opened'].includes(email.status) && (
+                          <div className="flex items-center space-x-1">
+                            <Eye className="h-3 w-3 text-purple-500" />
+                            <span className={`font-medium ${email.open_count > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                              {email.open_count} {email.open_count === 1 ? 'open' : 'opens'}
+                            </span>
+                          </div>
                         )}
+                        
+                        {/* Show clicks if any */}
                         {email.click_count > 0 && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-300">
-                            {email.click_count} clicks
-                          </Badge>
+                          <div className="flex items-center space-x-1">
+                            <MousePointer className="h-3 w-3 text-blue-500" />
+                            <span className="text-blue-600 font-medium">
+                              {email.click_count} {email.click_count === 1 ? 'click' : 'clicks'}
+                            </span>
+                          </div>
                         )}
-                        {email.open_count === 0 && email.click_count === 0 && ['sent', 'delivered'].includes(email.status) && (
-                          <Badge variant="outline" className="text-orange-500 border-orange-300">
-                            📊 Tracking active
-                          </Badge>
+                        
+                        {/* Status indicators for non-trackable emails */}
+                        {email.status === 'failed' && (
+                          <span className="text-red-500 text-xs">❌ Failed to send</span>
                         )}
-                        {email.open_count === 0 && email.click_count === 0 && email.status === 'failed' && (
-                          <span className="text-red-500">❌ Tracking unavailable</span>
+                        {email.status === 'queued' && (
+                          <span className="text-gray-400 text-xs">⏳ Queued</span>
                         )}
-                        {email.open_count === 0 && email.click_count === 0 && email.status === 'queued' && (
-                          <span className="text-gray-400">⏳ Pending send</span>
+                        {email.status === 'bounced' && (
+                          <span className="text-red-500 text-xs">↩️ Bounced</span>
                         )}
                       </div>
                     </TableCell>
