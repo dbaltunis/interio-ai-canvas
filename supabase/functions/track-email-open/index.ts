@@ -9,9 +9,18 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Cache-Control": "no-cache, no-store, must-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
 };
 
 serve(async (req: Request) => {
+  console.log("=== EMAIL TRACKING REQUEST RECEIVED ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  console.log("Headers:", Object.fromEntries(req.headers.entries()));
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,9 +29,12 @@ serve(async (req: Request) => {
     const url = new URL(req.url);
     const emailId = url.searchParams.get("id");
 
+    console.log("=== PROCESSING EMAIL OPEN ===");
+    console.log("Email ID:", emailId);
+
     if (!emailId) {
       console.error("Missing email ID");
-      return new Response("Missing email ID", { status: 400 });
+      return returnTrackingPixel(); // Still return pixel even if no ID
     }
 
     console.log("Tracking email open for ID:", emailId);

@@ -24,14 +24,23 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Processing SendGrid webhook events:", events.length);
 
     for (const event of events) {
-      const { event: eventType, email_id, timestamp } = event;
+      const { event: eventType, timestamp, sg_event_id, sg_message_id } = event;
+      
+      // Get email_id from custom_args
+      const email_id = event.email_id || event.unique_args?.email_id || event.custom_args?.email_id;
+      
+      console.log(`Processing ${eventType} event:`, {
+        email_id,
+        sg_event_id,
+        sg_message_id,
+        custom_args: event.custom_args,
+        unique_args: event.unique_args
+      });
       
       if (!email_id) {
         console.log("Skipping event without email_id:", eventType);
         continue;
       }
-
-      console.log(`Processing ${eventType} event for email ${email_id}`);
 
       // Update email status based on event type
       let updateData: any = {
@@ -43,13 +52,29 @@ const handler = async (req: Request): Promise<Response> => {
           updateData.status = 'delivered';
           break;
         case 'open':
-          await supabase
+          console.log("Processing email open event for email:", email_id);
+          // First get current open count
+          const { data: currentEmail } = await supabase
             .from('emails')
-            .update({ 
-              open_count: supabase.raw('open_count + 1'),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', email_id);
+            .select('open_count, status')
+            .eq('id', email_id)
+            .single();
+          
+          if (currentEmail) {
+            const newOpenCount = (currentEmail.open_count || 0) + 1;
+            const newStatus = ['sent', 'delivered'].includes(currentEmail.status) ? 'opened' : currentEmail.status;
+            
+            await supabase
+              .from('emails')
+              .update({ 
+                open_count: newOpenCount,
+                status: newStatus,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', email_id);
+            
+            console.log(`Updated email ${email_id} open count to ${newOpenCount}`);
+          }
           
           // Record analytics event
           await supabase

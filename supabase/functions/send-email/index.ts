@@ -159,6 +159,10 @@ const handler = async (req: Request): Promise<Response> => {
           {
             to: [{ email: to }],
             subject: subject,
+            custom_args: emailData ? {
+              email_id: emailData.id,
+              user_id: user_id || 'unknown'
+            } : {}
           },
         ],
         from: {
@@ -171,6 +175,16 @@ const handler = async (req: Request): Promise<Response> => {
             value: finalContent,
           },
         ],
+        tracking_settings: {
+          click_tracking: {
+            enable: true,
+            enable_text: false
+          },
+          open_tracking: {
+            enable: true,
+            substitution_tag: "%open-track%"
+          }
+        }
       }),
     });
 
