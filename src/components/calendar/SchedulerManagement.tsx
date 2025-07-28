@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAppointmentSchedulers, useDeleteScheduler } from "@/hooks/useAppointmentSchedulers";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useAppointmentSchedulers, useDeleteScheduler, useUpdateScheduler } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Edit, Trash2, ExternalLink, Users, Clock, Globe } from "lucide-react";
+import { Copy, Edit, Trash2, ExternalLink, Users, Clock, Globe, Save, X } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +13,10 @@ import { useQuery } from "@tanstack/react-query";
 export const SchedulerManagement = () => {
   const { data: schedulers, isLoading } = useAppointmentSchedulers();
   const deleteScheduler = useDeleteScheduler();
+  const updateScheduler = useUpdateScheduler();
   const { toast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>({});
 
   // Get booking counts for each scheduler
   const { data: bookingCounts } = useQuery({
@@ -68,6 +73,40 @@ export const SchedulerManagement = () => {
     window.open(`/book/${slug}`, '_blank');
   };
 
+  const handleEdit = (scheduler: any) => {
+    setEditingId(scheduler.id);
+    setEditData({
+      name: scheduler.name,
+      description: scheduler.description || '',
+      duration: scheduler.duration,
+      google_meet_link: scheduler.google_meet_link || '',
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+    
+    try {
+      await updateScheduler.mutateAsync({
+        id: editingId,
+        ...editData,
+      });
+      setEditingId(null);
+      setEditData({});
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update scheduler",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">Loading schedulers...</div>;
   }
@@ -97,13 +136,32 @@ export const SchedulerManagement = () => {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <CardTitle className="text-lg">{scheduler.name}</CardTitle>
+                    {editingId === scheduler.id ? (
+                      <Input
+                        value={editData.name || ''}
+                        onChange={(e) => setEditData({...editData, name: e.target.value})}
+                        className="text-lg font-semibold"
+                        placeholder="Scheduler name"
+                      />
+                    ) : (
+                      <CardTitle className="text-lg">{scheduler.name}</CardTitle>
+                    )}
                     <Badge variant={scheduler.active ? "default" : "secondary"}>
                       {scheduler.active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
-                  {scheduler.description && (
-                    <p className="text-sm text-muted-foreground">{scheduler.description}</p>
+                  {editingId === scheduler.id ? (
+                    <Textarea
+                      value={editData.description || ''}
+                      onChange={(e) => setEditData({...editData, description: e.target.value})}
+                      placeholder="Description (optional)"
+                      className="text-sm"
+                      rows={2}
+                    />
+                  ) : (
+                    scheduler.description && (
+                      <p className="text-sm text-muted-foreground">{scheduler.description}</p>
+                    )
                   )}
                 </div>
                 {scheduler.image_url && (
@@ -120,7 +178,17 @@ export const SchedulerManagement = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{scheduler.duration} min</span>
+                  {editingId === scheduler.id ? (
+                    <Input
+                      type="number"
+                      value={editData.duration || ''}
+                      onChange={(e) => setEditData({...editData, duration: parseInt(e.target.value)})}
+                      className="w-20 h-6 text-sm"
+                      placeholder="60"
+                    />
+                  ) : (
+                    <span className="text-sm">{scheduler.duration} min</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
@@ -137,18 +205,30 @@ export const SchedulerManagement = () => {
                 )}
               </div>
 
-              {scheduler.google_meet_link && (
-                <div className="mb-4 p-2 bg-blue-50 rounded border">
-                  <span className="text-sm font-medium">Google Meet: </span>
-                  <a 
-                    href={scheduler.google_meet_link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    {scheduler.google_meet_link}
-                  </a>
+              {editingId === scheduler.id ? (
+                <div className="mb-4">
+                  <label className="text-sm font-medium">Google Meet Link (optional):</label>
+                  <Input
+                    value={editData.google_meet_link || ''}
+                    onChange={(e) => setEditData({...editData, google_meet_link: e.target.value})}
+                    placeholder="https://meet.google.com/..."
+                    className="mt-1"
+                  />
                 </div>
+              ) : (
+                scheduler.google_meet_link && (
+                  <div className="mb-4 p-2 bg-blue-50 rounded border">
+                    <span className="text-sm font-medium">Google Meet: </span>
+                    <a 
+                      href={scheduler.google_meet_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {scheduler.google_meet_link}
+                    </a>
+                  </div>
+                )
               )}
 
               <div className="flex gap-2 flex-wrap">
@@ -170,17 +250,36 @@ export const SchedulerManagement = () => {
                   View Page
                 </Button>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // TODO: Implement edit functionality
-                    console.log('Edit scheduler:', scheduler.id);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
+                {editingId === scheduler.id ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSaveEdit}
+                      disabled={updateScheduler.isPending}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(scheduler)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
                 
                 <Button
                   variant="outline"
