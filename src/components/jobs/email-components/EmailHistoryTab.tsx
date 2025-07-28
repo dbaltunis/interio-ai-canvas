@@ -224,16 +224,17 @@ export const EmailHistoryTab = ({
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Recipient</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Attachments</TableHead>
-                    <TableHead>Sent</TableHead>
-                    <TableHead>Opens</TableHead>
-                  </TableRow>
-                </TableHeader>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Sent</TableHead>
+                      <TableHead>Engagement</TableHead>
+                      <TableHead>Attachments</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {paginatedEmails.map((email) => (
                     <TableRow 
@@ -250,12 +251,6 @@ export const EmailHistoryTab = ({
                       <TableCell>
                         <EmailStatusBadge status={email.status || 'queued'} />
                       </TableCell>
-                        <TableCell>
-                          <AttachmentInfo 
-                            attachments={(email.attachment_info as unknown as AttachmentData[]) || []} 
-                            className="max-w-[150px]"
-                          />
-                        </TableCell>
                       <TableCell>
                         <div className="text-sm">
                           {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : 'Not sent'}
@@ -270,6 +265,17 @@ export const EmailHistoryTab = ({
                           {email.click_count > 0 && (
                             <MousePointer className="h-3 w-3 text-orange-600" />
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <AttachmentInfo 
+                          attachments={(email.attachment_info as unknown as AttachmentData[]) || []} 
+                          className="max-w-[150px]"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          {/* Actions placeholder */}
                         </div>
                       </TableCell>
                     </TableRow>
