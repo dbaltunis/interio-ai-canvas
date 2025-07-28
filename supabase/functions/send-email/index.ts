@@ -370,13 +370,15 @@ const handler = async (req: Request): Promise<Response> => {
             continue; // Skip this attachment and continue with others
           }
           
-           // Convert file to base64 in tiny chunks for speed
+           // Convert file to base64 in tiny chunks for maximum speed
            const arrayBuffer = await fileData.arrayBuffer();
            const bytes = new Uint8Array(arrayBuffer);
            let binary = '';
-           const chunkSize = 1024; // 1KB tiny chunks for fast processing
+           const chunkSize = 512; // 512 bytes - ultra small chunks for speed
+           
            for (let i = 0; i < bytes.length; i += chunkSize) {
-             binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+             const end = Math.min(i + chunkSize, bytes.length);
+             binary += String.fromCharCode(...bytes.subarray(i, end));
            }
            const base64Content = btoa(binary);
           
