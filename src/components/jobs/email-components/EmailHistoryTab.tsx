@@ -13,6 +13,12 @@ import { AttachmentInfo } from "./AttachmentInfo";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Email } from "@/hooks/useEmails";
 
+interface AttachmentData {
+  filename: string;
+  type: string;
+  size: number;
+}
+
 interface EmailHistoryTabProps {
   emails: Email[] | undefined;
   emailsLoading: boolean;
@@ -244,12 +250,12 @@ export const EmailHistoryTab = ({
                       <TableCell>
                         <EmailStatusBadge status={email.status || 'queued'} />
                       </TableCell>
-                      <TableCell>
-                        <AttachmentInfo 
-                          attachments={(email as any).attachment_info || []} 
-                          className="max-w-[150px]"
-                        />
-                      </TableCell>
+                        <TableCell>
+                          <AttachmentInfo 
+                            attachments={(email.attachment_info as unknown as AttachmentData[]) || []} 
+                            className="max-w-[150px]"
+                          />
+                        </TableCell>
                       <TableCell>
                         <div className="text-sm">
                           {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : 'Not sent'}
