@@ -116,19 +116,19 @@ export const ClientManagementPage = () => {
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
+            className="p-2"
+            title="Filter"
           >
             <Filter className="h-4 w-4" />
-            Filter
           </Button>
           
           <Button
             variant="outline"
             onClick={() => setShowImportExport(true)}
-            className="flex items-center gap-2"
+            className="p-2"
+            title="Import/Export"
           >
             <Download className="h-4 w-4" />
-            Import/Export
           </Button>
           
           <Button 
