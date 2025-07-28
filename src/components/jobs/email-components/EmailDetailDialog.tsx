@@ -276,7 +276,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
                   <Smartphone className="h-4 w-4 text-indigo-600" />
-                  <span className="text-sm font-medium text-indigo-600">Devices</span>
+                  <span className="text-sm font-medium text-indigo-600">Device Types</span>
                 </div>
                 <div className="text-2xl font-bold">
                   {(() => {
@@ -289,7 +289,18 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                     return new Set(devices).size;
                   })()}
                 </div>
-                <div className="text-sm text-muted-foreground">types</div>
+                <div className="text-sm text-muted-foreground">
+                  {(() => {
+                    const devices = emailAnalytics.map(e => {
+                      const ua = e.user_agent || '';
+                      if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
+                      if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
+                      return 'Desktop';
+                    });
+                    const uniqueDevices = [...new Set(devices)];
+                    return uniqueDevices.length > 0 ? uniqueDevices.join(', ') : 'None detected';
+                  })()}
+                </div>
               </CardContent>
             </Card>
             
@@ -300,10 +311,20 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <span className="text-sm font-medium text-teal-600">Engagement</span>
                 </div>
                 <div className="text-2xl font-bold">
-                  {emailAnalytics.length > 0 ? 
-                    Math.round(((currentEmail.open_count || 0) + (currentEmail.click_count || 0)) / Math.max(emailAnalytics.length, 1) * 100) : 0}%
+                  {(() => {
+                    const opens = currentEmail.open_count || 0;
+                    const clicks = currentEmail.click_count || 0;
+                    const timeSpent = currentEmail.time_spent_seconds || 0;
+                    const downloads = emailAnalytics.filter(e => e.event_type === 'download').length;
+                    
+                    // Calculate engagement: weighted score based on interactions
+                    const engagementScore = (opens * 10) + (clicks * 25) + (Math.min(timeSpent / 60, 5) * 20) + (downloads * 30);
+                    return Math.min(Math.round(engagementScore), 100);
+                  })()}%
                 </div>
-                <div className="text-sm text-muted-foreground">score</div>
+                <div className="text-sm text-muted-foreground">
+                  Score: Opens(10pts) + Clicks(25pts) + Time(20pts) + Downloads(30pts)
+                </div>
               </CardContent>
             </Card>
             
@@ -314,12 +335,39 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <span className="text-sm font-medium text-amber-600">Locations</span>
                 </div>
                 <div className="text-2xl font-bold">
-                  {new Set(emailAnalytics.map(e => e.ip_address || 'Unknown')).size}
+                  {new Set(emailAnalytics.filter(e => e.ip_address && e.ip_address !== 'unknown').map(e => e.ip_address)).size}
                 </div>
-                <div className="text-sm text-muted-foreground">unique IPs</div>
+                <div className="text-sm text-muted-foreground">
+                  {(() => {
+                    const uniqueIPs = new Set(emailAnalytics.filter(e => e.ip_address && e.ip_address !== 'unknown').map(e => e.ip_address));
+                    return uniqueIPs.size > 0 ? 'unique IP addresses' : 'IP tracking active';
+                  })()}
+                </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Attachments Section */}
+          {currentEmail.content && currentEmail.content.includes('attachment') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Email Attachments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground">
+                  This email included attachments. Download tracking is active for recipient engagement.
+                </div>
+                {emailAnalytics.filter(e => e.event_type === 'download').length > 0 && (
+                  <div className="mt-2 text-sm text-green-600">
+                    ✓ {emailAnalytics.filter(e => e.event_type === 'download').length} attachment download(s) detected
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Email Activity Timeline */}
           <Card>

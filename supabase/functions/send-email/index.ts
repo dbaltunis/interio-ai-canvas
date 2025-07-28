@@ -90,16 +90,26 @@ const handler = async (req: Request): Promise<Response> => {
             const trackingBaseUrl = "${supabaseUrl}/functions/v1/track-email-enhanced";
             let startTime = Date.now();
             let isVisible = true;
+            let totalTimeSpent = 0;
             
-            // Track email open
-            fetch(trackingBaseUrl + "?id=" + emailId + "&type=open&screen_resolution=" + screen.width + "x" + screen.height);
+            // Track email open with device info
+            const deviceInfo = {
+              userAgent: navigator.userAgent,
+              screenRes: screen.width + "x" + screen.height,
+              platform: navigator.platform,
+              language: navigator.language,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
             
-            // Track time spent
+            fetch(trackingBaseUrl + "?id=" + emailId + "&type=open&screen_resolution=" + deviceInfo.screenRes + "&platform=" + encodeURIComponent(deviceInfo.platform) + "&language=" + deviceInfo.language);
+            
+            // Track time spent more accurately
             function trackTimeSpent() {
               if (isVisible) {
-                const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-                if (timeSpent > 5) { // Only track if viewed for more than 5 seconds
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=time_spent&time_spent=" + timeSpent);
+                const sessionTime = Math.floor((Date.now() - startTime) / 1000);
+                totalTimeSpent += sessionTime;
+                if (sessionTime > 3) { // Track if viewed for more than 3 seconds
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=time_spent&time_spent=" + totalTimeSpent);
                 }
               }
             }
@@ -112,33 +122,73 @@ const handler = async (req: Request): Promise<Response> => {
               } else {
                 isVisible = true;
                 startTime = Date.now();
-                // Track additional open
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=open");
+                // Track re-open
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=open&screen_resolution=" + deviceInfo.screenRes);
               }
             });
             
-            // Track when user leaves or closes
-            window.addEventListener('beforeunload', trackTimeSpent);
-            window.addEventListener('unload', trackTimeSpent);
-            
-            // Detect screenshots (works in some browsers)
-            if ('permissions' in navigator) {
-              navigator.permissions.query({name: 'screen-wake-lock'}).then(function(result) {
-                if (result.state === 'denied') {
-                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot");
+            // Track scrolling engagement
+            let maxScroll = 0;
+            window.addEventListener('scroll', function() {
+              const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+              if (scrollPercent > maxScroll) {
+                maxScroll = scrollPercent;
+                if (scrollPercent > 50) { // Track significant engagement
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=engagement&scroll_percent=" + scrollPercent);
                 }
-              });
-            }
-            
-            // Alternative screenshot detection
-            document.addEventListener('keydown', function(e) {
-              if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.keyCode === 83)) {
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot");
-              }
-              if (e.key === 'PrintScreen' || e.keyCode === 44) {
-                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot");
               }
             });
+            
+            // Enhanced screenshot detection
+            let screenshotAttempts = 0;
+            
+            // Keyboard shortcuts for screenshots
+            document.addEventListener('keydown', function(e) {
+              let isScreenshot = false;
+              
+              // Windows/Linux: Ctrl+Shift+S, Alt+PrintScreen, PrintScreen
+              if ((e.ctrlKey && e.shiftKey && e.key === 'S') || 
+                  (e.altKey && e.key === 'PrintScreen') || 
+                  e.key === 'PrintScreen' || 
+                  e.keyCode === 44) {
+                isScreenshot = true;
+              }
+              
+              // Mac: Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5
+              if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
+                isScreenshot = true;
+              }
+              
+              if (isScreenshot) {
+                screenshotAttempts++;
+                fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&attempt=" + screenshotAttempts);
+              }
+            });
+            
+            // Mobile screenshot detection (volume down + power button simulation)
+            let volumePressed = false;
+            window.addEventListener('blur', function() {
+              setTimeout(function() {
+                if (document.hidden) {
+                  screenshotAttempts++;
+                  fetch(trackingBaseUrl + "?id=" + emailId + "&type=screenshot&mobile=true&attempt=" + screenshotAttempts);
+                }
+              }, 100);
+            });
+            
+            // Track when user leaves
+            window.addEventListener('beforeunload', function() {
+              trackTimeSpent();
+              fetch(trackingBaseUrl + "?id=" + emailId + "&type=session_end&total_time=" + totalTimeSpent);
+            });
+            
+            // Periodic time tracking every 30 seconds
+            setInterval(function() {
+              if (isVisible) {
+                trackTimeSpent();
+                startTime = Date.now(); // Reset for next interval
+              }
+            }, 30000);
           })();
         </script>
       `;
