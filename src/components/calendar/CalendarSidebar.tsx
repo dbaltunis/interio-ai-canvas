@@ -50,7 +50,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   if (isCollapsed) {
     return (
       <div className="w-16 min-w-16 border-r bg-background flex flex-col h-full flex-shrink-0">
-        <div className="fixed top-16 left-0 w-16 z-30 bg-background p-2 border-b">
+        <div className="p-2 border-b">
           <Button
             variant="ghost"
             size="sm"
@@ -66,21 +66,19 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
 
   return (
     <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0">
-      {/* Fixed Header with Collapse Button */}
-      <div className="fixed top-16 left-0 w-80 z-30 bg-background border-b p-4 flex justify-between items-center">
-        <h3 className="text-sm font-medium text-muted-foreground">Calendar</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggleCollapse}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      <ScrollArea className="flex-1 pt-20">
+      <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
+          {/* Collapse Button */}
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleCollapse}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
           {/* Mini Calendar */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
