@@ -40,11 +40,6 @@ const App = () => (
           <AuthProvider>
             <Routes>
               {/* Public booking routes */}
-              <Route path="/schedule/:slug" element={
-                <ErrorBoundary>
-                  <PublicBookingPage />
-                </ErrorBoundary>
-              } />
               <Route path="/book/:slug" element={
                 <ErrorBoundary>
                   <PublicBookingPage />

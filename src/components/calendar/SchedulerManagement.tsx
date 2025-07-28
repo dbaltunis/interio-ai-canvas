@@ -34,7 +34,7 @@ export const SchedulerManagement = () => {
   });
 
   const copyBookingLink = async (slug: string) => {
-    const link = `${window.location.origin}/schedule/${slug}`;
+    const link = `${window.location.origin}/book/${slug}`;
     try {
       await navigator.clipboard.writeText(link);
       toast({
@@ -65,7 +65,7 @@ export const SchedulerManagement = () => {
   };
 
   const openBookingPage = (slug: string) => {
-    window.open(`/schedule/${slug}`, '_blank');
+    window.open(`/book/${slug}`, '_blank');
   };
 
   if (isLoading) {
@@ -128,7 +128,7 @@ export const SchedulerManagement = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">/schedule/{scheduler.slug}</span>
+                  <span className="text-sm">/book/{scheduler.slug}</span>
                 </div>
                 {scheduler.user_email && (
                   <div className="flex items-center gap-2">

@@ -14,9 +14,11 @@ const corsHeaders = {
 interface EmailRequest {
   to: string;
   subject: string;
-  content: string;
+  content?: string;
+  html?: string;
   client_id?: string;
-  user_id: string;
+  user_id?: string;
+  bookingId?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,44 +27,53 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, subject, content, client_id, user_id }: EmailRequest = await req.json();
+    const { to, subject, content, html, client_id, user_id, bookingId }: EmailRequest = await req.json();
 
-    console.log("Processing email send request:", { to, subject, client_id, user_id });
+    console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId });
+    
+    // Use html if provided, otherwise use content
+    const emailContent = html || content;
 
-    // First, save the email to database
-    const { data: emailData, error: insertError } = await supabase
-      .from("emails")
-      .insert({
-        user_id,
-        client_id,
-        recipient_email: to,
-        subject,
-        content,
-        status: 'queued'
-      })
-      .select()
-      .single();
+    // First, save the email to database (only if user_id is provided)
+    let emailData = null;
+    if (user_id) {
+      const { data, error: insertError } = await supabase
+        .from("emails")
+        .insert({
+          user_id,
+          client_id,
+          recipient_email: to,
+          subject,
+          content: emailContent,
+          status: 'queued'
+        })
+        .select()
+        .single();
 
-    if (insertError) {
-      console.error("Error saving email to database:", insertError);
-      throw new Error("Failed to save email to database");
+      if (insertError) {
+        console.error("Error saving email to database:", insertError);
+        throw new Error("Failed to save email to database");
+      }
+      emailData = data;
+      console.log("Email saved to database with ID:", emailData.id);
     }
 
-    console.log("Email saved to database with ID:", emailData.id);
+    // Add tracking pixel and wrap links only if we have an emailData record
+    let finalContent = emailContent;
+    if (emailData) {
+      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${emailData.id}" width="1" height="1" style="display: none;" />`;
+      
+      // Wrap links with tracking
+      const contentWithTracking = emailContent.replace(
+        /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>/gi,
+        (match, url) => {
+          const trackingUrl = `${supabaseUrl}/functions/v1/track-email-click?id=${emailData.id}&url=${encodeURIComponent(url)}`;
+          return match.replace(url, trackingUrl);
+        }
+      );
 
-    // Add tracking pixel and wrap links
-    const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${emailData.id}" width="1" height="1" style="display: none;" />`;
-    
-    // Wrap links with tracking
-    const contentWithTracking = content.replace(
-      /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>/gi,
-      (match, url) => {
-        const trackingUrl = `${supabaseUrl}/functions/v1/track-email-click?id=${emailData.id}&url=${encodeURIComponent(url)}`;
-        return match.replace(url, trackingUrl);
-      }
-    );
-
-    const finalContent = contentWithTracking + trackingPixel;
+      finalContent = contentWithTracking + trackingPixel;
+    }
 
     // Get SendGrid API key
     const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
@@ -105,40 +116,59 @@ const handler = async (req: Request): Promise<Response> => {
       const errorText = await sendGridResponse.text();
       console.error("SendGrid error response:", errorText);
       
-      // Update email status to failed
-      await supabase
-        .from("emails")
-        .update({
-          status: 'failed',
-          bounce_reason: errorText,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", emailData.id);
+      // Update email status to failed (only if we have emailData)
+      if (emailData) {
+        await supabase
+          .from("emails")
+          .update({
+            status: 'failed',
+            bounce_reason: errorText,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", emailData.id);
+      }
 
       throw new Error(`SendGrid API error: ${sendGridResponse.status} - ${errorText}`);
     }
 
     console.log("Email sent successfully via SendGrid");
 
-    // Update email status to sent
-    const { error: updateError } = await supabase
-      .from("emails")
-      .update({
-        status: 'sent',
-        sent_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", emailData.id);
+    // Update email status to sent (only if we have emailData)
+    if (emailData) {
+      const { error: updateError } = await supabase
+        .from("emails")
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", emailData.id);
 
-    if (updateError) {
-      console.error("Error updating email status:", updateError);
+      if (updateError) {
+        console.error("Error updating email status:", updateError);
+      }
+    }
+
+    // If this is for a booking confirmation, update the booking status
+    if (bookingId) {
+      const { error: bookingError } = await supabase
+        .from('appointments_booked')
+        .update({ 
+          status: 'confirmed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', bookingId);
+
+      if (bookingError) {
+        console.error('Error updating booking status:', bookingError);
+      }
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Email sent successfully",
-        email_id: emailData.id,
+        email_id: emailData?.id,
       }),
       {
         status: 200,

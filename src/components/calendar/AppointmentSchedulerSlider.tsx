@@ -151,7 +151,7 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
       });
 
       // Generate shareable link
-      const shareableLink = `${window.location.origin}/schedule/${uniqueSlug}`;
+      const shareableLink = `${window.location.origin}/book/${uniqueSlug}`;
       
       // Copy to clipboard
       try {
