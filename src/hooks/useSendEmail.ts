@@ -139,7 +139,9 @@ export const useSendEmail = () => {
           body: {
             to: emailData.to,
             subject: emailData.subject,
-            html: emailData.content,
+            message: emailData.content,
+            user_id: user.id,
+            client_id: emailData.client_id,
             emailId: emailRecord.id,
             attachmentPaths: attachmentPaths.length > 0 ? attachmentPaths : undefined
           }
