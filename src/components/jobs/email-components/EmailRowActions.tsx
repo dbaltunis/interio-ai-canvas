@@ -44,21 +44,39 @@ export const EmailRowActions = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border shadow-lg z-50">
-        <DropdownMenuItem onClick={onView}>
+        <DropdownMenuItem 
+          onClick={(e) => {
+            e.stopPropagation();
+            onView();
+          }}
+        >
           <Eye className="h-4 w-4 mr-2" />
           View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onFollowUp}>
+        <DropdownMenuItem 
+          onClick={(e) => {
+            e.stopPropagation();
+            onFollowUp();
+          }}
+        >
           <Reply className="h-4 w-4 mr-2" />
           Send Follow-up
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleCopyEmail}>
+        <DropdownMenuItem 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCopyEmail();
+          }}
+        >
           <Copy className="h-4 w-4 mr-2" />
           Copy Email
         </DropdownMenuItem>
         {canResend && (
           <DropdownMenuItem 
-            onClick={onResend}
+            onClick={(e) => {
+              e.stopPropagation();
+              onResend();
+            }}
             disabled={isResending}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isResending ? 'animate-spin' : ''}`} />

@@ -220,8 +220,12 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
               </TableHeader>
               <TableBody>
                 {filteredEmails.map((email) => (
-                  <TableRow key={email.id} className="hover:bg-gray-50">
-                    <TableCell>
+                  <TableRow 
+                    key={email.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleViewEmail(email)}
+                  >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleViewEmail(email)}
                         className="font-medium text-gray-900 hover:text-blue-600 text-left"
@@ -229,7 +233,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                         {email.subject}
                       </button>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleViewEmail(email)}
                         className="text-sm hover:text-blue-600 text-left"
@@ -269,7 +273,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <EmailRowActions
                         email={email}
                         onView={() => handleViewEmail(email)}
