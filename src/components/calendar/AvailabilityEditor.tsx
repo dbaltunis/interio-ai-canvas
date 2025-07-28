@@ -14,7 +14,7 @@ interface DayAvailability {
 }
 
 interface AvailabilityEditorProps {
-  availability: Record<string, DayAvailability>;
+  availability: Record<string, DayAvailability> | any; // Accept both formats
   onChange: (availability: Record<string, DayAvailability>) => void;
 }
 
@@ -29,9 +29,25 @@ const WEEKDAYS = [
 ];
 
 export const AvailabilityEditor = ({ availability, onChange }: AvailabilityEditorProps) => {
+  // Convert array format to object format if needed
+  const convertAvailabilityToObject = (avail: any): Record<string, DayAvailability> => {
+    if (Array.isArray(avail)) {
+      const converted: Record<string, DayAvailability> = {};
+      avail.forEach(dayData => {
+        converted[dayData.day] = {
+          enabled: dayData.enabled,
+          timeSlots: dayData.timeSlots || []
+        };
+      });
+      return converted;
+    }
+    return avail || {};
+  };
+
   // Initialize availability if empty
   const ensureAvailability = () => {
-    if (!availability || Object.keys(availability).length === 0) {
+    const converted = convertAvailabilityToObject(availability);
+    if (!converted || Object.keys(converted).length === 0) {
       const defaultAvailability: Record<string, DayAvailability> = {};
       WEEKDAYS.forEach(day => {
         defaultAvailability[day.key] = {
@@ -42,7 +58,7 @@ export const AvailabilityEditor = ({ availability, onChange }: AvailabilityEdito
       onChange(defaultAvailability);
       return defaultAvailability;
     }
-    return availability;
+    return converted;
   };
 
   const currentAvailability = ensureAvailability();
