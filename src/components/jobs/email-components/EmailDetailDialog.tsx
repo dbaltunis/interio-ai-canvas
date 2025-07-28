@@ -25,7 +25,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
   const navigate = useNavigate();
-  const [refreshedEmail, setRefreshedEmail] = useState<Email | null>(email);
+  const [refreshedEmail, setRefreshedEmail] = useState<Email | null>(null);
   const [emailAnalytics, setEmailAnalytics] = useState<any[]>([]);
   const [aiRecommendations, setAiRecommendations] = useState<string[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
