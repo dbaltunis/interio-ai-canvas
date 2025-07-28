@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Copy } from "lucide-react";
 
 interface TimeSlot {
   start: string;
@@ -75,14 +75,43 @@ export const AvailabilityEditor = ({ availability, onChange }: AvailabilityEdito
   };
 
   const addTimeSlot = (dayKey: string) => {
+    const existingSlots = currentAvailability[dayKey]?.timeSlots || [];
+    let newStart = '09:00';
+    let newEnd = '17:00';
+    
+    // If there are existing slots, start from the end of the last one
+    if (existingSlots.length > 0) {
+      const lastSlot = existingSlots[existingSlots.length - 1];
+      newStart = lastSlot.end;
+      // Add 1 hour to the end time as default
+      const [hours, minutes] = lastSlot.end.split(':').map(Number);
+      const endTime = new Date();
+      endTime.setHours(hours + 1, minutes, 0, 0);
+      newEnd = endTime.toTimeString().slice(0, 5);
+    }
+    
     const updated = {
       ...currentAvailability,
       [dayKey]: {
         ...currentAvailability[dayKey],
         timeSlots: [
-          ...(currentAvailability[dayKey]?.timeSlots || []),
-          { start: '09:00', end: '17:00' }
+          ...existingSlots,
+          { start: newStart, end: newEnd }
         ]
+      }
+    };
+    onChange(updated);
+  };
+
+  const copyDaySchedule = (fromDay: string, toDay: string) => {
+    const sourceData = currentAvailability[fromDay];
+    if (!sourceData) return;
+    
+    const updated = {
+      ...currentAvailability,
+      [toDay]: {
+        enabled: sourceData.enabled,
+        timeSlots: [...(sourceData.timeSlots || [])]
       }
     };
     onChange(updated);
@@ -127,16 +156,29 @@ export const AvailabilityEditor = ({ availability, onChange }: AvailabilityEdito
                 />
                 <span className="font-medium">{day.label}</span>
               </div>
-              {dayData.enabled && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addTimeSlot(day.key)}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Slot
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {dayData.enabled && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addTimeSlot(day.key)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Slot
+                  </Button>
+                )}
+                {dayData.enabled && day.key !== 'monday' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyDaySchedule('monday', day.key)}
+                    title="Copy Monday's schedule"
+                  >
+                    <Copy className="h-3 w-3 mr-1" />
+                    Copy Mon
+                  </Button>
+                )}
+              </div>
             </div>
             
             {dayData.enabled && (
