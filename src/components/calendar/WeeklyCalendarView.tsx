@@ -667,8 +667,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                            return (
                               <div
                                 ref={setNodeRef}
-                                {...listeners}
-                                {...attributes}
                                 className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
                                   transition-all duration-200 z-10 border
                                   ${event.isAvailableSlot ? 'border-blue-300' : 'border-white/40'}
@@ -676,37 +674,53 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   ${event.isAvailableSlot ? 'hover:bg-blue-50/30 hover:border-blue-400' : ''}
                                   ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
                                   ${eventStyling.textColor}`}
-                              style={eventStyle}
-                              onClick={() => {
-                                if (event.isAvailableSlot) {
-                                  // Handle available slot click - open booking dialog
-                                  setSelectedSlot({
-                                    id: event.id,
-                                    schedulerName: event.schedulerName,
-                                    schedulerSlug: event.schedulerSlug,
-                                    date: format(day, 'yyyy-MM-dd'),
-                                    startTime: format(startTime, 'HH:mm'),
-                                    endTime: format(endTime, 'HH:mm'),
-                                    duration: event.duration
-                                  });
-                                  setShowSlotDialog(true);
-                                } else if (event.isBooking) {
-                                  // Handle customer booking click - show booking details (read-only)
-                                  console.log('Customer booking clicked:', event);
-                                } else {
-                                  // Handle personal event click - open edit dialog
-                                  console.log('Personal event clicked:', event.id);
-                                  onEventClick?.(event.id);
+                               style={eventStyle}
+                               onClick={() => {
+                                 if (event.isAvailableSlot) {
+                                   // Handle available slot click - open booking dialog
+                                   setSelectedSlot({
+                                     id: event.id,
+                                     schedulerName: event.schedulerName,
+                                     schedulerSlug: event.schedulerSlug,
+                                     date: format(day, 'yyyy-MM-dd'),
+                                     startTime: format(startTime, 'HH:mm'),
+                                     endTime: format(endTime, 'HH:mm'),
+                                     duration: event.duration
+                                   });
+                                   setShowSlotDialog(true);
+                                 } else if (event.isBooking) {
+                                   // Handle customer booking click - show booking details (read-only)
+                                   console.log('Customer booking clicked:', event);
+                                 } else {
+                                   // Handle personal event click - open edit dialog
+                                   console.log('Personal event clicked:', event.id);
+                                   onEventClick?.(event.id);
+                                 }
+                               }}
+                                title={
+                                   event.isAvailableSlot
+                                     ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
+                                     : event.isBooking 
+                                     ? `👤 CUSTOMER BOOKING\n${event.customer_name}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details`
+                                     : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
                                 }
-                              }}
-                               title={
-                                  event.isAvailableSlot
-                                    ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
-                                    : event.isBooking 
-                                    ? `👤 CUSTOMER BOOKING\n${event.customer_name}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details`
-                                    : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
-                               }
-                            >
+                             >
+                               {/* Drag Handle - only for personal events */}
+                               {!event.isBooking && !event.isAvailableSlot && (
+                                 <div 
+                                   {...listeners}
+                                   {...attributes}
+                                   className="absolute top-0 left-0 w-full h-full opacity-0 cursor-move z-20"
+                                   onMouseDown={(e) => {
+                                     // Only start drag if not clicking on content
+                                     if (e.target === e.currentTarget) {
+                                       e.stopPropagation();
+                                     }
+                                   }}
+                                   title="Drag to move event"
+                                 />
+                                )}
+
                                  <div className="flex flex-col h-full p-1">
                                   {/* Event header with user info and notifications */}
                                   <div className="flex items-start justify-between mb-1">
