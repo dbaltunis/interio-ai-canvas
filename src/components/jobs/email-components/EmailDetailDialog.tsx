@@ -265,11 +265,9 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <Eye className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-600">Opens</span>
                 </div>
-                <div className="text-2xl font-bold">
-                  {emailAnalytics.filter(e => e.event_type === 'open').length > 0 ? '100%' : '0%'}
-                </div>
+                <div className="text-2xl font-bold">{currentEmail.open_count || 0}</div>
                 <div className="text-sm text-muted-foreground">
-                  open rate ({emailAnalytics.filter(e => e.event_type === 'open').length} opens)
+                  {emailAnalytics.filter(e => e.event_type === 'open').length} unique
                 </div>
               </CardContent>
             </Card>
@@ -280,9 +278,9 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <MousePointer className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium text-orange-600">Clicks</span>
                 </div>
-                <div className="text-2xl font-bold">{emailAnalytics.filter(e => e.event_type === 'click').length}</div>
+                <div className="text-2xl font-bold">{currentEmail.click_count || 0}</div>
                 <div className="text-sm text-muted-foreground">
-                  total clicks
+                  {emailAnalytics.filter(e => e.event_type === 'click').length} events
                 </div>
               </CardContent>
             </Card>
@@ -293,9 +291,9 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <Clock className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-600">Time Spent</span>
                 </div>
-                <div className="text-2xl font-bold">{currentEmail.time_spent_seconds || 0}s</div>
+                <div className="text-2xl font-bold">{Math.floor((currentEmail.time_spent_seconds || 0) / 60)}m</div>
                 <div className="text-sm text-muted-foreground">
-                  seconds viewing
+                  {currentEmail.time_spent_seconds || 0}s total
                 </div>
               </CardContent>
             </Card>
@@ -309,7 +307,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                 <div className="text-2xl font-bold">
                   {emailAnalytics.filter(e => e.event_type === 'download').length}
                 </div>
-                <div className="text-sm text-muted-foreground">attachment opens</div>
+                <div className="text-sm text-muted-foreground">attachments</div>
               </CardContent>
             </Card>
           </div>
