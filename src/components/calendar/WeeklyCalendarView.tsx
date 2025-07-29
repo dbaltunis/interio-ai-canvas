@@ -70,13 +70,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   // Drag and drop state
   const [activeEvent, setActiveEvent] = useState<any>(null);
 
-  // Generate all 24-hour time slots (00:00 to 23:30) - FIXED: exactly 2 slots per hour
+  // Generate all 24-hour time slots (00:00 to 23:30)
   const allTimeSlots = (() => {
     const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
+    for (let hour = 0; hour <= 23; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      if (hour < 23) {
+        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
     }
+    slots.push('23:30');
     return slots;
   })();
 
@@ -223,8 +226,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       endTime = new Date(startTime.getTime() + (60 * 60 * 1000));
     }
     
-    // CRITICAL: Match grid structure - each 30min slot = 20px, so each minute = 20/30 px
-    const pixelsPerMinute = 20 / 30;
+    // CRITICAL: Each minute = 1px for perfect alignment (same as daily view)
+    const pixelsPerMinute = 1;
     
     // Calculate total minutes from start time (6 AM for working hours, midnight for extended)
     let totalMinutesFromStart;
@@ -642,20 +645,19 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const currentHour = now.getHours();
                           const currentMinutes = now.getMinutes();
                           
-                           // EXACT positioning: match grid structure (20px per 30min = 0.67px per minute)
-                           const pixelsPerMinute = 20 / 30;
-                           let totalMinutesFromStart;
-                           
-                           if (showExtendedHours) {
-                             // From midnight (00:00)
-                             totalMinutesFromStart = currentHour * 60 + currentMinutes;
-                           } else {
-                             // From 6 AM (working hours)
-                             totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-                             if (totalMinutesFromStart < 0) return null; // Don't show if before visible hours
-                           }
-                           
-                           const top = totalMinutesFromStart * pixelsPerMinute;
+                          // EXACT positioning: 1px per minute (same as daily view)
+                          let totalMinutesFromStart;
+                          
+                          if (showExtendedHours) {
+                            // From midnight (00:00)
+                            totalMinutesFromStart = currentHour * 60 + currentMinutes;
+                          } else {
+                            // From 6 AM (working hours)
+                            totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
+                            if (totalMinutesFromStart < 0) return null; // Don't show if before visible hours
+                          }
+                          
+                          const top = totalMinutesFromStart; // 1px per minute
                          
                          return (
                            <div 
