@@ -557,6 +557,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                          // Each 30-minute slot is 20px, so each minute is 20/30 = 0.6667px
                          const top = (totalMinutesFromMidnight * 20) / 30;
                          
+                         // Debug logging
+                         console.log('Current time debug:', {
+                           hour: currentHour,
+                           minutes: currentMinutes,
+                           totalMinutesFromMidnight,
+                           calculatedTop: top,
+                           showExtendedHours
+                         });
+                         
                          return (
                            <div 
                              className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
