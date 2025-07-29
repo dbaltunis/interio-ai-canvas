@@ -592,40 +592,47 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
                         const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
                         
-                         // Clear visual distinction between events, bookings, and available slots
-                         const getEventStyling = (event: any) => {
-                           if (event.isAvailableSlot) {
-                             // AVAILABLE APPOINTMENT SLOTS: Using design system colors
-                             return {
-                               backgroundColor: 'hsl(var(--primary) / 0.08)',
-                               borderColor: 'hsl(var(--primary))',
-                               textColor: 'text-primary',
-                               borderRadius: '4px',
-                               pattern: 'dashed',
-                               isDashed: true,
-                               isCompact: true,
-                               minHeight: 24
-                             };
-                           } else if (event.isBooking) {
-                             // BOOKED APPOINTMENTS: Using secondary color from design system
-                             return {
-                               backgroundColor: 'hsl(var(--secondary))',
-                               borderColor: 'hsl(var(--secondary))',
-                               textColor: 'text-secondary-foreground',
-                               borderRadius: '6px',
-                               pattern: 'solid'
-                             };
-                           } else {
-                             // PERSONAL EVENTS: Using accent color from design system
-                             return {
-                               backgroundColor: 'hsl(var(--accent) / 0.9)',
-                               borderColor: 'hsl(var(--accent))',
-                               textColor: 'text-accent-foreground',
-                               borderRadius: '6px',
-                               pattern: 'gradient'
-                             };
-                           }
-                         };
+                        // Clear visual distinction between events, bookings, and available slots
+                        const getEventStyling = (event: any) => {
+                          if (event.isAvailableSlot) {
+                            // AVAILABLE APPOINTMENT SLOTS: Compact Google Calendar style
+                            return {
+                              backgroundColor: 'rgba(59, 130, 246, 0.08)', // Very subtle blue
+                              borderColor: '#3B82F6', // Blue-500
+                              textColor: 'text-blue-600',
+                              icon: <Share2 className="h-3 w-3" />,
+                              label: 'Available',
+                              borderRadius: '4px',
+                              pattern: 'dashed',
+                              isDashed: true,
+                              isCompact: true,
+                              minHeight: 24 // Minimum compact height
+                            };
+                          } else if (event.isBooking) {
+                            // BOOKED APPOINTMENTS: Green, solid, professional
+                            return {
+                              backgroundColor: '#10B981', // Emerald-500
+                              borderColor: '#047857', // Emerald-700
+                              textColor: 'text-white',
+                              icon: <UserCheck className="h-3 w-3" />,
+                              label: 'Booked',
+                              borderRadius: '6px',
+                              pattern: 'solid'
+                            };
+                          } else {
+                            // PERSONAL EVENTS: Blue, gradient, rounded
+                            const color = event.color || '#3B82F6';
+                            return {
+                              backgroundColor: `${color}90`, // 90% opacity
+                              borderColor: color,
+                              textColor: 'text-white',
+                              icon: <CalendarCheck className="h-3 w-3" />,
+                              label: 'Event',
+                              borderRadius: '6px',
+                              pattern: 'gradient'
+                            };
+                          }
+                        };
                         
                         const eventStyling = getEventStyling(event);
                         const isUserEvent = currentUserId && event.user_id === currentUserId;
@@ -652,11 +659,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             borderRadius: eventStyling.borderRadius,
                             borderStyle: eventStyling.isDashed ? 'dashed' : 'solid',
                             borderWidth: eventStyling.isDashed ? '1px' : '1px 1px 1px 4px',
-                             boxShadow: event.isAvailableSlot
-                               ? '0 1px 2px hsl(var(--primary) / 0.1)'
-                               : event.isBooking
-                               ? '0 4px 12px -2px hsl(var(--secondary) / 0.3), 0 2px 6px -1px hsl(var(--secondary) / 0.2)'
-                               : '0 8px 16px -4px hsl(var(--accent) / 0.1), 0 4px 8px -2px hsl(var(--accent) / 0.06)',
+                            boxShadow: event.isAvailableSlot
+                              ? '0 1px 2px rgba(59, 130, 246, 0.1)'
+                              : event.isBooking
+                              ? '0 4px 12px -2px rgba(16, 185, 129, 0.3), 0 2px 6px -1px rgba(16, 185, 129, 0.2)'
+                              : '0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.06)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
                             opacity: isDragging ? 0.5 : (event.isAvailableSlot ? 0.9 : 1),
                             cursor: (event.isBooking || event.isAvailableSlot) ? 'pointer' : 'grab',
@@ -667,11 +674,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                ref={setNodeRef}
                                className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
                                  transition-all duration-200 z-10 border
-                                  ${event.isAvailableSlot ? 'border-primary/30' : 'border-white/40'}
-                                  ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
-                                  ${event.isAvailableSlot ? 'hover:bg-primary/10 hover:border-primary/50' : ''}
-                                  ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
-                                  ${eventStyling.textColor}`}
+                                 ${event.isAvailableSlot ? 'border-blue-300' : 'border-white/40'}
+                                 ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
+                                 ${event.isAvailableSlot ? 'hover:bg-blue-50/30 hover:border-blue-400' : ''}
+                                 ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
+                                 ${eventStyling.textColor}`}
                               style={eventStyle}
                               onClick={() => {
                                 if (event.isAvailableSlot) {

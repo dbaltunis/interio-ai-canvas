@@ -19,13 +19,13 @@ export default {
 		},
 		extend: {
 			colors: {
-				// InterioApp Brand Colors - converted to HSL for consistency
+				// InterioApp Brand Colors
 				brand: {
-					primary: 'hsl(200 20% 42%)', // #415e6b converted to HSL
-					secondary: 'hsl(200 30% 65%)', // #9bb6bc converted to HSL  
-					accent: 'hsl(352 47% 32%)', // #733341 converted to HSL
-					neutral: 'hsl(240 2% 34%)', // #575656 converted to HSL
-					light: 'hsl(0 0% 100%)' // #ffffff converted to HSL
+					primary: '#415e6b',
+					secondary: '#9bb6bc',
+					accent: '#733341',
+					neutral: '#575656',
+					light: '#ffffff'
 				},
 				// Keep existing shadcn colors for compatibility
 				border: 'hsl(var(--border))',
