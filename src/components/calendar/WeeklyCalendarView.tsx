@@ -450,34 +450,37 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <div className="w-16 border-r bg-muted/20 flex-shrink-0">
               {showExtendedHours ? (
                 // 24-hour view: 0-23 (each hour = 48px)
-                Array.from({ length: 24 }, (_, hour) => (
-                  <div key={hour} className="relative">
-                    {/* Hour boundary line - SUBTLE */}
-                    <div 
-                      className="absolute left-0 right-0 border-t-2 border-border z-20"
-                      style={{ top: `${hour * 48}px` }}
-                    >
-                      {/* Hour label positioned exactly at boundary */}
-                       <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
-                         {hour.toString().padStart(2, '0')}:00
-                       </div>
+                Array.from({ length: 24 }, (_, hourIndex) => {
+                  const hour = hourIndex; // 0-23 for 24-hour format
+                  return (
+                    <div key={hour} className="relative">
+                      {/* Hour boundary line - SUBTLE */}
+                      <div 
+                        className="absolute left-0 right-0 border-t-2 border-border z-20"
+                        style={{ top: `${hour * 48}px` }}
+                      >
+                        {/* Hour label positioned exactly at boundary */}
+                        <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
+                          {hour.toString().padStart(2, '0')}:00
+                        </div>
+                      </div>
+                      
+                      {/* 30-minute divider - DASHED */}
+                      <div 
+                        className="absolute left-0 right-0 border-t border-dashed border-border/50 z-10"
+                        style={{ top: `${hour * 48 + 24}px` }}
+                      />
+                      
+                      {/* Hour block (48px = 2 × 24px slots) */}
+                      <div 
+                        className="relative h-[48px]"
+                        style={{ 
+                          backgroundColor: hour % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent'
+                        }}
+                      />
                     </div>
-                    
-                    {/* 30-minute divider - DASHED */}
-                    <div 
-                      className="absolute left-0 right-0 border-t border-dashed border-border/50 z-10"
-                      style={{ top: `${hour * 48 + 24}px` }}
-                    />
-                    
-                    {/* Hour block (48px = 2 × 24px slots) */}
-                    <div 
-                      className="relative h-[48px]"
-                      style={{ 
-                        backgroundColor: hour % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent'
-                      }}
-                    />
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 // Working hours view: 6 AM - 10 PM (each hour = 48px)
                 Array.from({ length: 17 }, (_, index) => {
