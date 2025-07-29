@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Shirt, Wrench, Palette, ArrowRightLeft } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, ArrowRightLeft } from "lucide-react";
 import { InventoryStats } from "./InventoryStats";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -20,6 +20,7 @@ export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("overview");
+  const [showSearch, setShowSearch] = useState(false);
   const { data: inventory, refetch } = useEnhancedInventory();
 
   return (
@@ -33,7 +34,11 @@ export const ModernInventoryDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowSearch(!showSearch)}
+          >
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
@@ -64,33 +69,35 @@ export const ModernInventoryDashboard = () => {
       </div>
 
       {/* Search and View Controls */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search inventory..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+      {showSearch && (
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search inventory..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-1 border rounded-md p-1">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-1 border rounded-md p-1">
-          <Button
-            variant={viewMode === "grid" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("grid")}
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -100,11 +107,11 @@ export const ModernInventoryDashboard = () => {
             Overview
           </TabsTrigger>
           <TabsTrigger value="fabrics" className="flex items-center gap-2">
-            <Shirt className="h-4 w-4" />
+            <Home className="h-4 w-4" />
             Fabrics
           </TabsTrigger>
           <TabsTrigger value="hardware" className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
+            <Minus className="h-4 w-4" />
             Hardware
           </TabsTrigger>
           <TabsTrigger value="assemblies" className="flex items-center gap-2">
@@ -126,7 +133,7 @@ export const ModernInventoryDashboard = () => {
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Shirt className="h-5 w-5 text-blue-500" />
+                  <Home className="h-5 w-5 text-blue-500" />
                   Fabric Library
                 </CardTitle>
                 <CardDescription>
@@ -144,7 +151,7 @@ export const ModernInventoryDashboard = () => {
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Wrench className="h-5 w-5 text-green-500" />
+                  <Minus className="h-5 w-5 text-green-500" />
                   Hardware
                 </CardTitle>
                 <CardDescription>
