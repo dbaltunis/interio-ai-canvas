@@ -451,9 +451,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
                   }`}
                 >
-                  {time.endsWith(':00') && (
-                    <span className="font-medium text-[10px] absolute top-0 right-2 -translate-y-full">{time}</span>
-                  )}
+                   {time.endsWith(':00') && (
+                     <span className="font-medium text-[10px] absolute bottom-0 right-2">{time}</span>
+                   )}
                 </div>
               ))}
             </div>
@@ -527,21 +527,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         </div>
                       )}
                       
-                      {/* Current time indicator with improved accuracy */}
-                      {isCurrentDay && (() => {
-                        const now = new Date();
-                        const currentHour = now.getHours();
-                        const currentMinutes = now.getMinutes();
-                        
-                        // Calculate exact position from start of visible time range
-                        let totalMinutesFromMidnight = currentHour * 60 + currentMinutes;
-                        if (!showExtendedHours) {
-                          totalMinutesFromMidnight -= 6 * 60; // Subtract 6 AM offset for working hours
-                          if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
-                        }
-                        
-                        // Use the same calculation as events for consistency
-                        const top = (totalMinutesFromMidnight * 20) / 30;
+                       {/* Current time indicator with improved accuracy */}
+                       {isCurrentDay && (() => {
+                         const now = new Date();
+                         const currentHour = now.getHours();
+                         const currentMinutes = now.getMinutes();
+                         
+                         // Calculate exact position from start of visible time range
+                         let totalMinutesFromMidnight = currentHour * 60 + currentMinutes;
+                         if (!showExtendedHours) {
+                           totalMinutesFromMidnight -= 6 * 60; // Subtract 6 AM offset for working hours
+                           if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
+                         }
+                         
+                         // FIXED: Use the same calculation as events for consistency
+                         const top = Math.round((totalMinutesFromMidnight / 30) * 20);
                         
                         return (
                           <div 
