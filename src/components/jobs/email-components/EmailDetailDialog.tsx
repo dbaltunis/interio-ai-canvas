@@ -278,7 +278,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <MousePointer className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium text-orange-600">Clicks</span>
                 </div>
-                <div className="text-2xl font-bold">{currentEmail.click_count || 0}</div>
+                <div className="text-2xl font-bold">{emailAnalytics.filter(e => e.event_type === 'click').length}</div>
                 <div className="text-sm text-muted-foreground">
                   {emailAnalytics.filter(e => e.event_type === 'click').length} events
                 </div>
