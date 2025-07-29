@@ -211,20 +211,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     });
   };
 
-  // COMPACT CALENDAR: 24px per hour = 0.4px per minute
+  // GOOGLE CALENDAR DENSITY: 12px per hour for compact view
   const timeToPixels = (hour: number, minutes: number, isExtendedHours: boolean = false) => {
     if (isExtendedHours) {
-      // From midnight: each hour = 24px
-      return hour * 24 + (minutes / 60) * 24;
+      // From midnight: each hour = 12px
+      return hour * 12 + (minutes / 60) * 12;
     } else {
-      // From 6 AM: each hour = 24px
+      // From 6 AM: each hour = 12px
       const hourOffset = hour - 6;
-      return hourOffset * 24 + (minutes / 60) * 24;
+      return hourOffset * 12 + (minutes / 60) * 12;
     }
   };
 
   const pixelsToTime = (pixels: number, isExtendedHours: boolean = false) => {
-    const totalMinutes = (pixels / 24) * 60; // 24px per hour
+    const totalMinutes = (pixels / 12) * 60; // 12px per hour
     const hour = Math.floor(totalMinutes / 60) + (isExtendedHours ? 0 : 6);
     const minutes = Math.floor(totalMinutes % 60);
     return { hour, minutes };
@@ -250,7 +250,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
     // Calculate duration and height
     const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
-    const height = Math.max((durationInMinutes / 60) * 24, 12);
+    const height = Math.max((durationInMinutes / 60) * 12, 6);
 
     return { top: finalTop, height, visible: true };
   };
@@ -487,10 +487,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const hour = index + 6; // Start from 6 AM
                   return (
                     <div key={hour} className="relative">
-                      {/* Hour boundary line - SUBTLE */}
-                      <div 
-                        className="absolute left-0 right-0 border-t-2 border-border z-20"
-                        style={{ top: `${index * 24}px` }}
+                       {/* Hour boundary line - SUBTLE */}
+                       <div 
+                         className="absolute left-0 right-0 border-t-2 border-border z-20"
+                         style={{ top: `${index * 12}px` }}
                       >
                          {/* Hour label positioned exactly at boundary */}
                           <div className="absolute top-0 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
@@ -498,15 +498,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           </div>
                       </div>
                       
-                      {/* 30-minute divider - DASHED - Position exactly at 12px */}
+                      {/* 30-minute divider - DASHED - Position exactly at 6px */}
                       <div 
                         className="absolute left-0 right-0 border-t border-dashed border-border/50 z-10"
-                        style={{ top: `${index * 24 + 12}px` }}
+                        style={{ top: `${index * 12 + 6}px` }}
                       />
                       
-                      {/* Hour block (24px to match timeToPixels calculation) */}
+                      {/* Hour block (12px to match Google Calendar density) */}
                       <div 
-                        className="relative h-[24px]"
+                        className="relative h-[12px]"
                         style={{ 
                           backgroundColor: index % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent'
                         }}
@@ -650,8 +650,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const currentHour = now.getHours();
                           const currentMinutes = now.getMinutes();
                           
-             // MATCH EXACT GRID: Hour boundaries are at index * 24px
-             const top = (currentHour - (showExtendedHours ? 0 : 6)) * 24 + (currentMinutes / 60) * 24;
+             // MATCH EXACT GRID: Hour boundaries are at index * 12px
+             const top = (currentHour - (showExtendedHours ? 0 : 6)) * 12 + (currentMinutes / 60) * 12;
              if (!showExtendedHours && top < 0) return null; // Don't show if before visible hours
                          
                          return (

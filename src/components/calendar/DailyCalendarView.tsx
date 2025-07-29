@@ -43,14 +43,14 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // COMPACT CALENDAR: 24px per hour = 0.4px per minute 
+  // GOOGLE CALENDAR DENSITY: 12px per hour for compact view
   const timeToPixels = (hour: number, minutes: number) => {
     const hourOffset = hour - 6; // Hours from 6 AM
-    return hourOffset * 24 + (minutes / 60) * 24;
+    return hourOffset * 12 + (minutes / 60) * 12;
   };
 
   const pixelsToTime = (pixels: number) => {
-    const totalMinutes = (pixels / 24) * 60; // 24px per hour
+    const totalMinutes = (pixels / 12) * 60; // 12px per hour
     const hour = Math.floor(totalMinutes / 60) + 6;
     const minutes = Math.floor(totalMinutes % 60);
     return { hour, minutes };
@@ -62,7 +62,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
     
     const top = timeToPixels(startHour, startMinutes);
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 60) * 24, 12);
+    const height = Math.max((durationInMinutes / 60) * 12, 6);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -118,21 +118,21 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             
             return (
               <div key={hour}>
-                {/* Hour slot - EXACTLY 12px with subtle border */}
+                {/* Hour slot - EXACTLY 6px with subtle border */}
                 <div 
                   className="relative border-b-2 border-border" 
-                  style={{ height: '12px' }}
+                  style={{ height: '6px' }}
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
-                    const { hour, minutes } = pixelsToTime(y + index * 24);
+                    const { hour, minutes } = pixelsToTime(y + index * 12);
                     const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
                     onTimeSlotClick?.(currentDate, timeStr);
                   }}
                   onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
-                    const { hour, minutes } = pixelsToTime(y + index * 24);
+                    const { hour, minutes } = pixelsToTime(y + index * 12);
                     const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
                     e.currentTarget.title = `Click to book at ${timeStr}`;
                   }}
@@ -146,22 +146,22 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                   />
                 </div>
                 
-                {/* Half hour slot - EXACTLY 12px with dashed border */}
+                {/* Half hour slot - EXACTLY 6px with dashed border */}
                 <div 
                   className="relative border-b border-dashed border-border/50" 
-                  style={{ height: '12px' }}
+                  style={{ height: '6px' }}
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
-                    const { hour, minutes } = pixelsToTime(y + index * 24 + 12);
-                    const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
+                    const { hour, minutes } = pixelsToTime(y + (index * 12) + 6);
+                    const timeStr = `${hour.toString().padStart(2, '0')}:30`;
                     onTimeSlotClick?.(currentDate, timeStr);
                   }}
                   onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
-                    const { hour, minutes } = pixelsToTime(y + index * 24 + 12);
-                    const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
+                    const { hour, minutes } = pixelsToTime(y + (index * 12) + 6);
+                    const timeStr = `${hour.toString().padStart(2, '0')}:30`;
                     e.currentTarget.title = `Click to book at ${timeStr}`;
                   }}
                 >
@@ -181,8 +181,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // MATCH EXACT GRID: Hour boundaries are at index * 24px
-              const top = (currentHour - 6) * 24 + (currentMinutes / 60) * 24;
+              // MATCH EXACT GRID: Hour boundaries are at index * 12px
+              const top = (currentHour - 6) * 12 + (currentMinutes / 60) * 12;
               
               return (
                 <div 
