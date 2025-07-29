@@ -117,6 +117,9 @@ const Index = () => {
       {/* Use the new ResponsiveHeader */}
       <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
+      {/* Notification Center - Shows appointment notifications */}
+      <NotificationCenter />
+
       {/* Main Content - Full Width with smooth transitions */}
       <main className="w-full">
         {renderActiveComponent()}
