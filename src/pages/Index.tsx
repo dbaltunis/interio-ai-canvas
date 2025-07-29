@@ -17,6 +17,7 @@ const CalendarView = lazy(() => import("@/components/calendar/CalendarView"));
 import { DashboardSkeleton } from "@/components/dashboard/skeleton/DashboardSkeleton";
 import { JobsPageSkeleton } from "@/components/jobs/skeleton/JobsPageSkeleton";
 import { ClientManagementSkeleton } from "@/components/clients/skeleton/ClientManagementSkeleton";
+import { CalendarSkeleton } from "@/components/calendar/skeleton/CalendarSkeleton";
 import { GenericPageSkeleton } from "@/components/skeleton/GenericPageSkeleton";
 
 const Index = () => {
@@ -92,7 +93,7 @@ const Index = () => {
         );
       case 'calendar':
         return (
-          <Suspense fallback={<GenericPageSkeleton />}>
+          <Suspense fallback={<CalendarSkeleton />}>
             <ComponentWrapper>
               <CalendarView />
             </ComponentWrapper>
