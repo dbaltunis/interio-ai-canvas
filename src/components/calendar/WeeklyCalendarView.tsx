@@ -555,8 +555,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                          }
                          
                          // Each 30-minute slot is 20px, so each minute is 20/30 = 0.6667px
-                         // Move up by 10px to center between hour markers
-                         const top = (totalMinutesFromMidnight * 20) / 30 - 10;
+                         const top = (totalMinutesFromMidnight * 20) / 30;
                          
                          return (
                            <div 
