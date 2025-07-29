@@ -18,6 +18,8 @@ import { DashboardSkeleton } from "@/components/dashboard/skeleton/DashboardSkel
 import { JobsPageSkeleton } from "@/components/jobs/skeleton/JobsPageSkeleton";
 import { ClientManagementSkeleton } from "@/components/clients/skeleton/ClientManagementSkeleton";
 import { CalendarSkeleton } from "@/components/calendar/skeleton/CalendarSkeleton";
+import { EmailManagementSkeleton } from "@/components/jobs/email/skeleton/EmailManagementSkeleton";
+import { InventorySkeleton } from "@/components/inventory/skeleton/InventorySkeleton";
 import { GenericPageSkeleton } from "@/components/skeleton/GenericPageSkeleton";
 
 const Index = () => {
@@ -77,7 +79,7 @@ const Index = () => {
         );
       case "quotes":
         return (
-          <Suspense fallback={<GenericPageSkeleton />}>
+          <Suspense fallback={<EmailManagementSkeleton />}>
             <ComponentWrapper>
               <EmailManagement />
             </ComponentWrapper>
@@ -85,7 +87,7 @@ const Index = () => {
         );
       case "inventory":
         return (
-          <Suspense fallback={<GenericPageSkeleton />}>
+          <Suspense fallback={<InventorySkeleton />}>
             <ComponentWrapper>
               <LibraryPage />
             </ComponentWrapper>
