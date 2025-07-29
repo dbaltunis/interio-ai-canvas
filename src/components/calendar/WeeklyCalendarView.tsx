@@ -452,7 +452,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   }`}
                 >
                   {time.endsWith(':00') && (
-                    <span className="font-medium text-[10px] absolute bottom-0 right-2">{time}</span>
+                    <span className="font-medium text-[10px] absolute top-0 right-2 -translate-y-full">{time}</span>
                   )}
                 </div>
               ))}
