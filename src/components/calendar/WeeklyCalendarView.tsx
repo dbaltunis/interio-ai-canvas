@@ -668,15 +668,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           };
 
                            return (
-                             <div
-                               ref={setNodeRef}
-                               className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
-                                 transition-all duration-200 z-10 border
-                                 ${event.isAvailableSlot ? 'border-blue-300' : 'border-white/40'}
-                                 ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
-                                 ${event.isAvailableSlot ? 'hover:bg-blue-50/30 hover:border-blue-400' : ''}
-                                 ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
-                                 ${eventStyling.textColor}`}
+                              <div
+                                ref={setNodeRef}
+                                {...listeners}
+                                {...attributes}
+                                className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
+                                  transition-all duration-200 z-10 border
+                                  ${event.isAvailableSlot ? 'border-blue-300' : 'border-white/40'}
+                                  ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
+                                  ${event.isAvailableSlot ? 'hover:bg-blue-50/30 hover:border-blue-400' : ''}
+                                  ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/50' : ''}
+                                  ${eventStyling.textColor}`}
                               style={eventStyle}
                               onClick={() => {
                                 if (event.isAvailableSlot) {
@@ -708,22 +710,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
                                }
                             >
-                              {/* Drag Handle - only for personal events */}
-                              {!event.isBooking && !event.isAvailableSlot && (
-                                <div 
-                                  {...listeners}
-                                  {...attributes}
-                                  className="absolute top-1 right-1 w-4 h-4 bg-black/20 rounded-sm cursor-move 
-                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                                            flex items-center justify-center hover:bg-black/30"
-                                  onClick={(e) => e.stopPropagation()}
-                                  title="Drag to move"
-                                >
-                                  <div className="w-2 h-2 bg-white/80 rounded-[1px]"></div>
-                                </div>
-                              )}
-
-                                <div className="flex flex-col h-full p-1">
+                                 <div className="flex flex-col h-full p-1">
                                   {/* Event header with user info and notifications */}
                                   <div className="flex items-start justify-between mb-1">
                                     {/* Event title at the top */}
