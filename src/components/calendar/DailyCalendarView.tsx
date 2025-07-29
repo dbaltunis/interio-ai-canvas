@@ -137,7 +137,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                     e.currentTarget.title = `Click to book at ${timeStr}`;
                   }}
                 >
-                  <div className="absolute left-2 -top-2 text-xs font-medium text-muted-foreground bg-background px-1 z-10">
+                  <div className="absolute left-2 top-0 text-xs font-medium text-muted-foreground bg-background px-1 z-10">
                     {hourTime}
                   </div>
                   <div 

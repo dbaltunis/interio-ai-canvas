@@ -492,10 +492,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         className="absolute left-0 right-0 border-t-2 border-border z-20"
                         style={{ top: `${index * 24}px` }}
                       >
-                        {/* Hour label positioned exactly at boundary */}
-                         <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
-                           {hour.toString().padStart(2, '0')}:00
-                         </div>
+                         {/* Hour label positioned exactly at boundary */}
+                          <div className="absolute top-0 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
+                            {hour.toString().padStart(2, '0')}:00
+                          </div>
                       </div>
                       
                       {/* 30-minute divider - DASHED */}
