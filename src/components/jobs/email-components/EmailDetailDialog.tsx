@@ -375,35 +375,58 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                     </div>
                   )}
 
-                  {/* Email Opened */}
-                  {emailAnalytics.filter(e => e.event_type === 'open').length > 0 && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <div>
-                        <div className="font-medium">Email Opened</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(emailAnalytics.filter(e => e.event_type === 'open')[0].created_at).toLocaleDateString()} at {new Date(emailAnalytics.filter(e => e.event_type === 'open')[0].created_at).toLocaleTimeString()}
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Individual Open Events */}
+                  {/* Individual Email Events */}
                   {emailAnalytics
-                    .filter(event => event.event_type === 'open')
-                    .map((openEvent, index) => (
-                      <div key={openEvent.id} className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        <div>
-                          <div className="font-medium">
-                            Email Opened {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(openEvent.created_at).toLocaleString()}
+                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                    .map((event, index) => {
+                      const getEventIcon = (eventType: string) => {
+                        switch (eventType) {
+                          case 'open':
+                            return 'bg-purple-500';
+                          case 'click':
+                            return 'bg-orange-500';
+                          case 'download':
+                            return 'bg-green-500';
+                          default:
+                            return 'bg-blue-500';
+                        }
+                      };
+
+                      const getEventTitle = (eventType: string, eventIndex: number) => {
+                        const openEvents = emailAnalytics.filter(e => e.event_type === 'open');
+                        const clickEvents = emailAnalytics.filter(e => e.event_type === 'click');
+                        const downloadEvents = emailAnalytics.filter(e => e.event_type === 'download');
+
+                        switch (eventType) {
+                          case 'open':
+                            const openIndex = openEvents.findIndex(e => e.id === event.id);
+                            return `Email Opened ${openIndex === 0 ? '(1st time)' : openIndex === 1 ? '(2nd time)' : openIndex === 2 ? '(3rd time)' : `(${openIndex + 1}th time)`}`;
+                          case 'click':
+                            const clickIndex = clickEvents.findIndex(e => e.id === event.id);
+                            return `Email Link Clicked ${clickIndex > 0 ? `(${clickIndex + 1}th time)` : ''}`;
+                          case 'download':
+                            const downloadIndex = downloadEvents.findIndex(e => e.id === event.id);
+                            return `Attachment Downloaded ${downloadIndex > 0 ? `(${downloadIndex + 1}th time)` : ''}`;
+                          default:
+                            return `Email Event: ${eventType}`;
+                        }
+                      };
+
+                      return (
+                        <div key={event.id} className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${getEventIcon(event.event_type)}`}></div>
+                          <div>
+                            <div className="font-medium">
+                              {getEventTitle(event.event_type, index)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(event.created_at).toLocaleDateString()} at {new Date(event.created_at).toLocaleTimeString()}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                   {/* Email deletion events */}
                   {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) && (
