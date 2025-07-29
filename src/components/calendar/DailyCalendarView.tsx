@@ -55,11 +55,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
     // Calculate exact position within the slot
     const slotHeight = 48; // 12rem / 2 = 48px per 30-min slot
     const minutesFromSlotStart = startMinutes % 30;
-    const top = startSlotIndex * slotHeight + (minutesFromSlotStart / 30) * slotHeight;
+    const top = Math.round(startSlotIndex * slotHeight + (minutesFromSlotStart / 30) * slotHeight);
 
     // Calculate duration and height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * slotHeight, 24);
+    const height = Math.max(Math.round((durationInMinutes / 30) * slotHeight), 24);
 
     return { top, height, visible: true };
   };

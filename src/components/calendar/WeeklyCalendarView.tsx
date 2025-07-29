@@ -241,12 +241,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     }
     
     // Convert minutes to pixels: each 30-minute slot = 20px
-    // So each minute = 20/30 = 0.6667px
-    const top = (totalMinutesFromMidnight * 20) / 30;
+    // So each minute = 20/30 = 0.6667px  
+    const top = Math.round((totalMinutesFromMidnight / 30) * 20);
 
     // Calculate duration and height with accurate minute conversion
     const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
-    const height = Math.max((durationInMinutes * 20) / 30, 15); // Minimum 15px height
+    const height = Math.max(Math.round((durationInMinutes / 30) * 20), 15); // Minimum 15px height
 
     return { top, height, visible: true };
   };
