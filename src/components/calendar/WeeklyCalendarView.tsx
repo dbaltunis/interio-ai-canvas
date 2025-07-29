@@ -458,9 +458,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       style={{ top: `${hour * 48}px` }}
                     >
                       {/* Hour label positioned exactly at boundary */}
-                      <div className="absolute -top-2 right-2 bg-background text-xs font-medium text-muted-foreground px-1 z-10">
-                        {hour.toString().padStart(2, '0')}:00
-                      </div>
+                       <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
+                         {hour.toString().padStart(2, '0')}:00
+                       </div>
                     </div>
                     
                     {/* 30-minute divider - DASHED */}
@@ -490,9 +490,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         style={{ top: `${index * 48}px` }}
                       >
                         {/* Hour label positioned exactly at boundary */}
-                        <div className="absolute -top-2 right-2 bg-background text-xs font-medium text-muted-foreground px-1 z-10">
-                          {hour.toString().padStart(2, '0')}:00
-                        </div>
+                         <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
+                           {hour.toString().padStart(2, '0')}:00
+                         </div>
                       </div>
                       
                       {/* 30-minute divider - DASHED */}
