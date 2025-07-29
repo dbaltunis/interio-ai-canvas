@@ -120,8 +120,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
               >
                 {/* Time label */}
                 <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r relative">
-                  {isNextSlotHour && index < timeSlots.length - 1 && (
-                    <span className="font-medium absolute bottom-0 left-2 transform translate-y-full">{timeSlots[index + 1]}</span>
+                  {isHourSlot && (
+                    <span className="font-medium absolute bottom-0 left-2">{time}</span>
                   )}
                 </div>
                 
