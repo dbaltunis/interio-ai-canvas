@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_notifications: {
+        Row: {
+          appointment_id: string
+          channels: string[]
+          created_at: string
+          error_message: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id: string
+          channels?: string[]
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string
+          channels?: string[]
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_notifications_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_schedulers: {
         Row: {
           active: boolean | null
