@@ -310,18 +310,31 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveEvent(null);
+    
+    console.log('Drag end:', { active: active?.id, over: over?.id, overData: over?.data?.current });
 
-    if (!over || !active) return;
+    if (!over || !active) {
+      console.log('No drop target or active element');
+      return;
+    }
 
     const eventId = active.id as string;
     const dropData = over.data.current;
     
-    if (!dropData) return;
+    if (!dropData) {
+      console.log('No drop data found');
+      return;
+    }
 
     const { day, timeSlotIndex } = dropData;
     const eventToUpdate = displayAppointments?.find(apt => apt.id === eventId);
     
-    if (!eventToUpdate) return;
+    if (!eventToUpdate) {
+      console.log('Event to update not found:', eventId);
+      return;
+    }
+
+    console.log('Updating event:', eventId, 'to day:', day, 'timeSlot:', timeSlotIndex);
 
     // Calculate new start time
     const originalDuration = new Date(eventToUpdate.end_time).getTime() - new Date(eventToUpdate.start_time).getTime();
