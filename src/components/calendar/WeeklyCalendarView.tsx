@@ -422,15 +422,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         : ''
                     }`}>
                       {format(day, 'd')}
-                      {/* Event indicators with clear labels */}
-                      <div className="absolute -top-1 -right-1 flex gap-1">
-                        {hasRegularEvents && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full" title="Has personal events" />
-                        )}
-                        {hasBookings && (
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full" title="Has customer bookings" />
-                        )}
-                      </div>
                     </div>
                   </div>
                 );
@@ -447,9 +438,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
-                  className={`h-[20px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
-                    index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
-                  }`}
+                className={`h-[20px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
+                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
+                }`}
                 >
                   {index % 2 === 0 && (
                     <span className="font-medium text-[10px]">{time}</span>
@@ -466,7 +457,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   return (
                     <div
                       key={`hour-line-${index}`}
-                      className="absolute left-0 right-0 border-t border-muted/20 pointer-events-none z-5"
+                      className="absolute left-0 right-0 border-t border-muted/10 pointer-events-none z-5"
                       style={{ top: `${index * 20}px` }}
                     />
                   );
@@ -498,8 +489,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div 
                               ref={setNodeRef}
-                               className={`h-[20px] transition-colors relative ${
-                                 index % 2 === 0 ? 'border-b border-muted/80' : 'border-b border-dashed border-muted/10'
+                              className={`h-[20px] transition-colors relative ${
+                                 index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                                } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
                                   ? 'bg-red-50 hover:bg-red-100 cursor-help border-red-200' 
@@ -531,7 +522,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             height: `${previewStyle.height}px`
                           }}
                         >
-                          <Calendar className="h-3 w-3 mr-1" />
                           <span className="text-xs font-medium">New Event</span>
                         </div>
                       )}
@@ -799,14 +789,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
               zIndex: 1000
             }}
           >
-            <div className="font-semibold text-white text-sm mb-1">
-              📅 {activeEvent.title}
+                            <div className="font-semibold text-white text-sm mb-1">
+              {activeEvent.title}
             </div>
-            <div className="text-white/90 text-xs">
-              🕐 {format(new Date(activeEvent.start_time), 'HH:mm')}
+                            <div className="text-white/90 text-xs">
+              {format(new Date(activeEvent.start_time), 'HH:mm')}
             </div>
-            <div className="text-white/70 text-xs mt-1">
-              ↻ Drop to reschedule
+                            <div className="text-white/70 text-xs mt-1">
+              Drop to reschedule
             </div>
           </div>
         )}
