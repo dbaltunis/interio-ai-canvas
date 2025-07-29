@@ -95,130 +95,133 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
       
-      {/* Scrollable time grid */}
+      {/* Scrollable time grid - COMPLETELY REBUILT */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
-        <div className="relative">
+        <div className="relative bg-background">
+          {/* Time grid with clear visual hierarchy */}
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
             const [hour, minute] = time.split(':');
             
             return (
-              <div 
-                key={time} 
-                className="relative"
-              >
-                {/* FIXED: Time label positioned ABOVE the grid line to show time starts HERE */}
-                <div className="h-0 relative">
-                  <div className="absolute -top-2 left-2 text-xs font-medium text-foreground bg-background px-1 z-30">
+              <div key={time} className="relative">
+                {/* STRONG horizontal line marking EXACT time start */}
+                <div className={`absolute left-0 right-0 z-10 ${
+                  isHourSlot 
+                    ? 'border-t-2 border-border' 
+                    : 'border-t border-dashed border-muted-foreground/40'
+                }`} 
+                style={{ top: `${index * 48}px` }}>
+                  {/* Time label positioned EXACTLY at the line */}
+                  <div className={`absolute -top-3 left-2 text-xs font-semibold px-2 py-1 rounded ${
+                    isHourSlot 
+                      ? 'bg-background text-foreground border border-border' 
+                      : 'bg-muted/80 text-muted-foreground'
+                  }`}>
                     {time}
                   </div>
                 </div>
                 
-                {/* FIXED: Grid line that represents the EXACT start of this time */}
-                <div className={`h-0 border-t-2 ${
-                  isHourSlot 
-                    ? 'border-border' 
-                    : 'border-dashed border-muted/60'
-                }`}></div>
-                
-                {/* FIXED: 30-minute content area */}
+                {/* 30-minute content area with clear boundaries */}
                 <div 
-                  className={`h-12 hover:bg-accent/20 cursor-pointer transition-colors ${
-                    isHourSlot ? 'bg-background' : 'bg-muted/5'
+                  className={`h-12 relative cursor-pointer transition-colors ${
+                    isHourSlot ? 'bg-background hover:bg-accent/20' : 'bg-muted/10 hover:bg-accent/30'
                   }`}
+                  style={{ top: `${index * 48}px` }}
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
-                  title={`${format(currentDate, 'MMM d')} at ${time}`}
+                  title={`Book appointment at ${time} on ${format(currentDate, 'MMM d')}`}
                 >
-                  {/* Current time indicator - FIXED positioning */}
-                  {isToday(currentDate) && index === 0 && (() => {
-                    const now = new Date();
-                    const currentHour = now.getHours();
-                    const currentMinutes = now.getMinutes();
-                    
-                    if (currentHour >= 6 && currentHour <= 22) {
-                      const pixelsPerMinute = 48 / 30; // 1.6px per minute
-                      const totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-                      const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
-                      
-                      return (
-                        <div 
-                          className="absolute left-0 right-0 h-1 bg-red-500 z-20 shadow-lg"
-                          style={{ top: `${top}px` }}
-                        >
-                          <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                          <div className="absolute left-4 -top-6 text-xs bg-red-500 text-white px-2 py-1 rounded font-medium">
-                            NOW: {format(now, 'HH:mm')}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {/* Visual feedback for clickable area */}
+                  <div className="absolute inset-0 border border-transparent hover:border-accent/50 rounded-sm"></div>
                 </div>
               </div>
             );
           })}
           
-          {/* Events overlay */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="relative"> {/* No left margin offset needed */}
-              {dayEvents.map((event, eventIndex) => {
-                const startTime = new Date(event.start_time);
-                const endTime = new Date(event.end_time);
-                const style = calculateEventStyle(startTime, endTime);
-                
-                if (!style.visible) return null;
-                
-                // Color coding by appointment color or type
-                const getEventColor = (event: any) => {
-                  if (event.color) {
-                    return `text-white border-l-4`;
-                  }
-                  
-                  switch (event.appointment_type) {
-                    case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
-                    case 'consultation': return 'bg-green-500/90 text-white border-green-600';
-                    case 'call': return 'bg-purple-500/90 text-white border-purple-600';
-                    case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
-                    default: return 'bg-primary/90 text-primary-foreground border-primary';
-                  }
-                };
-                
-                return (
-                  <div
-                    key={event.id}
-                    className={`absolute left-1 right-1 rounded border-l-4 p-2 text-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all z-10 pointer-events-auto ${
-                      getEventColor(event)
-                    }`}
-                    style={{
-                      top: `${style.top}px`,
-                      height: `${style.height}px`,
-                      marginLeft: `${eventIndex * 4}px`,
-                      zIndex: 10 + eventIndex,
-                      backgroundColor: event.color || undefined,
-                      borderLeftColor: event.color || undefined
-                    }}
-                    onClick={() => onEventClick?.(event.id)}
-                    title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
-                  >
-                    <div className="font-semibold truncate leading-tight text-base">
-                      {event.title}
-                    </div>
-                    <div className="text-sm opacity-90 leading-tight">
-                      {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                    </div>
-                    {style.height > 60 && event.location && (
-                      <div className="text-sm opacity-75 leading-tight truncate mt-1">
-                        📍 {event.location}
-                      </div>
-                    )}
+          {/* Current time indicator with precise positioning */}
+          {isToday(currentDate) && (() => {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinutes = now.getMinutes();
+            
+            if (currentHour >= 6 && currentHour <= 22) {
+              const pixelsPerMinute = 48 / 30; // 1.6px per minute
+              const totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
+              const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
+              
+              return (
+                <div 
+                  className="absolute left-0 right-0 h-1 bg-red-500 z-30 shadow-lg"
+                  style={{ top: `${top}px` }}
+                >
+                  <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background"></div>
+                  <div className="absolute left-6 -top-7 text-xs bg-red-500 text-white px-2 py-1 rounded font-bold shadow-lg">
+                    {format(now, 'HH:mm')} ({top}px)
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+                </div>
+              );
+            }
+            return null;
+          })()}
+          
+          {/* Events overlay with precise positioning */}
+          <div className="absolute inset-0 pointer-events-none">
+            {dayEvents.map((event, eventIndex) => {
+              const startTime = new Date(event.start_time);
+              const endTime = new Date(event.end_time);
+              const style = calculateEventStyle(startTime, endTime);
+              
+               if (!style.visible) return null;
+               
+               // Color coding by appointment color or type
+               const getEventColor = (event: any) => {
+                 if (event.color) {
+                   return `text-white border-l-4`;
+                 }
+                 
+                 switch (event.appointment_type) {
+                   case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
+                   case 'consultation': return 'bg-green-500/90 text-white border-green-600';
+                   case 'call': return 'bg-purple-500/90 text-white border-purple-600';
+                   case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
+                   default: return 'bg-primary/90 text-primary-foreground border-primary';
+                 }
+               };
+               
+               return (
+                 <div
+                   key={event.id}
+                   className={`absolute left-4 right-4 rounded border-l-4 p-2 text-sm overflow-hidden cursor-pointer hover:shadow-xl transition-all z-20 pointer-events-auto ${
+                     getEventColor(event)
+                   }`}
+                   style={{
+                     top: `${style.top}px`,
+                     height: `${style.height}px`,
+                     marginLeft: `${eventIndex * 6}px`,
+                     zIndex: 20 + eventIndex,
+                     backgroundColor: event.color || undefined,
+                     borderLeftColor: event.color || undefined
+                   }}
+                   onClick={() => onEventClick?.(event.id)}
+                   title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\nPosition: ${style.top}px-${style.top + style.height}px`}
+                 >
+                   <div className="font-semibold truncate leading-tight text-base">
+                     {event.title}
+                   </div>
+                   <div className="text-sm opacity-90 leading-tight">
+                     {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                   </div>
+                   {style.height > 60 && event.location && (
+                     <div className="text-sm opacity-75 leading-tight truncate mt-1">
+                       📍 {event.location}
+                     </div>
+                   )}
+                 </div>
+               );
+             })}
+           </div>
+         </div>
+       </div>
+     </div>
+   );
+ };
