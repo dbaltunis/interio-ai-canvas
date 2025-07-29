@@ -498,15 +498,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           </div>
                       </div>
                       
-                      {/* 30-minute divider - DASHED */}
+                      {/* 30-minute divider - DASHED - Position exactly at 12px */}
                       <div 
                         className="absolute left-0 right-0 border-t border-dashed border-border/50 z-10"
                         style={{ top: `${index * 24 + 12}px` }}
                       />
                       
-                      {/* Hour block (48px = 2 × 24px slots) */}
+                      {/* Hour block (24px to match timeToPixels calculation) */}
                       <div 
-                        className="relative h-[48px]"
+                        className="relative h-[24px]"
                         style={{ 
                           backgroundColor: index % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent'
                         }}
