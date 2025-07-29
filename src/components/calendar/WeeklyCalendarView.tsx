@@ -542,23 +542,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       )}
                       
                       {/* Current time indicator with improved accuracy */}
-                      {isCurrentDay && (() => {
-                        const now = new Date();
-                        const currentHour = now.getHours();
-                        const currentMinutes = now.getMinutes();
-                        
-                        // Calculate exact position from start of visible time range
-                        let totalMinutesFromMidnight = currentHour * 60 + currentMinutes;
-                        if (!showExtendedHours) {
-                          totalMinutesFromMidnight -= 6 * 60; // Subtract 6 AM offset for working hours
-                          if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
-                        }
-                        
-                        // Each time slot is 20px, and we have 2 slots per hour (00:00 and 00:30)
-                        // So current time position = current slot index * 20px
-                        const currentTimeSlotIndex = (currentHour * 2) + (currentMinutes >= 30 ? 1 : 0) + (currentMinutes % 30) / 30;
-                        const top = currentTimeSlotIndex * 20;
-                        
+                       {isCurrentDay && (() => {
+                         const now = new Date();
+                         const currentHour = now.getHours();
+                         const currentMinutes = now.getMinutes();
+                         
+                         // Calculate exact position from start of visible time range
+                         let totalMinutesFromMidnight = currentHour * 60 + currentMinutes;
+                         if (!showExtendedHours) {
+                           totalMinutesFromMidnight -= 6 * 60; // Subtract 6 AM offset for working hours
+                           if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
+                         }
+                         
+                         // Each 30-minute slot is 20px, so each minute is 20/30 = 0.6667px
+                         const top = (totalMinutesFromMidnight * 20) / 30;
+                         
                          return (
                            <div 
                              className="absolute left-0 right-0 h-0.5 bg-red-500/75 z-20"
