@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Clock, User, CalendarCheck, UserCheck, Share2 } from "lucide-react";
+import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { AvailableSlotDialog } from "./AvailableSlotDialog";
 
 interface WeeklyCalendarViewProps {
@@ -25,6 +26,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: schedulerSlots, isLoading: slotsLoading } = useSchedulerSlots(); 
   const { data: bookedAppointments, isLoading: bookingsLoading } = useAppointmentBookings(); 
   const { data: schedulers, isLoading: schedulersLoading } = useAppointmentSchedulers();
+  const updateAppointment = useUpdateAppointment();
   
   // Debug logging for data fetching
   console.log('Calendar data status:', { 
@@ -345,40 +347,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     
     const newEndTime = new Date(newStartTime.getTime() + originalDuration);
 
-    // Optimistic update - update cache immediately
-    queryClient.setQueryData(['appointments'], (oldData: any) => {
-      if (!oldData) return oldData;
-      
-      return oldData.map((appointment: any) => 
-        appointment.id === eventId
-          ? {
-              ...appointment,
-              start_time: newStartTime.toISOString(),
-              end_time: newEndTime.toISOString()
-            }
-          : appointment
-      );
+    console.log('Calling updateAppointment.mutateAsync with:', {
+      id: eventId,
+      start_time: newStartTime.toISOString(),
+      end_time: newEndTime.toISOString()
     });
 
-    // Update the appointment in Supabase in the background
+    // Use the proper React Query mutation
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          start_time: newStartTime.toISOString(),
-          end_time: newEndTime.toISOString()
-        })
-        .eq('id', eventId);
-
-      if (error) {
-        console.error('Error updating appointment:', error);
-        // Revert optimistic update on error
-        queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      }
+      await updateAppointment.mutateAsync({
+        id: eventId,
+        start_time: newStartTime.toISOString(),
+        end_time: newEndTime.toISOString()
+      });
+      console.log('Successfully updated appointment via mutation');
     } catch (error) {
-      console.error('Error updating appointment:', error);
-      // Revert optimistic update on error
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      console.error('Failed to update appointment via mutation:', error);
     }
   };
 
