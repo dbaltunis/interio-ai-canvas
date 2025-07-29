@@ -466,7 +466,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   return (
                     <div
                       key={`hour-line-${index}`}
-                      className="absolute left-0 right-0 border-t border-muted/80 pointer-events-none z-5"
+                      className="absolute left-0 right-0 border-t border-muted/20 pointer-events-none z-5"
                       style={{ top: `${index * 20}px` }}
                     />
                   );
@@ -498,9 +498,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div 
                               ref={setNodeRef}
-                              className={`h-[20px] transition-colors relative ${
-                                index % 2 === 0 ? 'border-b' : 'border-b border-dashed border-muted/50'
-                              } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
+                               className={`h-[20px] transition-colors relative ${
+                                 index % 2 === 0 ? 'border-b border-muted/80' : 'border-b border-dashed border-muted/10'
+                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
                                   ? 'bg-red-50 hover:bg-red-100 cursor-help border-red-200' 
                                   : 'hover:bg-accent/50 cursor-pointer'
@@ -513,14 +513,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   ? `${format(day, 'MMM d')} at ${time} - Time occupied by appointment`
                                   : `${format(day, 'MMM d')} at ${time} - Click to create personal event`
                               }
-                            >
-                              {/* Occupied slot indicator */}
-                              {isOccupied && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full opacity-60"></div>
-                                </div>
-                              )}
-                            </div>
+                             >
+                               {/* Remove the occupied slot indicator dots */}
+                             </div>
                           );
                         };
 
@@ -740,46 +735,40 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 </div>
                               )}
 
-                              <div className="flex items-start gap-2">
-                                {/* Clear event type indicator */}
-                                <div className="flex-shrink-0 mt-0.5">
-                                  {eventStyling.icon}
-                                </div>
-                                
-                                <div className="flex-1 min-w-0 pr-6">
-                                  {/* Clear type label */}
-                                  <div className="text-[9px] font-bold opacity-75 mb-1 tracking-wide">
-                                    {eventStyling.label}
-                                  </div>
-                                  
-                                  {/* Main title - CLEAR distinction */}
-                                  <div className="font-bold text-xs leading-tight mb-1 truncate">
-                                    {event.isAvailableSlot 
-                                      ? event.schedulerName 
-                                      : event.isBooking 
-                                      ? event.customer_name 
-                                      : event.title
-                                    }
-                                  </div>
-                                  
-                                   {/* Time display with precise range */}
-                                   <div className="text-[11px] leading-tight opacity-90 font-medium">
-                                     {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                                   </div>
-                                  
-                                  {/* Additional info if space allows */}
-                                  {style.height > 50 && (
-                                     <div className="text-[10px] leading-tight truncate opacity-75 mt-1">
-                                       {event.isAvailableSlot 
-                                         ? '📤 Click to share'
-                                         : event.isBooking 
-                                         ? event.scheduler_name 
-                                         : (event.location || event.description)
-                                       }
-                                     </div>
-                                  )}
-                                </div>
-                              </div>
+                               <div className="flex flex-col h-full justify-center px-1">
+                                 {/* Main title - Show full event title with better line height */}
+                                 <div className="font-semibold text-xs leading-tight mb-1 break-words overflow-hidden" 
+                                      style={{ 
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: Math.floor(finalHeight / 16), // Allow multiple lines based on height
+                                        WebkitBoxOrient: 'vertical',
+                                        lineHeight: '1.2'
+                                      }}>
+                                   {event.isAvailableSlot 
+                                     ? event.schedulerName 
+                                     : event.isBooking 
+                                     ? event.customer_name 
+                                     : event.title
+                                   }
+                                 </div>
+                                 
+                                 {/* Time display */}
+                                 <div className="text-[10px] leading-tight opacity-90 font-medium">
+                                   {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                                 </div>
+                                 
+                                 {/* Additional info if space allows */}
+                                 {finalHeight > 50 && (
+                                    <div className="text-[9px] leading-tight truncate opacity-75 mt-1">
+                                      {event.isAvailableSlot 
+                                        ? '📤 Click to share'
+                                        : event.isBooking 
+                                        ? event.scheduler_name 
+                                        : (event.location || event.description)
+                                      }
+                                    </div>
+                                 )}
+                               </div>
                             </div>
                           );
                         };
