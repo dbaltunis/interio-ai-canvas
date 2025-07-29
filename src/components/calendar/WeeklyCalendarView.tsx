@@ -725,40 +725,67 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 </div>
                               )}
 
-                               <div className="flex flex-col h-full justify-center px-1">
-                                 {/* Main title - Show full event title with better line height */}
-                                 <div className="font-semibold text-xs leading-tight mb-1 break-words overflow-hidden" 
-                                      style={{ 
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: Math.floor(finalHeight / 16), // Allow multiple lines based on height
-                                        WebkitBoxOrient: 'vertical',
-                                        lineHeight: '1.2'
-                                      }}>
-                                   {event.isAvailableSlot 
-                                     ? event.schedulerName 
-                                     : event.isBooking 
-                                     ? event.customer_name 
-                                     : event.title
-                                   }
-                                 </div>
-                                 
-                                 {/* Time display */}
-                                 <div className="text-[10px] leading-tight opacity-90 font-medium">
-                                   {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                                 </div>
-                                 
-                                 {/* Additional info if space allows */}
-                                 {finalHeight > 50 && (
-                                    <div className="text-[9px] leading-tight truncate opacity-75 mt-1">
+                                <div className="flex flex-col h-full p-1">
+                                  {/* Event header with user info and notifications */}
+                                  <div className="flex items-start justify-between mb-1">
+                                    {/* Event title at the top */}
+                                    <div className="font-normal text-xs leading-tight text-foreground dark:text-white flex-1 pr-1 break-words overflow-hidden" 
+                                         style={{ 
+                                           display: '-webkit-box',
+                                           WebkitLineClamp: finalHeight > 40 ? 3 : 2,
+                                           WebkitBoxOrient: 'vertical',
+                                           lineHeight: '1.3'
+                                         }}>
                                       {event.isAvailableSlot 
-                                        ? '📤 Click to share'
+                                        ? event.schedulerName 
                                         : event.isBooking 
-                                        ? event.scheduler_name 
-                                        : (event.location || event.description)
+                                        ? event.customer_name 
+                                        : event.title
                                       }
                                     </div>
-                                 )}
-                               </div>
+                                    
+                                    {/* User avatar or initials */}
+                                    {!event.isAvailableSlot && (
+                                      <div className="flex-shrink-0 ml-1">
+                                        <Avatar className="h-4 w-4">
+                                          <AvatarImage src="" alt="" />
+                                          <AvatarFallback className="text-[8px] bg-background/50 text-foreground">
+                                            {event.isBooking 
+                                              ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
+                                              : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
+                                            }
+                                          </AvatarFallback>
+                                        </Avatar>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Time display */}
+                                  <div className="text-[10px] leading-tight opacity-80 font-normal text-foreground dark:text-white/80">
+                                    {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                                  </div>
+                                  
+                                  {/* Notification and additional info for taller events */}
+                                  {finalHeight > 45 && (
+                                    <div className="flex items-center justify-between mt-1">
+                                      {/* Notification indicator */}
+                                      <div className="flex items-center gap-1">
+                                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" title="Email reminder set"></div>
+                                        <span className="text-[8px] text-foreground/60 dark:text-white/60">Reminder</span>
+                                      </div>
+                                      
+                                      {/* Additional event info */}
+                                      {finalHeight > 60 && (
+                                        <div className="text-[9px] leading-tight truncate opacity-60 text-foreground dark:text-white/60">
+                                          {event.isBooking 
+                                            ? event.scheduler_name 
+                                            : (event.location || event.description)
+                                          }
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                             </div>
                           );
                         };
