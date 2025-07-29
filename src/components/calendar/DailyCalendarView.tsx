@@ -181,8 +181,9 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // COMPACT CALENDAR: Use exact same calculation as events
-              const top = timeToPixels(currentHour, currentMinutes);
+              // EXACT GRID ALIGNMENT: Match the hour boundary positioning  
+              const currentHourOffset = currentHour - 6;
+              const top = currentHourOffset * 24 + (currentMinutes / 60) * 24;
               
               return (
                 <div 

@@ -650,8 +650,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const currentHour = now.getHours();
                           const currentMinutes = now.getMinutes();
                           
-             // COMPACT CALENDAR POSITIONING: Same as all other elements
-             const top = timeToPixels(currentHour, currentMinutes, showExtendedHours);
+             // EXACT GRID ALIGNMENT: Match the hour boundary positioning
+             const currentHourOffset = currentHour - (showExtendedHours ? 0 : 6);
+             const top = currentHourOffset * 24 + (currentMinutes / 60) * 24;
              if (!showExtendedHours && top < 0) return null; // Don't show if before visible hours
                          
                          return (
