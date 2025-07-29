@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
@@ -44,7 +44,9 @@ export const UnifiedAppointmentDialog = ({
     color: "",
     video_meeting_link: "",
     selectedTeamMembers: [] as string[],
-    inviteClientEmail: ""
+    inviteClientEmail: "",
+    notification_enabled: false,
+    notification_minutes: 15
   });
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
@@ -76,7 +78,9 @@ export const UnifiedAppointmentDialog = ({
         color: appointment.color || defaultColors[0],
         video_meeting_link: appointment.video_meeting_link || "",
         selectedTeamMembers: appointment.team_member_ids || [],
-        inviteClientEmail: appointment.invited_client_emails?.join(', ') || ""
+        inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
+        notification_enabled: appointment.notification_enabled || false,
+        notification_minutes: appointment.notification_minutes || 15
       });
     } else if (selectedDate) {
       setEvent({
@@ -90,7 +94,9 @@ export const UnifiedAppointmentDialog = ({
         color: defaultColors[0],
         video_meeting_link: "",
         selectedTeamMembers: [],
-        inviteClientEmail: ""
+        inviteClientEmail: "",
+        notification_enabled: false,
+        notification_minutes: 15
       });
     }
   }, [appointment, selectedDate, defaultColors]);
@@ -111,7 +117,9 @@ export const UnifiedAppointmentDialog = ({
       color: event.color,
       video_meeting_link: event.video_meeting_link,
       team_member_ids: event.selectedTeamMembers,
-      invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : []
+      invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
+      notification_enabled: event.notification_enabled,
+      notification_minutes: event.notification_minutes
     };
 
     try {
@@ -178,7 +186,9 @@ export const UnifiedAppointmentDialog = ({
       color: defaultColors[0],
       video_meeting_link: "",
       selectedTeamMembers: [],
-      inviteClientEmail: ""
+      inviteClientEmail: "",
+      notification_enabled: false,
+      notification_minutes: 15
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
@@ -255,7 +265,7 @@ export const UnifiedAppointmentDialog = ({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="date">Date *</Label>
                 <Input
@@ -326,6 +336,45 @@ export const UnifiedAppointmentDialog = ({
                   >
                     <Plus className="w-3 h-3" />
                   </Button>
+                </div>
+              </div>
+              <div>
+                <Label className="flex items-center gap-1">
+                  <Bell className="w-3 h-3" />
+                  Notification
+                </Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="notification-enabled"
+                      checked={event.notification_enabled}
+                      onCheckedChange={(checked) => 
+                        setEvent({ ...event, notification_enabled: checked === true })
+                      }
+                    />
+                    <Label htmlFor="notification-enabled" className="text-xs">
+                      Enable
+                    </Label>
+                  </div>
+                  {event.notification_enabled && (
+                    <Select 
+                      value={event.notification_minutes.toString()} 
+                      onValueChange={(value) => 
+                        setEvent({ ...event, notification_minutes: parseInt(value) })
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 min before</SelectItem>
+                        <SelectItem value="15">15 min before</SelectItem>
+                        <SelectItem value="30">30 min before</SelectItem>
+                        <SelectItem value="60">1 hour before</SelectItem>
+                        <SelectItem value="1440">1 day before</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </div>
