@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,15 @@ export const NotificationSettingsCard = () => {
   const [emailEnabled, setEmailEnabled] = useState(settings?.email_notifications_enabled || false);
   const [smsEnabled, setSmsEnabled] = useState(settings?.sms_notifications_enabled || false);
   const [smsPhoneNumber, setSmsPhoneNumber] = useState(settings?.sms_phone_number || '');
+
+  // Sync state with fetched settings
+  useEffect(() => {
+    if (settings) {
+      setEmailEnabled(settings.email_notifications_enabled || false);
+      setSmsEnabled(settings.sms_notifications_enabled || false);
+      setSmsPhoneNumber(settings.sms_phone_number || '');
+    }
+  }, [settings]);
 
   const handleSave = async () => {
     await updateSettings.mutateAsync({
