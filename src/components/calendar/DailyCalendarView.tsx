@@ -43,19 +43,19 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // PRECISE TIME-TO-PIXEL MAPPING: 48px per 30-minute slot = 1.6px per minute
+  // STANDARDIZED TIME-TO-PIXEL MAPPING: 40px per 30-minute slot = 1.33px per minute
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // CRITICAL: 48px per 30-minute slot = 1.6px per minute
-    // Formula: top = (hour - 6) * 60 * 1.6 + minutes * 1.6
+    // CRITICAL: 40px per 30-minute slot = 1.33px per minute
+    // Formula: top = (hour - 6) * 80 + (minutes / 30) * 40
     const hourOffset = startHour - 6; // Hours from 6 AM
-    const top = hourOffset * 60 * 1.6 + startMinutes * 1.6;
+    const top = hourOffset * 80 + (startMinutes / 30) * 40;
 
-    // Calculate height using same 1.6px per minute
+    // Calculate height using same formula
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max(durationInMinutes * 1.6, 24);
+    const height = Math.max((durationInMinutes / 30) * 40, 24);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -66,7 +66,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
       const now = new Date();
       const currentHour = now.getHours();
       const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
-      const scrollPosition = (scrollToHour - 6) * 60; // Each hour is 60px
+      const scrollPosition = (scrollToHour - 6) * 80; // Each hour is 80px
       scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
     }
   }, [currentDate]);
@@ -100,7 +100,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
       
-      {/* PRECISE TIME GRID: 48px per 30-minute slot */}
+      {/* STANDARDIZED TIME GRID: 40px per 30-minute slot */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
         <div className="relative">
           {/* Time slots with pixel-perfect alignment */}
@@ -111,8 +111,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             
             return (
               <div key={hour}>
-                {/* Hour slot - EXACTLY 48px with STRONG border */}
-                <div className="relative border-b-2 border-gray-900" style={{ height: '48px' }}>
+                {/* Hour slot - EXACTLY 40px with STRONG border */}
+                <div className="relative border-b-2 border-gray-900" style={{ height: '40px' }}>
                   <div className="absolute left-2 -top-2 text-xs font-bold text-gray-900 bg-white px-1 z-10">
                     {hourTime}
                   </div>
@@ -124,8 +124,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                   />
                 </div>
                 
-                {/* Half hour slot - EXACTLY 48px with dashed border */}
-                <div className="relative border-b border-dashed border-gray-400" style={{ height: '48px' }}>
+                {/* Half hour slot - EXACTLY 40px with dashed border */}
+                <div className="relative border-b border-dashed border-gray-400" style={{ height: '40px' }}>
                   <div className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 z-10">
                     {halfHourTime}
                   </div>
@@ -147,9 +147,9 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // PRECISE: Use exact same calculation as events (1.6px per minute)
+              // STANDARDIZED: Use exact same calculation as events
               const hourOffset = currentHour - 6;
-              const top = hourOffset * 60 * 1.6 + currentMinutes * 1.6;
+              const top = hourOffset * 80 + (currentMinutes / 30) * 40;
               
               return (
                 <div 
