@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,53 +62,107 @@ const handler = async (req: Request): Promise<Response> => {
     // Send Email Notification if enabled and configured
     if (settings.email_notifications_enabled && settings.email_api_key_encrypted) {
       try {
-        const resend = new Resend(settings.email_api_key_encrypted);
-        
         const fromAddress = settings.email_from_address || 'notifications@yourdomain.com';
         const fromName = settings.email_from_name || 'Appointment Reminder';
         
-        const emailResponse = await resend.emails.send({
-          from: `${fromName} <${fromAddress}>`,
-          to: [user.email],
-          subject: 'Appointment Reminder',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333; margin-bottom: 20px;">Appointment Reminder</h2>
-              <p style="color: #666; font-size: 16px; line-height: 1.5;">
-                You have an upcoming appointment scheduled.
-              </p>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
-                <p><strong>Event:</strong> ${appointmentDetails.title}</p>
-                <p><strong>Date & Time:</strong> ${new Date(appointmentDetails.startTime).toLocaleString()}</p>
-                ${appointmentDetails.location ? `<p><strong>Location:</strong> ${appointmentDetails.location}</p>` : ''}
-                ${appointmentDetails.videoMeetingLink ? 
-                  `<p><strong>Video Meeting:</strong> <a href="${appointmentDetails.videoMeetingLink}" target="_blank" style="color: #2563eb;">Join Meeting</a></p>` : 
-                  ''
-                }
-              </div>
-              
-              <p style="color: #999; font-size: 14px; margin-top: 30px;">
-                This is an automated reminder sent from your appointment management system.
-              </p>
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; margin-bottom: 20px;">Appointment Reminder</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.5;">
+              You have an upcoming appointment scheduled.
+            </p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
+              <p><strong>Event:</strong> ${appointmentDetails.title}</p>
+              <p><strong>Date & Time:</strong> ${new Date(appointmentDetails.startTime).toLocaleString()}</p>
+              ${appointmentDetails.location ? `<p><strong>Location:</strong> ${appointmentDetails.location}</p>` : ''}
+              ${appointmentDetails.videoMeetingLink ? 
+                `<p><strong>Video Meeting:</strong> <a href="${appointmentDetails.videoMeetingLink}" target="_blank" style="color: #2563eb;">Join Meeting</a></p>` : 
+                ''
+              }
             </div>
-          `,
-        });
+            
+            <p style="color: #999; font-size: 14px; margin-top: 30px;">
+              This is an automated reminder sent from your appointment management system.
+            </p>
+          </div>
+        `;
 
-        results.email = emailResponse;
-        console.log("Email sent successfully:", emailResponse);
+        if (settings.email_service_provider === 'sendgrid') {
+          const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${settings.email_api_key_encrypted}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              personalizations: [{
+                to: [{ email: user.email }],
+                subject: 'Appointment Reminder'
+              }],
+              from: {
+                email: fromAddress,
+                name: fromName
+              },
+              content: [{
+                type: 'text/html',
+                value: emailHtml
+              }]
+            })
+          });
+
+          if (!emailResponse.ok) {
+            const errorText = await emailResponse.text();
+            throw new Error(`SendGrid API error: ${emailResponse.status} - ${errorText}`);
+          }
+
+          results.email = { message: "Email sent via SendGrid" };
+          console.log("Email sent successfully via SendGrid");
+        } else {
+          throw new Error(`Unsupported email provider: ${settings.email_service_provider}`);
+        }
       } catch (error) {
         console.error("Error sending email:", error);
         results.errors.push(`Email error: ${error.message}`);
       }
     }
 
-    // SMS notifications (if enabled in future)
-    if (settings.sms_notifications_enabled) {
+    // SMS notifications via Twilio
+    if (settings.sms_notifications_enabled && settings.sms_api_key_encrypted && settings.sms_phone_number) {
       try {
-        console.log("SMS notifications not yet implemented");
-        results.sms = { message: "SMS notifications will be available soon" };
+        const twilioAccountSid = settings.sms_api_key_encrypted.split(':')[0]; // Assuming format "SID:TOKEN"
+        const twilioAuthToken = settings.sms_api_key_encrypted.split(':')[1];
+        
+        const smsMessage = `Appointment Reminder: ${appointmentDetails.title} at ${new Date(appointmentDetails.startTime).toLocaleString()}${appointmentDetails.location ? ` at ${appointmentDetails.location}` : ''}`;
+        
+        // Get user's phone number (you'll need to add this to user profile or appointment)
+        const userPhone = user.phone || user.user_metadata?.phone;
+        
+        if (userPhone) {
+          const smsResponse = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              From: settings.sms_phone_number,
+              To: userPhone,
+              Body: smsMessage
+            })
+          });
+
+          if (!smsResponse.ok) {
+            const errorText = await smsResponse.text();
+            throw new Error(`Twilio API error: ${smsResponse.status} - ${errorText}`);
+          }
+
+          results.sms = { message: "SMS sent via Twilio" };
+          console.log("SMS sent successfully via Twilio");
+        } else {
+          results.sms = { message: "No phone number found for user" };
+        }
       } catch (error) {
         console.error("Error with SMS:", error);
         results.errors.push(`SMS error: ${error.message}`);
