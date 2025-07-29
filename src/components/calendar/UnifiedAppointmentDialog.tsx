@@ -353,27 +353,35 @@ export const UnifiedAppointmentDialog = ({
                       }
                     />
                     <Label htmlFor="notification-enabled" className="text-xs">
-                      Enable
+                      Enable Notifications
                     </Label>
                   </div>
                   {event.notification_enabled && (
-                    <Select 
-                      value={event.notification_minutes.toString()} 
-                      onValueChange={(value) => 
-                        setEvent({ ...event, notification_minutes: parseInt(value) })
-                      }
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5 min before</SelectItem>
-                        <SelectItem value="15">15 min before</SelectItem>
-                        <SelectItem value="30">30 min before</SelectItem>
-                        <SelectItem value="60">1 hour before</SelectItem>
-                        <SelectItem value="1440">1 day before</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Select 
+                        value={event.notification_minutes.toString()} 
+                        onValueChange={(value) => 
+                          setEvent({ ...event, notification_minutes: parseInt(value) })
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5 min before</SelectItem>
+                          <SelectItem value="15">15 min before</SelectItem>
+                          <SelectItem value="30">30 min before</SelectItem>
+                          <SelectItem value="60">1 hour before</SelectItem>
+                          <SelectItem value="1440">1 day before</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <div className="font-medium">Notification channels:</div>
+                        <div>• Email notifications</div>
+                        <div>• In-app notifications</div>
+                        <div>• SMS (coming soon)</div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
