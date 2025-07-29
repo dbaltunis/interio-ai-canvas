@@ -540,8 +540,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
                         }
                         
-                        // Use the same calculation as events for consistency
-                        const top = (totalMinutesFromMidnight * 20) / 30;
+                        // Calculate position: each hour = 40px (2 slots of 20px each)
+                        const top = (totalMinutesFromMidnight / 60) * 40;
                         
                         return (
                           <div 
