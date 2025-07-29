@@ -86,7 +86,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
@@ -259,101 +259,6 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             </Card>
           </div>
 
-          {/* Additional KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <Camera className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium text-red-600">Screenshots</span>
-                </div>
-                <div className="text-2xl font-bold">
-                  {emailAnalytics.filter(e => e.event_type === 'screenshot').length}
-                </div>
-                <div className="text-sm text-muted-foreground">captured</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <Smartphone className="h-4 w-4 text-indigo-600" />
-                  <span className="text-sm font-medium text-indigo-600">Device Types</span>
-                </div>
-                <div className="text-2xl font-bold">
-                  {(() => {
-                     const devices = emailAnalytics.map(e => {
-                       const ua = e.user_agent || '';
-                       if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod') || ua.includes('BlackBerry') || ua.includes('Windows Phone')) return 'Mobile';
-                       if (ua.includes('Tablet')) return 'Tablet';
-                       return 'Desktop';
-                     });
-                    return new Set(devices).size;
-                  })()}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {(() => {
-                    const devices = emailAnalytics.map(e => {
-                      const ua = e.user_agent || '';
-                      if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
-                      if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
-                      return 'Desktop';
-                    });
-                    const uniqueDevices = [...new Set(devices)];
-                    return uniqueDevices.length > 0 ? uniqueDevices.join(', ') : 'None detected';
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <Activity className="h-4 w-4 text-teal-600" />
-                  <span className="text-sm font-medium text-teal-600">Engagement</span>
-                </div>
-                <div className="text-2xl font-bold">
-                  {(() => {
-                    const opens = currentEmail.open_count || 0;
-                    const clicks = currentEmail.click_count || 0;
-                    const timeSpent = currentEmail.time_spent_seconds || 0;
-                    const downloads = emailAnalytics.filter(e => e.event_type === 'download').length;
-                    
-                    // Calculate engagement: weighted score based on interactions
-                    const engagementScore = (opens * 10) + (clicks * 25) + (Math.min(timeSpent / 60, 5) * 20) + (downloads * 30);
-                    return Math.min(Math.round(engagementScore), 100);
-                  })()}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Score: Opens(10pts) + Clicks(25pts) + Time(20pts) + Downloads(30pts)
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) ? (
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  )}
-                  <span className={`text-sm font-medium ${(['dropped', 'spam_reported'].includes(currentEmail.status || '')) ? 'text-red-600' : 'text-green-600'}`}>
-                    Deleted Status
-                  </span>
-                </div>
-                <div className="text-2xl font-bold">
-                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) ? 'Yes' : 'No'}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) 
-                    ? `Status: ${currentEmail.status}`
-                    : 'Email is active'
-                  }
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Attachments Section */}
           {currentEmail.content && currentEmail.content.includes('attachment') && (
@@ -377,8 +282,6 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             </Card>
           )}
 
-            {/* Enhanced Email Analytics */}
-            <EmailAnalyticsDetail analytics={emailAnalytics} />
 
             {/* Email Activity Timeline */}
             <Card>
@@ -431,144 +334,23 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {new Date(openEvent.created_at).toLocaleString()}
-                            <div className="flex items-center gap-4 mt-1 text-xs">
-                              {openEvent.event_data?.screen_resolution && (
-                                <span className="flex items-center gap-1">
-                                  <Monitor className="h-3 w-3" />
-                                  {openEvent.event_data.screen_resolution}
-                                </span>
-                              )}
-                              {openEvent.user_agent && (
-                                <span className="flex items-center gap-1">
-                                  <Smartphone className="h-3 w-3" />
-                                  {(() => {
-                                    const ua = openEvent.user_agent;
-                                    if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
-                                    if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
-                                    if (ua.includes('Chrome')) return 'Chrome Desktop';
-                                    if (ua.includes('Firefox')) return 'Firefox Desktop';
-                                    if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari Desktop';
-                                    return 'Desktop';
-                                  })()}
-                                </span>
-                              )}
-                              {openEvent.ip_address && openEvent.ip_address !== 'unknown' && (
-                                <span className="flex items-center gap-1">
-                                  <Globe className="h-3 w-3" />
-                                  {openEvent.ip_address}
-                                </span>
-                              )}
-                            </div>
                           </div>
                         </div>
                       </div>
                     ))}
 
-                  {/* Individual Click Events */}
-                  {emailAnalytics
-                    .filter(event => event.event_type === 'click')
-                    .map((clickEvent, index) => (
-                      <div key={clickEvent.id} className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                        <div>
-                          <div className="font-medium">
-                            Link Clicked {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(clickEvent.created_at).toLocaleString()}
-                            {clickEvent.event_data?.targetUrl && (
-                              <div className="text-xs text-gray-400 truncate max-w-xs mt-1">
-                                → {clickEvent.event_data.targetUrl}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-4 mt-1 text-xs">
-                              {clickEvent.user_agent && (
-                                <span className="flex items-center gap-1">
-                                  <Smartphone className="h-3 w-3" />
-                                  {(() => {
-                                    const ua = clickEvent.user_agent;
-                                    if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) return 'Mobile';
-                                    if (ua.includes('iPad') || ua.includes('Tablet')) return 'Tablet';
-                                    if (ua.includes('Chrome')) return 'Chrome Desktop';
-                                    if (ua.includes('Firefox')) return 'Firefox Desktop';
-                                    if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari Desktop';
-                                    return 'Desktop';
-                                  })()}
-                                </span>
-                              )}
-                              {clickEvent.ip_address && clickEvent.ip_address !== 'unknown' && (
-                                <span className="flex items-center gap-1">
-                                  <Globe className="h-3 w-3" />
-                                  {clickEvent.ip_address}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                  {/* Email deletion events */}
+                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <div>
+                        <div className="font-medium">Email Deleted</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(currentEmail.updated_at).toLocaleString()} - Status: {currentEmail.status}
                         </div>
                       </div>
-                    ))}
-
-                  {/* Download Events */}
-                  {emailAnalytics
-                    .filter(event => event.event_type === 'download')
-                    .map((downloadEvent, index) => (
-                      <div key={downloadEvent.id} className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <div className="font-medium">
-                            Attachment Downloaded {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(downloadEvent.created_at).toLocaleString()}
-                            {downloadEvent.event_data?.attachmentName && (
-                              <div className="text-xs text-gray-400">
-                                📎 {downloadEvent.event_data.attachmentName}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                  {/* Screenshot Events */}
-                  {emailAnalytics
-                    .filter(event => event.event_type === 'screenshot')
-                    .map((screenshotEvent, index) => (
-                      <div key={screenshotEvent.id} className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <div>
-                          <div className="font-medium">
-                            Screenshot Detected {index === 0 ? '(1st time)' : index === 1 ? '(2nd time)' : index === 2 ? '(3rd time)' : `(${index + 1}th time)`}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(screenshotEvent.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                  {/* Time Spent Events */}
-                  {emailAnalytics
-                    .filter(event => event.event_type === 'time_spent')
-                    .map((timeEvent, index) => (
-                      <div key={timeEvent.id} className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div>
-                          <div className="font-medium">
-                            Time Spent Reading
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(timeEvent.created_at).toLocaleString()}
-                            {timeEvent.event_data?.timeSpent && (
-                              <span className="ml-2 text-xs font-medium text-blue-600">
-                                ⏱️ {Math.floor(timeEvent.event_data.timeSpent / 60)}m {timeEvent.event_data.timeSpent % 60}s
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
+                    </div>
+                  )}
 
                  {currentEmail.status === 'bounced' && (
                    <div className="flex items-center gap-3">
@@ -600,13 +382,40 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
            {/* Email Content */}
            <Card>
              <CardHeader>
-               <CardTitle>Email Content</CardTitle>
+               <CardTitle className="flex items-center gap-2">
+                 <Mail className="h-5 w-5" />
+                 Email Content
+                 {currentEmail.attachment_info && Array.isArray(currentEmail.attachment_info) && currentEmail.attachment_info.length > 0 && (
+                   <Badge variant="secondary" className="ml-2">
+                     <Download className="h-3 w-3 mr-1" />
+                     {currentEmail.attachment_info.length} attachment{currentEmail.attachment_info.length > 1 ? 's' : ''}
+                   </Badge>
+                 )}
+               </CardTitle>
              </CardHeader>
              <CardContent>
                <div 
-                 className="prose max-w-none"
+                 className="prose max-w-none mb-4"
                  dangerouslySetInnerHTML={{ __html: currentEmail.content || 'No content available' }}
                />
+               {currentEmail.attachment_info && Array.isArray(currentEmail.attachment_info) && currentEmail.attachment_info.length > 0 && (
+                 <div className="border-t pt-4">
+                   <h4 className="font-medium mb-2">Attachments:</h4>
+                   <div className="space-y-2">
+                     {currentEmail.attachment_info.map((attachment: any, index: number) => (
+                       <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
+                         <Download className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary" />
+                         <span className="text-sm">{attachment.filename || `Attachment ${index + 1}`}</span>
+                         {attachment.size && (
+                           <Badge variant="outline" className="text-xs">
+                             {Math.round(attachment.size / 1024)} KB
+                           </Badge>
+                         )}
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
              </CardContent>
            </Card>
 
@@ -627,16 +436,22 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                )}
              </div>
              
-             {onResendEmail && currentEmail.status !== 'sent' && currentEmail.status !== 'delivered' && (
-               <Button 
-                 onClick={() => onResendEmail(currentEmail)}
-                 disabled={isResending}
-                 className="flex items-center gap-2"
-               >
-                 <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
-                 {isResending ? 'Resending...' : 'Resend Email'}
-               </Button>
-             )}
+              <div className="flex gap-2">
+                {onResendEmail && currentEmail.status !== 'delivered' && (
+                  <Button 
+                    onClick={() => onResendEmail(currentEmail)}
+                    disabled={isResending}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
+                    {isResending ? 'Resending...' : 'Resend Email'}
+                  </Button>
+                )}
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Follow Up
+                </Button>
+              </div>
            </div>
         </div>
       </DialogContent>
