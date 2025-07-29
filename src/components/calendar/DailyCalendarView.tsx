@@ -43,21 +43,18 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // Calculate event position with PERFECT ALIGNMENT
+  // Simple event positioning
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // CRITICAL: Each hour = 60px, each minute = 1px (perfect alignment)
-    const pixelsPerMinute = 1;
-    
-    // Calculate minutes from start of visible time range (6 AM = 0px)
-    const totalMinutesFromStart = (startHour - 6) * 60 + startMinutes;
-    const top = totalMinutesFromStart * pixelsPerMinute;
+    // Each hour = 48px (h-12 x 2 slots), so each 30-min slot = 24px
+    const totalSlots = (startHour - 6) * 2 + (startMinutes >= 30 ? 1 : 0);
+    const top = totalSlots * 24;
 
-    // Calculate duration and height
+    // Calculate height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max(durationInMinutes * pixelsPerMinute, 30);
+    const height = Math.max(Math.round((durationInMinutes / 30) * 24), 24);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -102,88 +99,59 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
       
-      {/* Scrollable time grid - PERFECT ALIGNMENT */}
+      {/* Simple time grid */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
-        <div className="relative bg-background">
-          {/* HOUR GRID - Clear visual structure */}
-          {mainTimeSlots.map((hourSlot, hourIndex) => {
-            const [hour] = hourSlot.split(':');
-            const topPosition = hourIndex * 60; // 60px per hour
+        <div className="relative">
+          {/* Time slots - simple and clear */}
+          {Array.from({ length: 17 }, (_, index) => {
+            const hour = index + 6; // Start from 6 AM
+            const hourTime = `${hour.toString().padStart(2, '0')}:00`;
+            const halfHourTime = `${hour.toString().padStart(2, '0')}:30`;
             
             return (
-              <div key={hourSlot} className="relative">
-                {/* STRONG HOUR BOUNDARY - Thick border at exact hour start */}
-                <div 
-                  className="absolute left-0 right-0 border-t-2 border-border z-20"
-                  style={{ top: `${topPosition}px` }}
-                >
-                  {/* Hour label positioned EXACTLY at the boundary */}
-                  <div className="absolute -top-3 left-2 bg-background text-sm font-bold px-2 py-1 border border-border rounded shadow-sm">
-                    {hourSlot}
+              <div key={hour}>
+                {/* Hour slot */}
+                <div className="relative h-12 border-b border-gray-200">
+                  <div className="absolute left-2 -top-2 text-xs font-medium text-gray-600 bg-white px-1">
+                    {hourTime}
                   </div>
-                </div>
-                
-                {/* 30-minute divider line */}
-                <div 
-                  className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/30 z-10"
-                  style={{ top: `${topPosition + 30}px` }}
-                >
-                  {/* 30-minute label */}
-                  <div className="absolute -top-2 left-4 bg-muted/80 text-xs text-muted-foreground px-1 rounded">
-                    {hour}:30
-                  </div>
-                </div>
-                
-                {/* Hour block - 60px tall */}
-                <div 
-                  className="relative bg-background hover:bg-accent/10 transition-colors cursor-pointer border-l-2 border-accent/20"
-                  style={{ 
-                    height: '60px',
-                    top: `${topPosition}px`
-                  }}
-                  onClick={() => onTimeSlotClick?.(currentDate, hourSlot)}
-                  title={`Book appointment at ${hourSlot} on ${format(currentDate, 'MMM d')}`}
-                >
-                  {/* First 30-minute slot (00-30 minutes) */}
                   <div 
-                    className="absolute inset-x-0 top-0 h-7 hover:bg-accent/20 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTimeSlotClick?.(currentDate, hourSlot);
-                    }}
+                    className="h-full hover:bg-blue-50 cursor-pointer"
+                    onClick={() => onTimeSlotClick?.(currentDate, hourTime)}
                   />
-                  
-                  {/* Second 30-minute slot (30-60 minutes) */}
+                </div>
+                
+                {/* Half hour slot */}
+                <div className="relative h-12 border-b border-gray-100">
+                  <div className="absolute left-4 -top-2 text-xs text-gray-400 bg-white px-1">
+                    {halfHourTime}
+                  </div>
                   <div 
-                    className="absolute inset-x-0 bottom-0 h-7 hover:bg-accent/30 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTimeSlotClick?.(currentDate, `${hour}:30`);
-                    }}
+                    className="h-full hover:bg-blue-50 cursor-pointer"
+                    onClick={() => onTimeSlotClick?.(currentDate, halfHourTime)}
                   />
                 </div>
               </div>
             );
           })}
           
-          {/* PERFECT Current time indicator */}
+          {/* Current time indicator */}
           {isToday(currentDate) && (() => {
             const now = new Date();
             const currentHour = now.getHours();
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // EXACT positioning: 1px per minute from 6 AM
-              const totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-              const top = totalMinutesFromStart; // 1px per minute
+              const totalSlots = (currentHour - 6) * 2 + (currentMinutes / 30);
+              const top = totalSlots * 24;
               
               return (
                 <div 
-                  className="absolute left-0 right-0 h-0.5 bg-red-500 z-30 shadow-lg"
+                  className="absolute left-0 right-0 h-0.5 bg-red-500 z-30"
                   style={{ top: `${top}px` }}
                 >
-                  <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full border border-background"></div>
-                  <div className="absolute left-4 -top-6 text-xs bg-red-500 text-white px-2 py-1 rounded font-bold shadow-lg">
+                  <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                  <div className="absolute left-4 -top-6 text-xs bg-red-500 text-white px-1 py-0.5 rounded text-[10px]">
                     {format(now, 'HH:mm')}
                   </div>
                 </div>
