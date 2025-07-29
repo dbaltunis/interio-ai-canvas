@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield, Bell } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 // import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
 import { ComponentsTab } from "./tabs/ComponentsTab";
@@ -13,6 +13,7 @@ import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
+import { NotificationSettingsCard } from "./NotificationSettingsCard";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -49,7 +50,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 text-xs">
+        <TabsList className="grid w-full grid-cols-10 text-xs">
           <TabsTrigger value="business" className="flex items-center gap-1">
             <Settings className="h-3 w-3" />
             <span className="hidden sm:inline">Business</span>
@@ -81,6 +82,10 @@ export const SettingsView = () => {
           <TabsTrigger value="system" className="flex items-center gap-1">
             <Globe className="h-3 w-3" />
             <span className="hidden sm:inline">System</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-1">
+            <Bell className="h-3 w-3" />
+            <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center gap-1">
             <Zap className="h-3 w-3" />
@@ -120,6 +125,10 @@ export const SettingsView = () => {
 
         <TabsContent value="system">
           <SystemSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationSettingsCard />
         </TabsContent>
 
         <TabsContent value="integrations">

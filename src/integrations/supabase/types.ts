@@ -1723,6 +1723,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_settings: {
+        Row: {
+          created_at: string
+          email_api_key_encrypted: string | null
+          email_from_address: string | null
+          email_from_name: string | null
+          email_notifications_enabled: boolean
+          email_service_provider: string | null
+          id: string
+          sms_api_key_encrypted: string | null
+          sms_notifications_enabled: boolean
+          sms_phone_number: string | null
+          sms_service_provider: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_api_key_encrypted?: string | null
+          email_from_address?: string | null
+          email_from_name?: string | null
+          email_notifications_enabled?: boolean
+          email_service_provider?: string | null
+          id?: string
+          sms_api_key_encrypted?: string | null
+          sms_notifications_enabled?: boolean
+          sms_phone_number?: string | null
+          sms_service_provider?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_api_key_encrypted?: string | null
+          email_from_address?: string | null
+          email_from_name?: string | null
+          email_notifications_enabled?: boolean
+          email_service_provider?: string | null
+          id?: string
+          sms_api_key_encrypted?: string | null
+          sms_notifications_enabled?: boolean
+          sms_phone_number?: string | null
+          sms_service_provider?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           created_at: string | null

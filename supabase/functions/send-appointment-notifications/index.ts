@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,10 +10,7 @@ const corsHeaders = {
 
 interface NotificationRequest {
   notificationId: string;
-  userEmail: string;
-  title: string;
-  message: string;
-  channels: string[];
+  userId: string;
   appointmentDetails: {
     title: string;
     startTime: string;
@@ -30,16 +26,32 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { 
-      notificationId, 
-      userEmail, 
-      title, 
-      message, 
-      channels, 
-      appointmentDetails 
-    }: NotificationRequest = await req.json();
+    const { notificationId, userId, appointmentDetails }: NotificationRequest = await req.json();
 
-    console.log(`Processing notification ${notificationId} for ${userEmail}`);
+    console.log(`Processing notification ${notificationId} for user ${userId}`);
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    );
+
+    // Get user's notification settings
+    const { data: settings, error: settingsError } = await supabase
+      .from('user_notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (settingsError || !settings) {
+      throw new Error(`No notification settings found for user ${userId}`);
+    }
+
+    // Get user email
+    const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+    if (userError || !user?.email) {
+      throw new Error(`Could not get user email for ${userId}`);
+    }
 
     const results = {
       email: null as any,
@@ -48,17 +60,24 @@ const handler = async (req: Request): Promise<Response> => {
       errors: [] as string[]
     };
 
-    // Send Email Notification
-    if (channels.includes('email')) {
+    // Send Email Notification if enabled and configured
+    if (settings.email_notifications_enabled && settings.email_api_key_encrypted) {
       try {
+        const resend = new Resend(settings.email_api_key_encrypted);
+        
+        const fromAddress = settings.email_from_address || 'notifications@yourdomain.com';
+        const fromName = settings.email_from_name || 'Appointment Reminder';
+        
         const emailResponse = await resend.emails.send({
-          from: "Appointment Reminder <notifications@resend.dev>",
-          to: [userEmail],
-          subject: title,
+          from: `${fromName} <${fromAddress}>`,
+          to: [user.email],
+          subject: 'Appointment Reminder',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333; margin-bottom: 20px;">${title}</h2>
-              <p style="color: #666; font-size: 16px; line-height: 1.5;">${message}</p>
+              <h2 style="color: #333; margin-bottom: 20px;">Appointment Reminder</h2>
+              <p style="color: #666; font-size: 16px; line-height: 1.5;">
+                You have an upcoming appointment scheduled.
+              </p>
               
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
@@ -66,13 +85,13 @@ const handler = async (req: Request): Promise<Response> => {
                 <p><strong>Date & Time:</strong> ${new Date(appointmentDetails.startTime).toLocaleString()}</p>
                 ${appointmentDetails.location ? `<p><strong>Location:</strong> ${appointmentDetails.location}</p>` : ''}
                 ${appointmentDetails.videoMeetingLink ? 
-                  `<p><strong>Video Meeting:</strong> <a href="${appointmentDetails.videoMeetingLink}" target="_blank">Join Meeting</a></p>` : 
+                  `<p><strong>Video Meeting:</strong> <a href="${appointmentDetails.videoMeetingLink}" target="_blank" style="color: #2563eb;">Join Meeting</a></p>` : 
                   ''
                 }
               </div>
               
               <p style="color: #999; font-size: 14px; margin-top: 30px;">
-                This is an automated reminder for your upcoming appointment.
+                This is an automated reminder sent from your appointment management system.
               </p>
             </div>
           `,
@@ -86,53 +105,51 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Send SMS Notification (placeholder for Twilio integration)
-    if (channels.includes('sms')) {
+    // SMS notifications (if enabled in future)
+    if (settings.sms_notifications_enabled) {
       try {
-        // TODO: Implement SMS notification using Twilio
-        // For now, we'll just log that SMS would be sent
-        console.log("SMS notification would be sent here");
-        results.sms = { message: "SMS notification placeholder - implement with Twilio" };
+        console.log("SMS notifications not yet implemented");
+        results.sms = { message: "SMS notifications will be available soon" };
       } catch (error) {
-        console.error("Error sending SMS:", error);
+        console.error("Error with SMS:", error);
         results.errors.push(`SMS error: ${error.message}`);
       }
     }
 
-    // Send Push Notification (placeholder for web push or mobile push)
-    if (channels.includes('push')) {
-      try {
-        // TODO: Implement push notification
-        // For now, we'll create an in-app notification
-        console.log("Push notification would be sent here");
-        results.push = { message: "Push notification placeholder - implement with web push API" };
-      } catch (error) {
-        console.error("Error sending push notification:", error);
-        results.errors.push(`Push error: ${error.message}`);
+    // Create in-app notification
+    try {
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Appointment Reminder',
+          message: `Your appointment "${appointmentDetails.title}" is coming up at ${new Date(appointmentDetails.startTime).toLocaleString()}`,
+          type: 'info'
+        });
+
+      if (notifError) {
+        console.error('Error creating in-app notification:', notifError);
+      } else {
+        results.push = { message: "In-app notification created" };
       }
+    } catch (error) {
+      console.error("Error creating in-app notification:", error);
+      results.errors.push(`In-app notification error: ${error.message}`);
     }
 
     // Update notification status in database
-    const updateResponse = await fetch(
-      `${Deno.env.get('SUPABASE_URL')}/rest/v1/appointment_notifications?id=eq.${notificationId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          'Content-Type': 'application/json',
-          'apikey': Deno.env.get('SUPABASE_ANON_KEY') || '',
-        },
-        body: JSON.stringify({
-          status: results.errors.length > 0 ? 'failed' : 'sent',
-          sent_at: new Date().toISOString(),
-          error_message: results.errors.length > 0 ? results.errors.join('; ') : null,
-          metadata: { results }
-        })
-      }
-    );
+    const { error: updateError } = await supabase
+      .from('appointment_notifications')
+      .update({
+        status: results.errors.length > 0 ? 'failed' : 'sent',
+        sent_at: new Date().toISOString(),
+        error_message: results.errors.length > 0 ? results.errors.join('; ') : null,
+        metadata: { results }
+      })
+      .eq('id', notificationId);
 
-    if (!updateResponse.ok) {
-      console.error('Failed to update notification status');
+    if (updateError) {
+      console.error('Failed to update notification status:', updateError);
     }
 
     return new Response(JSON.stringify({
