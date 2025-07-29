@@ -12,8 +12,17 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const { data: appointments } = useAppointments();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Generate extended time slots from 6 AM to 10 PM
-  const timeSlots = (() => {
+  // Generate time slots - MAIN HOURS for grid structure (6 AM to 10 PM)
+  const mainTimeSlots = (() => {
+    const slots = [];
+    for (let hour = 6; hour <= 22; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+    return slots;
+  })();
+
+  // Generate ALL time slots for precise positioning (including 30-minute marks)
+  const allTimeSlots = (() => {
     const slots = [];
     for (let hour = 6; hour <= 22; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
@@ -34,23 +43,21 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // Calculate event position and styling
+  // Calculate event position with PERFECT ALIGNMENT
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // FIXED: Use exact pixel calculation based on actual grid
-    // Each slot is 48px (h-12), each slot is 30 minutes
-    // So: 48px / 30min = 1.6px per minute
-    const pixelsPerMinute = 48 / 30; // 1.6px per minute
+    // CRITICAL: Each hour = 60px, each minute = 1px (perfect alignment)
+    const pixelsPerMinute = 1;
     
-    // Calculate minutes from start of visible time range (6 AM)
+    // Calculate minutes from start of visible time range (6 AM = 0px)
     const totalMinutesFromStart = (startHour - 6) * 60 + startMinutes;
-    const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
+    const top = totalMinutesFromStart * pixelsPerMinute;
 
     // Calculate duration and height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max(Math.round(durationInMinutes * pixelsPerMinute), 24);
+    const height = Math.max(durationInMinutes * pixelsPerMinute, 30);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -61,7 +68,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
       const now = new Date();
       const currentHour = now.getHours();
       const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
-      const scrollPosition = (scrollToHour - 6) * 96; // Each hour is 96px (2 slots * 48px)
+      const scrollPosition = (scrollToHour - 6) * 60; // Each hour is 60px
       scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
     }
   }, [currentDate]);
@@ -95,68 +102,89 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
       
-      {/* Scrollable time grid - COMPLETELY REBUILT */}
+      {/* Scrollable time grid - PERFECT ALIGNMENT */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
         <div className="relative bg-background">
-          {/* Time grid with clear visual hierarchy */}
-          {timeSlots.map((time, index) => {
-            const isHourSlot = index % 2 === 0;
-            const [hour, minute] = time.split(':');
+          {/* HOUR GRID - Clear visual structure */}
+          {mainTimeSlots.map((hourSlot, hourIndex) => {
+            const [hour] = hourSlot.split(':');
+            const topPosition = hourIndex * 60; // 60px per hour
             
             return (
-              <div key={time} className="relative">
-                {/* STRONG horizontal line marking EXACT time start */}
-                <div className={`absolute left-0 right-0 z-10 ${
-                  isHourSlot 
-                    ? 'border-t-2 border-border' 
-                    : 'border-t border-dashed border-muted-foreground/40'
-                }`} 
-                style={{ top: `${index * 48}px` }}>
-                  {/* Time label positioned EXACTLY at the line */}
-                  <div className={`absolute -top-3 left-2 text-xs font-semibold px-2 py-1 rounded ${
-                    isHourSlot 
-                      ? 'bg-background text-foreground border border-border' 
-                      : 'bg-muted/80 text-muted-foreground'
-                  }`}>
-                    {time}
+              <div key={hourSlot} className="relative">
+                {/* STRONG HOUR BOUNDARY - Thick border at exact hour start */}
+                <div 
+                  className="absolute left-0 right-0 border-t-2 border-border z-20"
+                  style={{ top: `${topPosition}px` }}
+                >
+                  {/* Hour label positioned EXACTLY at the boundary */}
+                  <div className="absolute -top-3 left-2 bg-background text-sm font-bold px-2 py-1 border border-border rounded shadow-sm">
+                    {hourSlot}
                   </div>
                 </div>
                 
-                {/* 30-minute content area with clear boundaries */}
+                {/* 30-minute divider line */}
                 <div 
-                  className={`h-12 relative cursor-pointer transition-colors ${
-                    isHourSlot ? 'bg-background hover:bg-accent/20' : 'bg-muted/10 hover:bg-accent/30'
-                  }`}
-                  style={{ top: `${index * 48}px` }}
-                  onClick={() => onTimeSlotClick?.(currentDate, time)}
-                  title={`Book appointment at ${time} on ${format(currentDate, 'MMM d')}`}
+                  className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/30 z-10"
+                  style={{ top: `${topPosition + 30}px` }}
                 >
-                  {/* Visual feedback for clickable area */}
-                  <div className="absolute inset-0 border border-transparent hover:border-accent/50 rounded-sm"></div>
+                  {/* 30-minute label */}
+                  <div className="absolute -top-2 left-4 bg-muted/80 text-xs text-muted-foreground px-1 rounded">
+                    {hour}:30
+                  </div>
+                </div>
+                
+                {/* Hour block - 60px tall */}
+                <div 
+                  className="relative bg-background hover:bg-accent/10 transition-colors cursor-pointer border-l-2 border-accent/20"
+                  style={{ 
+                    height: '60px',
+                    top: `${topPosition}px`
+                  }}
+                  onClick={() => onTimeSlotClick?.(currentDate, hourSlot)}
+                  title={`Book appointment at ${hourSlot} on ${format(currentDate, 'MMM d')}`}
+                >
+                  {/* First 30-minute slot (00-30 minutes) */}
+                  <div 
+                    className="absolute inset-x-0 top-0 h-7 hover:bg-accent/20 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTimeSlotClick?.(currentDate, hourSlot);
+                    }}
+                  />
+                  
+                  {/* Second 30-minute slot (30-60 minutes) */}
+                  <div 
+                    className="absolute inset-x-0 bottom-0 h-7 hover:bg-accent/30 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTimeSlotClick?.(currentDate, `${hour}:30`);
+                    }}
+                  />
                 </div>
               </div>
             );
           })}
           
-          {/* Current time indicator with precise positioning */}
+          {/* PERFECT Current time indicator */}
           {isToday(currentDate) && (() => {
             const now = new Date();
             const currentHour = now.getHours();
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              const pixelsPerMinute = 48 / 30; // 1.6px per minute
+              // EXACT positioning: 1px per minute from 6 AM
               const totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-              const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
+              const top = totalMinutesFromStart; // 1px per minute
               
               return (
                 <div 
-                  className="absolute left-0 right-0 h-1 bg-red-500 z-30 shadow-lg"
+                  className="absolute left-0 right-0 h-0.5 bg-red-500 z-30 shadow-lg"
                   style={{ top: `${top}px` }}
                 >
-                  <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background"></div>
-                  <div className="absolute left-6 -top-7 text-xs bg-red-500 text-white px-2 py-1 rounded font-bold shadow-lg">
-                    {format(now, 'HH:mm')} ({top}px)
+                  <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full border border-background"></div>
+                  <div className="absolute left-4 -top-6 text-xs bg-red-500 text-white px-2 py-1 rounded font-bold shadow-lg">
+                    {format(now, 'HH:mm')}
                   </div>
                 </div>
               );
@@ -202,8 +230,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                      backgroundColor: event.color || undefined,
                      borderLeftColor: event.color || undefined
                    }}
-                   onClick={() => onEventClick?.(event.id)}
-                   title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\nPosition: ${style.top}px-${style.top + style.height}px`}
+                    onClick={() => onEventClick?.(event.id)}
+                    title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                  >
                    <div className="font-semibold truncate leading-tight text-base">
                      {event.title}
