@@ -540,8 +540,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                            if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
                          }
                          
-                         // FIXED: Use the same calculation as events for consistency
-                         const top = Math.round((totalMinutesFromMidnight / 30) * 20);
+                         // FIXED: Use correct pixel calculation (20px per 30 minutes = 0.667px per minute)
+                         const pixelsPerMinute = 20 / 30; // 0.667px per minute
+                         const top = Math.round(totalMinutesFromMidnight * pixelsPerMinute);
                         
                         return (
                           <div 

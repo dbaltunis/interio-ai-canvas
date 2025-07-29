@@ -38,30 +38,21 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
-    const endHour = endTime.getHours();
-    const endMinutes = endTime.getMinutes();
-
-    // Find the start slot index (each slot is 30 minutes)
-    const startSlotIndex = timeSlots.findIndex(slot => {
-      const [slotHour, slotMinute] = slot.split(':').map(Number);
-      return slotHour === startHour && (
-        (slotMinute === 0 && startMinutes < 30) ||
-        (slotMinute === 30 && startMinutes >= 30)
-      );
-    });
-
-    if (startSlotIndex === -1) return { top: 0, height: 48, visible: false };
-
-    // Calculate exact position within the slot
-    const slotHeight = 48; // 12rem / 2 = 48px per 30-min slot
-    const minutesFromSlotStart = startMinutes % 30;
-    const top = Math.round(startSlotIndex * slotHeight + (minutesFromSlotStart / 30) * slotHeight);
+    
+    // FIXED: Use exact pixel calculation based on actual grid
+    // Each slot is 48px (h-12), each slot is 30 minutes
+    // So: 48px / 30min = 1.6px per minute
+    const pixelsPerMinute = 48 / 30; // 1.6px per minute
+    
+    // Calculate minutes from start of visible time range (6 AM)
+    const totalMinutesFromStart = (startHour - 6) * 60 + startMinutes;
+    const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
 
     // Calculate duration and height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max(Math.round((durationInMinutes / 30) * slotHeight), 24);
+    const height = Math.max(Math.round(durationInMinutes * pixelsPerMinute), 24);
 
-    return { top, height, visible: true };
+    return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
 
   // Auto-scroll to current time on mount
@@ -131,29 +122,26 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
                   title={`${format(currentDate, 'MMM d')} at ${time}`}
                 >
-                  {/* Current time indicator */}
-                  {isToday(currentDate) && (() => {
+                  {/* Current time indicator - FIXED positioning */}
+                  {isToday(currentDate) && index === 0 && (() => {
                     const now = new Date();
                     const currentHour = now.getHours();
                     const currentMinutes = now.getMinutes();
                     
                     if (currentHour >= 6 && currentHour <= 22) {
-                      const [slotHour, slotMinute] = time.split(':').map(Number);
-                      if (slotHour === currentHour && 
-                          ((slotMinute === 0 && currentMinutes < 30) ||
-                           (slotMinute === 30 && currentMinutes >= 30))) {
-                        const minutesFromSlotStart = currentMinutes % 30;
-                        const top = Math.round((minutesFromSlotStart / 30) * 48);
-                        
-                        return (
-                          <div 
-                            className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
-                            style={{ top: `${top}px` }}
-                          >
-                            <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                          </div>
-                        );
-                      }
+                      // FIXED: Use same calculation as events
+                      const pixelsPerMinute = 48 / 30; // 1.6px per minute
+                      const totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
+                      const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
+                      
+                      return (
+                        <div 
+                          className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
+                          style={{ top: `${top}px` }}
+                        >
+                          <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                        </div>
+                      );
                     }
                     return null;
                   })()}
