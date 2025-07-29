@@ -555,14 +555,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                          }
                          
                          // Each 30-minute slot is 20px, so each minute is 20/30 = 0.6667px
-                         const top = (totalMinutesFromMidnight * 20) / 30;
+                         // Move up by 10px to center between hour markers
+                         const top = (totalMinutesFromMidnight * 20) / 30 - 10;
                          
                          return (
                            <div 
-                             className="absolute left-0 right-0 h-0.5 bg-red-500/75 z-20"
+                             className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
                              style={{ top: `${top}px` }}
                            >
-                             <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500/75 rounded-full"></div>
+                             <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
                              <div className="absolute right-2 -top-2 text-[10px] text-red-500 font-medium bg-white px-1 rounded">
                                {format(now, 'HH:mm')}
                              </div>
