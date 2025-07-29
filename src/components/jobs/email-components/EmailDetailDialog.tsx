@@ -265,7 +265,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <Eye className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-600">Opens</span>
                 </div>
-                <div className="text-2xl font-bold">{currentEmail.open_count || 0}</div>
+                <div className="text-2xl font-bold">{emailAnalytics.filter(e => e.event_type === 'open').length}</div>
                 <div className="text-sm text-muted-foreground">
                   {emailAnalytics.filter(e => e.event_type === 'open').length} unique
                 </div>
