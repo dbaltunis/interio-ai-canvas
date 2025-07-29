@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Search, Filter, Eye, Archive, Download, MousePointer } from "lucide-react";
+import { Mail, Search, Filter, Eye, Archive, Download, MousePointer, TrendingUp, Users, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
@@ -207,16 +207,119 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const totalEmails = emails.length;
   const deliveredEmails = emails.filter(e => e.status === 'delivered').length;
   const bouncedEmails = emails.filter(e => ['bounced', 'failed'].includes(e.status)).length;
+  const deletedEmails = emails.filter(e => ['dropped', 'spam_reported'].includes(e.status)).length;
   const openedEmails = emails.filter(e => e.open_count > 0).length;
   const clickedEmails = emails.filter(e => e.click_count > 0).length;
 
   const deliveryRate = totalEmails > 0 ? Math.round((deliveredEmails / totalEmails) * 100) : 0;
   const bounceRate = totalEmails > 0 ? Math.round((bouncedEmails / totalEmails) * 100) : 0;
+  const deleteRate = totalEmails > 0 ? Math.round((deletedEmails / totalEmails) * 100) : 0;
   const openRate = deliveredEmails > 0 ? Math.round((openedEmails / deliveredEmails) * 100) : 0;
   const clickRate = deliveredEmails > 0 ? Math.round((clickedEmails / deliveredEmails) * 100) : 0;
 
+  const handleKPIClick = (kpiType: string) => {
+    switch (kpiType) {
+      case 'deleted':
+        setStatusFilter('dropped');
+        break;
+      case 'bounced':
+        setStatusFilter('bounced');
+        break;
+      case 'delivered':
+        setStatusFilter('delivered');
+        break;
+      case 'opened':
+        setStatusFilter('opened');
+        break;
+      default:
+        setStatusFilter('all');
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* KPI Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card 
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleKPIClick('total')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Total Emails
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalEmails}</div>
+            <p className="text-xs text-muted-foreground mt-1">All emails sent</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleKPIClick('delivered')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Delivered
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{deliveredEmails}</div>
+            <p className="text-xs text-muted-foreground mt-1">{deliveryRate}% delivery rate</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleKPIClick('opened')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Opened
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{openedEmails}</div>
+            <p className="text-xs text-muted-foreground mt-1">{openRate}% open rate</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleKPIClick('bounced')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              Bounced
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{bouncedEmails}</div>
+            <p className="text-xs text-muted-foreground mt-1">{bounceRate}% bounce rate</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => handleKPIClick('deleted')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Trash2 className="h-4 w-4" />
+              Deleted
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{deletedEmails}</div>
+            <p className="text-xs text-muted-foreground mt-1">{deleteRate}% delete rate</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filters */}
       {showFilters && (
