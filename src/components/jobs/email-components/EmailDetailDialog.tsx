@@ -365,15 +365,28 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                    </div>
                  )}
 
-                 {currentEmail.status === 'delivered' && (
-                   <div className="flex items-center gap-3">
-                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                     <div>
-                       <div className="font-medium">Email Delivered</div>
-                       <div className="text-sm text-muted-foreground">Successfully delivered to recipient</div>
-                     </div>
-                   </div>
-                 )}
+                  {currentEmail.status === 'delivered' && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div>
+                        <div className="font-medium">Email Delivered</div>
+                        <div className="text-sm text-muted-foreground">Successfully delivered to recipient</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email Opened */}
+                  {emailAnalytics.filter(e => e.event_type === 'open').length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <div>
+                        <div className="font-medium">Email Opened</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(emailAnalytics.filter(e => e.event_type === 'open')[0].created_at).toLocaleDateString()} at {new Date(emailAnalytics.filter(e => e.event_type === 'open')[0].created_at).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Individual Open Events */}
                   {emailAnalytics
