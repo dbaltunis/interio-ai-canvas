@@ -459,7 +459,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             </div>
             
             {/* Day columns */}
-            <div className="flex-1">
+            <div className="flex-1 relative">
+              {/* Hour separation lines */}
+              {timeSlots.map((time, index) => {
+                if (index % 2 === 0) { // Only on full hours
+                  return (
+                    <div
+                      key={`hour-line-${index}`}
+                      className="absolute left-0 right-0 border-t border-muted/30 pointer-events-none z-5"
+                      style={{ top: `${index * 20}px` }}
+                    />
+                  );
+                }
+                return null;
+              })}
+              
               <div className="grid grid-cols-7 h-full">
                 {weekDays.map((day, dayIndex) => {
                   const dayEvents = getAllEventsForDate(day);
@@ -545,17 +559,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const currentTimeSlotIndex = (currentHour * 2) + (currentMinutes >= 30 ? 1 : 0) + (currentMinutes % 30) / 30;
                         const top = currentTimeSlotIndex * 20;
                         
-                        return (
-                          <div 
-                            className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
-                            style={{ top: `${top}px` }}
-                          >
-                            <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                            <div className="absolute right-2 -top-2 text-[10px] text-red-500 font-medium bg-white px-1 rounded">
-                              {format(now, 'HH:mm')}
-                            </div>
-                          </div>
-                        );
+                         return (
+                           <div 
+                             className="absolute left-0 right-0 h-0.5 bg-red-500/75 z-20"
+                             style={{ top: `${top}px` }}
+                           >
+                             <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500/75 rounded-full"></div>
+                             <div className="absolute right-2 -top-2 text-[10px] text-red-500 font-medium bg-white px-1 rounded">
+                               {format(now, 'HH:mm')}
+                             </div>
+                           </div>
+                         );
                       })()}
                       
                       {/* Events and Appointments with validation */}
