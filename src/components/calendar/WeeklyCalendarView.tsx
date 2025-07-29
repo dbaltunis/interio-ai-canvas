@@ -643,10 +643,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             disabled: event.isBooking || event.isAvailableSlot, // Disable dragging for booked appointments and available slots
                           });
 
-                          // Apply compact styling for available slots
-                          const finalHeight = event.isAvailableSlot && eventStyling.isCompact 
-                            ? Math.max(style.height, eventStyling.minHeight || 24)
-                            : style.height;
+                         // Apply minimum height for all events to ensure visibility
+                         const finalHeight = Math.max(style.height, 32); // Minimum 32px height for all events
 
                           const eventStyle = {
                             top: `${style.top}px`,
