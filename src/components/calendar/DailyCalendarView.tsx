@@ -181,8 +181,14 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // GOOGLE STANDARDS: Use exact same calculation as events
+              // COMPACT CALENDAR: Use exact same calculation as events
               const top = timeToPixels(currentHour, currentMinutes);
+              console.log('Daily current time debug:', { 
+                currentHour, 
+                currentMinutes, 
+                calculatedTop: top,
+                timeString: `${currentHour}:${currentMinutes.toString().padStart(2, '0')}`
+              });
               
               return (
                 <div 

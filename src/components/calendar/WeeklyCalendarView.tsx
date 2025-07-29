@@ -650,8 +650,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const currentHour = now.getHours();
                           const currentMinutes = now.getMinutes();
                           
-                             // GOOGLE CALENDAR POSITIONING: Same as daily view
+                             // COMPACT CALENDAR POSITIONING: Same as all other elements
                              const top = timeToPixels(currentHour, currentMinutes, showExtendedHours);
+                             console.log('Current time debug:', { 
+                               currentHour, 
+                               currentMinutes, 
+                               calculatedTop: top, 
+                               showExtendedHours,
+                               timeString: `${currentHour}:${currentMinutes.toString().padStart(2, '0')}`
+                             });
                              if (!showExtendedHours && top < 0) return null; // Don't show if before visible hours
                          
                          return (
