@@ -181,9 +181,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // EXACT GRID ALIGNMENT: Match the hour boundary positioning  
-              const currentHourOffset = currentHour - 6;
-              const top = currentHourOffset * 24 + (currentMinutes / 60) * 24;
+              // MATCH EXACT GRID: Hour boundaries are at index * 24px
+              const top = (currentHour - 6) * 24 + (currentMinutes / 60) * 24;
               
               return (
                 <div 
