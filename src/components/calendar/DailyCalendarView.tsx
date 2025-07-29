@@ -43,20 +43,19 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // Simple event positioning - FIXED TO MATCH GRID
+  // PRECISE TIME-TO-PIXEL MAPPING: 48px per 30-minute slot = 1.6px per minute
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // CRITICAL: Grid uses h-12 (48px) + h-12 (48px) = 96px per hour
-    // So events need: (hour_offset * 96px) + (minutes proportion of 96px)
+    // CRITICAL: 48px per 30-minute slot = 1.6px per minute
+    // Formula: top = (hour - 6) * 60 * 1.6 + minutes * 1.6
     const hourOffset = startHour - 6; // Hours from 6 AM
-    const minutesOffset = (startMinutes / 60) * 96; // Minutes as fraction of 96px
-    const top = hourOffset * 96 + minutesOffset;
+    const top = hourOffset * 60 * 1.6 + startMinutes * 1.6;
 
-    // Calculate height
+    // Calculate height using same 1.6px per minute
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 60) * 96, 24); // Use 96px per hour
+    const height = Math.max(durationInMinutes * 1.6, 24);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -101,10 +100,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
       
-      {/* Simple time grid */}
+      {/* PRECISE TIME GRID: 48px per 30-minute slot */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
         <div className="relative">
-          {/* Time slots - simple and clear */}
+          {/* Time slots with pixel-perfect alignment */}
           {Array.from({ length: 17 }, (_, index) => {
             const hour = index + 6; // Start from 6 AM
             const hourTime = `${hour.toString().padStart(2, '0')}:00`;
@@ -112,25 +111,29 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             
             return (
               <div key={hour}>
-                {/* Hour slot */}
-                <div className="relative h-12 border-b border-gray-200">
-                  <div className="absolute left-2 -top-2 text-xs font-medium text-gray-600 bg-white px-1">
+                {/* Hour slot - EXACTLY 48px with STRONG border */}
+                <div className="relative border-b-2 border-gray-900" style={{ height: '48px' }}>
+                  <div className="absolute left-2 -top-2 text-xs font-bold text-gray-900 bg-white px-1 z-10">
                     {hourTime}
                   </div>
                   <div 
                     className="h-full hover:bg-blue-50 cursor-pointer"
+                    style={{ backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
                     onClick={() => onTimeSlotClick?.(currentDate, hourTime)}
+                    title={`Click to book at ${hourTime}`}
                   />
                 </div>
                 
-                {/* Half hour slot */}
-                <div className="relative h-12 border-b border-gray-100">
-                  <div className="absolute left-4 -top-2 text-xs text-gray-400 bg-white px-1">
+                {/* Half hour slot - EXACTLY 48px with dashed border */}
+                <div className="relative border-b border-dashed border-gray-400" style={{ height: '48px' }}>
+                  <div className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 z-10">
                     {halfHourTime}
                   </div>
                   <div 
                     className="h-full hover:bg-blue-50 cursor-pointer"
+                    style={{ backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
                     onClick={() => onTimeSlotClick?.(currentDate, halfHourTime)}
+                    title={`Click to book at ${halfHourTime}`}
                   />
                 </div>
               </div>
@@ -144,10 +147,9 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // FIXED: Use same calculation as events (96px per hour)
+              // PRECISE: Use exact same calculation as events (1.6px per minute)
               const hourOffset = currentHour - 6;
-              const minutesOffset = (currentMinutes / 60) * 96;
-              const top = hourOffset * 96 + minutesOffset;
+              const top = hourOffset * 60 * 1.6 + currentMinutes * 1.6;
               
               return (
                 <div 

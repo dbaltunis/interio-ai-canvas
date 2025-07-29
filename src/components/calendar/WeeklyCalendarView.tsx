@@ -211,7 +211,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     });
   };
 
-  // Calculate event position with PERFECT ALIGNMENT (same as daily view)
+  // PRECISE TIME-TO-PIXEL MAPPING: 48px per 30-minute slot = 1.6px per minute (SAME AS DAILY VIEW)
   const calculateEventStyle = (startTime: Date, endTime: Date, isExtendedHours: boolean = false) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
@@ -226,27 +226,26 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       endTime = new Date(startTime.getTime() + (60 * 60 * 1000));
     }
     
-    // CRITICAL: Each minute = 1px for perfect alignment (same as daily view)
-    const pixelsPerMinute = 1;
+    // CRITICAL: 48px per 30-minute slot = 1.6px per minute (SAME AS DAILY VIEW)
+    const pixelsPerMinute = 1.6;
     
-    // Calculate total minutes from start time (6 AM for working hours, midnight for extended)
-    let totalMinutesFromStart;
+    // Calculate position using exact same formula as daily view
+    let top;
     
     if (isExtendedHours) {
-      // From midnight (00:00)
-      totalMinutesFromStart = startHour * 60 + startMinutes;
+      // From midnight (00:00): top = hour * 60 * 1.6 + minutes * 1.6
+      top = startHour * 60 * 1.6 + startMinutes * 1.6;
     } else {
-      // From 6 AM (working hours)
-      totalMinutesFromStart = (startHour - 6) * 60 + startMinutes;
+      // From 6 AM: top = (hour - 6) * 60 * 1.6 + minutes * 1.6 (SAME AS DAILY VIEW)
+      const hourOffset = startHour - 6;
+      top = hourOffset * 60 * 1.6 + startMinutes * 1.6;
       // If event starts before 6 AM, position it at the top
-      if (totalMinutesFromStart < 0) totalMinutesFromStart = 0;
+      if (top < 0) top = 0;
     }
-    
-    const top = totalMinutesFromStart * pixelsPerMinute;
 
-    // Calculate duration and height
+    // Calculate duration and height using same 1.6px per minute
     const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
-    const height = Math.max(durationInMinutes * pixelsPerMinute, 15);
+    const height = Math.max(durationInMinutes * 1.6, 24);
 
     return { top, height, visible: true };
   };
@@ -446,71 +445,74 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         {/* Scrollable time grid */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="flex">
-            {/* Fixed time labels column - PERFECT ALIGNMENT */}
+            {/* PRECISE TIME LABELS: 48px per 30-minute slot = 96px per hour */}
             <div className="w-16 border-r bg-muted/20 flex-shrink-0">
               {showExtendedHours ? (
-                // 24-hour view: 0-23 (each hour = 60px)
+                // 24-hour view: 0-23 (each hour = 96px to match daily view)
                 Array.from({ length: 24 }, (_, hour) => (
                   <div key={hour} className="relative">
-                    {/* Hour boundary line */}
+                    {/* Hour boundary line - STRONG */}
                     <div 
-                      className="absolute left-0 right-0 border-t-2 border-border z-20"
-                      style={{ top: `${hour * 60}px` }}
+                      className="absolute left-0 right-0 border-t-2 border-gray-900 z-20"
+                      style={{ top: `${hour * 96}px` }}
                     >
                       {/* Hour label positioned exactly at boundary */}
-                      <div className="absolute -top-3 right-2 bg-background text-xs font-bold px-1 border border-border rounded">
+                      <div className="absolute -top-3 right-2 bg-white text-xs font-bold px-1 border border-gray-900 rounded">
                         {hour.toString().padStart(2, '0')}:00
                       </div>
                     </div>
                     
-                    {/* 30-minute divider */}
+                    {/* 30-minute divider - DASHED */}
                     <div 
-                      className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/30 z-10"
-                      style={{ top: `${hour * 60 + 30}px` }}
+                      className="absolute left-0 right-0 border-t border-dashed border-gray-400 z-10"
+                      style={{ top: `${hour * 96 + 48}px` }}
                     >
-                      <div className="absolute -top-2 right-4 bg-muted/80 text-xs text-muted-foreground px-1 rounded">
+                      <div className="absolute -top-2 right-4 bg-white text-xs text-gray-500 px-1 rounded">
                         {hour.toString().padStart(2, '0')}:30
                       </div>
                     </div>
                     
-                    {/* Hour block (60px) */}
+                    {/* Hour block (96px = 2 × 48px slots) */}
                     <div 
-                      className="relative h-[60px]"
-                      style={{ top: `${hour * 60}px` }}
+                      className="relative h-[96px]"
+                      style={{ top: `${hour * 96}px` }}
                     />
                   </div>
                 ))
               ) : (
-                // Working hours view: 6 AM - 10 PM (each hour = 60px)
+                // Working hours view: 6 AM - 10 PM (each hour = 96px to match daily view)
                 Array.from({ length: 17 }, (_, index) => {
                   const hour = index + 6; // Start from 6 AM
                   return (
                     <div key={hour} className="relative">
-                      {/* Hour boundary line */}
+                      {/* Hour boundary line - STRONG */}
                       <div 
-                        className="absolute left-0 right-0 border-t-2 border-border z-20"
-                        style={{ top: `${index * 60}px` }}
+                        className="absolute left-0 right-0 border-t-2 border-gray-900 z-20"
+                        style={{ top: `${index * 96}px` }}
                       >
                         {/* Hour label positioned exactly at boundary */}
-                        <div className="absolute -top-3 right-2 bg-background text-xs font-bold px-1 border border-border rounded">
+                        <div className="absolute -top-3 right-2 bg-white text-xs font-bold px-1 border border-gray-900 rounded">
                           {hour.toString().padStart(2, '0')}:00
                         </div>
                       </div>
                       
-                      {/* 30-minute divider */}
+                      {/* 30-minute divider - DASHED */}
                       <div 
-                        className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/30 z-10"
-                        style={{ top: `${index * 60 + 30}px` }}
+                        className="absolute left-0 right-0 border-t border-dashed border-gray-400 z-10"
+                        style={{ top: `${index * 96 + 48}px` }}
                       >
-                        <div className="absolute -top-2 right-4 bg-muted/80 text-xs text-muted-foreground px-1 rounded">
+                        <div className="absolute -top-2 right-4 bg-white text-xs text-gray-500 px-1 rounded">
                           {hour.toString().padStart(2, '0')}:30
                         </div>
                       </div>
                       
-                      {/* Hour block (60px) */}
+                      {/* Hour block (96px = 2 × 48px slots) */}
                       <div 
-                        className="relative h-[60px]"
-                        style={{ top: `${index * 60}px` }}
+                        className="relative h-[96px]"
+                        style={{ 
+                          top: `${index * 96}px`,
+                          backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff'
+                        }}
                       />
                     </div>
                   );
@@ -527,61 +529,66 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                    const previewStyle = getEventCreationPreviewStyle();
                    const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
                    
-                   // Calculate total height based on view type (60px per hour)
-                   const totalHours = showExtendedHours ? 24 : 17; // 17 hours from 6 AM to 10 PM
-                   const totalHeight = totalHours * 60;
+                    // Calculate total height: 96px per hour (48px per 30-minute slot)
+                    const totalHours = showExtendedHours ? 24 : 17; // 17 hours from 6 AM to 10 PM
+                    const totalHeight = totalHours * 96;
                    
                    return (
                      <div key={day.toString()} className={`border-r relative ${
                        isCurrentDay ? 'bg-primary/5' : ''
                      }`} style={{ height: `${totalHeight}px` }}>
-                       {/* Hour grid structure (matches daily view) */}
-                       {Array.from({ length: totalHours }, (_, hourIndex) => {
-                         const hour = showExtendedHours ? hourIndex : hourIndex + 6;
-                         const topPosition = hourIndex * 60;
-                         
-                         return (
-                           <div key={hour} className="relative">
-                             {/* Hour boundary */}
-                             <div 
-                               className="absolute left-0 right-0 border-t-2 border-border/50 z-10"
-                               style={{ top: `${topPosition}px` }}
-                             />
-                             
-                             {/* 30-minute divider */}
-                             <div 
-                               className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/20 z-5"
-                               style={{ top: `${topPosition + 30}px` }}
-                             />
-                             
-                             {/* Hour clickable area (60px) */}
-                             <div 
-                               className="relative h-[60px] hover:bg-accent/10 transition-colors cursor-pointer"
-                               style={{ top: `${topPosition}px` }}
-                               onClick={() => onTimeSlotClick?.(day, `${hour.toString().padStart(2, '0')}:00`)}
-                               title={`Book appointment at ${hour.toString().padStart(2, '0')}:00 on ${format(day, 'MMM d')}`}
-                             >
-                               {/* First 30-minute slot */}
-                               <div 
-                                 className="absolute inset-x-0 top-0 h-7 hover:bg-accent/20 transition-colors"
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   onTimeSlotClick?.(day, `${hour.toString().padStart(2, '0')}:00`);
-                                 }}
-                               />
-                               
-                               {/* Second 30-minute slot */}
-                               <div 
-                                 className="absolute inset-x-0 bottom-0 h-7 hover:bg-accent/30 transition-colors"
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   onTimeSlotClick?.(day, `${hour.toString().padStart(2, '0')}:30`);
-                                 }}
-                               />
-                             </div>
-                           </div>
-                         );
-                       })}
+                        {/* PRECISE HOUR GRID: 48px per 30-minute slot */}
+                        {Array.from({ length: totalHours }, (_, hourIndex) => {
+                          const hour = showExtendedHours ? hourIndex : hourIndex + 6;
+                          const topPosition = hourIndex * 96; // 96px per hour
+                          
+                          return (
+                            <div key={hour} className="relative">
+                              {/* Hour boundary - STRONG */}
+                              <div 
+                                className="absolute left-0 right-0 border-t-2 border-gray-900/50 z-10"
+                                style={{ top: `${topPosition}px` }}
+                              />
+                              
+                              {/* 30-minute divider - DASHED */}
+                              <div 
+                                className="absolute left-0 right-0 border-t border-dashed border-gray-400/50 z-5"
+                                style={{ top: `${topPosition + 48}px` }}
+                              />
+                              
+                              {/* Hour clickable area (96px = 2 × 48px slots) */}
+                              <div 
+                                className="relative h-[96px] hover:bg-accent/10 transition-colors cursor-pointer"
+                                style={{ 
+                                  top: `${topPosition}px`,
+                                  backgroundColor: hourIndex % 2 === 0 ? '#f9fafb' : '#ffffff'
+                                }}
+                                onClick={() => onTimeSlotClick?.(day, `${hour.toString().padStart(2, '0')}:00`)}
+                                title={`Book appointment at ${hour.toString().padStart(2, '0')}:00 on ${format(day, 'MMM d')}`}
+                              >
+                                {/* First 30-minute slot (48px) */}
+                                <div 
+                                  className="absolute inset-x-0 top-0 h-12 hover:bg-blue-50 transition-colors border-b border-dashed border-gray-300"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onTimeSlotClick?.(day, `${hour.toString().padStart(2, '0')}:00`);
+                                  }}
+                                  title={`Book at ${hour.toString().padStart(2, '0')}:00`}
+                                />
+                                
+                                {/* Second 30-minute slot (48px) */}
+                                <div 
+                                  className="absolute inset-x-0 bottom-0 h-12 hover:bg-blue-50 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onTimeSlotClick?.(day, `${hour.toString().padStart(2, '0')}:30`);
+                                  }}
+                                  title={`Book at ${hour.toString().padStart(2, '0')}:30`}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                        
                        {/* Legacy time slots for backwards compatibility */}
                        {timeSlots.map((time, index) => {
@@ -645,19 +652,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const currentHour = now.getHours();
                           const currentMinutes = now.getMinutes();
                           
-                          // EXACT positioning: 1px per minute (same as daily view)
-                          let totalMinutesFromStart;
-                          
-                          if (showExtendedHours) {
-                            // From midnight (00:00)
-                            totalMinutesFromStart = currentHour * 60 + currentMinutes;
-                          } else {
-                            // From 6 AM (working hours)
-                            totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
-                            if (totalMinutesFromStart < 0) return null; // Don't show if before visible hours
-                          }
-                          
-                          const top = totalMinutesFromStart; // 1px per minute
+                           // PRECISE POSITIONING: 1.6px per minute (SAME AS DAILY VIEW)
+                           let top;
+                           
+                           if (showExtendedHours) {
+                             // From midnight: top = hour * 60 * 1.6 + minutes * 1.6
+                             top = currentHour * 60 * 1.6 + currentMinutes * 1.6;
+                           } else {
+                             // From 6 AM: top = (hour - 6) * 60 * 1.6 + minutes * 1.6 (SAME AS DAILY VIEW)
+                             const hourOffset = currentHour - 6;
+                             top = hourOffset * 60 * 1.6 + currentMinutes * 1.6;
+                             if (top < 0) return null; // Don't show if before visible hours
+                           }
                          
                          return (
                            <div 
