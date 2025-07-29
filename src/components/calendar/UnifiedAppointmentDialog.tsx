@@ -377,9 +377,9 @@ export const UnifiedAppointmentDialog = ({
                       </Select>
                       <div className="text-xs text-muted-foreground space-y-1">
                         <div className="font-medium">Notification channels:</div>
-                        <div>• Email notifications</div>
+                        <div>• Email notifications (via SendGrid)</div>
                         <div>• In-app notifications</div>
-                        <div>• SMS (coming soon)</div>
+                        <div>• SMS notifications (via Twilio)</div>
                       </div>
                     </div>
                   )}
