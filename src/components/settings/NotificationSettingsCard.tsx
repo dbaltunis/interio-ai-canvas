@@ -16,20 +16,11 @@ export const NotificationSettingsCard = () => {
   
   const [emailEnabled, setEmailEnabled] = useState(settings?.email_notifications_enabled || false);
   const [smsEnabled, setSmsEnabled] = useState(settings?.sms_notifications_enabled || false);
-  const [emailProvider, setEmailProvider] = useState(settings?.email_service_provider || 'sendgrid');
-  const [emailApiKey, setEmailApiKey] = useState('');
-  const [emailFromAddress, setEmailFromAddress] = useState(settings?.email_from_address || '');
-  const [emailFromName, setEmailFromName] = useState(settings?.email_from_name || '');
-  const [showApiKey, setShowApiKey] = useState(false);
 
   const handleSave = async () => {
     await updateSettings.mutateAsync({
       email_notifications_enabled: emailEnabled,
       sms_notifications_enabled: smsEnabled,
-      email_service_provider: emailProvider as any,
-      email_api_key_encrypted: emailApiKey || undefined,
-      email_from_address: emailFromAddress || undefined,
-      email_from_name: emailFromName || undefined,
     });
   };
 
@@ -58,7 +49,7 @@ export const NotificationSettingsCard = () => {
                 Email Notifications
               </Label>
               <p className="text-sm text-muted-foreground">
-                Receive email reminders for your appointments
+                Email reminders are configured via SendGrid integration
               </p>
             </div>
             <Switch
@@ -72,90 +63,16 @@ export const NotificationSettingsCard = () => {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>How to get your SendGrid API key:</strong>
+                  <strong>Email service is ready!</strong>
                   <br />
-                  1. Go to <a href="https://sendgrid.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                    SendGrid.com <ExternalLink className="h-3 w-3" />
-                  </a> and create an account
+                  Your SendGrid integration is configured in the Integrations tab. 
+                  Email notifications will be sent using your SendGrid setup.
                   <br />
-                  2. Verify your sender identity at <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                    Sender Authentication <ExternalLink className="h-3 w-3" />
+                  <a href="/settings?tab=sendgrid" className="text-primary hover:underline inline-flex items-center gap-1 mt-2">
+                    View SendGrid Settings <ExternalLink className="h-3 w-3" />
                   </a>
-                  <br />
-                  3. Create an API key at <a href="https://app.sendgrid.com/settings/api_keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                    API Keys <ExternalLink className="h-3 w-3" />
-                  </a>
-                  <br />
-                  4. Paste your API key below (starts with "SG.")
                 </AlertDescription>
               </Alert>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email-provider">Email Service</Label>
-                  <Select value={emailProvider} onValueChange={(value) => setEmailProvider(value as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sendgrid">SendGrid (Recommended)</SelectItem>
-                      <SelectItem value="resend" disabled>Resend</SelectItem>
-                      <SelectItem value="mailgun" disabled>Mailgun (Coming Soon)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="email-from-name">From Name</Label>
-                  <Input
-                    id="email-from-name"
-                    value={emailFromName}
-                    onChange={(e) => setEmailFromName(e.target.value)}
-                    placeholder="Your Name or Business"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="email-from-address">From Email Address</Label>
-                <Input
-                  id="email-from-address"
-                  type="email"
-                  value={emailFromAddress}
-                  onChange={(e) => setEmailFromAddress(e.target.value)}
-                  placeholder="notifications@yourdomain.com"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Must be a verified sender identity in your SendGrid account
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="email-api-key" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  API Key
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="email-api-key"
-                    type={showApiKey ? "text" : "password"}
-                    value={emailApiKey}
-                    onChange={(e) => setEmailApiKey(e.target.value)}
-                    placeholder={settings?.email_api_key_encrypted ? "••••••••••••••••" : "SG.your_api_key_here"}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                  >
-                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Your API key is encrypted and stored securely
-                </p>
-              </div>
             </div>
           )}
         </div>
