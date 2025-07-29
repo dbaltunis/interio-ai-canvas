@@ -211,20 +211,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     });
   };
 
-  // COMPACT CALENDAR: 12px per 30-minute slot = 0.4px per minute (HALF of Google standards)
+  // COMPACT CALENDAR: 24px per hour = 0.4px per minute
   const timeToPixels = (hour: number, minutes: number, isExtendedHours: boolean = false) => {
     if (isExtendedHours) {
       // From midnight: each hour = 24px
-      return hour * 24 + (minutes / 30) * 12;
+      return hour * 24 + (minutes / 60) * 24;
     } else {
       // From 6 AM: each hour = 24px
       const hourOffset = hour - 6;
-      return hourOffset * 24 + (minutes / 30) * 12;
+      return hourOffset * 24 + (minutes / 60) * 24;
     }
   };
 
   const pixelsToTime = (pixels: number, isExtendedHours: boolean = false) => {
-    const totalMinutes = (pixels / 12) * 30;
+    const totalMinutes = (pixels / 24) * 60; // 24px per hour
     const hour = Math.floor(totalMinutes / 60) + (isExtendedHours ? 0 : 6);
     const minutes = Math.floor(totalMinutes % 60);
     return { hour, minutes };
@@ -250,7 +250,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
     // Calculate duration and height
     const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
-    const height = Math.max((durationInMinutes / 30) * 12, 12);
+    const height = Math.max((durationInMinutes / 60) * 24, 12);
 
     return { top: finalTop, height, visible: true };
   };
@@ -650,16 +650,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const currentHour = now.getHours();
                           const currentMinutes = now.getMinutes();
                           
-                             // COMPACT CALENDAR POSITIONING: Same as all other elements
-                             const top = timeToPixels(currentHour, currentMinutes, showExtendedHours);
-                             console.log('Current time debug:', { 
-                               currentHour, 
-                               currentMinutes, 
-                               calculatedTop: top, 
-                               showExtendedHours,
-                               timeString: `${currentHour}:${currentMinutes.toString().padStart(2, '0')}`
-                             });
-                             if (!showExtendedHours && top < 0) return null; // Don't show if before visible hours
+             // COMPACT CALENDAR POSITIONING: Same as all other elements
+             const top = timeToPixels(currentHour, currentMinutes, showExtendedHours);
+             if (!showExtendedHours && top < 0) return null; // Don't show if before visible hours
                          
                          return (
                            <div 

@@ -43,14 +43,14 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // COMPACT CALENDAR: 12px per 30-minute slot = 0.4px per minute (HALF of Google standards)
+  // COMPACT CALENDAR: 24px per hour = 0.4px per minute 
   const timeToPixels = (hour: number, minutes: number) => {
     const hourOffset = hour - 6; // Hours from 6 AM
-    return hourOffset * 24 + (minutes / 30) * 12;
+    return hourOffset * 24 + (minutes / 60) * 24;
   };
 
   const pixelsToTime = (pixels: number) => {
-    const totalMinutes = (pixels / 12) * 30;
+    const totalMinutes = (pixels / 24) * 60; // 24px per hour
     const hour = Math.floor(totalMinutes / 60) + 6;
     const minutes = Math.floor(totalMinutes % 60);
     return { hour, minutes };
@@ -62,7 +62,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
     
     const top = timeToPixels(startHour, startMinutes);
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * 12, 12);
+    const height = Math.max((durationInMinutes / 60) * 24, 12);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -183,12 +183,6 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             if (currentHour >= 6 && currentHour <= 22) {
               // COMPACT CALENDAR: Use exact same calculation as events
               const top = timeToPixels(currentHour, currentMinutes);
-              console.log('Daily current time debug:', { 
-                currentHour, 
-                currentMinutes, 
-                calculatedTop: top,
-                timeString: `${currentHour}:${currentMinutes.toString().padStart(2, '0')}`
-              });
               
               return (
                 <div 
