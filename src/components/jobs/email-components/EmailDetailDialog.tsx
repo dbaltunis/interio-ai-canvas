@@ -265,9 +265,11 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                   <Eye className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-600">Opens</span>
                 </div>
-                <div className="text-2xl font-bold">{emailAnalytics.filter(e => e.event_type === 'open').length}</div>
+                <div className="text-2xl font-bold">
+                  {emailAnalytics.filter(e => e.event_type === 'open').length > 0 ? '100%' : '0%'}
+                </div>
                 <div className="text-sm text-muted-foreground">
-                  times opened
+                  open rate ({emailAnalytics.filter(e => e.event_type === 'open').length} opens)
                 </div>
               </CardContent>
             </Card>
