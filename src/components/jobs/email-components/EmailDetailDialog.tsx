@@ -333,17 +333,23 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
-                  <Globe className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-600">Locations</span>
+                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) ? (
+                    <XCircle className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  )}
+                  <span className={`text-sm font-medium ${(['dropped', 'spam_reported'].includes(currentEmail.status || '')) ? 'text-red-600' : 'text-green-600'}`}>
+                    Deleted Status
+                  </span>
                 </div>
                 <div className="text-2xl font-bold">
-                  {new Set(emailAnalytics.filter(e => e.ip_address && e.ip_address !== 'unknown').map(e => e.ip_address)).size}
+                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) ? 'Yes' : 'No'}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {(() => {
-                    const uniqueIPs = new Set(emailAnalytics.filter(e => e.ip_address && e.ip_address !== 'unknown').map(e => e.ip_address));
-                    return uniqueIPs.size > 0 ? 'unique IP addresses' : 'IP tracking active';
-                  })()}
+                  {(['dropped', 'spam_reported'].includes(currentEmail.status || '')) 
+                    ? `Status: ${currentEmail.status}`
+                    : 'Email is active'
+                  }
                 </div>
               </CardContent>
             </Card>
