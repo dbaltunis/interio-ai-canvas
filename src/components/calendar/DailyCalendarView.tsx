@@ -105,43 +105,30 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             return (
               <div 
                 key={time} 
-                className={`h-12 flex border-b relative ${
-                  isHourSlot 
-                    ? 'border-border bg-background' 
-                    : 'border-dashed border-muted/50 bg-muted/10'
-                }`}
+                className="relative"
               >
-                {/* Strong hour boundary line */}
-                {isHourSlot && (
-                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-border z-10"></div>
-                )}
-                
-                {/* Time label - positioned at TOP of time slot */}
-                <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r relative">
-                  <div className="absolute top-1 left-2 font-medium">
+                {/* FIXED: Time label positioned ABOVE the grid line to show time starts HERE */}
+                <div className="h-0 relative">
+                  <div className="absolute -top-2 left-2 text-xs font-medium text-foreground bg-background px-1 z-30">
                     {time}
                   </div>
-                  {/* Visual indicator for hour start */}
-                  {isHourSlot && (
-                    <div className="absolute top-0 left-0 w-1 h-full bg-primary/30"></div>
-                  )}
                 </div>
                 
-                {/* Time slot - with clear visual hierarchy */}
+                {/* FIXED: Grid line that represents the EXACT start of this time */}
+                <div className={`h-0 border-t-2 ${
+                  isHourSlot 
+                    ? 'border-border' 
+                    : 'border-dashed border-muted/60'
+                }`}></div>
+                
+                {/* FIXED: 30-minute content area */}
                 <div 
-                  className={`flex-1 cursor-pointer transition-colors relative ${
-                    isHourSlot 
-                      ? 'hover:bg-accent/30' 
-                      : 'hover:bg-accent/20'
+                  className={`h-12 hover:bg-accent/20 cursor-pointer transition-colors ${
+                    isHourSlot ? 'bg-background' : 'bg-muted/5'
                   }`}
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
                   title={`${format(currentDate, 'MMM d')} at ${time}`}
                 >
-                  {/* Clear visual indicator for 30-min boundaries */}
-                  {!isHourSlot && (
-                    <div className="absolute top-0 left-0 right-0 h-px bg-muted/30"></div>
-                  )}
-                  
                   {/* Current time indicator - FIXED positioning */}
                   {isToday(currentDate) && index === 0 && (() => {
                     const now = new Date();
@@ -149,7 +136,6 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                     const currentMinutes = now.getMinutes();
                     
                     if (currentHour >= 6 && currentHour <= 22) {
-                      // FIXED: Use same calculation as events
                       const pixelsPerMinute = 48 / 30; // 1.6px per minute
                       const totalMinutesFromStart = (currentHour - 6) * 60 + currentMinutes;
                       const top = Math.round(totalMinutesFromStart * pixelsPerMinute);
@@ -160,8 +146,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                           style={{ top: `${top}px` }}
                         >
                           <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                          {/* Clear time label */}
-                          <div className="absolute left-4 -top-5 text-xs bg-red-500 text-white px-2 py-1 rounded font-medium">
+                          <div className="absolute left-4 -top-6 text-xs bg-red-500 text-white px-2 py-1 rounded font-medium">
                             NOW: {format(now, 'HH:mm')}
                           </div>
                         </div>
@@ -176,7 +161,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           
           {/* Events overlay */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="relative ml-20"> {/* Offset for time labels */}
+            <div className="relative"> {/* No left margin offset needed */}
               {dayEvents.map((event, eventIndex) => {
                 const startTime = new Date(event.start_time);
                 const endTime = new Date(event.end_time);
