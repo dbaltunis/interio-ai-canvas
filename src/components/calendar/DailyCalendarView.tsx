@@ -43,18 +43,20 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // Simple event positioning
+  // Simple event positioning - FIXED TO MATCH GRID
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // Each hour = 48px (h-12 x 2 slots), so each 30-min slot = 24px
-    const totalSlots = (startHour - 6) * 2 + (startMinutes >= 30 ? 1 : 0);
-    const top = totalSlots * 24;
+    // CRITICAL: Grid uses h-12 (48px) + h-12 (48px) = 96px per hour
+    // So events need: (hour_offset * 96px) + (minutes proportion of 96px)
+    const hourOffset = startHour - 6; // Hours from 6 AM
+    const minutesOffset = (startMinutes / 60) * 96; // Minutes as fraction of 96px
+    const top = hourOffset * 96 + minutesOffset;
 
     // Calculate height
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max(Math.round((durationInMinutes / 30) * 24), 24);
+    const height = Math.max((durationInMinutes / 60) * 96, 24); // Use 96px per hour
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -142,8 +144,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              const totalSlots = (currentHour - 6) * 2 + (currentMinutes / 30);
-              const top = totalSlots * 24;
+              // FIXED: Use same calculation as events (96px per hour)
+              const hourOffset = currentHour - 6;
+              const minutesOffset = (currentMinutes / 60) * 96;
+              const top = hourOffset * 96 + minutesOffset;
               
               return (
                 <div 
