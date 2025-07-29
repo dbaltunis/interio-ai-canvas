@@ -7,16 +7,20 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Mail, MessageSquare, Eye, EyeOff, ExternalLink, Shield, Info } from "lucide-react";
+import { Bell, Mail, MessageSquare, Eye, EyeOff, ExternalLink, Shield, Info, Send } from "lucide-react";
 import { useUserNotificationSettings, useCreateOrUpdateNotificationSettings } from "@/hooks/useUserNotificationSettings";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const NotificationSettingsCard = () => {
   const { data: settings, isLoading } = useUserNotificationSettings();
   const updateSettings = useCreateOrUpdateNotificationSettings();
+  const { toast } = useToast();
   
   const [emailEnabled, setEmailEnabled] = useState(settings?.email_notifications_enabled || false);
   const [smsEnabled, setSmsEnabled] = useState(settings?.sms_notifications_enabled || false);
   const [smsPhoneNumber, setSmsPhoneNumber] = useState(settings?.sms_phone_number || '');
+  const [isSendingTest, setIsSendingTest] = useState(false);
 
   // Sync state with fetched settings
   useEffect(() => {
@@ -33,6 +37,40 @@ export const NotificationSettingsCard = () => {
       sms_notifications_enabled: smsEnabled,
       sms_phone_number: smsPhoneNumber,
     });
+  };
+
+  const handleTestSMS = async () => {
+    if (!smsPhoneNumber) {
+      toast({
+        title: "Phone number required",
+        description: "Please enter a phone number first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSendingTest(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-test-sms', {
+        body: { phoneNumber: smsPhoneNumber }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test SMS sent!",
+        description: "Check your phone for the test message",
+      });
+    } catch (error) {
+      console.error('Error sending test SMS:', error);
+      toast({
+        title: "Failed to send test SMS",
+        description: "Please check your Twilio configuration",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingTest(false);
+    }
   };
 
   if (isLoading) {
@@ -164,6 +202,19 @@ export const NotificationSettingsCard = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Your Twilio credentials are encrypted and stored securely
                 </p>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleTestSMS}
+                  disabled={isSendingTest || !smsPhoneNumber}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  {isSendingTest ? "Sending..." : "Send Test SMS"}
+                </Button>
               </div>
             </div>
           )}
