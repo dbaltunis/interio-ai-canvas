@@ -34,6 +34,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const [followUpSubject, setFollowUpSubject] = useState("");
   const [followUpContent, setFollowUpContent] = useState("");
   const [isSendingFollowUp, setIsSendingFollowUp] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<any>(null);
   const { data: emailAnalytics = [] } = useEmailAnalytics(email?.id || "");
 
   // Auto-refresh email data every 10 seconds
@@ -164,9 +165,16 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   };
 
   const handlePreviewAttachment = (attachment: any) => {
-    // For now, we'll just show an alert. In a real implementation,
-    // you would open a preview modal or download the file
-    alert(`Preview functionality for ${attachment.filename} would be implemented here`);
+    setPreviewAttachment(attachment);
+  };
+
+  const getFileExtension = (filename: string) => {
+    return filename.split('.').pop()?.toLowerCase() || '';
+  };
+
+  const isImageFile = (filename: string) => {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    return imageExtensions.includes(getFileExtension(filename));
   };
 
   return (
@@ -687,6 +695,111 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Attachment Preview Dialog */}
+      <Dialog open={!!previewAttachment} onOpenChange={() => setPreviewAttachment(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {getFileIcon(previewAttachment?.filename || 'file')}
+              Attachment Preview: {previewAttachment?.filename || 'Unknown File'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto">
+            {previewAttachment && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="flex-shrink-0">
+                    {getFileIcon(previewAttachment.filename || 'file')}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium">{previewAttachment.filename || 'Unknown File'}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      {previewAttachment.size && (
+                        <Badge variant="outline" className="text-xs">
+                          {Math.round(previewAttachment.size / 1024)} KB
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {getFileExtension(previewAttachment.filename || '').toUpperCase() || 'Unknown'} File
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      // Handle download
+                      alert(`Download ${previewAttachment.filename} would be implemented here`);
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+
+                <div className="border rounded-lg p-6 bg-muted/10 min-h-[400px] flex items-center justify-center">
+                  {isImageFile(previewAttachment.filename || '') ? (
+                    <div className="text-center space-y-4">
+                      <div className="w-24 h-24 mx-auto bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Image className="h-12 w-12 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Image Preview</h3>
+                        <p className="text-sm text-muted-foreground">
+                          In a real implementation, the image would be displayed here
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          File: {previewAttachment.filename}
+                        </p>
+                      </div>
+                    </div>
+                  ) : getFileExtension(previewAttachment.filename || '') === 'pdf' ? (
+                    <div className="text-center space-y-4">
+                      <div className="w-24 h-24 mx-auto bg-red-100 rounded-lg flex items-center justify-center">
+                        <FileText className="h-12 w-12 text-red-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">PDF Document</h3>
+                        <p className="text-sm text-muted-foreground">
+                          In a real implementation, the PDF would be embedded here
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          File: {previewAttachment.filename}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-4">
+                      <div className="w-24 h-24 mx-auto bg-muted rounded-lg flex items-center justify-center">
+                        <File className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">File Preview</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Preview not available for this file type
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          File: {previewAttachment.filename}
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => {
+                            alert(`Download ${previewAttachment.filename} would be implemented here`);
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download to View
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
