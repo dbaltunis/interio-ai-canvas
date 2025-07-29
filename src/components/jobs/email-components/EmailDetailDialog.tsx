@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink, Download, Camera, Smartphone, Activity, Globe, Monitor, Circle, CheckCircle, XCircle, LogOut } from "lucide-react";
+import { Calendar, Mail, Eye, MousePointer, Clock, RefreshCw, User, Building, Phone, MapPin, ExternalLink, Download, Camera, Smartphone, Activity, Globe, Monitor, Circle, CheckCircle, XCircle, LogOut, FileText, Image, File, Play } from "lucide-react";
 import { format } from "date-fns";
 import { EmailStatusBadge } from "./EmailStatusBadge";
 import { EmailAnalyticsDetail } from "./EmailAnalyticsDetail";
@@ -135,6 +135,38 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
     } finally {
       setIsSendingFollowUp(false);
     }
+  };
+
+  const getFileIcon = (filename: string) => {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return <FileText className="h-8 w-8 text-red-500" />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return <Image className="h-8 w-8 text-blue-500" />;
+      case 'mp4':
+      case 'mov':
+      case 'avi':
+        return <Play className="h-8 w-8 text-purple-500" />;
+      case 'doc':
+      case 'docx':
+        return <FileText className="h-8 w-8 text-blue-600" />;
+      case 'xls':
+      case 'xlsx':
+        return <FileText className="h-8 w-8 text-green-600" />;
+      default:
+        return <File className="h-8 w-8 text-muted-foreground" />;
+    }
+  };
+
+  const handlePreviewAttachment = (attachment: any) => {
+    // For now, we'll just show an alert. In a real implementation,
+    // you would open a preview modal or download the file
+    alert(`Preview functionality for ${attachment.filename} would be implemented here`);
   };
 
   return (
@@ -487,24 +519,67 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                  className="prose max-w-none mb-4"
                  dangerouslySetInnerHTML={{ __html: currentEmail.content || 'No content available' }}
                />
-               {currentEmail.attachment_info && Array.isArray(currentEmail.attachment_info) && currentEmail.attachment_info.length > 0 && (
-                 <div className="border-t pt-4">
-                   <h4 className="font-medium mb-2">Attachments:</h4>
-                   <div className="space-y-2">
-                     {currentEmail.attachment_info.map((attachment: any, index: number) => (
-                       <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
-                         <Download className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary" />
-                         <span className="text-sm">{attachment.filename || `Attachment ${index + 1}`}</span>
-                         {attachment.size && (
-                           <Badge variant="outline" className="text-xs">
-                             {Math.round(attachment.size / 1024)} KB
-                           </Badge>
-                         )}
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-               )}
+                {currentEmail.attachment_info && Array.isArray(currentEmail.attachment_info) && currentEmail.attachment_info.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Attachments ({currentEmail.attachment_info.length})
+                    </h4>
+                    <div className="grid gap-3">
+                      {currentEmail.attachment_info.map((attachment: any, index: number) => (
+                        <div 
+                          key={index} 
+                          className="group flex items-center gap-4 p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => handlePreviewAttachment(attachment)}
+                        >
+                          <div className="flex-shrink-0">
+                            {getFileIcon(attachment.filename || `file${index + 1}`)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                              {attachment.filename || `Attachment ${index + 1}`}
+                            </h5>
+                            <div className="flex items-center gap-2 mt-1">
+                              {attachment.size && (
+                                <Badge variant="outline" className="text-xs">
+                                  {Math.round(attachment.size / 1024)} KB
+                                </Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                Click to preview
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePreviewAttachment(attachment);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Handle download
+                                alert(`Download ${attachment.filename} would be implemented here`);
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
              </CardContent>
            </Card>
 
