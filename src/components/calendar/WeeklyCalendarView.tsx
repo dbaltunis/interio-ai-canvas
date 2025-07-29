@@ -466,7 +466,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   return (
                     <div
                       key={`hour-line-${index}`}
-                      className="absolute left-0 right-0 border-t border-muted/30 pointer-events-none z-5"
+                      className="absolute left-0 right-0 border-t border-muted/80 pointer-events-none z-5"
                       style={{ top: `${index * 20}px` }}
                     />
                   );
