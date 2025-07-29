@@ -11,6 +11,8 @@ import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmailAnalytics } from "@/hooks/useEmailAnalytics";
 import type { Email } from "@/hooks/useEmails";
@@ -28,6 +30,10 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const { data: projects = [] } = useProjects();
   const navigate = useNavigate();
   const [refreshedEmail, setRefreshedEmail] = useState<Email | null>(email);
+  const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
+  const [followUpSubject, setFollowUpSubject] = useState("");
+  const [followUpContent, setFollowUpContent] = useState("");
+  const [isSendingFollowUp, setIsSendingFollowUp] = useState(false);
   const { data: emailAnalytics = [] } = useEmailAnalytics(email?.id || "");
 
   // Auto-refresh email data every 10 seconds
@@ -82,6 +88,53 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const handleViewProject = (projectId: string) => {
     navigate(`/projects/${projectId}`);
     onOpenChange(false);
+  };
+
+  const handleFollowUp = () => {
+    setFollowUpSubject(`Re: ${currentEmail.subject}`);
+    setFollowUpContent(`\n\n---\nOriginal message:\n${currentEmail.content}`);
+    setShowFollowUpDialog(true);
+  };
+
+  const handleSendFollowUp = async () => {
+    if (!followUpSubject.trim() || !followUpContent.trim()) return;
+    
+    setIsSendingFollowUp(true);
+    try {
+      // Create new email in database
+      const { data, error } = await supabase
+        .from('emails')
+        .insert({
+          user_id: currentEmail.user_id,
+          client_id: currentEmail.client_id,
+          recipient_email: currentEmail.recipient_email,
+          subject: followUpSubject,
+          content: followUpContent,
+          status: 'queued'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Here you would call your email sending service
+      // For now, we'll just update the status to sent
+      await supabase
+        .from('emails')
+        .update({ 
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        })
+        .eq('id', data.id);
+
+      setShowFollowUpDialog(false);
+      setFollowUpSubject("");
+      setFollowUpContent("");
+    } catch (error) {
+      console.error('Error sending follow-up email:', error);
+    } finally {
+      setIsSendingFollowUp(false);
+    }
   };
 
   return (
@@ -447,14 +500,85 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                     {isResending ? 'Resending...' : 'Resend Email'}
                   </Button>
                 )}
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Follow Up
-                </Button>
+                 <Button 
+                   variant="outline" 
+                   className="flex items-center gap-2"
+                   onClick={handleFollowUp}
+                 >
+                   <Mail className="h-4 w-4" />
+                   Follow Up
+                 </Button>
               </div>
            </div>
         </div>
       </DialogContent>
+
+      {/* Follow-up Email Dialog */}
+      <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Follow-up Email
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Subject</label>
+              <Input
+                value={followUpSubject}
+                onChange={(e) => setFollowUpSubject(e.target.value)}
+                placeholder="Email subject..."
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Email Content</label>
+              <Textarea
+                value={followUpContent}
+                onChange={(e) => setFollowUpContent(e.target.value)}
+                placeholder="Write your follow-up email here..."
+                className="min-h-[400px] w-full resize-none font-mono"
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  padding: '16px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px'
+                }}
+              />
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowFollowUpDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendFollowUp}
+                disabled={isSendingFollowUp || !followUpSubject.trim() || !followUpContent.trim()}
+                className="flex items-center gap-2"
+              >
+                {isSendingFollowUp ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4" />
+                    Send Follow-up
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
