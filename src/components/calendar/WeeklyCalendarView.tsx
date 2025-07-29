@@ -211,20 +211,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     });
   };
 
-  // GOOGLE CALENDAR STANDARDS: 24px per 30-minute slot = 0.8px per minute (SAME AS DAILY VIEW)
+  // COMPACT CALENDAR: 12px per 30-minute slot = 0.4px per minute (HALF of Google standards)
   const timeToPixels = (hour: number, minutes: number, isExtendedHours: boolean = false) => {
     if (isExtendedHours) {
-      // From midnight: each hour = 48px
-      return hour * 48 + (minutes / 30) * 24;
+      // From midnight: each hour = 24px
+      return hour * 24 + (minutes / 30) * 12;
     } else {
-      // From 6 AM: each hour = 48px
+      // From 6 AM: each hour = 24px
       const hourOffset = hour - 6;
-      return hourOffset * 48 + (minutes / 30) * 24;
+      return hourOffset * 24 + (minutes / 30) * 12;
     }
   };
 
   const pixelsToTime = (pixels: number, isExtendedHours: boolean = false) => {
-    const totalMinutes = (pixels / 24) * 30;
+    const totalMinutes = (pixels / 12) * 30;
     const hour = Math.floor(totalMinutes / 60) + (isExtendedHours ? 0 : 6);
     const minutes = Math.floor(totalMinutes % 60);
     return { hour, minutes };
@@ -250,7 +250,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
     // Calculate duration and height
     const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
-    const height = Math.max((durationInMinutes / 30) * 24, 18);
+    const height = Math.max((durationInMinutes / 30) * 12, 12);
 
     return { top: finalTop, height, visible: true };
   };
@@ -446,10 +446,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         {/* Scrollable time grid */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="flex">
-            {/* GOOGLE CALENDAR TIME LABELS: 24px per 30-minute slot = 48px per hour */}
+            {/* COMPACT TIME LABELS: 12px per 30-minute slot = 24px per hour */}
             <div className="w-16 border-r bg-muted/20 flex-shrink-0">
               {showExtendedHours ? (
-                // 24-hour view: 0-23 (each hour = 48px)
+                // 24-hour view: 0-23 (each hour = 24px)
                 Array.from({ length: 24 }, (_, hourIndex) => {
                   const hour = hourIndex; // 0-23 for 24-hour format
                   return (
@@ -457,7 +457,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* Hour boundary line - SUBTLE */}
                       <div 
                         className="absolute left-0 right-0 border-t-2 border-border z-20"
-                        style={{ top: `${hour * 48}px` }}
+                        style={{ top: `${hour * 24}px` }}
                       >
                         {/* Hour label positioned exactly at boundary */}
                         <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
@@ -468,12 +468,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* 30-minute divider - DASHED */}
                       <div 
                         className="absolute left-0 right-0 border-t border-dashed border-border/50 z-10"
-                        style={{ top: `${hour * 48 + 24}px` }}
+                        style={{ top: `${hour * 24 + 12}px` }}
                       />
                       
-                      {/* Hour block (48px = 2 × 24px slots) */}
+                      {/* Hour block (24px = 2 × 12px slots) */}
                       <div 
-                        className="relative h-[48px]"
+                        className="relative h-[24px]"
                         style={{ 
                           backgroundColor: hour % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent'
                         }}
@@ -482,7 +482,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   );
                 })
               ) : (
-                // Working hours view: 6 AM - 10 PM (each hour = 48px)
+                // Working hours view: 6 AM - 10 PM (each hour = 24px)
                 Array.from({ length: 17 }, (_, index) => {
                   const hour = index + 6; // Start from 6 AM
                   return (
@@ -490,7 +490,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* Hour boundary line - SUBTLE */}
                       <div 
                         className="absolute left-0 right-0 border-t-2 border-border z-20"
-                        style={{ top: `${index * 48}px` }}
+                        style={{ top: `${index * 24}px` }}
                       >
                         {/* Hour label positioned exactly at boundary */}
                          <div className="absolute -top-2 right-1 bg-background text-xs font-medium text-muted-foreground px-2 py-1 rounded shadow-sm border border-border/20 z-10 min-w-[2.5rem] text-center">
@@ -501,7 +501,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       {/* 30-minute divider - DASHED */}
                       <div 
                         className="absolute left-0 right-0 border-t border-dashed border-border/50 z-10"
-                        style={{ top: `${index * 48 + 24}px` }}
+                        style={{ top: `${index * 24 + 12}px` }}
                       />
                       
                       {/* Hour block (48px = 2 × 24px slots) */}
@@ -526,18 +526,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                    const previewStyle = getEventCreationPreviewStyle();
                    const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
                    
-                      // Calculate total height: 48px per hour (24px per 30-minute slot)
+                      // Calculate total height: 24px per hour (12px per 30-minute slot)
                       const totalHours = showExtendedHours ? 24 : 17; // 17 hours from 6 AM to 10 PM
-                      const totalHeight = totalHours * 48;
+                      const totalHeight = totalHours * 24;
                    
                    return (
                      <div key={day.toString()} className={`border-r relative ${
                        isCurrentDay ? 'bg-primary/5' : ''
                      }`} style={{ height: `${totalHeight}px` }}>
-                          {/* GOOGLE CALENDAR HOUR GRID: 24px per 30-minute slot */}
+                          {/* COMPACT HOUR GRID: 12px per 30-minute slot */}
                           {Array.from({ length: totalHours }, (_, hourIndex) => {
                             const hour = showExtendedHours ? hourIndex : hourIndex + 6;
-                            const topPosition = hourIndex * 48; // 48px per hour
+                            const topPosition = hourIndex * 24; // 24px per hour
                             
                             return (
                               <div key={hour} className="relative">
@@ -550,12 +550,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                 {/* 30-minute divider - DASHED */}
                                 <div 
                                   className="absolute left-0 right-0 border-t border-dashed border-border/50 z-5"
-                                  style={{ top: `${topPosition + 24}px` }}
+                                  style={{ top: `${topPosition + 12}px` }}
                                 />
                                 
-                                {/* Hour clickable area (48px = 2 × 24px slots) */}
+                                {/* Hour clickable area (24px = 2 × 12px slots) */}
                                 <div 
-                                  className="relative h-[48px] hover:bg-accent/10 transition-colors cursor-pointer"
+                                  className="relative h-[24px] hover:bg-accent/10 transition-colors cursor-pointer"
                                   style={{ 
                                     backgroundColor: hourIndex % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent'
                                   }}
@@ -574,14 +574,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     e.currentTarget.title = `Book appointment at ${timeStr} on ${format(day, 'MMM d')}`;
                                   }}
                                 >
-                                  {/* First 30-minute slot (24px) */}
+                                  {/* First 30-minute slot (12px) */}
                                   <div 
-                                    className="absolute inset-x-0 top-0 h-6 hover:bg-accent/20 transition-colors border-b border-dashed border-border/30"
+                                    className="absolute inset-x-0 top-0 h-3 hover:bg-accent/20 transition-colors border-b border-dashed border-border/30"
                                   />
                                   
-                                  {/* Second 30-minute slot (24px) */}
+                                  {/* Second 30-minute slot (12px) */}
                                   <div 
-                                    className="absolute inset-x-0 bottom-0 h-6 hover:bg-accent/20 transition-colors"
+                                    className="absolute inset-x-0 bottom-0 h-3 hover:bg-accent/20 transition-colors"
                                   />
                                 </div>
                               </div>
