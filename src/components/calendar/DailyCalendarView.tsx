@@ -43,19 +43,26 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
   const dayEvents = getDayEvents();
 
-  // STANDARDIZED TIME-TO-PIXEL MAPPING: 40px per 30-minute slot = 1.33px per minute
+  // GOOGLE CALENDAR STANDARDS: 24px per 30-minute slot = 0.8px per minute
+  const timeToPixels = (hour: number, minutes: number) => {
+    const hourOffset = hour - 6; // Hours from 6 AM
+    return hourOffset * 48 + (minutes / 30) * 24;
+  };
+
+  const pixelsToTime = (pixels: number) => {
+    const totalMinutes = (pixels / 24) * 30;
+    const hour = Math.floor(totalMinutes / 60) + 6;
+    const minutes = Math.floor(totalMinutes % 60);
+    return { hour, minutes };
+  };
+
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours();
     const startMinutes = startTime.getMinutes();
     
-    // CRITICAL: 40px per 30-minute slot = 1.33px per minute
-    // Formula: top = (hour - 6) * 80 + (minutes / 30) * 40
-    const hourOffset = startHour - 6; // Hours from 6 AM
-    const top = hourOffset * 80 + (startMinutes / 30) * 40;
-
-    // Calculate height using same formula
+    const top = timeToPixels(startHour, startMinutes);
     const durationInMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    const height = Math.max((durationInMinutes / 30) * 40, 24);
+    const height = Math.max((durationInMinutes / 30) * 24, 18);
 
     return { top, height, visible: startHour >= 6 && startHour <= 22 };
   };
@@ -66,7 +73,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
       const now = new Date();
       const currentHour = now.getHours();
       const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
-      const scrollPosition = (scrollToHour - 6) * 80; // Each hour is 80px
+      const scrollPosition = timeToPixels(scrollToHour, 0); // Each hour is 48px
       scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
     }
   }, [currentDate]);
@@ -100,10 +107,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
       
-      {/* STANDARDIZED TIME GRID: 40px per 30-minute slot */}
+      {/* GOOGLE CALENDAR GRID: 24px per 30-minute slot */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
         <div className="relative">
-          {/* Time slots with pixel-perfect alignment */}
+          {/* Time slots with Google Calendar pixel alignment */}
           {Array.from({ length: 17 }, (_, index) => {
             const hour = index + 6; // Start from 6 AM
             const hourTime = `${hour.toString().padStart(2, '0')}:00`;
@@ -111,29 +118,56 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             
             return (
               <div key={hour}>
-                {/* Hour slot - EXACTLY 40px with STRONG border */}
-                <div className="relative border-b-2 border-gray-900" style={{ height: '40px' }}>
-                  <div className="absolute left-2 -top-2 text-xs font-bold text-gray-900 bg-white px-1 z-10">
+                {/* Hour slot - EXACTLY 24px with subtle border */}
+                <div 
+                  className="relative border-b-2 border-border" 
+                  style={{ height: '24px' }}
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const { hour, minutes } = pixelsToTime(y + index * 48);
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
+                    onTimeSlotClick?.(currentDate, timeStr);
+                  }}
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const { hour, minutes } = pixelsToTime(y + index * 48);
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
+                    e.currentTarget.title = `Click to book at ${timeStr}`;
+                  }}
+                >
+                  <div className="absolute left-2 -top-2 text-xs font-medium text-muted-foreground bg-background px-1 z-10">
                     {hourTime}
                   </div>
                   <div 
-                    className="h-full hover:bg-blue-50 cursor-pointer"
-                    style={{ backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
-                    onClick={() => onTimeSlotClick?.(currentDate, hourTime)}
-                    title={`Click to book at ${hourTime}`}
+                    className="h-full hover:bg-accent/20 cursor-pointer"
+                    style={{ backgroundColor: index % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent' }}
                   />
                 </div>
                 
-                {/* Half hour slot - EXACTLY 40px with dashed border */}
-                <div className="relative border-b border-dashed border-gray-400" style={{ height: '40px' }}>
-                  <div className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 z-10">
-                    {halfHourTime}
-                  </div>
+                {/* Half hour slot - EXACTLY 24px with dashed border */}
+                <div 
+                  className="relative border-b border-dashed border-border/50" 
+                  style={{ height: '24px' }}
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const { hour, minutes } = pixelsToTime(y + index * 48 + 24);
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
+                    onTimeSlotClick?.(currentDate, timeStr);
+                  }}
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const { hour, minutes } = pixelsToTime(y + index * 48 + 24);
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${Math.floor(minutes / 30) * 30 === 0 ? '00' : '30'}`;
+                    e.currentTarget.title = `Click to book at ${timeStr}`;
+                  }}
+                >
                   <div 
-                    className="h-full hover:bg-blue-50 cursor-pointer"
-                    style={{ backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
-                    onClick={() => onTimeSlotClick?.(currentDate, halfHourTime)}
-                    title={`Click to book at ${halfHourTime}`}
+                    className="h-full hover:bg-accent/20 cursor-pointer"
+                    style={{ backgroundColor: index % 2 === 0 ? 'hsl(var(--muted)/0.3)' : 'transparent' }}
                   />
                 </div>
               </div>
@@ -147,9 +181,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
             const currentMinutes = now.getMinutes();
             
             if (currentHour >= 6 && currentHour <= 22) {
-              // STANDARDIZED: Use exact same calculation as events
-              const hourOffset = currentHour - 6;
-              const top = hourOffset * 80 + (currentMinutes / 30) * 40;
+              // GOOGLE STANDARDS: Use exact same calculation as events
+              const top = timeToPixels(currentHour, currentMinutes);
               
               return (
                 <div 
