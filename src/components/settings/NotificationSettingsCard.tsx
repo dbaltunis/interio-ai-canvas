@@ -16,11 +16,13 @@ export const NotificationSettingsCard = () => {
   
   const [emailEnabled, setEmailEnabled] = useState(settings?.email_notifications_enabled || false);
   const [smsEnabled, setSmsEnabled] = useState(settings?.sms_notifications_enabled || false);
+  const [smsPhoneNumber, setSmsPhoneNumber] = useState(settings?.sms_phone_number || '');
 
   const handleSave = async () => {
     await updateSettings.mutateAsync({
       email_notifications_enabled: emailEnabled,
       sms_notifications_enabled: smsEnabled,
+      sms_phone_number: smsPhoneNumber,
     });
   };
 
@@ -133,8 +135,8 @@ export const NotificationSettingsCard = () => {
                   <Label htmlFor="sms-phone">From Phone Number</Label>
                   <Input
                     id="sms-phone"
-                    value={settings?.sms_phone_number || ''}
-                    onChange={(e) => {/* Handle SMS phone update */}}
+                    value={smsPhoneNumber}
+                    onChange={(e) => setSmsPhoneNumber(e.target.value)}
                     placeholder="+1234567890"
                   />
                 </div>
