@@ -100,15 +100,22 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
-            const isNextSlotHour = index < timeSlots.length - 1 && (index + 1) % 2 === 0;
+            const [hour] = time.split(':');
             
             return (
               <div 
                 key={time} 
-                className={`h-12 flex border-b ${
+                className={`h-12 flex border-b relative ${
                   isHourSlot ? 'border-border' : 'border-dashed border-muted'
                 }`}
               >
+                {/* DEBUG: Show pixel position for each hour */}
+                {isHourSlot && (
+                  <div className="absolute -left-16 top-0 text-xs bg-blue-500 text-white px-1 rounded">
+                    {hour}:00 @{index * 48}px
+                  </div>
+                )}
+                
                 {/* Time label */}
                 <div className="w-20 p-2 text-xs text-muted-foreground bg-muted/20 border-r relative">
                   {isHourSlot && (
@@ -140,6 +147,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                           style={{ top: `${top}px` }}
                         >
                           <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                          {/* DEBUG: Show exact pixel position */}
+                          <div className="absolute -right-24 -top-3 text-xs bg-red-500 text-white px-1 rounded">
+                            {format(now, 'HH:mm')} @{top}px
+                          </div>
                         </div>
                       );
                     }
@@ -187,10 +198,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                       marginLeft: `${eventIndex * 4}px`, // Slight offset for overlapping events
                       zIndex: 10 + eventIndex,
                       backgroundColor: event.color || undefined,
-                      borderLeftColor: event.color || undefined
+                      borderLeftColor: event.color || undefined,
+                      // DEBUG: Add visible border
+                      border: '2px solid lime'
                     }}
                     onClick={() => onEventClick?.(event.id)}
-                    title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
+                    title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\nDEBUG: top=${style.top}px, height=${style.height}px`}
                   >
                     <div className="font-semibold truncate leading-tight text-base">
                       {event.title}

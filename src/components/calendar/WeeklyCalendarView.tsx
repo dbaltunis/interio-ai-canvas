@@ -540,7 +540,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                            if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
                          }
                          
-                         // FIXED: Use correct pixel calculation (20px per 30 minutes = 0.667px per minute)
+                         // FIXED: Each slot is h-[20px] = 20px per 30 minutes
                          const pixelsPerMinute = 20 / 30; // 0.667px per minute
                          const top = Math.round(totalMinutesFromMidnight * pixelsPerMinute);
                         
@@ -549,10 +549,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
                             style={{ top: `${top}px` }}
                           >
-                            <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                            <div className="absolute right-2 -top-2 text-[10px] text-red-500 font-medium bg-white px-1 rounded">
-                              {format(now, 'HH:mm')}
-                            </div>
+                             <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                             {/* DEBUG: Show exact pixel position */}
+                             <div className="absolute -right-20 -top-3 text-xs bg-red-500 text-white px-1 rounded">
+                               {format(now, 'HH:mm')} @{top}px
+                             </div>
                           </div>
                         );
                       })()}
