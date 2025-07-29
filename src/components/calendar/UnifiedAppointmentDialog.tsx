@@ -102,7 +102,17 @@ export const UnifiedAppointmentDialog = ({
   }, [appointment, selectedDate, defaultColors]);
 
   const handleSubmit = async () => {
-    if (!event.title || !event.date || !event.startTime || !event.endTime) return;
+    console.log('handleSubmit called with event:', event);
+    
+    if (!event.title || !event.date || !event.startTime || !event.endTime) {
+      console.log('Validation failed:', {
+        title: event.title,
+        date: event.date,
+        startTime: event.startTime,
+        endTime: event.endTime
+      });
+      return;
+    }
 
     const startDateTime = new Date(`${event.date}T${event.startTime}`);
     const endDateTime = new Date(`${event.date}T${event.endTime}`);
