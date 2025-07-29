@@ -95,7 +95,7 @@ export const UnifiedAppointmentDialog = ({
         video_meeting_link: "",
         selectedTeamMembers: [],
         inviteClientEmail: "",
-        notification_enabled: false,
+        notification_enabled: true, // Enable notifications by default for new events
         notification_minutes: 15
       });
     }
