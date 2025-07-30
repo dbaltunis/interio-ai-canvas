@@ -357,9 +357,9 @@ export const UnifiedAppointmentDialog = ({
               <div>
                 <Label className="flex items-center gap-1">
                   <Bell className="w-3 h-3" />
-                  Notification
+                  Notification Settings
                 </Label>
-                <div className="space-y-2">
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="notification-enabled"
@@ -368,34 +368,44 @@ export const UnifiedAppointmentDialog = ({
                         setEvent({ ...event, notification_enabled: checked === true })
                       }
                     />
-                    <Label htmlFor="notification-enabled" className="text-xs">
-                      Enable Notifications
+                    <Label htmlFor="notification-enabled" className="text-sm font-medium">
+                      Send reminder notifications for this appointment
                     </Label>
                   </div>
+                  
                   {event.notification_enabled && (
-                    <div className="space-y-2">
-                      <Select 
-                        value={event.notification_minutes.toString()} 
-                        onValueChange={(value) => 
-                          setEvent({ ...event, notification_minutes: parseInt(value) })
-                        }
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="5">5 min before</SelectItem>
-                          <SelectItem value="15">15 min before</SelectItem>
-                          <SelectItem value="30">30 min before</SelectItem>
-                          <SelectItem value="60">1 hour before</SelectItem>
-                          <SelectItem value="1440">1 day before</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div className="font-medium">Notification channels:</div>
-                        <div>• Email notifications (via SendGrid)</div>
-                        <div>• In-app notifications</div>
-                        <div>• SMS notifications (via Twilio)</div>
+                    <div className="space-y-3 pl-6 border-l-2 border-primary/20">
+                      <div>
+                        <Label className="text-xs font-medium">Reminder timing:</Label>
+                        <Select 
+                          value={event.notification_minutes.toString()} 
+                          onValueChange={(value) => 
+                            setEvent({ ...event, notification_minutes: parseInt(value) })
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5 minutes before</SelectItem>
+                            <SelectItem value="15">15 minutes before</SelectItem>
+                            <SelectItem value="30">30 minutes before</SelectItem>
+                            <SelectItem value="60">1 hour before</SelectItem>
+                            <SelectItem value="1440">1 day before</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-2">
+                        <div className="text-xs text-blue-900 dark:text-blue-100 space-y-1">
+                          <div className="font-medium">📱 You'll receive notifications via:</div>
+                          <div>• Email (if SendGrid is configured)</div>
+                          <div>• SMS (if phone number is set)</div>
+                          <div>• In-app notification</div>
+                          <div className="text-xs opacity-75 mt-2">
+                            Configure your notification preferences in Settings → Notifications
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}

@@ -1982,8 +1982,12 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          default_notification_minutes: number | null
           display_name: string | null
+          email_notifications: boolean | null
           id: string
+          phone_number: string | null
+          sms_notifications: boolean | null
           status: string | null
           status_message: string | null
           updated_at: string | null
@@ -1992,8 +1996,12 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          default_notification_minutes?: number | null
           display_name?: string | null
+          email_notifications?: boolean | null
           id?: string
+          phone_number?: string | null
+          sms_notifications?: boolean | null
           status?: string | null
           status_message?: string | null
           updated_at?: string | null
@@ -2002,8 +2010,12 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          default_notification_minutes?: number | null
           display_name?: string | null
+          email_notifications?: boolean | null
           id?: string
+          phone_number?: string | null
+          sms_notifications?: boolean | null
           status?: string | null
           status_message?: string | null
           updated_at?: string | null

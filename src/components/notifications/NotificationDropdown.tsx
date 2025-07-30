@@ -67,28 +67,47 @@ export const NotificationDropdown = () => {
                         <h4 className="font-medium text-sm">{notification.title}</h4>
                       </div>
                       
-                      <p className="text-xs text-muted-foreground">
-                        {notification.message}
-                      </p>
-                      
                       {notification.appointments && (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            <span>{notification.appointments.title}</span>
+                        <div className="space-y-2">
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              <span>{notification.appointments.title}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>
+                                {format(new Date(notification.appointments.start_time), "MMM d, yyyy 'at' h:mm a")}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span>
-                              {format(new Date(notification.appointments.start_time), "MMM d, yyyy 'at' h:mm a")}
-                            </span>
+                          
+                          <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 rounded-lg p-2">
+                            <div className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                              📧 Notification Details:
+                            </div>
+                            <div>• Reminder scheduled for: {format(new Date(notification.scheduled_for), "MMM d 'at' h:mm a")}</div>
+                            <div>• Will notify via {notification.channels.join(', ')}</div>
+                            <div>• Click "Send Pending Notifications" above to send now</div>
                           </div>
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap">
                         {notification.channels.map((channel) => (
-                          <Badge key={channel} variant="outline" className="text-xs">
+                          <Badge 
+                            key={channel} 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs",
+                              channel === 'email' && "border-blue-200 text-blue-700",
+                              channel === 'sms' && "border-green-200 text-green-700",
+                              channel === 'push' && "border-purple-200 text-purple-700"
+                            )}
+                          >
+                            {channel === 'email' && '📧'} 
+                            {channel === 'sms' && '📱'} 
+                            {channel === 'push' && '🔔'} 
                             {channel}
                           </Badge>
                         ))}

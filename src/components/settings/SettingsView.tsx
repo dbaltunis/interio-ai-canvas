@@ -13,7 +13,7 @@ import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
-import { NotificationSettingsCard } from "./NotificationSettingsCard";
+import { EnhancedNotificationSettings } from "./EnhancedNotificationSettings";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -128,7 +128,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="notifications">
-          <NotificationSettingsCard />
+          <EnhancedNotificationSettings />
         </TabsContent>
 
         <TabsContent value="integrations">

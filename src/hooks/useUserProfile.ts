@@ -45,7 +45,13 @@ export const useUpdateUserProfile = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (profileData: { phone_number?: string; email_notifications?: boolean; sms_notifications?: boolean; default_notification_minutes?: number }) => {
+    mutationFn: async (profileData: Partial<{ 
+      display_name: string; 
+      phone_number: string; 
+      email_notifications: boolean; 
+      sms_notifications: boolean; 
+      default_notification_minutes: number 
+    }>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
