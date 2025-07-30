@@ -315,6 +315,42 @@ export type Database = {
           },
         ]
       }
+      booking_notifications: {
+        Row: {
+          booking_id: string
+          created_at: string
+          customer_email: string
+          id: string
+          notification_type: string
+          scheduler_id: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          customer_email: string
+          id?: string
+          notification_type?: string
+          scheduler_id: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          customer_email?: string
+          id?: string
+          notification_type?: string
+          scheduler_id?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_settings: {
         Row: {
           abn: string | null
