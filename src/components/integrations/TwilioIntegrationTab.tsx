@@ -56,7 +56,6 @@ export const TwilioIntegrationTab = () => {
     try {
       const integrationData = {
         integration_type: "twilio" as const,
-        name: "Twilio SMS",
         api_credentials: {
           account_sid: formData.account_sid,
           auth_token: formData.auth_token,
