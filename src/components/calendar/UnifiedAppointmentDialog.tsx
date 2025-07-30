@@ -107,6 +107,8 @@ export const UnifiedAppointmentDialog = ({
 
   const handleSubmit = async () => {
     console.log('handleSubmit called with event:', event);
+    console.log('isEditing:', isEditing);
+    console.log('appointment:', appointment);
     
     if (!event.title || !event.date || !event.startTime || !event.endTime) {
       console.log('Validation failed:', {
