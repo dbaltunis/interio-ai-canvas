@@ -94,7 +94,19 @@ export interface GoogleCalendarIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration;
+export interface TwilioIntegration extends BaseIntegration {
+  integration_type: 'twilio';
+  api_credentials: {
+    account_sid: string;
+    auth_token: string;
+  };
+  configuration: {
+    phone_number: string;
+    webhook_url?: string;
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | TwilioIntegration;
 
 export interface IntegrationSyncLog {
   id: string;

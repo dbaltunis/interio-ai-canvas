@@ -8,6 +8,7 @@ import { GoogleCalendarTab } from "./GoogleCalendarTab";
 import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
 import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
+import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
 import { useIntegrations } from "@/hooks/useIntegrations";
 
 export const IntegrationsTab = () => {
@@ -116,20 +117,7 @@ export const IntegrationsTab = () => {
         </TabsContent>
 
         <TabsContent value="communication">
-          <Card>
-            <CardHeader>
-              <CardTitle>Communication Integrations</CardTitle>
-              <CardDescription>
-                Connect with SMS, WhatsApp, and other communication platforms
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">Communication integrations coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
+          <TwilioIntegrationTab />
         </TabsContent>
       </Tabs>
     </div>
