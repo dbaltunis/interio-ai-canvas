@@ -93,10 +93,14 @@ export const EnhancedNotificationSettings = () => {
 
     setIsTesting(prev => ({ ...prev, sms: true }));
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       const { error } = await supabase.functions.invoke('send-bulk-sms', {
         body: { 
-          phoneNumber: phoneNumber,
-          message: 'Test SMS notification from your calendar app! 📅'
+          phoneNumbers: [phoneNumber],
+          message: 'Test SMS notification from your calendar app! 📅',
+          userId: user.id
         }
       });
 
