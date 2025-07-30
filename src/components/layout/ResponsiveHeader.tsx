@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -11,8 +12,7 @@ import {
   Package, 
   Calendar,
   Menu,
-  X,
-  Bell
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -75,13 +75,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               </nav>
               
               {/* Notification Bell */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden md:flex text-brand-neutral hover:text-brand-primary p-2"
-              >
-                <Bell className="h-5.5 w-5.5" />
-              </Button>
+              <div className="hidden md:block">
+                <NotificationDropdown />
+              </div>
               
               {/* User Profile */}
               <UserProfile />
