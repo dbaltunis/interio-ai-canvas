@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Share2 } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Share2, Bell } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { AvailableSlotDialog } from "./AvailableSlotDialog";
 
@@ -721,45 +721,51 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   </div>
                                  )}
 
-                                 <div className="flex flex-col h-full p-1">
-                                  {/* Event header with user info and notifications */}
-                                  <div className="flex items-start justify-between mb-1">
-                                    {/* Event title at the top */}
-                                    <div className="font-normal text-xs leading-tight text-foreground dark:text-white flex-1 pr-1 break-words overflow-hidden" 
-                                         style={{ 
-                                           display: '-webkit-box',
-                                           WebkitLineClamp: finalHeight > 40 ? 3 : 2,
-                                           WebkitBoxOrient: 'vertical',
-                                           lineHeight: '1.3'
-                                         }}>
-                                      {event.isAvailableSlot 
-                                        ? event.schedulerName 
-                                        : event.isBooking 
-                                        ? event.customer_name 
-                                        : event.title
-                                      }
-                                    </div>
-                                    
-                                    {/* User avatar or initials */}
-                                    {!event.isAvailableSlot && (
-                                      <div className="flex-shrink-0 ml-1">
-                                        <Avatar className="h-4 w-4">
-                                          <AvatarImage src="" alt="" />
-                                          <AvatarFallback className="text-[8px] bg-background/50 text-foreground">
-                                            {event.isBooking 
-                                              ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
-                                              : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
-                                            }
-                                          </AvatarFallback>
-                                        </Avatar>
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Time display */}
-                                  <div className="text-[10px] leading-tight opacity-80 font-normal text-foreground dark:text-white/80">
-                                    {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                                  </div>
+                                  <div className="flex flex-col h-full p-1">
+                                   {/* Event content - compact layout */}
+                                   <div className="flex items-start justify-between gap-1">
+                                     {/* Left side: Title and time */}
+                                     <div className="flex-1 min-w-0">
+                                       {/* Event title - compact */}
+                                       <div className="font-normal text-[10px] leading-tight text-foreground dark:text-white break-words overflow-hidden" 
+                                            style={{ 
+                                              display: '-webkit-box',
+                                              WebkitLineClamp: 1,
+                                              WebkitBoxOrient: 'vertical',
+                                              lineHeight: '1.2'
+                                            }}>
+                                         {event.isAvailableSlot 
+                                           ? event.schedulerName 
+                                           : event.isBooking 
+                                           ? event.customer_name 
+                                           : event.title
+                                         }
+                                       </div>
+                                       
+                                       {/* Time display with notification bell */}
+                                       <div className="flex items-center gap-1 text-[9px] leading-tight opacity-80 font-normal text-foreground dark:text-white/80 mt-0.5">
+                                         <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
+                                         {!event.isAvailableSlot && event.notification_enabled && (
+                                           <Bell className="w-2.5 h-2.5 text-yellow-400" />
+                                         )}
+                                       </div>
+                                     </div>
+                                     
+                                     {/* User avatar - positioned to not overlap drag handle */}
+                                     {!event.isAvailableSlot && (
+                                       <div className="flex-shrink-0 mr-5">
+                                         <Avatar className="h-3.5 w-3.5">
+                                           <AvatarImage src="" alt="" />
+                                           <AvatarFallback className="text-[7px] bg-background/50 text-foreground">
+                                             {event.isBooking 
+                                               ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
+                                               : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
+                                             }
+                                           </AvatarFallback>
+                                         </Avatar>
+                                       </div>
+                                     )}
+                                   </div>
                                   
                                   {/* Notification and additional info for taller events */}
                                   {finalHeight > 45 && (
