@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useToast } from "@/hooks/use-toast";
@@ -100,7 +101,11 @@ const CalendarView = () => {
     color: '',
     videoMeetingLink: '',
     selectedTeamMembers: [] as string[],
-    inviteClientEmail: ''
+    inviteClientEmail: '',
+    enableNotifications: false,
+    notificationMethods: [] as string[],
+    notificationTiming: '15',
+    customNotificationMessage: ''
   });
 
   const handleCreateEvent = async () => {
@@ -156,7 +161,11 @@ const CalendarView = () => {
         color: '',
         videoMeetingLink: '',
         selectedTeamMembers: [],
-        inviteClientEmail: ''
+        inviteClientEmail: '',
+        enableNotifications: false,
+        notificationMethods: [],
+        notificationTiming: '15',
+        customNotificationMessage: ''
       });
     } catch (error) {
       toast({
@@ -727,6 +736,118 @@ const CalendarView = () => {
                     </Select>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Notification Settings */}
+            <div className="space-y-4 border-t pt-6">
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notifications
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="enableNotifications" className="text-sm">Enable notifications for this event</Label>
+                  <Switch
+                    id="enableNotifications"
+                    checked={newEvent.enableNotifications || false}
+                    onCheckedChange={(checked) => setNewEvent({ ...newEvent, enableNotifications: checked })}
+                  />
+                </div>
+
+                {newEvent.enableNotifications && (
+                  <div className="space-y-3 ml-4 pl-4 border-l-2 border-muted">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Notification methods</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="emailNotification"
+                            checked={newEvent.notificationMethods?.includes('email') || false}
+                            onCheckedChange={(checked) => {
+                              const methods = newEvent.notificationMethods || [];
+                              setNewEvent({
+                                ...newEvent,
+                                notificationMethods: checked
+                                  ? [...methods.filter(m => m !== 'email'), 'email']
+                                  : methods.filter(m => m !== 'email')
+                              });
+                            }}
+                          />
+                          <Label htmlFor="emailNotification" className="text-sm">Email</Label>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="smsNotification"
+                            checked={newEvent.notificationMethods?.includes('sms') || false}
+                            onCheckedChange={(checked) => {
+                              const methods = newEvent.notificationMethods || [];
+                              setNewEvent({
+                                ...newEvent,
+                                notificationMethods: checked
+                                  ? [...methods.filter(m => m !== 'sms'), 'sms']
+                                  : methods.filter(m => m !== 'sms')
+                              });
+                            }}
+                          />
+                          <Label htmlFor="smsNotification" className="text-sm">SMS</Label>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="inAppNotification"
+                            checked={newEvent.notificationMethods?.includes('in_app') || false}
+                            onCheckedChange={(checked) => {
+                              const methods = newEvent.notificationMethods || [];
+                              setNewEvent({
+                                ...newEvent,
+                                notificationMethods: checked
+                                  ? [...methods.filter(m => m !== 'in_app'), 'in_app']
+                                  : methods.filter(m => m !== 'in_app')
+                              });
+                            }}
+                          />
+                          <Label htmlFor="inAppNotification" className="text-sm">In-app notification</Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="notificationTiming" className="text-sm font-medium">Notify before event</Label>
+                      <Select 
+                        value={newEvent.notificationTiming || '15'}
+                        onValueChange={(value) => setNewEvent({ ...newEvent, notificationTiming: value })}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">At event time</SelectItem>
+                          <SelectItem value="5">5 minutes before</SelectItem>
+                          <SelectItem value="15">15 minutes before</SelectItem>
+                          <SelectItem value="30">30 minutes before</SelectItem>
+                          <SelectItem value="60">1 hour before</SelectItem>
+                          <SelectItem value="120">2 hours before</SelectItem>
+                          <SelectItem value="1440">1 day before</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="customMessage" className="text-sm font-medium">Custom message (optional)</Label>
+                      <Textarea
+                        id="customMessage"
+                        value={newEvent.customNotificationMessage || ''}
+                        onChange={(e) => setNewEvent({ ...newEvent, customNotificationMessage: e.target.value })}
+                        placeholder="Add a custom message to the notification..."
+                        rows={2}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
