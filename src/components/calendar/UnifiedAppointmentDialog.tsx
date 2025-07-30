@@ -88,8 +88,8 @@ export const UnifiedAppointmentDialog = ({
         inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
         notification_enabled: appointment.notification_enabled || false,
         notification_minutes: appointment.notification_minutes || 15,
-        notificationMethods: appointment.notificationMethods || [],
-        customNotificationMessage: appointment.customNotificationMessage || ""
+        notificationMethods: appointment.notification_methods || [],
+        customNotificationMessage: appointment.custom_notification_message || ""
       });
     } else if (selectedDate) {
       setEvent({
@@ -142,7 +142,9 @@ export const UnifiedAppointmentDialog = ({
       team_member_ids: event.selectedTeamMembers,
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
-      notification_minutes: event.notification_minutes
+      notification_minutes: event.notification_minutes,
+      notification_methods: event.notificationMethods,
+      custom_notification_message: event.customNotificationMessage
     };
 
     try {
