@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { usePendingNotifications, useMarkNotificationRead } from "@/hooks/useAppointmentNotifications";
+import { ProcessNotificationsButton } from "./ProcessNotificationsButton";
 import { format } from "date-fns";
 
 export const NotificationCenter = () => {
@@ -15,6 +16,9 @@ export const NotificationCenter = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-sm space-y-2">
+      <div className="flex justify-end">
+        <ProcessNotificationsButton />
+      </div>
       {pendingNotifications.slice(0, 3).map((notification) => (
         <Card key={notification.id} className="border-l-4 border-l-orange-500 bg-background shadow-lg">
           <CardHeader className="pb-2">
