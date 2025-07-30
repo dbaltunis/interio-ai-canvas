@@ -14,11 +14,17 @@ import { useToast } from "@/hooks/use-toast";
 
 interface EmailComposerProps {
   onClose?: () => void;
+  clientId?: string;
 }
 
-export const EmailComposer = ({ onClose }: EmailComposerProps) => {
+export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
+  const { data: clients = [] } = useClients();
+  
+  // Find the client if clientId is provided
+  const targetClient = clientId ? clients.find(c => c.id === clientId) : null;
+  
   const [emailData, setEmailData] = useState({
-    recipients: [] as string[],
+    recipients: targetClient?.email ? [targetClient.email] : [] as string[],
     cc: [] as string[],
     subject: "",
     content: "",
@@ -30,7 +36,6 @@ export const EmailComposer = ({ onClose }: EmailComposerProps) => {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   
-  const { data: clients = [] } = useClients();
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
 
@@ -137,6 +142,7 @@ export const EmailComposer = ({ onClose }: EmailComposerProps) => {
           subject: emailData.subject,
           content: emailData.content,
           attachments: attachments,
+          client_id: clientId,
         });
       }
 

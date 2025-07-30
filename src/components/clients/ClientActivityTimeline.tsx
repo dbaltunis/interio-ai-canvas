@@ -19,9 +19,10 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       id: email.id,
       type: 'email',
       title: email.subject,
-      description: `Email ${email.status}`,
+      description: `Email ${email.status}${email.open_count > 0 ? ` • Opened ${email.open_count} time(s)` : ''}${email.click_count > 0 ? ` • Clicked ${email.click_count} time(s)` : ''}`,
       date: email.created_at,
-      icon: Mail
+      icon: Mail,
+      recipient: email.recipient_email
     })) || []),
     ...(projects?.map(project => ({
       id: project.id,
@@ -80,6 +81,11 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
                     </div>
                     <p className="text-sm text-gray-500">
                       {activity.description}
+                      {activity.type === 'email' && (activity as any).recipient && (
+                        <span className="text-xs text-gray-400 block">
+                          To: {(activity as any).recipient}
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(activity.date).toLocaleDateString()} at {new Date(activity.date).toLocaleTimeString()}

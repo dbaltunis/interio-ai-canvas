@@ -12,6 +12,7 @@ import { ClientActivityTimeline } from "./ClientActivityTimeline";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { ClientQuotesList } from "./ClientQuotesList";
 import { QuickMeasurementAccess } from "./QuickMeasurementAccess";
+import { EmailComposer } from "../jobs/email/EmailComposer";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -22,6 +23,7 @@ interface ClientProfilePageProps {
 export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePageProps) => {
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
 
   if (clientLoading) {
     return (
@@ -236,7 +238,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           <ClientEmailHistory 
             clientId={clientId} 
             clientEmail={client.email}
-            onComposeEmail={() => {/* TODO: Implement compose email */}}
+            onComposeEmail={() => setShowEmailComposer(true)}
           />
         </TabsContent>
         
@@ -244,6 +246,18 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           <ClientQuotesList clientId={clientId} />
         </TabsContent>
       </Tabs>
+
+      {/* Email Composer Dialog */}
+      {showEmailComposer && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto m-4">
+            <EmailComposer 
+              clientId={clientId}
+              onClose={() => setShowEmailComposer(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
