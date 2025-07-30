@@ -175,6 +175,8 @@ export type Database = {
           invited_client_emails: string[] | null
           last_caldav_sync: string | null
           location: string | null
+          notification_enabled: boolean | null
+          notification_minutes: number | null
           project_id: string | null
           start_time: string
           status: string | null
@@ -198,6 +200,8 @@ export type Database = {
           invited_client_emails?: string[] | null
           last_caldav_sync?: string | null
           location?: string | null
+          notification_enabled?: boolean | null
+          notification_minutes?: number | null
           project_id?: string | null
           start_time: string
           status?: string | null
@@ -221,6 +225,8 @@ export type Database = {
           invited_client_emails?: string[] | null
           last_caldav_sync?: string | null
           location?: string | null
+          notification_enabled?: boolean | null
+          notification_minutes?: number | null
           project_id?: string | null
           start_time?: string
           status?: string | null

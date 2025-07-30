@@ -19,6 +19,8 @@ export interface Appointment {
   video_meeting_link?: string;
   team_member_ids?: string[];
   invited_client_emails?: string[];
+  notification_enabled?: boolean;
+  notification_minutes?: number;
   created_at: string;
   updated_at: string;
 }
