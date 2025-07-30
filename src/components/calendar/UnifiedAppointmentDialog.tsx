@@ -131,9 +131,8 @@ export const UnifiedAppointmentDialog = ({
       color: event.color,
       video_meeting_link: event.video_meeting_link,
       team_member_ids: event.selectedTeamMembers,
-      invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
-      notification_enabled: event.notification_enabled,
-      notification_minutes: event.notification_minutes
+      invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : []
+      // Note: notification fields are handled separately through appointment_notifications table
     };
 
     try {
