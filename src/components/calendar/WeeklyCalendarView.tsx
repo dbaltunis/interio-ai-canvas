@@ -101,12 +101,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   const weekDays = getWeekDays();
 
-  // Get events for a specific date
+  // Get events for a specific date with date validation
   const getEventsForDate = (date: Date) => {
     if (!displayAppointments) return [];
-    return displayAppointments.filter(appointment => 
-      isSameDay(new Date(appointment.start_time), date)
-    );
+    return displayAppointments
+      .filter(appointment => {
+        // Validate dates first
+        const startTime = new Date(appointment.start_time);
+        const endTime = new Date(appointment.end_time);
+        
+        // Skip invalid dates or appointments where end time is before start time
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
+          console.warn('Invalid appointment dates detected:', appointment);
+          return false;
+        }
+        
+        return isSameDay(startTime, date);
+      });
   };
 
   // Get booked appointments for a specific date as events
@@ -125,6 +136,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         // Convert booking to event format with distinct styling
         const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
+        
+        // Validate the appointment date
+        if (isNaN(appointmentDateTime.getTime())) {
+          console.warn('Invalid booking date detected:', booking);
+          return null; // Skip invalid bookings
+        }
+        
         const endDateTime = new Date(appointmentDateTime.getTime() + (duration * 60 * 1000));
         
         return {
@@ -143,7 +161,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           customer_name: booking.customer_name,
           scheduler_name: scheduler?.name || 'Unknown'
         };
-      });
+      })
+      .filter(Boolean); // Remove null values from invalid bookings
   };
 
   // Get available appointment slots for a specific date
