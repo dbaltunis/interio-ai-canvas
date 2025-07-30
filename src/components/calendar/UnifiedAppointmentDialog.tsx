@@ -553,7 +553,7 @@ export const UnifiedAppointmentDialog = ({
                     Event Owner:
                   </span>
                   <span className="text-foreground font-medium">
-                    {eventOwnerProfile?.display_name || 'Loading...'}
+                    {eventOwnerProfile?.display_name || appointment?.user_email || 'Unknown User'}
                   </span>
                 </div>
                 <div className="flex justify-between">
