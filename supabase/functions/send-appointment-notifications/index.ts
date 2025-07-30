@@ -9,13 +9,11 @@ const corsHeaders = {
 
 interface NotificationRequest {
   notificationId: string;
+  appointmentId: string;
   userId: string;
-  appointmentDetails: {
-    title: string;
-    startTime: string;
-    location?: string;
-    videoMeetingLink?: string;
-  };
+  title: string;
+  message: string;
+  channels: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,7 +23,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { notificationId, userId, appointmentDetails }: NotificationRequest = await req.json();
+    const { notificationId, appointmentId, userId, title, message, channels }: NotificationRequest = await req.json();
 
     console.log(`Processing notification ${notificationId} for user ${userId}`);
 
@@ -35,16 +33,19 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 
-    // Get user's notification settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('user_notification_settings')
+    // Get user's notification settings and profile
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
       .single();
 
-    if (settingsError || !settings) {
-      throw new Error(`No notification settings found for user ${userId}`);
-    }
+    // Get appointment details
+    const { data: appointment, error: appointmentError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('id', appointmentId)
+      .single();
 
     // Get user email
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
@@ -60,10 +61,9 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     // Send Email Notification if enabled and configured
-    if (settings.email_notifications_enabled && settings.email_api_key_encrypted) {
+    if (channels.includes('email') && (profile?.email_notifications !== false)) {
       try {
-        const fromAddress = settings.email_from_address || 'notifications@yourdomain.com';
-        const fromName = settings.email_from_name || 'Appointment Reminder';
+        const appointmentDateTime = appointment ? new Date(appointment.start_time).toLocaleString() : 'TBD';
         
         const emailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -74,13 +74,10 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
-              <p><strong>Event:</strong> ${appointmentDetails.title}</p>
-              <p><strong>Date & Time:</strong> ${new Date(appointmentDetails.startTime).toLocaleString()}</p>
-              ${appointmentDetails.location ? `<p><strong>Location:</strong> ${appointmentDetails.location}</p>` : ''}
-              ${appointmentDetails.videoMeetingLink ? 
-                `<p><strong>Video Meeting:</strong> <a href="${appointmentDetails.videoMeetingLink}" target="_blank" style="color: #2563eb;">Join Meeting</a></p>` : 
-                ''
-              }
+              <p><strong>Event:</strong> ${title}</p>
+              <p><strong>Date & Time:</strong> ${appointmentDateTime}</p>
+              ${appointment?.location ? `<p><strong>Location:</strong> ${appointment.location}</p>` : ''}
+              ${appointment?.video_meeting_link ? `<p><strong>Video Meeting:</strong> <a href="${appointment.video_meeting_link}" style="color: #007bff; text-decoration: none;">${appointment.video_meeting_link}</a></p>` : ''}
             </div>
             
             <p style="color: #999; font-size: 14px; margin-top: 30px;">
@@ -89,38 +86,22 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
         `;
 
-        if (settings.email_service_provider === 'sendgrid') {
-          const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${settings.email_api_key_encrypted}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              personalizations: [{
-                to: [{ email: user.email }],
-                subject: 'Appointment Reminder'
-              }],
-              from: {
-                email: fromAddress,
-                name: fromName
-              },
-              content: [{
-                type: 'text/html',
-                value: emailHtml
-              }]
-            })
-          });
-
-          if (!emailResponse.ok) {
-            const errorText = await emailResponse.text();
-            throw new Error(`SendGrid API error: ${emailResponse.status} - ${errorText}`);
+        // Call send-email function
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
+          body: {
+            to: user.email,
+            subject: `Appointment Reminder: ${title}`,
+            html: emailHtml,
+            user_id: userId
           }
+        });
 
-          results.email = { message: "Email sent via SendGrid" };
-          console.log("Email sent successfully via SendGrid");
+        if (emailError) {
+          console.error('Error sending email:', emailError);
+          results.errors.push(`Email error: ${emailError.message}`);
         } else {
-          throw new Error(`Unsupported email provider: ${settings.email_service_provider}`);
+          results.email = { message: "Email sent successfully" };
+          console.log("Email sent successfully");
         }
       } catch (error) {
         console.error("Error sending email:", error);
@@ -128,18 +109,17 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // SMS notifications via Twilio
-    if (settings.sms_notifications_enabled && settings.sms_api_key_encrypted && settings.sms_phone_number) {
+    // SMS notifications via Twilio (if enabled and configured)
+    if (channels.includes('sms') && profile?.phone_number) {
       try {
-        const twilioAccountSid = settings.sms_api_key_encrypted.split(':')[0]; // Assuming format "SID:TOKEN"
-        const twilioAuthToken = settings.sms_api_key_encrypted.split(':')[1];
+        const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+        const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+        const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
         
-        const smsMessage = `Appointment Reminder: ${appointmentDetails.title} at ${new Date(appointmentDetails.startTime).toLocaleString()}${appointmentDetails.location ? ` at ${appointmentDetails.location}` : ''}`;
-        
-        // Get user's phone number (you'll need to add this to user profile or appointment)
-        const userPhone = user.phone || user.user_metadata?.phone;
-        
-        if (userPhone) {
+        if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+          const appointmentDateTime = appointment ? new Date(appointment.start_time).toLocaleString() : 'TBD';
+          const smsMessage = `Appointment Reminder: ${title} at ${appointmentDateTime}${appointment?.location ? ` at ${appointment.location}` : ''}`;
+          
           const smsResponse = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
             method: 'POST',
             headers: {
@@ -147,8 +127,8 @@ const handler = async (req: Request): Promise<Response> => {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-              From: settings.sms_phone_number,
-              To: userPhone,
+              From: twilioPhoneNumber,
+              To: profile.phone_number,
               Body: smsMessage
             })
           });
@@ -161,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
           results.sms = { message: "SMS sent via Twilio" };
           console.log("SMS sent successfully via Twilio");
         } else {
-          results.sms = { message: "No phone number found for user" };
+          results.sms = { message: "Twilio not configured" };
         }
       } catch (error) {
         console.error("Error with SMS:", error);
@@ -169,25 +149,30 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Create in-app notification
-    try {
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: userId,
-          title: 'Appointment Reminder',
-          message: `Your appointment "${appointmentDetails.title}" is coming up at ${new Date(appointmentDetails.startTime).toLocaleString()}`,
-          type: 'info'
-        });
+    // Create in-app notification (if push is included in channels)
+    if (channels.includes('push')) {
+      try {
+        const appointmentDateTime = appointment ? new Date(appointment.start_time).toLocaleString() : 'TBD';
+        
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            title: 'Appointment Reminder',
+            message: `Your appointment "${title}" is coming up at ${appointmentDateTime}`,
+            type: 'info'
+          });
 
-      if (notifError) {
-        console.error('Error creating in-app notification:', notifError);
-      } else {
-        results.push = { message: "In-app notification created" };
+        if (notifError) {
+          console.error('Error creating in-app notification:', notifError);
+          results.errors.push(`In-app notification error: ${notifError.message}`);
+        } else {
+          results.push = { message: "In-app notification created" };
+        }
+      } catch (error) {
+        console.error("Error creating in-app notification:", error);
+        results.errors.push(`In-app notification error: ${error.message}`);
       }
-    } catch (error) {
-      console.error("Error creating in-app notification:", error);
-      results.errors.push(`In-app notification error: ${error.message}`);
     }
 
     // Update notification status in database
