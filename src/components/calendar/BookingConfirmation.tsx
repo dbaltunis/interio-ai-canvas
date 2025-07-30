@@ -33,7 +33,8 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
     
     return allSlots.filter(slot => 
       isSameDay(slot.date, date) && 
-      slot.schedulerId === scheduler?.id
+      slot.schedulerId === scheduler?.id &&
+      !slot.isBooked // Only return slots that are not booked
     );
   };
   const [step, setStep] = useState(1); // 1: booking, 2: confirmation
