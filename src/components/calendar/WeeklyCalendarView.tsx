@@ -721,13 +721,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   </div>
                                  )}
 
-                                  <div className="flex flex-col h-full p-1">
+                                  <div className="flex flex-col h-full pr-1 pb-1">
                                    {/* Event content - compact layout */}
                                    <div className="flex items-start justify-between gap-1">
                                      {/* Left side: Title and time */}
                                      <div className="flex-1 min-w-0">
                                        {/* Event title - compact */}
-                                       <div className="font-normal text-[10px] leading-tight text-foreground dark:text-white break-words overflow-hidden" 
+                                       <div className="font-normal text-[12px] leading-tight text-foreground dark:text-white break-words overflow-hidden" 
                                             style={{ 
                                               display: '-webkit-box',
                                               WebkitLineClamp: 1,
@@ -754,7 +754,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                      {/* User avatar - positioned to not overlap drag handle */}
                                      {!event.isAvailableSlot && (
                                        <div className="flex-shrink-0 mr-5">
-                                         <Avatar className="h-3.5 w-3.5">
+                                         <Avatar className="h-4 w-4">
                                            <AvatarImage src="" alt="" />
                                            <AvatarFallback className="text-[7px] bg-background/50 text-foreground">
                                              {event.isBooking 
