@@ -37,7 +37,7 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
     );
   };
   const [step, setStep] = useState(1); // 1: booking, 2: confirmation
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>();
   const [clientInfo, setClientInfo] = useState({
     name: "",
