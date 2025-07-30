@@ -64,17 +64,19 @@ const handler = async (req: Request): Promise<Response> => {
 
 async function testTwilioConnection(integration: any) {
   try {
-    const { account_sid, auth_token } = integration.api_credentials;
-    const { phone_number } = integration.configuration;
-
-    if (!account_sid || !auth_token || !phone_number) {
-      return {
-        success: false,
-        message: 'Missing required Twilio credentials (Account SID, Auth Token, or Phone Number)'
-      };
-    }
+    // Get credentials from environment variables (Supabase secrets)
+    const account_sid = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const auth_token = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const phone_number = Deno.env.get('TWILIO_PHONE_NUMBER');
 
     console.log('Testing Twilio with Account SID:', account_sid);
+
+    if (!account_sid || !auth_token) {
+      return {
+        success: false,
+        message: 'Missing required Twilio credentials in Supabase secrets. Please ensure TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are configured.'
+      };
+    }
 
     // Test Twilio API by fetching account info
     const auth = btoa(`${account_sid}:${auth_token}`);
