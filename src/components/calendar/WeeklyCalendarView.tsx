@@ -705,21 +705,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                      : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
                                 }
                              >
-                               {/* Drag Handle - only for personal events */}
-                               {!event.isBooking && !event.isAvailableSlot && (
-                                 <div 
-                                   {...listeners}
-                                   {...attributes}
-                                   className="absolute top-0 left-0 w-full h-full opacity-0 cursor-move z-20"
-                                   onMouseDown={(e) => {
-                                     // Only start drag if not clicking on content
-                                     if (e.target === e.currentTarget) {
-                                       e.stopPropagation();
-                                     }
-                                   }}
-                                   title="Drag to move event"
-                                 />
-                                )}
+                                {/* Drag Handle - only for personal events */}
+                                {!event.isBooking && !event.isAvailableSlot && (
+                                  <div 
+                                    {...listeners}
+                                    {...attributes}
+                                    className="absolute top-1 right-1 w-4 h-4 bg-black/20 rounded hover:bg-black/30 cursor-move z-20 flex items-center justify-center"
+                                    title="Drag to move event"
+                                  >
+                                    <div className="flex flex-col gap-[1px]">
+                                      <div className="w-1 h-1 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-1 h-1 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-1 h-1 bg-current rounded-full opacity-60"></div>
+                                    </div>
+                                  </div>
+                                 )}
 
                                  <div className="flex flex-col h-full p-1">
                                   {/* Event header with user info and notifications */}
