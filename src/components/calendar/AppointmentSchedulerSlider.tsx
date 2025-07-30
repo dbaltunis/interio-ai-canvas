@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus, Trash2, Clock, MapPin, Calendar, Settings } from "lucide-react";
+import { X, Plus, Trash2, Clock, MapPin, Calendar, Settings, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -183,19 +183,55 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
   };
 
   const addTimeSlot = (dayKey: string) => {
-    setForm(prev => ({
-      ...prev,
-      availability: {
-        ...prev.availability,
-        [dayKey]: {
-          ...prev.availability[dayKey],
-          timeSlots: [
-            ...prev.availability[dayKey].timeSlots,
-            { start: '09:00', end: '17:00' }
-          ]
+    setForm(prev => {
+      const currentSlots = prev.availability[dayKey].timeSlots;
+      const lastSlot = currentSlots[currentSlots.length - 1];
+      
+      // Start new slot from the end time of the last slot, or default times
+      const startTime = lastSlot ? lastSlot.end : '09:00';
+      const endTime = lastSlot ? 
+        // Add 1 hour to the start time
+        new Date(`2024-01-01T${startTime}:00`).getTime() + 60 * 60 * 1000 >= new Date(`2024-01-01T17:00:00`).getTime() ?
+          '17:00' : 
+          String(new Date(`2024-01-01T${startTime}:00`).getHours() + 1).padStart(2, '0') + ':00'
+        : '17:00';
+      
+      return {
+        ...prev,
+        availability: {
+          ...prev.availability,
+          [dayKey]: {
+            ...prev.availability[dayKey],
+            timeSlots: [
+              ...currentSlots,
+              { start: startTime, end: endTime }
+            ]
+          }
         }
-      }
-    }));
+      };
+    });
+  };
+
+  const copyTimeSlotsToOtherDays = (sourceDayKey: string) => {
+    const sourceSlots = form.availability[sourceDayKey].timeSlots;
+    
+    setForm(prev => {
+      const newAvailability = { ...prev.availability };
+      
+      WEEKDAYS.forEach(day => {
+        if (day.key !== sourceDayKey && newAvailability[day.key].enabled) {
+          newAvailability[day.key] = {
+            ...newAvailability[day.key],
+            timeSlots: [...sourceSlots]
+          };
+        }
+      });
+      
+      return {
+        ...prev,
+        availability: newAvailability
+      };
+    });
   };
 
   const removeTimeSlot = (dayKey: string, index: number) => {
@@ -423,24 +459,36 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
                   <CardContent className="space-y-4">
                     {WEEKDAYS.map(day => (
                       <div key={day.key} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={form.availability[day.key].enabled}
-                              onCheckedChange={(checked) => toggleDayAvailability(day.key, checked)}
-                            />
-                            <Label className="font-medium">{day.label}</Label>
-                          </div>
-                          {form.availability[day.key].enabled && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => addTimeSlot(day.key)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
+                         <div className="flex items-center justify-between">
+                           <div className="flex items-center space-x-2">
+                             <Switch
+                               checked={form.availability[day.key].enabled}
+                               onCheckedChange={(checked) => toggleDayAvailability(day.key, checked)}
+                             />
+                             <Label className="font-medium">{day.label}</Label>
+                           </div>
+                           {form.availability[day.key].enabled && (
+                             <div className="flex items-center space-x-1">
+                               {form.availability[day.key].timeSlots.length > 0 && (
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={() => copyTimeSlotsToOtherDays(day.key)}
+                                   title="Copy time slots to other enabled days"
+                                 >
+                                   <Copy className="h-3 w-3" />
+                                 </Button>
+                               )}
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => addTimeSlot(day.key)}
+                               >
+                                 <Plus className="h-3 w-3" />
+                               </Button>
+                             </div>
+                           )}
+                         </div>
                         
                         {form.availability[day.key].enabled && (
                           <div className="ml-6 space-y-2">
