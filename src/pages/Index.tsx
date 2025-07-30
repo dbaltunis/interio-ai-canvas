@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
-import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+
 import { useAuth } from "@/components/auth/AuthProvider";
 
 // Lazy load heavy components
@@ -117,8 +117,6 @@ const Index = () => {
       {/* Use the new ResponsiveHeader */}
       <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* Notification Center - Shows appointment notifications */}
-      <NotificationCenter />
 
       {/* Main Content - Full Width with smooth transitions */}
       <main className="w-full">
