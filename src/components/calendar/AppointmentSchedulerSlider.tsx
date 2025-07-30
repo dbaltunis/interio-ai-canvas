@@ -222,7 +222,7 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
         if (day.key !== sourceDayKey && newAvailability[day.key].enabled) {
           newAvailability[day.key] = {
             ...newAvailability[day.key],
-            timeSlots: [...sourceSlots]
+            timeSlots: sourceSlots.map(slot => ({ ...slot }))
           };
         }
       });
