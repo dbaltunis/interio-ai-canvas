@@ -9,13 +9,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { format } from "date-fns";
 
@@ -61,6 +62,9 @@ export const UnifiedAppointmentDialog = ({
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
   const { defaultColors } = useCalendarColors();
+  
+  // Fetch event owner profile if editing an appointment
+  const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
 
   useEffect(() => {
     if (appointment) {
@@ -543,6 +547,16 @@ export const UnifiedAppointmentDialog = ({
             <>
               <Separator />
               <div className="text-sm text-muted-foreground space-y-1">
+                {/* Event Owner Information */}
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    Event Owner:
+                  </span>
+                  <span className="text-foreground font-medium">
+                    {eventOwnerProfile?.display_name || 'Loading...'}
+                  </span>
+                </div>
                 <div className="flex justify-between">
                   <span>Created:</span>
                   <span>{format(new Date(appointment.created_at), 'MMM d, yyyy h:mm a')}</span>
