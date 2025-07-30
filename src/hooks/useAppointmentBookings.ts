@@ -42,9 +42,14 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: async (booking: Omit<AppointmentBooking, "id" | "created_at" | "updated_at">) => {
+      const bookingData = {
+        ...booking,
+        status: booking.status || 'confirmed'
+      };
+      
       const { data, error } = await supabase
         .from("appointments_booked")
-        .insert([booking])
+        .insert([bookingData])
         .select()
         .single();
 

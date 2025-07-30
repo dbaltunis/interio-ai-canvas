@@ -7,10 +7,10 @@ begin
     -- Call the edge function to send confirmation email
     perform
       net.http_post(
-        url := 'https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/send-booking-confirmation',
+        url := current_setting('app.settings.api_external_url', true) || '/functions/v1/send-booking-confirmation',
         headers := jsonb_build_object(
           'Content-Type', 'application/json',
-          'Authorization', 'Bearer ' || current_setting('request.headers')::json->>'authorization'
+          'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
         ),
         body := jsonb_build_object(
           'booking_id', NEW.id,
