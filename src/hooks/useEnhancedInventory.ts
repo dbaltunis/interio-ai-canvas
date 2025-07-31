@@ -8,11 +8,10 @@ export interface EnhancedInventoryItem {
   name: string;
   description?: string;
   sku?: string;
-  category_type?: 'fabric' | 'hardware' | 'heading' | 'service' | 'parts';
-  category?: string;
+  category: string; // Maps to existing category field
   subcategory?: string;
   
-  // Main fields
+  // Main fields (using actual database columns)
   unit_price?: number;
   quantity: number;
   unit?: string;
@@ -21,75 +20,47 @@ export interface EnhancedInventoryItem {
   markup_percentage?: number;
   supplier?: string;
   location?: string;
-  width?: number;
-  height?: number;
-  weight?: number;
-  color?: string;
-  pattern?: string;
-  material?: string;
-  finish?: string;
-  brand?: string;
-  model?: string;
   reorder_point?: number;
-  lead_time_days?: number;
-  minimum_order_quantity?: number;
   active: boolean;
   
-  // Fabric-specific fields
-  fabric_type?: string;
+  // Fabric-specific fields (actual database columns)
   fabric_width?: number;
-  fabric_weight_gsm?: number;
-  care_instructions?: string;
-  composition?: string;
-  
-  // Hardware-specific fields
-  hardware_type?: string;
-  mounting_type?: string;
-  load_capacity?: number;
-  dimensions_length?: number;
-  dimensions_width?: number;
-  dimensions_height?: number;
-  finish_type?: string;
-  
-  // Heading-specific fields
-  fullness_ratio?: number;
-  heading_type?: string;
-  
-  // Service-specific fields
-  service_type?: string;
-  hourly_rate?: number;
-  duration_minutes?: number;
-  per_unit_charge?: boolean;
-  
-  // Additional backward compatibility fields
-  labor_hours?: number;
-  service_rate?: number;
-  reorder_quantity?: number;
+  fabric_composition?: string;
+  fabric_care_instructions?: string;
+  fabric_origin?: string;
+  fabric_grade?: string;
+  fabric_collection?: string;
   pattern_repeat_vertical?: number;
   pattern_repeat_horizontal?: number;
-  roll_direction?: string;
-  collection_name?: string;
-  color_code?: string;
-  pattern_direction?: string;
-  transparency_level?: string;
-  fire_rating?: string;
-  material_finish?: string;
-  installation_type?: string;
-  weight_capacity?: number;
-  max_length?: number;
-  specifications?: any;
-  pricing_grid?: any;
-  images?: any;
-  compatibility_tags?: any;
+  is_flame_retardant?: boolean;
   
-  // Pricing fields
-  pricing_method?: 'fixed' | 'per_unit' | 'per_area' | 'per_width';
-  base_price?: number;
-  price_per_unit?: number;
-  price_per_sqm?: number;
+  // Hardware-specific fields (actual database columns)
+  hardware_finish?: string;
+  hardware_material?: string;
+  hardware_dimensions?: string;
+  hardware_weight?: number;
+  hardware_mounting_type?: string;
+  hardware_load_capacity?: number;
+  
+  // Pricing fields (actual database columns)
+  price_per_yard?: number;
   price_per_meter?: number;
+  price_per_unit?: number;
   
-  track_inventory?: boolean;
+  // Physical dimensions (actual database columns)
+  width?: number;
+  height?: number;
+  depth?: number;
+  weight?: number;
+  color?: string;
+  finish?: string;
+  
+  // Service/heading specific (actual database columns)
+  labor_hours?: number;
+  fullness_ratio?: number;
+  service_rate?: number;
+  
+  // Timestamps
   created_at: string;
   updated_at: string;
 }
@@ -99,9 +70,14 @@ export const useEnhancedInventory = () => {
   return useQuery({
     queryKey: ["enhanced-inventory"],
     queryFn: async () => {
-      // Return empty array for now - this allows the app to work
-      // while we transition to the new system
-      return [] as EnhancedInventoryItem[];
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     },
   });
 };
@@ -110,8 +86,15 @@ export const useEnhancedInventoryByCategory = (category: string) => {
   return useQuery({
     queryKey: ["enhanced-inventory", category],
     queryFn: async () => {
-      // Return empty array for now
-      return [] as EnhancedInventoryItem[];
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("*")
+        .eq("category_type", category)
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     },
   });
 };
@@ -195,10 +178,15 @@ export const useCreateEnhancedInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (item: any) => {
-      // Mock implementation for now
-      console.log('Creating inventory item:', item);
-      return { ...item, id: `mock-${Date.now()}` };
+    mutationFn: async (item: Omit<EnhancedInventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .insert([item])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
@@ -214,10 +202,16 @@ export const useUpdateEnhancedInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: any) => {
-      // Mock implementation for now
-      console.log('Updating inventory item:', id, updates);
-      return { id, ...updates };
+    mutationFn: async ({ id, ...updates }: Partial<EnhancedInventoryItem> & { id: string }) => {
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
@@ -234,8 +228,12 @@ export const useDeleteEnhancedInventoryItem = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Mock implementation for now
-      console.log('Deleting inventory item:', id);
+      const { error } = await supabase
+        .from("enhanced_inventory_items")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
       return id;
     },
     onSuccess: () => {

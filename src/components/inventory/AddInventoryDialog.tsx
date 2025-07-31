@@ -61,7 +61,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     max_length: 0,
     installation_type: "",
     compatibility_tags: [] as string[],
-    pricing_method: "per_unit",
+    pricing_method: "per_unit" as const,
     pricing_grid: {},
     specifications: {}
   });
@@ -73,23 +73,18 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
       // Clean up the data before submission
       const cleanData = {
         ...formData,
-        category_type: itemType === 'curtain_fabric' || itemType === 'blind_fabric' || itemType === 'wallcovering' ? 'fabric' : 'hardware',
         category: itemType,
         active: true,
         selling_price: formData.unit_price,
         cost_price: formData.unit_price * 0.7, // Default 30% markup
-        hardware_type: formData.hardware_type || undefined,
       };
       
-      // Remove empty hardware_type if not a hardware item
-      if (!["track", "rod", "bracket", "motor", "accessory"].includes(itemType)) {
-        delete cleanData.hardware_type;
-      }
-      
-      // Only include transparency_level for blind fabrics
-      if (itemType !== "blind_fabric") {
-        delete cleanData.transparency_level;
-      }
+      // Remove empty fields to avoid database issues
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
+          delete cleanData[key];
+        }
+      });
       
       await createInventoryItem.mutateAsync(cleanData);
       
@@ -127,7 +122,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         max_length: 0,
         installation_type: "",
         compatibility_tags: [],
-        pricing_method: "per_unit",
+        pricing_method: "per_unit" as const,
         pricing_grid: {},
         specifications: {}
       });

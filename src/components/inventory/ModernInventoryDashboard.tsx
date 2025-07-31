@@ -12,6 +12,7 @@ import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { InventoryDemoData } from "./InventoryDemoData";
+import { InventoryDataLoader } from "./InventoryDataLoader";
 import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
@@ -125,9 +126,14 @@ export const ModernInventoryDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <InventoryStats />
-          
-          
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <InventoryStats />
+            </div>
+            <div>
+              <InventoryDataLoader />
+            </div>
+          </div>
           {/* Quick Actions */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
