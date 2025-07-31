@@ -1,5 +1,5 @@
 
-import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,13 @@ import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { format, isToday, addDays } from "date-fns";
-import { Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User, UserCheck } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CalendarSidebarProps {
   currentDate: Date;
@@ -30,6 +29,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
@@ -53,24 +53,41 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
     return client.client_type === 'B2B' ? client.company_name : client.name;
   };
 
-  // Helper function to get attendee info
+  // Helper function to get attendee info with avatar data
   const getAttendeeInfo = (event: any) => {
     const attendees = [];
     
     // Add organizer (current user)
-    if (currentUserProfile?.display_name) {
-      attendees.push(currentUserProfile.display_name);
+    if (currentUserProfile) {
+      attendees.push({
+        id: currentUserProfile.user_id,
+        name: currentUserProfile.display_name || 'You',
+        avatar: currentUserProfile.avatar_url,
+        isOwner: true
+      });
     }
     
-    // Add client if exists
+    // Add client if exists (clients don't have avatars in user_profiles)
     const clientName = getClientName(event.client_id);
     if (clientName) {
-      attendees.push(clientName);
+      attendees.push({
+        id: event.client_id,
+        name: clientName,
+        avatar: null,
+        isClient: true
+      });
     }
     
-    // Add invited emails
+    // Add invited emails (these are external, no avatars)
     if (event.invited_client_emails?.length > 0) {
-      attendees.push(...event.invited_client_emails);
+      event.invited_client_emails.forEach((email: string, index: number) => {
+        attendees.push({
+          id: `email-${index}`,
+          name: email,
+          avatar: null,
+          isInvited: true
+        });
+      });
     }
     
     return attendees;
@@ -167,10 +184,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
                       <div 
                         key={event.id} 
                         className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0 cursor-pointer group"
-                        onClick={() => {
-                          // TODO: Open event details modal or navigate to event
-                          console.log('Open event:', event.id);
-                        }}
+                        onClick={() => setSelectedEvent(event)}
                       >
                         {/* Enhanced color indicator */}
                         <div 
@@ -197,16 +211,24 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
                             </div>
                           )}
                           
-                          {/* Simplified Attendees - Names only */}
+                          {/* Attendees with Avatars */}
                           {attendees.length > 0 && (
-                            <div className="flex items-center text-xs text-muted-foreground mt-2">
-                              <User className="h-3 w-3 mr-1 flex-shrink-0" />
-                              <span className="truncate">
-                                {attendees.length === 1 
-                                  ? attendees[0]
-                                  : `${attendees[0]} ${attendees.length > 1 ? `+${attendees.length - 1}` : ''}`
-                                }
-                              </span>
+                            <div className="flex items-center mt-2 gap-1">
+                              <div className="flex -space-x-1">
+                                {attendees.slice(0, 3).map((attendee) => (
+                                  <Avatar key={attendee.id} className="w-5 h-5 border border-background">
+                                    <AvatarImage src={attendee.avatar || undefined} />
+                                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                      {attendee.name.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                                {attendees.length > 3 && (
+                                  <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center">
+                                    <span className="text-xs text-muted-foreground">+{attendees.length - 3}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -314,6 +336,82 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
             <DialogTitle>Analytics Dashboard</DialogTitle>
           </DialogHeader>
           <AnalyticsDashboard />
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Details Dialog */}
+      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Event Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedEvent && (
+            <div className="space-y-4">
+              {/* Event Header */}
+              <div className="flex items-start gap-3">
+                <div 
+                  className="w-4 h-4 rounded-full mt-1 flex-shrink-0"
+                  style={{ backgroundColor: selectedEvent.color || '#3b82f6' }}
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{selectedEvent.title}</h3>
+                  {selectedEvent.description && (
+                    <p className="text-muted-foreground text-sm mt-1">{selectedEvent.description}</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Event Details */}
+              <div className="grid grid-cols-1 gap-3 pt-4 border-t">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {format(new Date(selectedEvent.start_time), 'PPP p')} - {format(new Date(selectedEvent.end_time), 'p')}
+                  </span>
+                </div>
+                
+                {selectedEvent.location && (
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{selectedEvent.location}</span>
+                  </div>
+                )}
+                
+                {selectedEvent.appointment_type && (
+                  <div className="flex items-center gap-3">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm capitalize">{selectedEvent.appointment_type}</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Attendees */}
+              {getAttendeeInfo(selectedEvent).length > 0 && (
+                <div className="pt-4 border-t">
+                  <h4 className="font-medium text-sm mb-3">Attendees</h4>
+                  <div className="space-y-2">
+                    {getAttendeeInfo(selectedEvent).map((attendee) => (
+                      <div key={attendee.id} className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={attendee.avatar || undefined} />
+                          <AvatarFallback className="text-sm bg-primary/10 text-primary">
+                            {attendee.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{attendee.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {attendee.isOwner ? 'Organizer' : attendee.isClient ? 'Client' : 'Invited'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
