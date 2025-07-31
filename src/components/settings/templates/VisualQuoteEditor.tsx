@@ -254,34 +254,70 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
                   <CanvasGrid showGrid={showGrid}>
                     <div className="p-8 min-h-full">
                       <div 
-                        className="bg-white shadow-lg mx-auto max-w-4xl"
+                        className="bg-white shadow-xl mx-auto max-w-4xl rounded-lg border border-gray-200 overflow-hidden relative"
                         style={{ 
                           transform: `scale(${zoomLevel / 100})`, 
                           transformOrigin: 'top center',
                           minHeight: '800px'
                         }}
                       >
-                        <DndContext
-                          sensors={sensors}
-                          collisionDetection={closestCenter}
-                          onDragEnd={handleDragEnd}
-                          modifiers={[restrictToVerticalAxis]}
-                        >
-                          <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-                            <div className="min-h-full">
-                              {blocks.map((block) => (
-                                <DraggableBlock
-                                  key={block.id}
-                                  block={block}
-                                  isSelected={selectedBlockId === block.id}
-                                  onSelect={() => setSelectedBlockId(block.id)}
-                                  onUpdateContent={(content) => updateBlockContent(block.id, content)}
-                                  onRemove={() => removeBlock(block.id)}
-                                />
-                              ))}
+                        {/* Document Header with Template Name */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 px-6 py-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-sm font-medium text-gray-700">{templateName}</span>
                             </div>
-                          </SortableContext>
-                        </DndContext>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>{blocks.length} blocks</span>
+                              <span>•</span>
+                              <span>{zoomLevel}% zoom</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Document Content */}
+                        <div className="p-6">
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                            modifiers={[restrictToVerticalAxis]}
+                          >
+                            <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                              <div className="space-y-1">
+                                {blocks.map((block, index) => (
+                                  <div key={block.id} className="relative group">
+                                    {/* Block Order Indicator */}
+                                    <div className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600">
+                                        {index + 1}
+                                      </div>
+                                    </div>
+                                    <DraggableBlock
+                                      block={block}
+                                      isSelected={selectedBlockId === block.id}
+                                      onSelect={() => setSelectedBlockId(block.id)}
+                                      onUpdateContent={(content) => updateBlockContent(block.id, content)}
+                                      onRemove={() => removeBlock(block.id)}
+                                    />
+                                  </div>
+                                ))}
+                                
+                                {/* Add Block Prompt */}
+                                {blocks.length === 0 && (
+                                  <div className="text-center py-12 text-gray-500">
+                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                      <Plus className="h-8 w-8 text-gray-400" />
+                                    </div>
+                                    <h3 className="text-lg font-medium mb-2">Start Building Your Template</h3>
+                                    <p className="text-sm">Add components from the library on the left to get started</p>
+                                  </div>
+                                )}
+                              </div>
+                            </SortableContext>
+                          </DndContext>
+                        </div>
                       </div>
                     </div>
                   </CanvasGrid>
