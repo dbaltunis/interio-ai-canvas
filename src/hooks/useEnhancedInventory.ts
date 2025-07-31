@@ -3,38 +3,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface EnhancedInventoryItem {
+  // Core fields (exact database column names)
   id: string;
   user_id: string;
   name: string;
   description?: string;
   sku?: string;
-  category: string; // Maps to existing category field
-  subcategory?: string;
-  
-  // Main fields (using actual database columns)
-  unit_price?: number;
-  quantity: number;
+  category: string;
+  quantity?: number;
   unit?: string;
   cost_price?: number;
   selling_price?: number;
-  markup_percentage?: number;
+  unit_price?: number;
   supplier?: string;
   location?: string;
   reorder_point?: number;
-  active: boolean;
+  active?: boolean;
   
-  // Fabric-specific fields (actual database columns)
+  // Fabric fields (exact database column names)
   fabric_width?: number;
   fabric_composition?: string;
   fabric_care_instructions?: string;
   fabric_origin?: string;
+  pattern_repeat_horizontal?: number;
+  pattern_repeat_vertical?: number;
   fabric_grade?: string;
   fabric_collection?: string;
-  pattern_repeat_vertical?: number;
-  pattern_repeat_horizontal?: number;
   is_flame_retardant?: boolean;
   
-  // Hardware-specific fields (actual database columns)
+  // Hardware fields (exact database column names)
   hardware_finish?: string;
   hardware_material?: string;
   hardware_dimensions?: string;
@@ -42,12 +39,13 @@ export interface EnhancedInventoryItem {
   hardware_mounting_type?: string;
   hardware_load_capacity?: number;
   
-  // Pricing fields (actual database columns)
+  // Pricing fields (exact database column names)
   price_per_yard?: number;
   price_per_meter?: number;
   price_per_unit?: number;
+  markup_percentage?: number;
   
-  // Physical dimensions (actual database columns)
+  // Physical dimensions (exact database column names)
   width?: number;
   height?: number;
   depth?: number;
@@ -55,7 +53,7 @@ export interface EnhancedInventoryItem {
   color?: string;
   finish?: string;
   
-  // Service/heading specific (actual database columns)
+  // Service/Labor fields (exact database column names)
   labor_hours?: number;
   fullness_ratio?: number;
   service_rate?: number;
@@ -89,7 +87,7 @@ export const useEnhancedInventoryByCategory = (category: string) => {
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
-        .eq("category_type", category)
+        .eq("category", category)
         .eq("active", true)
         .order("created_at", { ascending: false });
 
@@ -111,14 +109,13 @@ export const useHeadingInventory = () => {
           user_id: "mock",
           name: "Standard Pinch Pleat",
           description: "Classic pinch pleat heading",
-          category_type: "heading" as const,
           category: "heading",
           quantity: 1,
           unit: "set",
           selling_price: 25,
           cost_price: 15,
           fullness_ratio: 2.5,
-          heading_type: "standard",
+          labor_hours: 1.5,
           active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -128,14 +125,13 @@ export const useHeadingInventory = () => {
           user_id: "mock",
           name: "Goblet Pleat",
           description: "Elegant goblet heading style",
-          category_type: "heading" as const,
           category: "heading",
           quantity: 1,
           unit: "set",
           selling_price: 35,
           cost_price: 20,
           fullness_ratio: 2.8,
-          heading_type: "goblet",
+          labor_hours: 2.0,
           active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -156,15 +152,13 @@ export const useServiceInventory = () => {
           user_id: "mock",
           name: "Installation Service",
           description: "Professional curtain installation",
-          category_type: "service" as const,
           category: "service",
           quantity: 1,
           unit: "per-window",
           selling_price: 50,
           cost_price: 30,
-          hourly_rate: 50,
-          duration_minutes: 60,
-          service_type: "installation",
+          labor_hours: 1.0,
+          service_rate: 50,
           active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -178,10 +172,10 @@ export const useCreateEnhancedInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (item: Omit<EnhancedInventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (item: any) => {
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
-        .insert([item])
+        .insert(item)
         .select()
         .single();
 

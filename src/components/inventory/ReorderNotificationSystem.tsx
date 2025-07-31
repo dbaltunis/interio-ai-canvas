@@ -124,7 +124,7 @@ export const ReorderNotificationSystem = () => {
                     </span>
                   </div>
                   <div className="text-sm text-red-600 mt-1">
-                    Suggested order: {item.minimum_order_quantity || 10} {item.unit}
+                    Suggested order: {item.reorder_point || 10} {item.unit}
                   </div>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export const ReorderNotificationSystem = () => {
                     </span>
                   </div>
                   <div className="text-sm text-yellow-700 mt-1">
-                    Suggested order: {item.minimum_order_quantity || 10} {item.unit} from {item.supplier}
+                    Suggested order: {item.reorder_point || 10} {item.unit} from {item.supplier}
                   </div>
                 </div>
               </div>
@@ -193,7 +193,7 @@ export const ReorderNotificationSystem = () => {
               <div>
                 <span className="font-medium">
                   ${lowStockItems.reduce((sum, item) => 
-                    sum + ((item.selling_price || 0) * (item.minimum_order_quantity || 10)), 0
+                    sum + ((item.selling_price || 0) * (item.reorder_point || 10)), 0
                   ).toFixed(2)}
                 </span> Total reorder value
               </div>

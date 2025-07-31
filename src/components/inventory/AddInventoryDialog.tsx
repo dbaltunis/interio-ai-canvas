@@ -61,7 +61,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     max_length: 0,
     installation_type: "",
     compatibility_tags: [] as string[],
-    pricing_method: "per_unit" as const,
+    pricing_method: "per_unit",
     pricing_grid: {},
     specifications: {}
   });
@@ -122,7 +122,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         max_length: 0,
         installation_type: "",
         compatibility_tags: [],
-        pricing_method: "per_unit" as const,
+        pricing_method: "per_unit",
         pricing_grid: {},
         specifications: {}
       });

@@ -43,9 +43,9 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
                   <Badge variant="outline" className="text-xs">
                     ${heading.selling_price}/{getFabricUnitLabel()}
                   </Badge>
-                  {heading.heading_type && heading.heading_type !== 'standard' && (
+                  {heading.category && heading.category !== 'heading' && (
                     <Badge variant="secondary" className="text-xs">
-                      {heading.heading_type}
+                      {heading.category}
                     </Badge>
                   )}
                 </div>
@@ -63,8 +63,8 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
             
             let description = `${selectedOption.fullness_ratio}x fullness multiplier will be applied for fabric calculations.`;
             
-            if (selectedOption.heading_type) {
-              description += ` Type: ${selectedOption.heading_type}.`;
+            if (selectedOption.category) {
+              description += ` Type: ${selectedOption.category}.`;
             }
             
             if (selectedOption.description) {

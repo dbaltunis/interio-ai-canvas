@@ -21,7 +21,10 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
   const [widthFilter, setWidthFilter] = useState<string>("all");
 
   const fabricItems = inventory?.filter(item => 
-    item.category_type === "fabric"
+    item.category?.includes('fabric') || 
+    item.category === 'curtain_fabric' ||
+    item.category === 'blind_fabric' ||
+    item.category === 'wallcovering'
   ) || [];
 
   const filteredItems = fabricItems.filter(item => {
@@ -174,7 +177,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>SKU: {item.sku}</span>
                     <Badge variant="outline" className="text-xs">
-                      {item.category_type}
+                      {item.category}
                     </Badge>
                   </div>
                 </div>

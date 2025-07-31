@@ -17,7 +17,12 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
   const { data: inventory, isLoading } = useEnhancedInventory();
 
   const hardware = inventory?.filter(item => 
-    item.category_type === "hardware"
+    item.category === 'track' ||
+    item.category === 'rod' ||
+    item.category === 'bracket' ||
+    item.category === 'motor' ||
+    item.category === 'accessory' ||
+    item.category === 'hardware'
   ) || [];
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedMaterial, setSelectedMaterial] = useState<string>("all");
@@ -145,13 +150,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                 <div className="space-y-3">
                   <div>
                     <h3 className="font-semibold text-lg leading-tight">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.category_type}</p>
+                    <p className="text-sm text-muted-foreground">{item.category}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-1">
                       <Settings className="h-4 w-4 text-muted-foreground" />
-                      <span>{item.finish_type || 'Standard'}</span>
+                      <span>{item.hardware_finish || 'Standard'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Package className="h-4 w-4 text-muted-foreground" />
@@ -162,11 +167,11 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                   <div className="space-y-1">
                     <div className="text-xs text-muted-foreground">Specifications:</div>
                     <div className="text-sm">
-                      {item.load_capacity && (
-                        <span>Capacity: {item.load_capacity}kg</span>
+                      {item.hardware_load_capacity && (
+                        <span>Capacity: {item.hardware_load_capacity}kg</span>
                       )}
-                      {item.dimensions_length && (
-                        <span className="ml-2">Max Length: {item.dimensions_length}cm</span>
+                      {item.hardware_dimensions && (
+                        <span className="ml-2">Max Length: {item.hardware_dimensions}</span>
                       )}
                     </div>
                   </div>
@@ -189,7 +194,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>SKU: {item.sku}</span>
                     <Badge variant="outline" className="text-xs">
-                      {item.category_type}
+                      {item.category}
                     </Badge>
                   </div>
                 </div>
@@ -215,12 +220,12 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                     </div>
                     <div>
                       <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.category_type} - {item.finish_type || 'Standard'}</p>
+                      <p className="text-sm text-muted-foreground">{item.category} - {item.hardware_finish || 'Standard'}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <span>SKU: {item.sku}</span>
-                        <span>Type: {item.hardware_type || item.category_type}</span>
-                        {item.load_capacity && (
-                          <span>Capacity: {item.load_capacity}kg</span>
+                        <span>Type: {item.category}</span>
+                        {item.hardware_load_capacity && (
+                          <span>Capacity: {item.hardware_load_capacity}kg</span>
                         )}
                       </div>
                     </div>
