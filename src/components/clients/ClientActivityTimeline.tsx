@@ -64,33 +64,38 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
             {activities.slice(0, 10).map((activity) => {
               const IconComponent = activity.icon;
               return (
-                <div key={`${activity.type}-${activity.id}`} className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                <div key={`${activity.type}-${activity.id}`} className="group relative flex items-start space-x-4 p-4 rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm hover:border-border hover:bg-card hover:shadow-md transition-all duration-200 cursor-pointer">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center">
-                      <IconComponent className="h-4 w-4 text-brand-primary" />
+                    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-200">
+                      <IconComponent className="h-5 w-5 text-primary" />
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-gray-900 truncate">
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors duration-200">
                         {activity.title}
-                      </p>
-                      <Badge className={`${getActivityColor(activity.type)} border text-xs`} variant="secondary">
+                      </h4>
+                      <Badge className={`${getActivityColor(activity.type)} border text-xs shrink-0`} variant="secondary">
                         {activity.type}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-500">
-                      {activity.description}
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {activity.description}
+                      </p>
                       {activity.type === 'email' && (activity as any).recipient && (
-                        <span className="text-xs text-gray-400 block">
-                          To: {(activity as any).recipient}
-                        </span>
+                        <p className="text-xs text-muted-foreground/80 font-medium">
+                          → {(activity as any).recipient}
+                        </p>
                       )}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(activity.date).toLocaleDateString()} at {new Date(activity.date).toLocaleTimeString()}
-                    </p>
+                    </div>
+                    <div className="flex items-center text-xs text-muted-foreground/70">
+                      <span>{new Date(activity.date).toLocaleDateString()}</span>
+                      <span className="mx-2">•</span>
+                      <span>{new Date(activity.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
                   </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                 </div>
               );
             })}
