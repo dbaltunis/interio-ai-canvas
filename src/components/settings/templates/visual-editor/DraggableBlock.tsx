@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GripVertical, X, Image, Type, FileText, PenTool, CreditCard, Upload, Plus, Minus } from "lucide-react";
+import { GripVertical, X, Image, Type, FileText, PenTool, CreditCard, Upload, Plus, Minus, ImageIcon } from "lucide-react";
 import { useState } from 'react';
 import { ImageUploadBlock } from './ImageUploadBlock';
 import { SignatureCanvas } from './SignatureCanvas';
 import { PaymentBlock } from './PaymentBlock';
+import { ProductImageUpload } from './ProductImageUpload';
 
 interface DraggableBlockProps {
   block: any;
@@ -384,6 +385,7 @@ const TextBlock = ({
 const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => {
   const isSimpleView = content.layout === 'simple';
   const isItemizedView = content.layout === 'itemized';
+  const isVisualView = content.layout === 'visual';
   
   return (
     <div className="space-y-4">
@@ -402,12 +404,89 @@ const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content
               <SelectItem value="simple">Simple</SelectItem>
               <SelectItem value="detailed">Detailed</SelectItem>
               <SelectItem value="itemized">Itemized</SelectItem>
+              <SelectItem value="visual">Visual</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {isSimpleView ? (
+      {/* Product Images Configuration */}
+      {isVisualView && (
+        <div className="border rounded-lg p-4 bg-gray-50">
+          <ProductImageUpload
+            productImages={content.productImages || []}
+            onUpdate={(images) => onUpdate({ ...content, productImages: images })}
+          />
+        </div>
+      )}
+
+      {isVisualView ? (
+        // Visual View with Product Images
+        <div className="space-y-6">
+          {(content.productImages || []).length > 0 ? (
+            content.productImages.map((productImage: any, index: number) => (
+              <div key={productImage.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                  {/* Product Image */}
+                  <div className="aspect-square bg-gray-100">
+                    <img
+                      src={productImage.imageUrl}
+                      alt={productImage.productName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Product Details */}
+                  <div className="p-6 flex flex-col justify-center">
+                    <h4 className="text-lg font-semibold text-brand-primary mb-4">
+                      {productImage.productName}
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Quantity:</span>
+                        <span className="font-medium">2 panels</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Fabric:</span>
+                        <span className="font-medium">Premium Blackout</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Dimensions:</span>
+                        <span className="font-medium">150cm × 200cm</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Installation:</span>
+                        <span className="font-medium">Included</span>
+                      </div>
+                      
+                      <div className="border-t pt-3 mt-4">
+                        <div className="flex justify-between items-center text-lg">
+                          <span className="font-semibold">Total:</span>
+                          <span className="font-bold text-brand-primary">
+                            ${(450 + index * 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No products added yet. Upload images or select from inventory above.</p>
+            </div>
+          )}
+        </div>
+      ) : isSimpleView ? (
         // Simple View
         <div className="space-y-2">
           <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
