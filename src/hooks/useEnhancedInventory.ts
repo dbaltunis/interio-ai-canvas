@@ -8,56 +8,64 @@ export interface EnhancedInventoryItem {
   name: string;
   description?: string;
   sku?: string;
-  category: 'fabric' | 'hardware' | 'heading' | 'service';
+  category_type: 'fabric' | 'hardware' | 'heading' | 'service' | 'parts';
+  subcategory?: string;
   
-  // Basic inventory fields
   quantity: number;
-  unit?: string;
-  cost_price?: number;
-  selling_price?: number;
-  unit_price?: number;
+  unit: string;
+  cost_price: number;
+  selling_price: number;
+  markup_percentage?: number;
   supplier?: string;
   location?: string;
-  reorder_point?: number;
+  width?: number;
+  height?: number;
+  weight?: number;
+  color?: string;
+  pattern?: string;
+  material?: string;
+  finish?: string;
+  brand?: string;
+  model?: string;
+  reorder_point: number;
+  lead_time_days: number;
+  minimum_order_quantity: number;
   active: boolean;
   
   // Fabric-specific fields
+  fabric_type?: string;
   fabric_width?: number;
-  fabric_composition?: string;
-  fabric_care_instructions?: string;
-  fabric_origin?: string;
-  pattern_repeat_horizontal?: number;
-  pattern_repeat_vertical?: number;
-  fabric_grade?: string;
-  fabric_collection?: string;
-  is_flame_retardant?: boolean;
+  fabric_weight_gsm?: number;
+  care_instructions?: string;
+  composition?: string;
   
   // Hardware-specific fields
-  hardware_finish?: string;
-  hardware_material?: string;
-  hardware_dimensions?: string;
-  hardware_weight?: number;
-  hardware_mounting_type?: string;
-  hardware_load_capacity?: number;
+  hardware_type?: string;
+  mounting_type?: string;
+  load_capacity?: number;
+  dimensions_length?: number;
+  dimensions_width?: number;
+  dimensions_height?: number;
+  finish_type?: string;
+  
+  // Heading-specific fields
+  fullness_ratio: number;
+  heading_type?: string;
+  
+  // Service-specific fields
+  service_type?: string;
+  hourly_rate?: number;
+  duration_minutes?: number;
+  per_unit_charge: boolean;
   
   // Pricing fields
-  price_per_yard?: number;
-  price_per_meter?: number;
-  price_per_unit?: number;
-  markup_percentage?: number;
+  pricing_method: 'fixed' | 'per_unit' | 'per_area' | 'per_width';
+  base_price: number;
+  price_per_unit: number;
+  price_per_sqm: number;
+  price_per_meter: number;
   
-  // Specification fields
-  width?: number;
-  height?: number;
-  depth?: number;
-  weight?: number;
-  color?: string;
-  finish?: string;
-  
-  // Service/Heading specific fields
-  labor_hours?: number;
-  fullness_ratio?: number; // For headings
-  service_rate?: number; // Hourly rate for services
+  track_inventory: boolean;
   
   created_at: string;
   updated_at: string;
@@ -94,7 +102,7 @@ export const useEnhancedInventoryByCategory = (category: string) => {
         .from('enhanced_inventory_items')
         .select('*')
         .eq('user_id', user.id)
-        .eq('category', category)
+        .eq('category_type', category)
         .eq('active', true)
         .order('name');
 
@@ -102,6 +110,15 @@ export const useEnhancedInventoryByCategory = (category: string) => {
       return data as EnhancedInventoryItem[];
     },
   });
+};
+
+// Specialized hooks for different inventory types
+export const useHeadingInventory = () => {
+  return useEnhancedInventoryByCategory('heading');
+};
+
+export const useServiceInventory = () => {
+  return useEnhancedInventoryByCategory('service');
 };
 
 export const useCreateEnhancedInventoryItem = () => {
@@ -246,7 +263,7 @@ export const useInventoryValuation = () => {
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
-        .select("quantity, cost_price, category")
+        .select("quantity, cost_price, category_type")
         .eq('user_id', user.id)
         .eq('active', true);
 
@@ -257,7 +274,7 @@ export const useInventoryValuation = () => {
       );
 
       const categoryBreakdown = data.reduce((acc, item) => {
-        const category = item.category || "Uncategorized";
+        const category = (item as any).category_type || "Uncategorized";
         const value = (item.quantity || 0) * (item.cost_price || 0);
         acc[category] = (acc[category] || 0) + value;
         return acc;
@@ -283,8 +300,8 @@ export const calculateFabricRequirement = (
     throw new Error("Fabric width not specified");
   }
 
-  const fullness = fullnessOverride || fabricItem.fullness_ratio || 2.5;
-  const patternRepeat = fabricItem.pattern_repeat_vertical || 0;
+  const fullness = fullnessOverride || (fabricItem as any).fullness_ratio || 2.5;
+  const patternRepeat = (fabricItem as any).pattern_repeat_vertical || 0;
   
   // Calculate number of widths needed
   const totalWidth = windowWidth * fullness;
@@ -300,7 +317,7 @@ export const calculateFabricRequirement = (
   
   // Total fabric needed
   const totalFabricMeters = (numWidths * cutLength) / 100; // Convert cm to meters
-  const totalCost = totalFabricMeters * (fabricItem.unit_price || 0);
+  const totalCost = totalFabricMeters * (fabricItem.selling_price || 0);
   
   return {
     numWidths,

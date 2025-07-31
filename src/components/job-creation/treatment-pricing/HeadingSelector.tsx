@@ -2,7 +2,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useHeadingOptions } from "@/hooks/useHeadingOptions";
+import { useHeadingInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface HeadingSelectorProps {
@@ -11,7 +11,7 @@ interface HeadingSelectorProps {
 }
 
 export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSelectorProps) => {
-  const { data: headingOptions = [], isLoading } = useHeadingOptions();
+  const { data: headingOptions = [], isLoading } = useHeadingInventory();
   const { getFabricUnitLabel } = useMeasurementUnits();
 
   if (isLoading) {
@@ -38,14 +38,14 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
                 <span>{heading.name}</span>
                 <div className="flex gap-2 ml-2">
                   <Badge variant="outline" className="text-xs">
-                    {heading.fullness}x fullness
+                    {heading.fullness_ratio}x fullness
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    ${heading.price}/{getFabricUnitLabel()}
+                    ${heading.selling_price}/{getFabricUnitLabel()}
                   </Badge>
-                  {heading.type !== 'standard' && (
+                  {heading.heading_type && heading.heading_type !== 'standard' && (
                     <Badge variant="secondary" className="text-xs">
-                      {heading.type}
+                      {heading.heading_type}
                     </Badge>
                   )}
                 </div>
@@ -61,14 +61,14 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
             const selectedOption = headingOptions.find(h => h.id === selectedHeading);
             if (!selectedOption) return null;
             
-            let description = `${selectedOption.fullness}x fullness multiplier will be applied for fabric calculations.`;
+            let description = `${selectedOption.fullness_ratio}x fullness multiplier will be applied for fabric calculations.`;
             
-            if (selectedOption.extras?.eyeletRings) {
-              description += ` Includes eyelet rings.`;
+            if (selectedOption.heading_type) {
+              description += ` Type: ${selectedOption.heading_type}.`;
             }
             
-            if (selectedOption.extras?.customOptions?.length > 0) {
-              description += ` ${selectedOption.type} system options available.`;
+            if (selectedOption.description) {
+              description += ` ${selectedOption.description}`;
             }
             
             return description;
