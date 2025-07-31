@@ -1,5 +1,6 @@
 
 import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
@@ -176,17 +177,43 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
     }
   }, [selectedBlockId]);
 
-  const handleSave = useCallback(() => {
-    const templateData = {
-      id: template?.id || Date.now(),
-      name: templateName,
-      blocks,
-      createdAt: template?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    onSave(templateData);
-    onClose();
-  }, [template, templateName, blocks, onSave, onClose]);
+  const handleSave = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const templateData = {
+        name: templateName,
+        description: `Template with ${blocks.length} blocks`,
+        template_style: templateStyle,
+        blocks,
+        user_id: user.id
+      };
+
+      if (template?.id) {
+        // Update existing template
+        const { error } = await supabase
+          .from('quote_templates')
+          .update(templateData)
+          .eq('id', template.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new template
+        const { error } = await supabase
+          .from('quote_templates')
+          .insert([templateData]);
+        
+        if (error) throw error;
+      }
+
+      onSave(templateData);
+      onClose();
+    } catch (error) {
+      console.error('Error saving template:', error);
+      // Add toast notification here if available
+    }
+  }, [templateName, blocks, templateStyle, template, onSave, onClose]);
 
   const selectedBlock = blocks.find(block => block.id === selectedBlockId);
 

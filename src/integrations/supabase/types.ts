@@ -1666,6 +1666,48 @@ export type Database = {
           },
         ]
       }
+      quote_templates: {
+        Row: {
+          active: boolean | null
+          blocks: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          preview_image_url: string | null
+          template_style: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          blocks?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          preview_image_url?: string | null
+          template_style?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          blocks?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          preview_image_url?: string | null
+          template_style?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           client_id: string | null
