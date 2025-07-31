@@ -1,19 +1,105 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { EnhancedInventoryItem } from "@/types/database";
+
+export interface EnhancedInventoryItem {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  category: 'fabric' | 'hardware' | 'heading' | 'service';
+  
+  // Basic inventory fields
+  quantity: number;
+  unit?: string;
+  cost_price?: number;
+  selling_price?: number;
+  unit_price?: number;
+  supplier?: string;
+  location?: string;
+  reorder_point?: number;
+  active: boolean;
+  
+  // Fabric-specific fields
+  fabric_width?: number;
+  fabric_composition?: string;
+  fabric_care_instructions?: string;
+  fabric_origin?: string;
+  pattern_repeat_horizontal?: number;
+  pattern_repeat_vertical?: number;
+  fabric_grade?: string;
+  fabric_collection?: string;
+  is_flame_retardant?: boolean;
+  
+  // Hardware-specific fields
+  hardware_finish?: string;
+  hardware_material?: string;
+  hardware_dimensions?: string;
+  hardware_weight?: number;
+  hardware_mounting_type?: string;
+  hardware_load_capacity?: number;
+  
+  // Pricing fields
+  price_per_yard?: number;
+  price_per_meter?: number;
+  price_per_unit?: number;
+  markup_percentage?: number;
+  
+  // Specification fields
+  width?: number;
+  height?: number;
+  depth?: number;
+  weight?: number;
+  color?: string;
+  finish?: string;
+  
+  // Service/Heading specific fields
+  labor_hours?: number;
+  fullness_ratio?: number; // For headings
+  service_rate?: number; // Hourly rate for services
+  
+  created_at: string;
+  updated_at: string;
+}
 
 export const useEnhancedInventory = () => {
   return useQuery({
-    queryKey: ["enhanced_inventory"],
+    queryKey: ["enhanced-inventory"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
-        .from("inventory")
-        .select("*")
-        .order("name");
+        .from('enhanced_inventory_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('active', true)
+        .order('name');
 
       if (error) throw error;
-      return data;
+      return data as EnhancedInventoryItem[];
+    },
+  });
+};
+
+export const useEnhancedInventoryByCategory = (category: string) => {
+  return useQuery({
+    queryKey: ["enhanced-inventory", category],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('enhanced_inventory_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('category', category)
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      return data as EnhancedInventoryItem[];
     },
   });
 };
@@ -23,12 +109,12 @@ export const useCreateEnhancedInventoryItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (item: any) => {
+    mutationFn: async (item: Omit<EnhancedInventoryItem, "id" | "user_id" | "created_at" | "updated_at">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
-        .from("inventory")
+        .from("enhanced_inventory_items")
         .insert({
           ...item,
           user_id: user.id,
@@ -40,11 +126,10 @@ export const useCreateEnhancedInventoryItem = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enhanced_inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
       toast({
         title: "Success",
-        description: "Inventory item created successfully",
+        description: "Item created successfully",
       });
     },
     onError: (error) => {
@@ -62,11 +147,15 @@ export const useUpdateEnhancedInventoryItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+    mutationFn: async ({ id, ...updates }: Partial<EnhancedInventoryItem> & { id: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
-        .from("inventory")
+        .from("enhanced_inventory_items")
         .update(updates)
         .eq("id", id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -74,11 +163,10 @@ export const useUpdateEnhancedInventoryItem = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enhanced_inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
       toast({
         title: "Success",
-        description: "Inventory item updated successfully",
+        description: "Item updated successfully",
       });
     },
     onError: (error) => {
@@ -97,30 +185,23 @@ export const useDeleteEnhancedInventoryItem = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { error } = await supabase
-        .from("inventory")
+        .from("enhanced_inventory_items")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
       return id;
     },
     onSuccess: (deletedId) => {
-      // Use more specific query invalidation to prevent race conditions
-      queryClient.invalidateQueries({ 
-        queryKey: ["enhanced_inventory"],
-        exact: false 
-      });
-      
-      // Remove the item from cache immediately for better UX
-      queryClient.setQueryData(["enhanced_inventory"], (oldData: any) => {
-        if (!oldData) return oldData;
-        return oldData.filter((item: any) => item.id !== deletedId);
-      });
-
+      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
       toast({
         title: "Success",
-        description: "Inventory item deleted successfully",
+        description: "Item deleted successfully",
       });
     },
     onError: (error) => {
@@ -135,69 +216,22 @@ export const useDeleteEnhancedInventoryItem = () => {
 
 export const useLowStockEnhancedItems = () => {
   return useQuery({
-    queryKey: ["enhanced_inventory", "low-stock"],
+    queryKey: ["enhanced-inventory", "low-stock"],
     queryFn: async () => {
-      // Get all inventory and filter client-side to avoid SQL comparison issues
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
-        .from("inventory")
+        .from("enhanced_inventory_items")
         .select("*")
+        .eq('user_id', user.id)
+        .eq('active', true)
+        .not('reorder_point', 'is', null)
+        .filter('quantity', 'lte', 'reorder_point')
         .order("quantity", { ascending: true });
       
       if (error) throw error;
-      
-      // Filter items where quantity is less than or equal to reorder_point
-      return data.filter(item => 
-        (item.quantity || 0) <= (item.reorder_point || 0)
-      );
-    },
-  });
-};
-
-// Automated reorder system
-export const useCreateReorderAlert = () => {
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (itemId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      // Get item details
-      const { data: item, error: itemError } = await supabase
-        .from("inventory")
-        .select("*")
-        .eq("id", itemId)
-        .single();
-
-      if (itemError) throw itemError;
-
-      // Create notification
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert({
-          user_id: user.id,
-          title: "Reorder Alert",
-          message: `${item.name} is running low (${item.quantity} ${item.unit} remaining). Consider reordering ${item.reorder_quantity || 10} units.`,
-          type: "warning",
-          action_url: `/inventory?item=${itemId}`,
-        });
-
-      if (notificationError) throw notificationError;
-
-      return item;
-    },
-    onSuccess: (item) => {
-      toast({
-        title: "Reorder Alert Created",
-        description: `Alert created for ${item.name}`,
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      return data as EnhancedInventoryItem[];
     },
   });
 };
@@ -205,21 +239,26 @@ export const useCreateReorderAlert = () => {
 // Inventory valuation
 export const useInventoryValuation = () => {
   return useQuery({
-    queryKey: ["inventory_valuation"],
+    queryKey: ["enhanced-inventory", "valuation"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
-        .from("inventory")
-        .select("quantity, unit_price, category");
+        .from("enhanced_inventory_items")
+        .select("quantity, cost_price, category")
+        .eq('user_id', user.id)
+        .eq('active', true);
 
       if (error) throw error;
 
       const totalValue = data.reduce((sum, item) => 
-        sum + ((item.quantity || 0) * (item.unit_price || 0)), 0
+        sum + ((item.quantity || 0) * (item.cost_price || 0)), 0
       );
 
       const categoryBreakdown = data.reduce((acc, item) => {
         const category = item.category || "Uncategorized";
-        const value = (item.quantity || 0) * (item.unit_price || 0);
+        const value = (item.quantity || 0) * (item.cost_price || 0);
         acc[category] = (acc[category] || 0) + value;
         return acc;
       }, {} as Record<string, number>);

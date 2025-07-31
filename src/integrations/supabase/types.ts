@@ -750,6 +750,51 @@ export type Database = {
         }
         Relationships: []
       }
+      components_temp: {
+        Row: {
+          active: boolean | null
+          component_type: string
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          fullness_ratio: number | null
+          id: string
+          labor_hours: number | null
+          name: string
+          selling_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          component_type: string
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          labor_hours?: number | null
+          name: string
+          selling_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          component_type?: string
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          labor_hours?: number | null
+          name?: string
+          selling_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_analytics: {
         Row: {
           created_at: string
@@ -972,6 +1017,150 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      enhanced_inventory_items: {
+        Row: {
+          active: boolean | null
+          category: string
+          color: string | null
+          cost_price: number | null
+          created_at: string
+          depth: number | null
+          description: string | null
+          fabric_care_instructions: string | null
+          fabric_collection: string | null
+          fabric_composition: string | null
+          fabric_grade: string | null
+          fabric_origin: string | null
+          fabric_width: number | null
+          finish: string | null
+          fullness_ratio: number | null
+          hardware_dimensions: string | null
+          hardware_finish: string | null
+          hardware_load_capacity: number | null
+          hardware_material: string | null
+          hardware_mounting_type: string | null
+          hardware_weight: number | null
+          height: number | null
+          id: string
+          is_flame_retardant: boolean | null
+          labor_hours: number | null
+          location: string | null
+          markup_percentage: number | null
+          name: string
+          pattern_repeat_horizontal: number | null
+          pattern_repeat_vertical: number | null
+          price_per_meter: number | null
+          price_per_unit: number | null
+          price_per_yard: number | null
+          quantity: number | null
+          reorder_point: number | null
+          selling_price: number | null
+          service_rate: number | null
+          sku: string | null
+          supplier: string | null
+          unit: string | null
+          unit_price: number | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+          width: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          color?: string | null
+          cost_price?: number | null
+          created_at?: string
+          depth?: number | null
+          description?: string | null
+          fabric_care_instructions?: string | null
+          fabric_collection?: string | null
+          fabric_composition?: string | null
+          fabric_grade?: string | null
+          fabric_origin?: string | null
+          fabric_width?: number | null
+          finish?: string | null
+          fullness_ratio?: number | null
+          hardware_dimensions?: string | null
+          hardware_finish?: string | null
+          hardware_load_capacity?: number | null
+          hardware_material?: string | null
+          hardware_mounting_type?: string | null
+          hardware_weight?: number | null
+          height?: number | null
+          id?: string
+          is_flame_retardant?: boolean | null
+          labor_hours?: number | null
+          location?: string | null
+          markup_percentage?: number | null
+          name: string
+          pattern_repeat_horizontal?: number | null
+          pattern_repeat_vertical?: number | null
+          price_per_meter?: number | null
+          price_per_unit?: number | null
+          price_per_yard?: number | null
+          quantity?: number | null
+          reorder_point?: number | null
+          selling_price?: number | null
+          service_rate?: number | null
+          sku?: string | null
+          supplier?: string | null
+          unit?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+          width?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          color?: string | null
+          cost_price?: number | null
+          created_at?: string
+          depth?: number | null
+          description?: string | null
+          fabric_care_instructions?: string | null
+          fabric_collection?: string | null
+          fabric_composition?: string | null
+          fabric_grade?: string | null
+          fabric_origin?: string | null
+          fabric_width?: number | null
+          finish?: string | null
+          fullness_ratio?: number | null
+          hardware_dimensions?: string | null
+          hardware_finish?: string | null
+          hardware_load_capacity?: number | null
+          hardware_material?: string | null
+          hardware_mounting_type?: string | null
+          hardware_weight?: number | null
+          height?: number | null
+          id?: string
+          is_flame_retardant?: boolean | null
+          labor_hours?: number | null
+          location?: string | null
+          markup_percentage?: number | null
+          name?: string
+          pattern_repeat_horizontal?: number | null
+          pattern_repeat_vertical?: number | null
+          price_per_meter?: number | null
+          price_per_unit?: number | null
+          price_per_yard?: number | null
+          quantity?: number | null
+          reorder_point?: number | null
+          selling_price?: number | null
+          service_rate?: number | null
+          sku?: string | null
+          supplier?: string | null
+          unit?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+          width?: number | null
+        }
+        Relationships: []
       }
       hardware_assemblies: {
         Row: {
