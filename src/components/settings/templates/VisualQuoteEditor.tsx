@@ -249,35 +249,43 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               </div>
 
               {/* Main Canvas Area */}
-              <div className="flex-1 flex flex-col bg-gray-50">
-                <CanvasGrid showGrid={showGrid}>
-                  <div 
-                    className="min-h-[800px] bg-white shadow-lg mx-8 my-8"
-                    style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
-                  >
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
-                      modifiers={[restrictToVerticalAxis]}
-                    >
-                      <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-                        <div className="min-h-full">
-                          {blocks.map((block) => (
-                            <DraggableBlock
-                              key={block.id}
-                              block={block}
-                              isSelected={selectedBlockId === block.id}
-                              onSelect={() => setSelectedBlockId(block.id)}
-                              onUpdateContent={(content) => updateBlockContent(block.id, content)}
-                              onRemove={() => removeBlock(block.id)}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  </div>
-                </CanvasGrid>
+              <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+                <div className="flex-1 overflow-auto">
+                  <CanvasGrid showGrid={showGrid}>
+                    <div className="p-8 min-h-full">
+                      <div 
+                        className="bg-white shadow-lg mx-auto max-w-4xl"
+                        style={{ 
+                          transform: `scale(${zoomLevel / 100})`, 
+                          transformOrigin: 'top center',
+                          minHeight: '800px'
+                        }}
+                      >
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleDragEnd}
+                          modifiers={[restrictToVerticalAxis]}
+                        >
+                          <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                            <div className="min-h-full">
+                              {blocks.map((block) => (
+                                <DraggableBlock
+                                  key={block.id}
+                                  block={block}
+                                  isSelected={selectedBlockId === block.id}
+                                  onSelect={() => setSelectedBlockId(block.id)}
+                                  onUpdateContent={(content) => updateBlockContent(block.id, content)}
+                                  onRemove={() => removeBlock(block.id)}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      </div>
+                    </div>
+                  </CanvasGrid>
+                </div>
               </div>
 
               {/* Properties Panel */}
