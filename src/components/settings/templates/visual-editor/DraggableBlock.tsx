@@ -67,6 +67,10 @@ export const DraggableBlock = ({
         return <PaymentBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'footer':
         return <FooterBlock content={block.content} onUpdate={onUpdateContent} />;
+      case 'spacer':
+        return <SpacerBlock content={block.content} onUpdate={onUpdateContent} />;
+      case 'divider':
+        return <DividerBlock content={block.content} onUpdate={onUpdateContent} />;
       default:
         return <div>Unknown block type: {block.type}</div>;
     }
@@ -860,3 +864,64 @@ const FooterBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: 
     </div>
   );
 };
+
+const SpacerBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
+  <div className="space-y-4">
+    <h4 className="font-medium text-brand-primary">Spacer</h4>
+    <div className="space-y-2">
+      <Label>Height</Label>
+      <Input
+        type="number"
+        value={parseInt(content.height?.replace('px', '') || '40')}
+        onChange={(e) => onUpdate({ ...content, height: `${e.target.value}px` })}
+        min={10}
+        max={200}
+      />
+    </div>
+    <div 
+      className="border-2 border-dashed border-gray-300 bg-gray-50 rounded flex items-center justify-center text-sm text-gray-500"
+      style={{ height: content.height || '40px' }}
+    >
+      Spacer ({content.height || '40px'})
+    </div>
+  </div>
+);
+
+const DividerBlock = ({ content, onUpdate }: { content: any; onUpdate: (content: any) => void }) => (
+  <div className="space-y-4">
+    <h4 className="font-medium text-brand-primary">Divider</h4>
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <Label>Style</Label>
+        <Select 
+          value={content.style || 'solid'} 
+          onValueChange={(value) => onUpdate({ ...content, style: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="solid">Solid</SelectItem>
+            <SelectItem value="dashed">Dashed</SelectItem>
+            <SelectItem value="dotted">Dotted</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Color</Label>
+        <Input
+          type="color"
+          value={content.color || '#e2e8f0'}
+          onChange={(e) => onUpdate({ ...content, color: e.target.value })}
+        />
+      </div>
+    </div>
+    <div 
+      className="w-full"
+      style={{ 
+        borderTop: `${content.thickness || '1px'} ${content.style || 'solid'} ${content.color || '#e2e8f0'}`,
+        margin: content.margin || '20px 0'
+      }}
+    />
+  </div>
+);

@@ -15,6 +15,10 @@ import { BlockStyleControls } from "./visual-editor/BlockStyleControls";
 import { BrochureStyleControls } from "./visual-editor/BrochureStyleControls";
 import { TemplateStylesSidebar } from "./visual-editor/TemplateStylesSidebar";
 import { QuoteTemplateSelector } from "./visual-editor/QuoteTemplateSelector";
+import { ComponentLibrary } from "./visual-editor/ComponentLibrary";
+import { CanvasGrid } from "./visual-editor/CanvasGrid";
+import { CanvaToolbar } from "./visual-editor/CanvaToolbar";
+import { EnhancedStyleControls } from "./visual-editor/EnhancedStyleControls";
 
 interface VisualQuoteEditorProps {
   isOpen: boolean;
@@ -124,6 +128,9 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
   const [showPreview, setShowPreview] = useState(false);
   const [showStyling, setShowStyling] = useState(false);
   const [templateStyle, setTemplateStyle] = useState<'simple' | 'detailed' | 'brochure'>('detailed');
+  const [showGrid, setShowGrid] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [selectedTool, setSelectedTool] = useState<'select' | 'move' | 'text' | 'shape'>('select');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -185,21 +192,22 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[95vh] overflow-hidden">
-        <DialogHeader className="border-b pb-4">
+      <DialogContent className="max-w-[98vw] h-[98vh] overflow-hidden p-0">
+        {/* Header */}
+        <div className="bg-white border-b px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              Visual Quote Editor
-            </DialogTitle>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowStyling(!showStyling)}
-                className="flex items-center gap-2"
-              >
-                <Palette className="h-4 w-4" />
-                Style
-              </Button>
+            <div className="flex items-center gap-4">
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                Visual Quote Editor
+              </DialogTitle>
+              <Input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Enter template name"
+                className="w-64 h-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowPreview(!showPreview)}
@@ -214,63 +222,39 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               </Button>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex-1">
-              <Input
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-                placeholder="Enter template name"
-                className="text-lg font-medium"
-              />
-            </div>
-          </div>
-        </DialogHeader>
+        </div>
+
+        {/* Canva-style Toolbar */}
+        {!showPreview && (
+          <CanvaToolbar
+            onToggleGrid={() => setShowGrid(!showGrid)}
+            showGrid={showGrid}
+            zoomLevel={zoomLevel}
+            selectedTool={selectedTool}
+            onToolChange={setSelectedTool}
+            hasSelection={!!selectedBlockId}
+            onZoomIn={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+            onZoomOut={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
+            onReset={() => setZoomLevel(100)}
+            onDelete={() => selectedBlockId && removeBlock(selectedBlockId)}
+          />
+        )}
 
         <div className="flex h-full overflow-hidden">
           {!showPreview ? (
             <>
-              {/* Template Styles Sidebar */}
-              <div className="w-72 border-r bg-white overflow-auto">
-                <TemplateStylesSidebar 
-                  onSelectTemplate={(selectedBlocks) => {
-                    setBlocks(selectedBlocks);
-                    // Detect template style from blocks
-                    const hasGradients = selectedBlocks.some(block => 
-                      block.styles?.background?.includes('gradient') || 
-                      block.content?.style?.backgroundColor?.includes('gradient')
-                    );
-                    const hasImages = selectedBlocks.some(block => block.type === 'image');
-                    const hasPayment = selectedBlocks.some(block => block.type === 'payment');
-                    
-                    if (hasGradients && hasImages && hasPayment) {
-                      setTemplateStyle('brochure');
-                    } else if (selectedBlocks.length > 6) {
-                      setTemplateStyle('detailed');
-                    } else {
-                      setTemplateStyle('simple');
-                    }
-                  }}
-                  currentBlocks={blocks}
-                />
+              {/* Component Library Sidebar */}
+              <div className="w-72 border-r bg-white">
+                <ComponentLibrary onAddBlock={addNewBlock} />
               </div>
 
-              {/* Editor Area */}
-              <div className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50/30">
-                <div className="max-w-4xl mx-auto">
-                  {/* Template Preview Header */}
-                  <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Quote Template Editor</h3>
-                        <p className="text-sm text-gray-600">Drag blocks to reorder, click to edit content</p>
-                      </div>
-                      <QuoteTemplateSelector onSelectTemplate={setBlocks} />
-                    </div>
-                  </div>
-
-                  {/* Template Canvas */}
-                  <div className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
+              {/* Main Canvas Area */}
+              <div className="flex-1 flex flex-col bg-gray-50">
+                <CanvasGrid showGrid={showGrid}>
+                  <div 
+                    className="min-h-[800px] bg-white shadow-lg mx-8 my-8"
+                    style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
+                  >
                     <DndContext
                       sensors={sensors}
                       collisionDetection={closestCenter}
@@ -278,7 +262,7 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
                       modifiers={[restrictToVerticalAxis]}
                     >
                       <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-                        <div className="min-h-[800px] bg-white">
+                        <div className="min-h-full">
                           {blocks.map((block) => (
                             <DraggableBlock
                               key={block.id}
@@ -292,38 +276,58 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
                         </div>
                       </SortableContext>
                     </DndContext>
-
-                    {/* Add Block Section */}
-                    <div className="border-t bg-gradient-to-r from-gray-50 to-blue-50/20 p-6">
-                      <BlockToolbar onAddBlock={addNewBlock} />
-                    </div>
                   </div>
-                </div>
+                </CanvasGrid>
               </div>
 
-              {/* Right Sidebar for Block Settings */}
-              {(selectedBlockId && showStyling) && (
-                <div className="w-80 border-l bg-white overflow-auto">
+              {/* Properties Panel */}
+              <div className="w-80 border-l bg-white flex flex-col">
+                {/* Template Styles */}
+                <div className="border-b">
                   <div className="p-4">
-                    <h3 className="font-medium mb-4">
-                      {templateStyle === 'brochure' ? 'Brochure Styling' : 'Block Settings'}
-                    </h3>
-                    {selectedBlock && (
-                      templateStyle === 'brochure' ? (
-                        <BrochureStyleControls
-                          block={selectedBlock}
-                          onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
-                        />
-                      ) : (
-                        <BlockStyleControls
-                          block={selectedBlock}
-                          onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
-                        />
-                      )
-                    )}
+                    <h3 className="font-semibold text-gray-900 mb-3">Templates</h3>
+                    <QuoteTemplateSelector onSelectTemplate={setBlocks} />
                   </div>
                 </div>
-              )}
+
+                {/* Block Properties */}
+                {selectedBlockId && (
+                  <div className="flex-1 overflow-auto p-4">
+                    <h3 className="font-semibold text-gray-900 mb-4">Properties</h3>
+                    {selectedBlock && (
+                      <EnhancedStyleControls
+                        block={selectedBlock}
+                        onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
+                      />
+                    )}
+                  </div>
+                )}
+                
+                {!selectedBlockId && (
+                  <div className="flex-1 overflow-auto">
+                    <TemplateStylesSidebar 
+                      onSelectTemplate={(selectedBlocks) => {
+                        setBlocks(selectedBlocks);
+                        const hasGradients = selectedBlocks.some(block => 
+                          block.styles?.background?.includes('gradient') || 
+                          block.content?.style?.backgroundColor?.includes('gradient')
+                        );
+                        const hasImages = selectedBlocks.some(block => block.type === 'image');
+                        const hasPayment = selectedBlocks.some(block => block.type === 'payment');
+                        
+                        if (hasGradients && hasImages && hasPayment) {
+                          setTemplateStyle('brochure');
+                        } else if (selectedBlocks.length > 6) {
+                          setTemplateStyle('detailed');
+                        } else {
+                          setTemplateStyle('simple');
+                        }
+                      }}
+                      currentBlocks={blocks}
+                    />
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div className="flex-1 overflow-auto p-6 bg-gray-50">
@@ -378,6 +382,18 @@ function getDefaultContentForType(type: string) {
       return {
         text: 'Thank you for your business!',
         includeTerms: true
+      };
+    case 'spacer':
+      return {
+        height: '40px',
+        backgroundColor: 'transparent'
+      };
+    case 'divider':
+      return {
+        style: 'solid',
+        color: '#e2e8f0',
+        thickness: '1px',
+        margin: '20px 0'
       };
     default:
       return {};
