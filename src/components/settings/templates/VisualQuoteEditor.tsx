@@ -10,7 +10,9 @@ import { Save, Plus, Eye, EyeOff, Palette } from "lucide-react";
 import { DraggableBlock } from "./visual-editor/DraggableBlock";
 import { BlockToolbar } from "./visual-editor/BlockToolbar";
 import { LivePreview } from "./visual-editor/LivePreview";
+import { EnhancedLivePreview } from "./visual-editor/EnhancedLivePreview";
 import { BlockStyleControls } from "./visual-editor/BlockStyleControls";
+import { BrochureStyleControls } from "./visual-editor/BrochureStyleControls";
 import { TemplateStylesSidebar } from "./visual-editor/TemplateStylesSidebar";
 import { QuoteTemplateSelector } from "./visual-editor/QuoteTemplateSelector";
 
@@ -121,6 +123,7 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showStyling, setShowStyling] = useState(false);
+  const [templateStyle, setTemplateStyle] = useState<'simple' | 'detailed' | 'brochure'>('detailed');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -230,7 +233,24 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               {/* Template Styles Sidebar */}
               <div className="w-72 border-r bg-white overflow-auto">
                 <TemplateStylesSidebar 
-                  onSelectTemplate={setBlocks}
+                  onSelectTemplate={(selectedBlocks) => {
+                    setBlocks(selectedBlocks);
+                    // Detect template style from blocks
+                    const hasGradients = selectedBlocks.some(block => 
+                      block.styles?.background?.includes('gradient') || 
+                      block.content?.style?.backgroundColor?.includes('gradient')
+                    );
+                    const hasImages = selectedBlocks.some(block => block.type === 'image');
+                    const hasPayment = selectedBlocks.some(block => block.type === 'payment');
+                    
+                    if (hasGradients && hasImages && hasPayment) {
+                      setTemplateStyle('brochure');
+                    } else if (selectedBlocks.length > 6) {
+                      setTemplateStyle('detailed');
+                    } else {
+                      setTemplateStyle('simple');
+                    }
+                  }}
                   currentBlocks={blocks}
                 />
               </div>
@@ -285,12 +305,21 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               {(selectedBlockId && showStyling) && (
                 <div className="w-80 border-l bg-white overflow-auto">
                   <div className="p-4">
-                    <h3 className="font-medium mb-4">Block Settings</h3>
+                    <h3 className="font-medium mb-4">
+                      {templateStyle === 'brochure' ? 'Brochure Styling' : 'Block Settings'}
+                    </h3>
                     {selectedBlock && (
-                      <BlockStyleControls
-                        block={selectedBlock}
-                        onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
-                      />
+                      templateStyle === 'brochure' ? (
+                        <BrochureStyleControls
+                          block={selectedBlock}
+                          onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
+                        />
+                      ) : (
+                        <BlockStyleControls
+                          block={selectedBlock}
+                          onUpdate={(content) => updateBlockContent(selectedBlockId, content)}
+                        />
+                      )
                     )}
                   </div>
                 </div>
@@ -298,7 +327,10 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
             </>
           ) : (
             <div className="flex-1 overflow-auto p-6 bg-gray-50">
-              <LivePreview blocks={blocks} />
+              <EnhancedLivePreview 
+                blocks={blocks} 
+                templateStyle={templateStyle}
+              />
             </div>
           )}
         </div>
