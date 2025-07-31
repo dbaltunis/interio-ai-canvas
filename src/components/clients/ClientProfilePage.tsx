@@ -12,6 +12,7 @@ import { ClientActivityTimeline } from "./ClientActivityTimeline";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { ClientQuotesList } from "./ClientQuotesList";
 import { QuickMeasurementAccess } from "./QuickMeasurementAccess";
+import { ClientQuickActions } from "./ClientQuickActions";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 
 interface ClientProfilePageProps {
@@ -145,6 +146,16 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <ClientQuickActions 
+        client={{
+          id: client.id,
+          name: clientDisplayName || '',
+          email: client.email,
+          phone: client.phone,
+        }}
+      />
 
       {/* Client Details and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
