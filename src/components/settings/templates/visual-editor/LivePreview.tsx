@@ -34,10 +34,24 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     : null;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    if (businessSettings?.measurement_units) {
+      try {
+        const units = JSON.parse(businessSettings.measurement_units);
+        const currency = units.currency || 'USD';
+        const currencySymbols: Record<string, string> = {
+          'NZD': 'NZ$',
+          'AUD': 'A$',
+          'USD': '$',
+          'GBP': '£',
+          'EUR': '€',
+          'ZAR': 'R'
+        };
+        return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
+      } catch {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+      }
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   const replaceTokens = (text: string, data: any = {}) => {
@@ -46,8 +60,14 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     const tokens = {
       company_name: businessSettings?.company_name || data.companyName || 'Your Company Name',
       company_address: businessSettings?.address || 'Your Company Address',
+      company_city: businessSettings?.city || '',
+      company_state: businessSettings?.state || '',
+      company_zip: businessSettings?.zip_code || '',
+      company_country: businessSettings?.country || '',
       company_phone: businessSettings?.business_phone || '(555) 123-4567',
       company_email: businessSettings?.business_email || 'info@company.com',
+      company_website: businessSettings?.website || '',
+      company_abn: businessSettings?.abn || '',
       quote_number: data.quoteNumber || `QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
       date: new Date().toLocaleDateString(),
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),

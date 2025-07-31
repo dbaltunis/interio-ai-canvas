@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
+import { useBusinessSettings, formatCurrency } from "@/hooks/useBusinessSettings";
 
 interface TemplateQuotePreviewProps {
   project: any;
@@ -29,6 +30,7 @@ export const TemplateQuotePreview = ({
   templateId
 }: TemplateQuotePreviewProps) => {
   const { data: clients } = useClients();
+  const { data: businessSettings } = useBusinessSettings();
   const client = clients?.find(c => c.id === project.client_id);
 
   // Generate quote items from treatments with detailed breakdown
@@ -89,22 +91,46 @@ export const TemplateQuotePreview = ({
     };
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+  const formatCurrencyWithSettings = (amount: number) => {
+    if (businessSettings?.measurement_units) {
+      try {
+        const units = JSON.parse(businessSettings.measurement_units);
+        return formatCurrency(amount, units.currency);
+      } catch {
+        return formatCurrency(amount, 'USD');
+      }
+    }
+    return formatCurrency(amount, 'USD');
   };
 
   const renderHeader = () => (
     <div className="flex items-start justify-between mb-8 p-6 bg-gradient-to-r from-brand-primary to-brand-accent text-white rounded-lg">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Your Company Name</h1>
-        <div className="space-y-1 text-brand-primary-foreground">
-          <p>123 Business Street</p>
-          <p>City, State 12345</p>
-          <p>Phone: (555) 123-4567</p>
-          <p>Email: info@company.com</p>
+      <div className="flex items-start gap-4">
+        {businessSettings?.company_logo_url && (
+          <img 
+            src={businessSettings.company_logo_url} 
+            alt="Company Logo" 
+            className="h-16 w-16 object-contain bg-white rounded p-1"
+          />
+        )}
+        <div>
+          <h1 className="text-3xl font-bold mb-2">
+            {businessSettings?.company_name || 'Your Company Name'}
+          </h1>
+          <div className="space-y-1 text-brand-primary-foreground">
+            {businessSettings?.address && <p>{businessSettings.address}</p>}
+            {(businessSettings?.city || businessSettings?.state || businessSettings?.zip_code) && (
+              <p>
+                {businessSettings?.city}
+                {businessSettings?.city && businessSettings?.state && ', '}
+                {businessSettings?.state} {businessSettings?.zip_code}
+              </p>
+            )}
+            {businessSettings?.business_phone && <p>Phone: {businessSettings.business_phone}</p>}
+            {businessSettings?.business_email && <p>Email: {businessSettings.business_email}</p>}
+            {businessSettings?.abn && <p>ABN: {businessSettings.abn}</p>}
+            {businessSettings?.website && <p>Web: {businessSettings.website}</p>}
+          </div>
         </div>
       </div>
       <div className="text-right">
@@ -175,8 +201,8 @@ export const TemplateQuotePreview = ({
                           </Badge>
                         </td>
                         <td className="p-3 text-center">{breakdownItem.quantity}</td>
-                        <td className="p-3 text-right">{formatCurrency(breakdownItem.unit_price)}</td>
-                        <td className="p-3 text-right font-medium">{formatCurrency(breakdownItem.total)}</td>
+                        <td className="p-3 text-right">{formatCurrencyWithSettings(breakdownItem.unit_price)}</td>
+                        <td className="p-3 text-right font-medium">{formatCurrencyWithSettings(breakdownItem.total)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -215,8 +241,8 @@ export const TemplateQuotePreview = ({
                       </div>
                     </td>
                     <td className="p-4 text-center">{treatment.quantity || 1}</td>
-                    <td className="p-4 text-right">{formatCurrency(treatment.unit_price || 0)}</td>
-                    <td className="p-4 text-right font-medium">{formatCurrency(treatment.total_price || 0)}</td>
+                    <td className="p-4 text-right">{formatCurrencyWithSettings(treatment.unit_price || 0)}</td>
+                    <td className="p-4 text-right font-medium">{formatCurrencyWithSettings(treatment.total_price || 0)}</td>
                   </tr>
                 );
               })}
@@ -232,15 +258,15 @@ export const TemplateQuotePreview = ({
       <div className="w-80 space-y-2">
         <div className="flex justify-between py-2">
           <span className="text-gray-600">Subtotal:</span>
-          <span className="font-medium">{formatCurrency(subtotal)}</span>
+          <span className="font-medium">{formatCurrencyWithSettings(subtotal)}</span>
         </div>
         <div className="flex justify-between py-2">
           <span className="text-gray-600">Tax ({(taxRate * 100).toFixed(1)}%):</span>
-          <span className="font-medium">{formatCurrency(taxAmount)}</span>
+          <span className="font-medium">{formatCurrencyWithSettings(taxAmount)}</span>
         </div>
         <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-3">
           <span>Total:</span>
-          <span className="text-brand-primary">{formatCurrency(total)}</span>
+          <span className="text-brand-primary">{formatCurrencyWithSettings(total)}</span>
         </div>
       </div>
     </div>
@@ -249,12 +275,16 @@ export const TemplateQuotePreview = ({
   const renderFooter = () => (
     <div className="border-t pt-6 mt-8">
       <div className="text-center text-gray-600 space-y-2">
-        <p className="font-medium">Thank you for choosing our services!</p>
+        <p className="font-medium">
+          Thank you for choosing {businessSettings?.company_name || 'our services'}!
+        </p>
         <p className="text-sm">
           Payment terms: Net 30 days. Quote valid for 30 days.
         </p>
         <p className="text-sm">
-          For questions about this quote, please contact us at info@company.com or (555) 123-4567
+          For questions about this quote, please contact us at{' '}
+          {businessSettings?.business_email || 'info@company.com'}
+          {businessSettings?.business_phone && ` or ${businessSettings.business_phone}`}
         </p>
       </div>
     </div>

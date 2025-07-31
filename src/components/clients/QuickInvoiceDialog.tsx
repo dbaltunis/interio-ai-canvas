@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { FileText, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 
 interface QuickInvoiceDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface QuickInvoiceDialogProps {
 }
 
 export const QuickInvoiceDialog = ({ open, onOpenChange, client }: QuickInvoiceDialogProps) => {
+  const { data: businessSettings } = useBusinessSettings();
   const [quoteNumber, setQuoteNumber] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -61,7 +63,7 @@ export const QuickInvoiceDialog = ({ open, onOpenChange, client }: QuickInvoiceD
 
       toast({
         title: "Quote created!",
-        description: `Quote ${finalQuoteNumber} created for ${client.name}`,
+        description: `Quote ${finalQuoteNumber} created for ${client.name} by ${businessSettings?.company_name || 'your company'}`,
       });
 
       // Reset form and close dialog
@@ -89,6 +91,11 @@ export const QuickInvoiceDialog = ({ open, onOpenChange, client }: QuickInvoiceD
             <FileText className="h-5 w-5" />
             Create Quote for {client.name}
           </DialogTitle>
+          {businessSettings?.company_name && (
+            <p className="text-sm text-muted-foreground">
+              From: {businessSettings.company_name}
+            </p>
+          )}
         </DialogHeader>
         
         <div className="space-y-4 pt-4">
