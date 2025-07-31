@@ -17,11 +17,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
   const { data: inventory, isLoading } = useEnhancedInventory();
 
   const hardware = inventory?.filter(item => 
-    item.category === "track" ||
-    item.category === "rod" ||
-    item.category === "bracket" ||
-    item.category === "motor" ||
-    item.category === "accessory"
+    item.category_type === "hardware"
   ) || [];
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedMaterial, setSelectedMaterial] = useState<string>("all");
@@ -149,13 +145,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                 <div className="space-y-3">
                   <div>
                     <h3 className="font-semibold text-lg leading-tight">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.category}</p>
+                    <p className="text-sm text-muted-foreground">{item.category_type}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-1">
                       <Settings className="h-4 w-4 text-muted-foreground" />
-                      <span>{item.material_finish || 'Standard'}</span>
+                      <span>{item.finish_type || 'Standard'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Package className="h-4 w-4 text-muted-foreground" />
@@ -166,18 +162,18 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                   <div className="space-y-1">
                     <div className="text-xs text-muted-foreground">Specifications:</div>
                     <div className="text-sm">
-                      {item.weight_capacity && (
-                        <span>Capacity: {item.weight_capacity}kg</span>
+                      {item.load_capacity && (
+                        <span>Capacity: {item.load_capacity}kg</span>
                       )}
-                      {item.max_length && (
-                        <span className="ml-2">Max Length: {item.max_length}cm</span>
+                      {item.dimensions_length && (
+                        <span className="ml-2">Max Length: {item.dimensions_length}cm</span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-lg font-bold">${item.unit_price}</div>
+                      <div className="text-lg font-bold">${item.selling_price}</div>
                       <div className="text-xs text-muted-foreground">Per {item.unit}</div>
                     </div>
                     <div className="flex gap-1">
@@ -193,7 +189,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>SKU: {item.sku}</span>
                     <Badge variant="outline" className="text-xs">
-                      {item.category}
+                      {item.category_type}
                     </Badge>
                   </div>
                 </div>
@@ -219,19 +215,19 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                     </div>
                     <div>
                       <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.category} - {item.material_finish || 'Standard'}</p>
+                      <p className="text-sm text-muted-foreground">{item.category_type} - {item.finish_type || 'Standard'}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <span>SKU: {item.sku}</span>
-                        <span>Type: {item.hardware_type || item.category}</span>
-                        {item.weight_capacity && (
-                          <span>Capacity: {item.weight_capacity}kg</span>
+                        <span>Type: {item.hardware_type || item.category_type}</span>
+                        {item.load_capacity && (
+                          <span>Capacity: {item.load_capacity}kg</span>
                         )}
                       </div>
                     </div>
                   </div>
                   
                   <div className="text-right">
-                    <div className="font-semibold">${item.unit_price}</div>
+                    <div className="font-semibold">${item.selling_price}</div>
                     <div className="text-sm text-muted-foreground">{item.quantity} {item.unit} available</div>
                     <div className="flex items-center gap-2 mt-2">
                       {item.quantity <= (item.reorder_point || 0) && (

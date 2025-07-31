@@ -21,9 +21,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
   const [widthFilter, setWidthFilter] = useState<string>("all");
 
   const fabricItems = inventory?.filter(item => 
-    item.category === "fabric" ||
-    item.category === "curtain_fabric" ||
-    item.category === "blind_fabric"
+    item.category_type === "fabric"
   ) || [];
 
   const filteredItems = fabricItems.filter(item => {
@@ -160,7 +158,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-lg font-bold">${item.unit_price}/m</div>
+                      <div className="text-lg font-bold">${item.selling_price}/m</div>
                       <div className="text-xs text-muted-foreground">Pattern repeat: 64cm</div>
                     </div>
                     <div className="flex gap-1">
@@ -176,7 +174,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>SKU: {item.sku}</span>
                     <Badge variant="outline" className="text-xs">
-                      {item.category}
+                      {item.category_type}
                     </Badge>
                   </div>
                 </div>
@@ -212,7 +210,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                   </div>
                   
                   <div className="text-right">
-                    <div className="font-semibold">${item.unit_price}/m</div>
+                    <div className="font-semibold">${item.selling_price}/m</div>
                     <div className="text-sm text-muted-foreground">{item.quantity} {item.unit} available</div>
                     <div className="flex items-center gap-2 mt-2">
                       {item.quantity <= (item.reorder_point || 5) && (
