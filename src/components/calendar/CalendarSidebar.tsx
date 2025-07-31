@@ -341,17 +341,20 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
 
       {/* Event Details Dialog */}
       <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Event Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Event Details
+            </DialogTitle>
           </DialogHeader>
           
           {selectedEvent && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Event Header */}
               <div className="flex items-start gap-3">
                 <div 
-                  className="w-4 h-4 rounded-full mt-1 flex-shrink-0"
+                  className="w-4 h-4 rounded-full mt-1 flex-shrink-0 ring-2 ring-background"
                   style={{ backgroundColor: selectedEvent.color || '#3b82f6' }}
                 />
                 <div className="flex-1">
@@ -410,6 +413,54 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
                   </div>
                 </div>
               )}
+
+              {/* Notifications & Settings */}
+              <div className="pt-4 border-t">
+                <h4 className="font-medium text-sm mb-3">Notifications & Settings</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Notification Status</div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm">Enabled</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Reminder Time</div>
+                    <span className="text-sm">15 minutes before</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Event Status</div>
+                    <span className="text-sm capitalize">{selectedEvent.status || 'confirmed'}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Visibility</div>
+                    <span className="text-sm">Private</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-4 border-t">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Settings className="h-4 w-4 mr-1" />
+                    Edit Event
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <User className="h-4 w-4 mr-1" />
+                    Manage Attendees
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="text-destructive">
+                    Delete
+                  </Button>
+                  <Button size="sm">
+                    Send Reminder
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
