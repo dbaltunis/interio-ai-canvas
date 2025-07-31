@@ -1,5 +1,5 @@
 
-import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User, Trash2, Bell, Video, Palette } from "lucide-react";
+import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User, Trash2, Bell, Video, Palette, Edit3, UserPlus, Send } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AppointmentEditSidebar } from './AppointmentEditSidebar';
+import { UnifiedAppointmentDialog } from './UnifiedAppointmentDialog';
+import { useAppointmentEdit } from '@/hooks/useAppointmentEdit';
 import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
@@ -37,10 +40,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [editEvent, setEditEvent] = useState<any>({});
+  const appointmentEdit = useAppointmentEdit();
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
   const { data: clients } = useClients();
@@ -112,80 +114,16 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
     }
   };
 
-  // Handler functions for event actions
+  // Handler functions for event actions - Updated for hybrid approach
   const handleEditEvent = () => {
     if (selectedEvent) {
-      // Populate edit form with current event data
-      const startTime = format(new Date(selectedEvent.start_time), 'HH:mm');
-      const endTime = format(new Date(selectedEvent.end_time), 'HH:mm');
-      const date = format(new Date(selectedEvent.start_time), 'yyyy-MM-dd');
-      
-      setEditEvent({
-        title: selectedEvent.title || '',
-        description: selectedEvent.description || '',
-        date: date,
-        startTime: startTime,
-        endTime: endTime,
-        location: selectedEvent.location || '',
-        appointmentType: selectedEvent.appointment_type || 'meeting',
-        color: selectedEvent.color || '#3b82f6',
-        enableNotifications: false,
-        notificationMethods: [],
-        notificationTiming: '15'
-      });
-      setShowEditDialog(true);
+      appointmentEdit.openQuickEdit(selectedEvent);
+      setSelectedEvent(null); // Close details dialog
     }
   };
 
-  const handleSaveEditEvent = async () => {
-    if (!editEvent.title || !editEvent.date || !editEvent.startTime || !editEvent.endTime) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const startDateTime = new Date(`${editEvent.date}T${editEvent.startTime}`);
-      const endDateTime = new Date(`${editEvent.date}T${editEvent.endTime}`);
-
-      const updateData = {
-        id: selectedEvent.id,
-        title: editEvent.title,
-        description: editEvent.description,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        location: editEvent.location,
-        appointment_type: editEvent.appointmentType,
-        color: editEvent.color,
-      };
-
-      updateAppointment.mutate(updateData, {
-        onSuccess: () => {
-          setShowEditDialog(false);
-          setSelectedEvent(null);
-          toast({
-            title: "Event Updated",
-            description: "The event has been successfully updated.",
-          });
-        },
-        onError: () => {
-          toast({
-            title: "Error",
-            description: "Failed to update the event. Please try again.",
-            variant: "destructive",
-          });
-        }
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid date or time format.",
-        variant: "destructive",
-      });
-    }
+  const handleAdvancedOptions = () => {
+    appointmentEdit.openAdvancedEdit();
   };
 
   const handleManageAttendees = () => {
@@ -618,224 +556,24 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Event Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Edit Event
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Basic Event Details */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-title">Event Title</Label>
-                <Input
-                  id="edit-title"
-                  value={editEvent.title || ''}
-                  onChange={(e) => setEditEvent({ ...editEvent, title: e.target.value })}
-                  placeholder="Enter event title"
-                />
-              </div>
+      {/* Quick Edit Sidebar */}
+      {appointmentEdit.isQuickEditOpen && (
+        <div className="fixed inset-y-0 right-0 w-96 z-50">
+          <AppointmentEditSidebar
+            appointment={appointmentEdit.selectedAppointment}
+            onSave={appointmentEdit.saveAppointment}
+            onCancel={appointmentEdit.closeEdit}
+            onAdvancedOptions={handleAdvancedOptions}
+          />
+        </div>
+      )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-date">Date</Label>
-                  <Input
-                    id="edit-date"
-                    type="date"
-                    value={editEvent.date || ''}
-                    onChange={(e) => setEditEvent({ ...editEvent, date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-type">Event Type</Label>
-                  <Select value={editEvent.appointmentType} onValueChange={(value) => setEditEvent({ ...editEvent, appointmentType: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                      <SelectItem value="consultation">Consultation</SelectItem>
-                      <SelectItem value="call">Call</SelectItem>
-                      <SelectItem value="follow-up">Follow-up</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-start-time">Start Time</Label>
-                  <Input
-                    id="edit-start-time"
-                    type="time"
-                    value={editEvent.startTime || ''}
-                    onChange={(e) => setEditEvent({ ...editEvent, startTime: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-end-time">End Time</Label>
-                  <Input
-                    id="edit-end-time"
-                    type="time"
-                    value={editEvent.endTime || ''}
-                    onChange={(e) => setEditEvent({ ...editEvent, endTime: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="edit-location">Location</Label>
-                <Input
-                  id="edit-location"
-                  value={editEvent.location || ''}
-                  onChange={(e) => setEditEvent({ ...editEvent, location: e.target.value })}
-                  placeholder="Enter meeting location"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editEvent.description || ''}
-                  onChange={(e) => setEditEvent({ ...editEvent, description: e.target.value })}
-                  placeholder="Enter event description"
-                  rows={3}
-                />
-              </div>
-
-              {/* Event Color Selection */}
-              <div>
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Event Color
-                </Label>
-                <div className="flex gap-2 mt-2">
-                  {[
-                    { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
-                    { name: 'Green', value: '#10B981', bg: 'bg-green-500' },
-                    { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-500' },
-                    { name: 'Orange', value: '#F59E0B', bg: 'bg-orange-500' },
-                    { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
-                    { name: 'Pink', value: '#EC4899', bg: 'bg-pink-500' },
-                    { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
-                  ].map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        editEvent.color === color.value 
-                          ? 'border-foreground scale-110' 
-                          : 'border-muted hover:border-muted-foreground'
-                      } ${color.bg}`}
-                      onClick={() => setEditEvent({ ...editEvent, color: color.value })}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Notification Settings */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Notifications
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="edit-enable-notifications" className="text-sm">Enable notifications for this event</Label>
-                  <Switch
-                    id="edit-enable-notifications"
-                    checked={editEvent.enableNotifications || false}
-                    onCheckedChange={(checked) => setEditEvent({ ...editEvent, enableNotifications: checked })}
-                  />
-                </div>
-
-                {editEvent.enableNotifications && (
-                  <div className="space-y-3 ml-4 pl-4 border-l-2 border-muted">
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Notification methods</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="edit-email-notification"
-                            checked={editEvent.notificationMethods?.includes('email') || false}
-                            onCheckedChange={(checked) => {
-                              const methods = editEvent.notificationMethods || [];
-                              setEditEvent({
-                                ...editEvent,
-                                notificationMethods: checked
-                                  ? [...methods.filter((m: string) => m !== 'email'), 'email']
-                                  : methods.filter((m: string) => m !== 'email')
-                              });
-                            }}
-                          />
-                          <Label htmlFor="edit-email-notification" className="text-sm">Email</Label>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="edit-sms-notification"
-                            checked={editEvent.notificationMethods?.includes('sms') || false}
-                            onCheckedChange={(checked) => {
-                              const methods = editEvent.notificationMethods || [];
-                              setEditEvent({
-                                ...editEvent,
-                                notificationMethods: checked
-                                  ? [...methods.filter((m: string) => m !== 'sms'), 'sms']
-                                  : methods.filter((m: string) => m !== 'sms')
-                              });
-                            }}
-                          />
-                          <Label htmlFor="edit-sms-notification" className="text-sm">SMS</Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="edit-notification-timing" className="text-sm font-medium">Notify before event</Label>
-                      <Select 
-                        value={editEvent.notificationTiming || '15'}
-                        onValueChange={(value) => setEditEvent({ ...editEvent, notificationTiming: value })}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">At event time</SelectItem>
-                          <SelectItem value="5">5 minutes before</SelectItem>
-                          <SelectItem value="15">15 minutes before</SelectItem>
-                          <SelectItem value="30">30 minutes before</SelectItem>
-                          <SelectItem value="60">1 hour before</SelectItem>
-                          <SelectItem value="120">2 hours before</SelectItem>
-                          <SelectItem value="1440">1 day before</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveEditEvent} disabled={!editEvent.title}>
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Advanced Edit Dialog */}
+      <UnifiedAppointmentDialog
+        open={appointmentEdit.isAdvancedEditOpen}
+        onOpenChange={appointmentEdit.closeEdit}
+        appointment={appointmentEdit.selectedAppointment}
+      />
     </div>
   );
 };
