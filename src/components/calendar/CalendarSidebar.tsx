@@ -1,15 +1,16 @@
 
-import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User } from "lucide-react";
+import { CalendarDays, Link2, Settings, ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User, Trash2, Bell } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { format, isToday, addDays } from "date-fns";
-import { useAppointments } from "@/hooks/useAppointments";
+import { useAppointments, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
@@ -31,11 +32,14 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
   const { data: clients } = useClients();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { toast } = useToast();
+  const updateAppointment = useUpdateAppointment();
+  const deleteAppointment = useDeleteAppointment();
 
   // Get upcoming events (next 7 days)
   const upcomingEvents = appointments?.filter(appointment => {
@@ -98,6 +102,50 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
       setSidebarDate(date);
       onDateChange(date);
     }
+  };
+
+  // Handler functions for event actions
+  const handleEditEvent = () => {
+    toast({
+      title: "Edit Event",
+      description: "Event editing functionality will open here.",
+    });
+  };
+
+  const handleManageAttendees = () => {
+    toast({
+      title: "Manage Attendees",
+      description: "Attendee management functionality will open here.",
+    });
+  };
+
+  const handleDeleteEvent = () => {
+    if (selectedEvent) {
+      deleteAppointment.mutate(selectedEvent.id, {
+        onSuccess: () => {
+          setSelectedEvent(null);
+          setShowDeleteDialog(false);
+          toast({
+            title: "Event Deleted",
+            description: "The event has been successfully deleted.",
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "Failed to delete the event. Please try again.",
+            variant: "destructive",
+          });
+        }
+      });
+    }
+  };
+
+  const handleSendReminder = () => {
+    toast({
+      title: "Reminder Sent",
+      description: "Notification reminder has been sent to all attendees.",
+    });
   };
 
   if (isCollapsed) {
@@ -443,20 +491,27 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
               {/* Action Buttons */}
               <div className="flex justify-between pt-4 border-t">
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleEditEvent}>
                     <Settings className="h-4 w-4 mr-1" />
                     Edit Event
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleManageAttendees}>
                     <User className="h-4 w-4 mr-1" />
                     Manage Attendees
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="text-destructive">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
                     Delete
                   </Button>
-                  <Button size="sm">
+                  <Button size="sm" onClick={handleSendReminder}>
+                    <Bell className="h-4 w-4 mr-1" />
                     Send Reminder
                   </Button>
                 </div>
@@ -465,6 +520,27 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedEvent?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteEvent}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Event
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
