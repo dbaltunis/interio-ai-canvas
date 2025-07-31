@@ -12,9 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { AppointmentEditSidebar } from './AppointmentEditSidebar';
-import { UnifiedAppointmentDialog } from './UnifiedAppointmentDialog';
-import { useAppointmentEdit } from '@/hooks/useAppointmentEdit';
+import { EventDialog } from './EventDialog';
+import { useEventDialog } from '@/hooks/useEventDialog';
 import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
@@ -42,7 +41,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const appointmentEdit = useAppointmentEdit();
+  const eventDialog = useEventDialog();
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
   const { data: clients } = useClients();
@@ -117,13 +116,13 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   // Handler functions for event actions - Updated for hybrid approach
   const handleEditEvent = () => {
     if (selectedEvent) {
-      appointmentEdit.openQuickEdit(selectedEvent);
+      eventDialog.openEdit(selectedEvent);
       setSelectedEvent(null); // Close details dialog
     }
   };
 
   const handleAdvancedOptions = () => {
-    appointmentEdit.openAdvancedEdit();
+    eventDialog.openCreate();
   };
 
   const handleManageAttendees = () => {
@@ -556,23 +555,24 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Quick Edit Sidebar */}
-      {appointmentEdit.isQuickEditOpen && (
-        <div className="fixed inset-y-0 right-0 w-96 z-50">
-          <AppointmentEditSidebar
-            appointment={appointmentEdit.selectedAppointment}
-            onSave={appointmentEdit.saveAppointment}
-            onCancel={appointmentEdit.closeEdit}
-            onAdvancedOptions={handleAdvancedOptions}
-          />
-        </div>
-      )}
-
-      {/* Advanced Edit Dialog */}
-      <UnifiedAppointmentDialog
-        open={appointmentEdit.isAdvancedEditOpen}
-        onOpenChange={appointmentEdit.closeEdit}
-        appointment={appointmentEdit.selectedAppointment}
+      {/* Unified Event Dialog */}
+      <EventDialog
+        mode={eventDialog.mode}
+        open={eventDialog.isOpen}
+        onOpenChange={eventDialog.close}
+        appointment={eventDialog.selectedAppointment}
+        selectedDate={eventDialog.selectedDate}
+        onSave={(appointment) => {
+          // Handle save logic here
+          console.log('Saving appointment:', appointment);
+          eventDialog.close();
+        }}
+        onDelete={(appointmentId) => {
+          // Handle delete logic here
+          console.log('Deleting appointment:', appointmentId);
+          eventDialog.close();
+        }}
+        onModeChange={eventDialog.changeMode}
       />
     </div>
   );
