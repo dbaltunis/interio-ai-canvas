@@ -13,6 +13,8 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
+import { EventDialog } from "@/components/calendar/EventDialog";
+import { useEventDialog } from "@/hooks/useEventDialog";
 
 interface ProjectHeaderProps {
   projectName: string;
@@ -48,12 +50,8 @@ export const ProjectHeader = ({
   const updateProject = useUpdateProject();
   const navigate = useNavigate();
   
-  const [showEventDialog, setShowEventDialog] = useState(false);
+  const eventDialog = useEventDialog();
   const [showTeamDialog, setShowTeamDialog] = useState(false);
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [eventTime, setEventTime] = useState("");
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [hasActiveEvent, setHasActiveEvent] = useState(false);
@@ -204,23 +202,15 @@ export const ProjectHeader = ({
     }
   };
 
-  const handleCreateEvent = () => {
-    if (!eventTitle || !eventDate || !eventTime) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all event details",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleCreateEvent = (appointment: any) => {
     const eventDetails = {
-      title: eventTitle,
-      description: `${eventDescription}\n\nProject: ${projectName}\nJob Number: ${projectNumber}\nValue: $${projectValue?.toLocaleString()}`,
-      date: eventDate,
-      time: eventTime,
-      projectLink: window.location.href,
-      invitedMembers: selectedTeamMembers
+      title: appointment.title,
+      description: `${appointment.description}\n\nProject: ${projectName}\nJob Number: ${projectNumber}\nValue: $${projectValue?.toLocaleString()}`,
+      start_time: appointment.start_time,
+      end_time: appointment.end_time,
+      location: appointment.location,
+      project_id: projectId,
+      team_member_ids: selectedTeamMembers,
     };
 
     console.log('Creating event:', eventDetails);
@@ -228,14 +218,9 @@ export const ProjectHeader = ({
 
     toast({
       title: "Event Created",
-      description: `Calendar event "${eventTitle}" has been created for this project with ${selectedTeamMembers.length} team members invited`,
+      description: `Calendar event "${appointment.title}" has been created for this project with ${selectedTeamMembers.length} team members invited`,
     });
 
-    setShowEventDialog(false);
-    setEventTitle("");
-    setEventDescription("");
-    setEventDate("");
-    setEventTime("");
     setSelectedTeamMembers([]);
   };
 
@@ -332,111 +317,17 @@ export const ProjectHeader = ({
             </SelectContent>
           </Select>
 
-          <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="relative">
-                {hasActiveEvent ? <CalendarCheck className="h-4 w-4 text-green-600" /> : <Calendar className="h-4 w-4" />}
-                {hasActiveEvent && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
-                )}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create Calendar Event</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Event Title</Label>
-                  <Input 
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    placeholder="Meeting with client..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Input 
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Time</Label>
-                  <Input 
-                    type="time"
-                    value={eventTime}
-                    onChange={(e) => setEventTime(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea 
-                    value={eventDescription}
-                    onChange={(e) => setEventDescription(e.target.value)}
-                    placeholder="Meeting notes, agenda items..."
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Invite Team Members</Label>
-                  <Select onValueChange={(value) => {
-                    if (!selectedTeamMembers.includes(value)) {
-                      setSelectedTeamMembers([...selectedTeamMembers, value]);
-                    }
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select team members..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teamMembers?.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name} - {member.role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedTeamMembers.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {selectedTeamMembers.map((memberId) => {
-                        const member = teamMembers?.find(m => m.id === memberId);
-                        return member ? (
-                          <Badge key={memberId} variant="secondary" className="text-xs">
-                            {member.name}
-                            <button
-                              onClick={() => setSelectedTeamMembers(selectedTeamMembers.filter(id => id !== memberId))}
-                              className="ml-1 text-red-500 hover:text-red-700"
-                            >
-                              ×
-                            </button>
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="bg-muted p-3 rounded-lg text-sm">
-                  <p className="font-medium">This event will include:</p>
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Project: {projectName}</li>
-                    <li>Job Number: {projectNumber}</li>
-                    <li>Project Value: ${projectValue?.toLocaleString()}</li>
-                    <li>Link to this project</li>
-                    <li>Invited members: {selectedTeamMembers.length}</li>
-                  </ul>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setShowEventDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateEvent}>
-                    Create Event
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="relative"
+            onClick={() => eventDialog.openCreate()}
+          >
+            {hasActiveEvent ? <CalendarCheck className="h-4 w-4 text-green-600" /> : <Calendar className="h-4 w-4" />}
+            {hasActiveEvent && (
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+            )}
+          </Button>
 
           <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
             <DialogTrigger asChild>
@@ -545,6 +436,20 @@ export const ProjectHeader = ({
           </div>
         </DialogContent>
       </Dialog>
+      {/* Unified Event Dialog */}
+      <EventDialog
+        mode={eventDialog.mode}
+        open={eventDialog.isOpen}
+        onOpenChange={eventDialog.close}
+        appointment={eventDialog.selectedAppointment}
+        selectedDate={eventDialog.selectedDate}
+        onSave={handleCreateEvent}
+        onDelete={(appointmentId) => {
+          console.log('Deleting appointment:', appointmentId);
+          eventDialog.close();
+        }}
+        onModeChange={eventDialog.changeMode}
+      />
     </div>
   );
 };
