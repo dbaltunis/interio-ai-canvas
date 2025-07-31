@@ -9,11 +9,14 @@ import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { format, isToday, addDays } from "date-fns";
-import { Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3 } from "lucide-react";
+import { Clock, MapPin, Calendar as CalendarIcon, Users, BarChart3, User, UserCheck } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
+import { useClients } from "@/hooks/useClients";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 interface CalendarSidebarProps {
   currentDate: Date;
@@ -30,6 +33,8 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
   const { data: appointments } = useAppointments();
   const { data: schedulers } = useAppointmentSchedulers();
+  const { data: clients } = useClients();
+  const { data: currentUserProfile } = useCurrentUserProfile();
   const { toast } = useToast();
 
   // Get upcoming events (next 7 days)
@@ -39,6 +44,37 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
     const nextWeek = addDays(today, 7);
     return eventDate >= today && eventDate <= nextWeek;
   }).slice(0, 5) || [];
+
+  // Helper function to get client name
+  const getClientName = (clientId?: string) => {
+    if (!clientId || !clients) return null;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return null;
+    return client.client_type === 'B2B' ? client.company_name : client.name;
+  };
+
+  // Helper function to get attendee info
+  const getAttendeeInfo = (event: any) => {
+    const attendees = [];
+    
+    // Add organizer (current user)
+    if (currentUserProfile?.display_name) {
+      attendees.push(currentUserProfile.display_name);
+    }
+    
+    // Add client if exists
+    const clientName = getClientName(event.client_id);
+    if (clientName) {
+      attendees.push(clientName);
+    }
+    
+    // Add invited emails
+    if (event.invited_client_emails?.length > 0) {
+      attendees.push(...event.invited_client_emails);
+    }
+    
+    return attendees;
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -123,21 +159,57 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
             <CardContent className="flex-1 min-h-0">
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {upcomingEvents.length > 0 ? (
-                  upcomingEvents.map(event => (
-                    <div key={event.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0">
-                      <div className="font-medium text-sm truncate">{event.title}</div>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                        {format(new Date(event.start_time), 'MMM d, HH:mm')}
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                          <span className="truncate">{event.location}</span>
+                  upcomingEvents.map(event => {
+                    const attendees = getAttendeeInfo(event);
+                    const eventColor = event.color || '#3b82f6'; // Default blue
+                    
+                    return (
+                      <div key={event.id} className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0">
+                        {/* Color indicator */}
+                        <div 
+                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                          style={{ backgroundColor: eventColor }}
+                        />
+                        
+                        <div className="ml-2">
+                          <div className="font-medium text-sm truncate">{event.title}</div>
+                          
+                          {/* Time */}
+                          <div className="flex items-center text-xs text-muted-foreground mt-1">
+                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                            {format(new Date(event.start_time), 'MMM d, HH:mm')}
+                          </div>
+                          
+                          {/* Location */}
+                          {event.location && (
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">{event.location}</span>
+                            </div>
+                          )}
+                          
+                          {/* Attendees */}
+                          {attendees.length > 0 && (
+                            <div className="flex items-center text-xs text-muted-foreground mt-2">
+                              <UserCheck className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <div className="flex flex-wrap gap-1">
+                                {attendees.slice(0, 2).map((attendee, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs px-1 py-0 h-5">
+                                    {attendee.length > 12 ? `${attendee.substring(0, 12)}...` : attendee}
+                                  </Badge>
+                                ))}
+                                {attendees.length > 2 && (
+                                  <Badge variant="outline" className="text-xs px-1 py-0 h-5">
+                                    +{attendees.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="text-sm text-muted-foreground text-center py-4">
                     No upcoming events
