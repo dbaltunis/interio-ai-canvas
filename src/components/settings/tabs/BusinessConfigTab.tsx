@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Check } from "lucide-react";
 
 export const BusinessConfigTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
   const createBusinessSettings = useCreateBusinessSettings();
   const updateBusinessSettings = useUpdateBusinessSettings();
   const { toast } = useToast();
+  
+  const [savedSuccessfully, setSavedSuccessfully] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -48,6 +50,7 @@ export const BusinessConfigTab = () => {
   }, [businessSettings]);
 
   const handleInputChange = (field: string, value: string) => {
+    setSavedSuccessfully(false);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -65,11 +68,19 @@ export const BusinessConfigTab = () => {
         await createBusinessSettings.mutateAsync(formData);
       }
       
+      setSavedSuccessfully(true);
+      
       toast({
         title: "Success",
         description: "Business settings saved successfully",
       });
+      
+      // Reset saved state after 3 seconds
+      setTimeout(() => {
+        setSavedSuccessfully(false);
+      }, 3000);
     } catch (error) {
+      setSavedSuccessfully(false);
       toast({
         title: "Error",
         description: "Failed to save business settings",
@@ -232,12 +243,28 @@ export const BusinessConfigTab = () => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center space-x-3">
+        {savedSuccessfully && (
+          <div className="flex items-center text-green-600 text-sm">
+            <Check className="h-4 w-4 mr-1" />
+            <span>Saved successfully</span>
+          </div>
+        )}
         <Button 
           onClick={handleSave}
-          disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+          disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending || savedSuccessfully}
+          variant={savedSuccessfully ? "secondary" : "default"}
         >
-          {(createBusinessSettings.isPending || updateBusinessSettings.isPending) ? "Saving..." : "Save Settings"}
+          {savedSuccessfully ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Saved
+            </>
+          ) : (createBusinessSettings.isPending || updateBusinessSettings.isPending) ? (
+            "Saving..."
+          ) : (
+            "Save Settings"
+          )}
         </Button>
       </div>
     </div>
