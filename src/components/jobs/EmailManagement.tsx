@@ -73,26 +73,46 @@ export const EmailManagement = () => {
       
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <Home className="w-4 h-4" />
-            Dashboard
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1 p-1 bg-muted/30">
+          <TabsTrigger 
+            value="dashboard" 
+            className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Home className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+            <span className="sm:hidden">Home</span>
           </TabsTrigger>
-          <TabsTrigger value="composer" className="flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Compose
+          <TabsTrigger 
+            value="composer" 
+            className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Mail className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Compose</span>
+            <span className="sm:hidden">Write</span>
           </TabsTrigger>
-          <TabsTrigger value="campaigns" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Campaigns
+          <TabsTrigger 
+            value="campaigns" 
+            className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Campaigns</span>
+            <span className="sm:hidden">Camps</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Analytics
+          <TabsTrigger 
+            value="analytics" 
+            className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm lg:flex"
+          >
+            <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Settings
+          <TabsTrigger 
+            value="settings" 
+            className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm lg:flex"
+          >
+            <Settings className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sm:hidden">Config</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
