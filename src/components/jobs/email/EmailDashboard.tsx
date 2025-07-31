@@ -238,88 +238,69 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
 
   return (
     <div className="space-y-6">
-      {/* KPI Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card 
-          className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleKPIClick('total')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Total Emails
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEmails}</div>
-            <p className="text-xs text-muted-foreground mt-1">All emails sent</p>
-          </CardContent>
-        </Card>
+      {/* KPI Dashboard - Compact View */}
+      <Card className="p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div 
+            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            onClick={() => handleKPIClick('total')}
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <Users className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="text-xs font-medium text-muted-foreground">Total</span>
+            </div>
+            <div className="text-lg font-bold">{totalEmails}</div>
+          </div>
 
-        <Card 
-          className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleKPIClick('delivered')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Delivered
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{deliveredEmails}</div>
-            <p className="text-xs text-muted-foreground mt-1">{deliveryRate}% delivery rate</p>
-          </CardContent>
-        </Card>
+          <div 
+            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            onClick={() => handleKPIClick('delivered')}
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <CheckCircle className="h-3 w-3 text-green-600 group-hover:text-green-700 transition-colors" />
+              <span className="text-xs font-medium text-muted-foreground">Delivered</span>
+            </div>
+            <div className="text-lg font-bold text-green-600">{deliveredEmails}</div>
+            <span className="text-xs text-muted-foreground">{deliveryRate}%</span>
+          </div>
 
-        <Card 
-          className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleKPIClick('opened')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Opened
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{openedEmails}</div>
-            <p className="text-xs text-muted-foreground mt-1">{openRate}% open rate</p>
-          </CardContent>
-        </Card>
+          <div 
+            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            onClick={() => handleKPIClick('opened')}
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <Eye className="h-3 w-3 text-purple-600 group-hover:text-purple-700 transition-colors" />
+              <span className="text-xs font-medium text-muted-foreground">Opened</span>
+            </div>
+            <div className="text-lg font-bold text-purple-600">{openedEmails}</div>
+            <span className="text-xs text-muted-foreground">{openRate}%</span>
+          </div>
 
-        <Card 
-          className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleKPIClick('bounced')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <XCircle className="h-4 w-4" />
-              Bounced
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{bouncedEmails}</div>
-            <p className="text-xs text-muted-foreground mt-1">{bounceRate}% bounce rate</p>
-          </CardContent>
-        </Card>
+          <div 
+            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            onClick={() => handleKPIClick('bounced')}
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <XCircle className="h-3 w-3 text-red-600 group-hover:text-red-700 transition-colors" />
+              <span className="text-xs font-medium text-muted-foreground">Bounced</span>
+            </div>
+            <div className="text-lg font-bold text-red-600">{bouncedEmails}</div>
+            <span className="text-xs text-muted-foreground">{bounceRate}%</span>
+          </div>
 
-        <Card 
-          className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleKPIClick('deleted')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Trash2 className="h-4 w-4" />
-              Deleted
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{deletedEmails}</div>
-            <p className="text-xs text-muted-foreground mt-1">{deleteRate}% delete rate</p>
-          </CardContent>
-        </Card>
-      </div>
+          <div 
+            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            onClick={() => handleKPIClick('deleted')}
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <Trash2 className="h-3 w-3 text-orange-600 group-hover:text-orange-700 transition-colors" />
+              <span className="text-xs font-medium text-muted-foreground">Deleted</span>
+            </div>
+            <div className="text-lg font-bold text-orange-600">{deletedEmails}</div>
+            <span className="text-xs text-muted-foreground">{deleteRate}%</span>
+          </div>
+        </div>
+      </Card>
 
       {/* Filters */}
       {showFilters && (
