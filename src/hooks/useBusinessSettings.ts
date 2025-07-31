@@ -1,5 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define the business settings interface directly since tables don't exist
 export interface BusinessSettings {
@@ -37,15 +38,25 @@ export const defaultMeasurementUnits: MeasurementUnits = {
   currency: 'USD'
 };
 
-// Mock storage
-let mockBusinessSettings: BusinessSettings | null = null;
-
 export const useBusinessSettings = () => {
   return useQuery({
     queryKey: ["business-settings"],
     queryFn: async () => {
-      // Mock implementation
-      return mockBusinessSettings;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('business_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching business settings:', error);
+        return null;
+      }
+
+      return data;
     },
   });
 };
@@ -55,17 +66,20 @@ export const useCreateBusinessSettings = () => {
 
   return useMutation({
     mutationFn: async (settings: Omit<BusinessSettings, "id" | "user_id" | "created_at" | "updated_at">) => {
-      // Mock implementation
-      const newSettings: BusinessSettings = {
-        ...settings,
-        id: 'mock-id',
-        user_id: 'mock-user-id',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      mockBusinessSettings = newSettings;
-      return newSettings;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('business_settings')
+        .insert({
+          ...settings,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
@@ -78,15 +92,19 @@ export const useUpdateBusinessSettings = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...settings }: Partial<BusinessSettings> & { id: string }) => {
-      // Mock implementation
-      if (mockBusinessSettings && mockBusinessSettings.id === id) {
-        mockBusinessSettings = {
-          ...mockBusinessSettings,
-          ...settings,
-          updated_at: new Date().toISOString()
-        };
-      }
-      return mockBusinessSettings!;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('business_settings')
+        .update(settings)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
