@@ -11,6 +11,8 @@ import { DraggableBlock } from "./visual-editor/DraggableBlock";
 import { BlockToolbar } from "./visual-editor/BlockToolbar";
 import { LivePreview } from "./visual-editor/LivePreview";
 import { BlockStyleControls } from "./visual-editor/BlockStyleControls";
+import { TemplateStylesSidebar } from "./visual-editor/TemplateStylesSidebar";
+import { QuoteTemplateSelector } from "./visual-editor/QuoteTemplateSelector";
 
 interface VisualQuoteEditorProps {
   isOpen: boolean;
@@ -225,34 +227,56 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
         <div className="flex h-full overflow-hidden">
           {!showPreview ? (
             <>
-              {/* Editor Area */}
-              <div className="flex-1 overflow-auto p-6 bg-gray-50">
-                <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                    modifiers={[restrictToVerticalAxis]}
-                  >
-                    <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-                      <div className="space-y-2 p-6">
-                        {blocks.map((block) => (
-                          <DraggableBlock
-                            key={block.id}
-                            block={block}
-                            isSelected={selectedBlockId === block.id}
-                            onSelect={() => setSelectedBlockId(block.id)}
-                            onUpdateContent={(content) => updateBlockContent(block.id, content)}
-                            onRemove={() => removeBlock(block.id)}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
+              {/* Template Styles Sidebar */}
+              <div className="w-72 border-r bg-white overflow-auto">
+                <TemplateStylesSidebar 
+                  onSelectTemplate={setBlocks}
+                  currentBlocks={blocks}
+                />
+              </div>
 
-                  {/* Add Block Button */}
-                  <div className="border-t p-4 bg-gray-50">
-                    <BlockToolbar onAddBlock={addNewBlock} />
+              {/* Editor Area */}
+              <div className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50/30">
+                <div className="max-w-4xl mx-auto">
+                  {/* Template Preview Header */}
+                  <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Quote Template Editor</h3>
+                        <p className="text-sm text-gray-600">Drag blocks to reorder, click to edit content</p>
+                      </div>
+                      <QuoteTemplateSelector onSelectTemplate={setBlocks} />
+                    </div>
+                  </div>
+
+                  {/* Template Canvas */}
+                  <div className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                      modifiers={[restrictToVerticalAxis]}
+                    >
+                      <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                        <div className="min-h-[800px] bg-white">
+                          {blocks.map((block) => (
+                            <DraggableBlock
+                              key={block.id}
+                              block={block}
+                              isSelected={selectedBlockId === block.id}
+                              onSelect={() => setSelectedBlockId(block.id)}
+                              onUpdateContent={(content) => updateBlockContent(block.id, content)}
+                              onRemove={() => removeBlock(block.id)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+
+                    {/* Add Block Section */}
+                    <div className="border-t bg-gradient-to-r from-gray-50 to-blue-50/20 p-6">
+                      <BlockToolbar onAddBlock={addNewBlock} />
+                    </div>
                   </div>
                 </div>
               </div>
