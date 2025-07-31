@@ -239,13 +239,13 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   return (
     <div className="space-y-6">
       {/* KPI Dashboard - Compact View */}
-      <Card className="p-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <Card className="p-2">{/* reduced from p-4 to p-2 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
           <div 
-            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
             onClick={() => handleKPIClick('total')}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1 mb-0.5">
               <Users className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
               <span className="text-xs font-medium text-muted-foreground">Total</span>
             </div>
@@ -253,10 +253,10 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
           </div>
 
           <div 
-            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
             onClick={() => handleKPIClick('delivered')}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1 mb-0.5">
               <CheckCircle className="h-3 w-3 text-green-600 group-hover:text-green-700 transition-colors" />
               <span className="text-xs font-medium text-muted-foreground">Delivered</span>
             </div>
@@ -265,10 +265,10 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
           </div>
 
           <div 
-            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
             onClick={() => handleKPIClick('opened')}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1 mb-0.5">
               <Eye className="h-3 w-3 text-purple-600 group-hover:text-purple-700 transition-colors" />
               <span className="text-xs font-medium text-muted-foreground">Opened</span>
             </div>
@@ -277,10 +277,10 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
           </div>
 
           <div 
-            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
             onClick={() => handleKPIClick('bounced')}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1 mb-0.5">
               <XCircle className="h-3 w-3 text-red-600 group-hover:text-red-700 transition-colors" />
               <span className="text-xs font-medium text-muted-foreground">Bounced</span>
             </div>
@@ -289,10 +289,10 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
           </div>
 
           <div 
-            className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
             onClick={() => handleKPIClick('deleted')}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1 mb-0.5">
               <Trash2 className="h-3 w-3 text-orange-600 group-hover:text-orange-700 transition-colors" />
               <span className="text-xs font-medium text-muted-foreground">Deleted</span>
             </div>
