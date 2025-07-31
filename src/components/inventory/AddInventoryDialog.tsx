@@ -73,7 +73,11 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
       // Clean up the data before submission
       const cleanData = {
         ...formData,
+        category_type: itemType === 'curtain_fabric' || itemType === 'blind_fabric' || itemType === 'wallcovering' ? 'fabric' : 'hardware',
         category: itemType,
+        active: true,
+        selling_price: formData.unit_price,
+        cost_price: formData.unit_price * 0.7, // Default 30% markup
         hardware_type: formData.hardware_type || undefined,
       };
       

@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useLowStockEnhancedItems, useCreateReorderAlert } from "@/hooks/useEnhancedInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AlertTriangle, Package, ShoppingCart, Bell } from "lucide-react";
 
 export const ReorderNotificationSystem = () => {
-  const { data: lowStockItems, isLoading } = useLowStockEnhancedItems();
-  const createReorderAlert = useCreateReorderAlert();
+  const { data: inventory, isLoading } = useEnhancedInventory();
+  const lowStockItems = inventory?.filter(item => 
+    (item.quantity || 0) <= (item.reorder_point || 0)) || [];
 
   // Auto-create notifications for critically low items
   useEffect(() => {
@@ -74,7 +75,8 @@ export const ReorderNotificationSystem = () => {
 
   const handleCreateReorderAlert = async (itemId: string) => {
     try {
-      await createReorderAlert.mutateAsync(itemId);
+      console.log('Creating reorder alert for item:', itemId);
+      // TODO: Implement actual reorder alert creation
     } catch (error) {
       console.error('Failed to create reorder alert:', error);
     }
@@ -122,7 +124,7 @@ export const ReorderNotificationSystem = () => {
                     </span>
                   </div>
                   <div className="text-sm text-red-600 mt-1">
-                    Suggested order: {item.reorder_quantity || 10} {item.unit}
+                    Suggested order: {item.minimum_order_quantity || 10} {item.unit}
                   </div>
                 </div>
               </div>
@@ -131,7 +133,6 @@ export const ReorderNotificationSystem = () => {
                   size="sm" 
                   variant="destructive"
                   onClick={() => handleCreateReorderAlert(item.id)}
-                  disabled={createReorderAlert.isPending}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Order Now
@@ -158,7 +159,7 @@ export const ReorderNotificationSystem = () => {
                     </span>
                   </div>
                   <div className="text-sm text-yellow-700 mt-1">
-                    Suggested order: {item.reorder_quantity || 10} {item.unit} from {item.supplier}
+                    Suggested order: {item.minimum_order_quantity || 10} {item.unit} from {item.supplier}
                   </div>
                 </div>
               </div>
@@ -167,7 +168,6 @@ export const ReorderNotificationSystem = () => {
                   size="sm" 
                   variant="outline"
                   onClick={() => handleCreateReorderAlert(item.id)}
-                  disabled={createReorderAlert.isPending}
                 >
                   <Bell className="h-4 w-4 mr-2" />
                   Alert
@@ -193,7 +193,7 @@ export const ReorderNotificationSystem = () => {
               <div>
                 <span className="font-medium">
                   ${lowStockItems.reduce((sum, item) => 
-                    sum + (item.unit_price * (item.reorder_quantity || 10)), 0
+                    sum + ((item.selling_price || 0) * (item.minimum_order_quantity || 10)), 0
                   ).toFixed(2)}
                 </span> Total reorder value
               </div>

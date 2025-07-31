@@ -2,19 +2,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Package, AlertTriangle, DollarSign, RotateCcw, TrendingUp } from "lucide-react";
-import { useEnhancedInventory, useInventoryValuation, useLowStockEnhancedItems } from "@/hooks/useEnhancedInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const InventoryAnalytics = () => {
   const { data: inventory, isLoading: inventoryLoading } = useEnhancedInventory();
-  const { data: valuation, isLoading: valuationLoading } = useInventoryValuation();
-  const { data: lowStockItems, isLoading: lowStockLoading } = useLowStockEnhancedItems();
 
-  const isLoading = inventoryLoading || valuationLoading || lowStockLoading;
+  const isLoading = inventoryLoading;
 
   // Calculate real metrics from inventory data
   const totalItems = inventory?.length || 0;
-  const totalValue = valuation?.totalValue || 0;
+  const totalValue = inventory?.reduce((sum, item) => 
+    sum + ((item.quantity || 0) * (item.selling_price || 0)), 0) || 0;
+  const lowStockItems = inventory?.filter(item => 
+    (item.quantity || 0) <= (item.reorder_point || 0)) || [];
   const lowStockCount = lowStockItems?.length || 0;
   
   // Calculate items by category
@@ -24,7 +25,7 @@ export const InventoryAnalytics = () => {
       acc[category] = { total: 0, value: 0, lowStock: 0, outOfStock: 0 };
     }
     acc[category].total += 1;
-    acc[category].value += (item.quantity || 0) * (item.unit_price || 0);
+    acc[category].value += (item.quantity || 0) * (item.selling_price || 0);
     
     if ((item.quantity || 0) <= (item.reorder_point || 0)) {
       acc[category].lowStock += 1;
@@ -270,7 +271,7 @@ export const InventoryAnalytics = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">${((item.quantity || 0) * (item.unit_price || 0)).toLocaleString()}</div>
+                        <div className="font-semibold">${((item.quantity || 0) * (item.selling_price || 0)).toLocaleString()}</div>
                         <div className="text-xs text-muted-foreground">{item.quantity} in stock</div>
                       </div>
                     </div>
