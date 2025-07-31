@@ -147,41 +147,57 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
+          {/* Quick Actions */}
           <Card className="flex-shrink-0">
-            <CardContent className="pt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Primary Action */}
+              <Button 
+                onClick={onBookingLinks}
+                className="w-full"
+                size="sm"
+              >
+                <Link2 className="h-4 w-4 mr-2" />
+                Create Schedule
+              </Button>
+              
+              {/* Management Actions */}
               <div className="space-y-2">
-                <Button 
-                  onClick={onBookingLinks}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Link2 className="h-4 w-4 mr-2" />
-                  Create Schedule
-                </Button>
-                
-                <Button 
-                  onClick={() => setShowSchedulerManagement(true)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manage Schedules
-                </Button>
-                
-                <Button 
-                  onClick={() => setShowBookingManagement(true)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  View Bookings
-                </Button>
-                
+                <div className="text-xs font-medium text-muted-foreground px-1">
+                  Manage
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button 
+                    onClick={() => setShowSchedulerManagement(true)}
+                    className="w-full justify-start"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Schedules
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setShowBookingManagement(true)}
+                    className="w-full justify-start"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Bookings
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Analytics Action */}
+              <div className="pt-2 border-t">
                 <Button 
                   onClick={() => setShowAnalytics(true)}
-                  className="w-full"
-                  variant="outline"
+                  className="w-full justify-start"
+                  variant="ghost"
+                  size="sm"
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Analytics
