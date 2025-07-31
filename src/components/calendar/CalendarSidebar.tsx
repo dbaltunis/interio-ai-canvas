@@ -164,15 +164,24 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
                     const eventColor = event.color || '#3b82f6'; // Default blue
                     
                     return (
-                      <div key={event.id} className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0">
-                        {/* Color indicator */}
+                      <div 
+                        key={event.id} 
+                        className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0 cursor-pointer group"
+                        onClick={() => {
+                          // TODO: Open event details modal or navigate to event
+                          console.log('Open event:', event.id);
+                        }}
+                      >
+                        {/* Enhanced color indicator */}
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                          className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg opacity-80 group-hover:opacity-100 transition-opacity"
                           style={{ backgroundColor: eventColor }}
                         />
                         
-                        <div className="ml-2">
-                          <div className="font-medium text-sm truncate">{event.title}</div>
+                        <div className="ml-3">
+                          <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                            {event.title}
+                          </div>
                           
                           {/* Time */}
                           <div className="flex items-center text-xs text-muted-foreground mt-1">
@@ -188,25 +197,25 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
                             </div>
                           )}
                           
-                          {/* Attendees */}
+                          {/* Simplified Attendees - Names only */}
                           {attendees.length > 0 && (
                             <div className="flex items-center text-xs text-muted-foreground mt-2">
-                              <UserCheck className="h-3 w-3 mr-1 flex-shrink-0" />
-                              <div className="flex flex-wrap gap-1">
-                                {attendees.slice(0, 2).map((attendee, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs px-1 py-0 h-5">
-                                    {attendee.length > 12 ? `${attendee.substring(0, 12)}...` : attendee}
-                                  </Badge>
-                                ))}
-                                {attendees.length > 2 && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0 h-5">
-                                    +{attendees.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
+                              <User className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">
+                                {attendees.length === 1 
+                                  ? attendees[0]
+                                  : `${attendees[0]} ${attendees.length > 1 ? `+${attendees.length - 1}` : ''}`
+                                }
+                              </span>
                             </div>
                           )}
                         </div>
+                        
+                        {/* Color dot indicator in top right */}
+                        <div 
+                          className="absolute top-2 right-2 w-3 h-3 rounded-full border border-white/50 shadow-sm"
+                          style={{ backgroundColor: eventColor }}
+                        />
                       </div>
                     );
                   })
