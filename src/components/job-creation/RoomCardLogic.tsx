@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 
-export const useRoomCardLogic = (room: any, projectId: string) => {
+export const useRoomCardLogic = (room: any, projectId: string, onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   
@@ -34,22 +34,28 @@ export const useRoomCardLogic = (room: any, projectId: string) => {
 
   // Remove surface creation logic from here - it will be handled by parent
 
-  const handleAddTreatment = (surfaceId: string, treatmentType: string, windowCovering?: any) => {
-    const surface = roomSurfaces.find(s => s.id === surfaceId);
-    
-    const formData = {
-      treatmentType,
-      surfaceId,
-      surfaceType: surface?.surface_type || 'window',
-      windowCovering
-    };
-    
-    setCurrentFormData(formData);
-    
-    if (windowCovering?.making_cost_id) {
-      setCalculatorDialogOpen(true);
+  const handleAddTreatment = (surfaceId: string, treatmentType: string, treatmentData?: any) => {
+    if (treatmentData && onCreateTreatment) {
+      // Direct treatment creation with data from WindowManagementDialog
+      onCreateTreatment(room.id, surfaceId, treatmentType, treatmentData);
     } else {
-      setPricingFormOpen(true);
+      // Legacy flow for opening pricing form
+      const surface = roomSurfaces.find(s => s.id === surfaceId);
+      
+      const formData = {
+        treatmentType,
+        surfaceId,
+        surfaceType: surface?.surface_type || 'window',
+        windowCovering: treatmentData
+      };
+      
+      setCurrentFormData(formData);
+      
+      if (treatmentData?.making_cost_id) {
+        setCalculatorDialogOpen(true);
+      } else {
+        setPricingFormOpen(true);
+      }
     }
   };
 

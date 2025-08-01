@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RectangleHorizontal, Ruler, Plus, Edit2, Trash2, Eye } from "lucide-react";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
+import { RectangleHorizontal, Trash2, Eye } from "lucide-react";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
+import { WindowManagementDialog } from "./WindowManagementDialog";
 
 interface SurfaceListProps {
   surfaces: any[];
   treatments: any[];
   clientId?: string;
   projectId?: string;
-  onAddTreatment: (surfaceId: string, treatmentType: string) => void;
+  onAddTreatment: (surfaceId: string, treatmentType: string, treatmentData?: any) => void;
   onUpdateSurface: (surfaceId: string, updates: any) => void;
   onDeleteSurface: (surfaceId: string) => void;
 }
@@ -26,18 +25,18 @@ export const SurfaceList = ({
   onDeleteSurface
 }: SurfaceListProps) => {
   const [selectedSurface, setSelectedSurface] = useState<any>(null);
-  const [showMeasurementDialog, setShowMeasurementDialog] = useState(false);
+  const [showWindowDialog, setShowWindowDialog] = useState(false);
   
   const { data: clientMeasurements } = useClientMeasurements(clientId);
 
-  const handleOpenMeasurement = (surface: any) => {
+  const handleViewWindow = (surface: any) => {
     setSelectedSurface(surface);
-    setShowMeasurementDialog(true);
+    setShowWindowDialog(true);
   };
 
-  const handleCloseMeasurement = () => {
+  const handleCloseWindow = () => {
     setSelectedSurface(null);
-    setShowMeasurementDialog(false);
+    setShowWindowDialog(false);
   };
 
   // Find matching client measurement for a surface
@@ -52,13 +51,6 @@ export const SurfaceList = ({
     return treatments.filter(t => t.window_id === surfaceId);
   };
 
-  const treatmentTypes = [
-    { id: 'curtains', label: 'Curtains' },
-    { id: 'blinds', label: 'Blinds' },
-    { id: 'shutters', label: 'Shutters' },
-    { id: 'valance', label: 'Valance' },
-    { id: 'shade', label: 'Shade' }
-  ];
 
   return (
     <>
@@ -109,12 +101,11 @@ export const SurfaceList = ({
                 <div className="flex items-center space-x-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => handleOpenMeasurement(surface)}
+                    onClick={() => handleViewWindow(surface)}
                     className="flex items-center gap-1"
                   >
-                    <Ruler className="h-4 w-4" />
-                    {hasMeasurements ? 'View' : 'Measure'}
+                    <Eye className="h-4 w-4" />
+                    View Window
                   </Button>
                   <Button
                     size="sm"
@@ -140,49 +131,39 @@ export const SurfaceList = ({
                 </div>
               )}
 
-              {/* Add Treatment Buttons - Only show if measurements exist */}
-              {hasMeasurements ? (
-                <div className="flex flex-wrap gap-2">
-                  {treatmentTypes.map((type) => (
-                    <Button
-                      key={type.id}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onAddTreatment(surface.id, type.id)}
-                      className="text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {type.label}
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-2 text-sm text-gray-500 bg-gray-100 rounded-md">
-                  Complete measurements first to add treatments
-                </div>
-              )}
+              {/* Treatment Summary */}
+              <div className="text-center py-2 text-sm text-gray-600">
+                {surfaceTreatments.length > 0 ? (
+                  <span>
+                    {surfaceTreatments.length} treatment{surfaceTreatments.length > 1 ? 's' : ''} configured • 
+                    Total: ${surfaceTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0).toFixed(2)}
+                  </span>
+                ) : hasMeasurements ? (
+                  <span className="text-blue-600">Ready for treatment selection</span>
+                ) : (
+                  <span className="text-orange-600">Measurements needed</span>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Measurement Dialog */}
-      {showMeasurementDialog && selectedSurface && clientId && (
-        <Dialog open={showMeasurementDialog} onOpenChange={setShowMeasurementDialog}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                Measurement Worksheet - {selectedSurface.name}
-              </DialogTitle>
-            </DialogHeader>
-            <MeasurementWorksheet
-              clientId={clientId}
-              projectId={projectId}
-              existingMeasurement={getClientMeasurementForSurface(selectedSurface)}
-              onSave={handleCloseMeasurement}
-            />
-          </DialogContent>
-        </Dialog>
+      {/* Window Management Dialog */}
+      {selectedSurface && clientId && (
+        <WindowManagementDialog
+          isOpen={showWindowDialog}
+          onClose={handleCloseWindow}
+          surface={{
+            ...selectedSurface,
+            room_name: surfaces.find(s => s.id === selectedSurface.id)?.room_name || 'Unknown Room'
+          }}
+          clientId={clientId}
+          projectId={projectId || ''}
+          existingMeasurement={getClientMeasurementForSurface(selectedSurface)}
+          existingTreatments={getSurfaceTreatments(selectedSurface.id)}
+          onSaveTreatment={(treatmentData) => onAddTreatment(selectedSurface.id, treatmentData.treatment_type, treatmentData)}
+        />
       )}
     </>
   );
