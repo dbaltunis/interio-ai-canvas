@@ -120,19 +120,174 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
             <TabsTrigger value="effects">Effects</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="colors" className="space-y-4 mt-4">
-            {/* Color Presets */}
+          <TabsContent value="colors" className="space-y-6 mt-4">
+            {/* Quick Color Themes */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Color Presets</Label>
-              <div className="grid grid-cols-4 gap-2">
+              <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Quick Color Themes
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => updateStyles({ 
+                    color: '#1f2937', 
+                    backgroundColor: '#ffffff',
+                    primaryColor: '#3b82f6' 
+                  })}
+                  className="h-16 flex flex-col items-center justify-center gap-1 border-2"
+                >
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 rounded bg-blue-500"></div>
+                    <div className="w-3 h-3 rounded bg-white border"></div>
+                    <div className="w-3 h-3 rounded bg-gray-800"></div>
+                  </div>
+                  <span className="text-xs font-medium">Professional</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateStyles({ 
+                    color: '#ffffff', 
+                    backgroundColor: '#1f2937',
+                    primaryColor: '#10b981' 
+                  })}
+                  className="h-16 flex flex-col items-center justify-center gap-1 border-2"
+                >
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 rounded bg-emerald-500"></div>
+                    <div className="w-3 h-3 rounded bg-gray-800"></div>
+                    <div className="w-3 h-3 rounded bg-white border"></div>
+                  </div>
+                  <span className="text-xs font-medium">Dark Mode</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateStyles({ 
+                    color: '#7c2d12', 
+                    backgroundColor: '#fef7f0',
+                    primaryColor: '#ea580c' 
+                  })}
+                  className="h-16 flex flex-col items-center justify-center gap-1 border-2"
+                >
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 rounded bg-orange-600"></div>
+                    <div className="w-3 h-3 rounded bg-orange-50 border"></div>
+                    <div className="w-3 h-3 rounded bg-orange-900"></div>
+                  </div>
+                  <span className="text-xs font-medium">Warm</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateStyles({ 
+                    color: '#1e293b', 
+                    backgroundColor: '#f8fafc',
+                    primaryColor: '#8b5cf6' 
+                  })}
+                  className="h-16 flex flex-col items-center justify-center gap-1 border-2"
+                >
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 rounded bg-violet-500"></div>
+                    <div className="w-3 h-3 rounded bg-slate-50 border"></div>
+                    <div className="w-3 h-3 rounded bg-slate-800"></div>
+                  </div>
+                  <span className="text-xs font-medium">Modern</span>
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Individual Colors */}
+            <div className="space-y-4">
+              <Label className="text-sm font-medium block">Individual Colors</Label>
+              
+              {/* Text Color */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-8 h-8 rounded border-2 border-gray-200 cursor-pointer"
+                    style={{ backgroundColor: currentStyle.color || '#000000' }}
+                    onClick={() => setActiveColorPicker('text')}
+                  />
+                  <Input
+                    type="color"
+                    value={currentStyle.color || '#000000'}
+                    onChange={(e) => updateStyle('color', e.target.value)}
+                    className="w-12 h-8 p-0 border-0 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={currentStyle.color || '#000000'}
+                    onChange={(e) => updateStyle('color', e.target.value)}
+                    placeholder="#000000"
+                    className="flex-1 h-8 font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Background Color */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-8 h-8 rounded border-2 border-gray-200 cursor-pointer"
+                    style={{ backgroundColor: currentStyle.backgroundColor || '#ffffff' }}
+                    onClick={() => setActiveColorPicker('background')}
+                  />
+                  <Input
+                    type="color"
+                    value={currentStyle.backgroundColor || '#ffffff'}
+                    onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+                    className="w-12 h-8 p-0 border-0 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={currentStyle.backgroundColor || '#ffffff'}
+                    onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+                    placeholder="#ffffff"
+                    className="flex-1 h-8 font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Primary/Accent Color */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Accent Color</Label>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-8 h-8 rounded border-2 border-gray-200 cursor-pointer"
+                    style={{ backgroundColor: currentStyle.primaryColor || '#415e6b' }}
+                    onClick={() => setActiveColorPicker('primary')}
+                  />
+                  <Input
+                    type="color"
+                    value={currentStyle.primaryColor || '#415e6b'}
+                    onChange={(e) => updateStyle('primaryColor', e.target.value)}
+                    className="w-12 h-8 p-0 border-0 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={currentStyle.primaryColor || '#415e6b'}
+                    onChange={(e) => updateStyle('primaryColor', e.target.value)}
+                    placeholder="#415e6b"
+                    className="flex-1 h-8 font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Popular Colors */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-3 block">Popular Colors</Label>
+              <div className="grid grid-cols-8 gap-1">
                 {colorPresets.map((color) => (
                   <Button
                     key={color.value}
                     variant="ghost"
                     size="sm"
                     onClick={() => updateStyle('color', color.value)}
-                    className="h-8 p-1 border"
-                    title={color.name}
+                    className="h-8 w-8 p-0 border hover:scale-110 transition-transform"
+                    title={`${color.name} - ${color.value}`}
                   >
                     <div 
                       className="w-full h-full rounded"
@@ -140,54 +295,6 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
                     />
                   </Button>
                 ))}
-              </div>
-            </div>
-
-            {/* Primary Color */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Primary Color</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveColorPicker('primary')}
-                  className="w-10 h-8 p-1"
-                >
-                  <div 
-                    className="w-full h-full rounded"
-                    style={{ backgroundColor: currentStyle.primaryColor || '#415e6b' }}
-                  />
-                </Button>
-                <Input
-                  value={currentStyle.primaryColor || '#415e6b'}
-                  onChange={(e) => updateStyle('primaryColor', e.target.value)}
-                  placeholder="#415e6b"
-                  className="flex-1 h-8"
-                />
-              </div>
-            </div>
-
-            {/* Background Color */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Background</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveColorPicker('background')}
-                  className="w-10 h-8 p-1"
-                >
-                  <div 
-                    className="w-full h-full rounded"
-                    style={{ backgroundColor: currentStyle.backgroundColor || '#ffffff' }}
-                  />
-                </Button>
-                <Input
-                  value={currentStyle.backgroundColor || '#ffffff'}
-                  onChange={(e) => updateStyle('backgroundColor', e.target.value)}
-                  placeholder="#ffffff"
-                  className="flex-1 h-8"
-                />
               </div>
             </div>
           </TabsContent>
