@@ -279,10 +279,11 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
                   <Input
                     id="pattern_repeat_vertical"
                     type="number"
-                    value={formData.pattern_repeat_vertical || ""}
+                    step="0.1"
+                    value={formData.pattern_repeat_vertical ?? ""}
                     onChange={(e) => setFormData(prev => ({ 
                       ...prev, 
-                      pattern_repeat_vertical: e.target.value ? parseFloat(e.target.value) : null 
+                      pattern_repeat_vertical: e.target.value ? parseFloat(e.target.value) : 0 
                     }))}
                     placeholder="64"
                   />
@@ -293,10 +294,11 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
                   <Input
                     id="pattern_repeat_horizontal"
                     type="number"
-                    value={formData.pattern_repeat_horizontal || ""}
+                    step="0.1"
+                    value={formData.pattern_repeat_horizontal ?? ""}
                     onChange={(e) => setFormData(prev => ({ 
                       ...prev, 
-                      pattern_repeat_horizontal: e.target.value ? parseFloat(e.target.value) : null 
+                      pattern_repeat_horizontal: e.target.value ? parseFloat(e.target.value) : 0 
                     }))}
                     placeholder="32"
                   />
