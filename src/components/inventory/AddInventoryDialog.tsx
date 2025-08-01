@@ -67,11 +67,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         selling_price: formData.unit_price,
         cost_price: formData.unit_price * 0.7,
         quantity: trackInventory ? formData.quantity : 0,
-        reorder_point: trackInventory ? formData.reorder_point : 0,
-        // Auto-calculate roll direction based on fabric width
-        roll_direction: formData.fabric_width ? 
-          (formData.fabric_width <= 200 ? 'vertical' : 'horizontal') : 
-          'vertical'
+        reorder_point: trackInventory ? formData.reorder_point : 0
       };
       
       // Remove empty fields to avoid database issues
