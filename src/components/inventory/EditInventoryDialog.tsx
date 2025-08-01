@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { PricingGridEditor } from "./PricingGridEditor";
@@ -31,6 +33,10 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     location: item.location || "",
     fabric_width: item.fabric_width || null,
     pattern_repeat_vertical: item.pattern_repeat_vertical || null,
+    pattern_repeat_horizontal: item.pattern_repeat_horizontal || null,
+    fabric_composition: item.fabric_composition || "",
+    color: item.color || "",
+    collection_name: item.collection_name || "",
     pricing_grid: item.pricing_grid || null,
   });
 
@@ -53,6 +59,10 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
         location: item.location || "",
         fabric_width: item.fabric_width || null,
         pattern_repeat_vertical: item.pattern_repeat_vertical || null,
+        pattern_repeat_horizontal: item.pattern_repeat_horizontal || null,
+        fabric_composition: item.fabric_composition || "",
+        color: item.color || "",
+        collection_name: item.collection_name || "",
         pricing_grid: item.pricing_grid || null,
       });
     }
@@ -236,32 +246,102 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
 
           {/* Fabric-specific fields */}
           {isFabric && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="fabric_width">Fabric Width (cm)</Label>
-                <Input
-                  id="fabric_width"
-                  type="number"
-                  value={formData.fabric_width || ""}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    fabric_width: e.target.value ? parseFloat(e.target.value) : null 
-                  }))}
-                />
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Fabric Specifications</h3>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="fabric_width">Fabric Width (cm)</Label>
+                  <Input
+                    id="fabric_width"
+                    type="number"
+                    value={formData.fabric_width || ""}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      fabric_width: e.target.value ? parseFloat(e.target.value) : null 
+                    }))}
+                    placeholder="137"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="fabric_composition">Composition</Label>
+                  <Input
+                    id="fabric_composition"
+                    value={formData.fabric_composition}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fabric_composition: e.target.value }))}
+                    placeholder="e.g., 100% Cotton"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="pattern_repeat_vertical">Vertical Pattern Repeat (cm)</Label>
+                  <Input
+                    id="pattern_repeat_vertical"
+                    type="number"
+                    value={formData.pattern_repeat_vertical || ""}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      pattern_repeat_vertical: e.target.value ? parseFloat(e.target.value) : null 
+                    }))}
+                    placeholder="64"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="pattern_repeat_horizontal">Horizontal Pattern Repeat (cm)</Label>
+                  <Input
+                    id="pattern_repeat_horizontal"
+                    type="number"
+                    value={formData.pattern_repeat_horizontal || ""}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      pattern_repeat_horizontal: e.target.value ? parseFloat(e.target.value) : null 
+                    }))}
+                    placeholder="32"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="color">Color</Label>
+                  <Input
+                    id="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                    placeholder="e.g., Navy Blue"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="collection_name">Collection</Label>
+                  <Input
+                    id="collection_name"
+                    value={formData.collection_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, collection_name: e.target.value }))}
+                    placeholder="e.g., Luxury Collection"
+                  />
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="pattern_repeat">Pattern Repeat (cm)</Label>
-                <Input
-                  id="pattern_repeat"
-                  type="number"
-                  value={formData.pattern_repeat_vertical || ""}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    pattern_repeat_vertical: e.target.value ? parseFloat(e.target.value) : null 
-                  }))}
-                />
-              </div>
+              {/* Roll Direction Info */}
+              {formData.fabric_width && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-medium">Roll Direction</h4>
+                    <Badge variant={formData.fabric_width <= 200 ? "default" : "secondary"}>
+                      {formData.fabric_width <= 200 ? "Vertical" : "Horizontal"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Based on fabric width of {formData.fabric_width}cm, this fabric will be used in{" "}
+                    <strong>{formData.fabric_width <= 200 ? "vertical" : "horizontal"}</strong> orientation for optimal fabric utilization.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    • Narrow fabrics (≤200cm): Used vertically for better fabric efficiency
+                    • Wide fabrics ({">"}200cm): Used horizontally for standard curtain making
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
