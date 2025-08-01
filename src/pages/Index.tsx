@@ -2,16 +2,27 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
-
 import { useAuth } from "@/components/auth/AuthProvider";
 
-// Lazy load heavy components
-const Dashboard = lazy(() => import("@/components/dashboard/Dashboard"));
-const JobsPage = lazy(() => import("@/components/jobs/JobsPage"));
-const LibraryPage = lazy(() => import("@/components/library/LibraryPage"));
-const ClientManagement = lazy(() => import("@/components/jobs/ClientManagement"));
-const EmailManagement = lazy(() => import("@/components/jobs/EmailManagement"));
-const CalendarView = lazy(() => import("@/components/calendar/CalendarView"));
+// Lazy load heavy components with proper error handling
+const Dashboard = lazy(() => 
+  import("@/components/dashboard/Dashboard").catch(() => ({ default: () => <div>Error loading Dashboard</div> }))
+);
+const JobsPage = lazy(() => 
+  import("@/components/jobs/JobsPage").catch(() => ({ default: () => <div>Error loading Jobs</div> }))
+);
+const LibraryPage = lazy(() => 
+  import("@/components/library/LibraryPage").catch(() => ({ default: () => <div>Error loading Library</div> }))
+);
+const ClientManagement = lazy(() => 
+  import("@/components/jobs/ClientManagement").catch(() => ({ default: () => <div>Error loading Clients</div> }))
+);
+const EmailManagement = lazy(() => 
+  import("@/components/jobs/EmailManagement").catch(() => ({ default: () => <div>Error loading Emails</div> }))
+);
+const CalendarView = lazy(() => 
+  import("@/components/calendar/CalendarView").catch(() => ({ default: () => <div>Error loading Calendar</div> }))
+);
 
 // Skeleton loading components
 import { DashboardSkeleton } from "@/components/dashboard/skeleton/DashboardSkeleton";
@@ -20,7 +31,6 @@ import { ClientManagementSkeleton } from "@/components/clients/skeleton/ClientMa
 import { CalendarSkeleton } from "@/components/calendar/skeleton/CalendarSkeleton";
 import { EmailManagementSkeleton } from "@/components/jobs/email/skeleton/EmailManagementSkeleton";
 import { InventorySkeleton } from "@/components/inventory/skeleton/InventorySkeleton";
-import { GenericPageSkeleton } from "@/components/skeleton/GenericPageSkeleton";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
