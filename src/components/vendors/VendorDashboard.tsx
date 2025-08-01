@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { VendorsList } from "./VendorsList";
 import { VendorForm } from "./VendorForm";
 import { VendorOrdering } from "./VendorOrdering";
+import { VendorProductLibrary } from "./VendorProductLibrary";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const VendorDashboard = () => {
@@ -30,11 +31,16 @@ export const VendorDashboard = () => {
       <Tabs defaultValue="vendors" className="w-full">
         <TabsList>
           <TabsTrigger value="vendors">All Vendors</TabsTrigger>
+          <TabsTrigger value="products">Product Libraries</TabsTrigger>
           <TabsTrigger value="ordering">Weekly Ordering</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vendors" className="space-y-4">
           <VendorsList />
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-4">
+          <VendorProductLibrary />
         </TabsContent>
 
         <TabsContent value="ordering" className="space-y-4">
