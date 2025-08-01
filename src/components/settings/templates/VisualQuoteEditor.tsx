@@ -177,7 +177,15 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
     }
   }, [selectedBlockId]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = useCallback(async () => {
+    if (!templateName.trim()) {
+      alert('Please enter a template name');
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -198,6 +206,7 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
           .eq('id', template.id);
         
         if (error) throw error;
+        alert('Template updated successfully!');
       } else {
         // Create new template
         const { error } = await supabase
@@ -205,13 +214,16 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
           .insert([templateData]);
         
         if (error) throw error;
+        alert('Template saved successfully!');
       }
 
       onSave(templateData);
       onClose();
     } catch (error) {
       console.error('Error saving template:', error);
-      // Add toast notification here if available
+      alert(`Failed to save template: ${error.message}`);
+    } finally {
+      setIsSaving(false);
     }
   }, [templateName, blocks, templateStyle, template, onSave, onClose]);
 
@@ -243,9 +255,13 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
                 {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 {showPreview ? 'Edit' : 'Preview'}
               </Button>
-              <Button onClick={handleSave} className="flex items-center gap-2">
+              <Button 
+                onClick={handleSave} 
+                disabled={isSaving}
+                className="flex items-center gap-2"
+              >
                 <Save className="h-4 w-4" />
-                Save Template
+                {isSaving ? 'Saving...' : 'Save Template'}
               </Button>
             </div>
           </div>
