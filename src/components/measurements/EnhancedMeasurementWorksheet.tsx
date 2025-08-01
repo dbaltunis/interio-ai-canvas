@@ -49,8 +49,12 @@ export const EnhancedMeasurementWorksheet = ({
   const [selectedRoom, setSelectedRoom] = useState(existingMeasurement?.room_id || "no_room");
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(existingMeasurement?.window_covering_id || "no_covering");
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
-  const [measurements, setMeasurements] = useState(existingMeasurement?.measurements || {});
-  const [treatmentData, setTreatmentData] = useState<any>({});
+  const [measurements, setMeasurements] = useState(() => 
+    existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
+  );
+  const [treatmentData, setTreatmentData] = useState<any>(() => 
+    existingTreatments?.[0] ? { ...existingTreatments[0] } : {}
+  );
   const [notes, setNotes] = useState(existingMeasurement?.notes || "");
   const [measuredBy, setMeasuredBy] = useState(existingMeasurement?.measured_by || "");
   const [photos, setPhotos] = useState<string[]>(existingMeasurement?.photos || []);
