@@ -37,7 +37,6 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     fabric_composition: item.fabric_composition || "",
     color: item.color || "",
     collection_name: item.collection_name || "",
-    pricing_grid: item.pricing_grid || null,
   });
 
   const updateMutation = useUpdateEnhancedInventoryItem();
@@ -63,7 +62,6 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
         fabric_composition: item.fabric_composition || "",
         color: item.color || "",
         collection_name: item.collection_name || "",
-        pricing_grid: item.pricing_grid || null,
       });
     }
   }, [item]);
@@ -344,17 +342,6 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
                   </p>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Pricing Grid for hardware and blinds */}
-          {(isHardware || formData.category === "blind_fabric") && (
-            <div>
-              <Label>Pricing Grid</Label>
-              <PricingGridEditor
-                itemType={formData.category}
-                onGridChange={(grid) => setFormData(prev => ({ ...prev, pricing_grid: grid }))}
-              />
             </div>
           )}
 
