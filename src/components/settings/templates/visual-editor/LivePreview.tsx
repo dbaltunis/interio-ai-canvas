@@ -96,41 +96,53 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
   };
 
   const renderHeader = (block: any) => {
-    const content = block.content;
-    const styles = block.styles;
+    const content = block.content || {};
+    const styles = content.style || {};
     
     return (
       <div 
         className={`flex items-start justify-between mb-8 p-6 rounded-lg`}
         style={{ 
-          backgroundColor: styles?.backgroundColor || '#f8fafc',
-          color: styles?.textColor || '#1e293b'
+          backgroundColor: styles.backgroundColor || '#f8fafc',
+          color: styles.color || '#1e293b'
         }}
       >
-        <div className={content.logoPosition === 'right' ? 'order-2' : ''}>
-          {isEditable ? (
-            <Input
-              value={getEditableValue(block.id, 'companyName', replaceTokens(content.companyName))}
-              onChange={(e) => handleContentEdit(block.id, 'companyName', e.target.value)}
-              className="text-3xl font-bold mb-2 border-none bg-transparent p-0"
-            />
-          ) : (
-            <h1 className="text-3xl font-bold mb-2">
-              {replaceTokens(content.companyName)}
-            </h1>
+        <div className={`flex-1 ${content.logoPosition === 'right' ? 'order-2' : ''}`}>
+          {content.showLogo && businessSettings?.company_logo_url && (
+            <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
+              <img 
+                src={businessSettings.company_logo_url} 
+                alt="Company Logo" 
+                className="max-h-16 w-auto"
+                style={{ 
+                  maxHeight: '64px',
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
           )}
+          <h1 className="text-3xl font-bold mb-2">
+            {businessSettings?.company_name || 'Your Company Name'}
+          </h1>
           <div className="space-y-1 opacity-90 text-sm">
-            <p>{replaceTokens(content.address)}</p>
-            <p>{replaceTokens(content.phone)}</p>
-            <p>{replaceTokens(content.email)}</p>
+            {businessSettings?.address && <p>{businessSettings.address}</p>}
+            {(businessSettings?.city || businessSettings?.state || businessSettings?.zip_code) && (
+              <p>
+                {businessSettings.city}{businessSettings.city && businessSettings.state ? ', ' : ''}
+                {businessSettings.state} {businessSettings.zip_code}
+              </p>
+            )}
+            {businessSettings?.business_phone && <p>{businessSettings.business_phone}</p>}
+            {businessSettings?.business_email && <p>{businessSettings.business_email}</p>}
+            {businessSettings?.website && <p>{businessSettings.website}</p>}
           </div>
         </div>
         <div className={`text-right ${content.logoPosition === 'right' ? 'order-1' : ''}`}>
-          <h2 className="text-2xl font-semibold mb-2">{content.quoteTitle}</h2>
+          <h2 className="text-2xl font-semibold mb-2">Quote</h2>
           <div className="text-sm space-y-1">
-            <p>Quote #: {replaceTokens(content.quoteNumber)}</p>
-            <p>Date: {replaceTokens(content.date)}</p>
-            <p>Valid Until: {replaceTokens(content.validUntil)}</p>
+            <p>Quote #: {replaceTokens('{{quote_number}}')}</p>
+            <p>Date: {replaceTokens('{{date}}')}</p>
+            <p>Valid Until: {replaceTokens('{{valid_until}}')}</p>
           </div>
         </div>
       </div>
