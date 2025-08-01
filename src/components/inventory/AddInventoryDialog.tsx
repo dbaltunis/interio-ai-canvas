@@ -12,6 +12,7 @@ import { Plus, DollarSign, Ruler, Package, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddInventoryDialogProps {
   trigger?: React.ReactNode;
@@ -60,8 +61,21 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     e.preventDefault();
     
     try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create inventory items.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const cleanData = {
         ...formData,
+        user_id: user.id, // This is required for RLS policy
         category: itemType,
         active: true,
         selling_price: formData.unit_price,
