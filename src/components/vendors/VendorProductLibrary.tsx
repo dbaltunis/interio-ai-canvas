@@ -63,69 +63,146 @@ export const VendorProductLibrary = () => {
     try {
       const text = await csvFile.text();
       const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
       
-      // Expected CSV format: name, description, sku, category, price, fabric_width, composition, etc.
+      // Support Shopify CSV format with fabric-specific enhancements
       const products = lines.slice(1).map(line => {
-        const values = line.split(',');
+        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
         const product: any = { vendor_id: selectedVendor };
         
         headers.forEach((header, index) => {
           const value = values[index]?.trim();
           if (value) {
             switch (header) {
+              // Shopify standard fields
+              case 'handle':
+              case 'title':
               case 'name':
                 product.name = value;
                 break;
+              case 'body (html)':
               case 'description':
                 product.description = value;
                 break;
+              case 'vendor':
+                // Keep track of original vendor from CSV
+                product.original_vendor = value;
+                break;
+              case 'product type':
+              case 'type':
+              case 'category':
+                // Map to our categories with fabric focus
+                if (value.toLowerCase().includes('fabric') || value.toLowerCase().includes('textile')) {
+                  product.category = 'curtain_fabric';
+                } else if (value.toLowerCase().includes('hardware')) {
+                  product.category = 'hardware';
+                } else if (value.toLowerCase().includes('trim')) {
+                  product.category = 'trims';
+                } else {
+                  product.category = value.toLowerCase().replace(' ', '_');
+                }
+                break;
+              case 'tags':
+                product.tags = value.split(',').map(tag => tag.trim());
+                break;
+              case 'variant sku':
               case 'sku':
                 product.sku = value;
                 break;
-              case 'category':
-                product.category = value;
-                break;
+              case 'variant price':
               case 'price':
               case 'unit_price':
-                product.unit_price = parseFloat(value) || 0;
-                product.selling_price = parseFloat(value) || 0;
-                product.cost_price = (parseFloat(value) || 0) * 0.7;
+                const price = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+                product.unit_price = price;
+                product.selling_price = price;
+                product.cost_price = price * 0.7;
                 break;
+              case 'variant inventory qty':
+              case 'quantity':
+              case 'inventory':
+                product.quantity = parseInt(value) || 0;
+                break;
+              case 'image src':
+              case 'image_url':
+                product.image_url = value;
+                break;
+              
+              // Fabric-specific fields
+              case 'fabric width':
               case 'fabric_width':
+              case 'width':
                 product.fabric_width = parseFloat(value) || 0;
                 break;
               case 'composition':
+              case 'fabric composition':
+              case 'material':
                 product.fabric_composition = value;
                 break;
+              case 'pattern repeat vertical':
               case 'pattern_repeat_vertical':
                 product.pattern_repeat_vertical = parseFloat(value) || 0;
                 break;
+              case 'pattern repeat horizontal':
               case 'pattern_repeat_horizontal':
                 product.pattern_repeat_horizontal = parseFloat(value) || 0;
                 break;
               case 'color':
+              case 'colour':
                 product.color = value;
                 break;
               case 'collection':
+              case 'fabric collection':
                 product.fabric_collection = value;
                 break;
+              case 'care instructions':
+              case 'care':
+                product.care_instructions = value;
+                break;
+              case 'origin':
+              case 'country of origin':
+                product.origin_country = value;
+                break;
+              case 'weight':
+              case 'fabric weight':
+                product.fabric_weight = parseFloat(value) || 0;
+                break;
+              case 'fire rating':
+              case 'flame retardant':
+                product.fire_rating = value;
+                break;
               case 'unit':
-                product.unit = value;
+              case 'sold by':
+                product.unit = value.toLowerCase().includes('meter') ? 'meters' : 
+                            value.toLowerCase().includes('yard') ? 'yards' : value;
                 break;
               default:
-                // Store any additional fields
-                product[header] = value;
+                // Store any additional fields as metadata
+                if (value && value !== '') {
+                  if (!product.metadata) product.metadata = {};
+                  product.metadata[header] = value;
+                }
             }
           }
         });
         
-        // Set defaults
+        // Set intelligent defaults based on product type
         product.active = true;
-        product.quantity = 0;
+        if (!product.quantity) product.quantity = 0;
+        if (!product.unit) product.unit = 'meters'; // Default for fabrics
+        
+        // Auto-categorize if not set
+        if (!product.category) {
+          if (product.name?.toLowerCase().includes('fabric') || product.fabric_width) {
+            product.category = 'curtain_fabric';
+          } else if (product.name?.toLowerCase().includes('pole') || product.name?.toLowerCase().includes('rod')) {
+            product.category = 'hardware';
+          } else {
+            product.category = 'other';
+          }
+        }
         
         return product;
-      }).filter(product => product.name); // Only include products with names
+      }).filter(product => product.name && product.name !== ''); // Only include products with names
 
       // Create products in batches
       let successCount = 0;
@@ -163,9 +240,15 @@ export const VendorProductLibrary = () => {
 
   const downloadTemplate = () => {
     const template = [
-      "name,description,sku,category,price,fabric_width,composition,pattern_repeat_vertical,pattern_repeat_horizontal,color,collection,unit",
-      "Luxury Velvet Navy,Premium velvet fabric,LVN-001,curtain_fabric,45.00,137,100% Cotton Velvet,64,32,Navy Blue,Luxury Collection,meters",
-      "Silk Dupioni Gold,Elegant silk dupioni,SDG-002,curtain_fabric,85.00,140,100% Silk,0,0,Gold,Premium Collection,meters"
+      // Shopify-compatible format with fabric-specific fields
+      "Handle,Title,Body (HTML),Vendor,Product Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Qty,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Google Product Category,Google Shopping / Gender,Google Shopping / Age Group,Google Shopping / MPN,Google Shopping / AdWords Grouping,Google Shopping / AdWords Labels,Google Shopping / Condition,Google Shopping / Custom Product,Google Shopping / Custom Label 0,Google Shopping / Custom Label 1,Google Shopping / Custom Label 2,Google Shopping / Custom Label 3,Google Shopping / Custom Label 4,Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Status,Fabric Width,Composition,Pattern Repeat Vertical,Pattern Repeat Horizontal,Color,Collection,Care Instructions,Origin,Fabric Weight,Fire Rating,Unit",
+      
+      // Sample fabric entries
+      "luxury-velvet-navy,Luxury Velvet Navy,Premium velvet curtain fabric perfect for elegant window treatments,Angely-Paris,Fabric,curtain fabric;velvet;luxury,TRUE,Color,Navy,,,LVN-001,0,shopify,50,deny,manual,45.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,45.00,active,137,100% Cotton Velvet,64,32,Navy Blue,Luxury Collection,Dry clean only,France,350,FR rated,meters",
+      
+      "silk-dupioni-gold,Silk Dupioni Gold,Elegant silk dupioni with natural slub texture for sophisticated interiors,Angely-Paris,Fabric,curtain fabric;silk;premium,TRUE,Color,Gold,,,SDG-002,0,shopify,25,deny,manual,85.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,65.00,active,140,100% Silk,0,0,Gold,Premium Collection,Dry clean recommended,Italy,220,Inherently flame resistant,meters",
+      
+      "cotton-linen-natural,Cotton Linen Natural,Natural cotton linen blend perfect for casual elegance,Angely-Paris,Fabric,curtain fabric;cotton;linen;natural,TRUE,Color,Natural,,,CLN-003,0,shopify,100,deny,manual,32.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,22.00,active,150,65% Cotton 35% Linen,25,15,Natural,Essentials Collection,Machine wash cold,Portugal,280,Flame retardant treated,meters"
     ].join('\n');
     
     const blob = new Blob([template], { type: 'text/csv' });
@@ -173,7 +256,7 @@ export const VendorProductLibrary = () => {
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = 'vendor_products_template.csv';
+    a.download = 'shopify_fabric_template.csv';
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
