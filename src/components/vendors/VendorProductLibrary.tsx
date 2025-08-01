@@ -175,6 +175,16 @@ export const VendorProductLibrary = () => {
                 product.unit = value.toLowerCase().includes('meter') ? 'meters' : 
                             value.toLowerCase().includes('yard') ? 'yards' : value;
                 break;
+              case 'rotation':
+              case 'orientation':
+              case 'roll direction':
+                product.roll_direction = value.toLowerCase().includes('vertical') ? 'vertical' : 'horizontal';
+                break;
+              case 'rotatable':
+              case 'can rotate':
+              case 'fabric rotatable':
+                product.fabric_rotatable = value.toLowerCase() === 'yes' || value.toLowerCase() === 'true';
+                break;
               default:
                 // Store any additional fields as metadata
                 if (value && value !== '') {
@@ -241,14 +251,14 @@ export const VendorProductLibrary = () => {
   const downloadTemplate = () => {
     const template = [
       // Shopify-compatible format with fabric-specific fields
-      "Handle,Title,Body (HTML),Vendor,Product Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Qty,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Google Product Category,Google Shopping / Gender,Google Shopping / Age Group,Google Shopping / MPN,Google Shopping / AdWords Grouping,Google Shopping / AdWords Labels,Google Shopping / Condition,Google Shopping / Custom Product,Google Shopping / Custom Label 0,Google Shopping / Custom Label 1,Google Shopping / Custom Label 2,Google Shopping / Custom Label 3,Google Shopping / Custom Label 4,Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Status,Fabric Width,Composition,Pattern Repeat Vertical,Pattern Repeat Horizontal,Color,Collection,Care Instructions,Origin,Fabric Weight,Fire Rating,Unit",
+      "Handle,Title,Body (HTML),Vendor,Product Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Qty,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Google Product Category,Google Shopping / Gender,Google Shopping / Age Group,Google Shopping / MPN,Google Shopping / AdWords Grouping,Google Shopping / AdWords Labels,Google Shopping / Condition,Google Shopping / Custom Product,Google Shopping / Custom Label 0,Google Shopping / Custom Label 1,Google Shopping / Custom Label 2,Google Shopping / Custom Label 3,Google Shopping / Custom Label 4,Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Status,Fabric Width,Composition,Pattern Repeat Vertical,Pattern Repeat Horizontal,Color,Collection,Care Instructions,Origin,Fabric Weight,Fire Rating,Unit,Rotation,Rotatable",
       
       // Sample fabric entries
-      "luxury-velvet-navy,Luxury Velvet Navy,Premium velvet curtain fabric perfect for elegant window treatments,Angely-Paris,Fabric,curtain fabric;velvet;luxury,TRUE,Color,Navy,,,LVN-001,0,shopify,50,deny,manual,45.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,45.00,active,137,100% Cotton Velvet,64,32,Navy Blue,Luxury Collection,Dry clean only,France,350,FR rated,meters",
+      "luxury-velvet-navy,Luxury Velvet Navy,Premium velvet curtain fabric perfect for elegant window treatments,Angely-Paris,Fabric,curtain fabric;velvet;luxury,TRUE,Color,Navy,,,LVN-001,0,shopify,50,deny,manual,45.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,45.00,active,137,100% Cotton Velvet,64,32,Navy Blue,Luxury Collection,Dry clean only,France,350,FR rated,meters,horizontal,yes",
       
-      "silk-dupioni-gold,Silk Dupioni Gold,Elegant silk dupioni with natural slub texture for sophisticated interiors,Angely-Paris,Fabric,curtain fabric;silk;premium,TRUE,Color,Gold,,,SDG-002,0,shopify,25,deny,manual,85.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,65.00,active,140,100% Silk,0,0,Gold,Premium Collection,Dry clean recommended,Italy,220,Inherently flame resistant,meters",
+      "silk-dupioni-gold,Silk Dupioni Gold,Elegant silk dupioni with natural slub texture for sophisticated interiors,Angely-Paris,Fabric,curtain fabric;silk;premium,TRUE,Color,Gold,,,SDG-002,0,shopify,25,deny,manual,85.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,65.00,active,140,100% Silk,0,0,Gold,Premium Collection,Dry clean recommended,Italy,220,Inherently flame resistant,meters,vertical,no",
       
-      "cotton-linen-natural,Cotton Linen Natural,Natural cotton linen blend perfect for casual elegance,Angely-Paris,Fabric,curtain fabric;cotton;linen;natural,TRUE,Color,Natural,,,CLN-003,0,shopify,100,deny,manual,32.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,22.00,active,150,65% Cotton 35% Linen,25,15,Natural,Essentials Collection,Machine wash cold,Portugal,280,Flame retardant treated,meters"
+      "cotton-linen-natural,Cotton Linen Natural,Natural cotton linen blend perfect for casual elegance,Angely-Paris,Fabric,curtain fabric;cotton;linen;natural,TRUE,Color,Natural,,,CLN-003,0,shopify,100,deny,manual,32.00,,TRUE,TRUE,,,,,,,,,,,,,,,,,,,,kg,,22.00,active,150,65% Cotton 35% Linen,25,15,Natural,Essentials Collection,Machine wash cold,Portugal,280,Flame retardant treated,meters,horizontal,yes"
     ].join('\n');
     
     const blob = new Blob([template], { type: 'text/csv' });
