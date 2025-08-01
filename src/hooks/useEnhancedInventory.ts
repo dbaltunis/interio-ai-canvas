@@ -16,6 +16,7 @@ export interface EnhancedInventoryItem {
   selling_price?: number;
   unit_price?: number;
   supplier?: string;
+  vendor_id?: string; // Added vendor_id field
   location?: string;
   reorder_point?: number;
   active?: boolean;

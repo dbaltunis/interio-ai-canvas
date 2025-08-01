@@ -19,28 +19,31 @@ export const VendorOrderingView = () => {
   const [selectedVendor, setSelectedVendor] = useState<string>("");
   const [orderItems, setOrderItems] = useState<Record<string, number>>({});
 
-  // Group inventory by vendor
+  // Group inventory by vendor (use supplier as fallback if vendor_id not available)
   const inventoryByVendor = inventory.reduce((acc, item) => {
-    const vendorId = item.vendor_id || 'no-vendor';
+    const vendorId = item.vendor_id || item.supplier || 'no-vendor';
     if (!acc[vendorId]) acc[vendorId] = [];
     acc[vendorId].push(item);
     return acc;
   }, {} as Record<string, any[]>);
 
-  const generateOrderEmail = (vendorId: string) => {
-    const vendor = vendors.find(v => v.id === vendorId);
-    const items = inventoryByVendor[vendorId] || [];
+  const generateOrderEmail = (vendorKey: string) => {
+    // Find vendor by ID first, then by name (supplier field)
+    const vendor = vendors.find(v => v.id === vendorKey) || 
+                  vendors.find(v => v.name === vendorKey);
+    const items = inventoryByVendor[vendorKey] || [];
     const itemsToOrder = items.filter(item => orderItems[item.id] > 0);
     
-    if (!vendor || itemsToOrder.length === 0) return "";
+    if (itemsToOrder.length === 0) return "";
 
+    const vendorName = vendor?.name || vendorKey;
     const orderList = itemsToOrder.map(item => 
       `- ${item.name} (${item.sku || 'N/A'}): ${orderItems[item.id]} ${item.unit || 'units'}`
     ).join('\n');
 
     return `Subject: Weekly Order - ${new Date().toLocaleDateString()}
 
-Dear ${vendor.contact_person || vendor.name},
+Dear ${vendor?.contact_person || vendorName},
 
 Please prepare the following items for our weekly order:
 
@@ -74,18 +77,21 @@ Best regards,
 
         <TabsContent value="vendors" className="space-y-4">
           <div className="grid gap-4">
-            {vendors.map((vendor) => {
-              const vendorItems = inventoryByVendor[vendor.id] || [];
+            {Object.entries(inventoryByVendor).map(([vendorKey, vendorItems]) => {
+              // Find vendor info by ID first, then by name
+              const vendor = vendors.find(v => v.id === vendorKey) || 
+                           vendors.find(v => v.name === vendorKey);
+              const vendorName = vendor?.name || vendorKey;
               const itemsToOrder = vendorItems.filter(item => orderItems[item.id] > 0);
               
               return (
-                <Card key={vendor.id}>
+                <Card key={vendorKey}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Store className="h-5 w-5" />
                         <div>
-                          <CardTitle>{vendor.name}</CardTitle>
+                          <CardTitle>{vendorName}</CardTitle>
                           <CardDescription>
                             {vendorItems.length} products • {itemsToOrder.length} pending
                           </CardDescription>
@@ -102,13 +108,13 @@ Best regards,
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl">
                             <DialogHeader>
-                              <DialogTitle>Order Email - {vendor.name}</DialogTitle>
+                              <DialogTitle>Order Email - {vendorName}</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
                                 <Label>Email Template</Label>
                                 <Textarea
-                                  value={generateOrderEmail(vendor.id)}
+                                  value={generateOrderEmail(vendorKey)}
                                   readOnly
                                   rows={12}
                                   className="font-mono text-sm"
@@ -116,14 +122,15 @@ Best regards,
                               </div>
                               <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => {
-                                  navigator.clipboard.writeText(generateOrderEmail(vendor.id));
+                                  navigator.clipboard.writeText(generateOrderEmail(vendorKey));
                                 }}>
                                   Copy to Clipboard
                                 </Button>
                                 <Button onClick={() => {
                                   const subject = `Weekly Order - ${new Date().toLocaleDateString()}`;
-                                  const body = generateOrderEmail(vendor.id).split('\n').slice(1).join('\n');
-                                  window.open(`mailto:${vendor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+                                  const body = generateOrderEmail(vendorKey).split('\n').slice(1).join('\n');
+                                  const email = vendor?.email || '';
+                                  window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
                                 }}>
                                   Open in Email Client
                                 </Button>
@@ -219,7 +226,9 @@ Best regards,
                       .filter(id => orderItems[id] > 0)
                       .map(itemId => {
                         const item = inventory.find(i => i.id === itemId);
-                        const vendor = vendors.find(v => v.id === item?.vendor_id);
+                        const vendorKey = item?.vendor_id || item?.supplier || 'no-vendor';
+                        const vendor = vendors.find(v => v.id === vendorKey) || 
+                                     vendors.find(v => v.name === vendorKey);
                         if (!item) return null;
                         
                         return (
@@ -227,7 +236,7 @@ Best regards,
                             <TableCell>
                               <div className="font-medium">{item.name}</div>
                             </TableCell>
-                            <TableCell>{vendor?.name || 'No vendor'}</TableCell>
+                            <TableCell>{vendor?.name || vendorKey || 'No vendor'}</TableCell>
                             <TableCell>
                               {orderItems[itemId]} {item.unit || 'units'}
                             </TableCell>
