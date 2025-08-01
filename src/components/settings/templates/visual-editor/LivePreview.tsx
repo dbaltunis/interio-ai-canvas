@@ -188,6 +188,23 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
       );
     }
 
+    // Show message if no treatments but rooms/surfaces exist
+    if (treatments.length === 0 && (rooms.length > 0 || surfaces.length > 0)) {
+      return (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
+          <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
+            <div className="text-gray-600 mb-2">No treatments added yet</div>
+            <div className="text-sm text-gray-500">
+              You have {rooms.length} room{rooms.length !== 1 ? 's' : ''} and {surfaces.length} surface{surfaces.length !== 1 ? 's' : ''} configured.
+              <br />
+              Add treatments to see them in your quote.
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mb-8">
         <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
