@@ -7,14 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Upload, DollarSign, Ruler, Package, Store } from "lucide-react";
+import { Plus, DollarSign, Ruler, Package, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
-import { PricingGridEditor } from "./PricingGridEditor";
 
 interface AddInventoryDialogProps {
   trigger?: React.ReactNode;
@@ -43,31 +40,20 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     vendor_id: "",
     location: "",
     reorder_point: 5,
-    reorder_quantity: 10,
-    track_inventory: false,
     
     // Fabric-specific
     fabric_width: 0,
     pattern_repeat_vertical: 0,
     pattern_repeat_horizontal: 0,
-    composition: "",
-    care_instructions: "",
-    roll_direction: "either",
+    fabric_composition: "",
+    fabric_care_instructions: "",
     collection_name: "",
-    color_code: "",
-    pattern_direction: "straight",
-    transparency_level: "screen",
-    fire_rating: "",
+    color: "",
     
     // Hardware-specific
-    hardware_type: "" as "track" | "rod" | "bracket" | "motor" | "accessory" | "",
-    material_finish: "",
-    weight_capacity: 0,
-    max_length: 0,
-    installation_type: "",
-    pricing_method: "per_unit",
-    pricing_grid: {},
-    specifications: {}
+    hardware_finish: "",
+    hardware_material: "",
+    weight: 0
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,9 +66,12 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         active: true,
         selling_price: formData.unit_price,
         cost_price: formData.unit_price * 0.7,
-        track_inventory: trackInventory,
         quantity: trackInventory ? formData.quantity : 0,
         reorder_point: trackInventory ? formData.reorder_point : 0,
+        // Auto-calculate roll direction based on fabric width
+        roll_direction: formData.fabric_width ? 
+          (formData.fabric_width <= 200 ? 'vertical' : 'horizontal') : 
+          'vertical'
       };
       
       // Remove empty fields to avoid database issues
@@ -110,29 +99,23 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         vendor_id: "",
         location: "",
         reorder_point: 5,
-        reorder_quantity: 10,
-        track_inventory: false,
         fabric_width: 0,
         pattern_repeat_vertical: 0,
         pattern_repeat_horizontal: 0,
-        composition: "",
-        care_instructions: "",
-        roll_direction: "either",
+        fabric_composition: "",
+        fabric_care_instructions: "",
         collection_name: "",
-        color_code: "",
-        pattern_direction: "straight",
-        transparency_level: "screen",
-        fire_rating: "",
-        hardware_type: "" as "track" | "rod" | "bracket" | "motor" | "accessory" | "",
-        material_finish: "",
-        weight_capacity: 0,
-        max_length: 0,
-        installation_type: "",
-        pricing_method: "per_unit",
-        pricing_grid: {},
-        specifications: {}
+        color: "",
+        hardware_finish: "",
+        hardware_material: "",
+        weight: 0
       });
       setTrackInventory(false);
+      
+      toast({
+        title: "Success",
+        description: "Product created successfully!",
+      });
       
     } catch (error: any) {
       console.error("Error creating inventory item:", error);
@@ -262,6 +245,16 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                       </div>
 
                       <div>
+                        <Label htmlFor="fabric_composition">Composition</Label>
+                        <Input
+                          id="fabric_composition"
+                          value={formData.fabric_composition}
+                          onChange={(e) => setFormData({ ...formData, fabric_composition: e.target.value })}
+                          placeholder="e.g., 100% Cotton"
+                        />
+                      </div>
+
+                      <div>
                         <Label htmlFor="pattern_repeat_vertical">Vertical Pattern Repeat (cm)</Label>
                         <Input
                           id="pattern_repeat_vertical"
@@ -284,16 +277,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                       </div>
 
                       <div>
-                        <Label htmlFor="composition">Composition</Label>
-                        <Input
-                          id="composition"
-                          value={formData.composition}
-                          onChange={(e) => setFormData({ ...formData, composition: e.target.value })}
-                          placeholder="e.g., 100% Cotton"
-                        />
-                      </div>
-
-                      <div>
                         <Label htmlFor="collection_name">Collection</Label>
                         <Input
                           id="collection_name"
@@ -303,37 +286,15 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         />
                       </div>
 
-                      {itemType === "blind_fabric" && (
-                        <>
-                          <div>
-                            <Label htmlFor="transparency_level">Transparency Level</Label>
-                            <Select 
-                              value={formData.transparency_level} 
-                              onValueChange={(value) => setFormData({ ...formData, transparency_level: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select transparency" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="blackout">Blackout</SelectItem>
-                                <SelectItem value="dim_out">Dim Out</SelectItem>
-                                <SelectItem value="screen">Screen</SelectItem>
-                                <SelectItem value="transparent">Transparent</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="fire_rating">Fire Rating</Label>
-                            <Input
-                              id="fire_rating"
-                              value={formData.fire_rating}
-                              onChange={(e) => setFormData({ ...formData, fire_rating: e.target.value })}
-                              placeholder="e.g., M1, Class 1"
-                            />
-                          </div>
-                        </>
-                      )}
+                      <div>
+                        <Label htmlFor="color">Color</Label>
+                        <Input
+                          id="color"
+                          value={formData.color}
+                          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                          placeholder="e.g., Navy Blue"
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -349,59 +310,25 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <Label htmlFor="material_finish">Material & Finish</Label>
+                        <Label htmlFor="hardware_finish">Material & Finish</Label>
                         <Input
-                          id="material_finish"
-                          value={formData.material_finish}
-                          onChange={(e) => setFormData({ ...formData, material_finish: e.target.value })}
+                          id="hardware_finish"
+                          value={formData.hardware_finish}
+                          onChange={(e) => setFormData({ ...formData, hardware_finish: e.target.value })}
                           placeholder="e.g., Aluminum, Chrome Finish"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="installation_type">Installation Type</Label>
-                        <Select 
-                          value={formData.installation_type} 
-                          onValueChange={(value) => setFormData({ ...formData, installation_type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select installation type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ceiling_mount">Ceiling Mount</SelectItem>
-                            <SelectItem value="wall_mount">Wall Mount</SelectItem>
-                            <SelectItem value="recess_mount">Recess Mount</SelectItem>
-                            <SelectItem value="face_fix">Face Fix</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="weight">Weight (kg)</Label>
+                        <Input
+                          id="weight"
+                          type="number"
+                          value={formData.weight}
+                          onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
+                          placeholder="2.5"
+                        />
                       </div>
-
-                      {(itemType === "track" || itemType === "rod") && (
-                        <>
-                          <div>
-                            <Label htmlFor="weight_capacity">Weight Capacity (kg)</Label>
-                            <Input
-                              id="weight_capacity"
-                              type="number"
-                              value={formData.weight_capacity}
-                              onChange={(e) => setFormData({ ...formData, weight_capacity: parseFloat(e.target.value) })}
-                              placeholder="15"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="max_length">Maximum Length (m)</Label>
-                            <Input
-                              id="max_length"
-                              type="number"
-                              step="0.1"
-                              value={formData.max_length}
-                              onChange={(e) => setFormData({ ...formData, max_length: parseFloat(e.target.value) })}
-                              placeholder="6.0"
-                            />
-                          </div>
-                        </>
-                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -416,7 +343,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <Label htmlFor="unit">Unit</Label>
                         <Select 
@@ -437,24 +364,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                       </div>
 
                       <div>
-                        <Label htmlFor="pricing_method">Pricing Method</Label>
-                        <Select 
-                          value={formData.pricing_method} 
-                          onValueChange={(value) => setFormData({ ...formData, pricing_method: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="per_unit">Per Unit</SelectItem>
-                            <SelectItem value="per_meter">Per Meter</SelectItem>
-                            <SelectItem value="per_sqm">Per Square Meter</SelectItem>
-                            <SelectItem value="price_grid">Price Grid (CSV)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
                         <Label htmlFor="unit_price">Unit Price ($)</Label>
                         <Input
                           id="unit_price"
@@ -466,30 +375,17 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         />
                       </div>
                     </div>
-
-                    {formData.pricing_method === "price_grid" && (
-                      <div className="mt-6">
-                        <PricingGridEditor 
-                          itemType={itemType}
-                          onGridChange={(grid) => setFormData({ ...formData, pricing_grid: grid })}
-                        />
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="inventory" className="space-y-4">
-                {/* Vendor Selection */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Store className="h-5 w-5" />
                       Vendor & Ordering
                     </CardTitle>
-                    <CardDescription>
-                      Manage supplier information and ordering preferences
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -523,21 +419,10 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         id="location"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="e.g., Warehouse A, Shelf B-1, or 'Order as needed'"
+                        placeholder="e.g., Warehouse A, Shelf B-1"
                       />
                     </div>
-                  </CardContent>
-                </Card>
 
-                {/* Inventory Tracking Toggle */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Inventory Tracking</CardTitle>
-                    <CardDescription>
-                      Enable if you want to track stock levels for this item
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="track-inventory"
@@ -548,7 +433,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                     </div>
 
                     {trackInventory && (
-                      <div className="grid gap-4 md:grid-cols-3 border-l-2 border-primary/20 pl-4">
+                      <div className="grid gap-4 md:grid-cols-2 border-l-2 border-primary/20 pl-4">
                         <div>
                           <Label htmlFor="quantity">Current Quantity</Label>
                           <Input
@@ -570,26 +455,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                             placeholder="5"
                           />
                         </div>
-
-                        <div>
-                          <Label htmlFor="reorder_quantity">Reorder Quantity</Label>
-                          <Input
-                            id="reorder_quantity"
-                            type="number"
-                            value={formData.reorder_quantity}
-                            onChange={(e) => setFormData({ ...formData, reorder_quantity: parseInt(e.target.value) })}
-                            placeholder="50"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {!trackInventory && (
-                      <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
-                        <p>
-                          <strong>Order as needed:</strong> This item will be available for selection in projects, 
-                          and you can track what needs to be ordered from each vendor without managing stock levels.
-                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -597,8 +462,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
               </TabsContent>
             </Tabs>
           )}
-
-          <Separator />
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
