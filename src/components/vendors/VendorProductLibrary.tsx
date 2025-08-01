@@ -28,12 +28,12 @@ export const VendorProductLibrary = () => {
 
   // Filter inventory by selected vendor
   const vendorProducts = inventory.filter(item => 
-    selectedVendor ? item.vendor_id === selectedVendor : true
+    selectedVendor && selectedVendor !== "all" ? item.vendor_id === selectedVendor : true
   ).filter(item =>
     searchTerm ? item.name.toLowerCase().includes(searchTerm.toLowerCase()) : true
   );
 
-  const selectedVendorData = vendors.find(v => v.id === selectedVendor);
+  const selectedVendorData = vendors.find(v => v.id === selectedVendor && selectedVendor !== "all");
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -192,7 +192,7 @@ export const VendorProductLibrary = () => {
                 <SelectValue placeholder="All vendors" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Vendors</SelectItem>
+                <SelectItem value="all">All Vendors</SelectItem>
                 {vendors.map((vendor) => (
                   <SelectItem key={vendor.id} value={vendor.id}>
                     {vendor.name}
