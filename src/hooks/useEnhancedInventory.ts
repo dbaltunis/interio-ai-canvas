@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,7 +17,7 @@ export interface EnhancedInventoryItem {
   selling_price?: number;
   unit_price?: number;
   supplier?: string;
-  vendor_id?: string; // Added vendor_id field
+  vendor_id?: string;
   location?: string;
   reorder_point?: number;
   active?: boolean;
@@ -64,7 +65,6 @@ export interface EnhancedInventoryItem {
   updated_at: string;
 }
 
-// For now, fall back to the old inventory hook until database is properly migrated
 export const useEnhancedInventory = () => {
   return useQuery({
     queryKey: ["enhanced-inventory"],
@@ -94,77 +94,6 @@ export const useEnhancedInventoryByCategory = (category: string) => {
 
       if (error) throw error;
       return data || [];
-    },
-  });
-};
-
-// Specialized hooks for different inventory types
-export const useHeadingInventory = () => {
-  return useQuery({
-    queryKey: ["enhanced-inventory", "heading"],
-    queryFn: async () => {
-      // Mock heading data for now to get HeadingSelector working
-      return [
-        {
-          id: "heading-1",
-          user_id: "mock",
-          name: "Standard Pinch Pleat",
-          description: "Classic pinch pleat heading",
-          category: "heading",
-          quantity: 1,
-          unit: "set",
-          selling_price: 25,
-          cost_price: 15,
-          fullness_ratio: 2.5,
-          labor_hours: 1.5,
-          active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: "heading-2",
-          user_id: "mock",
-          name: "Goblet Pleat",
-          description: "Elegant goblet heading style",
-          category: "heading",
-          quantity: 1,
-          unit: "set",
-          selling_price: 35,
-          cost_price: 20,
-          fullness_ratio: 2.8,
-          labor_hours: 2.0,
-          active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ] as EnhancedInventoryItem[];
-    },
-  });
-};
-
-export const useServiceInventory = () => {
-  return useQuery({
-    queryKey: ["enhanced-inventory", "service"],
-    queryFn: async () => {
-      // Mock service data for now
-      return [
-        {
-          id: "service-1",
-          user_id: "mock",
-          name: "Installation Service",
-          description: "Professional curtain installation",
-          category: "service",
-          quantity: 1,
-          unit: "per-window",
-          selling_price: 50,
-          cost_price: 30,
-          labor_hours: 1.0,
-          service_rate: 50,
-          active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ] as EnhancedInventoryItem[];
     },
   });
 };
@@ -237,37 +166,6 @@ export const useDeleteEnhancedInventoryItem = () => {
     },
     onError: (error) => {
       toast.error(`Error deleting item: ${error.message}`);
-    },
-  });
-};
-
-// Legacy compatibility exports
-export const useLowStockEnhancedItems = () => {
-  return useQuery({
-    queryKey: ["enhanced-inventory", "low-stock"],
-    queryFn: async () => {
-      return [] as EnhancedInventoryItem[];
-    },
-  });
-};
-
-export const useInventoryValuation = () => {
-  return useQuery({
-    queryKey: ["enhanced-inventory", "valuation"],
-    queryFn: async () => {
-      return { totalValue: 0, categoryBreakdown: {}, itemCount: 0 };
-    },
-  });
-};
-
-export const useCreateReorderAlert = () => {
-  return useMutation({
-    mutationFn: async (alert: any) => {
-      console.log('Creating reorder alert:', alert);
-      return alert;
-    },
-    onSuccess: () => {
-      toast.success('Reorder alert created');
     },
   });
 };

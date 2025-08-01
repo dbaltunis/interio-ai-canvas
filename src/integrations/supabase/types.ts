@@ -1063,6 +1063,7 @@ export type Database = {
           unit_price: number | null
           updated_at: string
           user_id: string
+          vendor_id: string | null
           weight: number | null
           width: number | null
         }
@@ -1110,6 +1111,7 @@ export type Database = {
           unit_price?: number | null
           updated_at?: string
           user_id: string
+          vendor_id?: string | null
           weight?: number | null
           width?: number | null
         }
@@ -1157,10 +1159,19 @@ export type Database = {
           unit_price?: number | null
           updated_at?: string
           user_id?: string
+          vendor_id?: string | null
           weight?: number | null
           width?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "enhanced_inventory_items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hardware_assemblies: {
         Row: {
