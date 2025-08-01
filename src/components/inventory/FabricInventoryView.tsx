@@ -128,7 +128,18 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
           {filteredItems.map((item) => (
             <Card key={item.id} className="group hover:shadow-lg transition-shadow">
               <div className="relative">
-                <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 rounded-t-lg flex items-center justify-center">
+                {(item as any).image_url ? (
+                  <img 
+                    src={(item as any).image_url} 
+                    alt={item.name}
+                    className="h-48 w-full object-cover rounded-t-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`h-48 bg-gradient-to-br from-blue-50 to-blue-100 rounded-t-lg flex items-center justify-center ${(item as any).image_url ? 'hidden' : ''}`}>
                   <Palette className="h-12 w-12 text-blue-300" />
                 </div>
                 <div className="absolute top-2 right-2 flex gap-1">
@@ -151,7 +162,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-1">
                       <Ruler className="h-4 w-4 text-muted-foreground" />
-                      <span>137cm wide</span>
+                      <span>{item.fabric_width || 'N/A'}cm wide</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Package className="h-4 w-4 text-muted-foreground" />
@@ -159,10 +170,32 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                     </div>
                   </div>
 
+                  <div className="space-y-1">
+                    {item.fabric_composition && (
+                      <div className="text-xs text-muted-foreground">
+                        Composition: {item.fabric_composition}
+                      </div>
+                    )}
+                    {item.color && (
+                      <div className="text-xs text-muted-foreground">
+                        Color: {item.color}
+                      </div>
+                    )}
+                    {(item.pattern_repeat_vertical || item.pattern_repeat_horizontal) && (
+                      <div className="text-xs text-muted-foreground">
+                        Pattern repeat: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-lg font-bold">${item.selling_price}/m</div>
-                      <div className="text-xs text-muted-foreground">Pattern repeat: 64cm</div>
+                      <div className="text-lg font-bold">${item.selling_price || item.unit_price}/m</div>
+                      {item.fabric_width && (
+                        <div className="text-xs text-muted-foreground">
+                          Roll direction: {item.fabric_width <= 200 ? 'Vertical' : 'Horizontal'}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-1">
                       <Button size="sm" variant="outline">
@@ -198,16 +231,31 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
               {filteredItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center">
-                      <Palette className="h-6 w-6 text-blue-300" />
+                    <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden">
+                      {(item as any).image_url ? (
+                        <img 
+                          src={(item as any).image_url} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center ${(item as any).image_url ? 'hidden' : ''}`}>
+                        <Palette className="h-6 w-6 text-blue-300" />
+                      </div>
                     </div>
                     <div>
                       <h3 className="font-semibold">{item.name}</h3>
                       <p className="text-sm text-muted-foreground">{item.description}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <span>SKU: {item.sku}</span>
-                        <span>Width: 137cm</span>
-                        <span>Pattern: 64cm repeat</span>
+                        <span>Width: {item.fabric_width || 'N/A'}cm</span>
+                        {(item.pattern_repeat_vertical || item.pattern_repeat_horizontal) && (
+                          <span>Pattern: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm</span>
+                        )}
                       </div>
                     </div>
                   </div>
