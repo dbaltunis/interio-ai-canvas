@@ -29,12 +29,13 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     unit: item.unit || "units",
     supplier: item.supplier || "",
     location: item.location || "",
-    fabric_width: item.fabric_width || null,
-    pattern_repeat_vertical: item.pattern_repeat_vertical || null,
-    pattern_repeat_horizontal: item.pattern_repeat_horizontal || null,
+    fabric_width: item.fabric_width || 0,
+    pattern_repeat_vertical: item.pattern_repeat_vertical || 0,
+    pattern_repeat_horizontal: item.pattern_repeat_horizontal || 0,
     fabric_composition: item.fabric_composition || "",
     color: item.color || "",
     collection_name: item.collection_name || "",
+    image_url: item.image_url || "",
   });
 
   const updateMutation = useUpdateEnhancedInventoryItem();
@@ -52,12 +53,13 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
         unit: item.unit || "units",
         supplier: item.supplier || "",
         location: item.location || "",
-        fabric_width: item.fabric_width || null,
-        pattern_repeat_vertical: item.pattern_repeat_vertical || null,
-        pattern_repeat_horizontal: item.pattern_repeat_horizontal || null,
+        fabric_width: item.fabric_width || 0,
+        pattern_repeat_vertical: item.pattern_repeat_vertical || 0,
+        pattern_repeat_horizontal: item.pattern_repeat_horizontal || 0,
         fabric_composition: item.fabric_composition || "",
         color: item.color || "",
         collection_name: item.collection_name || "",
+        image_url: item.image_url || "",
       });
     }
   }, [item]);
@@ -66,9 +68,17 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     e.preventDefault();
     
     try {
+      // Clean data - ensure numbers are properly formatted
+      const cleanData = {
+        ...formData,
+        fabric_width: formData.fabric_width || null,
+        pattern_repeat_vertical: formData.pattern_repeat_vertical || null,
+        pattern_repeat_horizontal: formData.pattern_repeat_horizontal || null,
+      };
+      
       await updateMutation.mutateAsync({
         id: item.id,
-        ...formData,
+        ...cleanData,
       });
       
       setOpen(false);
@@ -229,10 +239,11 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
                   <Input
                     id="fabric_width"
                     type="number"
+                    step="0.1"
                     value={formData.fabric_width || ""}
                     onChange={(e) => setFormData(prev => ({ 
                       ...prev, 
-                      fabric_width: e.target.value ? parseFloat(e.target.value) : null 
+                      fabric_width: e.target.value ? parseFloat(e.target.value) : 0 
                     }))}
                     placeholder="137"
                   />
@@ -295,6 +306,16 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
                     value={formData.collection_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, collection_name: e.target.value }))}
                     placeholder="e.g., Luxury Collection"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="image_url">Image URL</Label>
+                  <Input
+                    id="image_url"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                    placeholder="https://example.com/fabric-image.jpg"
                   />
                 </div>
               </div>
