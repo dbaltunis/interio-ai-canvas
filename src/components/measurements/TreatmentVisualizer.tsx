@@ -17,8 +17,8 @@ export const TreatmentVisualizer = ({
 }: TreatmentVisualizerProps) => {
   const { units } = useMeasurementUnits();
   
-  const width = measurements.measurement_a || measurements.rail_width || 60;
-  const height = measurements.measurement_b || measurements.drop || 48;
+  const width = measurements.measurement_a || measurements.rail_width || (units.length === 'cm' ? 150 : 60);
+  const height = measurements.measurement_b || measurements.drop || (units.length === 'cm' ? 120 : 48);
 
   const renderCurtainVisualization = () => {
     const fullness = parseFloat(treatmentData.fullness_ratio || "2.0");
@@ -85,11 +85,11 @@ export const TreatmentVisualizer = ({
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div className="text-center">
             <div className="font-medium">Fabric Width</div>
-            <div className="text-muted-foreground">{fabricWidth.toFixed(1)}"</div>
+            <div className="text-muted-foreground">{fabricWidth.toFixed(1)}{units.length}</div>
           </div>
           <div className="text-center">
             <div className="font-medium">Total Drop</div>
-            <div className="text-muted-foreground">{totalDrop.toFixed(1)}"</div>
+            <div className="text-muted-foreground">{totalDrop.toFixed(1)}{units.length}</div>
           </div>
           <div className="text-center">
             <div className="font-medium">Fullness</div>

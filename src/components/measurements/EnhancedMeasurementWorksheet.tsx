@@ -110,9 +110,9 @@ export const EnhancedMeasurementWorksheet = ({
   const handleInventorySelect = (item: any) => {
     setSelectedInventoryItem(item);
     // Calculate preliminary cost based on measurements and item pricing
-    const width = measurements.measurement_a || measurements.rail_width || 60;
-    const height = measurements.measurement_b || measurements.drop || 48;
-    const area = (width * height) / 144; // sq ft
+    const width = measurements.measurement_a || measurements.rail_width || (units.length === 'cm' ? 150 : 60);
+    const height = measurements.measurement_b || measurements.drop || (units.length === 'cm' ? 120 : 48);
+    const area = units.length === 'cm' ? (width * height) / 10000 : (width * height) / 144; // sq m or sq ft
     const estimatedCost = area * (item.selling_price || item.unit_price || 0);
     setCalculatedCost(estimatedCost);
   };
