@@ -7,9 +7,9 @@ type Quote = Tables<"quotes">;
 type QuoteInsert = TablesInsert<"quotes">;
 type QuoteUpdate = TablesUpdate<"quotes">;
 
-export const useQuotes = () => {
+export const useQuotes = (projectId?: string) => {
   return useQuery({
-    queryKey: ["quotes"],
+    queryKey: ["quotes", projectId],
     queryFn: async () => {
       console.log("useQuotes: Starting fetch");
       const { data: { user } } = await supabase.auth.getUser();
@@ -23,10 +23,16 @@ export const useQuotes = () => {
       try {
         // First try the simple query without complex joins
         console.log("useQuotes: Attempting simple query first");
-        const { data: simpleData, error: simpleError } = await supabase
+        let simpleQuery = supabase
           .from("quotes")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("user_id", user.id);
+        
+        if (projectId) {
+          simpleQuery = simpleQuery.eq("project_id", projectId);
+        }
+        
+        const { data: simpleData, error: simpleError } = await simpleQuery
           .order("created_at", { ascending: false });
 
         if (simpleError) {
@@ -39,7 +45,7 @@ export const useQuotes = () => {
         // Now try to enrich with project and client data
         try {
           console.log("useQuotes: Attempting enriched query");
-          const { data, error } = await supabase
+          let enrichedQuery = supabase
             .from("quotes")
             .select(`
               *,
@@ -64,7 +70,13 @@ export const useQuotes = () => {
                 client_type
               )
             `)
-            .eq("user_id", user.id)
+            .eq("user_id", user.id);
+          
+          if (projectId) {
+            enrichedQuery = enrichedQuery.eq("project_id", projectId);
+          }
+          
+          const { data, error } = await enrichedQuery
             .order("created_at", { ascending: false });
 
           if (error) {

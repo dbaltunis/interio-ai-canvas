@@ -10,11 +10,12 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useQuotes } from "@/hooks/useQuotes";
+import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
+import { QuoteViewer } from "../QuoteViewer";
 
 interface QuotationTabProps {
   projectId: string;
@@ -41,15 +42,17 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
+  const { data: quotes = [], isLoading: quotesLoading } = useQuotes(projectId);
+  const createQuote = useCreateQuote();
+  const updateQuote = useUpdateQuote();
 
   const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
   const project = projects?.find(p => p.id === projectId);
   
-  // Filter quotes for this specific project
-  const projectQuotes = quotes.filter(quote => quote.project_id === projectId);
+  // Filter quotes for this specific project (already filtered by hook)
+  const projectQuotes = quotes;
 
   // Set default template when templates load
   useEffect(() => {
@@ -93,10 +96,34 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     });
   };
 
-  const handleCreateNewQuote = () => {
-    toast({
-      title: "Create New Quote",
-      description: "New quote creation functionality would be implemented here",
+  const handleCreateNewQuote = async () => {
+    if (!selectedTemplate) {
+      toast({
+        title: "No Template Selected",
+        description: "Please select a template before creating a quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate quote number
+    const quoteNumber = `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    
+    // Calculate valid until date (30 days from now)
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 30);
+
+    await createQuote.mutateAsync({
+      project_id: projectId,
+      client_id: project?.client_id,
+      quote_number: quoteNumber,
+      status: 'draft',
+      subtotal,
+      tax_rate: taxRate,
+      tax_amount: taxAmount,
+      total_amount: total,
+      valid_until: validUntil.toISOString().split('T')[0],
+      notes: `Generated from template: ${selectedTemplate.name}`,
     });
   };
 
@@ -270,10 +297,12 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
                       )}
                     </div>
                     <div className="mt-3 flex space-x-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
+                      <QuoteViewer quote={quote} isEditable={true}>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
+                      </QuoteViewer>
                       <Button variant="outline" size="sm" className="flex-1">
                         <Mail className="h-3 w-3 mr-1" />
                         Send
