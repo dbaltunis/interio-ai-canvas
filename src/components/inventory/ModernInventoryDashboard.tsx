@@ -12,10 +12,11 @@ import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { InventoryDemoData } from "./InventoryDemoData";
-import { InventoryDataLoader } from "./InventoryDataLoader";
 import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
+import { VendorDashboard } from "../vendors/VendorDashboard";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useVendors } from "@/hooks/useVendors";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,6 +24,7 @@ export const ModernInventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showSearch, setShowSearch] = useState(false);
   const { data: inventory, refetch } = useEnhancedInventory();
+  const { data: vendors } = useVendors();
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -102,7 +104,7 @@ export const ModernInventoryDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Overview
@@ -114,6 +116,10 @@ export const ModernInventoryDashboard = () => {
           <TabsTrigger value="hardware" className="flex items-center gap-2">
             <Minus className="h-4 w-4" />
             Hardware
+          </TabsTrigger>
+          <TabsTrigger value="vendors" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Vendors
           </TabsTrigger>
           <TabsTrigger value="assemblies" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
@@ -131,12 +137,28 @@ export const ModernInventoryDashboard = () => {
               <InventoryStats />
             </div>
             <div>
-              <InventoryDataLoader />
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("vendors")}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Package className="h-5 w-5 text-orange-500" />
+                    Vendor Management
+                  </CardTitle>
+                  <CardDescription>
+                    Manage suppliers and weekly ordering
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">{vendors?.length || 0} Vendors</Badge>
+                    <Button variant="ghost" size="sm">Manage</Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
           {/* Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("fabrics")}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Home className="h-5 w-5 text-blue-500" />
@@ -154,7 +176,7 @@ export const ModernInventoryDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("hardware")}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Minus className="h-5 w-5 text-green-500" />
@@ -172,7 +194,25 @@ export const ModernInventoryDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("vendors")}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Package className="h-5 w-5 text-orange-500" />
+                  Vendors
+                </CardTitle>
+                <CardDescription>
+                  Manage suppliers and track orders
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary">{vendors?.length || 0} Vendors</Badge>
+                  <Button variant="ghost" size="sm">Manage</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("assemblies")}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Package className="h-5 w-5 text-purple-500" />
@@ -201,6 +241,10 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="hardware" className="space-y-6">
           <HardwareInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+        </TabsContent>
+
+        <TabsContent value="vendors" className="space-y-6">
+          <VendorDashboard />
         </TabsContent>
 
         <TabsContent value="assemblies" className="space-y-6">
