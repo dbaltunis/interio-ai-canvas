@@ -78,15 +78,12 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         cost_price: formData.unit_price * 0.7, // Default 30% markup
       };
       
-      // Remove empty fields and compatibility_tags to avoid database issues
+      // Remove empty fields to avoid database issues
       Object.keys(cleanData).forEach(key => {
         if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
           delete cleanData[key];
         }
       });
-      
-      // Remove compatibility_tags as it doesn't exist in the database
-      delete cleanData.compatibility_tags;
       
       await createInventoryItem.mutateAsync(cleanData);
       
