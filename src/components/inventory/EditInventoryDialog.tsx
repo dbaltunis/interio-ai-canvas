@@ -27,8 +27,6 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     quantity: item.quantity || 0,
     unit_price: item.unit_price || 0,
     unit: item.unit || "units",
-    reorder_point: item.reorder_point || 0,
-    reorder_quantity: item.reorder_quantity || 0,
     supplier: item.supplier || "",
     location: item.location || "",
     fabric_width: item.fabric_width || null,
@@ -52,8 +50,6 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
         quantity: item.quantity || 0,
         unit_price: item.unit_price || 0,
         unit: item.unit || "units",
-        reorder_point: item.reorder_point || 0,
-        reorder_quantity: item.reorder_quantity || 0,
         supplier: item.supplier || "",
         location: item.location || "",
         fabric_width: item.fabric_width || null,
@@ -208,26 +204,6 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="reorder_point">Reorder Point</Label>
-              <Input
-                id="reorder_point"
-                type="number"
-                value={formData.reorder_point}
-                onChange={(e) => setFormData(prev => ({ ...prev, reorder_point: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="reorder_quantity">Reorder Quantity</Label>
-              <Input
-                id="reorder_quantity"
-                type="number"
-                value={formData.reorder_quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, reorder_quantity: parseInt(e.target.value) || 0 }))}
               />
             </div>
           </div>
