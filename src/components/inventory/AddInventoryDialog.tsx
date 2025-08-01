@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Upload, DollarSign, Ruler, Package } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Upload, DollarSign, Ruler, Package, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useVendors } from "@/hooks/useVendors";
 import { PricingGridEditor } from "./PricingGridEditor";
 
 interface AddInventoryDialogProps {
@@ -24,8 +25,10 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [itemType, setItemType] = useState<string>("");
+  const [trackInventory, setTrackInventory] = useState(false);
   const { toast } = useToast();
   const createInventoryItem = useCreateEnhancedInventoryItem();
+  const { data: vendors = [] } = useVendors();
 
   const [formData, setFormData] = useState({
     // Basic fields
@@ -37,9 +40,11 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     unit: "meters",
     unit_price: 0,
     supplier: "",
+    vendor_id: "",
     location: "",
     reorder_point: 5,
     reorder_quantity: 10,
+    track_inventory: false,
     
     // Fabric-specific
     fabric_width: 0,
@@ -69,13 +74,15 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     e.preventDefault();
     
     try {
-      // Clean up the data before submission
       const cleanData = {
         ...formData,
         category: itemType,
         active: true,
         selling_price: formData.unit_price,
-        cost_price: formData.unit_price * 0.7, // Default 30% markup
+        cost_price: formData.unit_price * 0.7,
+        track_inventory: trackInventory,
+        quantity: trackInventory ? formData.quantity : 0,
+        reorder_point: trackInventory ? formData.reorder_point : 0,
       };
       
       // Remove empty fields to avoid database issues
@@ -100,9 +107,11 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         unit: "meters",
         unit_price: 0,
         supplier: "",
+        vendor_id: "",
         location: "",
         reorder_point: 5,
         reorder_quantity: 10,
+        track_inventory: false,
         fabric_width: 0,
         pattern_repeat_vertical: 0,
         pattern_repeat_horizontal: 0,
@@ -123,6 +132,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         pricing_grid: {},
         specifications: {}
       });
+      setTrackInventory(false);
       
     } catch (error: any) {
       console.error("Error creating inventory item:", error);
@@ -146,7 +156,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Inventory Item</DialogTitle>
+          <DialogTitle>Add New Product</DialogTitle>
           <DialogDescription>
             Create a new fabric, hardware, or blind material item
           </DialogDescription>
@@ -156,12 +166,12 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
           {/* Item Type Selection */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Item Type</CardTitle>
+              <CardTitle className="text-lg">Product Type</CardTitle>
             </CardHeader>
             <CardContent>
               <Select value={itemType} onValueChange={setItemType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select item type" />
+                  <SelectValue placeholder="Select product type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
@@ -183,7 +193,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="specifications">Specifications</TabsTrigger>
                 <TabsTrigger value="pricing">Pricing</TabsTrigger>
-                <TabsTrigger value="inventory">Inventory</TabsTrigger>
+                <TabsTrigger value="inventory">Vendor & Stock</TabsTrigger>
               </TabsList>
 
               <TabsContent value="basic" className="space-y-4">
@@ -223,26 +233,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         placeholder="Product description..."
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="supplier">Supplier</Label>
-                      <Input
-                        id="supplier"
-                        value={formData.supplier}
-                        onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                        placeholder="Supplier name"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="location">Storage Location</Label>
-                      <Input
-                        id="location"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="e.g., Warehouse A, Shelf B-1"
                       />
                     </div>
                   </CardContent>
@@ -490,43 +480,118 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
               </TabsContent>
 
               <TabsContent value="inventory" className="space-y-4">
+                {/* Vendor Selection */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Inventory Management</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Store className="h-5 w-5" />
+                      Vendor & Ordering
+                    </CardTitle>
+                    <CardDescription>
+                      Manage supplier information and ordering preferences
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="grid gap-4 md:grid-cols-2">
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="quantity">Current Quantity</Label>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
-                        placeholder="100"
-                      />
+                      <Label htmlFor="vendor">Vendor</Label>
+                      <Select 
+                        value={formData.vendor_id} 
+                        onValueChange={(value) => {
+                          setFormData({ ...formData, vendor_id: value });
+                          const selectedVendor = vendors.find(v => v.id === value);
+                          if (selectedVendor) {
+                            setFormData(prev => ({ ...prev, supplier: selectedVendor.name }));
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vendor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendors.map((vendor) => (
+                            <SelectItem key={vendor.id} value={vendor.id}>
+                              {vendor.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
-                      <Label htmlFor="reorder_point">Reorder Point</Label>
+                      <Label htmlFor="location">Storage Location</Label>
                       <Input
-                        id="reorder_point"
-                        type="number"
-                        value={formData.reorder_point}
-                        onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) })}
-                        placeholder="5"
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="e.g., Warehouse A, Shelf B-1, or 'Order as needed'"
                       />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Inventory Tracking Toggle */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Inventory Tracking</CardTitle>
+                    <CardDescription>
+                      Enable if you want to track stock levels for this item
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="track-inventory"
+                        checked={trackInventory}
+                        onCheckedChange={setTrackInventory}
+                      />
+                      <Label htmlFor="track-inventory">Track inventory levels</Label>
                     </div>
 
-                    <div>
-                      <Label htmlFor="reorder_quantity">Reorder Quantity</Label>
-                      <Input
-                        id="reorder_quantity"
-                        type="number"
-                        value={formData.reorder_quantity}
-                        onChange={(e) => setFormData({ ...formData, reorder_quantity: parseInt(e.target.value) })}
-                        placeholder="50"
-                      />
-                    </div>
+                    {trackInventory && (
+                      <div className="grid gap-4 md:grid-cols-3 border-l-2 border-primary/20 pl-4">
+                        <div>
+                          <Label htmlFor="quantity">Current Quantity</Label>
+                          <Input
+                            id="quantity"
+                            type="number"
+                            value={formData.quantity}
+                            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
+                            placeholder="100"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="reorder_point">Reorder Point</Label>
+                          <Input
+                            id="reorder_point"
+                            type="number"
+                            value={formData.reorder_point}
+                            onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) })}
+                            placeholder="5"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="reorder_quantity">Reorder Quantity</Label>
+                          <Input
+                            id="reorder_quantity"
+                            type="number"
+                            value={formData.reorder_quantity}
+                            onChange={(e) => setFormData({ ...formData, reorder_quantity: parseInt(e.target.value) })}
+                            placeholder="50"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {!trackInventory && (
+                      <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                        <p>
+                          <strong>Order as needed:</strong> This item will be available for selection in projects, 
+                          and you can track what needs to be ordered from each vendor without managing stock levels.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -540,7 +605,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
               Cancel
             </Button>
             <Button type="submit" disabled={!itemType || !formData.name}>
-              Create Item
+              Create Product
             </Button>
           </div>
         </form>
