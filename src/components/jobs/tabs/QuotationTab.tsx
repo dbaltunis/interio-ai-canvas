@@ -8,7 +8,8 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
-import { useActiveQuoteTemplates } from "@/hooks/useDocumentTemplates";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
@@ -25,7 +26,21 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
-  const { data: activeTemplates, isLoading: templatesLoading } = useActiveQuoteTemplates();
+  // Fetch quote templates from database
+  const { data: activeTemplates, isLoading: templatesLoading } = useQuery({
+    queryKey: ["quote-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quote_templates")
+        .select("*")
+        .eq("active", true)
+        .order("updated_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
 
   const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
@@ -136,14 +151,16 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   }
 
   // Get template blocks and update view mode for products block
-  const templateBlocks = selectedTemplate && selectedTemplate.blocks ? selectedTemplate.blocks.map(block => ({
-    ...block,
-    content: {
-      ...block.content,
-      // Update products block to use the correct view mode
-      ...(block.type === 'products' ? { tableStyle: viewMode } : {})
-    }
-  })) : [];
+  const templateBlocks = selectedTemplate && selectedTemplate.blocks && Array.isArray(selectedTemplate.blocks) 
+    ? selectedTemplate.blocks.map((block: any) => ({
+        ...block,
+        content: {
+          ...block.content,
+          // Update products block to use the correct view mode
+          ...(block.type === 'products' ? { tableStyle: viewMode } : {})
+        }
+      })) 
+    : [];
 
   return (
     <div className="space-y-6">
