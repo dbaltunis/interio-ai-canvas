@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     fabric_width: 0,
     pattern_repeat_vertical: 0,
     pattern_repeat_horizontal: 0,
-    // No fullness_ratio for fabrics
     composition: "",
     care_instructions: "",
     roll_direction: "either",
@@ -60,7 +60,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     weight_capacity: 0,
     max_length: 0,
     installation_type: "",
-    compatibility_tags: [] as string[],
     pricing_method: "per_unit",
     pricing_grid: {},
     specifications: {}
@@ -79,12 +78,15 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         cost_price: formData.unit_price * 0.7, // Default 30% markup
       };
       
-      // Remove empty fields to avoid database issues
+      // Remove empty fields and compatibility_tags to avoid database issues
       Object.keys(cleanData).forEach(key => {
         if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
           delete cleanData[key];
         }
       });
+      
+      // Remove compatibility_tags as it doesn't exist in the database
+      delete cleanData.compatibility_tags;
       
       await createInventoryItem.mutateAsync(cleanData);
       
@@ -107,7 +109,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         fabric_width: 0,
         pattern_repeat_vertical: 0,
         pattern_repeat_horizontal: 0,
-        // No fullness_ratio for fabrics
         composition: "",
         care_instructions: "",
         roll_direction: "either",
@@ -121,7 +122,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         weight_capacity: 0,
         max_length: 0,
         installation_type: "",
-        compatibility_tags: [],
         pricing_method: "per_unit",
         pricing_grid: {},
         specifications: {}
@@ -129,6 +129,11 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
       
     } catch (error: any) {
       console.error("Error creating inventory item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create inventory item. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -228,7 +233,7 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                       <Label htmlFor="supplier">Supplier</Label>
                       <Input
                         id="supplier"
-        value={formData.supplier}
+                        value={formData.supplier}
                         onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                         placeholder="Supplier name"
                       />
@@ -268,8 +273,6 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                           placeholder="137"
                         />
                       </div>
-
-                      {/* Fullness ratio only belongs to headings, not fabrics */}
 
                       <div>
                         <Label htmlFor="pattern_repeat_vertical">Vertical Pattern Repeat (cm)</Label>
