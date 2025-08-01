@@ -28,19 +28,30 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
   // Fetch quote templates from database
-  const { data: activeTemplates, isLoading: templatesLoading } = useQuery({
+  const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
+      console.log('Fetching quote templates...');
       const { data, error } = await supabase
         .from("quote_templates")
         .select("*")
         .eq("active", true)
         .order("updated_at", { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching templates:', error);
+        throw error;
+      }
+      
+      console.log('Fetched templates:', data);
+      console.log('Templates count:', data?.length || 0);
+      data?.forEach(template => {
+        console.log(`Template: ${template.name} (${template.template_style}) - Active: ${template.active}`);
+      });
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
   });
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes(projectId);
   const createQuote = useCreateQuote();
