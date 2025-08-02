@@ -97,13 +97,19 @@ export const CostCalculationSummary = ({
 
     let cost = 0;
     const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+    const fabricUsage = calculateFabricUsage();
 
+    // Cost per metre of fabric used
     if (template.machine_price_per_metre) {
-      cost += template.machine_price_per_metre * width / 100; // Convert cm to m
+      cost += template.machine_price_per_metre * fabricUsage.meters;
     }
+    
+    // Cost per curtain drop (per panel)
     if (template.machine_price_per_drop) {
       cost += template.machine_price_per_drop * curtainCount;
     }
+    
+    // Cost per curtain panel
     if (template.machine_price_per_panel) {
       cost += template.machine_price_per_panel * curtainCount;
     }
