@@ -304,60 +304,84 @@ export const VisualMeasurementSheet = ({
             </div>
 
             {/* Additional Measurements for Curtain Makers */}
-            <div className="mt-4 border rounded-lg p-4 bg-gray-50">
-              <h4 className="font-medium mb-3">Additional Measurements (for Curtain Makers)</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="rod_extension_left" className="text-sm font-medium">{hardwareType === "track" ? "Track" : "Rod"} Extension Left</Label>
-                  <p className="text-xs text-gray-600 mb-1">How far {hardwareType === "track" ? "track" : "rod"} extends beyond window left</p>
-                  <Input
-                    id="rod_extension_left"
-                    type="number"
-                    step="0.25"
-                    value={measurements.rod_extension_left || ""}
-                    onChange={(e) => handleInputChange("rod_extension_left", e.target.value)}
-                    placeholder="8-10"
-                    readOnly={readOnly}
-                  />
+            <div className="mt-4">
+              <details className="group">
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                  <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Additional Measurements (for Curtain Makers)
+                  <span className="text-xs text-gray-500 ml-auto">Click to expand</span>
+                </summary>
+                <div className="mt-3 p-3 bg-gray-50/50 rounded-lg border border-gray-200">
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="rod_extension_left" className="text-xs font-medium text-gray-700">
+                        Left Extension
+                      </Label>
+                      <Input
+                        id="rod_extension_left"
+                        type="number"
+                        step="0.25"
+                        value={measurements.rod_extension_left || ""}
+                        onChange={(e) => handleInputChange("rod_extension_left", e.target.value)}
+                        placeholder="8-10"
+                        readOnly={readOnly}
+                        className="h-8 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends left</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="rod_extension_right" className="text-xs font-medium text-gray-700">
+                        Right Extension
+                      </Label>
+                      <Input
+                        id="rod_extension_right"
+                        type="number"
+                        step="0.25"
+                        value={measurements.rod_extension_right || ""}
+                        onChange={(e) => handleInputChange("rod_extension_right", e.target.value)}
+                        placeholder="8-10"
+                        readOnly={readOnly}
+                        className="h-8 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends right</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="panel_overlap" className="text-xs font-medium text-gray-700">
+                        Panel Overlap
+                      </Label>
+                      <Input
+                        id="panel_overlap"
+                        type="number"
+                        step="0.25"
+                        value={measurements.panel_overlap || ""}
+                        onChange={(e) => handleInputChange("panel_overlap", e.target.value)}
+                        placeholder="2-3"
+                        readOnly={readOnly}
+                        className="h-8 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">Overlap in center</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="floor_clearance" className="text-xs font-medium text-gray-700">
+                        Floor Clearance
+                      </Label>
+                      <Input
+                        id="floor_clearance"
+                        type="number"
+                        step="0.25"
+                        value={measurements.floor_clearance || ""}
+                        onChange={(e) => handleInputChange("floor_clearance", e.target.value)}
+                        placeholder="0.5"
+                        readOnly={readOnly}
+                        className="h-8 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">Gap from floor</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="rod_extension_right" className="text-sm font-medium">{hardwareType === "track" ? "Track" : "Rod"} Extension Right</Label>
-                  <p className="text-xs text-gray-600 mb-1">How far {hardwareType === "track" ? "track" : "rod"} extends beyond window right</p>
-                  <Input
-                    id="rod_extension_right"
-                    type="number"
-                    step="0.25"
-                    value={measurements.rod_extension_right || ""}
-                    onChange={(e) => handleInputChange("rod_extension_right", e.target.value)}
-                    placeholder="8-10"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="panel_overlap" className="text-sm font-medium">Panel Overlap</Label>
-                  <p className="text-xs text-gray-600 mb-1">How much panels overlap in center</p>
-                  <Input
-                    id="panel_overlap"
-                    type="number"
-                    step="0.25"
-                    value={measurements.panel_overlap || ""}
-                    onChange={(e) => handleInputChange("panel_overlap", e.target.value)}
-                    placeholder="2-3"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="floor_clearance" className="text-sm font-medium">Floor Clearance</Label>
-                  <p className="text-xs text-gray-600 mb-1">Gap between curtain and floor</p>
-                  <Input
-                    id="floor_clearance"
-                    type="number"
-                    step="0.25"
-                    value={measurements.floor_clearance || ""}
-                    onChange={(e) => handleInputChange("floor_clearance", e.target.value)}
-                    placeholder="0.5"
-                    readOnly={readOnly}
-                  />
+              </details>
             </div>
 
             {/* Detailed Window Measurements */}
@@ -445,8 +469,6 @@ export const VisualMeasurementSheet = ({
                   />
                 </div>
               </div>
-            </div>
-          </div>
             </div>
           </div>
 
@@ -609,8 +631,6 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
             </div>
-
-
           </div>
         </div>
       </CardContent>
