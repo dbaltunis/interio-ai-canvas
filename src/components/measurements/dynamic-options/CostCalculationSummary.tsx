@@ -178,11 +178,22 @@ export const CostCalculationSummary = ({
                 <span className="text-sm">Manufacturing ({template.manufacturing_type})</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="ml-1 p-1 hover:bg-gray-100 rounded">
+                    <button 
+                      className="ml-1 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      type="button"
+                      aria-label="Show calculation details"
+                    >
                       <Info className="h-3 w-3 text-muted-foreground" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 p-4">
+                  <PopoverContent 
+                    className="w-80 p-4" 
+                    side="top" 
+                    align="start"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                  >
                     <div className="space-y-3">
                       <h4 className="font-semibold text-sm">Manufacturing Cost Calculation</h4>
                       <div className="text-xs space-y-2">
