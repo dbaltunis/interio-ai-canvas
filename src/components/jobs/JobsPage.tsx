@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
+import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { JobsTableView } from "./JobsTableView";
@@ -17,6 +17,7 @@ const JobsPage = () => {
   const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
+  const updateQuote = useUpdateQuote();
   const { toast } = useToast();
 
   const handleNewJob = async () => {
@@ -96,8 +97,8 @@ const JobsPage = () => {
       console.log("Project created for CRM quote:", newProject);
 
       // Update the quote with the new project_id
-      await createQuote.mutateAsync({
-        ...quote,
+      await updateQuote.mutateAsync({
+        id: quote.id,
         project_id: newProject.id
       });
 
