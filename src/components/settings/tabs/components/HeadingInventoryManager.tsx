@@ -3,15 +3,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Upload, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Edit, Trash2, Upload, X, Settings } from "lucide-react";
 import { useEnhancedInventoryByCategory, useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// Extended type to include image_url
+// Extended type to include image_url and advanced settings
 interface HeadingItem extends EnhancedInventoryItem {
   image_url?: string;
+  advanced_settings?: {
+    heading_type?: 'standard' | 'wave' | 'eyelet';
+    spacing?: number;
+    eyelet_diameter?: number;
+    eyelet_color?: string;
+    multiple_fullness_ratios?: number[];
+    use_multiple_ratios?: boolean;
+  };
 }
 
 export const HeadingInventoryManager = () => {
@@ -27,12 +37,20 @@ export const HeadingInventoryManager = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingHeading, setEditingHeading] = useState<HeadingItem | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     fullness_ratio: 2.5,
-    extra_fabric: 0, // Optional extra fabric in metres/yards
-    price_per_linear_unit: 0, // Optional price per running linear metre/yard
-    image_url: '' // For uploaded image
+    extra_fabric: 0,
+    price_per_linear_unit: 0,
+    image_url: '',
+    // Advanced settings
+    heading_type: 'standard' as 'standard' | 'wave' | 'eyelet',
+    spacing: 10,
+    eyelet_diameter: 8,
+    eyelet_color: 'antique-brass',
+    use_multiple_ratios: false,
+    multiple_fullness_ratios: [2.5] as number[],
   });
 
   const resetForm = () => {
@@ -41,8 +59,15 @@ export const HeadingInventoryManager = () => {
       fullness_ratio: 2.5,
       extra_fabric: 0,
       price_per_linear_unit: 0,
-      image_url: ''
+      image_url: '',
+      heading_type: 'standard',
+      spacing: 10,
+      eyelet_diameter: 8,
+      eyelet_color: 'antique-brass',
+      use_multiple_ratios: false,
+      multiple_fullness_ratios: [2.5],
     });
+    setShowAdvanced(false);
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,8 +76,14 @@ export const HeadingInventoryManager = () => {
 
     setUploadingImage(true);
     try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to upload images');
+      }
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `heading-${Date.now()}.${fileExt}`;
+      const fileName = `heading-${user.id}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('project-images')
@@ -88,6 +119,33 @@ export const HeadingInventoryManager = () => {
     setFormData({ ...formData, image_url: '' });
   };
 
+  const addFullnessRatio = () => {
+    const newRatio = 2.5;
+    setFormData({
+      ...formData,
+      multiple_fullness_ratios: [...formData.multiple_fullness_ratios, newRatio]
+    });
+  };
+
+  const updateFullnessRatio = (index: number, value: number) => {
+    const updated = [...formData.multiple_fullness_ratios];
+    updated[index] = value;
+    setFormData({
+      ...formData,
+      multiple_fullness_ratios: updated
+    });
+  };
+
+  const removeFullnessRatio = (index: number) => {
+    if (formData.multiple_fullness_ratios.length > 1) {
+      const updated = formData.multiple_fullness_ratios.filter((_, i) => i !== index);
+      setFormData({
+        ...formData,
+        multiple_fullness_ratios: updated
+      });
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast({
@@ -99,13 +157,35 @@ export const HeadingInventoryManager = () => {
     }
 
     try {
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "You must be logged in to save headings.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Prepare advanced settings
+      const advancedSettings = {
+        heading_type: formData.heading_type,
+        spacing: formData.spacing,
+        eyelet_diameter: formData.eyelet_diameter,
+        eyelet_color: formData.eyelet_color,
+        use_multiple_ratios: formData.use_multiple_ratios,
+        multiple_fullness_ratios: formData.use_multiple_ratios ? formData.multiple_fullness_ratios : [formData.fullness_ratio]
+      };
+
       const itemData = {
+        user_id: user.id, // Explicitly set user_id for RLS
         name: formData.name.trim(),
-        fullness_ratio: formData.fullness_ratio,
-        // Store extra fabric and price in the relevant fields
-        labor_hours: formData.extra_fabric, // Using labor_hours field for extra fabric
-        price_per_meter: formData.price_per_linear_unit, // Using price_per_meter for linear pricing
+        fullness_ratio: formData.use_multiple_ratios ? formData.multiple_fullness_ratios[0] : formData.fullness_ratio,
+        labor_hours: formData.extra_fabric,
+        price_per_meter: formData.price_per_linear_unit,
         image_url: formData.image_url,
+        description: JSON.stringify(advancedSettings), // Store advanced settings in description as JSON
         category: 'heading' as const,
         quantity: 1,
         active: true
@@ -138,15 +218,41 @@ export const HeadingInventoryManager = () => {
   };
 
   const handleEdit = (heading: HeadingItem) => {
+    // Parse advanced settings from description
+    let advancedSettings = {
+      heading_type: 'standard' as 'standard' | 'wave' | 'eyelet',
+      spacing: 10,
+      eyelet_diameter: 8,
+      eyelet_color: 'antique-brass',
+      use_multiple_ratios: false,
+      multiple_fullness_ratios: [heading.fullness_ratio || 2.5]
+    };
+
+    try {
+      if (heading.description) {
+        const parsed = JSON.parse(heading.description);
+        advancedSettings = { ...advancedSettings, ...parsed };
+      }
+    } catch (e) {
+      console.log('Could not parse advanced settings, using defaults');
+    }
+
     setFormData({
       name: heading.name,
       fullness_ratio: heading.fullness_ratio || 2.5,
-      extra_fabric: heading.labor_hours || 0, // Using labor_hours for extra fabric
-      price_per_linear_unit: heading.price_per_meter || 0, // Using price_per_meter for linear pricing
-      image_url: heading.image_url || ''
+      extra_fabric: heading.labor_hours || 0,
+      price_per_linear_unit: heading.price_per_meter || 0,
+      image_url: heading.image_url || '',
+      heading_type: advancedSettings.heading_type,
+      spacing: advancedSettings.spacing,
+      eyelet_diameter: advancedSettings.eyelet_diameter,
+      eyelet_color: advancedSettings.eyelet_color,
+      use_multiple_ratios: advancedSettings.use_multiple_ratios,
+      multiple_fullness_ratios: advancedSettings.multiple_fullness_ratios
     });
     setEditingHeading(heading);
     setIsCreating(false);
+    setShowAdvanced(advancedSettings.heading_type !== 'standard' || advancedSettings.use_multiple_ratios);
   };
 
   const handleDelete = async (id: string) => {
@@ -219,15 +325,88 @@ export const HeadingInventoryManager = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="fullness_ratio">Fullness Ratio *</Label>
-                  <Input
-                    id="fullness_ratio"
-                    type="number"
-                    step="0.1"
-                    value={formData.fullness_ratio}
-                    onChange={(e) => setFormData({ ...formData, fullness_ratio: parseFloat(e.target.value) || 0 })}
-                    placeholder="2.5"
-                  />
+                  <Label htmlFor="heading_type">Heading Type</Label>
+                  <Select 
+                    value={formData.heading_type} 
+                    onValueChange={(value: 'standard' | 'wave' | 'eyelet') => 
+                      setFormData({ ...formData, heading_type: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="wave">Wave</SelectItem>
+                      <SelectItem value="eyelet">Eyelet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Fullness Ratio Section */}
+                <div className="col-span-2">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Switch
+                      id="use_multiple_ratios"
+                      checked={formData.use_multiple_ratios}
+                      onCheckedChange={(checked) => setFormData({ 
+                        ...formData, 
+                        use_multiple_ratios: checked,
+                        multiple_fullness_ratios: checked ? formData.multiple_fullness_ratios : [formData.fullness_ratio]
+                      })}
+                    />
+                    <Label htmlFor="use_multiple_ratios">Multiple Fullness Ratios</Label>
+                  </div>
+
+                  {formData.use_multiple_ratios ? (
+                    <div className="space-y-2">
+                      <Label>Fullness Ratio Options</Label>
+                      {formData.multiple_fullness_ratios.map((ratio, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={ratio}
+                            onChange={(e) => updateFullnessRatio(index, parseFloat(e.target.value) || 0)}
+                            placeholder="2.5"
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">x</span>
+                          {formData.multiple_fullness_ratios.length > 1 && (
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => removeFullnessRatio(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={addFullnessRatio}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Ratio
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="fullness_ratio">Fullness Ratio *</Label>
+                      <Input
+                        id="fullness_ratio"
+                        type="number"
+                        step="0.1"
+                        value={formData.fullness_ratio}
+                        onChange={(e) => setFormData({ ...formData, fullness_ratio: parseFloat(e.target.value) || 0 })}
+                        placeholder="2.5"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -259,6 +438,72 @@ export const HeadingInventoryManager = () => {
                     Additional cost per running linear unit
                   </p>
                 </div>
+              </div>
+
+              {/* Advanced Settings Button */}
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="mb-4"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Advanced Settings
+                </Button>
+
+                {/* Advanced Settings for Wave/Eyelet */}
+                {showAdvanced && (formData.heading_type === 'wave' || formData.heading_type === 'eyelet') && (
+                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                    <div>
+                      <Label htmlFor="spacing">Spacing (cm)</Label>
+                      <Input
+                        id="spacing"
+                        type="number"
+                        step="0.5"
+                        value={formData.spacing}
+                        onChange={(e) => setFormData({ ...formData, spacing: parseFloat(e.target.value) || 0 })}
+                        placeholder="10"
+                      />
+                    </div>
+
+                    {formData.heading_type === 'eyelet' && (
+                      <>
+                        <div>
+                          <Label htmlFor="eyelet_diameter">Eyelet Diameter (mm)</Label>
+                          <Input
+                            id="eyelet_diameter"
+                            type="number"
+                            step="1"
+                            value={formData.eyelet_diameter}
+                            onChange={(e) => setFormData({ ...formData, eyelet_diameter: parseFloat(e.target.value) || 0 })}
+                            placeholder="8"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="eyelet_color">Eyelet Color</Label>
+                          <Select 
+                            value={formData.eyelet_color} 
+                            onValueChange={(value) => setFormData({ ...formData, eyelet_color: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="antique-brass">Antique Brass</SelectItem>
+                              <SelectItem value="chrome">Chrome</SelectItem>
+                              <SelectItem value="black">Black</SelectItem>
+                              <SelectItem value="white">White</SelectItem>
+                              <SelectItem value="brushed-nickel">Brushed Nickel</SelectItem>
+                              <SelectItem value="bronze">Bronze</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Image Upload */}
@@ -326,54 +571,73 @@ export const HeadingInventoryManager = () => {
                 No heading styles yet. Add your first heading style to get started.
               </p>
             ) : (
-              headings.map((heading) => (
-                <div key={heading.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                  {/* Image */}
-                  {heading.image_url && (
-                    <img 
-                      src={heading.image_url} 
-                      alt={heading.name}
-                      className="w-16 h-16 object-cover rounded-lg border"
-                      onError={(e) => {
-                        console.error('Heading image failed to load:', heading.image_url);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  
-                  {/* Content */}
-                  <div className="flex-1">
-                    <h4 className="font-medium">{heading.name}</h4>
-                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>Fullness: {heading.fullness_ratio || 1.0}</span>
-                      {(heading.labor_hours || 0) > 0 && (
-                        <span>Extra Fabric: {heading.labor_hours}m</span>
-                      )}
-                      {(heading.price_per_meter || 0) > 0 && (
-                        <span>Price: ${heading.price_per_meter}/m</span>
-                      )}
+              headings.map((heading) => {
+                // Parse advanced settings for display
+                let advancedSettings: any = {};
+                try {
+                  if (heading.description) {
+                    advancedSettings = JSON.parse(heading.description);
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+
+                return (
+                  <div key={heading.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    {/* Image */}
+                    {heading.image_url && (
+                      <img 
+                        src={heading.image_url} 
+                        alt={heading.name}
+                        className="w-16 h-16 object-cover rounded-lg border"
+                        onError={(e) => {
+                          console.error('Heading image failed to load:', heading.image_url);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    
+                    {/* Content */}
+                    <div className="flex-1">
+                      <h4 className="font-medium">{heading.name}</h4>
+                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                        {advancedSettings.use_multiple_ratios ? (
+                          <span>Ratios: {advancedSettings.multiple_fullness_ratios?.join(', ')}</span>
+                        ) : (
+                          <span>Fullness: {heading.fullness_ratio || 1.0}</span>
+                        )}
+                        {(heading.labor_hours || 0) > 0 && (
+                          <span>Extra Fabric: {heading.labor_hours}m</span>
+                        )}
+                        {(heading.price_per_meter || 0) > 0 && (
+                          <span>Price: ${heading.price_per_meter}/m</span>
+                        )}
+                        {advancedSettings.heading_type && advancedSettings.heading_type !== 'standard' && (
+                          <span className="capitalize">{advancedSettings.heading_type}</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(heading)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(heading.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(heading)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(heading.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </CardContent>
