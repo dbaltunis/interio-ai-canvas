@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, Shirt, Hammer, DollarSign } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calculator, Shirt, Hammer, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
@@ -175,6 +176,52 @@ export const CostCalculationSummary = ({
               <div className="flex items-center gap-2">
                 <Hammer className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Manufacturing ({template.manufacturing_type})</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="ml-1 p-1 hover:bg-gray-100 rounded">
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4">
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm">Manufacturing Cost Calculation</h4>
+                      <div className="text-xs space-y-2">
+                        <div>
+                          <strong>Fabric Required:</strong> {fabricUsage.meters.toFixed(2)}m²
+                          <div className="text-muted-foreground">
+                            • Width: {width}cm × Fullness: {template.fullness_ratio}x
+                            <br />
+                            • Drop: {height}cm + Hems & Allowances
+                            <br />
+                            • Waste Factor: {template.waste_percent || 0}%
+                          </div>
+                        </div>
+                        
+                        {template.machine_price_per_metre && (
+                          <div>
+                            <strong>Per Metre:</strong> {formatPrice(template.machine_price_per_metre)} × {fabricUsage.meters.toFixed(2)}m = {formatPrice(template.machine_price_per_metre * fabricUsage.meters)}
+                          </div>
+                        )}
+                        
+                        {template.machine_price_per_drop && (
+                          <div>
+                            <strong>Per Drop:</strong> {formatPrice(template.machine_price_per_drop)} × {template.curtain_type === 'pair' ? 2 : 1} curtain(s) = {formatPrice(template.machine_price_per_drop * (template.curtain_type === 'pair' ? 2 : 1))}
+                          </div>
+                        )}
+                        
+                        {template.machine_price_per_panel && (
+                          <div>
+                            <strong>Per Panel:</strong> {formatPrice(template.machine_price_per_panel)} × {template.curtain_type === 'pair' ? 2 : 1} panel(s) = {formatPrice(template.machine_price_per_panel * (template.curtain_type === 'pair' ? 2 : 1))}
+                          </div>
+                        )}
+                        
+                        <div className="pt-2 border-t">
+                          <strong>Total Manufacturing:</strong> {formatPrice(manufacturingCost)}
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="font-medium">{formatPrice(manufacturingCost)}</div>
             </div>
