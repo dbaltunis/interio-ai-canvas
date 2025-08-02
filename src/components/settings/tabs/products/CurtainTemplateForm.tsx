@@ -677,13 +677,21 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 {formData.pricing_type === "per_drop" && (
                   <div className="space-y-4">
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                      <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">🟫 What's a Drop?</h4>
+                      <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">🟫 Per Drop Pricing (British)</h4>
                       <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
-                        A drop is one full-width piece of fabric cut vertically to match the curtain height. 
-                        You often need multiple drops per panel, especially with narrow-width fabric (e.g., 137cm), 
-                        to achieve the full width of the curtain. Pricing per drop is common for workroom/seamstress pricing.
+                        Price is calculated based on the number of fabric drops needed. System automatically calculates 
+                        how many drops are required based on fabric width and curtain width, then multiplies by your price per drop.
                       </p>
                     </div>
+                    
+                    <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg">
+                      <h5 className="font-medium text-xs text-amber-900 dark:text-amber-100">Calculation Example:</h5>
+                      <p className="text-xs text-amber-800 dark:text-amber-200 mt-1">
+                        Curtain width: 300cm, Fabric width: 137cm → Need 3 drops<br/>
+                        Final price: 3 drops × £{formData.machine_price_per_drop || '30'} = £{(3 * parseFloat(formData.machine_price_per_drop || '30')).toFixed(2)}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="machine_price_per_drop">Machine Price per Drop</Label>
@@ -693,9 +701,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           step="0.01"
                           value={formData.machine_price_per_drop}
                           onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
-                          placeholder="180.00"
+                          placeholder="30.00"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Price charged per fabric drop (British style)</p>
+                        <p className="text-xs text-muted-foreground mt-1">Price per fabric drop (scales with complexity)</p>
                       </div>
                       {formData.offers_hand_finished && (
                         <div>
@@ -706,7 +714,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             step="0.01"
                             value={formData.hand_price_per_drop}
                             onChange={(e) => handleInputChange("hand_price_per_drop", e.target.value)}
-                            placeholder="280.00"
+                            placeholder="45.00"
                           />
                           <p className="text-xs text-muted-foreground mt-1">Hand-finished premium per drop</p>
                         </div>
@@ -718,13 +726,21 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 {formData.pricing_type === "per_panel" && (
                   <div className="space-y-4">
                     <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
-                      <h4 className="font-medium text-sm text-green-900 dark:text-green-100">🟩 What's a Panel?</h4>
+                      <h4 className="font-medium text-sm text-green-900 dark:text-green-100">🟩 Per Panel Pricing (American)</h4>
                       <p className="text-xs text-green-800 dark:text-green-200 mt-1">
-                        A panel is the finished curtain unit – either a single or half of a pair. 
-                        A panel is made from 1 or more drops sewn together. Pricing per panel provides 
-                        a fixed price per finished curtain regardless of number of drops, common in retail quotations.
+                        Fixed price per finished curtain panel regardless of how many fabric drops are needed. 
+                        Simpler pricing structure commonly used in retail environments.
                       </p>
                     </div>
+                    
+                    <div className="bg-purple-50 dark:bg-purple-950 p-3 rounded-lg">
+                      <h5 className="font-medium text-xs text-purple-900 dark:text-purple-100">Calculation Example:</h5>
+                      <p className="text-xs text-purple-800 dark:text-purple-200 mt-1">
+                        Pair of curtains (2 panels) regardless of fabric complexity<br/>
+                        Final price: 2 panels × ${formData.machine_price_per_panel || '180'} = ${(2 * parseFloat(formData.machine_price_per_panel || '180')).toFixed(2)}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="machine_price_per_panel">Machine Price per Panel</Label>
@@ -736,7 +752,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("machine_price_per_panel", e.target.value)}
                           placeholder="180.00"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Fixed price per finished curtain unit (American style)</p>
+                        <p className="text-xs text-muted-foreground mt-1">Fixed price per finished curtain (doesn't scale)</p>
                       </div>
                       {formData.offers_hand_finished && (
                         <div>

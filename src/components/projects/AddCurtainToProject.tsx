@@ -148,11 +148,21 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         makeUpPrice = railWidth * pricePerMetre;
         break;
       case 'per_drop':
+        // Calculate actual number of drops needed based on fabric width
+        const standardFabricWidth = template.fabric_width_type === 'wide' ? 280 : 140;
+        const fabricWidthNeeded = railWidth * template.fullness_ratio;
+        const dropsRequired = Math.ceil(fabricWidthNeeded / standardFabricWidth);
+        
+        // Price per drop calculation
+        const pricePerDrop = template.machine_price_per_drop || 30;
+        makeUpPrice = dropsRequired * pricePerDrop;
+        break;
+        
       case 'per_panel':
-        makeUpPrice = template.unit_price || 0;
-        if (template.curtain_type === 'pair') {
-          makeUpPrice *= 2;
-        }
+        // Fixed price per panel - doesn't scale with fabric complexity
+        const pricePerPanel = template.machine_price_per_panel || 180;
+        const panelCount = template.curtain_type === 'pair' ? 2 : 1;
+        makeUpPrice = panelCount * pricePerPanel;
         break;
       default:
         makeUpPrice = railWidth * 25; // Default fallback
@@ -184,6 +194,24 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
 
     const totalPrice = makeUpPrice + fabricCost + liningCost + hardwareCost;
 
+    // Add calculation details for better transparency
+    let calculationDetails = {};
+    if (template.pricing_type === 'per_drop') {
+      const dropsRequired = Math.ceil((railWidth * template.fullness_ratio) / (template.fabric_width_type === 'wide' ? 280 : 140));
+      calculationDetails = {
+        dropsRequired,
+        pricePerDrop: template.machine_price_per_drop || 30,
+        explanation: `${dropsRequired} drops × £${template.machine_price_per_drop || 30} per drop`
+      };
+    } else if (template.pricing_type === 'per_panel') {
+      const panelCount = template.curtain_type === 'pair' ? 2 : 1;
+      calculationDetails = {
+        panelCount,
+        pricePerPanel: template.machine_price_per_panel || 180,
+        explanation: `${panelCount} panel${panelCount > 1 ? 's' : ''} × £${template.machine_price_per_panel || 180} per panel`
+      };
+    }
+
     return {
       totalFabricRequired: Math.round(totalFabricRequired * 100) / 100,
       totalLiningRequired: Math.round(totalLiningRequired * 100) / 100,
@@ -191,7 +219,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
       fabricCost: Math.round(fabricCost * 100) / 100,
       liningCost: Math.round(liningCost * 100) / 100,
       hardwareCost: Math.round(hardwareCost * 100) / 100,
-      totalPrice: Math.round(totalPrice * 100) / 100
+      totalPrice: Math.round(totalPrice * 100) / 100,
+      calculationDetails
     };
   };
 
@@ -410,6 +439,16 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
                 <Separator />
 
                 <div className="space-y-2">
+                  {(formData.calculations as any).calculationDetails?.explanation && (
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                      <h5 className="font-medium text-sm text-blue-900 dark:text-blue-100">
+                        {selectedTemplate.pricing_type === 'per_drop' ? '🟫 Drop Calculation' : '🟩 Panel Calculation'}
+                      </h5>
+                      <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
+                        {(formData.calculations as any).calculationDetails.explanation}
+                      </p>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Make-up Cost:</span>
                     <span>£{formData.calculations.makeUpPrice}</span>
