@@ -661,7 +661,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </Card>
                 )}
 
-                {formData.pricing_type === "per_metre" && (
+                {formData.pricing_type === "per_metre" && !formData.uses_height_pricing && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
