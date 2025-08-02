@@ -2,9 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
-import { CurtainTemplateAnalytics } from "./products/CurtainTemplateAnalytics";
-import { SystemSettingsManager } from "./products/SystemSettingsManager";
-import { Settings, Layers, DollarSign, Wrench, BarChart } from "lucide-react";
+import { Settings, Layers, DollarSign, Wrench } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   return (
@@ -18,14 +16,10 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Templates
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
-                <BarChart className="h-4 w-4" />
-                Analytics
               </TabsTrigger>
               <TabsTrigger value="pricing" className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -40,10 +34,6 @@ export const WindowCoveringsTab = () => {
                 Settings
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="analytics" className="space-y-6">
-              <CurtainTemplateAnalytics />
-            </TabsContent>
 
             <TabsContent value="templates" className="space-y-6">
               <CurtainTemplatesManager />
@@ -132,7 +122,30 @@ export const WindowCoveringsTab = () => {
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
-              <SystemSettingsManager />
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Settings</CardTitle>
+                  <CardDescription>
+                    Global configuration and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Measurement Units</h4>
+                      <p className="text-sm text-muted-foreground">Currently using centimetres (cm) for all measurements</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Default Values</h4>
+                      <p className="text-sm text-muted-foreground">Configure default hem allowances, waste percentages, and other manufacturing defaults</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Integration Settings</h4>
+                      <p className="text-sm text-muted-foreground">Inventory integration, hardware compatibility, and project workflow settings</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </CardContent>
