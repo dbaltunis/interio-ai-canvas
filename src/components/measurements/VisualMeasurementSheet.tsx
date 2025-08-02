@@ -9,13 +9,15 @@ interface VisualMeasurementSheetProps {
   onMeasurementChange: (field: string, value: string) => void;
   readOnly?: boolean;
   windowType: string;
+  selectedTemplate?: any;
 }
 
 export const VisualMeasurementSheet = ({ 
   measurements, 
   onMeasurementChange, 
   readOnly = false,
-  windowType 
+  windowType,
+  selectedTemplate 
 }: VisualMeasurementSheetProps) => {
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
@@ -24,9 +26,10 @@ export const VisualMeasurementSheet = ({
     }
   };
 
-  const curtainType = measurements.curtain_type || "pair";
+  // Use template data if available, fallback to measurements
+  const curtainType = selectedTemplate?.curtain_type || measurements.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
-  const hardwareType = measurements.hardware_type || "rod";
+  const hardwareType = selectedTemplate?.compatible_hardware?.[0]?.toLowerCase() || measurements.hardware_type || "rod";
   const poolingOption = measurements.pooling_option || "above_floor";
   const poolingAmount = measurements.pooling_amount || "";
 

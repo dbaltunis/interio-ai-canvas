@@ -16,6 +16,11 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { TreatmentSpecificFields } from "./TreatmentSpecificFields";
 import { TreatmentVisualizer } from "./TreatmentVisualizer";
+import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
+import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
+import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
+import { DynamicTreatmentVisualizer } from "./dynamic-options/DynamicTreatmentVisualizer";
+import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId: string;
@@ -60,6 +65,11 @@ export const EnhancedMeasurementWorksheet = ({
   const [photos, setPhotos] = useState<string[]>(existingMeasurement?.photos || []);
   const [activeTab, setActiveTab] = useState("measurements");
   const [calculatedCost, setCalculatedCost] = useState(0);
+  
+  // Dynamic options state
+  const [selectedHeading, setSelectedHeading] = useState("standard");
+  const [selectedLining, setSelectedLining] = useState("none");
+  const [selectedFabric, setSelectedFabric] = useState("");
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -293,6 +303,7 @@ export const EnhancedMeasurementWorksheet = ({
                 onMeasurementChange={handleMeasurementChange}
                 readOnly={readOnly}
                 windowType={windowType}
+                selectedTemplate={selectedCovering}
               />
 
               <div>
@@ -368,24 +379,56 @@ export const EnhancedMeasurementWorksheet = ({
                 </CardContent>
               </Card>
 
-              {/* Treatment Visualizer */}
+              {/* Dynamic Treatment Visualizer */}
               {selectedCovering && (
-                <TreatmentVisualizer
-                  windowType={windowType}
+                <DynamicTreatmentVisualizer
+                  template={selectedCovering}
                   measurements={measurements}
-                  covering={selectedCovering}
-                  treatmentData={treatmentData}
+                  selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
+                  selectedLining={selectedLining}
                 />
               )}
 
-              {/* Treatment-Specific Fields */}
+              {/* Fabric Selection */}
               {selectedCovering && (
-                <TreatmentSpecificFields
-                  covering={selectedCovering}
-                  measurements={measurements}
-                  treatmentData={treatmentData}
-                  onTreatmentDataChange={handleTreatmentDataChange}
+                <FabricSelectionSection
+                  selectedFabric={selectedFabric}
+                  onFabricChange={setSelectedFabric}
+                  inventory={inventoryItems}
                   readOnly={readOnly}
+                />
+              )}
+
+              {/* Heading Options */}
+              {selectedCovering && (
+                <HeadingOptionsSection
+                  template={selectedCovering}
+                  selectedHeading={selectedHeading}
+                  onHeadingChange={setSelectedHeading}
+                  inventory={inventoryItems}
+                  readOnly={readOnly}
+                />
+              )}
+
+              {/* Lining Options */}
+              {selectedCovering && selectedCovering.lining_types && selectedCovering.lining_types.length > 0 && (
+                <LiningOptionsSection
+                  template={selectedCovering}
+                  selectedLining={selectedLining}
+                  onLiningChange={setSelectedLining}
+                  readOnly={readOnly}
+                />
+              )}
+
+              {/* Cost Calculation Summary */}
+              {selectedCovering && (
+                <CostCalculationSummary
+                  template={selectedCovering}
+                  measurements={measurements}
+                  selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
+                  selectedLining={selectedLining}
+                  selectedHeading={selectedHeading}
+                  inventory={inventoryItems}
                 />
               )}
 
