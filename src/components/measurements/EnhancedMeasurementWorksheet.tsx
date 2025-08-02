@@ -196,211 +196,117 @@ export const EnhancedMeasurementWorksheet = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Ruler className="h-5 w-5" />
-            Enhanced Measurement & Treatment Worksheet
+            Measurement & Treatment Worksheet
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="measurements" className="flex items-center gap-2">
-                <Ruler className="h-4 w-4" />
-                Measurements
-                {Object.keys(measurements).length > 0 && <Badge variant="secondary">✓</Badge>}
-              </TabsTrigger>
-              <TabsTrigger value="treatment" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Treatment Setup
-                {selectedWindowCovering !== "no_covering" && <Badge variant="secondary">✓</Badge>}
-              </TabsTrigger>
-              <TabsTrigger value="configure" className="flex items-center gap-2" disabled={!canConfigureTreatment}>
-                <Calculator className="h-4 w-4" />
-                Configure & Price
-                {hasTreatmentConfiguration && <Badge variant="secondary">{units.currency}{calculatedCost.toFixed(2)}</Badge>}
-              </TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-6">
+          {/* Basic Setup */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="windowType">Window Type</Label>
+              <Select value={windowType} onValueChange={setWindowType} disabled={readOnly}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select window type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WINDOW_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="treatment">Treatment</Label>
+              <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering} disabled={readOnly}>
+                <SelectTrigger>
+                  <SelectValue placeholder={curtainTemplates.length > 0 ? "Select treatment" : "No treatments available - Create in Settings"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no_covering">No Treatment</SelectItem>
+                  {curtainTemplates.length > 0 ? (
+                    curtainTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">{template.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {template.curtain_type} • Fullness: {template.fullness_ratio}x • {template.manufacturing_type}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="create_treatment" disabled>
+                      Create treatments in Settings → Window Coverings
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <TabsContent value="measurements" className="space-y-6">
-              {/* Basic Measurement Setup */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="windowType">Window Type</Label>
-                  <Select value={windowType} onValueChange={setWindowType} disabled={readOnly}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select window type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WINDOW_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="treatment">Treatment</Label>
-                  <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering} disabled={readOnly}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={curtainTemplates.length > 0 ? "Select treatment" : "No treatments available - Create in Settings"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no_covering">No Treatment</SelectItem>
-                      {curtainTemplates.length > 0 ? (
-                        curtainTemplates.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium">{template.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {template.curtain_type} • Fullness: {template.fullness_ratio}x • {template.manufacturing_type}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="create_treatment" disabled>
-                          Create treatments in Settings → Window Coverings
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {projectId && (
-                  <div>
-                    <Label htmlFor="room">Room</Label>
-                    <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={readOnly}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select room" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no_room">No Room Selected</SelectItem>
-                        {rooms.map((room) => (
-                          <SelectItem key={room.id} value={room.id}>
-                            {room.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="measuredBy">Measured By</Label>
-                  <Input
-                    id="measuredBy"
-                    value={measuredBy}
-                    onChange={(e) => setMeasuredBy(e.target.value)}
-                    placeholder="Enter name"
-                    readOnly={readOnly}
-                  />
-                </div>
+            {projectId && (
+              <div>
+                <Label htmlFor="room">Room</Label>
+                <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={readOnly}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no_room">No Room Selected</SelectItem>
+                    {rooms.map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
+                        {room.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
 
-              {/* Visual Measurement Sheet */}
-              <VisualMeasurementSheet
-                measurements={measurements}
-                onMeasurementChange={handleMeasurementChange}
+            <div>
+              <Label htmlFor="measuredBy">Measured By</Label>
+              <Input
+                id="measuredBy"
+                value={measuredBy}
+                onChange={(e) => setMeasuredBy(e.target.value)}
+                placeholder="Enter name"
                 readOnly={readOnly}
-                windowType={windowType}
-                selectedTemplate={selectedCovering}
+              />
+            </div>
+          </div>
+
+          {/* Visual Measurement Sheet */}
+          <VisualMeasurementSheet
+            measurements={measurements}
+            onMeasurementChange={handleMeasurementChange}
+            readOnly={readOnly}
+            windowType={windowType}
+            selectedTemplate={selectedCovering}
+          />
+
+          {/* Treatment-Specific Sections - Only show when treatment is selected */}
+          {selectedCovering && (
+            <div className="space-y-6">
+              {/* Dynamic Treatment Visualizer */}
+              <DynamicTreatmentVisualizer
+                template={selectedCovering}
+                measurements={measurements}
+                selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
+                selectedLining={selectedLining}
               />
 
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add any additional notes about the measurements..."
-                  rows={3}
-                  readOnly={readOnly}
-                />
-              </div>
-
-              {!readOnly && (
-                <div className="flex justify-between items-center pt-4">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Add Photos
-                  </Button>
-                  
-                  <Button 
-                    onClick={handleSaveMeasurements}
-                    disabled={createMeasurement.isPending || updateMeasurement.isPending}
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    Save & Continue to Treatment
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="treatment" className="space-y-6">
-              {Object.keys(measurements).length === 0 && (
-                <Card className="border-yellow-200 bg-yellow-50">
-                  <CardContent className="p-4">
-                    <p className="text-sm text-yellow-800">
-                      Please complete measurements first before selecting a treatment.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Window Covering Selection */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Window Covering Type</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Select 
-                    value={selectedWindowCovering} 
-                    onValueChange={setSelectedWindowCovering} 
-                    disabled={readOnly || Object.keys(measurements).length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select window covering" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no_covering">Not Selected</SelectItem>
-                      {curtainTemplates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{template.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {template.curtain_type}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
-
-              {/* Dynamic Treatment Visualizer */}
-              {selectedCovering && (
-                <DynamicTreatmentVisualizer
-                  template={selectedCovering}
-                  measurements={measurements}
-                  selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
-                  selectedLining={selectedLining}
-                />
-              )}
-
-              {/* Fabric Selection */}
-              {selectedCovering && (
+              {/* Treatment Options Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Fabric Selection */}
                 <FabricSelectionSection
                   selectedFabric={selectedFabric}
                   onFabricChange={setSelectedFabric}
                   inventory={inventoryItems}
                   readOnly={readOnly}
                 />
-              )}
 
-              {/* Heading Options */}
-              {selectedCovering && (
+                {/* Heading Options */}
                 <HeadingOptionsSection
                   template={selectedCovering}
                   selectedHeading={selectedHeading}
@@ -408,10 +314,10 @@ export const EnhancedMeasurementWorksheet = ({
                   inventory={inventoryItems}
                   readOnly={readOnly}
                 />
-              )}
+              </div>
 
-              {/* Lining Options */}
-              {selectedCovering && selectedCovering.lining_types && selectedCovering.lining_types.length > 0 && (
+              {/* Lining Options - Full width if available */}
+              {selectedCovering.lining_types && selectedCovering.lining_types.length > 0 && (
                 <LiningOptionsSection
                   template={selectedCovering}
                   selectedLining={selectedLining}
@@ -421,110 +327,61 @@ export const EnhancedMeasurementWorksheet = ({
               )}
 
               {/* Cost Calculation Summary */}
-              {selectedCovering && (
-                <CostCalculationSummary
-                  template={selectedCovering}
-                  measurements={measurements}
-                  selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
-                  selectedLining={selectedLining}
-                  selectedHeading={selectedHeading}
-                  inventory={inventoryItems}
-                />
-              )}
+              <CostCalculationSummary
+                template={selectedCovering}
+                measurements={measurements}
+                selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
+                selectedHeading={selectedHeading}
+                selectedLining={selectedLining}
+                inventory={inventoryItems}
+              />
+            </div>
+          )}
 
-              {selectedCovering && (
-                <div className="flex justify-end">
+          {/* Notes Section */}
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any additional notes about the measurements..."
+              rows={3}
+              readOnly={readOnly}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          {!readOnly && (
+            <div className="flex justify-between items-center pt-4">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Add Photos
+              </Button>
+              
+              <div className="flex gap-3">
+                <Button 
+                  onClick={handleSaveMeasurements}
+                  disabled={createMeasurement.isPending || updateMeasurement.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save Measurements
+                </Button>
+
+                {selectedCovering && selectedFabric && (
                   <Button 
-                    onClick={() => setActiveTab("configure")}
-                    disabled={!canConfigureTreatment}
+                    onClick={handleSaveTreatmentConfig}
+                    className="flex items-center gap-2"
+                    variant="default"
                   >
-                    Continue to Configure & Price
+                    <Package className="h-4 w-4" />
+                    Save Treatment Configuration
                   </Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="configure" className="space-y-6">
-              {/* Inventory Selection */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Materials from Inventory</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select value={selectedInventoryItem?.id || ""} onValueChange={(value) => {
-                    const item = inventoryItems.find(i => i.id === value);
-                    if (item) handleInventorySelect(item);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${selectedCovering?.name.toLowerCase()} materials`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getInventoryForCovering(selectedCovering).map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{item.name}</span>
-                            <span className="text-sm text-muted-foreground ml-4">
-                              {units.currency}{item.selling_price || item.unit_price || 0}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {selectedInventoryItem && (
-                    <Card className="p-4 bg-muted/50">
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="font-medium">{selectedInventoryItem.name}</span>
-                          <span>{units.currency}{selectedInventoryItem.selling_price || selectedInventoryItem.unit_price || 0}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{selectedInventoryItem.description}</p>
-                      </div>
-                    </Card>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Cost Summary */}
-              {hasTreatmentConfiguration && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Treatment Summary & Pricing</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-medium mb-2">Treatment Details</h4>
-                        <div className="space-y-1 text-sm">
-                          <div>Type: {selectedCovering.name}</div>
-                          <div>Material: {selectedInventoryItem.name}</div>
-                          <div>Width: {measurements.measurement_a || measurements.rail_width || 0}"</div>
-                          <div>Height: {measurements.measurement_b || measurements.drop || 0}"</div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-2">Cost Breakdown</h4>
-                        <div className="space-y-1 text-sm">
-                          <div>Material: {units.currency}{(calculatedCost * 0.6).toFixed(2)}</div>
-                          <div>Labor: {units.currency}{(calculatedCost * 0.4).toFixed(2)}</div>
-                          <div className="border-t pt-1 font-medium">Total: {units.currency}{calculatedCost.toFixed(2)}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button 
-                      onClick={handleSaveTreatmentConfig}
-                      className="w-full"
-                      size="lg"
-                    >
-                      Save Treatment Configuration
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
