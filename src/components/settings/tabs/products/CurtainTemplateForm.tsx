@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -46,19 +47,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Curtain Type
     curtain_type: template?.curtain_type || "single",
     
-    // Heading Style (One option per entry)
-    selected_heading_id: "",
-    heading_name: template?.heading_name || "",
-    fullness_ratio: template?.fullness_ratio?.toString() || "2.0",
-    extra_fabric_fixed: template?.extra_fabric_fixed?.toString() || "",
-    extra_fabric_percentage: template?.extra_fabric_percentage?.toString() || "",
-    
-    // Eyelet Advanced Config
-    eyelet_spacing: template?.eyelet_spacing?.toString() || "14",
-    eyelet_ring_id: 1, // Default to first ring
-    
-    // Glider spacing for wave headings
-    glider_spacing: template?.glider_spacing?.toString() || "",
+    // Selected Headings from Library
+    selected_heading_ids: [],
     
     // Fabric Requirements (will use inventory)
     fabric_width_type: template?.fabric_width_type || "wide",
@@ -114,6 +104,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       return;
     }
 
+    if (formData.selected_heading_ids.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one heading style must be selected",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -126,19 +125,16 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       }
 
       const templateData = {
-        user_id: user.id, // Critical: Set the user_id for RLS policies
+        user_id: user.id,
         name: formData.name,
         description: formData.description,
         curtain_type: formData.curtain_type as 'single' | 'pair',
-        heading_name: formData.heading_name,
-        fullness_ratio: parseFloat(formData.fullness_ratio.toString()) || 2.0,
-        extra_fabric_fixed: formData.extra_fabric_fixed ? parseFloat(formData.extra_fabric_fixed.toString()) : undefined,
-        extra_fabric_percentage: formData.extra_fabric_percentage ? parseFloat(formData.extra_fabric_percentage.toString()) : undefined,
-        // Remove upcharge fields - moved to pricing section
-        heading_upcharge_per_metre: undefined,
-        heading_upcharge_per_curtain: undefined,
-        glider_spacing: formData.glider_spacing ? parseFloat(formData.glider_spacing.toString()) : undefined,
-        eyelet_spacing: formData.eyelet_spacing ? parseFloat(formData.eyelet_spacing.toString()) : undefined,
+        selected_heading_ids: formData.selected_heading_ids,
+        // Keep these for compatibility - now derived from selected headings
+        heading_name: formData.selected_heading_ids.length > 0 ? 
+          headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.name || "" : "",
+        fullness_ratio: formData.selected_heading_ids.length > 0 ? 
+          headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.fullness_ratio || 2.0 : 2.0,
         fabric_width_type: formData.fabric_width_type as 'wide' | 'narrow',
         vertical_repeat: formData.vertical_repeat ? parseFloat(formData.vertical_repeat.toString()) : undefined,
         horizontal_repeat: formData.horizontal_repeat ? parseFloat(formData.horizontal_repeat.toString()) : undefined,
@@ -240,139 +236,51 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             {/* Heading Configuration */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Heading Configuration</CardTitle>
-                <CardDescription>Configure this specific heading style</CardDescription>
+                <CardTitle className="text-base">Available Heading Styles</CardTitle>
+                <CardDescription>Select heading styles to include in this template</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="selected_heading">Heading Style *</Label>
-                    <Select 
-                      value={formData.selected_heading_id} 
-                      onValueChange={(value) => {
-                        const selectedHeading = headingStyles.find(h => h.id === value);
-                        handleInputChange("selected_heading_id", value);
-                        if (selectedHeading) {
-                          handleInputChange("heading_name", selectedHeading.name);
-                          // Set default fullness ratio from heading if available
-                          if (selectedHeading.fullness_ratio) {
-                            handleInputChange("fullness_ratio", selectedHeading.fullness_ratio.toString());
-                          }
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select heading style from library" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {headingStyles.map((heading) => (
-                          <SelectItem key={heading.id} value={heading.id}>
-                            <div className="flex items-center gap-2">
-                              {(heading as any).image_url && (
-                                <img 
-                                  src={(heading as any).image_url} 
-                                  alt={heading.name}
-                                  className="w-6 h-6 object-cover rounded"
-                                />
-                              )}
+              <CardContent>
+                <div className="space-y-3">
+                  {headingStyles.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No heading styles found. Create heading styles in the inventory section first.</p>
+                  ) : (
+                    headingStyles.map((heading) => (
+                      <div key={heading.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Checkbox
+                          id={`heading-${heading.id}`}
+                          checked={formData.selected_heading_ids.includes(heading.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange("selected_heading_ids", [...formData.selected_heading_ids, heading.id]);
+                            } else {
+                              handleInputChange("selected_heading_ids", formData.selected_heading_ids.filter(id => id !== heading.id));
+                            }
+                          }}
+                        />
+                        <div className="flex items-center gap-3 flex-1">
+                          {(heading as any).image_url && (
+                            <img 
+                              src={(heading as any).image_url} 
+                              alt={heading.name}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <Label htmlFor={`heading-${heading.id}`} className="font-medium cursor-pointer">
                               {heading.name}
+                            </Label>
+                            <div className="text-sm text-muted-foreground">
+                              Fullness: {heading.fullness_ratio}x
+                              {(heading as any).fullness_ratios && Array.isArray((heading as any).fullness_ratios) && 
+                                ` (${(heading as any).fullness_ratios.length} options)`
+                              }
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
-                    {(() => {
-                      const selectedHeading = headingStyles.find(h => h.id === formData.selected_heading_id);
-                      const hasMultipleRatios = (selectedHeading as any)?.fullness_ratios && Array.isArray((selectedHeading as any).fullness_ratios) && (selectedHeading as any).fullness_ratios.length > 1;
-                      
-                      if (hasMultipleRatios) {
-                        return (
-                          <Select 
-                            value={formData.fullness_ratio} 
-                            onValueChange={(value) => handleInputChange("fullness_ratio", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select fullness ratio" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {((selectedHeading as any).fullness_ratios || []).map((ratio: any) => (
-                                <SelectItem key={ratio.ratio} value={ratio.ratio.toString()}>
-                                  {ratio.ratio}x {ratio.name && `(${ratio.name})`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        );
-                      } else {
-                        return (
-                          <Input
-                            id="fullness_ratio"
-                            type="number"
-                            step="0.1"
-                            value={formData.fullness_ratio}
-                            onChange={(e) => handleInputChange("fullness_ratio", e.target.value)}
-                            placeholder="2.0"
-                          />
-                        );
-                      }
-                    })()}
-                  </div>
-                </div>
-
-                {/* Eyelet Specific Configuration */}
-                {formData.heading_name?.toLowerCase().includes("eyelet") && (
-                  <Card className="p-4">
-                    <CardHeader className="p-0 pb-4">
-                      <CardTitle className="text-sm">Eyelet Configuration</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="eyelet_spacing">Ring Spacing (cm)</Label>
-                          <Input
-                            id="eyelet_spacing"
-                            type="number"
-                            value={formData.eyelet_spacing}
-                            onChange={(e) => handleInputChange("eyelet_spacing", e.target.value)}
-                            placeholder="14"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="eyelet_ring">Ring Type</Label>
-                          <Select value={formData.eyelet_ring_id.toString()} onValueChange={(value) => handleInputChange("eyelet_ring_id", parseInt(value))}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {eyeletRings.map((ring) => (
-                                <SelectItem key={ring.id} value={ring.id.toString()}>
-                                  {ring.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Wave Specific Configuration */}
-                {formData.heading_name?.toLowerCase().includes("wave") && (
-                  <div>
-                    <Label htmlFor="glider_spacing">Glider Spacing (cm)</Label>
-                    <Input
-                      id="glider_spacing"
-                      type="number"
-                      value={formData.glider_spacing}
-                      onChange={(e) => handleInputChange("glider_spacing", e.target.value)}
-                      placeholder="10"
-                    />
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -382,13 +290,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               onLiningTypesChange={(types) => handleInputChange("lining_types", types)}
             />
 
-            {/* Eyelet Ring Management for Eyelet Headings */}
-            {formData.heading_name?.toLowerCase().includes("eyelet") && (
-              <EyeletRingManager 
-                rings={eyeletRings}
-                onRingsChange={() => {}} // Static for now - could be made dynamic
-              />
-            )}
           </TabsContent>
 
           <TabsContent value="manufacturing" className="space-y-6">
@@ -646,7 +547,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
             {/* Hardware Compatibility */}
             <HardwareCompatibilityManager 
-              headingType={formData.heading_name}
+              headingType={formData.selected_heading_ids.length > 0 ? 
+                headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.name || "" : ""}
               compatibleHardware={formData.compatible_hardware}
               onHardwareChange={(hardware) => handleInputChange("compatible_hardware", hardware)}
             />
