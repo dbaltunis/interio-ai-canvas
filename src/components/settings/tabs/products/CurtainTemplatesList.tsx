@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCurtainTemplates, useDeleteCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 interface CurtainTemplatesListProps {
   onEdit: (template: CurtainTemplate) => void;
@@ -14,6 +14,7 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const { toast } = useToast();
   const { data: templates = [], isLoading } = useCurtainTemplates();
   const deleteTemplate = useDeleteCurtainTemplate();
+  const createTemplate = useCreateCurtainTemplate();
 
   const handleDelete = async (templateId: string) => {
     try {
@@ -23,13 +24,32 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
     }
   };
 
-  const handleDuplicate = (template: CurtainTemplate) => {
-    // TODO: Implement duplicate logic
-    console.log("Duplicating template:", template);
-    toast({
-      title: "Template Duplicated",
-      description: "A copy of the template has been created"
-    });
+  const handleDuplicate = async (template: CurtainTemplate) => {
+    try {
+      const duplicatedTemplate = {
+        ...template,
+        name: `${template.name} - Copy`,
+        description: `Copy of ${template.description || template.name}`,
+        active: true
+      };
+      
+      // Remove fields that shouldn't be copied
+      const { id, user_id, created_at, updated_at, ...templateData } = duplicatedTemplate;
+      
+      await createTemplate.mutateAsync(templateData);
+      
+      toast({
+        title: "Template Duplicated",
+        description: "A copy of the template has been created"
+      });
+    } catch (error) {
+      console.error("Error duplicating template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate template. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {

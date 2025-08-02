@@ -12,6 +12,10 @@ import { Save, X, Info, Plus, Trash2, Upload, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { EyeletRingManager } from "./EyeletRingManager";
+import { LiningTypeManager } from "./LiningTypeManager";
+import { PricingGridUploader } from "./PricingGridUploader";
+import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
@@ -303,49 +307,18 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             </Card>
 
             {/* Lining Configuration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Lining Options</CardTitle>
-                <CardDescription>Pre-configured lining types with pricing</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {formData.lining_types.map((lining, index) => (
-                    <div key={index} className="flex items-center space-x-4 p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <Label className="text-sm font-medium">{lining.type} Lining</Label>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={lining.price_per_metre}
-                          onChange={(e) => {
-                            const updatedLinings = [...formData.lining_types];
-                            updatedLinings[index].price_per_metre = parseFloat(e.target.value) || 0;
-                            handleInputChange("lining_types", updatedLinings);
-                          }}
-                          placeholder="Price per metre"
-                          className="w-32"
-                        />
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={lining.labour_per_curtain}
-                          onChange={(e) => {
-                            const updatedLinings = [...formData.lining_types];
-                            updatedLinings[index].labour_per_curtain = parseFloat(e.target.value) || 0;
-                            handleInputChange("lining_types", updatedLinings);
-                          }}
-                          placeholder="Labour per curtain"
-                          className="w-32"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <LiningTypeManager 
+              liningTypes={formData.lining_types}
+              onLiningTypesChange={(types) => handleInputChange("lining_types", types)}
+            />
+
+            {/* Eyelet Ring Management for Eyelet Headings */}
+            {formData.heading_name?.toLowerCase().includes("eyelet") && (
+              <EyeletRingManager 
+                rings={eyeletRings}
+                onRingsChange={() => {}} // Static for now - could be made dynamic
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="manufacturing" className="space-y-6">
@@ -592,53 +565,21 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 )}
 
                 {formData.pricing_type === "pricing_grid" && (
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="pricing_grid_file">Upload Pricing Grid</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="pricing_grid_file"
-                          type="file"
-                          accept=".csv,.xlsx,.xls"
-                          className="flex-1"
-                        />
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          Sample
-                        </Button>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Upload a file with width × drop matrix pricing. Download sample for format reference.
-                      </p>
-                    </div>
-                  </div>
+                  <PricingGridUploader 
+                    initialData={formData.pricing_grid_data}
+                    onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                  />
                 )}
               </CardContent>
             </Card>
 
+
             {/* Hardware Compatibility */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Hardware Compatibility</CardTitle>
-                <CardDescription>Select compatible hardware from inventory</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Hardware selection will be available from your inventory during project creation.
-                    Compatibility is automatically matched (e.g., Wave headings require tracks).
-                  </p>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium">Auto-matched compatibility:</p>
-                    <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                      <li>• Wave headings → Track systems</li>
-                      <li>• Eyelet headings → Poles</li>
-                      <li>• Pinch pleat → Poles or tracks</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <HardwareCompatibilityManager 
+              headingType={formData.heading_name}
+              compatibleHardware={formData.compatible_hardware}
+              onHardwareChange={(hardware) => handleInputChange("compatible_hardware", hardware)}
+            />
           </TabsContent>
         </div>
 
