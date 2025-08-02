@@ -4,17 +4,18 @@ import { Plus } from "lucide-react";
 import { CurtainTemplateForm } from "./CurtainTemplateForm";
 import { CurtainTemplatesList } from "./CurtainTemplatesList";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 export const CurtainTemplatesManager = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [editingTemplate, setEditingTemplate] = useState<CurtainTemplate | null>(null);
 
   const handleAddTemplate = () => {
     setEditingTemplate(null);
     setIsFormOpen(true);
   };
 
-  const handleEditTemplate = (template: any) => {
+  const handleEditTemplate = (template: CurtainTemplate) => {
     setEditingTemplate(template);
     setIsFormOpen(true);
   };

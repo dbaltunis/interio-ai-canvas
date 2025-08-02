@@ -1,59 +1,29 @@
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useCurtainTemplates, useDeleteCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 interface CurtainTemplatesListProps {
-  onEdit: (template: any) => void;
+  onEdit: (template: CurtainTemplate) => void;
 }
-
-// Mock data for demonstration
-const mockTemplates = [
-  {
-    id: "1",
-    name: "Premium Blackout Curtains",
-    description: "High-quality blackout curtains with thermal lining",
-    fabric_type: "blackout",
-    heading_style: "pencil_pleat",
-    lining_type: "blackout",
-    width_multiplier: "2.5",
-    drop_allowance: "15",
-    base_price: "45.00",
-    installation_fee: "25.00",
-    created_at: "2024-01-15"
-  },
-  {
-    id: "2",
-    name: "Luxury Silk Curtains",
-    description: "Elegant silk curtains for formal rooms",
-    fabric_type: "silk",
-    heading_style: "eyelet",
-    lining_type: "standard",
-    width_multiplier: "2.0",
-    drop_allowance: "20",
-    base_price: "85.00",
-    installation_fee: "30.00",
-    created_at: "2024-01-12"
-  }
-];
 
 export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const { toast } = useToast();
-  const [templates] = useState(mockTemplates);
+  const { data: templates = [], isLoading } = useCurtainTemplates();
+  const deleteTemplate = useDeleteCurtainTemplate();
 
-  const handleDelete = (templateId: string) => {
-    // TODO: Implement actual delete logic
-    console.log("Deleting template:", templateId);
-    toast({
-      title: "Template Deleted",
-      description: "The curtain template has been successfully deleted"
-    });
+  const handleDelete = async (templateId: string) => {
+    try {
+      await deleteTemplate.mutateAsync(templateId);
+    } catch (error) {
+      console.error("Error deleting template:", error);
+    }
   };
 
-  const handleDuplicate = (template: any) => {
+  const handleDuplicate = (template: CurtainTemplate) => {
     // TODO: Implement duplicate logic
     console.log("Duplicating template:", template);
     toast({
@@ -62,28 +32,17 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
     });
   };
 
-  const getFabricTypeLabel = (type: string) => {
-    const labels: { [key: string]: string } = {
-      cotton: "Cotton",
-      polyester: "Polyester",
-      linen: "Linen",
-      silk: "Silk",
-      blackout: "Blackout",
-      sheer: "Sheer"
-    };
-    return labels[type] || type;
-  };
-
-  const getHeadingStyleLabel = (style: string) => {
-    const labels: { [key: string]: string } = {
-      pencil_pleat: "Pencil Pleat",
-      eyelet: "Eyelet",
-      tab_top: "Tab Top",
-      rod_pocket: "Rod Pocket",
-      grommet: "Grommet"
-    };
-    return labels[style] || style;
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center text-muted-foreground">
+            <p>Loading curtain templates...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (templates.length === 0) {
     return (
@@ -142,23 +101,24 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
           <CardContent>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{getFabricTypeLabel(template.fabric_type)}</Badge>
-                <Badge variant="outline">{getHeadingStyleLabel(template.heading_style)}</Badge>
-                <Badge variant="outline">Lining: {template.lining_type}</Badge>
+                <Badge variant="secondary">{template.curtain_type}</Badge>
+                <Badge variant="outline">{template.heading_name}</Badge>
+                <Badge variant="outline">Fullness: {template.fullness_ratio}</Badge>
+                <Badge variant="outline">{template.manufacturing_type}</Badge>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">Width Multiplier:</span> {template.width_multiplier}
+                  <span className="font-medium">Fabric Width:</span> {template.fabric_width_type}
                 </div>
                 <div>
-                  <span className="font-medium">Drop Allowance:</span> {template.drop_allowance}cm
+                  <span className="font-medium">Direction:</span> {template.fabric_direction}
                 </div>
                 <div>
-                  <span className="font-medium">Base Price:</span> £{template.base_price}/m²
+                  <span className="font-medium">Bottom Hem:</span> {template.bottom_hem}cm
                 </div>
                 <div>
-                  <span className="font-medium">Installation:</span> £{template.installation_fee}
+                  <span className="font-medium">Pricing:</span> {template.pricing_type.replace('_', ' ')}
                 </div>
               </div>
             </div>

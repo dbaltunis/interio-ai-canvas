@@ -1,0 +1,165 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export interface CurtainTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  
+  // Curtain Type
+  curtain_type: 'single' | 'pair';
+  
+  // Heading Style
+  heading_name: string;
+  fullness_ratio: number;
+  extra_fabric_fixed?: number;
+  extra_fabric_percentage?: number;
+  heading_upcharge_per_metre?: number;
+  heading_upcharge_per_curtain?: number;
+  glider_spacing?: number;
+  eyelet_spacing?: number;
+  
+  // Fabric Requirements
+  fabric_width_type: 'wide' | 'narrow';
+  vertical_repeat?: number;
+  horizontal_repeat?: number;
+  fabric_direction: 'standard' | 'railroaded';
+  bottom_hem: number;
+  side_hems: number;
+  seam_hems: number;
+  
+  // Lining Options
+  lining_types: Array<{
+    type: string;
+    price_per_metre: number;
+    labour_per_curtain: number;
+  }>;
+  
+  // Hardware
+  compatible_hardware: string[];
+  
+  // Make-Up Pricing
+  pricing_type: 'per_metre' | 'per_drop' | 'per_curtain' | 'pricing_grid';
+  price_rules: Array<{
+    min_drop: number;
+    max_drop: number;
+    price_per_metre: number;
+  }>;
+  unit_price?: number;
+  pricing_grid_data?: any;
+  
+  // Manufacturing
+  manufacturing_type: 'machine' | 'hand';
+  hand_finished_upcharge_fixed?: number;
+  hand_finished_upcharge_percentage?: number;
+  
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const useCurtainTemplates = () => {
+  return useQuery({
+    queryKey: ["curtain-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("curtain_templates" as any)
+        .select("*")
+        .eq("active", true)
+        .order("name");
+
+      if (error) throw error;
+      return (data as unknown) as CurtainTemplate[];
+    },
+  });
+};
+
+export const useCurtainTemplate = (id: string) => {
+  return useQuery({
+    queryKey: ["curtain-template", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("curtain_templates" as any)
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as unknown) as CurtainTemplate | null;
+    },
+    enabled: !!id,
+  });
+};
+
+export const useCreateCurtainTemplate = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (template: Omit<CurtainTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from("curtain_templates" as any)
+        .insert([template])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      toast.success("Curtain template created successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to create curtain template: " + error.message);
+    },
+  });
+};
+
+export const useUpdateCurtainTemplate = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<CurtainTemplate> & { id: string }) => {
+      const { data, error } = await supabase
+        .from("curtain_templates" as any)
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      toast.success("Curtain template updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update curtain template: " + error.message);
+    },
+  });
+};
+
+export const useDeleteCurtainTemplate = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("curtain_templates" as any)
+        .update({ active: false })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      toast.success("Curtain template deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete curtain template: " + error.message);
+    },
+  });
+};

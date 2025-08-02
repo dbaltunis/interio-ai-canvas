@@ -8,14 +8,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 interface CurtainTemplateFormProps {
-  template?: any;
+  template?: CurtainTemplate;
   onClose: () => void;
 }
 
 export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormProps) => {
   const { toast } = useToast();
+  const createTemplate = useCreateCurtainTemplate();
+  const updateTemplate = useUpdateCurtainTemplate();
   const [formData, setFormData] = useState({
     // Basic Information
     name: template?.name || "",
@@ -26,22 +29,22 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     
     // Heading Style
     heading_name: template?.heading_name || "",
-    fullness_ratio: template?.fullness_ratio || "2.0",
-    extra_fabric_fixed: template?.extra_fabric_fixed || "",
-    extra_fabric_percentage: template?.extra_fabric_percentage || "",
-    heading_upcharge_per_metre: template?.heading_upcharge_per_metre || "",
-    heading_upcharge_per_curtain: template?.heading_upcharge_per_curtain || "",
-    glider_spacing: template?.glider_spacing || "",
-    eyelet_spacing: template?.eyelet_spacing || "",
+    fullness_ratio: template?.fullness_ratio?.toString() || "2.0",
+    extra_fabric_fixed: template?.extra_fabric_fixed?.toString() || "",
+    extra_fabric_percentage: template?.extra_fabric_percentage?.toString() || "",
+    heading_upcharge_per_metre: template?.heading_upcharge_per_metre?.toString() || "",
+    heading_upcharge_per_curtain: template?.heading_upcharge_per_curtain?.toString() || "",
+    glider_spacing: template?.glider_spacing?.toString() || "",
+    eyelet_spacing: template?.eyelet_spacing?.toString() || "",
     
     // Fabric Requirements
     fabric_width_type: template?.fabric_width_type || "wide",
-    vertical_repeat: template?.vertical_repeat || "",
-    horizontal_repeat: template?.horizontal_repeat || "",
+    vertical_repeat: template?.vertical_repeat?.toString() || "",
+    horizontal_repeat: template?.horizontal_repeat?.toString() || "",
     fabric_direction: template?.fabric_direction || "standard",
-    bottom_hem: template?.bottom_hem || "15",
-    side_hems: template?.side_hems || "7.5",
-    seam_hems: template?.seam_hems || "1.5",
+    bottom_hem: template?.bottom_hem?.toString() || "15",
+    side_hems: template?.side_hems?.toString() || "7.5",
+    seam_hems: template?.seam_hems?.toString() || "1.5",
     
     // Lining Options
     lining_types: template?.lining_types || [],
@@ -52,20 +55,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Make-Up Pricing
     pricing_type: template?.pricing_type || "per_metre",
     price_rules: template?.price_rules || [],
-    unit_price: template?.unit_price || "",
-    pricing_grid_file: template?.pricing_grid_file || null,
+    unit_price: template?.unit_price?.toString() || "",
     
     // Manufacturing
     manufacturing_type: template?.manufacturing_type || "machine",
-    hand_finished_upcharge_fixed: template?.hand_finished_upcharge_fixed || "",
-    hand_finished_upcharge_percentage: template?.hand_finished_upcharge_percentage || ""
+    hand_finished_upcharge_fixed: template?.hand_finished_upcharge_fixed?.toString() || "",
+    hand_finished_upcharge_percentage: template?.hand_finished_upcharge_percentage?.toString() || ""
   });
 
   const handleInputChange = (field: string, value: string | any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       toast({
         title: "Validation Error",
@@ -75,15 +77,48 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       return;
     }
 
-    // TODO: Implement save logic with actual API
-    console.log("Saving curtain template:", formData);
-    
-    toast({
-      title: "Success",
-      description: template ? "Template updated successfully" : "Template created successfully"
-    });
-    
-    onClose();
+    try {
+      const templateData = {
+        name: formData.name,
+        description: formData.description,
+        curtain_type: formData.curtain_type as 'single' | 'pair',
+        heading_name: formData.heading_name,
+        fullness_ratio: parseFloat(formData.fullness_ratio.toString()) || 2.0,
+        extra_fabric_fixed: formData.extra_fabric_fixed ? parseFloat(formData.extra_fabric_fixed.toString()) : undefined,
+        extra_fabric_percentage: formData.extra_fabric_percentage ? parseFloat(formData.extra_fabric_percentage.toString()) : undefined,
+        heading_upcharge_per_metre: formData.heading_upcharge_per_metre ? parseFloat(formData.heading_upcharge_per_metre.toString()) : undefined,
+        heading_upcharge_per_curtain: formData.heading_upcharge_per_curtain ? parseFloat(formData.heading_upcharge_per_curtain.toString()) : undefined,
+        glider_spacing: formData.glider_spacing ? parseFloat(formData.glider_spacing.toString()) : undefined,
+        eyelet_spacing: formData.eyelet_spacing ? parseFloat(formData.eyelet_spacing.toString()) : undefined,
+        fabric_width_type: formData.fabric_width_type as 'wide' | 'narrow',
+        vertical_repeat: formData.vertical_repeat ? parseFloat(formData.vertical_repeat.toString()) : undefined,
+        horizontal_repeat: formData.horizontal_repeat ? parseFloat(formData.horizontal_repeat.toString()) : undefined,
+        fabric_direction: formData.fabric_direction as 'standard' | 'railroaded',
+        bottom_hem: parseFloat(formData.bottom_hem.toString()) || 15,
+        side_hems: parseFloat(formData.side_hems.toString()) || 7.5,
+        seam_hems: parseFloat(formData.seam_hems.toString()) || 1.5,
+        lining_types: [],
+        compatible_hardware: [],
+        pricing_type: formData.pricing_type as 'per_metre' | 'per_drop' | 'per_curtain' | 'pricing_grid',
+        price_rules: [],
+        unit_price: formData.unit_price ? parseFloat(formData.unit_price.toString()) : undefined,
+        pricing_grid_data: {},
+        manufacturing_type: formData.manufacturing_type as 'machine' | 'hand',
+        hand_finished_upcharge_fixed: formData.hand_finished_upcharge_fixed ? parseFloat(formData.hand_finished_upcharge_fixed.toString()) : undefined,
+        hand_finished_upcharge_percentage: formData.hand_finished_upcharge_percentage ? parseFloat(formData.hand_finished_upcharge_percentage.toString()) : undefined,
+        active: true
+      };
+
+      if (template) {
+        await updateTemplate.mutateAsync({ id: template.id, ...templateData });
+      } else {
+        await createTemplate.mutateAsync(templateData);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error("Error saving template:", error);
+    }
   };
 
   return (
