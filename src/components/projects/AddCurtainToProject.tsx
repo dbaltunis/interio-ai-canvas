@@ -447,6 +447,16 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
                       <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
                         {(formData.calculations as any).calculationDetails.explanation}
                       </p>
+                      {selectedTemplate.pricing_type === 'per_drop' && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          Price scales with fabric complexity
+                        </p>
+                      )}
+                      {selectedTemplate.pricing_type === 'per_panel' && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          Fixed price regardless of fabric complexity
+                        </p>
+                      )}
                     </div>
                   )}
                   <div className="flex justify-between">

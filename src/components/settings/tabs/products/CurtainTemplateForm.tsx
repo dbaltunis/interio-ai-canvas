@@ -619,28 +619,33 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="per_metre">Per Running Metre/Yard</SelectItem>
-                      <SelectItem value="per_drop">Per Drop - Labour pricing based on vertical cuts (British)</SelectItem>
-                      <SelectItem value="per_panel">Per Panel - Fixed price per finished curtain unit (American)</SelectItem>
+                      <SelectItem value="per_drop">Per Drop - Price multiplies by fabric pieces needed</SelectItem>
+                      <SelectItem value="per_panel">Per Panel - Fixed price per finished curtain</SelectItem>
                       <SelectItem value="pricing_grid">Pricing Grid (Upload)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Average drop width for per drop/panel pricing */}
+                {/* Fabric width setting for calculations */}
                 {(formData.pricing_type === "per_drop" || formData.pricing_type === "per_panel") && (
-                  <div>
-                    <Label htmlFor="average_drop_width">Average Drop/Panel Width (cm)</Label>
-                    <Input
-                      id="average_drop_width"
-                      type="number"
-                      value={formData.average_drop_width}
-                      onChange={(e) => handleInputChange("average_drop_width", e.target.value)}
-                      placeholder="140"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Used to calculate pricing when ordering by {formData.pricing_type === "per_drop" ? "drop" : "panel"}
-                    </p>
-                  </div>
+                  <Card className="p-3 bg-muted/30">
+                    <h5 className="font-medium text-sm mb-2">Fabric Width Configuration</h5>
+                    <div>
+                      <Label htmlFor="fabric_width_type">Standard Fabric Width</Label>
+                      <Select value={formData.fabric_width_type} onValueChange={(value) => handleInputChange("fabric_width_type", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select fabric width" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="narrow">Narrow Width (140cm) - Multiple drops often needed</SelectItem>
+                          <SelectItem value="wide">Wide Width (280cm) - Fewer drops needed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        This affects how many fabric pieces are needed for {formData.pricing_type === "per_drop" ? "per-drop calculations" : "wide curtains"}
+                      </p>
+                    </div>
+                  </Card>
                 )}
 
                 {formData.pricing_type === "per_metre" && (
@@ -677,10 +682,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 {formData.pricing_type === "per_drop" && (
                   <div className="space-y-4">
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                      <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">🟫 Per Drop Pricing (British)</h4>
+                      <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">🟫 Per Drop Pricing</h4>
                       <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
-                        Price is calculated based on the number of fabric drops needed. System automatically calculates 
-                        how many drops are required based on fabric width and curtain width, then multiplies by your price per drop.
+                        Price scales with fabric complexity. System calculates how many fabric pieces (drops) 
+                        are needed based on curtain width vs fabric width, then multiplies by your price per drop.
                       </p>
                     </div>
                     
@@ -726,10 +731,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 {formData.pricing_type === "per_panel" && (
                   <div className="space-y-4">
                     <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
-                      <h4 className="font-medium text-sm text-green-900 dark:text-green-100">🟩 Per Panel Pricing (American)</h4>
+                      <h4 className="font-medium text-sm text-green-900 dark:text-green-100">🟩 Per Panel Pricing</h4>
                       <p className="text-xs text-green-800 dark:text-green-200 mt-1">
-                        Fixed price per finished curtain panel regardless of how many fabric drops are needed. 
-                        Simpler pricing structure commonly used in retail environments.
+                        Fixed price per finished curtain panel regardless of fabric complexity. 
+                        Price stays the same whether you need 1 drop or 5 drops to make the panel.
                       </p>
                     </div>
                     
