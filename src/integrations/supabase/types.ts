@@ -814,6 +814,7 @@ export type Database = {
           hand_finished_upcharge_fixed: number | null
           hand_finished_upcharge_percentage: number | null
           hand_price_per_drop: number | null
+          hand_price_per_metre: number | null
           hand_price_per_panel: number | null
           header_allowance: number | null
           heading_name: string
@@ -826,6 +827,7 @@ export type Database = {
           is_railroadable: boolean | null
           lining_types: Json | null
           machine_price_per_drop: number | null
+          machine_price_per_metre: number | null
           machine_price_per_panel: number | null
           manufacturing_type: string
           name: string
@@ -865,6 +867,7 @@ export type Database = {
           hand_finished_upcharge_fixed?: number | null
           hand_finished_upcharge_percentage?: number | null
           hand_price_per_drop?: number | null
+          hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
           heading_name: string
@@ -877,6 +880,7 @@ export type Database = {
           is_railroadable?: boolean | null
           lining_types?: Json | null
           machine_price_per_drop?: number | null
+          machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
           manufacturing_type?: string
           name: string
@@ -916,6 +920,7 @@ export type Database = {
           hand_finished_upcharge_fixed?: number | null
           hand_finished_upcharge_percentage?: number | null
           hand_price_per_drop?: number | null
+          hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
           heading_name?: string
@@ -928,6 +933,7 @@ export type Database = {
           is_railroadable?: boolean | null
           lining_types?: Json | null
           machine_price_per_drop?: number | null
+          machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
           manufacturing_type?: string
           name?: string
