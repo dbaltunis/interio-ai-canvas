@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, X, Info, Plus, Trash2, Upload, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { EyeletRingManager } from "./EyeletRingManager";
@@ -111,6 +112,16 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     }
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to save templates",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const templateData = {
         name: formData.name,
         description: formData.description,
