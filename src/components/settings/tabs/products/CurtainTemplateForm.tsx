@@ -90,10 +90,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     machine_price_per_panel: "",
     hand_price_per_panel: "",
     average_drop_width: "140", // Default average drop width in cm
-    // Height-based pricing
+    // Height range pricing
     uses_height_pricing: false,
-    height_breakpoint: "200",
-    price_above_breakpoint_multiplier: "1.2",
+    height_price_ranges: template?.height_price_ranges || [
+      { min_height: 1, max_height: 200, price: 24 }
+    ],
     price_rules: template?.price_rules || [],
     pricing_grid_data: template?.pricing_grid_data || null
   });
@@ -513,38 +514,91 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </Tooltip>
                 </div>
 
-                {/* Height pricing configuration */}
+                {/* Height range pricing configuration */}
                 {formData.uses_height_pricing && (
                   <Card className="p-4">
                     <CardHeader className="p-0 pb-4">
-                      <CardTitle className="text-sm">Height Pricing Configuration</CardTitle>
+                      <CardTitle className="text-sm">Height Range Pricing Configuration</CardTitle>
+                      <CardDescription className="text-xs">
+                        Create different pricing tiers based on curtain height ranges (e.g., 1-200cm = $24, 201-250cm = $30)
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="height_breakpoint">Height Breakpoint (cm)</Label>
-                          <Input
-                            id="height_breakpoint"
-                            type="number"
-                            value={formData.height_breakpoint}
-                            onChange={(e) => handleInputChange("height_breakpoint", e.target.value)}
-                            placeholder="200"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">Curtains above this height get different pricing</p>
+                      {formData.height_price_ranges.map((range, index) => (
+                        <div key={index} className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <Label htmlFor={`min_height_${index}`}>Min Height (cm)</Label>
+                            <Input
+                              id={`min_height_${index}`}
+                              type="number"
+                              value={range.min_height}
+                              onChange={(e) => {
+                                const newRanges = [...formData.height_price_ranges];
+                                newRanges[index].min_height = parseInt(e.target.value) || 0;
+                                handleInputChange("height_price_ranges", newRanges);
+                              }}
+                              placeholder="1"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Label htmlFor={`max_height_${index}`}>Max Height (cm)</Label>
+                            <Input
+                              id={`max_height_${index}`}
+                              type="number"
+                              value={range.max_height}
+                              onChange={(e) => {
+                                const newRanges = [...formData.height_price_ranges];
+                                newRanges[index].max_height = parseInt(e.target.value) || 0;
+                                handleInputChange("height_price_ranges", newRanges);
+                              }}
+                              placeholder="200"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Label htmlFor={`price_${index}`}>Price ($)</Label>
+                            <Input
+                              id={`price_${index}`}
+                              type="number"
+                              step="0.01"
+                              value={range.price}
+                              onChange={(e) => {
+                                const newRanges = [...formData.height_price_ranges];
+                                newRanges[index].price = parseFloat(e.target.value) || 0;
+                                handleInputChange("height_price_ranges", newRanges);
+                              }}
+                              placeholder="24.00"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newRanges = formData.height_price_ranges.filter((_, i) => i !== index);
+                              handleInputChange("height_price_ranges", newRanges);
+                            }}
+                            disabled={formData.height_price_ranges.length === 1}
+                          >
+                            Remove
+                          </Button>
                         </div>
-                        <div>
-                          <Label htmlFor="price_above_breakpoint_multiplier">Price Multiplier</Label>
-                          <Input
-                            id="price_above_breakpoint_multiplier"
-                            type="number"
-                            step="0.1"
-                            value={formData.price_above_breakpoint_multiplier}
-                            onChange={(e) => handleInputChange("price_above_breakpoint_multiplier", e.target.value)}
-                            placeholder="1.2"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">Multiply base price by this amount</p>
-                        </div>
-                      </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const lastRange = formData.height_price_ranges[formData.height_price_ranges.length - 1];
+                          const newRange = {
+                            min_height: lastRange.max_height + 1,
+                            max_height: lastRange.max_height + 50,
+                            price: lastRange.price + 5
+                          };
+                          handleInputChange("height_price_ranges", [...formData.height_price_ranges, newRange]);
+                        }}
+                      >
+                        Add Range
+                      </Button>
                     </CardContent>
                   </Card>
                 )}
@@ -614,6 +668,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
                 {formData.pricing_type === "per_drop" && (
                   <div className="space-y-4">
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                      <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">🟫 What's a Drop?</h4>
+                      <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
+                        A drop is one full-width piece of fabric cut vertically to match the curtain height. 
+                        You often need multiple drops per panel, especially with narrow-width fabric (e.g., 137cm), 
+                        to achieve the full width of the curtain. Pricing per drop is common for workroom/seamstress pricing.
+                      </p>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="machine_price_per_drop">Machine Price per Drop</Label>
@@ -625,7 +687,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
                           placeholder="180.00"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">British terminology</p>
+                        <p className="text-xs text-muted-foreground mt-1">Price charged per fabric drop (British style)</p>
                       </div>
                       {formData.offers_hand_finished && (
                         <div>
@@ -638,6 +700,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             onChange={(e) => handleInputChange("hand_price_per_drop", e.target.value)}
                             placeholder="280.00"
                           />
+                          <p className="text-xs text-muted-foreground mt-1">Hand-finished premium per drop</p>
                         </div>
                       )}
                     </div>
@@ -646,6 +709,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
                 {formData.pricing_type === "per_panel" && (
                   <div className="space-y-4">
+                    <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
+                      <h4 className="font-medium text-sm text-green-900 dark:text-green-100">🟩 What's a Panel?</h4>
+                      <p className="text-xs text-green-800 dark:text-green-200 mt-1">
+                        A panel is the finished curtain unit – either a single or half of a pair. 
+                        A panel is made from 1 or more drops sewn together. Pricing per panel provides 
+                        a fixed price per finished curtain regardless of number of drops, common in retail quotations.
+                      </p>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="machine_price_per_panel">Machine Price per Panel</Label>
@@ -657,7 +728,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("machine_price_per_panel", e.target.value)}
                           placeholder="180.00"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">American terminology</p>
+                        <p className="text-xs text-muted-foreground mt-1">Fixed price per finished curtain unit (American style)</p>
                       </div>
                       {formData.offers_hand_finished && (
                         <div>
@@ -670,6 +741,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             onChange={(e) => handleInputChange("hand_price_per_panel", e.target.value)}
                             placeholder="280.00"
                           />
+                          <p className="text-xs text-muted-foreground mt-1">Hand-finished premium per panel</p>
                         </div>
                       )}
                     </div>
@@ -677,10 +749,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 )}
 
                 {formData.pricing_type === "pricing_grid" && (
-                  <PricingGridUploader 
-                    initialData={formData.pricing_grid_data}
-                    onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
-                  />
+                  <div className="space-y-4">
+                    <PricingGridUploader 
+                      initialData={formData.pricing_grid_data}
+                      onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                    />
+                  </div>
                 )}
               </CardContent>
             </Card>

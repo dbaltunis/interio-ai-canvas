@@ -57,10 +57,16 @@ export interface CurtainTemplate {
   machine_price_per_panel?: number;
   hand_price_per_panel?: number;
   average_drop_width?: number;
-  // Height-based pricing
+  // Height range pricing
   uses_height_pricing?: boolean;
-  height_breakpoint?: number;
+  height_price_ranges?: Array<{
+    min_height: number;
+    max_height: number;
+    price: number;
+  }>;
   price_above_breakpoint_multiplier?: number;
+  // Height-based pricing
+  height_breakpoint?: number;
   price_rules: Array<{
     min_drop: number;
     max_drop: number;
