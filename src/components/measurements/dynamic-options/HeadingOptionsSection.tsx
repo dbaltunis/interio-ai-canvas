@@ -56,21 +56,30 @@ export const HeadingOptionsSection = ({
             ) : (
               <>
                 <SelectItem value="standard">
-                  <div className="flex flex-col gap-1">
-                    <span>Standard {template.heading_name}</span>
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Standard {template.heading_name}</span>
+                      <span className="text-xs text-muted-foreground">No upcharge</span>
+                    </div>
                     <span className="text-xs text-muted-foreground">
-                      Fullness: {template.fullness_ratio}x • No upcharge
+                      Fullness: {template.fullness_ratio}x
                     </span>
                   </div>
                 </SelectItem>
                 {headingOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium">{option.name}</span>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatPrice(option.price_per_meter || option.unit_price || 0)}/m</span>
-                        {option.description && <span>• {option.description}</span>}
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{option.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatPrice(option.price_per_meter || option.unit_price || 0)}/m
+                        </span>
                       </div>
+                      {option.description && (
+                        <span className="text-xs text-muted-foreground">
+                          {option.description}
+                        </span>
+                      )}
                     </div>
                   </SelectItem>
                 ))}
