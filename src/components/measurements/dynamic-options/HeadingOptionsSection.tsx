@@ -3,13 +3,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 interface HeadingOptionsSectionProps {
   template: CurtainTemplate;
   selectedHeading: string;
   onHeadingChange: (headingId: string) => void;
-  inventory: any[];
   readOnly?: boolean;
 }
 
@@ -17,21 +17,18 @@ export const HeadingOptionsSection = ({
   template,
   selectedHeading,
   onHeadingChange,
-  inventory,
   readOnly = false
 }: HeadingOptionsSectionProps) => {
   const { units } = useMeasurementUnits();
+  const { data: inventory = [], isLoading } = useEnhancedInventory();
 
-  // Get heading options from template's selected_heading_ids and match with inventory
-  const headingOptions = template.selected_heading_ids?.map(headingId => {
-    const inventoryItem = inventory.find(item => item.id === headingId);
-    return inventoryItem ? {
-      id: headingId,
-      name: inventoryItem.name,
-      price: inventoryItem.price_per_meter || inventoryItem.unit_price || 0,
-      description: inventoryItem.description
-    } : null;
-  }).filter(Boolean) || [];
+  // Filter heading options from inventory - looking for heading/hardware items
+  const headingOptions = inventory.filter(item => 
+    item.category?.toLowerCase().includes('heading') || 
+    item.category?.toLowerCase().includes('hardware') ||
+    item.category?.toLowerCase().includes('pleat') ||
+    (template.selected_heading_ids && template.selected_heading_ids.includes(item.id))
+  );
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -60,25 +57,38 @@ export const HeadingOptionsSection = ({
               <SelectValue placeholder="Choose heading style" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="standard">
-                <div className="flex flex-col gap-1">
-                  <span>Standard {template.heading_name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    Fullness: {template.fullness_ratio}x • No upcharge
-                  </span>
-                </div>
-              </SelectItem>
-              {headingOptions.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium">{option.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatPrice(option.price)}/m</span>
-                      {option.description && <span>• {option.description}</span>}
-                    </div>
-                  </div>
+              {isLoading ? (
+                <SelectItem value="loading" disabled>
+                  Loading heading options...
                 </SelectItem>
-              ))}
+              ) : (
+                <>
+                  <SelectItem value="standard">
+                    <div className="flex flex-col gap-1">
+                      <span>Standard {template.heading_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Fullness: {template.fullness_ratio}x • No upcharge
+                      </span>
+                    </div>
+                  </SelectItem>
+                  {headingOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">{option.name}</span>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{formatPrice(option.price_per_meter || option.unit_price || 0)}/m</span>
+                          {option.description && <span>• {option.description}</span>}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {headingOptions.length === 0 && (
+                    <SelectItem value="no-options" disabled>
+                      No heading options in inventory - Add heading items in Settings
+                    </SelectItem>
+                  )}
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

@@ -725,7 +725,6 @@ export const VisualMeasurementSheet = ({
                      template={selectedTemplate}
                      selectedHeading={selectedHeading || "standard"}
                      onHeadingChange={onHeadingChange || (() => {})}
-                     inventory={inventory}
                      readOnly={readOnly}
                    />
                 </div>
