@@ -48,7 +48,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     curtain_type: template?.curtain_type || "single",
     
     // Selected Headings from Library
-    selected_heading_ids: [],
+    selected_heading_ids: template?.selected_heading_ids || [],
     
     // Fabric Requirements (will use inventory)
     fabric_width_type: template?.fabric_width_type || "wide",

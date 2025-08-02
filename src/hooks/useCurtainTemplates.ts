@@ -13,6 +13,7 @@ export interface CurtainTemplate {
   
   // Heading Style
   heading_name: string;
+  selected_heading_ids?: string[]; // Array of heading IDs from inventory
   fullness_ratio: number;
   extra_fabric_fixed?: number;
   extra_fabric_percentage?: number;

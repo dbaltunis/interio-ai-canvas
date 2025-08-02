@@ -5,6 +5,7 @@ import { Edit, Trash2, Copy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 
 interface CurtainTemplatesListProps {
   onEdit: (template: CurtainTemplate) => void;
@@ -13,6 +14,7 @@ interface CurtainTemplatesListProps {
 export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const { toast } = useToast();
   const { data: templates = [], isLoading } = useCurtainTemplates();
+  const { data: headingStyles = [] } = useHeadingInventory();
   const deleteTemplate = useDeleteCurtainTemplate();
   const createTemplate = useCreateCurtainTemplate();
 
@@ -122,7 +124,16 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">{template.curtain_type}</Badge>
-                <Badge variant="outline">{template.heading_name}</Badge>
+                {template.selected_heading_ids && template.selected_heading_ids.length > 0 ? (
+                  template.selected_heading_ids.map((headingId) => {
+                    const heading = headingStyles.find(h => h.id === headingId);
+                    return heading ? (
+                      <Badge key={headingId} variant="outline">{heading.name}</Badge>
+                    ) : null;
+                  })
+                ) : (
+                  <Badge variant="outline">{template.heading_name}</Badge>
+                )}
                 <Badge variant="outline">Fullness: {template.fullness_ratio}</Badge>
                 <Badge variant="outline">{template.manufacturing_type}</Badge>
                 {template.is_railroadable && <Badge variant="outline">Railroadable</Badge>}
