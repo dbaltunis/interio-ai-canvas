@@ -804,6 +804,7 @@ export type Database = {
           created_at: string
           curtain_type: string
           description: string | null
+          drop_height_ranges: Json | null
           extra_fabric_fixed: number | null
           extra_fabric_percentage: number | null
           eyelet_spacing: number | null
@@ -811,6 +812,7 @@ export type Database = {
           fabric_width_type: string
           fullness_ratio: number
           glider_spacing: number | null
+          hand_drop_height_prices: Json | null
           hand_finished_upcharge_fixed: number | null
           hand_finished_upcharge_percentage: number | null
           hand_price_per_drop: number | null
@@ -826,6 +828,7 @@ export type Database = {
           id: string
           is_railroadable: boolean | null
           lining_types: Json | null
+          machine_drop_height_prices: Json | null
           machine_price_per_drop: number | null
           machine_price_per_metre: number | null
           machine_price_per_panel: number | null
@@ -857,6 +860,7 @@ export type Database = {
           created_at?: string
           curtain_type?: string
           description?: string | null
+          drop_height_ranges?: Json | null
           extra_fabric_fixed?: number | null
           extra_fabric_percentage?: number | null
           eyelet_spacing?: number | null
@@ -864,6 +868,7 @@ export type Database = {
           fabric_width_type?: string
           fullness_ratio?: number
           glider_spacing?: number | null
+          hand_drop_height_prices?: Json | null
           hand_finished_upcharge_fixed?: number | null
           hand_finished_upcharge_percentage?: number | null
           hand_price_per_drop?: number | null
@@ -879,6 +884,7 @@ export type Database = {
           id?: string
           is_railroadable?: boolean | null
           lining_types?: Json | null
+          machine_drop_height_prices?: Json | null
           machine_price_per_drop?: number | null
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
@@ -910,6 +916,7 @@ export type Database = {
           created_at?: string
           curtain_type?: string
           description?: string | null
+          drop_height_ranges?: Json | null
           extra_fabric_fixed?: number | null
           extra_fabric_percentage?: number | null
           eyelet_spacing?: number | null
@@ -917,6 +924,7 @@ export type Database = {
           fabric_width_type?: string
           fullness_ratio?: number
           glider_spacing?: number | null
+          hand_drop_height_prices?: Json | null
           hand_finished_upcharge_fixed?: number | null
           hand_finished_upcharge_percentage?: number | null
           hand_price_per_drop?: number | null
@@ -932,6 +940,7 @@ export type Database = {
           id?: string
           is_railroadable?: boolean | null
           lining_types?: Json | null
+          machine_drop_height_prices?: Json | null
           machine_price_per_drop?: number | null
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null

@@ -74,6 +74,12 @@ export interface CurtainTemplate {
     max_drop: number;
     price_per_metre: number;
   }>;
+  
+  // Height-based drop pricing
+  drop_height_ranges?: { min: number; max: number }[];
+  machine_drop_height_prices?: number[];
+  hand_drop_height_prices?: number[];
+  
   unit_price?: number;
   pricing_grid_data?: any;
   

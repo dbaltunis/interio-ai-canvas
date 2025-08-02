@@ -163,8 +163,18 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         const fabricWidthNeeded = railWidth * template.fullness_ratio;
         const dropsRequired = Math.ceil(fabricWidthNeeded / standardFabricWidth);
         
-        // Price per drop calculation
-        const pricePerDrop = template.machine_price_per_drop || 30;
+        // Check for height-based drop pricing first
+        let pricePerDrop = template.machine_price_per_drop || 30;
+        if (template.drop_height_ranges && template.drop_height_ranges.length > 0) {
+          const heightRangeIndex = template.drop_height_ranges.findIndex(
+            range => drop >= range.min && drop <= range.max
+          );
+          
+          if (heightRangeIndex !== -1 && template.machine_drop_height_prices?.[heightRangeIndex] !== undefined) {
+            pricePerDrop = template.machine_drop_height_prices[heightRangeIndex];
+          }
+        }
+        
         makeUpPrice = dropsRequired * pricePerDrop;
         break;
         
