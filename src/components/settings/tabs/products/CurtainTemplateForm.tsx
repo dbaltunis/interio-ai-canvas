@@ -123,6 +123,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       }
 
       const templateData = {
+        user_id: user.id, // Critical: Set the user_id for RLS policies
         name: formData.name,
         description: formData.description,
         curtain_type: formData.curtain_type as 'single' | 'pair',
