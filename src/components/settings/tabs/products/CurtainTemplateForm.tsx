@@ -626,8 +626,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </Select>
                 </div>
 
-                {/* Fabric width setting for calculations */}
-                {(formData.pricing_type === "per_drop" || formData.pricing_type === "per_panel") && (
+                {/* Fabric width setting for drop calculations only */}
+                {formData.pricing_type === "per_drop" && (
                   <Card className="p-3 bg-muted/30">
                     <h5 className="font-medium text-sm mb-2">Fabric Width Configuration</h5>
                     <div>
@@ -637,12 +637,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           <SelectValue placeholder="Select fabric width" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="narrow">Narrow Width (140cm) - Multiple drops often needed</SelectItem>
+                          <SelectItem value="narrow">Narrow Width (140cm) - More drops needed for wide curtains</SelectItem>
                           <SelectItem value="wide">Wide Width (280cm) - Fewer drops needed</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        This affects how many fabric pieces are needed for {formData.pricing_type === "per_drop" ? "per-drop calculations" : "wide curtains"}
+                        This determines how many fabric pieces (drops) are needed, which affects the total price
                       </p>
                     </div>
                   </Card>
