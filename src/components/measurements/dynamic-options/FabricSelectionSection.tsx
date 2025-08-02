@@ -5,21 +5,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shirt, Palette } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 
 interface FabricSelectionSectionProps {
   selectedFabric: string;
   onFabricChange: (fabricId: string) => void;
-  inventory: any[];
   readOnly?: boolean;
 }
 
 export const FabricSelectionSection = ({
   selectedFabric,
   onFabricChange,
-  inventory,
   readOnly = false
 }: FabricSelectionSectionProps) => {
   const { units } = useMeasurementUnits();
+  const { data: inventory = [], isLoading } = useEnhancedInventory();
 
   // Filter fabric inventory items
   const fabricItems = inventory.filter(item => 
@@ -56,7 +56,12 @@ export const FabricSelectionSection = ({
               <SelectValue placeholder="Select fabric from inventory" />
             </SelectTrigger>
             <SelectContent>
-              {fabricItems.map((fabric) => (
+              {isLoading ? (
+                <SelectItem value="loading" disabled>
+                  Loading fabrics...
+                </SelectItem>
+              ) : fabricItems.length > 0 ? (
+                fabricItems.map((fabric) => (
                 <SelectItem key={fabric.id} value={fabric.id}>
                   <div className="flex flex-col gap-1 w-full">
                     <div className="flex items-center justify-between">
@@ -72,8 +77,8 @@ export const FabricSelectionSection = ({
                     </div>
                   </div>
                 </SelectItem>
-              ))}
-              {fabricItems.length === 0 && (
+                ))
+              ) : (
                 <SelectItem value="no-fabrics" disabled>
                   No fabrics in inventory - Add fabrics in Settings
                 </SelectItem>

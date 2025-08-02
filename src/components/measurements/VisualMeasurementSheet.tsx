@@ -704,7 +704,6 @@ export const VisualMeasurementSheet = ({
                   <FabricSelectionSection
                     selectedFabric={selectedFabric || ""}
                     onFabricChange={onFabricChange || (() => {})}
-                    inventory={inventory}
                     readOnly={readOnly}
                   />
                 </div>
