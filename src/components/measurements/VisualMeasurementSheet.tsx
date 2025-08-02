@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 
@@ -51,6 +53,9 @@ export const VisualMeasurementSheet = ({
   console.log("Current pooling option:", poolingOption);
   console.log("Current pooling amount:", poolingAmount);
 
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
+  const { units } = useMeasurementUnits();
+  
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {
     return value && value !== "" && value !== "0" && parseFloat(value) > 0;
@@ -593,7 +598,7 @@ export const VisualMeasurementSheet = ({
                       className="pr-16 font-semibold text-center border-2 focus:border-blue-500"
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                      inches
+                       {units.length}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">Total {hardwareType === "track" ? "track" : "rail"} length</p>
@@ -618,7 +623,7 @@ export const VisualMeasurementSheet = ({
                       className="pr-16 font-semibold text-center border-2 focus:border-purple-500"
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                      inches
+                      {units.length}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">Length to curtain bottom</p>
