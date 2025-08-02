@@ -798,6 +798,7 @@ export type Database = {
       curtain_templates: {
         Row: {
           active: boolean
+          average_drop_width: number | null
           bottom_hem: number
           compatible_hardware: string[] | null
           created_at: string
@@ -812,17 +813,25 @@ export type Database = {
           glider_spacing: number | null
           hand_finished_upcharge_fixed: number | null
           hand_finished_upcharge_percentage: number | null
+          hand_price_per_drop: number | null
+          hand_price_per_panel: number | null
           header_allowance: number | null
           heading_name: string
           heading_upcharge_per_curtain: number | null
           heading_upcharge_per_metre: number | null
+          height_breakpoint: number | null
+          height_price_ranges: Json | null
           horizontal_repeat: number | null
           id: string
           is_railroadable: boolean | null
           lining_types: Json | null
+          machine_price_per_drop: number | null
+          machine_price_per_panel: number | null
           manufacturing_type: string
           name: string
+          offers_hand_finished: boolean | null
           overlap: number | null
+          price_above_breakpoint_multiplier: number | null
           price_rules: Json | null
           pricing_grid_data: Json | null
           pricing_type: string
@@ -834,11 +843,13 @@ export type Database = {
           unit_price: number | null
           updated_at: string
           user_id: string
+          uses_height_pricing: boolean | null
           vertical_repeat: number | null
           waste_percent: number | null
         }
         Insert: {
           active?: boolean
+          average_drop_width?: number | null
           bottom_hem?: number
           compatible_hardware?: string[] | null
           created_at?: string
@@ -853,17 +864,25 @@ export type Database = {
           glider_spacing?: number | null
           hand_finished_upcharge_fixed?: number | null
           hand_finished_upcharge_percentage?: number | null
+          hand_price_per_drop?: number | null
+          hand_price_per_panel?: number | null
           header_allowance?: number | null
           heading_name: string
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
+          height_breakpoint?: number | null
+          height_price_ranges?: Json | null
           horizontal_repeat?: number | null
           id?: string
           is_railroadable?: boolean | null
           lining_types?: Json | null
+          machine_price_per_drop?: number | null
+          machine_price_per_panel?: number | null
           manufacturing_type?: string
           name: string
+          offers_hand_finished?: boolean | null
           overlap?: number | null
+          price_above_breakpoint_multiplier?: number | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
           pricing_type?: string
@@ -875,11 +894,13 @@ export type Database = {
           unit_price?: number | null
           updated_at?: string
           user_id: string
+          uses_height_pricing?: boolean | null
           vertical_repeat?: number | null
           waste_percent?: number | null
         }
         Update: {
           active?: boolean
+          average_drop_width?: number | null
           bottom_hem?: number
           compatible_hardware?: string[] | null
           created_at?: string
@@ -894,17 +915,25 @@ export type Database = {
           glider_spacing?: number | null
           hand_finished_upcharge_fixed?: number | null
           hand_finished_upcharge_percentage?: number | null
+          hand_price_per_drop?: number | null
+          hand_price_per_panel?: number | null
           header_allowance?: number | null
           heading_name?: string
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
+          height_breakpoint?: number | null
+          height_price_ranges?: Json | null
           horizontal_repeat?: number | null
           id?: string
           is_railroadable?: boolean | null
           lining_types?: Json | null
+          machine_price_per_drop?: number | null
+          machine_price_per_panel?: number | null
           manufacturing_type?: string
           name?: string
+          offers_hand_finished?: boolean | null
           overlap?: number | null
+          price_above_breakpoint_multiplier?: number | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
           pricing_type?: string
@@ -916,6 +945,7 @@ export type Database = {
           unit_price?: number | null
           updated_at?: string
           user_id?: string
+          uses_height_pricing?: boolean | null
           vertical_repeat?: number | null
           waste_percent?: number | null
         }
