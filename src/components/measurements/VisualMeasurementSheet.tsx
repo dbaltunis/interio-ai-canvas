@@ -64,7 +64,8 @@ export const VisualMeasurementSheet = ({
   // Helper function to display measurement values
   const displayValue = (value: any) => {
     if (!hasValue(value)) return "";
-    return `${value}"`;
+    const unitSymbol = units.length === 'cm' ? 'cm' : '"';
+    return `${value}${unitSymbol}`;
   };
 
   // Calculate curtain bottom position based on pooling
