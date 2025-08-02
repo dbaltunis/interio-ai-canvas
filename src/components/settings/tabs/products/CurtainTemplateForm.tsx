@@ -509,17 +509,27 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     checked={formData.uses_height_pricing}
                     onCheckedChange={(checked) => handleInputChange("uses_height_pricing", checked)}
                   />
-                  <Label htmlFor="uses_height_pricing">
-                    Height-Based Pricing
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Apply different pricing for curtains above a certain height</p>
-                    </TooltipContent>
-                  </Tooltip>
+                 {/* Clear explanation of pricing logic */}
+                <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg">
+                  <h5 className="font-medium text-xs text-amber-900 dark:text-amber-100">⚠️ How Pricing Works</h5>
+                  <p className="text-xs text-amber-800 dark:text-amber-200 mt-1">
+                    <strong>Base pricing:</strong> Choose ONE method below (per metre, per drop, or per panel)<br/>
+                    <strong>Height surcharges:</strong> Optional extra charges ADDED to base price for tall curtains<br/>
+                    <strong>Example:</strong> £20/metre base + £10 surcharge for 250cm+ = (£20 × 2.5m) + £10 = £60 total
+                  </p>
+                </div>
+
+                 <div className="flex items-center gap-2">
+                   <h4 className="font-medium">Height-Based Pricing</h4>
+                   <Tooltip>
+                     <TooltipTrigger>
+                       <Info className="h-4 w-4 text-muted-foreground" />
+                     </TooltipTrigger>
+                     <TooltipContent>
+                       <p>Add surcharges for extra-tall curtains on top of base pricing</p>
+                     </TooltipContent>
+                   </Tooltip>
+                 </div>
                 </div>
 
                 {/* Height range pricing configuration */}
@@ -563,7 +573,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             />
                           </div>
                           <div className="flex-1">
-                            <Label htmlFor={`price_${index}`}>Price ($)</Label>
+                            <Label htmlFor={`price_${index}`}>Surcharge ($)</Label>
                             <Input
                               id={`price_${index}`}
                               type="number"
@@ -574,8 +584,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                 newRanges[index].price = parseFloat(e.target.value) || 0;
                                 handleInputChange("height_price_ranges", newRanges);
                               }}
-                              placeholder="24.00"
+                              placeholder="10.00"
                             />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Extra charge ADDED to base pricing for this height range
+                            </p>
                           </div>
                           <Button
                             type="button"
