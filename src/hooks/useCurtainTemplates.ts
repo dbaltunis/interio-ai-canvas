@@ -51,6 +51,14 @@ export interface CurtainTemplate {
   
   // Make-Up Pricing
   pricing_type: 'per_metre' | 'per_drop' | 'per_curtain' | 'pricing_grid';
+  offers_hand_finished?: boolean;
+  machine_price_per_curtain?: number;
+  hand_price_per_metre?: number;
+  hand_price_per_curtain?: number;
+  // Height-based pricing
+  uses_height_pricing?: boolean;
+  height_breakpoint?: number;
+  price_above_breakpoint_multiplier?: number;
   price_rules: Array<{
     min_drop: number;
     max_drop: number;

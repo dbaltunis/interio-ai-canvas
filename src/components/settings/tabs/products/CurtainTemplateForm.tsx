@@ -82,10 +82,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     
     // Make-Up Pricing with machine/hand conditions
     pricing_type: template?.pricing_type || "per_metre",
+    offers_hand_finished: false,
     machine_price_per_metre: template?.unit_price?.toString() || "",
     hand_price_per_metre: "",
     machine_price_per_curtain: "",
     hand_price_per_curtain: "",
+    // Height-based pricing
+    uses_height_pricing: false,
+    height_breakpoint: "200",
+    price_above_breakpoint_multiplier: "1.2",
     price_rules: template?.price_rules || [],
     pricing_grid_data: template?.pricing_grid_data || null
   });
@@ -465,6 +470,82 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 <CardDescription>Configure pricing logic with machine/hand conditions</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Hand-finished toggle */}
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="offers_hand_finished"
+                    checked={formData.offers_hand_finished}
+                    onCheckedChange={(checked) => handleInputChange("offers_hand_finished", checked)}
+                  />
+                  <Label htmlFor="offers_hand_finished">
+                    Offer Hand-Finished Options
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Enable this if your company offers both machine and hand-finished curtains</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {/* Height-based pricing toggle */}
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="uses_height_pricing"
+                    checked={formData.uses_height_pricing}
+                    onCheckedChange={(checked) => handleInputChange("uses_height_pricing", checked)}
+                  />
+                  <Label htmlFor="uses_height_pricing">
+                    Height-Based Pricing
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Apply different pricing for curtains above a certain height</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {/* Height pricing configuration */}
+                {formData.uses_height_pricing && (
+                  <Card className="p-4">
+                    <CardHeader className="p-0 pb-4">
+                      <CardTitle className="text-sm">Height Pricing Configuration</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="height_breakpoint">Height Breakpoint (cm)</Label>
+                          <Input
+                            id="height_breakpoint"
+                            type="number"
+                            value={formData.height_breakpoint}
+                            onChange={(e) => handleInputChange("height_breakpoint", e.target.value)}
+                            placeholder="200"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Curtains above this height get different pricing</p>
+                        </div>
+                        <div>
+                          <Label htmlFor="price_above_breakpoint_multiplier">Price Multiplier</Label>
+                          <Input
+                            id="price_above_breakpoint_multiplier"
+                            type="number"
+                            step="0.1"
+                            value={formData.price_above_breakpoint_multiplier}
+                            onChange={(e) => handleInputChange("price_above_breakpoint_multiplier", e.target.value)}
+                            placeholder="1.2"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Multiply base price by this amount</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div>
                   <Label htmlFor="pricing_type">Pricing Method</Label>
                   <Select value={formData.pricing_type} onValueChange={(value) => handleInputChange("pricing_type", value)}>
@@ -493,17 +574,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           placeholder="20.00"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="hand_price_per_metre">Hand-Finished Price per Metre</Label>
-                        <Input
-                          id="hand_price_per_metre"
-                          type="number"
-                          step="0.01"
-                          value={formData.hand_price_per_metre}
-                          onChange={(e) => handleInputChange("hand_price_per_metre", e.target.value)}
-                          placeholder="35.00"
-                        />
-                      </div>
+                      {formData.offers_hand_finished && (
+                        <div>
+                          <Label htmlFor="hand_price_per_metre">Hand-Finished Price per Metre</Label>
+                          <Input
+                            id="hand_price_per_metre"
+                            type="number"
+                            step="0.01"
+                            value={formData.hand_price_per_metre}
+                            onChange={(e) => handleInputChange("hand_price_per_metre", e.target.value)}
+                            placeholder="35.00"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -521,17 +604,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         placeholder="150.00"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="hand_price_per_curtain">Hand-Finished Price per Curtain</Label>
-                      <Input
-                        id="hand_price_per_curtain"
-                        type="number"
-                        step="0.01"
-                        value={formData.hand_price_per_curtain}
-                        onChange={(e) => handleInputChange("hand_price_per_curtain", e.target.value)}
-                        placeholder="250.00"
-                      />
-                    </div>
+                    {formData.offers_hand_finished && (
+                      <div>
+                        <Label htmlFor="hand_price_per_curtain">Hand-Finished Price per Curtain</Label>
+                        <Input
+                          id="hand_price_per_curtain"
+                          type="number"
+                          step="0.01"
+                          value={formData.hand_price_per_curtain}
+                          onChange={(e) => handleInputChange("hand_price_per_curtain", e.target.value)}
+                          placeholder="250.00"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
