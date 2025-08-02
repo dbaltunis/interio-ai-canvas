@@ -519,7 +519,20 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     checked={formData.uses_height_pricing}
                     onCheckedChange={(checked) => handleInputChange("uses_height_pricing", checked)}
                   />
-                 {/* Clear explanation of pricing logic */}
+                  <Label htmlFor="uses_height_pricing">
+                    Use Height-Based Pricing
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Use different per-metre rates based on curtain height ranges</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {/* Clear explanation of pricing logic */}
                 <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
                   <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 How Height-Based Pricing Works</h5>
                   <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
@@ -527,19 +540,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     <strong>With height pricing:</strong> Uses DIFFERENT per-metre rates based on curtain height ranges<br/>
                     <strong>Example:</strong> 1-200cm = £18/m, 201-250cm = £22/m, 251cm+ = £25/m
                   </p>
-                </div>
-
-                 <div className="flex items-center gap-2">
-                   <h4 className="font-medium">Height-Based Pricing</h4>
-                   <Tooltip>
-                     <TooltipTrigger>
-                       <Info className="h-4 w-4 text-muted-foreground" />
-                     </TooltipTrigger>
-                     <TooltipContent>
-                       <p>Use different per-metre rates based on curtain height ranges</p>
-                     </TooltipContent>
-                   </Tooltip>
-                 </div>
                 </div>
 
                 {/* Height range pricing configuration */}
