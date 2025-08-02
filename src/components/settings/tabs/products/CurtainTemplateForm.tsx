@@ -17,6 +17,7 @@ import { EyeletRingManager } from "./EyeletRingManager";
 import { LiningTypeManager } from "./LiningTypeManager";
 import { PricingGridUploader } from "./PricingGridUploader";
 import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
+import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
@@ -27,6 +28,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const { toast } = useToast();
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
+  const { data: headingStyles = [] } = useHeadingInventory();
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -45,6 +47,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     curtain_type: template?.curtain_type || "single",
     
     // Heading Style (One option per entry)
+    selected_heading_id: "",
     heading_name: template?.heading_name || "",
     fullness_ratio: template?.fullness_ratio?.toString() || "2.0",
     extra_fabric_fixed: template?.extra_fabric_fixed?.toString() || "",
@@ -243,24 +246,79 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="heading_name">Heading Name *</Label>
-                    <Input
-                      id="heading_name"
-                      value={formData.heading_name}
-                      onChange={(e) => handleInputChange("heading_name", e.target.value)}
-                      placeholder="e.g., Wave, Eyelet, Pinch Pleat"
-                    />
+                    <Label htmlFor="selected_heading">Heading Style *</Label>
+                    <Select 
+                      value={formData.selected_heading_id} 
+                      onValueChange={(value) => {
+                        const selectedHeading = headingStyles.find(h => h.id === value);
+                        handleInputChange("selected_heading_id", value);
+                        if (selectedHeading) {
+                          handleInputChange("heading_name", selectedHeading.name);
+                          // Set default fullness ratio from heading if available
+                          if (selectedHeading.fullness_ratio) {
+                            handleInputChange("fullness_ratio", selectedHeading.fullness_ratio.toString());
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select heading style from library" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {headingStyles.map((heading) => (
+                          <SelectItem key={heading.id} value={heading.id}>
+                            <div className="flex items-center gap-2">
+                              {(heading as any).image_url && (
+                                <img 
+                                  src={(heading as any).image_url} 
+                                  alt={heading.name}
+                                  className="w-6 h-6 object-cover rounded"
+                                />
+                              )}
+                              {heading.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
-                    <Input
-                      id="fullness_ratio"
-                      type="number"
-                      step="0.1"
-                      value={formData.fullness_ratio}
-                      onChange={(e) => handleInputChange("fullness_ratio", e.target.value)}
-                      placeholder="2.0"
-                    />
+                    {(() => {
+                      const selectedHeading = headingStyles.find(h => h.id === formData.selected_heading_id);
+                      const hasMultipleRatios = (selectedHeading as any)?.fullness_ratios && Array.isArray((selectedHeading as any).fullness_ratios) && (selectedHeading as any).fullness_ratios.length > 1;
+                      
+                      if (hasMultipleRatios) {
+                        return (
+                          <Select 
+                            value={formData.fullness_ratio} 
+                            onValueChange={(value) => handleInputChange("fullness_ratio", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select fullness ratio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {((selectedHeading as any).fullness_ratios || []).map((ratio: any) => (
+                                <SelectItem key={ratio.ratio} value={ratio.ratio.toString()}>
+                                  {ratio.ratio}x {ratio.name && `(${ratio.name})`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      } else {
+                        return (
+                          <Input
+                            id="fullness_ratio"
+                            type="number"
+                            step="0.1"
+                            value={formData.fullness_ratio}
+                            onChange={(e) => handleInputChange("fullness_ratio", e.target.value)}
+                            placeholder="2.0"
+                          />
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
 
