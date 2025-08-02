@@ -52,6 +52,8 @@ export interface CurtainTemplate {
   // Make-Up Pricing
   pricing_type: 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid';
   offers_hand_finished?: boolean;
+  machine_price_per_metre?: number;
+  hand_price_per_metre?: number;
   machine_price_per_drop?: number;
   hand_price_per_drop?: number;
   machine_price_per_panel?: number;

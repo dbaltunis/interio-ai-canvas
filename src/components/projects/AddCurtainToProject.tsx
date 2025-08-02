@@ -151,11 +151,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
             pricePerMetre = applicableRange.price;
           }
         } else {
-          // Use standard per-metre price from unit_price or price rules
-          const applicableRule = template.price_rules.find(rule => 
-            drop >= rule.min_drop && drop <= rule.max_drop
-          );
-          pricePerMetre = applicableRule?.price_per_metre || template.machine_price_per_drop || 25;
+          // Use standard per-metre price from machine_price_per_metre field
+          pricePerMetre = template.machine_price_per_metre || template.unit_price || 25;
         }
         
         makeUpPrice = (drop / 100) * pricePerMetre; // Convert cm to metres
