@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
+import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { Settings, Layers, DollarSign, Wrench } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
@@ -21,9 +22,9 @@ export const WindowCoveringsTab = () => {
                 <Layers className="h-4 w-4" />
                 Templates
               </TabsTrigger>
-              <TabsTrigger value="pricing" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Pricing
+              <TabsTrigger value="headings" className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                Heading Library
               </TabsTrigger>
               <TabsTrigger value="manufacturing" className="flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
@@ -39,35 +40,8 @@ export const WindowCoveringsTab = () => {
               <CurtainTemplatesManager />
             </TabsContent>
 
-            <TabsContent value="pricing" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pricing Overview</CardTitle>
-                  <CardDescription>
-                    Summary of pricing configurations across all templates
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Per Metre Templates</h4>
-                      <Badge variant="secondary">Most flexible</Badge>
-                    </div>
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Per Curtain Templates</h4>
-                      <Badge variant="secondary">Fixed pricing</Badge>
-                    </div>
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Pricing Grid Templates</h4>
-                      <Badge variant="secondary">Complex matrix</Badge>
-                    </div>
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Hand vs Machine</h4>
-                      <Badge variant="secondary">Dual pricing</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="headings" className="space-y-6">
+              <HeadingInventoryManager />
             </TabsContent>
 
             <TabsContent value="manufacturing" className="space-y-6">
