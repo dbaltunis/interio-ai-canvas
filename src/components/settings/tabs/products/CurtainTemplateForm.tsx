@@ -557,8 +557,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="per_metre">Per Running Metre/Yard</SelectItem>
-                      <SelectItem value="per_drop">Per Drop (British)</SelectItem>
-                      <SelectItem value="per_panel">Per Panel (American)</SelectItem>
+                      <SelectItem value="per_drop">Per Drop - Labour pricing based on vertical cuts (British)</SelectItem>
+                      <SelectItem value="per_panel">Per Panel - Fixed price per finished curtain unit (American)</SelectItem>
                       <SelectItem value="pricing_grid">Pricing Grid (Upload)</SelectItem>
                     </SelectContent>
                   </Select>
