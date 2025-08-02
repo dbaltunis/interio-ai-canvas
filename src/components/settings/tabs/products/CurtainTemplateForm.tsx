@@ -85,8 +85,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     offers_hand_finished: false,
     machine_price_per_metre: template?.unit_price?.toString() || "",
     hand_price_per_metre: "",
-    machine_price_per_curtain: "",
-    hand_price_per_curtain: "",
+    machine_price_per_drop: "",
+    hand_price_per_drop: "",
+    machine_price_per_panel: "",
+    hand_price_per_panel: "",
+    average_drop_width: "140", // Default average drop width in cm
     // Height-based pricing
     uses_height_pricing: false,
     height_breakpoint: "200",
@@ -149,7 +152,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         seam_hems: parseFloat(formData.seam_hems.toString()) || 1.5,
         lining_types: formData.lining_types,
         compatible_hardware: formData.compatible_hardware,
-        pricing_type: formData.pricing_type as 'per_metre' | 'per_drop' | 'per_curtain' | 'pricing_grid',
+        pricing_type: formData.pricing_type as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid',
         price_rules: formData.price_rules,
         unit_price: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre.toString()) : undefined,
         pricing_grid_data: formData.pricing_grid_data || {},
@@ -554,11 +557,29 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="per_metre">Per Running Metre/Yard</SelectItem>
-                      <SelectItem value="per_curtain">Per Curtain (Unit Price)</SelectItem>
+                      <SelectItem value="per_drop">Per Drop (British)</SelectItem>
+                      <SelectItem value="per_panel">Per Panel (American)</SelectItem>
                       <SelectItem value="pricing_grid">Pricing Grid (Upload)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Average drop width for per drop/panel pricing */}
+                {(formData.pricing_type === "per_drop" || formData.pricing_type === "per_panel") && (
+                  <div>
+                    <Label htmlFor="average_drop_width">Average Drop/Panel Width (cm)</Label>
+                    <Input
+                      id="average_drop_width"
+                      type="number"
+                      value={formData.average_drop_width}
+                      onChange={(e) => handleInputChange("average_drop_width", e.target.value)}
+                      placeholder="140"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Used to calculate pricing when ordering by {formData.pricing_type === "per_drop" ? "drop" : "panel"}
+                    </p>
+                  </div>
+                )}
 
                 {formData.pricing_type === "per_metre" && (
                   <div className="space-y-4">
@@ -591,32 +612,67 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </div>
                 )}
 
-                {formData.pricing_type === "per_curtain" && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="machine_price_per_curtain">Machine Price per Curtain</Label>
-                      <Input
-                        id="machine_price_per_curtain"
-                        type="number"
-                        step="0.01"
-                        value={formData.machine_price_per_curtain}
-                        onChange={(e) => handleInputChange("machine_price_per_curtain", e.target.value)}
-                        placeholder="150.00"
-                      />
-                    </div>
-                    {formData.offers_hand_finished && (
+                {formData.pricing_type === "per_drop" && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="hand_price_per_curtain">Hand-Finished Price per Curtain</Label>
+                        <Label htmlFor="machine_price_per_drop">Machine Price per Drop</Label>
                         <Input
-                          id="hand_price_per_curtain"
+                          id="machine_price_per_drop"
                           type="number"
                           step="0.01"
-                          value={formData.hand_price_per_curtain}
-                          onChange={(e) => handleInputChange("hand_price_per_curtain", e.target.value)}
-                          placeholder="250.00"
+                          value={formData.machine_price_per_drop}
+                          onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
+                          placeholder="180.00"
                         />
+                        <p className="text-xs text-muted-foreground mt-1">British terminology</p>
                       </div>
-                    )}
+                      {formData.offers_hand_finished && (
+                        <div>
+                          <Label htmlFor="hand_price_per_drop">Hand-Finished Price per Drop</Label>
+                          <Input
+                            id="hand_price_per_drop"
+                            type="number"
+                            step="0.01"
+                            value={formData.hand_price_per_drop}
+                            onChange={(e) => handleInputChange("hand_price_per_drop", e.target.value)}
+                            placeholder="280.00"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {formData.pricing_type === "per_panel" && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="machine_price_per_panel">Machine Price per Panel</Label>
+                        <Input
+                          id="machine_price_per_panel"
+                          type="number"
+                          step="0.01"
+                          value={formData.machine_price_per_panel}
+                          onChange={(e) => handleInputChange("machine_price_per_panel", e.target.value)}
+                          placeholder="180.00"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">American terminology</p>
+                      </div>
+                      {formData.offers_hand_finished && (
+                        <div>
+                          <Label htmlFor="hand_price_per_panel">Hand-Finished Price per Panel</Label>
+                          <Input
+                            id="hand_price_per_panel"
+                            type="number"
+                            step="0.01"
+                            value={formData.hand_price_per_panel}
+                            onChange={(e) => handleInputChange("hand_price_per_panel", e.target.value)}
+                            placeholder="280.00"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

@@ -147,14 +147,12 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         const pricePerMetre = applicableRule?.price_per_metre || 25; // Default fallback
         makeUpPrice = railWidth * pricePerMetre;
         break;
-      case 'per_curtain':
+      case 'per_drop':
+      case 'per_panel':
         makeUpPrice = template.unit_price || 0;
         if (template.curtain_type === 'pair') {
           makeUpPrice *= 2;
         }
-        break;
-      case 'per_drop':
-        makeUpPrice = (template.unit_price || 0) * Math.ceil(totalFabricWidth / standardFabricWidth);
         break;
       default:
         makeUpPrice = railWidth * 25; // Default fallback

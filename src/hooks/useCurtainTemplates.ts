@@ -50,11 +50,13 @@ export interface CurtainTemplate {
   compatible_hardware: string[];
   
   // Make-Up Pricing
-  pricing_type: 'per_metre' | 'per_drop' | 'per_curtain' | 'pricing_grid';
+  pricing_type: 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid';
   offers_hand_finished?: boolean;
-  machine_price_per_curtain?: number;
-  hand_price_per_metre?: number;
-  hand_price_per_curtain?: number;
+  machine_price_per_drop?: number;
+  hand_price_per_drop?: number;
+  machine_price_per_panel?: number;
+  hand_price_per_panel?: number;
+  average_drop_width?: number;
   // Height-based pricing
   uses_height_pricing?: boolean;
   height_breakpoint?: number;
