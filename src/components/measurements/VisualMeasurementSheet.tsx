@@ -358,8 +358,95 @@ export const VisualMeasurementSheet = ({
                     placeholder="0.5"
                     readOnly={readOnly}
                   />
+            </div>
+
+            {/* Detailed Window Measurements */}
+            <div className="mt-4 border rounded-lg p-4 bg-gray-50">
+              <h4 className="font-medium mb-3">Detailed Window Measurements</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="measurement_a" className="text-sm font-medium">A - Window Width</Label>
+                  <p className="text-xs text-gray-600 mb-1">Inside frame width</p>
+                  <Input
+                    id="measurement_a"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_a || ""}
+                    onChange={(e) => handleInputChange("measurement_a", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_b" className="text-sm font-medium">B - Window Height</Label>
+                  <p className="text-xs text-gray-600 mb-1">Inside frame height</p>
+                  <Input
+                    id="measurement_b"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_b || ""}
+                    onChange={(e) => handleInputChange("measurement_b", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                {hardwareType === "rod" && (
+                  <div>
+                    <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling</Label>
+                    <p className="text-xs text-gray-600 mb-1">Distance from rod to ceiling</p>
+                    <Input
+                      id="measurement_c"
+                      type="number"
+                      step="0.25"
+                      value={measurements.measurement_c || ""}
+                      onChange={(e) => handleInputChange("measurement_c", e.target.value)}
+                      placeholder="0.00"
+                      readOnly={readOnly}
+                    />
+                  </div>
+                )}
+                <div>
+                  <Label htmlFor="measurement_d" className="text-sm font-medium">D - Window to Floor</Label>
+                  <p className="text-xs text-gray-600 mb-1">Distance from window bottom to floor</p>
+                  <Input
+                    id="measurement_d"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_d || ""}
+                    onChange={(e) => handleInputChange("measurement_d", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height</Label>
+                  <p className="text-xs text-gray-600 mb-1">{hardwareType === "track" ? "Track" : "Rod"} to floor total height</p>
+                  <Input
+                    id="measurement_e"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_e || ""}
+                    onChange={(e) => handleInputChange("measurement_e", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="measurement_f" className="text-sm font-medium">F - Total Width</Label>
+                  <p className="text-xs text-gray-600 mb-1">Total width including extensions</p>
+                  <Input
+                    id="measurement_f"
+                    type="number"
+                    step="0.25"
+                    value={measurements.measurement_f || ""}
+                    onChange={(e) => handleInputChange("measurement_f", e.target.value)}
+                    placeholder="0.00"
+                    readOnly={readOnly}
+                  />
                 </div>
               </div>
+            </div>
+          </div>
             </div>
           </div>
 
@@ -523,92 +610,6 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Detailed Window Measurements */}
-            <div className="border rounded-lg p-4">
-              <h4 className="font-medium mb-3">Detailed Window Measurements</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="measurement_a" className="text-sm font-medium">A - Window Width</Label>
-                  <p className="text-xs text-gray-600 mb-1">Inside frame width</p>
-                  <Input
-                    id="measurement_a"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_a || ""}
-                    onChange={(e) => handleInputChange("measurement_a", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measurement_b" className="text-sm font-medium">B - Window Height</Label>
-                  <p className="text-xs text-gray-600 mb-1">Inside frame height</p>
-                  <Input
-                    id="measurement_b"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_b || ""}
-                    onChange={(e) => handleInputChange("measurement_b", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                {hardwareType === "rod" && (
-                  <div>
-                    <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling</Label>
-                    <p className="text-xs text-gray-600 mb-1">Distance from rod to ceiling</p>
-                    <Input
-                      id="measurement_c"
-                      type="number"
-                      step="0.25"
-                      value={measurements.measurement_c || ""}
-                      onChange={(e) => handleInputChange("measurement_c", e.target.value)}
-                      placeholder="0.00"
-                      readOnly={readOnly}
-                    />
-                  </div>
-                )}
-                <div>
-                  <Label htmlFor="measurement_d" className="text-sm font-medium">D - Window to Floor</Label>
-                  <p className="text-xs text-gray-600 mb-1">Distance from window bottom to floor</p>
-                  <Input
-                    id="measurement_d"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_d || ""}
-                    onChange={(e) => handleInputChange("measurement_d", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height</Label>
-                  <p className="text-xs text-gray-600 mb-1">{hardwareType === "track" ? "Track" : "Rod"} to floor total height</p>
-                  <Input
-                    id="measurement_e"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_e || ""}
-                    onChange={(e) => handleInputChange("measurement_e", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measurement_f" className="text-sm font-medium">F - Total Width</Label>
-                  <p className="text-xs text-gray-600 mb-1">Total width including extensions</p>
-                  <Input
-                    id="measurement_f"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_f || ""}
-                    onChange={(e) => handleInputChange("measurement_f", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-              </div>
-            </div>
 
           </div>
         </div>
