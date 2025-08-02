@@ -9,7 +9,8 @@ export interface WindowCovering {
   category: string;
   description?: string;
   base_price?: number;
-  user_id?: string;
+  user_id: string;
+  active?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -18,19 +19,113 @@ export const useWindowCoverings = () => {
   return useQuery({
     queryKey: ["window-coverings"],
     queryFn: async () => {
-      // For now, return static data until we have a proper window_coverings table
-      // This can be expanded to fetch from database later
-      return [
-        { id: "curtains", name: "Curtains", category: "fabric" },
-        { id: "drapes", name: "Drapes", category: "fabric" },
-        { id: "blinds", name: "Blinds", category: "hard" },
-        { id: "shutters", name: "Shutters", category: "hard" },
-        { id: "valances", name: "Valances", category: "fabric" },
-        { id: "roman_shades", name: "Roman Shades", category: "fabric" },
-        { id: "roller_shades", name: "Roller Shades", category: "hard" },
-        { id: "cellular_shades", name: "Cellular Shades", category: "hard" }
-      ];
+      const { data, error } = await supabase
+        .from("window_coverings")
+        .select("*")
+        .eq("active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data || [];
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useCreateWindowCovering = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: Omit<WindowCovering, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data: result, error } = await supabase
+        .from("window_coverings")
+        .insert({ ...data, user_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["window-coverings"] });
+      toast({
+        title: "Success",
+        description: "Window covering created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create window covering",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateWindowCovering = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<WindowCovering> & { id: string }) => {
+      const { data: result, error } = await supabase
+        .from("window_coverings")
+        .update(data)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["window-coverings"] });
+      toast({
+        title: "Success",
+        description: "Window covering updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update window covering",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteWindowCovering = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("window_coverings")
+        .update({ active: false })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["window-coverings"] });
+      toast({
+        title: "Success",
+        description: "Window covering deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete window covering",
+        variant: "destructive",
+      });
+    },
   });
 };
