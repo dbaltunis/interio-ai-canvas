@@ -720,136 +720,171 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="machine_price_per_drop">Machine Price per Drop</Label>
-                        <Input
-                          id="machine_price_per_drop"
-                          type="number"
-                          step="0.01"
-                          value={formData.machine_price_per_drop}
-                          onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
-                          placeholder="30.00"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Price per fabric drop (scales with complexity)</p>
-                      </div>
-                      {formData.offers_hand_finished && (
-                        <div>
-                          <Label htmlFor="hand_price_per_drop">Hand-Finished Price per Drop</Label>
-                          <Input
-                            id="hand_price_per_drop"
-                            type="number"
-                            step="0.01"
-                            value={formData.hand_price_per_drop}
-                            onChange={(e) => handleInputChange("hand_price_per_drop", e.target.value)}
-                            placeholder="45.00"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">Hand-finished premium per drop</p>
-                        </div>
-                      )}
+                    {/* Choose between simple or height-based pricing */}
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="use_height_based_drop_pricing"
+                        checked={formData.drop_height_ranges && formData.drop_height_ranges.length > 0}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleInputChange('drop_height_ranges', [{ min: 0, max: 150 }]);
+                            handleInputChange('machine_drop_height_prices', [30]);
+                            handleInputChange('hand_drop_height_prices', [45]);
+                          } else {
+                            handleInputChange('drop_height_ranges', []);
+                            handleInputChange('machine_drop_height_prices', []);
+                            handleInputChange('hand_drop_height_prices', []);
+                          }
+                        }}
+                      />
+                      <Label htmlFor="use_height_based_drop_pricing">
+                        Use Height-Based Drop Pricing
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Use different drop prices based on curtain height ranges instead of a single rate</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
 
-                    <Card className="p-4">
-                      <h4 className="font-medium mb-4">Height-Based Drop Pricing Ranges</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Configure different drop pricing based on curtain height. If no ranges are set, the standard per-drop pricing above will be used.
-                      </p>
-                      
-                      <div className="space-y-3">
-                        {formData.drop_height_ranges?.map((range, index) => (
-                          <div key={index} className="grid grid-cols-4 gap-2 items-center">
-                            <div>
-                              <Label className="text-xs">Min Height (cm)</Label>
-                              <Input
-                                type="number"
-                                value={range.min}
-                                onChange={(e) => {
-                                  const newRanges = [...(formData.drop_height_ranges || [])];
-                                  newRanges[index] = { ...range, min: Number(e.target.value) };
-                                  handleInputChange('drop_height_ranges', newRanges);
-                                }}
-                                className="mt-1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Max Height (cm)</Label>
-                              <Input
-                                type="number"
-                                value={range.max}
-                                onChange={(e) => {
-                                  const newRanges = [...(formData.drop_height_ranges || [])];
-                                  newRanges[index] = { ...range, max: Number(e.target.value) };
-                                  handleInputChange('drop_height_ranges', newRanges);
-                                }}
-                                className="mt-1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Machine (£/drop)</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={formData.machine_drop_height_prices?.[index] || ''}
-                                onChange={(e) => {
-                                  const newPrices = [...(formData.machine_drop_height_prices || [])];
-                                  newPrices[index] = Number(e.target.value);
-                                  handleInputChange('machine_drop_height_prices', newPrices);
-                                }}
-                                className="mt-1"
-                              />
-                            </div>
-                            {formData.offers_hand_finished && (
+                    {/* Show either simple pricing or height-based pricing */}
+                    {!(formData.drop_height_ranges && formData.drop_height_ranges.length > 0) ? (
+                      /* Simple per-drop pricing */
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="machine_price_per_drop">Machine Price per Drop</Label>
+                          <Input
+                            id="machine_price_per_drop"
+                            type="number"
+                            step="0.01"
+                            value={formData.machine_price_per_drop}
+                            onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
+                            placeholder="30.00"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Standard price per fabric drop</p>
+                        </div>
+                        {formData.offers_hand_finished && (
+                          <div>
+                            <Label htmlFor="hand_price_per_drop">Hand-Finished Price per Drop</Label>
+                            <Input
+                              id="hand_price_per_drop"
+                              type="number"
+                              step="0.01"
+                              value={formData.hand_price_per_drop}
+                              onChange={(e) => handleInputChange("hand_price_per_drop", e.target.value)}
+                              placeholder="45.00"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">Hand-finished premium per drop</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Height-based drop pricing */
+                      <Card className="p-4">
+                        <h4 className="font-medium mb-4">Height-Based Drop Pricing Ranges</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Configure different drop pricing based on curtain height ranges.
+                        </p>
+                        
+                        <div className="space-y-3">
+                          {formData.drop_height_ranges?.map((range, index) => (
+                            <div key={index} className="grid grid-cols-5 gap-2 items-center">
                               <div>
-                                <Label className="text-xs">Hand (£/drop)</Label>
+                                <Label className="text-xs">Min Height (cm)</Label>
                                 <Input
                                   type="number"
-                                  step="0.01"
-                                  value={formData.hand_drop_height_prices?.[index] || ''}
+                                  value={range.min}
                                   onChange={(e) => {
-                                    const newPrices = [...(formData.hand_drop_height_prices || [])];
-                                    newPrices[index] = Number(e.target.value);
-                                    handleInputChange('hand_drop_height_prices', newPrices);
+                                    const newRanges = [...(formData.drop_height_ranges || [])];
+                                    newRanges[index] = { ...range, min: Number(e.target.value) };
+                                    handleInputChange('drop_height_ranges', newRanges);
                                   }}
                                   className="mt-1"
                                 />
                               </div>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const newRanges = (formData.drop_height_ranges || []).filter((_, i) => i !== index);
-                                const newMachinePrices = (formData.machine_drop_height_prices || []).filter((_, i) => i !== index);
-                                const newHandPrices = (formData.hand_drop_height_prices || []).filter((_, i) => i !== index);
-                                handleInputChange('drop_height_ranges', newRanges);
-                                handleInputChange('machine_drop_height_prices', newMachinePrices);
-                                handleInputChange('hand_drop_height_prices', newHandPrices);
-                              }}
-                              className="mt-6"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                        
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const newRanges = [...(formData.drop_height_ranges || []), { min: 0, max: 100 }];
-                            const newMachinePrices = [...(formData.machine_drop_height_prices || []), 0];
-                            const newHandPrices = [...(formData.hand_drop_height_prices || []), 0];
-                            handleInputChange('drop_height_ranges', newRanges);
-                            handleInputChange('machine_drop_height_prices', newMachinePrices);
-                            handleInputChange('hand_drop_height_prices', newHandPrices);
-                          }}
-                        >
-                          Add Height Range
-                        </Button>
-                      </div>
-                    </Card>
+                              <div>
+                                <Label className="text-xs">Max Height (cm)</Label>
+                                <Input
+                                  type="number"
+                                  value={range.max}
+                                  onChange={(e) => {
+                                    const newRanges = [...(formData.drop_height_ranges || [])];
+                                    newRanges[index] = { ...range, max: Number(e.target.value) };
+                                    handleInputChange('drop_height_ranges', newRanges);
+                                  }}
+                                  className="mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Machine (£/drop)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={formData.machine_drop_height_prices?.[index] || ''}
+                                  onChange={(e) => {
+                                    const newPrices = [...(formData.machine_drop_height_prices || [])];
+                                    newPrices[index] = Number(e.target.value);
+                                    handleInputChange('machine_drop_height_prices', newPrices);
+                                  }}
+                                  className="mt-1"
+                                />
+                              </div>
+                              {formData.offers_hand_finished && (
+                                <div>
+                                  <Label className="text-xs">Hand (£/drop)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.hand_drop_height_prices?.[index] || ''}
+                                    onChange={(e) => {
+                                      const newPrices = [...(formData.hand_drop_height_prices || [])];
+                                      newPrices[index] = Number(e.target.value);
+                                      handleInputChange('hand_drop_height_prices', newPrices);
+                                    }}
+                                    className="mt-1"
+                                  />
+                                </div>
+                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newRanges = (formData.drop_height_ranges || []).filter((_, i) => i !== index);
+                                  const newMachinePrices = (formData.machine_drop_height_prices || []).filter((_, i) => i !== index);
+                                  const newHandPrices = (formData.hand_drop_height_prices || []).filter((_, i) => i !== index);
+                                  handleInputChange('drop_height_ranges', newRanges);
+                                  handleInputChange('machine_drop_height_prices', newMachinePrices);
+                                  handleInputChange('hand_drop_height_prices', newHandPrices);
+                                }}
+                                className="mt-6"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                          
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newRanges = [...(formData.drop_height_ranges || []), { min: 0, max: 100 }];
+                              const newMachinePrices = [...(formData.machine_drop_height_prices || []), 0];
+                              const newHandPrices = [...(formData.hand_drop_height_prices || []), 0];
+                              handleInputChange('drop_height_ranges', newRanges);
+                              handleInputChange('machine_drop_height_prices', newMachinePrices);
+                              handleInputChange('hand_drop_height_prices', newHandPrices);
+                            }}
+                          >
+                            Add Height Range
+                          </Button>
+                        </div>
+                      </Card>
+                    )}
                   </div>
                 )}
 
