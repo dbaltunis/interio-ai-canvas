@@ -43,7 +43,7 @@ export const CurtainTemplatesManager = () => {
       <CurtainTemplatesList onEdit={handleEditTemplate} />
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <SheetContent className="w-full sm:max-w-md">
+        <SheetContent className="w-full sm:max-w-6xl">
           <SheetHeader>
             <SheetTitle>
               {editingTemplate ? "Edit Curtain Template" : "Add Curtain Template"}
