@@ -71,17 +71,51 @@ const JobsPage = () => {
     }
   };
 
-  const handleJobSelect = (quote: any) => {
+  const handleJobSelect = async (quote: any) => {
     console.log("Job selected:", quote);
-    // Directly navigate to job detail using project_id
-    const projectId = quote.project_id || quote.projects?.id;
-    if (projectId) {
-      setSelectedJobId(projectId);
-    } else {
-      console.error("No project ID found for quote:", quote);
+    
+    // Check if quote already has a project_id
+    const existingProjectId = quote.project_id || quote.projects?.id;
+    if (existingProjectId) {
+      setSelectedJobId(existingProjectId);
+      return;
+    }
+
+    // Quote doesn't have a project (CRM-created quote) - create one
+    try {
+      console.log("Creating project for CRM quote:", quote);
+      
+      const newProject = await createProject.mutateAsync({
+        name: `Job ${quote.quote_number || new Date().toLocaleDateString()}`,
+        description: `Project created from quote ${quote.quote_number}`,
+        status: "planning",
+        job_number: quote.quote_number,
+        client_id: quote.client_id
+      });
+
+      console.log("Project created for CRM quote:", newProject);
+
+      // Update the quote with the new project_id
+      await createQuote.mutateAsync({
+        ...quote,
+        project_id: newProject.id
+      });
+
+      // Refresh quotes to reflect the update
+      await refetchQuotes();
+
+      // Navigate to the job detail page
+      setSelectedJobId(newProject.id);
+
+      toast({
+        title: "Success",
+        description: "Job opened successfully",
+      });
+    } catch (error) {
+      console.error("Failed to create project for CRM quote:", error);
       toast({
         title: "Error",
-        description: "Unable to open job details. Project not found.",
+        description: "Unable to open job details. Please try again.",
         variant: "destructive",
       });
     }
