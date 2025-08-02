@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
+import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -10,6 +12,11 @@ interface VisualMeasurementSheetProps {
   readOnly?: boolean;
   windowType: string;
   selectedTemplate?: any;
+  selectedFabric?: string;
+  onFabricChange?: (fabricId: string) => void;
+  selectedHeading?: string;
+  onHeadingChange?: (headingId: string) => void;
+  inventory?: any[];
 }
 
 export const VisualMeasurementSheet = ({ 
@@ -17,7 +24,12 @@ export const VisualMeasurementSheet = ({
   onMeasurementChange, 
   readOnly = false,
   windowType,
-  selectedTemplate 
+  selectedTemplate,
+  selectedFabric,
+  onFabricChange,
+  selectedHeading,
+  onHeadingChange,
+  inventory = []
 }: VisualMeasurementSheetProps) => {
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
@@ -672,6 +684,54 @@ export const VisualMeasurementSheet = ({
                 </div>
               </details>
             </div>
+
+            {/* Treatment Options - Compact Style */}
+            {selectedTemplate && (
+              <div className="space-y-3">
+                {/* Fabric Selection - Compact */}
+                <div className="bg-white border-2 border-purple-200 rounded-lg p-3 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                      <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-sm">Fabric Selection</h4>
+                      <p className="text-xs text-gray-500">Choose material</p>
+                    </div>
+                  </div>
+                  <FabricSelectionSection
+                    selectedFabric={selectedFabric || ""}
+                    onFabricChange={onFabricChange || (() => {})}
+                    inventory={inventory}
+                    readOnly={readOnly}
+                  />
+                </div>
+
+                {/* Heading Options - Compact */}
+                <div className="bg-white border-2 border-orange-200 rounded-lg p-3 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-orange-100 rounded-md flex items-center justify-center">
+                      <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-sm">Heading Style</h4>
+                      <p className="text-xs text-gray-500">Top treatment</p>
+                    </div>
+                  </div>
+                   <HeadingOptionsSection
+                     template={selectedTemplate}
+                     selectedHeading={selectedHeading || "standard"}
+                     onHeadingChange={onHeadingChange || (() => {})}
+                     inventory={inventory}
+                     readOnly={readOnly}
+                   />
+                </div>
+              </div>
+            )}
 
           </div>
         </div>

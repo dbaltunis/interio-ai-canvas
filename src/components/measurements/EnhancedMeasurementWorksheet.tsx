@@ -283,6 +283,11 @@ export const EnhancedMeasurementWorksheet = ({
             readOnly={readOnly}
             windowType={windowType}
             selectedTemplate={selectedCovering}
+            selectedFabric={selectedFabric}
+            onFabricChange={setSelectedFabric}
+            selectedHeading={selectedHeading}
+            onHeadingChange={setSelectedHeading}
+            inventory={inventoryItems}
           />
 
           {/* Treatment-Specific Sections - Only show when treatment is selected */}
@@ -296,25 +301,6 @@ export const EnhancedMeasurementWorksheet = ({
                 selectedLining={selectedLining}
               />
 
-              {/* Treatment Options Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Fabric Selection */}
-                <FabricSelectionSection
-                  selectedFabric={selectedFabric}
-                  onFabricChange={setSelectedFabric}
-                  inventory={inventoryItems}
-                  readOnly={readOnly}
-                />
-
-                {/* Heading Options */}
-                <HeadingOptionsSection
-                  template={selectedCovering}
-                  selectedHeading={selectedHeading}
-                  onHeadingChange={setSelectedHeading}
-                  inventory={inventoryItems}
-                  readOnly={readOnly}
-                />
-              </div>
 
               {/* Lining Options - Full width if available */}
               {selectedCovering.lining_types && selectedCovering.lining_types.length > 0 && (
