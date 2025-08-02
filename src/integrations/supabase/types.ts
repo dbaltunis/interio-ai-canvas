@@ -795,6 +795,132 @@ export type Database = {
         }
         Relationships: []
       }
+      curtain_templates: {
+        Row: {
+          active: boolean
+          bottom_hem: number
+          compatible_hardware: string[] | null
+          created_at: string
+          curtain_type: string
+          description: string | null
+          extra_fabric_fixed: number | null
+          extra_fabric_percentage: number | null
+          eyelet_spacing: number | null
+          fabric_direction: string
+          fabric_width_type: string
+          fullness_ratio: number
+          glider_spacing: number | null
+          hand_finished_upcharge_fixed: number | null
+          hand_finished_upcharge_percentage: number | null
+          header_allowance: number | null
+          heading_name: string
+          heading_upcharge_per_curtain: number | null
+          heading_upcharge_per_metre: number | null
+          horizontal_repeat: number | null
+          id: string
+          is_railroadable: boolean | null
+          lining_types: Json | null
+          manufacturing_type: string
+          name: string
+          overlap: number | null
+          price_rules: Json | null
+          pricing_grid_data: Json | null
+          pricing_type: string
+          return_left: number | null
+          return_right: number | null
+          seam_hems: number
+          selected_heading_ids: string[] | null
+          side_hems: number
+          unit_price: number | null
+          updated_at: string
+          user_id: string
+          vertical_repeat: number | null
+          waste_percent: number | null
+        }
+        Insert: {
+          active?: boolean
+          bottom_hem?: number
+          compatible_hardware?: string[] | null
+          created_at?: string
+          curtain_type?: string
+          description?: string | null
+          extra_fabric_fixed?: number | null
+          extra_fabric_percentage?: number | null
+          eyelet_spacing?: number | null
+          fabric_direction?: string
+          fabric_width_type?: string
+          fullness_ratio?: number
+          glider_spacing?: number | null
+          hand_finished_upcharge_fixed?: number | null
+          hand_finished_upcharge_percentage?: number | null
+          header_allowance?: number | null
+          heading_name: string
+          heading_upcharge_per_curtain?: number | null
+          heading_upcharge_per_metre?: number | null
+          horizontal_repeat?: number | null
+          id?: string
+          is_railroadable?: boolean | null
+          lining_types?: Json | null
+          manufacturing_type?: string
+          name: string
+          overlap?: number | null
+          price_rules?: Json | null
+          pricing_grid_data?: Json | null
+          pricing_type?: string
+          return_left?: number | null
+          return_right?: number | null
+          seam_hems?: number
+          selected_heading_ids?: string[] | null
+          side_hems?: number
+          unit_price?: number | null
+          updated_at?: string
+          user_id: string
+          vertical_repeat?: number | null
+          waste_percent?: number | null
+        }
+        Update: {
+          active?: boolean
+          bottom_hem?: number
+          compatible_hardware?: string[] | null
+          created_at?: string
+          curtain_type?: string
+          description?: string | null
+          extra_fabric_fixed?: number | null
+          extra_fabric_percentage?: number | null
+          eyelet_spacing?: number | null
+          fabric_direction?: string
+          fabric_width_type?: string
+          fullness_ratio?: number
+          glider_spacing?: number | null
+          hand_finished_upcharge_fixed?: number | null
+          hand_finished_upcharge_percentage?: number | null
+          header_allowance?: number | null
+          heading_name?: string
+          heading_upcharge_per_curtain?: number | null
+          heading_upcharge_per_metre?: number | null
+          horizontal_repeat?: number | null
+          id?: string
+          is_railroadable?: boolean | null
+          lining_types?: Json | null
+          manufacturing_type?: string
+          name?: string
+          overlap?: number | null
+          price_rules?: Json | null
+          pricing_grid_data?: Json | null
+          pricing_type?: string
+          return_left?: number | null
+          return_right?: number | null
+          seam_hems?: number
+          selected_heading_ids?: string[] | null
+          side_hems?: number
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string
+          vertical_repeat?: number | null
+          waste_percent?: number | null
+        }
+        Relationships: []
+      }
       email_analytics: {
         Row: {
           created_at: string
@@ -1022,6 +1148,7 @@ export type Database = {
         Row: {
           active: boolean | null
           category: string
+          collection_name: string | null
           color: string | null
           cost_price: number | null
           created_at: string
@@ -1043,6 +1170,7 @@ export type Database = {
           hardware_weight: number | null
           height: number | null
           id: string
+          image_url: string | null
           is_flame_retardant: boolean | null
           labor_hours: number | null
           location: string | null
@@ -1070,6 +1198,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           category: string
+          collection_name?: string | null
           color?: string | null
           cost_price?: number | null
           created_at?: string
@@ -1091,6 +1220,7 @@ export type Database = {
           hardware_weight?: number | null
           height?: number | null
           id?: string
+          image_url?: string | null
           is_flame_retardant?: boolean | null
           labor_hours?: number | null
           location?: string | null
@@ -1118,6 +1248,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           category?: string
+          collection_name?: string | null
           color?: string | null
           cost_price?: number | null
           created_at?: string
@@ -1139,6 +1270,7 @@ export type Database = {
           hardware_weight?: number | null
           height?: number | null
           id?: string
+          image_url?: string | null
           is_flame_retardant?: boolean | null
           labor_hours?: number | null
           location?: string | null
