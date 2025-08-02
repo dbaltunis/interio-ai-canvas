@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield, Bell } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
-// import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
+import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
 
 import { CalculationsTab } from "./tabs/CalculationsTab";
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
@@ -98,9 +98,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="window-coverings">
-          <div className="p-4 text-center text-muted-foreground">
-            Window coverings management coming soon...
-          </div>
+          <WindowCoveringsTab />
         </TabsContent>
 
 
