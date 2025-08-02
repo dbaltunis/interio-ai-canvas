@@ -232,15 +232,21 @@ export const EnhancedMeasurementWorksheet = ({
                   <Label htmlFor="treatment">Treatment</Label>
                   <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering} disabled={readOnly}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select treatment" />
+                      <SelectValue placeholder={windowCoverings.length > 0 ? "Select treatment" : "No treatments available - Create in Settings"} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no_covering">No Treatment</SelectItem>
-                      {windowCoverings.map((covering) => (
-                        <SelectItem key={covering.id} value={covering.id}>
-                          {covering.name}
+                      {windowCoverings.length > 0 ? (
+                        windowCoverings.map((covering) => (
+                          <SelectItem key={covering.id} value={covering.id}>
+                            {covering.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="create_treatment" disabled>
+                          Create treatments in Settings → Window Coverings
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
