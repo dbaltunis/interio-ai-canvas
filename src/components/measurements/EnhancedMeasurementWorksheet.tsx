@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, Save, Upload, Ruler, Package, Calculator } from "lucide-react";
 import { useCreateClientMeasurement, useUpdateClientMeasurement } from "@/hooks/useClientMeasurements";
 import { useRooms } from "@/hooks/useRooms";
-import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
@@ -64,12 +64,12 @@ export const EnhancedMeasurementWorksheet = ({
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
   const { data: rooms = [] } = useRooms(projectId);
-  const { data: windowCoverings = [] } = useWindowCoverings();
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
 
-  // Get selected window covering details
-  const selectedCovering = windowCoverings.find(c => c.id === selectedWindowCovering);
+  // Get selected curtain template details
+  const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
 
   // Filter inventory based on selected covering category
   const getInventoryForCovering = (covering: any) => {
@@ -232,14 +232,19 @@ export const EnhancedMeasurementWorksheet = ({
                   <Label htmlFor="treatment">Treatment</Label>
                   <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering} disabled={readOnly}>
                     <SelectTrigger>
-                      <SelectValue placeholder={windowCoverings.length > 0 ? "Select treatment" : "No treatments available - Create in Settings"} />
+                      <SelectValue placeholder={curtainTemplates.length > 0 ? "Select treatment" : "No treatments available - Create in Settings"} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no_covering">No Treatment</SelectItem>
-                      {windowCoverings.length > 0 ? (
-                        windowCoverings.map((covering) => (
-                          <SelectItem key={covering.id} value={covering.id}>
-                            {covering.name}
+                      {curtainTemplates.length > 0 ? (
+                        curtainTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium">{template.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {template.curtain_type} • Fullness: {template.fullness_ratio}x • {template.manufacturing_type}
+                              </span>
+                            </div>
                           </SelectItem>
                         ))
                       ) : (
@@ -348,12 +353,12 @@ export const EnhancedMeasurementWorksheet = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no_covering">Not Selected</SelectItem>
-                      {windowCoverings.map((covering) => (
-                        <SelectItem key={covering.id} value={covering.id}>
+                      {curtainTemplates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center justify-between w-full">
-                            <span>{covering.name}</span>
+                            <span>{template.name}</span>
                             <Badge variant="outline" className="ml-2">
-                              {covering.category}
+                              {template.curtain_type}
                             </Badge>
                           </div>
                         </SelectItem>
