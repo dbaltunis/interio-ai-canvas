@@ -547,56 +547,6 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Pooling Configuration */}
-            <div className="border rounded-lg p-4 bg-amber-50">
-              <h4 className="font-medium mb-3 text-amber-800">Pooling Configuration</h4>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Pooling Position</Label>
-                  <RadioGroup 
-                    value={poolingOption} 
-                    onValueChange={(value) => {
-                      console.log("Pooling option changed to:", value);
-                      handleInputChange("pooling_option", value);
-                    }}
-                    disabled={readOnly}
-                    className="space-y-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="above_floor" id="above_floor" />
-                      <Label htmlFor="above_floor">Above floor (hanging)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="touching_floor" id="touching_floor" />
-                      <Label htmlFor="touching_floor">Touching floor</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="below_floor" id="below_floor" />
-                      <Label htmlFor="below_floor">Below floor (pooling)</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {poolingOption === "below_floor" && (
-                  <div>
-                    <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
-                    <p className="text-xs text-gray-600 mb-1">How much fabric pools on the floor</p>
-                    <Input
-                      id="pooling_amount"
-                      type="number"
-                      step="0.25"
-                      value={poolingAmount}
-                      onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
-                      placeholder="2.00"
-                      readOnly={readOnly}
-                      className="font-semibold"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Main Measurements - Rail Width and Drop */}
             <div className="border rounded-lg p-4 bg-green-50">
               <h4 className="font-medium mb-3 text-green-800">Main Measurements (for Calculator)</h4>
@@ -631,6 +581,66 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
             </div>
+
+            {/* Pooling Configuration - Collapsible */}
+            <div className="space-y-2">
+              <details className="group">
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors">
+                  <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Pooling Configuration
+                  <span className="text-xs text-amber-600 ml-auto">Optional - Click to configure</span>
+                </summary>
+                <div className="mt-3 p-4 bg-amber-50/50 rounded-lg border border-amber-200">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Pooling Position</Label>
+                      <RadioGroup 
+                        value={poolingOption} 
+                        onValueChange={(value) => {
+                          console.log("Pooling option changed to:", value);
+                          handleInputChange("pooling_option", value);
+                        }}
+                        disabled={readOnly}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="above_floor" id="above_floor" />
+                          <Label htmlFor="above_floor">Above floor (hanging)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="touching_floor" id="touching_floor" />
+                          <Label htmlFor="touching_floor">Touching floor</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="below_floor" id="below_floor" />
+                          <Label htmlFor="below_floor">Below floor (pooling)</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {poolingOption === "below_floor" && (
+                      <div>
+                        <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
+                        <p className="text-xs text-gray-600 mb-1">How much fabric pools on the floor</p>
+                        <Input
+                          id="pooling_amount"
+                          type="number"
+                          step="0.25"
+                          value={poolingAmount}
+                          onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
+                          placeholder="2.00"
+                          readOnly={readOnly}
+                          className="font-semibold"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </details>
+            </div>
+
           </div>
         </div>
       </CardContent>
