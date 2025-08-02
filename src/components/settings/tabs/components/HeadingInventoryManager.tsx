@@ -9,15 +9,23 @@ import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Extended type to include image_url
+interface HeadingItem extends EnhancedInventoryItem {
+  image_url?: string;
+}
+
 export const HeadingInventoryManager = () => {
-  const { data: headings = [], isLoading } = useEnhancedInventoryByCategory('heading');
+  const { data: headingsData = [], isLoading } = useEnhancedInventoryByCategory('heading');
   const createItem = useCreateEnhancedInventoryItem();
   const updateItem = useUpdateEnhancedInventoryItem();
   const deleteItem = useDeleteEnhancedInventoryItem();
   const { toast } = useToast();
   
+  // Cast to our extended type
+  const headings = headingsData as HeadingItem[];
+  
   const [isCreating, setIsCreating] = useState(false);
-  const [editingHeading, setEditingHeading] = useState<EnhancedInventoryItem | null>(null);
+  const [editingHeading, setEditingHeading] = useState<HeadingItem | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -50,7 +58,10 @@ export const HeadingInventoryManager = () => {
         .from('project-images')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('project-images')
@@ -78,9 +89,18 @@ export const HeadingInventoryManager = () => {
   };
 
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter a heading name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const itemData = {
-        name: formData.name,
+        name: formData.name.trim(),
         fullness_ratio: formData.fullness_ratio,
         // Store extra fabric and price in the relevant fields
         labor_hours: formData.extra_fabric, // Using labor_hours field for extra fabric
@@ -94,17 +114,30 @@ export const HeadingInventoryManager = () => {
       if (editingHeading) {
         await updateItem.mutateAsync({ id: editingHeading.id, ...itemData });
         setEditingHeading(null);
+        toast({
+          title: "Heading updated",
+          description: "The heading style has been updated.",
+        });
       } else {
         await createItem.mutateAsync(itemData);
         setIsCreating(false);
+        toast({
+          title: "Heading created",
+          description: "New heading style has been created.",
+        });
       }
       resetForm();
     } catch (error) {
       console.error('Error saving heading:', error);
+      toast({
+        title: "Save failed",
+        description: "Failed to save heading. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleEdit = (heading: EnhancedInventoryItem) => {
+  const handleEdit = (heading: HeadingItem) => {
     setFormData({
       name: heading.name,
       fullness_ratio: heading.fullness_ratio || 2.5,
@@ -113,11 +146,25 @@ export const HeadingInventoryManager = () => {
       image_url: heading.image_url || ''
     });
     setEditingHeading(heading);
+    setIsCreating(false);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this heading?')) {
-      await deleteItem.mutateAsync(id);
+      try {
+        await deleteItem.mutateAsync(id);
+        toast({
+          title: "Heading deleted",
+          description: "The heading style has been removed.",
+        });
+      } catch (error) {
+        console.error('Error deleting heading:', error);
+        toast({
+          title: "Delete failed",
+          description: "Failed to delete heading. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -224,6 +271,10 @@ export const HeadingInventoryManager = () => {
                         src={formData.image_url} 
                         alt="Heading preview" 
                         className="w-32 h-32 object-cover rounded-lg border"
+                        onError={(e) => {
+                          console.error('Image failed to load:', formData.image_url);
+                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSIjZjNmNGY2Ii8+CjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjZTVlN2ViIi8+Cjx0ZXh0IHg9IjY0IiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZTwvdGV4dD4KPC9zdmc+';
+                        }}
                       />
                       <Button
                         type="button"
@@ -258,7 +309,7 @@ export const HeadingInventoryManager = () => {
               </div>
 
               <div className="flex gap-2 mt-6">
-                <Button onClick={handleSave} disabled={!formData.name || uploadingImage}>
+                <Button onClick={handleSave} disabled={!formData.name.trim() || uploadingImage}>
                   {editingHeading ? 'Update' : 'Create'}
                 </Button>
                 <Button variant="outline" onClick={handleCancel}>
@@ -283,6 +334,10 @@ export const HeadingInventoryManager = () => {
                       src={heading.image_url} 
                       alt={heading.name}
                       className="w-16 h-16 object-cover rounded-lg border"
+                      onError={(e) => {
+                        console.error('Heading image failed to load:', heading.image_url);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   )}
                   
@@ -290,7 +345,7 @@ export const HeadingInventoryManager = () => {
                   <div className="flex-1">
                     <h4 className="font-medium">{heading.name}</h4>
                     <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>Fullness: {heading.fullness_ratio}</span>
+                      <span>Fullness: {heading.fullness_ratio || 1.0}</span>
                       {(heading.labor_hours || 0) > 0 && (
                         <span>Extra Fabric: {heading.labor_hours}m</span>
                       )}
