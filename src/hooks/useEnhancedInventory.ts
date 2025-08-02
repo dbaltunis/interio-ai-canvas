@@ -54,6 +54,8 @@ export interface EnhancedInventoryItem {
   weight?: number;
   color?: string;
   finish?: string;
+  collection_name?: string;
+  image_url?: string;
   
   // Service/Labor fields (exact database column names)
   labor_hours?: number;
