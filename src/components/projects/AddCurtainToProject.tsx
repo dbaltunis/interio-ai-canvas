@@ -140,12 +140,25 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     let makeUpPrice = 0;
     switch (template.pricing_type) {
       case 'per_metre':
-        // Use price rules if available
-        const applicableRule = template.price_rules.find(rule => 
-          drop >= rule.min_drop && drop <= rule.max_drop
-        );
-        const pricePerMetre = applicableRule?.price_per_metre || 25; // Default fallback
-        makeUpPrice = railWidth * pricePerMetre;
+        // Check if height-based pricing is enabled and find the correct rate
+        let pricePerMetre = 25; // Default fallback
+        
+        if (template.uses_height_pricing && template.height_price_ranges) {
+          const applicableRange = template.height_price_ranges.find(range => 
+            drop >= range.min_height && drop <= range.max_height
+          );
+          if (applicableRange) {
+            pricePerMetre = applicableRange.price;
+          }
+        } else {
+          // Use standard per-metre price from unit_price or price rules
+          const applicableRule = template.price_rules.find(rule => 
+            drop >= rule.min_drop && drop <= rule.max_drop
+          );
+          pricePerMetre = applicableRule?.price_per_metre || template.machine_price_per_drop || 25;
+        }
+        
+        makeUpPrice = (drop / 100) * pricePerMetre; // Convert cm to metres
         break;
       case 'per_drop':
         // Calculate actual number of drops needed based on fabric width
