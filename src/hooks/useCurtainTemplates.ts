@@ -30,6 +30,14 @@ export interface CurtainTemplate {
   side_hems: number;
   seam_hems: number;
   
+  // Manufacturing Configuration
+  return_left: number;
+  return_right: number;
+  overlap: number;
+  header_allowance: number;
+  waste_percent: number;
+  is_railroadable: boolean;
+  
   // Lining Options
   lining_types: Array<{
     type: string;

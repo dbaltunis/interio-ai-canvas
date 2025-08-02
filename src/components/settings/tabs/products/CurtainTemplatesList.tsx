@@ -105,17 +105,18 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
                 <Badge variant="outline">{template.heading_name}</Badge>
                 <Badge variant="outline">Fullness: {template.fullness_ratio}</Badge>
                 <Badge variant="outline">{template.manufacturing_type}</Badge>
+                {template.is_railroadable && <Badge variant="outline">Railroadable</Badge>}
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">Fabric Width:</span> {template.fabric_width_type}
+                  <span className="font-medium">Returns:</span> L:{template.return_left}cm R:{template.return_right}cm
                 </div>
                 <div>
-                  <span className="font-medium">Direction:</span> {template.fabric_direction}
+                  <span className="font-medium">Header Allowance:</span> {template.header_allowance}cm
                 </div>
                 <div>
-                  <span className="font-medium">Bottom Hem:</span> {template.bottom_hem}cm
+                  <span className="font-medium">Waste:</span> {template.waste_percent}%
                 </div>
                 <div>
                   <span className="font-medium">Pricing:</span> {template.pricing_type.replace('_', ' ')}

@@ -76,6 +76,10 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     // Calculate fabric width needed based on fullness ratio
     const fabricWidthNeeded = railWidth * template.fullness_ratio;
     
+    // Add returns and overlap to the flat finished width
+    const returnAllowance = (template.return_left || 7.5) + (template.return_right || 7.5);
+    const overlapAllowance = template.curtain_type === 'pair' ? (template.overlap || 10) : 0;
+    
     // Add extra fabric if specified
     let extraFabric = 0;
     if (template.extra_fabric_fixed) {
@@ -84,10 +88,14 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     if (template.extra_fabric_percentage) {
       extraFabric += fabricWidthNeeded * (template.extra_fabric_percentage / 100);
     }
-    const totalFabricWidth = fabricWidthNeeded + extraFabric;
+    
+    const totalFabricWidth = fabricWidthNeeded + returnAllowance + overlapAllowance + extraFabric;
 
-    // Calculate drop with allowances
-    let totalDrop = drop + template.bottom_hem;
+    // Calculate drop with header and bottom hem allowances
+    const headerAllowance = template.header_allowance || 8;
+    const bottomHemAllowance = template.bottom_hem || 15;
+    
+    let totalDrop = drop + headerAllowance + bottomHemAllowance;
     
     // Add pooling allowance
     switch (formData.pooling) {
@@ -101,13 +109,29 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         break;
     }
 
-    // Calculate seams needed if fabric width is not sufficient
+    // Check for railroading possibility
     const standardFabricWidth = template.fabric_width_type === 'wide' ? 280 : 140; // cm
-    const seamsNeeded = Math.max(0, Math.ceil(totalFabricWidth / standardFabricWidth) - 1);
-    const seamAllowance = seamsNeeded * template.seam_hems * 2; // Both sides of seam
+    const canRailroad = template.is_railroadable && 
+                       (totalDrop <= standardFabricWidth);
 
-    // Calculate total fabric required in meters
-    const totalFabricRequired = (totalDrop + seamAllowance) / 100; // Convert to meters
+    let totalFabricRequired: number;
+    
+    if (canRailroad) {
+      // Railroaded calculation: cut from fabric width, not length
+      const dropsNeeded = Math.ceil(totalFabricWidth / standardFabricWidth);
+      totalFabricRequired = (dropsNeeded * totalDrop) / 100; // Convert to meters
+    } else {
+      // Standard calculation: calculate seams needed if fabric width is not sufficient
+      const seamsNeeded = Math.max(0, Math.ceil(totalFabricWidth / standardFabricWidth) - 1);
+      const seamAllowance = seamsNeeded * template.seam_hems * 2; // Both sides of seam
+
+      // Calculate total fabric required in meters
+      totalFabricRequired = (totalDrop + seamAllowance) / 100; // Convert to meters
+    }
+
+    // Apply waste percentage at the very end
+    const wastePercent = template.waste_percent || 5;
+    totalFabricRequired = totalFabricRequired * (1 + (wastePercent / 100));
 
     // Calculate lining (typically same as main fabric)
     const totalLiningRequired = template.lining_types.length > 0 ? totalFabricRequired : 0;

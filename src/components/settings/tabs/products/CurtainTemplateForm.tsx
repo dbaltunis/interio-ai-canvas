@@ -6,8 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Save, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Save, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 interface CurtainTemplateFormProps {
@@ -45,6 +47,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     bottom_hem: template?.bottom_hem?.toString() || "15",
     side_hems: template?.side_hems?.toString() || "7.5",
     seam_hems: template?.seam_hems?.toString() || "1.5",
+    
+    // Manufacturing Configuration
+    return_left: template?.return_left?.toString() || "7.5",
+    return_right: template?.return_right?.toString() || "7.5",
+    overlap: template?.overlap?.toString() || "10",
+    header_allowance: template?.header_allowance?.toString() || "8",
+    waste_percent: template?.waste_percent?.toString() || "5",
+    is_railroadable: template?.is_railroadable || false,
     
     // Lining Options
     lining_types: template?.lining_types || [],
@@ -106,6 +116,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         manufacturing_type: formData.manufacturing_type as 'machine' | 'hand',
         hand_finished_upcharge_fixed: formData.hand_finished_upcharge_fixed ? parseFloat(formData.hand_finished_upcharge_fixed.toString()) : undefined,
         hand_finished_upcharge_percentage: formData.hand_finished_upcharge_percentage ? parseFloat(formData.hand_finished_upcharge_percentage.toString()) : undefined,
+        return_left: parseFloat(formData.return_left.toString()) || 7.5,
+        return_right: parseFloat(formData.return_right.toString()) || 7.5,
+        overlap: parseFloat(formData.overlap.toString()) || 10,
+        header_allowance: parseFloat(formData.header_allowance.toString()) || 8,
+        waste_percent: parseFloat(formData.waste_percent.toString()) || 5,
+        is_railroadable: formData.is_railroadable,
         active: true
       };
 
@@ -382,6 +398,174 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           <p className="text-sm text-muted-foreground">
             Note: Seam hems will increase fabric requirements if fabric width is insufficient
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Manufacturing Configuration - Returns, Headers, Waste */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Manufacturing Configuration</CardTitle>
+          <CardDescription>Customise fabric usage rules based on your manufacturing setup</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <TooltipProvider>
+            {/* Return & Overlap Allowance */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">1. Return & Overlap Allowance</h4>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Returns are the part of fabric that wraps to the wall at each end of the track.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="return_left">Return Left (cm)</Label>
+                  <Input
+                    id="return_left"
+                    type="number"
+                    step="0.5"
+                    value={formData.return_left}
+                    onChange={(e) => handleInputChange("return_left", e.target.value)}
+                    placeholder="7.5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="return_right">Return Right (cm)</Label>
+                  <Input
+                    id="return_right"
+                    type="number"
+                    step="0.5"
+                    value={formData.return_right}
+                    onChange={(e) => handleInputChange("return_right", e.target.value)}
+                    placeholder="7.5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="overlap">Centre Overlap (cm)</Label>
+                  <Input
+                    id="overlap"
+                    type="number"
+                    step="0.5"
+                    value={formData.overlap}
+                    onChange={(e) => handleInputChange("overlap", e.target.value)}
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">For pairs only</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                These values will be added to the flat finished width
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Header & Bottom Hem Allowances */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">2. Header & Bottom Hem Allowances</h4>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Header is the pleat or tape section at the top. Typically 5–10 cm.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="header_allowance">Header Allowance (cm)</Label>
+                  <Input
+                    id="header_allowance"
+                    type="number"
+                    step="0.5"
+                    value={formData.header_allowance}
+                    onChange={(e) => handleInputChange("header_allowance", e.target.value)}
+                    placeholder="8"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bottom_hem_manufacturing">Bottom Hem (cm)</Label>
+                  <Input
+                    id="bottom_hem_manufacturing"
+                    type="number"
+                    step="0.5"
+                    value={formData.bottom_hem}
+                    onChange={(e) => handleInputChange("bottom_hem", e.target.value)}
+                    placeholder="10"
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                These values are added to the drop to get the cut length
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Waste Allowance */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">3. Waste Allowance</h4>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add a small waste % to avoid shortages due to cutting, matching, or human error.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="w-1/2">
+                <Label htmlFor="waste_percent">Fabric Cutting Waste (%)</Label>
+                <Input
+                  id="waste_percent"
+                  type="number"
+                  step="0.1"
+                  value={formData.waste_percent}
+                  onChange={(e) => handleInputChange("waste_percent", e.target.value)}
+                  placeholder="5"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Applied at the very end of the calculation
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Railroading Toggle */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium">4. Railroading Option</h4>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>If enabled, app checks if curtain drop + header + hem is less than fabric width to allow railroading.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_railroadable"
+                  checked={formData.is_railroadable}
+                  onCheckedChange={(checked) => handleInputChange("is_railroadable", checked)}
+                />
+                <Label htmlFor="is_railroadable">Allow railroading with this fabric/template</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                When enabled, the system will check if railroading is possible and calculate accordingly
+              </p>
+            </div>
+          </TooltipProvider>
         </CardContent>
       </Card>
 
