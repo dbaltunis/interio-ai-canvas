@@ -13,7 +13,6 @@ const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
   
   const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const createProject = useCreateProject();
@@ -55,7 +54,7 @@ const JobsPage = () => {
       // Refresh the quotes list to show the new job
       await refetchQuotes();
 
-      // Navigate to the project detail page using the PROJECT ID
+      // Navigate directly to the project detail page using the PROJECT ID
       setSelectedJobId(newProject.id);
 
       toast({
@@ -74,11 +73,10 @@ const JobsPage = () => {
 
   const handleJobSelect = (quote: any) => {
     console.log("Job selected:", quote);
-    // Use the project_id from the quote to navigate to the correct job detail
-    if (quote.project_id) {
-      setSelectedJobId(quote.project_id);
-    } else if (quote.projects?.id) {
-      setSelectedJobId(quote.projects.id);
+    // Directly navigate to job detail using project_id
+    const projectId = quote.project_id || quote.projects?.id;
+    if (projectId) {
+      setSelectedJobId(projectId);
     } else {
       console.error("No project ID found for quote:", quote);
       toast({
@@ -100,6 +98,7 @@ const JobsPage = () => {
     setStatusFilter("all");
   };
 
+  // Direct rendering - no intermediate pages
   if (selectedJobId) {
     return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
   }
