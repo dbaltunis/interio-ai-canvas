@@ -547,37 +547,87 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Main Measurements - Rail Width and Drop */}
-            <div className="border rounded-lg p-4 bg-green-50">
-              <h4 className="font-medium mb-3 text-green-800">Main Measurements (for Calculator)</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="rail_width" className="text-sm font-medium">{hardwareType === "track" ? "Track" : "Rail"} Width</Label>
-                  <p className="text-xs text-gray-600 mb-1">Total width of the curtain {hardwareType === "track" ? "track" : "rail/rod"}</p>
-                  <Input
-                    id="rail_width"
-                    type="number"
-                    step="0.25"
-                    value={measurements.rail_width || ""}
-                    onChange={(e) => handleInputChange("rail_width", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                    className="font-semibold"
-                  />
+            {/* Main Measurements - Enhanced UI */}
+            <div className="bg-white border-2 border-green-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l3-3 9.5-9.5a1.5 1.5 0 000-2.121L18.379 5.257a1.5 1.5 0 00-2.121 0L6.5 14.5 7 21z" />
+                  </svg>
                 </div>
                 <div>
-                  <Label htmlFor="drop" className="text-sm font-medium">Curtain Drop</Label>
-                  <p className="text-xs text-gray-600 mb-1">Length of curtain panel from {hardwareType === "track" ? "track" : "rod"} to bottom</p>
-                  <Input
-                    id="drop"
-                    type="number"
-                    step="0.25"
-                    value={measurements.drop || ""}
-                    onChange={(e) => handleInputChange("drop", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                    className="font-semibold"
-                  />
+                  <h4 className="font-semibold text-gray-900 text-lg">Essential Measurements</h4>
+                  <p className="text-sm text-gray-600">Required for accurate calculations</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-600 font-semibold text-sm">W</span>
+                    </div>
+                    <Label htmlFor="rail_width" className="font-medium text-gray-900">
+                      {hardwareType === "track" ? "Track" : "Rail"} Width
+                    </Label>
+                  </div>
+                  <p className="text-xs text-gray-500 pl-8">Total width of the curtain {hardwareType === "track" ? "track" : "rail/rod"}</p>
+                  <div className="relative pl-8">
+                    <Input
+                      id="rail_width"
+                      type="number"
+                      step="0.25"
+                      value={measurements.rail_width || ""}
+                      onChange={(e) => handleInputChange("rail_width", e.target.value)}
+                      placeholder="0.00"
+                      readOnly={readOnly}
+                      className="pr-12 text-lg font-semibold border-2 focus:border-blue-500 transition-colors"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">
+                      inches
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-purple-600 font-semibold text-sm">H</span>
+                    </div>
+                    <Label htmlFor="drop" className="font-medium text-gray-900">
+                      Curtain Drop
+                    </Label>
+                  </div>
+                  <p className="text-xs text-gray-500 pl-8">Length from {hardwareType === "track" ? "track" : "rod"} to curtain bottom</p>
+                  <div className="relative pl-8">
+                    <Input
+                      id="drop"
+                      type="number"
+                      step="0.25"
+                      value={measurements.drop || ""}
+                      onChange={(e) => handleInputChange("drop", e.target.value)}
+                      placeholder="0.00"
+                      readOnly={readOnly}
+                      className="pr-12 text-lg font-semibold border-2 focus:border-purple-500 transition-colors"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">
+                      inches
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Tips */}
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-xs text-gray-600">
+                    <p className="font-medium mb-1">Quick Tips:</p>
+                    <p>• Width: Measure the full {hardwareType === "track" ? "track" : "rod"} length including extensions</p>
+                    <p>• Drop: Measure from mounting point to desired curtain bottom</p>
+                  </div>
                 </div>
               </div>
             </div>
