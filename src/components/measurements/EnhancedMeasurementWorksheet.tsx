@@ -228,6 +228,23 @@ export const EnhancedMeasurementWorksheet = ({
                   </Select>
                 </div>
 
+                <div>
+                  <Label htmlFor="treatment">Treatment</Label>
+                  <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering} disabled={readOnly}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select treatment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no_covering">No Treatment</SelectItem>
+                      {windowCoverings.map((covering) => (
+                        <SelectItem key={covering.id} value={covering.id}>
+                          {covering.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {projectId && (
                   <div>
                     <Label htmlFor="room">Room</Label>
