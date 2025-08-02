@@ -494,13 +494,13 @@ export const VisualMeasurementSheet = ({
               </RadioGroup>
             </div>
 
-            {/* Curtain Configuration */}
-            <div className="border rounded-lg p-4 bg-blue-50">
-              <h4 className="font-medium mb-3 text-blue-800">Curtain Configuration</h4>
+            {/* Curtain Configuration - Compact Design */}
+            <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/30">
+              <h4 className="font-medium text-blue-800 mb-3 text-sm">Curtain Configuration</h4>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Curtain Type</Label>
+                  <Label className="text-xs font-medium mb-1 block text-gray-700">Curtain Type</Label>
                   <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
@@ -508,22 +508,22 @@ export const VisualMeasurementSheet = ({
                       handleInputChange("curtain_type", value);
                     }}
                     disabled={readOnly}
-                    className="flex flex-row space-x-4"
+                    className="flex flex-row gap-4"
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="pair" id="pair" />
-                      <Label htmlFor="pair">Pair (Two panels)</Label>
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
+                      <Label htmlFor="pair" className="text-sm">Pair (Two panels)</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="single" id="single" />
-                      <Label htmlFor="single">Single (One panel)</Label>
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="single" id="single" className="w-4 h-4" />
+                      <Label htmlFor="single" className="text-sm">Single (One panel)</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
                 {curtainType === "single" && (
                   <div>
-                    <Label className="text-sm font-medium mb-2 block">Panel Position</Label>
+                    <Label className="text-xs font-medium mb-1 block text-gray-700">Panel Position</Label>
                     <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
@@ -531,15 +531,15 @@ export const VisualMeasurementSheet = ({
                         handleInputChange("curtain_side", value);
                       }}
                       disabled={readOnly}
-                      className="flex flex-row space-x-4"
+                      className="flex flex-row gap-4"
                     >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="left" id="left" />
-                        <Label htmlFor="left">Left side</Label>
+                      <div className="flex items-center space-x-1.5">
+                        <RadioGroupItem value="left" id="left" className="w-4 h-4" />
+                        <Label htmlFor="left" className="text-sm">Left side</Label>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="right" id="right" />
-                        <Label htmlFor="right">Right side</Label>
+                      <div className="flex items-center space-x-1.5">
+                        <RadioGroupItem value="right" id="right" className="w-4 h-4" />
+                        <Label htmlFor="right" className="text-sm">Right side</Label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -547,32 +547,29 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Main Measurements - Enhanced UI */}
-            <div className="bg-white border-2 border-green-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Main Measurements - Compact Design */}
+            <div className="bg-white border-2 border-green-200 rounded-lg p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l3-3 9.5-9.5a1.5 1.5 0 000-2.121L18.379 5.257a1.5 1.5 0 00-2.121 0L6.5 14.5 7 21z" />
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 text-lg">Essential Measurements</h4>
-                  <p className="text-sm text-gray-600">Required for accurate calculations</p>
+                  <h4 className="font-semibold text-gray-900">Essential Measurements</h4>
+                  <p className="text-xs text-gray-500">Required for accurate calculations</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-blue-600 font-semibold text-sm">W</span>
-                    </div>
-                    <Label htmlFor="rail_width" className="font-medium text-gray-900">
+                    <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">W</span>
+                    <Label htmlFor="rail_width" className="text-sm font-medium text-gray-900">
                       {hardwareType === "track" ? "Track" : "Rail"} Width
                     </Label>
                   </div>
-                  <p className="text-xs text-gray-500 pl-8">Total width of the curtain {hardwareType === "track" ? "track" : "rail/rod"}</p>
-                  <div className="relative pl-8">
+                  <div className="relative">
                     <Input
                       id="rail_width"
                       type="number"
@@ -581,25 +578,23 @@ export const VisualMeasurementSheet = ({
                       onChange={(e) => handleInputChange("rail_width", e.target.value)}
                       placeholder="0.00"
                       readOnly={readOnly}
-                      className="pr-12 text-lg font-semibold border-2 focus:border-blue-500 transition-colors"
+                      className="pr-16 font-semibold text-center border-2 focus:border-blue-500"
                     />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                       inches
                     </span>
                   </div>
+                  <p className="text-xs text-gray-500">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-purple-600 font-semibold text-sm">H</span>
-                    </div>
-                    <Label htmlFor="drop" className="font-medium text-gray-900">
+                    <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xs">H</span>
+                    <Label htmlFor="drop" className="text-sm font-medium text-gray-900">
                       Curtain Drop
                     </Label>
                   </div>
-                  <p className="text-xs text-gray-500 pl-8">Length from {hardwareType === "track" ? "track" : "rod"} to curtain bottom</p>
-                  <div className="relative pl-8">
+                  <div className="relative">
                     <Input
                       id="drop"
                       type="number"
@@ -608,26 +603,13 @@ export const VisualMeasurementSheet = ({
                       onChange={(e) => handleInputChange("drop", e.target.value)}
                       placeholder="0.00"
                       readOnly={readOnly}
-                      className="pr-12 text-lg font-semibold border-2 focus:border-purple-500 transition-colors"
+                      className="pr-16 font-semibold text-center border-2 focus:border-purple-500"
                     />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                       inches
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Quick Tips */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-xs text-gray-600">
-                    <p className="font-medium mb-1">Quick Tips:</p>
-                    <p>• Width: Measure the full {hardwareType === "track" ? "track" : "rod"} length including extensions</p>
-                    <p>• Drop: Measure from mounting point to desired curtain bottom</p>
-                  </div>
+                  <p className="text-xs text-gray-500">Length to curtain bottom</p>
                 </div>
               </div>
             </div>
