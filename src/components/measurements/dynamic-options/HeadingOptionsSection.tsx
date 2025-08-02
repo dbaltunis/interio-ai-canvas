@@ -37,7 +37,7 @@ export const HeadingOptionsSection = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div>
         <Label className="text-xs font-medium mb-1 block text-gray-700">Heading Style</Label>
         <Select 
@@ -45,7 +45,7 @@ export const HeadingOptionsSection = ({
           onValueChange={onHeadingChange}
           disabled={readOnly}
         >
-          <SelectTrigger className="h-8">
+          <SelectTrigger className="h-8 text-sm">
             <SelectValue placeholder="Choose heading style" />
           </SelectTrigger>
           <SelectContent>
@@ -56,30 +56,18 @@ export const HeadingOptionsSection = ({
             ) : (
               <>
                 <SelectItem value="standard">
-                  <div className="flex flex-col gap-1 w-full">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Standard {template.heading_name}</span>
-                      <span className="text-xs text-muted-foreground">No upcharge</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      Fullness: {template.fullness_ratio}x
-                    </span>
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-sm">Standard {template.heading_name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">No upcharge</span>
                   </div>
                 </SelectItem>
                 {headingOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
-                    <div className="flex flex-col gap-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{option.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatPrice(option.price_per_meter || option.unit_price || 0)}/m
-                        </span>
-                      </div>
-                      {option.description && (
-                        <span className="text-xs text-muted-foreground">
-                          {option.description}
-                        </span>
-                      )}
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-sm">{option.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {formatPrice(option.price_per_meter || option.unit_price || 0)}/m
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -94,15 +82,15 @@ export const HeadingOptionsSection = ({
         </Select>
       </div>
 
-      {/* Display template heading configuration */}
-      <div className="grid grid-cols-2 gap-2 p-2 bg-gray-50 rounded text-xs">
+      {/* Compact template info */}
+      <div className="grid grid-cols-2 gap-1 p-2 bg-gray-50 rounded text-xs">
         <div>
-          <div className="font-medium text-gray-600">Fullness</div>
-          <div className="text-gray-800">{template.fullness_ratio}x</div>
+          <div className="font-medium text-gray-600 text-xs">Fullness</div>
+          <div className="text-gray-800 text-xs">{template.fullness_ratio}x</div>
         </div>
         <div>
-          <div className="font-medium text-gray-600">Type</div>
-          <div className="text-gray-800">{template.manufacturing_type}</div>
+          <div className="font-medium text-gray-600 text-xs">Type</div>
+          <div className="text-gray-800 text-xs truncate">{template.manufacturing_type}</div>
         </div>
         {template.heading_upcharge_per_metre && (
           <div>
