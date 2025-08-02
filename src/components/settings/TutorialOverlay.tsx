@@ -43,13 +43,6 @@ const tutorialSteps: TutorialStep[] = [
     example: "Roman Blinds: Width ranges (columns) × Height ranges (rows) = Price in each cell"
   },
   {
-    id: "calculations",
-    title: "4. Set Calculation Rules",
-    description: "Configure allowances, wastage, and markup percentages that match your current processes.",
-    targetTab: "calculations",
-    example: "Seam allowance: 5cm, Hem allowance: 15cm, Default markup: 40%"
-  },
-  {
     id: "complete",
     title: "Setup Complete!",
     description: "You're ready to create quotes! Your settings will now be used in job creation to calculate prices automatically.",

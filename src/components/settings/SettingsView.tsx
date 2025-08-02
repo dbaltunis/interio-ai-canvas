@@ -1,11 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Calculator, Play, Users, FileText, Globe, Shield, Bell } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell } from "lucide-react";
 import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
 import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
 
-import { CalculationsTab } from "./tabs/CalculationsTab";
+
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
@@ -50,7 +50,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 text-xs">
+        <TabsList className="grid w-full grid-cols-8 text-xs">
           <TabsTrigger value="business" className="flex items-center gap-1">
             <Settings className="h-3 w-3" />
             <span className="hidden sm:inline">Business</span>
@@ -62,10 +62,6 @@ export const SettingsView = () => {
           <TabsTrigger value="window-coverings" className="flex items-center gap-1">
             <Package className="h-3 w-3" />
             <span className="hidden sm:inline">Window Coverings</span>
-          </TabsTrigger>
-          <TabsTrigger value="calculations" className="flex items-center gap-1">
-            <Calculator className="h-3 w-3" />
-            <span className="hidden sm:inline">Calculations</span>
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-1">
             <Users className="h-3 w-3" />
@@ -101,10 +97,6 @@ export const SettingsView = () => {
           <WindowCoveringsTab />
         </TabsContent>
 
-
-        <TabsContent value="calculations">
-          <CalculationsTab />
-        </TabsContent>
 
         <TabsContent value="users">
           <UserManagementTab />
