@@ -133,7 +133,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       onClose();
     } catch (error) {
-      console.error("Error saving template:", error);
+      console.error("Error saving curtain template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save template. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
