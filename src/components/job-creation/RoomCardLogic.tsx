@@ -142,7 +142,16 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
       pricing_method: "per_meter",
       base_price: 25,
       complexity_multiplier: 1.2
-    }
+    },
+    lining_types: [
+      { id: 'standard', name: 'Standard Lining', cost_per_meter: 15 },
+      { id: 'blackout', name: 'Blackout Lining', cost_per_meter: 20 },
+      { id: 'interlining', name: 'Interlining', cost_per_meter: 26.63 }
+    ],
+    heading_types: [
+      { id: 'pencil', name: 'Pencil Pleat', cost_per_meter: 8 },
+      { id: 'eyelet', name: 'Eyelet', cost_per_meter: 10 }
+    ]
   };
 
   const selectedFabric = {
