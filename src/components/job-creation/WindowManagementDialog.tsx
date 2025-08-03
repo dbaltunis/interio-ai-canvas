@@ -124,7 +124,11 @@ export const WindowManagementDialog = ({
               Enhanced Window Management: {surface?.name}
             </DialogTitle>
             <div className="text-sm text-muted-foreground">
-              {surface?.width}" × {surface?.height}" • Room: {surface?.room_name}
+              {existingMeasurement?.measurements ? (
+                `${existingMeasurement.measurements.measurement_a || surface?.width}" × ${existingMeasurement.measurements.measurement_b || surface?.height}" • Room: ${surface?.room_name}`
+              ) : (
+                `${surface?.width}" × ${surface?.height}" (Basic dimensions) • Room: ${surface?.room_name}`
+              )}
             </div>
           </DialogHeader>
 
