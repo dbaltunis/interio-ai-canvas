@@ -106,6 +106,11 @@ export const EnhancedMeasurementWorksheet = ({
   // Reset state when surface changes to ensure each window has independent state
   useEffect(() => {
     if (surfaceId) {
+      console.log("EnhancedMeasurementWorksheet: Setting room selection", {
+        existingMeasurementRoomId: existingMeasurement?.room_id,
+        currentRoomId,
+        finalSelection: existingMeasurement?.room_id || currentRoomId || "no_room"
+      });
       setWindowType(existingMeasurement?.measurement_type || "standard");
       setSelectedRoom(existingMeasurement?.room_id || currentRoomId || "no_room");
       setSelectedWindowCovering(existingMeasurement?.window_covering_id || "no_covering");
@@ -137,7 +142,7 @@ export const EnhancedMeasurementWorksheet = ({
       );
       setCalculatedCost(0);
     }
-  }, [surfaceId]); // Only reset when surfaceId changes, not when measurement data changes
+  }, [surfaceId, currentRoomId]); // Reset when surfaceId or currentRoomId changes
 
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
