@@ -79,33 +79,55 @@ export const VisualMeasurementSheet = ({
       const fabricWidthCm = selectedFabricItem.fabric_width || 137; // Default fabric width
       const requiredWidth = width * selectedTemplate.fullness_ratio;
       
-      // Include pooling in the total drop calculation
+      // Include all manufacturing allowances from template settings
       const headerHem = selectedTemplate.header_allowance || 8;
       const bottomHem = selectedTemplate.bottom_hem || 8;
-      const totalDrop = height + headerHem + bottomHem + pooling;
+      const sideHems = selectedTemplate.side_hems || 0; // Manufacturing side hems
+      const seamHems = selectedTemplate.seam_hems || 0; // Manufacturing seam allowances
+      const returnLeft = selectedTemplate.return_left || 0; // Manufacturing return left
+      const returnRight = selectedTemplate.return_right || 0; // Manufacturing return right
+      
+      // Calculate total width including returns for proper fabric calculation
+      const totalWidthWithReturns = requiredWidth + returnLeft + returnRight;
+      
+      // Include pooling and all manufacturing allowances in the total drop calculation
+      const totalDrop = height + headerHem + bottomHem + pooling + sideHems;
       const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
       
-      // Calculate how many fabric widths are needed
-      const widthsRequired = Math.ceil(requiredWidth / fabricWidthCm);
+      // Calculate how many fabric widths are needed (including returns)
+      const widthsRequired = Math.ceil(totalWidthWithReturns / fabricWidthCm);
       
-      // Calculate linear metres needed (drop + allowances + pooling) × number of widths
-      const linearMeters = (totalDrop / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
+      // Add seam allowances when multiple widths are needed
+      const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0; // Both sides of seam
+      
+      // Calculate linear metres needed (drop + allowances + pooling + seams) × number of widths
+      const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
       
       // Get price per meter from various possible fields
       const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0;
       
-      console.log('VisualMeasurementSheet fabric calculation:', {
+       console.log('VisualMeasurementSheet fabric calculation with manufacturing allowances:', {
         width,
         height,
         pooling,
         requiredWidth,
+        totalWidthWithReturns,
         totalDrop,
         widthsRequired,
         linearMeters,
         pricePerMeter,
         fabricWidthCm,
         fullnessRatio: selectedTemplate.fullness_ratio,
-        wastePercent: selectedTemplate.waste_percent
+        wastePercent: selectedTemplate.waste_percent,
+        manufacturingAllowances: {
+          headerHem,
+          bottomHem,
+          sideHems,
+          seamHems,
+          returnLeft,
+          returnRight,
+          totalSeamAllowance
+        }
       });
 
       return {
@@ -120,8 +142,13 @@ export const VisualMeasurementSheet = ({
         bottomHem: bottomHem,
         pooling: pooling,
         totalDrop: totalDrop,
-        returns: returns,
-        wastePercent: selectedTemplate.waste_percent || 0
+        returns: returnLeft + returnRight,
+        wastePercent: selectedTemplate.waste_percent || 0,
+        sideHems: sideHems,
+        seamHems: seamHems,
+        totalSeamAllowance: totalSeamAllowance,
+        returnLeft: returnLeft,
+        returnRight: returnRight
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
