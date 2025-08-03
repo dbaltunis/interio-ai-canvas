@@ -205,7 +205,15 @@ export const SurfaceList = ({
                   </div>
                 </div>
                 </div>
-              ) : null}
+              ) : (
+                <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🪟</div>
+                    <h5 className="font-medium text-gray-500 mb-2">Empty Window</h5>
+                    <p className="text-sm text-gray-400">No treatment selected</p>
+                  </div>
+                </div>
+              )}
 
               {/* Configured Treatments Display */}
               {surfaceTreatments.length > 0 && (
