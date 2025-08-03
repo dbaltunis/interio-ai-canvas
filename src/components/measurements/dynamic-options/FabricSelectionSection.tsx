@@ -223,14 +223,6 @@ export const FabricSelectionSection = ({
             </div>
           )}
 
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" className="h-6 px-2 text-xs" disabled={readOnly}>
-              Details
-            </Button>
-            <Button variant="outline" size="sm" className="h-6 px-2 text-xs" disabled={readOnly}>
-              Sample
-            </Button>
-          </div>
         </div>
       )}
 
