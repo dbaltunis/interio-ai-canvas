@@ -27,6 +27,7 @@ interface EnhancedMeasurementWorksheetProps {
   projectId?: string;
   surfaceId?: string; // Add unique surface ID to isolate state
   currentRoomId?: string; // Add current room ID to preselect
+  surfaceData?: any; // Add surface data to extract room_id from the surface itself
   existingMeasurement?: any;
   existingTreatments?: any[];
   onSave?: () => void;
@@ -47,7 +48,8 @@ export const EnhancedMeasurementWorksheet = ({
   clientId, 
   projectId,
   surfaceId,
-  currentRoomId, 
+  currentRoomId,
+  surfaceData, 
   existingMeasurement, 
   existingTreatments = [],
   onSave,
@@ -61,7 +63,7 @@ export const EnhancedMeasurementWorksheet = ({
     existingMeasurement?.measurement_type || "standard"
   );
   const [selectedRoom, setSelectedRoom] = useState(() => 
-    existingMeasurement?.room_id || currentRoomId || "no_room"
+    existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room"
   );
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
     existingMeasurement?.window_covering_id || "no_covering"
@@ -108,11 +110,12 @@ export const EnhancedMeasurementWorksheet = ({
     if (surfaceId) {
       console.log("EnhancedMeasurementWorksheet: Setting room selection", {
         existingMeasurementRoomId: existingMeasurement?.room_id,
+        surfaceRoomId: surfaceData?.room_id,
         currentRoomId,
-        finalSelection: existingMeasurement?.room_id || currentRoomId || "no_room"
+        finalSelection: existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room"
       });
       setWindowType(existingMeasurement?.measurement_type || "standard");
-      setSelectedRoom(existingMeasurement?.room_id || currentRoomId || "no_room");
+      setSelectedRoom(existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room");
       setSelectedWindowCovering(existingMeasurement?.window_covering_id || "no_covering");
       setSelectedInventoryItem(null);
       setMeasurements(existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {});
