@@ -122,73 +122,130 @@ export const SurfaceList = ({
               {surfaceTreatments.length > 0 && (
                 <div className="mb-3 space-y-3">
                   {surfaceTreatments.map((treatment) => (
-                    <div key={treatment.id} className="bg-white rounded-md p-3 border border-gray-200">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h5 className="font-medium text-gray-900 capitalize">
-                            {treatment.treatment_type} - {treatment.product_name || 'Custom Treatment'}
-                          </h5>
-                          <p className="text-sm text-gray-600">Quantity: {treatment.quantity || 1}</p>
-                        </div>
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          ${treatment.total_price?.toFixed(2) || '0.00'}
-                        </Badge>
-                      </div>
-                      
-                      {/* Fabric Details */}
-                      {treatment.fabric_details && (
-                        <div className="mb-2">
-                          <h6 className="text-sm font-medium text-gray-700 mb-1">Fabric Requirements:</h6>
-                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                            {treatment.fabric_details.fabric_type && (
-                              <div>Type: {treatment.fabric_details.fabric_type}</div>
-                            )}
-                            {treatment.fabric_details.fabric_code && (
-                              <div>Code: {treatment.fabric_details.fabric_code}</div>
-                            )}
-                            {treatment.measurements?.fabric_usage && (
-                              <div>Amount: {treatment.measurements.fabric_usage.toFixed(2)}m</div>
-                            )}
-                            {treatment.fabric_details.fabric_width && (
-                              <div>Width: {treatment.fabric_details.fabric_width}"</div>
-                            )}
+                    <div key={treatment.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                      {/* Treatment Header */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <span className="text-lg">🪟</span>
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-gray-900 capitalize">
+                              {treatment.treatment_type} - {treatment.product_name || 'Custom Treatment'}
+                            </h5>
+                            <p className="text-sm text-gray-600">Quantity: {treatment.quantity || 1}</p>
                           </div>
                         </div>
-                      )}
-                      
-                      {/* Treatment Options/Extras */}
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-green-700">
+                            £{treatment.total_price?.toFixed(2) || '0.00'}
+                          </div>
+                          <div className="text-xs text-gray-500">Total price</div>
+                        </div>
+                      </div>
+
+                      {/* Treatment Specifications Grid */}
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        {/* Measurements */}
+                        {treatment.measurements?.rail_width && (
+                          <>
+                            <div className="text-gray-600">Mechanism width</div>
+                            <div className="text-right font-medium">{treatment.measurements.rail_width} cm</div>
+                          </>
+                        )}
+                        
+                        {treatment.measurements?.drop && (
+                          <>
+                            <div className="text-gray-600">Curtain drop</div>
+                            <div className="text-right font-medium">{treatment.measurements.drop} cm</div>
+                          </>
+                        )}
+
+                        {/* Fabric Details */}
+                        {treatment.fabric_details?.fabric_type && (
+                          <>
+                            <div className="text-gray-600">Heading name</div>
+                            <div className="text-right font-medium">{treatment.fabric_details.fabric_type}</div>
+                          </>
+                        )}
+
+                        {treatment.fabric_details?.heading_fullness && (
+                          <>
+                            <div className="text-gray-600">Fullness</div>
+                            <div className="text-right font-medium">{treatment.fabric_details.heading_fullness}</div>
+                          </>
+                        )}
+
+                        <div className="text-gray-600">Making Costs</div>
+                        <div className="text-right font-medium">Default</div>
+
+                        <div className="text-gray-600">Lining</div>
+                        <div className="text-right font-medium">
+                          {treatment.selected_options?.some(opt => opt.includes('lining')) ? 'Lined' : 'Unlined'}
+                        </div>
+
+                        {treatment.fabric_details?.fabric_code && (
+                          <>
+                            <div className="text-gray-600">Fabric article</div>
+                            <div className="text-right font-medium">{treatment.fabric_details.fabric_code}</div>
+                          </>
+                        )}
+
+                        {treatment.fabric_details?.fabric_width && (
+                          <>
+                            <div className="text-gray-600">Fabric width</div>
+                            <div className="text-right font-medium">{treatment.fabric_details.fabric_width} cm</div>
+                          </>
+                        )}
+
+                        {treatment.fabric_details?.fabric_cost_per_yard && (
+                          <>
+                            <div className="text-gray-600">Fabric Price/Unit</div>
+                            <div className="text-right font-medium">£{treatment.fabric_details.fabric_cost_per_yard}</div>
+                          </>
+                        )}
+
+                        {treatment.measurements?.fabric_usage && (
+                          <>
+                            <div className="text-gray-600">Fabric amount</div>
+                            <div className="text-right font-medium">{treatment.measurements.fabric_usage.toFixed(0)} cm</div>
+                          </>
+                        )}
+
+                        {treatment.material_cost && (
+                          <>
+                            <div className="text-gray-600">Fabric price</div>
+                            <div className="text-right font-medium">£{treatment.material_cost.toFixed(2)}</div>
+                          </>
+                        )}
+
+                        {treatment.labor_cost && (
+                          <>
+                            <div className="text-gray-600">Manufacturing price</div>
+                            <div className="text-right font-medium">£{treatment.labor_cost.toFixed(2)}</div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Treatment Options */}
                       {treatment.selected_options && treatment.selected_options.length > 0 && (
-                        <div className="mb-2">
-                          <h6 className="text-sm font-medium text-gray-700 mb-1">Treatment Options:</h6>
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-xs text-gray-600 mb-2">Selected Options:</div>
                           <div className="flex flex-wrap gap-1">
                             {treatment.selected_options.map((optionId: string, index: number) => (
-                              <Badge key={index} variant="outline" className="text-xs">
+                              <span key={index} className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
                                 Option #{optionId.slice(-4)}
-                              </Badge>
+                              </span>
                             ))}
                           </div>
                         </div>
                       )}
-                      
-                      {/* Measurements */}
-                      {treatment.measurements && (
-                        <div className="text-xs text-gray-500">
-                          <span>Rail: {treatment.measurements.rail_width || 0}"</span>
-                          <span className="mx-2">•</span>
-                          <span>Drop: {treatment.measurements.drop || 0}"</span>
-                          {treatment.measurements.pooling && (
-                            <>
-                              <span className="mx-2">•</span>
-                              <span>Pooling: {treatment.measurements.pooling}"</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      
+
                       {/* Notes */}
                       {treatment.notes && (
-                        <div className="mt-2 text-xs text-gray-600 italic">
-                          {treatment.notes}
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-xs text-gray-600 mb-1">Notes:</div>
+                          <div className="text-sm text-gray-700 italic">{treatment.notes}</div>
                         </div>
                       )}
                     </div>
@@ -201,7 +258,7 @@ export const SurfaceList = ({
                 {surfaceTreatments.length > 0 ? (
                   <span>
                     {surfaceTreatments.length} treatment{surfaceTreatments.length > 1 ? 's' : ''} configured • 
-                    Total: ${surfaceTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0).toFixed(2)}
+                    Total: £{surfaceTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0).toFixed(2)}
                   </span>
                 ) : hasMeasurements ? (
                   <span className="text-blue-600">Ready for treatment selection</span>
