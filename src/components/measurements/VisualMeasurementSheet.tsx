@@ -77,46 +77,53 @@ export const VisualMeasurementSheet = ({
       const returns = parseFloat(measurements.returns || "0");
       
       const fabricWidthCm = selectedFabricItem.fabric_width || 137; // Default fabric width
-      const requiredWidth = width * selectedTemplate.fullness_ratio;
       
       // Include all manufacturing allowances from template settings
       const headerHem = selectedTemplate.header_allowance || 8;
       const bottomHem = selectedTemplate.bottom_hem || 8;
-      const sideHems = selectedTemplate.side_hems || 0; // Manufacturing side hems
+      const sideHems = selectedTemplate.side_hems || 0; // Manufacturing side hems (both sides)
       const seamHems = selectedTemplate.seam_hems || 0; // Manufacturing seam allowances
       const returnLeft = selectedTemplate.return_left || 0; // Manufacturing return left
       const returnRight = selectedTemplate.return_right || 0; // Manufacturing return right
       
-      // Calculate total width including returns for proper fabric calculation
-      const totalWidthWithReturns = requiredWidth + returnLeft + returnRight;
+      // Calculate required width with fullness multiplier
+      const requiredWidth = width * selectedTemplate.fullness_ratio;
       
-      // Include pooling and all manufacturing allowances in the total drop calculation
-      const totalDrop = height + headerHem + bottomHem + pooling + sideHems;
+      // Add side hems to width calculation (for curtain pairs, each curtain needs side hems)
+      const curtainCount = selectedTemplate.curtain_type === 'pair' ? 2 : 1;
+      const totalSideHems = sideHems * 2 * curtainCount; // Both sides of each curtain
+      
+      // Calculate total width including returns and side hems
+      const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+      
+      // Calculate how many fabric widths are needed (including all width allowances)
+      const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
+      
+      // Calculate seam allowances for joining fabric pieces (when multiple widths needed)
+      const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0; // Both sides of each seam
+      
+      // Include pooling and vertical allowances in the total drop calculation  
+      const totalDrop = height + headerHem + bottomHem + pooling;
       const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
       
-      // Calculate how many fabric widths are needed (including returns)
-      const widthsRequired = Math.ceil(totalWidthWithReturns / fabricWidthCm);
-      
-      // Add seam allowances when multiple widths are needed
-      const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0; // Both sides of seam
-      
-      // Calculate linear metres needed (drop + allowances + pooling + seams) × number of widths
+      // Calculate linear metres needed (drop + seam allowances) × number of widths
       const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
       
       // Get price per meter from various possible fields
       const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0;
       
-       console.log('VisualMeasurementSheet fabric calculation with manufacturing allowances:', {
+       console.log('VisualMeasurementSheet fabric calculation with proper hems:', {
         width,
         height,
         pooling,
         requiredWidth,
-        totalWidthWithReturns,
+        totalWidthWithAllowances,
         totalDrop,
         widthsRequired,
         linearMeters,
         pricePerMeter,
         fabricWidthCm,
+        curtainCount,
         fullnessRatio: selectedTemplate.fullness_ratio,
         wastePercent: selectedTemplate.waste_percent,
         manufacturingAllowances: {
@@ -126,6 +133,7 @@ export const VisualMeasurementSheet = ({
           seamHems,
           returnLeft,
           returnRight,
+          totalSideHems,
           totalSeamAllowance
         }
       });
@@ -147,8 +155,12 @@ export const VisualMeasurementSheet = ({
         sideHems: sideHems,
         seamHems: seamHems,
         totalSeamAllowance: totalSeamAllowance,
+        totalSideHems: totalSideHems,
         returnLeft: returnLeft,
-        returnRight: returnRight
+        returnRight: returnRight,
+        curtainCount: curtainCount,
+        curtainType: selectedTemplate.curtain_type,
+        totalWidthWithAllowances: totalWidthWithAllowances
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);

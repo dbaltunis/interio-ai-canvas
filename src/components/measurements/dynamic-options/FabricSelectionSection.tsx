@@ -26,6 +26,15 @@ interface FabricSelectionSectionProps {
     totalDrop?: number;
     returns?: number;
     wastePercent?: number;
+    sideHems?: number;
+    seamHems?: number;
+    totalSeamAllowance?: number;
+    totalSideHems?: number;
+    returnLeft?: number;
+    returnRight?: number;
+    curtainCount?: number;
+    curtainType?: string;
+    totalWidthWithAllowances?: number;
   };
 }
 
@@ -171,7 +180,17 @@ export const FabricSelectionSection = ({
                 <div>• Rail width: {fabricCalculation.railWidth || 'Not set'}cm</div>
                 <div>• Fullness multiplier: {fabricCalculation.fullnessRatio || 2.0}x</div>
                 <div>• Required width: {fabricCalculation.railWidth ? Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 2.0)) : 'Calculating...'}cm</div>
+                {fabricCalculation.totalSideHems && fabricCalculation.totalSideHems > 0 && (
+                  <div>• Side hems: {fabricCalculation.sideHems}cm × 2 sides × {fabricCalculation.curtainCount} curtain(s) = {fabricCalculation.totalSideHems}cm total</div>
+                )}
+                {fabricCalculation.returns && fabricCalculation.returns > 0 && (
+                  <div>• Returns: {fabricCalculation.returnLeft}cm + {fabricCalculation.returnRight}cm = {fabricCalculation.returns}cm</div>
+                )}
+                <div>• Total width with allowances: {fabricCalculation.totalWidthWithAllowances || 'Calculating...'}cm</div>
                 <div>• Widths needed: {fabricCalculation.widthsRequired}</div>
+                {fabricCalculation.totalSeamAllowance && fabricCalculation.totalSeamAllowance > 0 && (
+                  <div>• Seam allowances: {fabricCalculation.seamHems}cm × 2 sides × {fabricCalculation.widthsRequired - 1} seam(s) = {fabricCalculation.totalSeamAllowance}cm</div>
+                )}
                 <div className="border-t pt-1 mt-1">
                   <div>• Drop measurement: {fabricCalculation.drop || 'Not set'}cm</div>
                   <div>• Header hem allowance: {fabricCalculation.headerHem || 8}cm</div>
@@ -188,9 +207,8 @@ export const FabricSelectionSection = ({
                   <div>• Total drop per width: {fabricCalculation.totalDrop || 'Calculating...'}cm</div>
                 </div>
                 <div className="border-t pt-1 mt-1">
-                  <div>• Side returns: {fabricCalculation.returns || 0}cm each side</div>
                   <div>• Waste factor: {fabricCalculation.wastePercent || 0}%</div>
-                  <div className="font-medium text-primary">• Final calculation: {fabricCalculation.totalDrop || 0}cm × {fabricCalculation.widthsRequired} widths = {fabricCalculation.linearMeters.toFixed(2)}m</div>
+                  <div className="font-medium text-primary">• Final calculation: {fabricCalculation.totalDrop || 0}cm drop × {fabricCalculation.widthsRequired} width(s) + seam allowances = {fabricCalculation.linearMeters.toFixed(2)}m</div>
                 </div>
               </div>
               )}
