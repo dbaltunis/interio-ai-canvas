@@ -35,22 +35,43 @@ export const CostCalculationSummary = ({
     }).format(price);
   };
 
-  // Calculate fabric usage
+  // Calculate fabric usage per running linear metre
   const calculateFabricUsage = () => {
-    if (!width || !height) return { meters: 0, cost: 0 };
+    if (!width || !height) return { 
+      linearMeters: 0, 
+      squareMeters: 0, 
+      cost: 0, 
+      fabricWidth: 0,
+      totalDrop: 0,
+      widthsRequired: 0
+    };
 
-    const fabricWidth = width * template.fullness_ratio;
+    const fabricWidthCm = selectedFabric?.fabric_width_cm || 137; // Default fabric width
+    const requiredWidth = width * template.fullness_ratio;
     const totalDrop = height + (template.bottom_hem || 0) + (template.header_allowance || 0);
     const wasteMultiplier = 1 + ((template.waste_percent || 0) / 100);
     
-    // Calculate fabric meters needed
-    const fabricMeters = (fabricWidth * totalDrop / 10000) * wasteMultiplier; // Convert cm² to m²
+    // Calculate how many fabric widths are needed
+    const widthsRequired = Math.ceil(requiredWidth / fabricWidthCm);
     
-    // Calculate cost
-    const fabricCost = selectedFabric ? 
-      fabricMeters * (selectedFabric.price_per_meter || selectedFabric.unit_price || 0) : 0;
+    // Calculate linear metres needed (drop + allowances) × number of widths
+    const linearMeters = (totalDrop / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
+    
+    // Calculate square metres for reference
+    const squareMeters = linearMeters * (fabricWidthCm / 100); // Convert cm to m
+    
+    // Calculate cost using price per metre
+    const pricePerMeter = selectedFabric?.price_per_meter || selectedFabric?.unit_price || 0;
+    const fabricCost = linearMeters * pricePerMeter;
 
-    return { meters: fabricMeters, cost: fabricCost };
+    return { 
+      linearMeters, 
+      squareMeters, 
+      cost: fabricCost,
+      fabricWidth: fabricWidthCm,
+      totalDrop,
+      widthsRequired
+    };
   };
 
   // Calculate lining cost
@@ -61,7 +82,7 @@ export const CostCalculationSummary = ({
     if (!liningType) return 0;
 
     const fabricUsage = calculateFabricUsage();
-    const liningCost = fabricUsage.meters * liningType.price_per_metre;
+    const liningCost = fabricUsage.linearMeters * liningType.price_per_metre;
     const laborCost = liningType.labour_per_curtain * (template.curtain_type === 'pair' ? 2 : 1);
 
     return liningCost + laborCost;
@@ -102,7 +123,7 @@ export const CostCalculationSummary = ({
 
     // Cost per metre of fabric used
     if (template.machine_price_per_metre) {
-      cost += template.machine_price_per_metre * fabricUsage.meters;
+      cost += template.machine_price_per_metre * fabricUsage.linearMeters;
     }
     
     // Cost per curtain drop (per panel)
@@ -138,12 +159,22 @@ export const CostCalculationSummary = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shirt className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Fabric ({fabricUsage.meters.toFixed(2)}m²)</span>
+              <div className="text-sm">
+                <div>Fabric ({fabricUsage.linearMeters.toFixed(2)}m linear)</div>
+                <div className="text-xs text-muted-foreground">
+                  {fabricUsage.widthsRequired} width(s) × {(fabricUsage.totalDrop/100).toFixed(2)}m drop
+                  {selectedFabric && ` • ${selectedFabric.fabric_width_cm}cm wide`}
+                </div>
+              </div>
             </div>
             <div className="text-right">
               <div className="font-medium">{formatPrice(fabricUsage.cost)}</div>
               {selectedFabric && (
-                <div className="text-xs text-muted-foreground">{selectedFabric.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {selectedFabric.name}
+                  <br />
+                  {formatPrice(selectedFabric.price_per_meter || selectedFabric.unit_price || 0)}/m
+                </div>
               )}
             </div>
           </div>
@@ -198,11 +229,13 @@ export const CostCalculationSummary = ({
                       <h4 className="font-semibold text-sm">Manufacturing Cost Calculation</h4>
                       <div className="text-xs space-y-2">
                         <div>
-                          <strong>Fabric Required:</strong> {fabricUsage.meters.toFixed(2)}m²
+                          <strong>Fabric Required:</strong> {fabricUsage.linearMeters.toFixed(2)}m linear ({fabricUsage.squareMeters.toFixed(2)}m²)
                           <div className="text-muted-foreground">
-                            • Width: {width}cm × Fullness: {template.fullness_ratio}x
+                            • Required Width: {width}cm × Fullness: {template.fullness_ratio}x = {(width * template.fullness_ratio).toFixed(0)}cm
                             <br />
-                            • Drop: {height}cm + Hems & Allowances
+                            • Fabric Width: {fabricUsage.fabricWidth}cm ({fabricUsage.widthsRequired} width(s) needed)
+                            <br />
+                            • Drop: {height}cm + Hems & Allowances = {fabricUsage.totalDrop}cm
                             <br />
                             • Waste Factor: {template.waste_percent || 0}%
                           </div>
@@ -210,7 +243,7 @@ export const CostCalculationSummary = ({
                         
                         {template.machine_price_per_metre && (
                           <div>
-                            <strong>Per Metre:</strong> {formatPrice(template.machine_price_per_metre)} × {fabricUsage.meters.toFixed(2)}m = {formatPrice(template.machine_price_per_metre * fabricUsage.meters)}
+                            <strong>Per Metre:</strong> {formatPrice(template.machine_price_per_metre)} × {fabricUsage.linearMeters.toFixed(2)}m = {formatPrice(template.machine_price_per_metre * fabricUsage.linearMeters)}
                           </div>
                         )}
                         
