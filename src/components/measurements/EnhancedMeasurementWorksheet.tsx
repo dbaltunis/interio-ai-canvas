@@ -361,6 +361,8 @@ export const EnhancedMeasurementWorksheet = ({
             selectedTemplate={selectedCovering}
             selectedFabric={selectedFabric}
             onFabricChange={setSelectedFabric}
+            selectedLining={selectedLining}
+            onLiningChange={setSelectedLining}
             selectedHeading={selectedHeading}
             onHeadingChange={setSelectedHeading}
           />
@@ -369,15 +371,6 @@ export const EnhancedMeasurementWorksheet = ({
           {selectedCovering && (
             <div className="space-y-6">
 
-              {/* Lining Options - Full width if available */}
-              {selectedCovering.lining_types && selectedCovering.lining_types.length > 0 && (
-                <LiningOptionsSection
-                  template={selectedCovering}
-                  selectedLining={selectedLining}
-                  onLiningChange={setSelectedLining}
-                  readOnly={readOnly}
-                />
-              )}
 
               {/* Cost Calculation Summary */}
               <CostCalculationSummary

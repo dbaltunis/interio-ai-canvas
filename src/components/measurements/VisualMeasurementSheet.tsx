@@ -8,6 +8,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMemo } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
+import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 
@@ -19,6 +20,8 @@ interface VisualMeasurementSheetProps {
   selectedTemplate?: any;
   selectedFabric?: string;
   onFabricChange?: (fabricId: string) => void;
+  selectedLining?: string;
+  onLiningChange?: (liningType: string) => void;
   selectedHeading?: string;
   onHeadingChange?: (headingId: string) => void;
 }
@@ -31,6 +34,8 @@ export const VisualMeasurementSheet = ({
   selectedTemplate,
   selectedFabric,
   onFabricChange,
+  selectedLining,
+  onLiningChange,
   selectedHeading,
   onHeadingChange
 }: VisualMeasurementSheetProps) => {
@@ -851,6 +856,31 @@ export const VisualMeasurementSheet = ({
                     fabricCalculation={fabricCalculation}
                   />
                 </div>
+
+                {/* Lining Options - Compact */}
+                {selectedTemplate?.lining_types && selectedTemplate.lining_types.length > 0 && (
+                  <div className="bg-white border-2 border-purple-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                        <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 text-sm">Lining Options</h4>
+                        <p className="text-xs text-gray-500">Interior backing</p>
+                      </div>
+                    </div>
+                    <LiningOptionsSection
+                      template={selectedTemplate}
+                      selectedLining={selectedLining || "none"}
+                      onLiningChange={onLiningChange || (() => {})}
+                      readOnly={readOnly}
+                    />
+                  </div>
+                )}
+
+                {/* Heading Options - Compact */}
 
                 {/* Heading Options - Compact */}
                 <div className="bg-white border-2 border-orange-200 rounded-lg p-3 shadow-sm">
