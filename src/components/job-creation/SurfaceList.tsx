@@ -101,141 +101,155 @@ export const SurfaceList = ({
                 </div>
               </div>
 
-              {/* Window Details Display - From Worksheet */}
-              <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  {/* Treatment Type */}
-                  <div className="text-gray-600">Treatment selected</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.selected_treatment ? 
-                        measurements.selected_treatment : 
-                        (surfaceTreatments.length > 0 ? surfaceTreatments[0].treatment_type : 'None selected');
-                    })()}
-                  </div>
-
-                  {/* Width and Drop */}
-                  <div className="text-gray-600">Width × Drop</div>
-                  <div className="text-right font-medium">
-                    {hasMeasurements ? (
-                      (() => {
+              {/* Worksheet Treatments Display */}
+              {hasMeasurements ? (
+                <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
+                  <h5 className="font-medium text-gray-900 mb-3">Worksheet Details</h5>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    {/* Basic measurements */}
+                    <div className="text-gray-600">Width × Drop</div>
+                    <div className="text-right font-medium">
+                      {(() => {
                         const measurements = clientMeasurement.measurements as Record<string, any>;
                         return `${measurements.measurement_a || measurements.width || surface.width}" × ${measurements.measurement_b || measurements.drop || surface.height}"`;
-                      })()
-                    ) : (
-                      `${surface.width}" × ${surface.height}"`
-                    )}
-                  </div>
+                      })()}
+                    </div>
 
-                  {/* Heading Option with Fullness */}
-                  <div className="text-gray-600">Heading & Fullness</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.selected_heading ? (
-                        `${measurements.selected_heading}${measurements.fullness_ratio ? ` - ${measurements.fullness_ratio}x` : ''}`
-                      ) : surfaceTreatments.length > 0 && surfaceTreatments[0].fabric_details?.fabric_type ? (
-                        `${surfaceTreatments[0].fabric_details.fabric_type} - ${surfaceTreatments[0].fabric_details.heading_fullness || '1.0x'}`
-                      ) : (
-                        'Not selected'
-                      );
-                    })()}
-                  </div>
+                    {/* Treatment Type */}
+                    <div className="text-gray-600">Treatment selected</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.selected_treatment || 'Not selected';
+                      })()}
+                    </div>
 
-                  {/* Manufacturing Price */}
-                  <div className="text-gray-600">Manufacturing price</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.manufacturing_price ? (
-                        `£${Number(measurements.manufacturing_price).toFixed(2)}`
-                      ) : surfaceTreatments.length > 0 && surfaceTreatments[0].labor_cost ? (
-                        `£${surfaceTreatments[0].labor_cost.toFixed(2)}`
-                      ) : (
-                        '£0.00'
-                      );
-                    })()}
-                  </div>
+                    {/* Heading & Fullness */}
+                    <div className="text-gray-600">Heading & Fullness</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.selected_heading ? 
+                          `${measurements.selected_heading}${measurements.fullness_ratio ? ` - ${measurements.fullness_ratio}x` : ''}` :
+                          'Not selected';
+                      })()}
+                    </div>
 
-                  {/* Lining Selection and Price */}
-                  <div className="text-gray-600">Lining</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.selected_lining ? (
-                        <span className="text-blue-600">
-                          {measurements.selected_lining}
-                          {measurements.lining_price && ` - £${Number(measurements.lining_price).toFixed(2)}`}
-                        </span>
-                      ) : surfaceTreatments.length > 0 ? (
-                        surfaceTreatments[0].selected_options?.some((opt: string) => opt.includes('lining')) ? (
-                          <span className="text-blue-600">Selected - £15.00</span>
+                    {/* Manufacturing Price */}
+                    <div className="text-gray-600">Manufacturing price</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.manufacturing_price ? 
+                          `£${Number(measurements.manufacturing_price).toFixed(2)}` : 
+                          '£0.00';
+                      })()}
+                    </div>
+
+                    {/* Lining */}
+                    <div className="text-gray-600">Lining</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.selected_lining ? (
+                          <span className="text-blue-600">
+                            {measurements.selected_lining}
+                            {measurements.lining_price && ` - £${Number(measurements.lining_price).toFixed(2)}`}
+                          </span>
                         ) : (
                           <span className="text-gray-400">No lining</span>
-                        )
-                      ) : (
-                        <span className="text-gray-400">No lining</span>
-                      );
-                    })()}
-                  </div>
+                        );
+                      })()}
+                    </div>
 
-                  {/* Fabric Selection with Total and Per Unit Price */}
-                  <div className="text-gray-600">Fabric selected</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.selected_fabric ? (
-                        measurements.selected_fabric
-                      ) : surfaceTreatments.length > 0 && surfaceTreatments[0].fabric_details?.fabric_code ? (
-                        surfaceTreatments[0].fabric_details.fabric_code
-                      ) : (
-                        'Not selected'
-                      );
-                    })()}
-                  </div>
+                    {/* Fabric */}
+                    <div className="text-gray-600">Fabric selected</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.selected_fabric || 'Not selected';
+                      })()}
+                    </div>
 
-                  <div className="text-gray-600">Fabric price (total)</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.fabric_total_price ? (
-                        `£${Number(measurements.fabric_total_price).toFixed(2)}`
-                      ) : surfaceTreatments.length > 0 && surfaceTreatments[0].material_cost ? (
-                        `£${surfaceTreatments[0].material_cost.toFixed(2)}`
-                      ) : (
-                        '£0.00'
-                      );
-                    })()}
-                  </div>
+                    <div className="text-gray-600">Fabric price (total)</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.fabric_total_price ? 
+                          `£${Number(measurements.fabric_total_price).toFixed(2)}` : 
+                          '£0.00';
+                      })()}
+                    </div>
 
-                  <div className="text-gray-600">Fabric price (per unit)</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = hasMeasurements ? clientMeasurement.measurements as Record<string, any> : null;
-                      return measurements?.fabric_price_per_unit ? (
-                        `£${Number(measurements.fabric_price_per_unit).toFixed(2)}`
-                      ) : surfaceTreatments.length > 0 && surfaceTreatments[0].fabric_details?.fabric_cost_per_yard ? (
-                        `£${surfaceTreatments[0].fabric_details.fabric_cost_per_yard}`
-                      ) : (
-                        '£0.00'
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                {/* Total Price Section */}
-                {surfaceTreatments.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-medium text-gray-900">Total Price:</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        £{surfaceTreatments[0].total_price?.toFixed(2) || '0.00'}
-                      </span>
+                    <div className="text-gray-600">Fabric price (per unit)</div>
+                    <div className="text-right font-medium">
+                      {(() => {
+                        const measurements = clientMeasurement.measurements as Record<string, any>;
+                        return measurements.fabric_price_per_unit ? 
+                          `£${Number(measurements.fabric_price_per_unit).toFixed(2)}` : 
+                          '£0.00';
+                      })()}
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : null}
+
+              {/* Configured Treatments Display */}
+              {surfaceTreatments.length > 0 && (
+                <div className="space-y-3 mb-3">
+                  <h5 className="font-medium text-gray-900">Configured Treatments</h5>
+                  {surfaceTreatments.map((treatment, index) => (
+                    <div key={treatment.id} className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="flex justify-between items-start mb-2">
+                        <h6 className="font-medium text-gray-800">Treatment {index + 1}</h6>
+                        <Badge variant="outline" className="text-xs">
+                          {treatment.status || 'planned'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        <div className="text-gray-600">Type</div>
+                        <div className="text-right font-medium">{treatment.treatment_type}</div>
+
+                        <div className="text-gray-600">Product</div>
+                        <div className="text-right font-medium">{treatment.product_name || 'Not specified'}</div>
+
+                        <div className="text-gray-600">Fabric</div>
+                        <div className="text-right font-medium">
+                          {treatment.fabric_details?.fabric_code || treatment.fabric_type || 'Not selected'}
+                        </div>
+
+                        <div className="text-gray-600">Color/Pattern</div>
+                        <div className="text-right font-medium">
+                          {treatment.color || treatment.pattern || 'Not specified'}
+                        </div>
+
+                        <div className="text-gray-600">Hardware</div>
+                        <div className="text-right font-medium">{treatment.hardware || 'Not specified'}</div>
+
+                        <div className="text-gray-600">Material Cost</div>
+                        <div className="text-right font-medium">£{treatment.material_cost?.toFixed(2) || '0.00'}</div>
+
+                        <div className="text-gray-600">Labor Cost</div>
+                        <div className="text-right font-medium">£{treatment.labor_cost?.toFixed(2) || '0.00'}</div>
+
+                        <div className="text-gray-600 font-medium">Total Price</div>
+                        <div className="text-right font-bold text-green-600">
+                          £{treatment.total_price?.toFixed(2) || '0.00'}
+                        </div>
+                      </div>
+
+                      {treatment.notes && (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Notes:</span> {treatment.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Status Summary */}
               <div className="text-center py-2 text-sm">
