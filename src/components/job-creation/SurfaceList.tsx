@@ -117,17 +117,10 @@ export const SurfaceList = ({
               {/* Worksheet Treatments Display */}
               {hasMeasurements && (getSurfaceTreatments(surface.id).length > 0 || (clientMeasurement?.measurements && Object.keys(clientMeasurement.measurements).some(key => key.includes('selected_')))) ? (
                 <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
-                  {(() => {
-                    console.log(`Surface ${surface.name} (${surface.id}) displaying measurement:`, clientMeasurement?.id);
-                    console.log(`Surface room_id: ${surface.room_id}`);
-                    console.log(`Measurement room_id: ${clientMeasurement?.room_id}`);
-                    console.log(`Measurement data:`, clientMeasurement?.measurements);
-                    return null;
-                  })()}
                   <h5 className="font-medium text-gray-900 mb-3">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      return measurements.selected_treatment || 'curtain testing 1';
+                      return measurements.selected_treatment || 'Curtain Treatment';
                     })()}
                   </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
