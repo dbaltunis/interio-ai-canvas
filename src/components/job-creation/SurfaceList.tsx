@@ -41,10 +41,20 @@ export const SurfaceList = ({
 
   // Find matching client measurement for a surface
   const getClientMeasurementForSurface = (surface: any) => {
-    return clientMeasurements?.find(measurement => 
-      measurement.notes?.includes(surface.name) || 
-      measurement.project_id === projectId
-    );
+    console.log(`Looking for measurement for surface ${surface.name} in room ${surface.room_id}`);
+    
+    const matchedMeasurement = clientMeasurements?.find(measurement => {
+      // First priority: exact match by room_id and surface name in notes
+      const roomMatch = measurement.room_id === surface.room_id;
+      const nameMatch = measurement.notes?.includes(surface.name);
+      
+      console.log(`Checking measurement ${measurement.id}: room_match=${roomMatch}, name_match=${nameMatch}, notes="${measurement.notes}"`);
+      
+      return roomMatch && nameMatch;
+    });
+    
+    console.log(`Found measurement for ${surface.name}:`, matchedMeasurement?.id || 'none');
+    return matchedMeasurement;
   };
 
   const getSurfaceTreatments = (surfaceId: string) => {
