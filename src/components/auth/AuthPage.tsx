@@ -1,39 +1,145 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { UserPlus, Mail } from 'lucide-react';
 
 export const AuthPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [invitation, setInvitation] = useState<any>(null);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+
+  const invitationToken = searchParams.get('invitation');
+
+  // Load invitation details if token is present
+  useEffect(() => {
+    if (invitationToken) {
+      setIsSignUp(true);
+      setLoadingInvitation(true);
+      
+      const loadInvitation = async () => {
+        try {
+          const { data: invitationData, error } = await supabase
+            .from('user_invitations')
+            .select('*')
+            .eq('invitation_token', invitationToken)
+            .eq('status', 'pending')
+            .single();
+
+          if (error || !invitationData) {
+            toast({
+              title: "Error",
+              description: "Invalid or expired invitation",
+              variant: "destructive"
+            });
+            navigate('/auth');
+            return;
+          }
+
+          // Check if invitation has expired
+          const expiresAt = new Date(invitationData.expires_at);
+          if (expiresAt < new Date()) {
+            toast({
+              title: "Error",
+              description: "This invitation has expired",
+              variant: "destructive"
+            });
+            navigate('/auth');
+            return;
+          }
+
+          setInvitation(invitationData);
+          setEmail(invitationData.invited_email);
+        } catch (error) {
+          console.error('Error loading invitation:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load invitation details",
+            variant: "destructive"
+          });
+        } finally {
+          setLoadingInvitation(false);
+        }
+      };
+
+      loadInvitation();
+    }
+  }, [invitationToken, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = isSignUp 
-        ? await signUp(email, password)
-        : await signIn(email, password);
+      if (isSignUp && invitation) {
+        // Handle invitation signup
+        if (password !== confirmPassword) {
+          toast({
+            title: "Error",
+            description: "Passwords do not match",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else if (isSignUp) {
-        toast({
-          title: "Success",
-          description: "Check your email to confirm your account"
-        });
+        const { error } = await signUp(email, password);
+
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          // Mark invitation as accepted
+          await supabase
+            .from('user_invitations')
+            .update({ 
+              status: 'accepted',
+              updated_at: new Date().toISOString()
+            })
+            .eq('invitation_token', invitationToken);
+
+          toast({
+            title: "Success",
+            description: `Welcome to the team! You've been assigned the ${invitation.role} role. Please check your email to confirm your account.`,
+          });
+
+          // Don't navigate immediately - let them confirm email first
+        }
+      } else {
+        // Handle regular login/signup
+        const { error } = isSignUp 
+          ? await signUp(email, password)
+          : await signIn(email, password);
+
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else if (isSignUp) {
+          toast({
+            title: "Success",
+            description: "Check your email to confirm your account"
+          });
+        }
       }
     } catch (err) {
       toast({
@@ -45,6 +151,18 @@ export const AuthPage = () => {
       setLoading(false);
     }
   };
+
+  if (loadingInvitation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">Loading invitation...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
@@ -99,25 +217,45 @@ export const AuthPage = () => {
           <div className="w-full max-w-md mx-auto">
             <Card className="shadow-lg border-0 bg-card/60 backdrop-blur-sm">
               <CardHeader className="text-center pb-4">
+                {invitation && (
+                  <div className="mb-4">
+                    <Alert className="text-left">
+                      <UserPlus className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>{invitation.invited_by_name}</strong> invited you to join as a <strong>{invitation.role}</strong>
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+                
                 <CardTitle className="text-2xl font-semibold">
-                  {isSignUp ? 'Create Account' : 'Welcome Back'}
+                  {invitation ? 'Complete Your Registration' : (isSignUp ? 'Create Account' : 'Welcome Back')}
                 </CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  {isSignUp 
-                    ? 'Start managing your window treatment business' 
-                    : 'Sign in to your InterioApp account'
+                  {invitation 
+                    ? 'Set up your password to access your account'
+                    : (isSignUp 
+                      ? 'Start managing your window treatment business' 
+                      : 'Sign in to your InterioApp account'
+                    )
                   }
                 </p>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={!!invitation}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  
                   <Input
                     type="password"
                     placeholder="Password"
@@ -125,19 +263,35 @@ export const AuthPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  
+                  {(isSignUp && invitation) && (
+                    <Input
+                      type="password"
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  )}
+                  
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+                    {loading ? 'Loading...' : (
+                      invitation ? 'Complete Registration' : (isSignUp ? 'Sign Up' : 'Sign In')
+                    )}
                   </Button>
                 </form>
-                <div className="mt-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-primary hover:underline"
-                  >
-                    {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-                  </button>
-                </div>
+                
+                {!invitation && (
+                  <div className="mt-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      className="text-primary hover:underline"
+                    >
+                      {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                    </button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
