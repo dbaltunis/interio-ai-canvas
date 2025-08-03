@@ -32,7 +32,8 @@ const handler = async (req: Request): Promise<Response> => {
           to: [{ email: invitedEmail, name: invitedName || invitedEmail }],
         },
       ],
-      from: { email: inviterEmail, name: inviterName },
+      from: { email: "noreply@curtainscalculator.com", name: inviterName },
+      reply_to: { email: inviterEmail, name: inviterName },
       subject: `You're invited to join our team`,
       content: [
         {
