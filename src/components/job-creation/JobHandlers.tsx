@@ -90,7 +90,7 @@ export const useJobHandlers = (project: any) => {
       const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
       const windowNumber = roomSurfaces.filter(s => s.surface_type === 'window').length + 1;
       
-      // Create both surface and measurement
+      // Create surface only - measurement will be created separately when needed
       const surface = await createSurface.mutateAsync({
         room_id: roomId,
         project_id: projectId,
@@ -100,31 +100,38 @@ export const useJobHandlers = (project: any) => {
         height: 48
       });
 
-      // Create corresponding client measurement (client_id can be null)
-      await createClientMeasurement.mutateAsync({
-        client_id: clientId || null,
-        project_id: projectId,
-        measurement_type: 'standard_window',
-        measurements: {
-          measurement_a: 60, // Window width
-          measurement_b: 48, // Window height
-          measurement_e: 48, // Total height
-          measurement_f: 60, // Total width
-        },
-        photos: [],
-        notes: `Measurement worksheet for ${surface.name}`,
-        measured_at: new Date().toISOString(),
-      });
+      // Check if measurement already exists for this surface
+      const existingMeasurement = clientMeasurements?.find(m => 
+        m.notes?.includes(surface.name) && m.project_id === projectId
+      );
+
+      // Only create measurement if one doesn't already exist
+      if (!existingMeasurement) {
+        await createClientMeasurement.mutateAsync({
+          client_id: clientId || null,
+          project_id: projectId,
+          measurement_type: 'standard_window',
+          measurements: {
+            measurement_a: 60, // Window width
+            measurement_b: 48, // Window height
+            measurement_e: 48, // Total height
+            measurement_f: 60, // Total width
+          },
+          photos: [],
+          notes: `Measurement worksheet for ${surface.name}`,
+          measured_at: new Date().toISOString(),
+        });
+      }
 
       toast({
         title: "Success",
-        description: `Measurement worksheet created successfully`,
+        description: `Window added successfully`,
       });
     } catch (error) {
-      console.error("Failed to create measurement worksheet:", error);
+      console.error("Failed to create window:", error);
       toast({
         title: "Error",
-        description: "Failed to create measurement worksheet. Please try again.",
+        description: "Failed to create window. Please try again.",
         variant: "destructive",
       });
     }

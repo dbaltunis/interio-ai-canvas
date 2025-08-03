@@ -33,29 +33,31 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     let total = 0;
     
     // Sum up all treatment total_price values
-    total += roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
+    const treatmentTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
     
-    // If no treatments or treatments have no price, include worksheet calculations
-    if (total === 0 && clientMeasurements) {
-      // Get measurements for surfaces in this room
-      const roomSurfaceIds = roomSurfaces.map(s => s.id);
+    // Only use treatment totals if they exist, otherwise fall back to worksheet calculations
+    if (treatmentTotal > 0) {
+      total = treatmentTotal;
+    } else if (clientMeasurements) {
+      // Get measurements for surfaces in this room - only count each measurement once
       const roomMeasurements = clientMeasurements.filter(measurement => 
         measurement.project_id === projectId && 
         roomSurfaces.some(surface => 
-          measurement.notes?.includes(surface.name) || 
-          surface.room_id === room.id
+          measurement.notes?.includes(surface.name)
         )
       );
       
-      // Calculate total from worksheet measurements
+      // Calculate total from worksheet measurements - avoid counting the same measurement multiple times
+      const uniqueMeasurements = new Map();
       roomMeasurements.forEach(measurement => {
-        if (measurement.measurements) {
+        if (!uniqueMeasurements.has(measurement.id) && measurement.measurements) {
+          uniqueMeasurements.set(measurement.id, measurement);
           const measurements = measurement.measurements as Record<string, any>;
           
           // Calculate totals from measurement components
-          const fabricCost = Number(measurements.fabric_total_cost || measurements.fabric_total_price || 756);
-          const liningCost = Number(measurements.lining_cost || measurements.lining_price || 277);
-          const manufacturingCost = Number(measurements.manufacturing_cost || measurements.manufacturing_price || 336);
+          const fabricCost = Number(measurements.fabric_total_cost || measurements.fabric_total_price || 0);
+          const liningCost = Number(measurements.lining_cost || measurements.lining_price || 0);
+          const manufacturingCost = Number(measurements.manufacturing_cost || measurements.manufacturing_price || 0);
           
           // Add worksheet total to room total
           total += fabricCost + liningCost + manufacturingCost;
