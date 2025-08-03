@@ -130,48 +130,6 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     }
   };
 
-  // Get room measurements for cost calculation display
-  const roomMeasurements = clientMeasurements?.filter(measurement => 
-    measurement.room_id === room.id
-  )?.[0] || null;
-
-  // Mock template and selection data for now - in a real app this would come from the database
-  const template = {
-    name: "Standard Curtain",
-    manufacturing: {
-      pricing_method: "per_meter",
-      base_price: 25,
-      complexity_multiplier: 1.2
-    },
-    lining_types: [
-      { id: 'standard', name: 'Standard Lining', cost_per_meter: 15 },
-      { id: 'blackout', name: 'Blackout Lining', cost_per_meter: 20 },
-      { id: 'interlining', name: 'Interlining', cost_per_meter: 26.63 }
-    ],
-    heading_types: [
-      { id: 'pencil', name: 'Pencil Pleat', cost_per_meter: 8 },
-      { id: 'eyelet', name: 'Eyelet', cost_per_meter: 10 }
-    ]
-  };
-
-  const selectedFabric = {
-    name: "Sample Fabric",
-    cost_per_meter: 45,
-    width: 150
-  };
-
-  const selectedLining = {
-    name: "Standard Lining", 
-    cost_per_meter: 15
-  };
-
-  const selectedHeading = {
-    name: "Pencil Pleat",
-    cost_per_meter: 8
-  };
-
-  const inventory = [];
-
   return {
     allSurfaces,
     allTreatments,
@@ -184,12 +142,6 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     calculatorDialogOpen,
     setCalculatorDialogOpen,
     currentFormData,
-    handleAddTreatment,
-    roomMeasurements,
-    template,
-    selectedFabric,
-    selectedLining,
-    selectedHeading,
-    inventory
+    handleAddTreatment
   };
 };
