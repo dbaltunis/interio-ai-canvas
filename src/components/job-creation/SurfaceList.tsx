@@ -123,7 +123,9 @@ export const SurfaceList = ({
                   <h5 className="font-medium text-gray-900 mb-3">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      return measurements.selected_treatment || 'Curtain Treatment';
+                      // Get the actual selected treatment name or default
+                      const selectedTreatment = measurements.selected_treatment || measurements.treatment_type || 'Selected Treatment';
+                      return selectedTreatment;
                     })()}
                   </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -145,9 +147,10 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      const heading = measurements.selected_heading || measurements.heading_type || 'standard';
-                      const fullness = measurements.fullness_ratio || '2';
-                      return `${heading} - ${fullness}x`;
+                      // Get actual selected heading name and fullness
+                      const selectedHeading = measurements.selected_heading_name || measurements.heading_type || 'Standard';
+                      const fullness = measurements.heading_fullness || measurements.fullness || '2x';
+                      return `${selectedHeading} - ${fullness}`;
                     })()}
                   </div>
 
@@ -156,28 +159,22 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Try to get from calculated values or fallback to stored value
-                      return measurements.manufacturing_cost || measurements.manufacturing_price ? 
-                        `£${Number(measurements.manufacturing_cost || measurements.manufacturing_price).toFixed(2)}` : 
-                        '£336.00'; // Use calculated value from cost calculation
+                      const manufacturingCost = Number(measurements.manufacturing_cost || measurements.labor_cost || 0);
+                      return `£${manufacturingCost.toFixed(2)}`;
                     })()}
                   </div>
 
                   {/* Lining */}
                   <div className="text-gray-600">Lining</div>
-                  <div className="text-right font-medium">
+                  <div className="text-right font-medium text-blue-600">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      if (measurements.selected_lining || measurements.lining_type) {
-                        const liningType = measurements.selected_lining || measurements.lining_type;
-                        const liningPrice = measurements.lining_cost || measurements.lining_price || 277; // Use calculated value
-                        return (
-                          <span className="text-blue-600">
-                            {liningType} - £{Number(liningPrice).toFixed(2)}
-                          </span>
-                        );
+                      const selectedLining = measurements.selected_lining || measurements.lining_type || 'None';
+                      const liningCost = Number(measurements.lining_cost || measurements.lining_price || 0);
+                      if (liningCost > 0) {
+                        return `${selectedLining} - £${liningCost.toFixed(2)}`;
                       }
-                      return <span className="text-gray-400">No lining</span>;
+                      return selectedLining;
                     })()}
                   </div>
 
@@ -186,12 +183,12 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Show fabric name and price per unit with proper units
-                      const fabricName = 'Fabric to test'; // From network request data
-                      const pricePerUnit = '£45.00/m'; // From calculation logs
-                      return measurements.selected_fabric ? 
-                        `${fabricName} - ${pricePerUnit}` : 
-                        'Not selected';
+                      const fabricName = measurements.selected_fabric_name || measurements.fabric_name || 'Selected fabric';
+                      const fabricCost = Number(measurements.fabric_cost || measurements.fabric_price || 0);
+                      if (fabricCost > 0) {
+                        return `${fabricName} - £${fabricCost.toFixed(2)}/m`;
+                      }
+                      return fabricName;
                     })()}
                   </div>
 
@@ -200,23 +197,25 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Use calculated fabric cost or fallback to calculated value
-                      const fabricCost = measurements.fabric_total_cost || measurements.fabric_total_price || 756; // Use calculated value
-                      return `£${Number(fabricCost).toFixed(2)}`;
+                      const fabricTotal = Number(measurements.fabric_total_cost || measurements.fabric_total_price || 0);
+                      return `£${fabricTotal.toFixed(2)}`;
                     })()}
                   </div>
 
                   {/* Total Cost */}
-                  <div className="text-gray-600 font-medium">Total Cost</div>
-                  <div className="text-right font-bold text-green-600">
+                  <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
+                  <div className="text-right font-bold text-green-600 border-t pt-2">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Calculate total from components or use stored total
-                      const fabricCost = measurements.fabric_total_cost || measurements.fabric_total_price || 756;
-                      const liningCost = measurements.lining_cost || measurements.lining_price || 277;
-                      const manufacturingCost = measurements.manufacturing_cost || measurements.manufacturing_price || 336;
-                      const total = Number(fabricCost) + Number(liningCost) + Number(manufacturingCost);
-                      return `£${total.toFixed(2)}`;
+                      // Calculate total from all components
+                      const fabricTotal = Number(measurements.fabric_total_cost || measurements.fabric_total_price || 0);
+                      const liningCost = Number(measurements.lining_cost || measurements.lining_price || 0);
+                      const manufacturingCost = Number(measurements.manufacturing_cost || measurements.labor_cost || 0);
+                      const totalCost = Number(measurements.total_cost || measurements.total_price || 0);
+                      
+                      // Use explicit total if available, otherwise calculate from components
+                      const finalTotal = totalCost > 0 ? totalCost : (fabricTotal + liningCost + manufacturingCost);
+                      return `£${finalTotal.toFixed(2)}`;
                     })()}
                   </div>
                 </div>

@@ -17,16 +17,19 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   
   const project = projects?.find(p => p.id === projectId);
 
-  // Calculate totals
+  // Calculate job total by summing all room totals
+  // This will be calculated in the EnhancedRoomView component and passed up
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
+  // For now, use treatment total as base - this will be enhanced by room calculations
+  const subtotal = treatmentTotal;
   const markupPercentage = 25;
   const taxRate = 0.08;
-  const subtotal = treatmentTotal * (1 + markupPercentage / 100);
-  const taxAmount = subtotal * taxRate;
-  const total = subtotal + taxAmount;
+  const finalSubtotal = subtotal * (1 + markupPercentage / 100);
+  const taxAmount = finalSubtotal * taxRate;
+  const total = finalSubtotal + taxAmount;
 
   if (!project) {
     return (
@@ -37,9 +40,8 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   }
 
   console.log('RoomsTab: Project ID:', projectId);
-  console.log('RoomsTab: Rooms data:', rooms);
-  console.log('RoomsTab: Surfaces data:', surfaces);
-  console.log('RoomsTab: Treatments data:', treatments);
+  console.log('RoomsTab: Calculated job total:', total);
+  console.log('RoomsTab: Base treatment total:', treatmentTotal);
 
   return (
     <div className="space-y-6">
