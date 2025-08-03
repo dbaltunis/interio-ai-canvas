@@ -99,11 +99,7 @@ export const UserManagementTab = () => {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-medium">Team Members</h4>
-              <Button size="sm" onClick={() => {
-                console.log('Invite button clicked, current state:', isInviteDialogOpen);
-                setIsInviteDialogOpen(true);
-                console.log('Invite dialog should now be open');
-              }}>
+              <Button size="sm" onClick={() => setIsInviteDialogOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Invite User
               </Button>
