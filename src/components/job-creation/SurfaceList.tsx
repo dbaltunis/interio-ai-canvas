@@ -102,7 +102,7 @@ export const SurfaceList = ({
               </div>
 
               {/* Worksheet Treatments Display */}
-              {hasMeasurements ? (
+              {hasMeasurements && (getSurfaceTreatments(surface.id).length > 0 || (clientMeasurement?.measurements && Object.keys(clientMeasurement.measurements).some(key => key.includes('selected_')))) ? (
                 <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
                   <h5 className="font-medium text-gray-900 mb-3">
                     {(() => {
