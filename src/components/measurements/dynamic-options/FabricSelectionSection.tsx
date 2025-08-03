@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shirt, Palette } from "lucide-react";
+import { Shirt, Palette, ChevronDown, ChevronUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 
@@ -34,6 +35,7 @@ export const FabricSelectionSection = ({
   readOnly = false,
   fabricCalculation
 }: FabricSelectionSectionProps) => {
+  const [showDetails, setShowDetails] = useState(false);
   const { units } = useMeasurementUnits();
   const { data: inventory = [], isLoading } = useEnhancedInventory();
 
@@ -125,7 +127,21 @@ export const FabricSelectionSection = ({
 
           {fabricCalculation && (
             <div className="p-2 bg-primary/5 border border-primary/20 rounded text-xs">
-              <div className="font-semibold text-primary mb-1">Calculated Requirements</div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="font-semibold text-primary">Calculated Requirements</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => setShowDetails(!showDetails)}
+                >
+                  {showDetails ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
               
               {/* Main calculation results in compact grid */}
               <div className="grid grid-cols-2 gap-2 mb-2">
@@ -147,7 +163,8 @@ export const FabricSelectionSection = ({
                 </div>
               </div>
 
-              {/* Always visible calculation details with real numbers */}
+              {/* Toggleable calculation details */}
+              {showDetails && (
               <div className="mt-2 p-2 bg-background/50 rounded border text-xs space-y-1">
                 <div className="font-medium text-muted-foreground mb-1">Calculation breakdown:</div>
                 <div>• Fabric width: {selectedFabricItem.fabric_width || 137}cm</div>
@@ -176,6 +193,7 @@ export const FabricSelectionSection = ({
                   <div className="font-medium text-primary">• Final calculation: {fabricCalculation.totalDrop || 0}cm × {fabricCalculation.widthsRequired} widths = {fabricCalculation.linearMeters.toFixed(2)}m</div>
                 </div>
               </div>
+              )}
             </div>
           )}
 
