@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus, Home, Trash2, Ruler } from "lucide-react";
 import { useSurfaces, useCreateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useRooms } from "@/hooks/useRooms";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
+import { EnhancedMeasurementWorksheet } from "../measurements/EnhancedMeasurementWorksheet";
 
 interface WindowManagerProps {
   projectId: string;
@@ -139,9 +139,10 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
             </DialogTitle>
           </DialogHeader>
           {selectedSurface && (
-            <MeasurementWorksheet
+            <EnhancedMeasurementWorksheet
               clientId="" // We'll use project context instead
               projectId={projectId}
+              surfaceId={selectedSurface.id} // Pass unique surface ID to isolate state
               existingMeasurement={selectedSurface.measurements ? {
                 measurements: selectedSurface.measurements,
                 measurement_type: "standard",
