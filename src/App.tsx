@@ -12,6 +12,7 @@ import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 
 const queryClient = new QueryClient({
@@ -45,6 +46,13 @@ const App = () => (
                 <Route path="/book/:slug" element={
                   <ErrorBoundary>
                     <PublicBookingPage />
+                  </ErrorBoundary>
+                } />
+                
+                {/* Invitation acceptance route */}
+                <Route path="/accept-invitation" element={
+                  <ErrorBoundary>
+                    <AcceptInvitation />
                   </ErrorBoundary>
                 } />
                 
