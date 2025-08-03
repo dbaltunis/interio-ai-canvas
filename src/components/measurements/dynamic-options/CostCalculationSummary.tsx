@@ -60,8 +60,24 @@ export const CostCalculationSummary = ({
     // Calculate square metres for reference
     const squareMeters = linearMeters * (fabricWidthCm / 100); // Convert cm to m
     
-    // Calculate cost using price per metre
-    const pricePerMeter = selectedFabric?.price_per_meter || selectedFabric?.unit_price || 0;
+    // Calculate cost using price per metre - check multiple price fields
+    const pricePerMeter = selectedFabric?.price_per_meter || 
+                         selectedFabric?.unit_price || 
+                         selectedFabric?.price || 
+                         selectedFabric?.cost_per_meter || 
+                         0;
+    
+    // Debug logging
+    console.log('Fabric calculation debug:', {
+      selectedFabric,
+      pricePerMeter,
+      linearMeters,
+      fabricWidthCm,
+      requiredWidth,
+      totalDrop,
+      widthsRequired
+    });
+    
     const fabricCost = linearMeters * pricePerMeter;
 
     return { 
