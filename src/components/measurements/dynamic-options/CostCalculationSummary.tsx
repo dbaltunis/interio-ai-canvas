@@ -79,6 +79,7 @@ export const CostCalculationSummary = ({
     // Calculate cost using price per metre - check multiple price fields
     const pricePerMeter = selectedFabric?.price_per_meter || 
                          selectedFabric?.unit_price || 
+                         selectedFabric?.selling_price ||
                          selectedFabric?.price || 
                          selectedFabric?.cost_per_meter || 
                          0;
@@ -211,7 +212,7 @@ export const CostCalculationSummary = ({
                 </div>
                 {selectedFabric && (
                   <div className="text-xs text-gray-500">
-                    {selectedFabric.name} • {formatPrice(selectedFabric.price_per_meter || selectedFabric.unit_price || 0)}/m
+                    {selectedFabric.name} • {formatPrice(selectedFabric.price_per_meter || selectedFabric.unit_price || selectedFabric.selling_price || 0)}/m
                   </div>
                 )}
               </div>
