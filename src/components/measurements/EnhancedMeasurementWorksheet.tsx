@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,10 @@ const WINDOW_TYPES = [
   { value: "corner_window", label: "Corner Window" }
 ];
 
-export const EnhancedMeasurementWorksheet = ({ 
+export const EnhancedMeasurementWorksheet = forwardRef<
+  { autoSave: () => Promise<void> },
+  EnhancedMeasurementWorksheetProps
+>(({ 
   clientId, 
   projectId,
   surfaceId,
@@ -55,7 +58,7 @@ export const EnhancedMeasurementWorksheet = ({
   onSave,
   onSaveTreatment,
   readOnly = false
-}: EnhancedMeasurementWorksheetProps) => {
+}, ref) => {
   // Create state keys that include surfaceId to isolate state per window
   const stateKey = surfaceId || 'default';
   
@@ -276,6 +279,47 @@ export const EnhancedMeasurementWorksheet = ({
 
   const hasTreatmentConfiguration = selectedInventoryItem && selectedCovering;
 
+  // Auto-save functionality with debouncing
+  const autoSaveTimerRef = useRef<NodeJS.Timeout>();
+  
+  const autoSave = useCallback(async () => {
+    if (readOnly) return;
+    
+    try {
+      await handleSaveMeasurements();
+      console.log("Auto-save completed successfully");
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+    }
+  }, [readOnly, handleSaveMeasurements]);
+
+  // Debounced auto-save on changes
+  const debouncedAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSave();
+    }, 2000); // Auto-save after 2 seconds of inactivity
+  }, [autoSave]);
+
+  // Auto-save when key data changes
+  useEffect(() => {
+    if (!readOnly && (Object.keys(measurements).length > 0 || selectedFabric || selectedHeading || selectedLining)) {
+      debouncedAutoSave();
+    }
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [measurements, selectedFabric, selectedHeading, selectedLining, notes, measuredBy, debouncedAutoSave, readOnly]);
+
+  // Expose autoSave function to parent via ref
+  useImperativeHandle(ref, () => ({
+    autoSave
+  }), [autoSave]);
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <Card>
@@ -440,4 +484,6 @@ export const EnhancedMeasurementWorksheet = ({
       </Card>
     </div>
   );
-};
+});
+
+EnhancedMeasurementWorksheet.displayName = 'EnhancedMeasurementWorksheet';

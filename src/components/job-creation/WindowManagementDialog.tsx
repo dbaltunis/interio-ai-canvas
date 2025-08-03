@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +44,9 @@ export const WindowManagementDialog = ({
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [calculatedCost, setCalculatedCost] = useState(0);
+  
+  // Reference to access worksheet's save function
+  const worksheetRef = useRef<any>(null);
 
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
@@ -96,11 +99,24 @@ export const WindowManagementDialog = ({
     onClose();
   };
 
+  // Auto-save function when dialog closes
+  const handleDialogClose = async (open: boolean) => {
+    if (!open && worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
+      try {
+        await worksheetRef.current.autoSave();
+        console.log("Auto-saved measurements on dialog close");
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+      }
+    }
+    onClose();
+  };
+
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -114,6 +130,7 @@ export const WindowManagementDialog = ({
 
           <div className="flex-1 overflow-y-auto">
             <EnhancedMeasurementWorksheet
+              ref={worksheetRef}
               clientId={clientId}
               projectId={projectId}
               surfaceId={surface?.id} // Pass unique surface ID to isolate state
