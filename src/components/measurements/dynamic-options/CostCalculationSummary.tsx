@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calculator, Shirt, Hammer, DollarSign, Info } from "lucide-react";
+import { Calculator, Palette, Layers, Wrench, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
@@ -308,13 +308,13 @@ export const CostCalculationSummary = ({
           Cost Calculation
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {/* Products & Services List */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Fabric - Always show even if no fabric selected */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <Shirt className="h-5 w-5 text-gray-600" />
+              <Palette className="h-5 w-5 text-blue-600" />
               <div>
                 <div className="font-medium">Fabric</div>
                 <div className="text-sm text-gray-600">
@@ -341,9 +341,9 @@ export const CostCalculationSummary = ({
 
           {/* Lining */}
           {selectedLining && selectedLining !== 'none' && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded border-2 border-gray-600 bg-white" />
+                <Layers className="h-5 w-5 text-purple-600" />
                 <div>
                   <div className="font-medium">Lining</div>
                   <div className="text-sm text-gray-600">{selectedLining}</div>
@@ -355,7 +355,7 @@ export const CostCalculationSummary = ({
 
           {/* Heading */}
           {headingCost > 0 && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className="w-5 h-5 border-b-2 border-gray-600" />
                 <div>
@@ -369,9 +369,9 @@ export const CostCalculationSummary = ({
 
           {/* Manufacturing */}
           {manufacturingCost > 0 && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <Hammer className="h-5 w-5 text-gray-600" />
+                <Wrench className="h-5 w-5 text-orange-600" />
                 <div>
                   <div className="font-medium">Manufacturing</div>
                   <div className="text-sm text-gray-600">{template.manufacturing_type}</div>
