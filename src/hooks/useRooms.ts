@@ -64,12 +64,8 @@ export const useCreateRoom = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidate all related queries to ensure fresh data
+      // Invalidate all room queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      queryClient.invalidateQueries({ queryKey: ["treatments"] });
-      queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
-      
       toast({
         title: "Success",
         description: "Room created successfully",

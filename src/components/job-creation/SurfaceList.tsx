@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RectangleHorizontal, Trash2, Eye, Copy, Clipboard } from "lucide-react";
-import { useClientMeasurements, useCreateClientMeasurement, useUpdateClientMeasurement } from "@/hooks/useClientMeasurements";
+import { RectangleHorizontal, Trash2, Eye } from "lucide-react";
+import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { WindowManagementDialog } from "./WindowManagementDialog";
-import { useToast } from "@/hooks/use-toast";
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -27,12 +26,8 @@ export const SurfaceList = ({
 }: SurfaceListProps) => {
   const [selectedSurface, setSelectedSurface] = useState<any>(null);
   const [showWindowDialog, setShowWindowDialog] = useState(false);
-  const [copiedWorksheet, setCopiedWorksheet] = useState<any>(null);
   
   const { data: clientMeasurements } = useClientMeasurements(clientId);
-  const createMutation = useCreateClientMeasurement();
-  const updateMutation = useUpdateClientMeasurement();
-  const { toast } = useToast();
 
   const handleViewWindow = (surface: any) => {
     setSelectedSurface(surface);
@@ -54,75 +49,6 @@ export const SurfaceList = ({
 
   const getSurfaceTreatments = (surfaceId: string) => {
     return treatments.filter(t => t.window_id === surfaceId);
-  };
-
-  // Copy worksheet functionality
-  const handleCopyWorksheet = (surface: any) => {
-    const clientMeasurement = getClientMeasurementForSurface(surface);
-    if (clientMeasurement?.measurements) {
-      setCopiedWorksheet({
-        measurements: clientMeasurement.measurements,
-        sourceSurface: surface.name
-      });
-      toast({
-        title: "Worksheet Copied",
-        description: `Copied worksheet from ${surface.name}`,
-      });
-    } else {
-      toast({
-        title: "No Worksheet Found",
-        description: "This surface doesn't have a worksheet to copy",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Paste worksheet functionality
-  const handlePasteWorksheet = async (surface: any) => {
-    if (!copiedWorksheet) {
-      toast({
-        title: "No Worksheet Copied",
-        description: "Copy a worksheet first before pasting",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const existingMeasurement = getClientMeasurementForSurface(surface);
-    
-    try {
-      if (existingMeasurement) {
-        // Update existing measurement
-        await updateMutation.mutateAsync({
-          id: existingMeasurement.id,
-          measurements: copiedWorksheet.measurements,
-          notes: `Pasted from ${copiedWorksheet.sourceSurface}`
-        });
-      } else {
-        // Create new measurement
-        await createMutation.mutateAsync({
-          client_id: clientId || null,
-          project_id: projectId || '',
-          measurement_type: 'standard',
-          measurements: copiedWorksheet.measurements,
-          photos: [],
-          notes: `Pasted from ${copiedWorksheet.sourceSurface}`,
-          measured_by: '',
-          measured_at: new Date().toISOString()
-        });
-      }
-      
-      toast({
-        title: "Worksheet Pasted",
-        description: `Applied worksheet to ${surface.name}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to paste worksheet",
-        variant: "destructive"
-      });
-    }
   };
 
 
@@ -156,32 +82,6 @@ export const SurfaceList = ({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {/* Copy Worksheet Button - only show if worksheet exists */}
-                  {hasMeasurements && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCopyWorksheet(surface)}
-                      className="flex items-center gap-1"
-                      title="Copy worksheet"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  {/* Paste Worksheet Button - only show if worksheet is copied */}
-                  {copiedWorksheet && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handlePasteWorksheet(surface)}
-                      className="flex items-center gap-1"
-                      title={`Paste worksheet from ${copiedWorksheet.sourceSurface}`}
-                    >
-                      <Clipboard className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
                   <Button
                     size="sm"
                     onClick={() => handleViewWindow(surface)}
