@@ -27,10 +27,21 @@ export const useRoomCardLogic = (room: any, projectId: string, onCreateTreatment
     [allTreatments, room.id]
   );
   
-  const roomTotal = useMemo(() => 
-    roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0),
-    [roomTreatments]
-  );
+  const roomTotal = useMemo(() => {
+    let total = 0;
+    
+    // Sum up all treatment total_price values
+    total += roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
+    
+    // If no treatments with total_price, try to get from worksheet calculations
+    if (total === 0 && roomTreatments.length === 0) {
+      // Get all client measurements for this room's surfaces
+      const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
+      // This would need client measurements data - for now use treatment prices
+    }
+    
+    return total;
+  }, [roomTreatments, room.id]);
 
   // Remove surface creation logic from here - it will be handled by parent
 
