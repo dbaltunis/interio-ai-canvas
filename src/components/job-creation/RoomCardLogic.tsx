@@ -71,14 +71,28 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
             };
             
             const calculation = calculateFabricUsage(formData, []);
-            const measurementTotal = calculation.details?.totalCost || 0;
             
+            // Calculate costs using the same logic as SurfaceList
+            const fabricCostPerMetre = 45;
+            const fabricTotal = calculation.meters * fabricCostPerMetre;
+            
+            const liningType = measurements.selected_lining || measurements.lining_type;
+            const liningCostPerMetre = liningType === 'Interlining' ? 18 : 15;
+            const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
+                              calculation.meters * liningCostPerMetre : 0;
+            
+            const squareMetres = (railWidth * 2.54 * drop * 2.54) / 10000;
+            const manufacturingCost = squareMetres * 15;
+            
+            const measurementTotal = fabricTotal + liningCost + manufacturingCost;
             total += measurementTotal;
             
             console.log(`ROOM CALC using proper fabric calculator:`);
             console.log(`  Measurement ID: ${measurement.id}`);
             console.log(`  Dimensions: ${railWidth}" × ${drop}"`);
-            console.log(`  Calculation result:`, calculation);
+            console.log(`  Fabric: ${calculation.meters.toFixed(2)}m × £${fabricCostPerMetre} = £${fabricTotal.toFixed(2)}`);
+            console.log(`  Lining (${liningType}): ${liningCost > 0 ? `${calculation.meters.toFixed(2)}m × £${liningCostPerMetre} = £${liningCost.toFixed(2)}` : '£0.00'}`);
+            console.log(`  Manufacturing: ${squareMetres.toFixed(2)}m² × £15 = £${manufacturingCost.toFixed(2)}`);
             console.log(`  Window Total: £${measurementTotal.toFixed(2)}`);
             console.log(`  Running Room Total: £${total.toFixed(2)}`);
           } else {
