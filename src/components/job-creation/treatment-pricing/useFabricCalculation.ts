@@ -6,7 +6,7 @@ import { calculateFabricUsage } from "./fabric-calculation/fabricUsageCalculator
 import { calculateOptionCost, calculateHierarchicalOptionCost } from "./fabric-calculation/optionCostCalculator";
 import { calculateIntegratedFabricUsage, type FabricCalculationParams } from "@/hooks/services/makingCostIntegrationService";
 
-export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = []) => {
+export const useFabricCalculation = (formData: any, options: any[], treatmentTypesData: any[], treatmentType: string, hierarchicalOptions: any[] = [], selectedFabricItem?: any) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptions = [] } = useHeadingOptions();
 
@@ -102,7 +102,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       fabric_properties: fabricProps
     };
     
-    return calculateFabricUsage(formDataWithEnhancements, treatmentTypesData);
+    return calculateFabricUsage(formDataWithEnhancements, treatmentTypesData, selectedFabricItem);
   }, [formData, treatmentTypesData, hierarchicalOptions]);
 
   const findHierarchicalOptionById = (optionId: string): any => {

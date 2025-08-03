@@ -115,7 +115,10 @@ export const VisualMeasurementSheet = ({
       const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
       
       // Get price per meter from various possible fields
-      const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0;
+      const pricePerMeter = selectedFabricItem.price_per_meter || 
+                           selectedFabricItem.unit_price || 
+                           selectedFabricItem.selling_price || 
+                           0;
       
        console.log('VisualMeasurementSheet fabric calculation with proper hems:', {
         width,

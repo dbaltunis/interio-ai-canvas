@@ -4,7 +4,8 @@ import { calculateOrientation } from './orientationCalculator';
 
 export const calculateFabricUsage = (
   formData: any,
-  treatmentTypesData: any[]
+  treatmentTypesData: any[],
+  selectedFabricItem?: any
 ): FabricUsageResult => {
   const railWidth = parseFloat(formData.rail_width) || 0;
   const drop = parseFloat(formData.drop) || 0;
@@ -68,7 +69,16 @@ export const calculateFabricUsage = (
   const defaultLaborRate = currentTreatmentType?.labor_rate || 25;
   const customLaborRate = parseFloat(formData.custom_labor_rate) || 0;
   const laborRate = customLaborRate > 0 ? customLaborRate : defaultLaborRate;
-  const fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
+  
+  // Get fabric cost from selected fabric item, fallback to form field
+  let fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
+  if (selectedFabricItem) {
+    const pricePerMeter = selectedFabricItem.price_per_meter || 
+                         selectedFabricItem.unit_price || 
+                         selectedFabricItem.selling_price || 
+                         0;
+    fabricCostPerYard = pricePerMeter * 1.09361; // Convert meters to yards
+  }
 
   // Calculate both orientations
   const horizontalCalc = calculateOrientation('horizontal', params, fabricCostPerYard, laborRate);
