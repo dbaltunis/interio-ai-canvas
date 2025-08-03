@@ -30,61 +30,69 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
   );
   
   const roomTotal = useMemo(() => {
-    console.log("Calculating roomTotal for room:", room.id, room.name);
+    console.log("=== ROOM TOTAL CALCULATION ===");
+    console.log("Room:", room.id, room.name);
     console.log("roomTreatments:", roomTreatments);
     console.log("roomSurfaces:", roomSurfaces);
-    console.log("all clientMeasurements:", clientMeasurements);
     
     let total = 0;
     
     // Sum up all treatment total_price values
-    total += roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-    console.log("Total from treatments:", total);
+    const treatmentTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
+    total += treatmentTotal;
+    console.log("Treatment total:", treatmentTotal);
     
-    // If no treatments or treatments have no price, include worksheet calculations
-    if (total === 0 && clientMeasurements && roomSurfaces.length > 0) {
-      // More precise filtering: only get measurements that belong to surfaces in THIS specific room
+    // If no treatments have prices, try to get from worksheet calculations
+    if (treatmentTotal === 0 && clientMeasurements && roomSurfaces.length > 0) {
+      console.log("No treatment prices, checking worksheets...");
+      
+      // Get measurements that belong specifically to this room's surfaces
       const roomMeasurements = clientMeasurements.filter(measurement => {
-        // First check if measurement belongs to this project
-        if (measurement.project_id !== projectId) return false;
+        // Direct room association
+        if (measurement.room_id === room.id) {
+          console.log("Found measurement by room_id:", measurement.id);
+          return true;
+        }
         
-        // Check if measurement has a room_id that matches this room
-        if (measurement.room_id === room.id) return true;
-        
-        // Fallback: check if measurement notes mention a surface that belongs to this room
-        if (measurement.notes) {
-          return roomSurfaces.some(surface => 
-            measurement.notes === surface.name || 
-            measurement.notes.includes(`${surface.name} -`) ||
-            measurement.notes.includes(`- ${surface.name}`)
-          );
+        // Check if measurement is associated with surfaces in this room
+        if (measurement.notes && roomSurfaces.length > 0) {
+          const belongsToThisRoom = roomSurfaces.some(surface => {
+            const matches = measurement.notes === surface.name ||
+                          measurement.notes.includes(`${surface.name} -`) ||
+                          measurement.notes.includes(`- ${surface.name}`);
+            if (matches) {
+              console.log("Found measurement by surface name match:", measurement.id, "for surface:", surface.name);
+            }
+            return matches;
+          });
+          return belongsToThisRoom;
         }
         
         return false;
       });
       
-      console.log("Filtered roomMeasurements for room", room.name, ":", roomMeasurements);
+      console.log("Filtered measurements for this room:", roomMeasurements);
       
       // Calculate total from worksheet measurements
       roomMeasurements.forEach(measurement => {
         if (measurement.measurements) {
           const measurements = measurement.measurements as Record<string, any>;
           
-          // Calculate totals from measurement components
+          // Calculate totals from measurement components (use actual values, not hardcoded)
           const fabricCost = Number(measurements.fabric_total_cost || measurements.fabric_total_price || 0);
           const liningCost = Number(measurements.lining_cost || measurements.lining_price || 0);
           const manufacturingCost = Number(measurements.manufacturing_cost || measurements.manufacturing_price || 0);
           
           const measurementTotal = fabricCost + liningCost + manufacturingCost;
-          console.log("Adding measurement total:", measurementTotal, "from measurement:", measurement.id);
+          console.log("Measurement total:", measurementTotal, "from measurement:", measurement.id);
+          console.log("  - Fabric:", fabricCost, "Lining:", liningCost, "Manufacturing:", manufacturingCost);
           
-          // Add worksheet total to room total
           total += measurementTotal;
         }
       });
     }
     
-    console.log("Final roomTotal for", room.name, ":", total);
+    console.log("=== FINAL ROOM TOTAL:", total, "for room:", room.name, "===");
     return total;
   }, [roomTreatments, roomSurfaces, clientMeasurements, projectId, room.id, room.name]);
 
