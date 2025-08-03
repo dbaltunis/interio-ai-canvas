@@ -46,7 +46,7 @@ export const RoomHeader = ({
           ) : (
             <CardTitle className="text-xl text-brand-primary">{room.name}</CardTitle>
           )}
-          <p className="text-2xl font-bold text-brand-accent mt-1">${roomTotal.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-brand-accent mt-1">£{roomTotal.toFixed(2)}</p>
         </div>
         <RoomActionsMenu
           room={room}
