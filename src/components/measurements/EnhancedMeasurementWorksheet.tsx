@@ -492,24 +492,18 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               
               <div className="flex gap-3">
                 <Button 
-                  onClick={handleSaveMeasurements}
+                  onClick={() => {
+                    handleSaveMeasurements();
+                    if (selectedCovering && selectedFabric) {
+                      handleSaveTreatmentConfig();
+                    }
+                  }}
                   disabled={createMeasurement.isPending || updateMeasurement.isPending}
                   className="flex items-center gap-2"
                 >
                   <Save className="h-4 w-4" />
-                  Save Measurements
+                  Save
                 </Button>
-
-                {selectedCovering && selectedFabric && (
-                  <Button 
-                    onClick={handleSaveTreatmentConfig}
-                    className="flex items-center gap-2"
-                    variant="default"
-                  >
-                    <Package className="h-4 w-4" />
-                    Save Treatment Configuration
-                  </Button>
-                )}
               </div>
             </div>
           )}
