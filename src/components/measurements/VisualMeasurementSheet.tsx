@@ -74,12 +74,15 @@ export const VisualMeasurementSheet = ({
       const width = parseFloat(measurements.rail_width);
       const height = parseFloat(measurements.drop);
       const pooling = parseFloat(measurements.pooling_amount || "0");
+      const returns = parseFloat(measurements.returns || "0");
       
       const fabricWidthCm = selectedFabricItem.fabric_width || 137; // Default fabric width
       const requiredWidth = width * selectedTemplate.fullness_ratio;
       
       // Include pooling in the total drop calculation
-      const totalDrop = height + (selectedTemplate.bottom_hem || 0) + (selectedTemplate.header_allowance || 0) + pooling;
+      const headerHem = selectedTemplate.header_allowance || 8;
+      const bottomHem = selectedTemplate.bottom_hem || 8;
+      const totalDrop = height + headerHem + bottomHem + pooling;
       const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
       
       // Calculate how many fabric widths are needed
@@ -94,6 +97,7 @@ export const VisualMeasurementSheet = ({
       console.log('VisualMeasurementSheet fabric calculation:', {
         width,
         height,
+        pooling,
         requiredWidth,
         totalDrop,
         widthsRequired,
@@ -108,7 +112,16 @@ export const VisualMeasurementSheet = ({
         linearMeters: linearMeters,
         totalCost: linearMeters * pricePerMeter,
         pricePerMeter: pricePerMeter,
-        widthsRequired: widthsRequired
+        widthsRequired: widthsRequired,
+        railWidth: width,
+        fullnessRatio: selectedTemplate.fullness_ratio,
+        drop: height,
+        headerHem: headerHem,
+        bottomHem: bottomHem,
+        pooling: pooling,
+        totalDrop: totalDrop,
+        returns: returns,
+        wastePercent: selectedTemplate.waste_percent || 0
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);

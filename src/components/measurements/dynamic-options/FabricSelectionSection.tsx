@@ -16,6 +16,15 @@ interface FabricSelectionSectionProps {
     totalCost: number;
     pricePerMeter: number;
     widthsRequired: number;
+    railWidth?: number;
+    fullnessRatio?: number;
+    drop?: number;
+    headerHem?: number;
+    bottomHem?: number;
+    pooling?: number;
+    totalDrop?: number;
+    returns?: number;
+    wastePercent?: number;
   };
 }
 
@@ -138,23 +147,35 @@ export const FabricSelectionSection = ({
                 </div>
               </div>
 
-              {/* Expandable calculation details */}
-              <details className="group">
-                <summary className="cursor-pointer text-primary hover:text-primary/80 font-medium flex items-center gap-1">
-                  <span className="text-xs">Show calculation breakdown</span>
-                  <span className="transform transition-transform group-open:rotate-90">▶</span>
-                </summary>
-                <div className="mt-2 p-2 bg-background/50 rounded border text-xs space-y-1">
-                  <div className="font-medium text-muted-foreground mb-1">How this was calculated:</div>
-                  <div>• Fabric width: {selectedFabricItem.fabric_width || 137}cm</div>
-                  <div>• Required fullness width determines widths needed</div>
-                  <div>• Drop + hem allowances × number of widths</div>
-                  <div>• Waste percentage applied for cutting efficiency</div>
-                  <div className="text-muted-foreground italic mt-1">
-                    Formula: (Drop + Hems) × Widths × Waste Factor
-                  </div>
+              {/* Always visible calculation details with real numbers */}
+              <div className="mt-2 p-2 bg-background/50 rounded border text-xs space-y-1">
+                <div className="font-medium text-muted-foreground mb-1">Calculation breakdown:</div>
+                <div>• Fabric width: {selectedFabricItem.fabric_width || 137}cm</div>
+                <div>• Rail width: {fabricCalculation.railWidth || 'Not set'}cm</div>
+                <div>• Fullness multiplier: {fabricCalculation.fullnessRatio || 2.0}x</div>
+                <div>• Required width: {fabricCalculation.railWidth ? Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 2.0)) : 'Calculating...'}cm</div>
+                <div>• Widths needed: {fabricCalculation.widthsRequired}</div>
+                <div className="border-t pt-1 mt-1">
+                  <div>• Drop measurement: {fabricCalculation.drop || 'Not set'}cm</div>
+                  <div>• Header hem allowance: {fabricCalculation.headerHem || 8}cm</div>
+                  <div>• Bottom hem allowance: {fabricCalculation.bottomHem || 8}cm</div>
+                  {fabricCalculation.pooling && fabricCalculation.pooling > 0 && (
+                    <div>• Pooling amount: {fabricCalculation.pooling}cm</div>
+                  )}
+                  {selectedFabricItem.pattern_repeat_vertical && parseFloat(String(selectedFabricItem.pattern_repeat_vertical)) > 0 && (
+                    <div>• Vertical pattern repeat: {selectedFabricItem.pattern_repeat_vertical}cm</div>
+                  )}
+                  {selectedFabricItem.pattern_repeat_horizontal && parseFloat(String(selectedFabricItem.pattern_repeat_horizontal)) > 0 && (
+                    <div>• Horizontal pattern repeat: {selectedFabricItem.pattern_repeat_horizontal}cm</div>
+                  )}
+                  <div>• Total drop per width: {fabricCalculation.totalDrop || 'Calculating...'}cm</div>
                 </div>
-              </details>
+                <div className="border-t pt-1 mt-1">
+                  <div>• Side returns: {fabricCalculation.returns || 0}cm each side</div>
+                  <div>• Waste factor: {fabricCalculation.wastePercent || 0}%</div>
+                  <div className="font-medium text-primary">• Final calculation: {fabricCalculation.totalDrop || 0}cm × {fabricCalculation.widthsRequired} widths = {fabricCalculation.linearMeters.toFixed(2)}m</div>
+                </div>
+              </div>
             </div>
           )}
 
