@@ -16,7 +16,7 @@ interface WindowManagementDialogProps {
   isOpen: boolean;
   onClose: () => void;
   surface: any;
-  clientId: string;
+  clientId?: string; // Optional - measurements can exist without being assigned to a client
   projectId: string;
   existingMeasurement?: any;
   existingTreatments?: any[];

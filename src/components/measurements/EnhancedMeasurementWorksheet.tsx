@@ -23,7 +23,7 @@ import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 
 interface EnhancedMeasurementWorksheetProps {
-  clientId: string;
+  clientId?: string; // Optional - measurements can exist without being assigned to a client
   projectId?: string;
   surfaceId?: string; // Add unique surface ID to isolate state
   currentRoomId?: string; // Add current room ID to preselect
@@ -201,7 +201,7 @@ export const EnhancedMeasurementWorksheet = ({
     if (readOnly) return;
     
     const measurementData = {
-      client_id: clientId,
+      client_id: clientId || null, // Allow null for measurements without clients
       project_id: projectId,
       room_id: selectedRoom === "no_room" ? null : selectedRoom,
       window_covering_id: selectedWindowCovering === "no_covering" ? null : selectedWindowCovering,

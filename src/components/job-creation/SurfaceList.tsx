@@ -150,7 +150,7 @@ export const SurfaceList = ({
       </div>
 
       {/* Window Management Dialog */}
-      {selectedSurface && clientId && (
+      {selectedSurface && (
         <WindowManagementDialog
           isOpen={showWindowDialog}
           onClose={handleCloseWindow}

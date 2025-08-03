@@ -613,7 +613,7 @@ export type Database = {
       }
       client_measurements: {
         Row: {
-          client_id: string
+          client_id: string | null
           created_at: string | null
           id: string
           measured_at: string | null
@@ -629,7 +629,7 @@ export type Database = {
           window_covering_id: string | null
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           created_at?: string | null
           id?: string
           measured_at?: string | null
@@ -645,7 +645,7 @@ export type Database = {
           window_covering_id?: string | null
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           created_at?: string | null
           id?: string
           measured_at?: string | null

@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export interface ClientMeasurement {
   id: string;
-  client_id: string;
+  client_id: string | null; // Optional - measurements can exist without being assigned to a client
   user_id: string;
   project_id?: string;
   measurement_type: string;
@@ -31,15 +31,23 @@ export const useClientMeasurements = (clientId?: string) => {
         .eq("user_id", user.id)
         .order("measured_at", { ascending: false });
 
-      if (clientId) {
-        query = query.eq("client_id", clientId);
+      // If clientId is provided, filter by it
+      // If clientId is undefined, fetch all measurements (including those without clients)
+      if (clientId !== undefined) {
+        if (clientId === null || clientId === "") {
+          // Fetch measurements without a client
+          query = query.is("client_id", null);
+        } else {
+          // Fetch measurements for specific client
+          query = query.eq("client_id", clientId);
+        }
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
-    enabled: !!clientId,
+    enabled: true, // Always enabled - can fetch measurements with or without client
   });
 };
 
@@ -66,7 +74,7 @@ export const useCreateClientMeasurement = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
-      queryClient.invalidateQueries({ queryKey: ["client-measurements", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["client-measurements", data.client_id || null] });
       toast({
         title: "Success",
         description: "Measurements saved successfully",
@@ -101,7 +109,7 @@ export const useUpdateClientMeasurement = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
-      queryClient.invalidateQueries({ queryKey: ["client-measurements", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["client-measurements", data.client_id || null] });
       toast({
         title: "Success",
         description: "Measurements updated successfully",

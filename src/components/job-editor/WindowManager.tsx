@@ -140,7 +140,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
           </DialogHeader>
           {selectedSurface && (
             <EnhancedMeasurementWorksheet
-              clientId="" // We'll use project context instead
+              clientId={undefined} // No client required - measurements can exist independently
               projectId={projectId}
               surfaceId={selectedSurface.id} // Pass unique surface ID to isolate state
               currentRoomId={activeRoomId} // Pass current room ID to preselect
