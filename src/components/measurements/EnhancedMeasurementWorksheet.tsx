@@ -306,13 +306,18 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         photos
       };
 
+      // Silent update - no toast notifications for auto-save
       if (existingMeasurement?.id) {
-        await updateMeasurement.mutateAsync({
+        // Use direct mutation without toast notifications
+        const mutation = updateMeasurement.mutateAsync({
           id: existingMeasurement.id,
           ...measurementData
         });
+        await mutation;
       } else {
-        await createMeasurement.mutateAsync(measurementData);
+        // Use direct mutation without toast notifications  
+        const mutation = createMeasurement.mutateAsync(measurementData);
+        await mutation;
       }
       
       console.log("Auto-save completed silently");
@@ -331,17 +336,17 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     }, 2000); // Auto-save after 2 seconds of inactivity
   }, [autoSave]);
 
-  // Auto-save when key data changes
-  useEffect(() => {
-    if (!readOnly && (Object.keys(measurements).length > 0 || selectedFabric || selectedHeading || selectedLining)) {
-      debouncedAutoSave();
-    }
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [measurements, selectedFabric, selectedHeading, selectedLining, notes, measuredBy, debouncedAutoSave, readOnly]);
+  // Auto-save when key data changes - DISABLED to prevent notification spam
+  // useEffect(() => {
+  //   if (!readOnly && (Object.keys(measurements).length > 0 || selectedFabric || selectedHeading || selectedLining)) {
+  //     debouncedAutoSave();
+  //   }
+  //   return () => {
+  //     if (autoSaveTimerRef.current) {
+  //       clearTimeout(autoSaveTimerRef.current);
+  //     }
+  //   };
+  // }, [measurements, selectedFabric, selectedHeading, selectedLining, notes, measuredBy, debouncedAutoSave, readOnly]);
 
   // Expose autoSave function to parent via ref
   useImperativeHandle(ref, () => ({

@@ -212,6 +212,22 @@ export const CostCalculationSummary = ({
       measurements.fabric_type
     ];
     
+    console.log('Fabric cost debugging:', {
+      selectedFabric: selectedFabric ? {
+        id: selectedFabric.id,
+        name: selectedFabric.name,
+        selling_price: selectedFabric.selling_price,
+        unit_price: selectedFabric.unit_price
+      } : null,
+      fabricSources,
+      measurements: {
+        selected_fabric: measurements.selected_fabric,
+        fabric_id: measurements.fabric_id,
+        fabric_type: measurements.fabric_type
+      },
+      inventoryCount: inventory.length
+    });
+    
     for (const fabricId of fabricSources) {
       if (fabricId && typeof fabricId === 'string') {
         fabricItem = inventory.find(item => 
@@ -219,7 +235,10 @@ export const CostCalculationSummary = ({
           item.name === fabricId ||
           item.sku === fabricId
         );
-        if (fabricItem) break;
+        if (fabricItem) {
+          console.log('Found fabric item:', fabricItem.name);
+          break;
+        }
       }
     }
     
@@ -238,17 +257,18 @@ export const CostCalculationSummary = ({
         },
         pricePerMeter,
         linearMeters: fabricUsage.linearMeters,
-        effectiveFabricCost,
-        sources: {
-          selectedFabric: selectedFabric?.id,
-          measurements_selected_fabric: measurements.selected_fabric,
-          measurements_fabric_id: measurements.fabric_id,
-          measurements_fabric_type: measurements.fabric_type
-        }
+        effectiveFabricCost
       });
+    } else {
+      console.log('No fabric item found from any source');
     }
   } else if (selectedFabric) {
     fabricPriceDisplay = selectedFabric.selling_price || selectedFabric.unit_price || selectedFabric.price_per_meter || 0;
+    console.log('Using selectedFabric prop:', {
+      name: selectedFabric.name,
+      pricePerMeter: fabricPriceDisplay,
+      cost: fabricUsage.cost
+    });
   }
   
   const totalCost = effectiveFabricCost + liningCost + headingCost + manufacturingCost;
