@@ -197,18 +197,58 @@ export const CostCalculationSummary = ({
   
   // If selectedFabric is missing but there's a fabric selection, try to find it in inventory
   let effectiveFabricCost = fabricUsage.cost;
-  if (effectiveFabricCost === 0 && measurements.selectedFabric && inventory.length > 0) {
-    const fabricItem = inventory.find(item => item.id === measurements.selectedFabric);
+  let fabricName = selectedFabric?.name || "No fabric selected";
+  let fabricPriceDisplay = 0;
+  
+  // Try multiple sources for fabric selection
+  if (effectiveFabricCost === 0 && inventory.length > 0) {
+    let fabricItem = null;
+    
+    // Check various sources for fabric selection
+    const fabricSources = [
+      selectedFabric?.id,
+      measurements.selected_fabric,
+      measurements.fabric_id,
+      measurements.fabric_type
+    ];
+    
+    for (const fabricId of fabricSources) {
+      if (fabricId && typeof fabricId === 'string') {
+        fabricItem = inventory.find(item => 
+          item.id === fabricId || 
+          item.name === fabricId ||
+          item.sku === fabricId
+        );
+        if (fabricItem) break;
+      }
+    }
+    
     if (fabricItem) {
       const pricePerMeter = fabricItem.selling_price || fabricItem.unit_price || fabricItem.price_per_meter || 0;
       effectiveFabricCost = fabricUsage.linearMeters * pricePerMeter;
-      console.log('Fallback fabric cost calculation:', {
-        fabricItem: fabricItem.name,
+      fabricName = fabricItem.name;
+      fabricPriceDisplay = pricePerMeter;
+      
+      console.log('Found fabric from measurements:', {
+        fabricItem: {
+          id: fabricItem.id,
+          name: fabricItem.name,
+          selling_price: fabricItem.selling_price,
+          unit_price: fabricItem.unit_price
+        },
         pricePerMeter,
         linearMeters: fabricUsage.linearMeters,
-        effectiveFabricCost
+        effectiveFabricCost,
+        sources: {
+          selectedFabric: selectedFabric?.id,
+          measurements_selected_fabric: measurements.selected_fabric,
+          measurements_fabric_id: measurements.fabric_id,
+          measurements_fabric_type: measurements.fabric_type
+        }
       });
     }
+  } else if (selectedFabric) {
+    fabricPriceDisplay = selectedFabric.selling_price || selectedFabric.unit_price || selectedFabric.price_per_meter || 0;
   }
   
   const totalCost = effectiveFabricCost + liningCost + headingCost + manufacturingCost;
@@ -233,9 +273,9 @@ export const CostCalculationSummary = ({
                 <div className="text-sm text-gray-600">
                   {fabricUsage.linearMeters.toFixed(2)}m linear ({fabricUsage.widthsRequired} width(s) × {(fabricUsage.totalDrop/100).toFixed(2)}m drop)
                 </div>
-                {selectedFabric && (
+                {(selectedFabric || fabricName !== "No fabric selected") && (
                   <div className="text-xs text-gray-500">
-                    {selectedFabric.name} • {formatPrice(selectedFabric.price_per_meter || selectedFabric.unit_price || selectedFabric.selling_price || 0)}/m
+                    {fabricName} • {formatPrice(fabricPriceDisplay)}/m
                   </div>
                 )}
               </div>

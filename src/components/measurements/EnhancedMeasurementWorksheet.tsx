@@ -286,12 +286,40 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     if (readOnly) return;
     
     try {
-      await handleSaveMeasurements();
-      console.log("Auto-save completed successfully");
+      // Silent save without notifications
+      const measurementData = {
+        client_id: clientId || null,
+        project_id: projectId,
+        room_id: selectedRoom === "no_room" ? null : selectedRoom,
+        window_covering_id: selectedWindowCovering === "no_covering" ? null : selectedWindowCovering,
+        measurement_type: windowType,
+        measurements: {
+          ...measurements,
+          fabric_type: selectedFabric ? inventoryItems.find(item => item.id === selectedFabric)?.name : undefined,
+          fabric_id: selectedFabric,
+          heading_type: selectedHeading,
+          lining_type: selectedLining
+        },
+        notes,
+        measured_by: measuredBy,
+        measured_at: new Date().toISOString(),
+        photos
+      };
+
+      if (existingMeasurement?.id) {
+        await updateMeasurement.mutateAsync({
+          id: existingMeasurement.id,
+          ...measurementData
+        });
+      } else {
+        await createMeasurement.mutateAsync(measurementData);
+      }
+      
+      console.log("Auto-save completed silently");
     } catch (error) {
       console.error("Auto-save failed:", error);
     }
-  }, [readOnly, handleSaveMeasurements]);
+  }, [readOnly, clientId, projectId, selectedRoom, selectedWindowCovering, windowType, measurements, notes, measuredBy, photos, selectedFabric, selectedHeading, selectedLining, inventoryItems, existingMeasurement, updateMeasurement, createMeasurement]);
 
   // Debounced auto-save on changes
   const debouncedAutoSave = useCallback(() => {
