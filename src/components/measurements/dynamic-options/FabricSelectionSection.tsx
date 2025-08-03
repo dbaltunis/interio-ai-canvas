@@ -208,7 +208,8 @@ export const FabricSelectionSection = ({
                 </div>
                 <div className="border-t pt-1 mt-1">
                   <div>• Waste factor: {fabricCalculation.wastePercent || 0}%</div>
-                  <div className="font-medium text-primary">• Final calculation: {fabricCalculation.totalDrop || 0}cm drop × {fabricCalculation.widthsRequired} width(s) + seam allowances = {fabricCalculation.linearMeters.toFixed(2)}m</div>
+                  <div className="font-medium text-primary">• Final calculation: {(fabricCalculation.totalDrop || 0) / 100}m drop × {fabricCalculation.widthsRequired} piece(s) {fabricCalculation.totalSeamAllowance && fabricCalculation.totalSeamAllowance > 0 ? `+ ${(fabricCalculation.totalSeamAllowance / 100).toFixed(2)}m seam allowances` : ''} = {fabricCalculation.linearMeters.toFixed(2)}m linear</div>
+                  <div className="text-xs text-muted-foreground mt-1">Linear meters = length to buy from fabric roll (not area calculation)</div>
                 </div>
               </div>
               )}
