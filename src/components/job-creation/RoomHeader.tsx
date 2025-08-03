@@ -2,6 +2,7 @@
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { RoomActionsMenu } from "./RoomActionsMenu";
+import { CostCalculationSummary } from "@/components/measurements/dynamic-options/CostCalculationSummary";
 
 interface RoomHeaderProps {
   room: any;
@@ -15,6 +16,12 @@ interface RoomHeaderProps {
   onCopyRoom: (room: any) => void;
   onDeleteRoom: any;
   onChangeRoomType: (roomId: string, roomType: string) => void;
+  measurements?: any;
+  selectedFabric?: any;
+  selectedLining?: any;
+  selectedHeading?: any;
+  inventory?: any;
+  template?: any;
 }
 
 export const RoomHeader = ({
@@ -28,7 +35,13 @@ export const RoomHeader = ({
   onRenameRoom,
   onCopyRoom,
   onDeleteRoom,
-  onChangeRoomType
+  onChangeRoomType,
+  measurements,
+  selectedFabric,
+  selectedLining,
+  selectedHeading,
+  inventory,
+  template
 }: RoomHeaderProps) => {
   return (
     <CardHeader className="pb-4 bg-brand-primary/5 border-b border-brand-secondary/20">
@@ -60,6 +73,20 @@ export const RoomHeader = ({
           onChangeRoomType={(type) => onChangeRoomType(room.id, type)}
         />
       </div>
+      
+      {/* Dynamic Cost Calculation Summary */}
+      {measurements && template && (
+        <div className="mt-4">
+          <CostCalculationSummary
+            template={template}
+            measurements={measurements}
+            selectedFabric={selectedFabric}
+            selectedLining={selectedLining}
+            selectedHeading={selectedHeading}
+            inventory={inventory}
+          />
+        </div>
+      )}
     </CardHeader>
   );
 };

@@ -55,7 +55,13 @@ export const RoomCard = ({
     calculatorDialogOpen,
     setCalculatorDialogOpen,
     currentFormData,
-    handleAddTreatment
+    handleAddTreatment,
+    roomMeasurements,
+    template,
+    selectedFabric,
+    selectedLining,
+    selectedHeading,
+    inventory
   } = useRoomCardLogic(room, projectId, clientId, onCreateTreatment);
 
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
@@ -110,6 +116,12 @@ export const RoomCard = ({
         onCopyRoom={onCopyRoom}
         onDeleteRoom={onDeleteRoom}
         onChangeRoomType={onChangeRoomType}
+        measurements={roomMeasurements}
+        template={template}
+        selectedFabric={selectedFabric}
+        selectedLining={selectedLining}
+        selectedHeading={selectedHeading}
+        inventory={inventory}
       />
 
       <CardContent className="p-6">
