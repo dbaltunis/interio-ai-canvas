@@ -280,8 +280,12 @@ export const EnhancedMeasurementWorksheet = ({
                 </SelectTrigger>
                 <SelectContent>
                   {WINDOW_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                    <SelectItem 
+                      key={type.value} 
+                      value={type.value}
+                      disabled={type.value !== "standard"}
+                    >
+                      {type.value === "standard" ? type.label : `${type.label} - Coming Soon`}
                     </SelectItem>
                   ))}
                 </SelectContent>
