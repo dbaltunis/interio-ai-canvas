@@ -11,12 +11,19 @@ interface FabricSelectionSectionProps {
   selectedFabric: string;
   onFabricChange: (fabricId: string) => void;
   readOnly?: boolean;
+  fabricCalculation?: {
+    linearMeters: number;
+    totalCost: number;
+    pricePerMeter: number;
+    widthsRequired: number;
+  };
 }
 
 export const FabricSelectionSection = ({
   selectedFabric,
   onFabricChange,
-  readOnly = false
+  readOnly = false,
+  fabricCalculation
 }: FabricSelectionSectionProps) => {
   const { units } = useMeasurementUnits();
   const { data: inventory = [], isLoading } = useEnhancedInventory();
@@ -124,6 +131,38 @@ export const FabricSelectionSection = ({
                 </div>
               </div>
             </div>
+
+            {fabricCalculation && (
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="text-sm font-medium text-primary mb-2">Calculated Fabric Requirements</div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="font-medium">Linear Metres Required</div>
+                    <div className="text-muted-foreground">
+                      {fabricCalculation.linearMeters.toFixed(2)}m
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Widths Required</div>
+                    <div className="text-muted-foreground">
+                      {fabricCalculation.widthsRequired}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Price per Metre</div>
+                    <div className="text-muted-foreground">
+                      {formatPrice(fabricCalculation.pricePerMeter)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Total Fabric Cost</div>
+                    <div className="text-lg font-semibold text-primary">
+                      {formatPrice(fabricCalculation.totalCost)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {selectedFabricItem.collection_name && (
               <div className="flex items-center gap-2">
