@@ -27,6 +27,20 @@ export const CostCalculationSummary = ({
 
   const width = parseFloat(measurements.rail_width || measurements.measurement_a || '0');
   const height = parseFloat(measurements.drop || measurements.measurement_b || '0');
+  const pooling = parseFloat(measurements.pooling_amount || '0');
+  
+  // Manufacturing allowances from template
+  const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+  const sideHems = template.side_hems || 0;
+  const totalSideHems = sideHems * 2 * curtainCount;
+  const returnLeft = template.return_left || 0;
+  const returnRight = template.return_right || 0;
+  const seamHems = template.seam_hems || 0;
+  const requiredWidth = width * template.fullness_ratio;
+  const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+  const fabricWidthCm = selectedFabric?.fabric_width_cm || selectedFabric?.fabric_width || 137;
+  const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
+  const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -47,31 +61,10 @@ export const CostCalculationSummary = ({
     };
 
     const fabricWidthCm = selectedFabric?.fabric_width_cm || selectedFabric?.fabric_width || 137; // Default fabric width
-    const pooling = parseFloat(measurements.pooling_amount || '0');
     
     // Include all manufacturing allowances from template settings
     const headerHem = template.header_allowance || 8;
     const bottomHem = template.bottom_hem || 8;
-    const sideHems = template.side_hems || 0; // Manufacturing side hems (both sides)
-    const seamHems = template.seam_hems || 0; // Manufacturing seam allowances  
-    const returnLeft = template.return_left || 0; // Manufacturing return left
-    const returnRight = template.return_right || 0; // Manufacturing return right
-    
-    // Calculate required width with fullness multiplier
-    const requiredWidth = width * template.fullness_ratio;
-    
-    // Add side hems to width calculation (for curtain pairs, each curtain needs side hems)
-    const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
-    const totalSideHems = sideHems * 2 * curtainCount; // Both sides of each curtain
-    
-    // Calculate total width including returns and side hems
-    const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
-    
-    // Calculate how many fabric widths are needed (including all width allowances)
-    const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
-    
-    // Calculate seam allowances for joining fabric pieces (when multiple widths needed)
-    const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0; // Both sides of each seam
     
     // Include pooling and vertical allowances in the total drop calculation  
     const totalDrop = height + headerHem + bottomHem + pooling;
@@ -286,15 +279,27 @@ export const CostCalculationSummary = ({
                         <div className="text-xs space-y-2">
                           <div>
                             <strong>Fabric Required:</strong> {fabricUsage.linearMeters.toFixed(2)}m linear ({fabricUsage.squareMeters.toFixed(2)}m²)
-                            <div className="text-muted-foreground">
-                              • Required Width: {width}cm × Fullness: {template.fullness_ratio}x = {(width * template.fullness_ratio).toFixed(0)}cm
-                              <br />
-                              • Fabric Width: {fabricUsage.fabricWidth}cm ({fabricUsage.widthsRequired} width(s) needed)
-                              <br />
-                              • Drop: {height}cm + Hems & Allowances = {fabricUsage.totalDrop}cm
-                              <br />
-                              • Waste Factor: {template.waste_percent || 0}%
-                            </div>
+                             <div className="text-muted-foreground">
+                               • Required Width: {width}cm × Fullness: {template.fullness_ratio}x = {(width * template.fullness_ratio).toFixed(0)}cm
+                               <br />
+                               • Side Hems: {template.side_hems || 0}cm × 2 sides × {curtainCount} curtain(s) = {totalSideHems}cm (added to width)
+                               <br />
+                               • Returns: {template.return_left || 0}cm + {template.return_right || 0}cm = {(template.return_left || 0) + (template.return_right || 0)}cm (added to width)
+                               <br />
+                               • Total Width: {totalWidthWithAllowances}cm requiring {fabricUsage.widthsRequired} fabric width(s)
+                               <br />
+                               • Drop: {height}cm + Header: {template.header_allowance || 8}cm + Bottom: {template.bottom_hem || 8}cm{pooling > 0 ? ` + Pooling: ${pooling}cm` : ''} = {fabricUsage.totalDrop}cm
+                               {totalSeamAllowance > 0 && (
+                                 <>
+                                   <br />
+                                   • Seam Allowances: {template.seam_hems || 0}cm × 2 sides × {fabricUsage.widthsRequired - 1} seam(s) = {totalSeamAllowance}cm (added to drop)
+                                 </>
+                               )}
+                               <br />
+                               • Waste Factor: {template.waste_percent || 0}%
+                               <br />
+                               • <strong>✓ Manufacturing price includes ALL hems, seams & returns</strong>
+                             </div>
                           </div>
                           
                           {template.machine_price_per_metre && (
