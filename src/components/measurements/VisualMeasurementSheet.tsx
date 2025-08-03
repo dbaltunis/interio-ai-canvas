@@ -60,7 +60,7 @@ export const VisualMeasurementSheet = ({
 
   // Calculate fabric usage when measurements and fabric change
   const fabricCalculation = useMemo(() => {
-    if (!selectedFabric || !measurements.rail_width || !measurements.drop) {
+    if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
       return null;
     }
 
@@ -70,47 +70,49 @@ export const VisualMeasurementSheet = ({
     }
 
     try {
-      // Create form data object for fabric calculation
-      const formData = {
-        rail_width: measurements.rail_width,
-        drop: measurements.drop,
-        fullness: measurements.fullness || "2.0", // Default fullness
-        quantity: "1",
-        pooling_amount: measurements.pooling_amount || "0",
-        fabric_width: selectedFabricItem.fabric_width || "137",
-        pattern_repeat_vertical: selectedFabricItem.pattern_repeat_vertical || "0",
-        fabric_type: selectedFabricItem.fabric_composition || "plain",
-        price_per_meter: selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0,
-        header_hem: "8",
-        bottom_hem: "8",
-        side_hem: "4",
-        seam_hem: "1.5"
+      // Use the same calculation method as CostCalculationSummary for consistency
+      const width = parseFloat(measurements.rail_width);
+      const height = parseFloat(measurements.drop);
+      
+      const fabricWidthCm = selectedFabricItem.fabric_width || 137; // Default fabric width
+      const requiredWidth = width * selectedTemplate.fullness_ratio;
+      const totalDrop = height + (selectedTemplate.bottom_hem || 0) + (selectedTemplate.header_allowance || 0);
+      const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
+      
+      // Calculate how many fabric widths are needed
+      const widthsRequired = Math.ceil(requiredWidth / fabricWidthCm);
+      
+      // Calculate linear metres needed (drop + allowances) × number of widths
+      const linearMeters = (totalDrop / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
+      
+      // Get price per meter from various possible fields
+      const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0;
+      
+      console.log('VisualMeasurementSheet fabric calculation:', {
+        width,
+        height,
+        requiredWidth,
+        totalDrop,
+        widthsRequired,
+        linearMeters,
+        pricePerMeter,
+        fabricWidthCm,
+        fullnessRatio: selectedTemplate.fullness_ratio,
+        wastePercent: selectedTemplate.waste_percent
+      });
+
+      return {
+        linearMeters: linearMeters,
+        totalCost: linearMeters * pricePerMeter,
+        pricePerMeter: pricePerMeter,
+        widthsRequired: widthsRequired
       };
-
-      const treatmentTypesData = [{
-        type: "Curtains",
-        base_labor_rate: 25,
-        seam_labor_rate: 15
-      }];
-
-      console.log('Calculating fabric usage with:', formData);
-      const result = calculateFabricUsage(formData, treatmentTypesData);
-      console.log('Fabric calculation result:', result);
-
-      if (result) {
-        return {
-          linearMeters: result.meters,
-          totalCost: result.meters * formData.price_per_meter,
-          pricePerMeter: formData.price_per_meter,
-          widthsRequired: result.widthsRequired || 1
-        };
-      }
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
     }
 
     return null;
-  }, [selectedFabric, measurements.rail_width, measurements.drop, measurements.fullness, measurements.pooling_amount, inventory]);
+  }, [selectedFabric, measurements.rail_width, measurements.drop, selectedTemplate, inventory]);
   
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {
