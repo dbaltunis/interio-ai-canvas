@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { RectangleHorizontal, Trash2, Eye } from "lucide-react";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { WindowManagementDialog } from "./WindowManagementDialog";
+import { calculateFabricUsage } from "./treatment-pricing/fabric-calculation/fabricUsageCalculator";
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -161,12 +162,22 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      const railWidth = Number(measurements.rail_width || 0);
-                      const drop = Number(measurements.drop || 0);
-                      const squareFeet = (railWidth * drop) / 144;
-                      const manufacturingCost = squareFeet * 4;
-                      console.log(`Manufacturing calc: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft × £4 = £${manufacturingCost.toFixed(2)}`);
-                      return `£${manufacturingCost.toFixed(2)}`;
+                      
+                      // Use proper fabric calculation
+                      const formData = {
+                        rail_width: measurements.rail_width,
+                        drop: measurements.drop,
+                        heading_fullness: 2.5,
+                        fabric_width: 140, // Standard fabric width
+                        quantity: 1,
+                        fabric_type: 'plain'
+                      };
+                      
+                      const calculation = calculateFabricUsage(formData, []);
+                      const manufacturingCost = calculation.details?.laborCost || 0;
+                      
+                      console.log(`Manufacturing calculation for ${measurements.rail_width}" × ${measurements.drop}":`, manufacturingCost);
+                      return `£${Number(manufacturingCost).toFixed(2)}`;
                     })()}
                   </div>
 
@@ -176,14 +187,23 @@ export const SurfaceList = ({
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
                       const liningType = measurements.selected_lining || measurements.lining_type || 'None';
-                      const railWidth = Number(measurements.rail_width || 0);
-                      const drop = Number(measurements.drop || 0);
-                      const squareFeet = (railWidth * drop) / 144;
                       
                       if (liningType && liningType !== 'none' && liningType !== 'None') {
-                        const liningCost = squareFeet * 3;
-                        console.log(`Lining calc: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft × £3 = £${liningCost.toFixed(2)} for ${liningType}`);
-                        return `${liningType} - £${liningCost.toFixed(2)}`;
+                        // Use proper fabric calculation for lining
+                        const formData = {
+                          rail_width: measurements.rail_width,
+                          drop: measurements.drop,
+                          heading_fullness: 2.5,
+                          fabric_width: 140,
+                          quantity: 1,
+                          fabric_type: 'plain'
+                        };
+                        
+                        const calculation = calculateFabricUsage(formData, []);
+                        const liningCost = calculation.details?.liningCost || 0;
+                        
+                        console.log(`Lining calculation for ${liningType}:`, liningCost);
+                        return `${liningType} - £${Number(liningCost).toFixed(2)}`;
                       } else {
                         console.log(`No lining selected: ${liningType}`);
                         return liningType;
@@ -208,12 +228,22 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      const railWidth = Number(measurements.rail_width || 0);
-                      const drop = Number(measurements.drop || 0);
-                      const squareFeet = (railWidth * drop) / 144;
-                      const fabricTotal = squareFeet * 8;
-                      console.log(`Fabric calc: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft × £8 = £${fabricTotal.toFixed(2)}`);
-                      return `£${fabricTotal.toFixed(2)}`;
+                      
+                      // Use proper fabric calculation
+                      const formData = {
+                        rail_width: measurements.rail_width,
+                        drop: measurements.drop,
+                        heading_fullness: 2.5,
+                        fabric_width: 140,
+                        quantity: 1,
+                        fabric_type: 'plain'
+                      };
+                      
+                      const calculation = calculateFabricUsage(formData, []);
+                      const fabricTotal = calculation.details?.fabricCost || 0;
+                      
+                      console.log(`Fabric calculation:`, calculation);
+                      return `£${Number(fabricTotal).toFixed(2)}`;
                     })()}
                   </div>
 
@@ -222,18 +252,22 @@ export const SurfaceList = ({
                   <div className="text-right font-bold text-green-600 border-t pt-2">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      const railWidth = Number(measurements.rail_width || 0);
-                      const drop = Number(measurements.drop || 0);
-                      const squareFeet = (railWidth * drop) / 144;
                       
-                      const fabricTotal = squareFeet * 8;
-                      const liningType = measurements.selected_lining || measurements.lining_type;
-                      const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? squareFeet * 3 : 0;
-                      const manufacturingCost = squareFeet * 4;
+                      // Use proper fabric calculation for total
+                      const formData = {
+                        rail_width: measurements.rail_width,
+                        drop: measurements.drop,
+                        heading_fullness: 2.5,
+                        fabric_width: 140,
+                        quantity: 1,
+                        fabric_type: 'plain'
+                      };
                       
-                      const total = fabricTotal + liningCost + manufacturingCost;
-                      console.log(`TOTAL CALC for surface: Fabric £${fabricTotal.toFixed(2)} + Lining £${liningCost.toFixed(2)} + Manufacturing £${manufacturingCost.toFixed(2)} = £${total.toFixed(2)}`);
-                      return `£${total.toFixed(2)}`;
+                      const calculation = calculateFabricUsage(formData, []);
+                      const total = calculation.details?.totalCost || 0;
+                      
+                      console.log(`TOTAL CALC using proper fabric calculator:`, total);
+                      return `£${Number(total).toFixed(2)}`;
                     })()}
                   </div>
                 </div>
