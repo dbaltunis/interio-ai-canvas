@@ -73,7 +73,7 @@ export const SurfaceList = ({
           return (
             <div key={surface.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3">
                   <RectangleHorizontal className="h-5 w-5 text-brand-primary" />
                   
                   <div>
@@ -82,7 +82,10 @@ export const SurfaceList = ({
                       {hasMeasurements ? (
                         (() => {
                           const measurements = clientMeasurement.measurements as Record<string, any>;
-                          return `${measurements.measurement_a || surface.width}" × ${measurements.measurement_b || surface.height}"`;
+                          // Use rail_width/drop if available (from worksheet), otherwise use measurement_a/b
+                          const width = measurements.rail_width || measurements.measurement_a || surface.width;
+                          const height = measurements.drop || measurements.measurement_b || surface.height;
+                          return `${width}" × ${height}" (From worksheet)`;
                         })()
                       ) : (
                         `${surface.width}" × ${surface.height}" (Basic dimensions)`
@@ -133,10 +136,9 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Get dimensions from treatment measurements or fallback to surface dimensions
-                      const width = measurements.rail_width || surface.width;
-                      const drop = measurements.drop || surface.height;
-                      console.log(`Surface ${surface.name} dimensions: width=${width}, drop=${drop} (from measurements: rail_width=${measurements.rail_width}, drop=${measurements.drop})`);
+                      // Get dimensions from treatment measurements or fallback to surface dimensions  
+                      const width = measurements.rail_width || measurements.measurement_a || surface.width;
+                      const drop = measurements.drop || measurements.measurement_b || surface.height;
                       return `${width}" × ${drop}"`;
                     })()}
                   </div>
