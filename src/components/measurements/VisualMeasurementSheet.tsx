@@ -73,16 +73,19 @@ export const VisualMeasurementSheet = ({
       // Use the same calculation method as CostCalculationSummary for consistency
       const width = parseFloat(measurements.rail_width);
       const height = parseFloat(measurements.drop);
+      const pooling = parseFloat(measurements.pooling_amount || "0");
       
       const fabricWidthCm = selectedFabricItem.fabric_width || 137; // Default fabric width
       const requiredWidth = width * selectedTemplate.fullness_ratio;
-      const totalDrop = height + (selectedTemplate.bottom_hem || 0) + (selectedTemplate.header_allowance || 0);
+      
+      // Include pooling in the total drop calculation
+      const totalDrop = height + (selectedTemplate.bottom_hem || 0) + (selectedTemplate.header_allowance || 0) + pooling;
       const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
       
       // Calculate how many fabric widths are needed
       const widthsRequired = Math.ceil(requiredWidth / fabricWidthCm);
       
-      // Calculate linear metres needed (drop + allowances) × number of widths
+      // Calculate linear metres needed (drop + allowances + pooling) × number of widths
       const linearMeters = (totalDrop / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
       
       // Get price per meter from various possible fields
@@ -729,19 +732,43 @@ export const VisualMeasurementSheet = ({
                     </div>
 
                     {poolingOption === "below_floor" && (
-                      <div>
-                        <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
-                        <p className="text-xs text-gray-600 mb-1">How much fabric pools on the floor</p>
-                        <Input
-                          id="pooling_amount"
-                          type="number"
-                          step="0.25"
-                          value={poolingAmount}
-                          onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
-                          placeholder="2.00"
-                          readOnly={readOnly}
-                          className="font-semibold"
-                        />
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
+                          <p className="text-xs text-gray-600 mb-1">How much fabric pools on the floor</p>
+                          <Input
+                            id="pooling_amount"
+                            type="number"
+                            step="0.25"
+                            value={poolingAmount}
+                            onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
+                            placeholder="2.00"
+                            readOnly={readOnly}
+                            className="font-semibold"
+                          />
+                        </div>
+                        
+                        {/* Fabric Usage Impact Indicator */}
+                        {hasValue(poolingAmount) && selectedFabric && fabricCalculation && (
+                          <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
+                            <div className="font-medium text-amber-800 mb-1">
+                              ✓ Pooling included in fabric calculation
+                            </div>
+                            <div className="text-amber-700 space-y-1">
+                              <div>• Pooling amount: {displayValue(poolingAmount)} added to drop</div>
+                              <div>• Extra fabric: ~{((parseFloat(poolingAmount) / 100) * fabricCalculation.widthsRequired).toFixed(2)}m</div>
+                              <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}m (includes pooling)</div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {hasValue(poolingAmount) && !selectedFabric && (
+                          <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
+                            <div className="text-amber-700">
+                              💡 Select a fabric above to see how pooling affects fabric usage
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
