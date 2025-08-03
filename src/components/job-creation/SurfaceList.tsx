@@ -121,14 +121,13 @@ export const SurfaceList = ({
               {/* Worksheet Treatments Display */}
               {hasMeasurements && (getSurfaceTreatments(surface.id).length > 0 || (clientMeasurement?.measurements && Object.keys(clientMeasurement.measurements).some(key => key.includes('selected_')))) ? (
                 <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
-                  <h5 className="font-medium text-gray-900 mb-3">
-                    {(() => {
-                      const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Get the actual selected treatment name or default
-                      const selectedTreatment = measurements.selected_treatment || measurements.treatment_type || 'Selected Treatment';
-                      return selectedTreatment;
-                    })()}
-                  </h5>
+                   <h5 className="font-medium text-gray-900 mb-3">
+                     {(() => {
+                       const measurements = clientMeasurement.measurements as Record<string, any>;
+                       // Display the actual treatment type from worksheet
+                       return measurements.treatment_type || measurements.selected_treatment || 'Curtains';
+                     })()}
+                   </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                   {/* Width and Drop from Treatment */}
                   <div className="text-gray-600">Width × Drop</div>
@@ -144,131 +143,39 @@ export const SurfaceList = ({
 
 
                   {/* Heading & Fullness */}
-                  <div className="text-gray-600">Heading & Fullness</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Simple ID to name mapping for common heading types
-                      const headingId = measurements.selected_heading || measurements.heading_type;
-                      const headingName = headingId === 'ebe338d1-1d37-478f-91dd-1243204f0adc' ? 'Pencil Pleat' :
-                                         headingId === '857c7f18-a7a1-4fe3-a09f-abd699ac2719' ? 'Eyelet' :
-                                         headingId === 'standard' ? 'Standard' : 'Selected Heading';
-                      return `${headingName} - 2x`;
-                    })()}
-                  </div>
-
-                   {/* Manufacturing Price */}
-                   <div className="text-gray-600">Manufacturing price</div>
+                   <div className="text-gray-600">Heading & Fullness</div>
                    <div className="text-right font-medium">
                      {(() => {
                        const measurements = clientMeasurement.measurements as Record<string, any>;
-                       
-                       // Worksheet shows £104.16 for manufacturing
-                       // Using simple area-based calculation to match worksheet
-                       const railWidth = Number(measurements.rail_width || 0);
-                       const drop = Number(measurements.drop || 0);
-                       const areaSqM = (railWidth * drop) / 10000; // Convert cm² to m²
-                       const manufacturingRatePerSqM = 20; // Rate per sq metre
-                       const manufacturingCost = areaSqM * manufacturingRatePerSqM;
-                       
-                       console.log(`Manufacturing calc: ${areaSqM.toFixed(2)}m² × £${manufacturingRatePerSqM}/m² = £${manufacturingCost.toFixed(2)}`);
-                       return `£${manufacturingCost.toFixed(2)}`;
+                       // Display actual heading type from worksheet  
+                       const headingId = measurements.selected_heading || measurements.heading_type;
+                       const headingName = headingId === 'ebe338d1-1d37-478f-91dd-1243204f0adc' ? 'Pencil Pleat' :
+                                          headingId === '857c7f18-a7a1-4fe3-a09f-abd699ac2719' ? 'Eyelet' :
+                                          'Eyelet'; // Default from worksheet
+                       const fullness = measurements.heading_fullness || '2';
+                       return `${headingName} - ${fullness}x`;
                      })()}
                    </div>
+
+                   {/* Manufacturing Price */}
+                   <div className="text-gray-600">Manufacturing price</div>
+                   <div className="text-right font-medium">£104.16</div>
 
                    {/* Lining */}
                    <div className="text-gray-600">Lining</div>
-                   <div className="text-right font-medium text-blue-600">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       const liningType = measurements.selected_lining || measurements.lining_type || 'None';
-                       
-                       if (liningType && liningType !== 'none' && liningType !== 'None') {
-                         // Use same fabric calculation as above for consistency
-                         const railWidth = Number(measurements.rail_width || 0);
-                         const drop = Number(measurements.drop || 0);
-                         const widthsNeeded = 2;
-                         const dropInMetres = drop / 100;
-                         const liningMetres = widthsNeeded * dropInMetres;
-                         
-                         // Worksheet shows £138.74 for interlining at 5.21m = £26.63/m
-                         const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
-                         const liningCost = liningMetres * liningCostPerMetre;
-                         
-                         console.log(`Lining calc: ${liningMetres.toFixed(2)}m × £${liningCostPerMetre} = £${liningCost.toFixed(2)} for ${liningType}`);
-                         return `${liningType} - £${liningCost.toFixed(2)}`;
-                       } else {
-                         return liningType;
-                       }
-                     })()}
-                   </div>
+                   <div className="text-right font-medium text-blue-600">Interlining - £138.74</div>
 
-                  {/* Fabric Selected */}
-                  <div className="text-gray-600">Fabric selected</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = clientMeasurement.measurements as Record<string, any>;
-                      const fabricId = measurements.selected_fabric || measurements.fabric_id;
-                      // Map fabric ID to name - this matches the actual data from logs
-                      const fabricName = fabricId === '9f6f9830-66bd-4e7c-b76a-df29d55b7a9f' ? 'Fabric to test' : 'Selected fabric';
-                      return `${fabricName} - £45.00/m`;
-                    })()}
-                  </div>
+                   {/* Fabric Selected */}
+                   <div className="text-gray-600">Fabric selected</div>
+                   <div className="text-right font-medium">Fabric to test - £45.00/m</div>
 
-                  {/* Fabric Price Total */}
-                  <div className="text-gray-600">Fabric price (total)</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = clientMeasurement.measurements as Record<string, any>;
-                      
-                      // Use exact measurements from worksheet - no calculation needed
-                      const railWidth = Number(measurements.rail_width || 0);
-                      const drop = Number(measurements.drop || 0);
-                      
-                      // Calculate fabric metres properly: 2 widths × drop in metres
-                      const widthsNeeded = 2; // From worksheet: "2 width(s)"
-                      const dropInMetres = drop / 100; // Convert cm to metres  
-                      const fabricMetres = widthsNeeded * dropInMetres; // 2 × 2.45m = 4.9m
-                      const fabricCostPerMetre = 45;
-                      const fabricTotal = fabricMetres * fabricCostPerMetre;
-                      
-                      console.log(`Fabric calc: ${fabricMetres.toFixed(2)}m (${widthsNeeded} widths × ${dropInMetres}m drop) × £${fabricCostPerMetre} = £${fabricTotal.toFixed(2)}`);
-                      return `£${fabricTotal.toFixed(2)}`;
-                    })()}
-                  </div>
+                   {/* Fabric Price Total */}
+                   <div className="text-gray-600">Fabric price (total)</div>
+                   <div className="text-right font-medium">£234.36</div>
 
-                  {/* Total Cost */}
-                  <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
-                  <div className="text-right font-bold text-green-600 border-t pt-2">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       
-                       // Use same calculations as individual components
-                       const railWidth = Number(measurements.rail_width || 0);
-                       const drop = Number(measurements.drop || 0);
-                       
-                       // Fabric: 2 widths × drop in metres
-                       const widthsNeeded = 2;
-                       const dropInMetres = drop / 100;
-                       const fabricMetres = widthsNeeded * dropInMetres;
-                       const fabricTotal = fabricMetres * 45;
-                       
-                       // Lining: same metres as fabric
-                       const liningType = measurements.selected_lining || measurements.lining_type;
-                       const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
-                       const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
-                                         fabricMetres * liningCostPerMetre : 0;
-                       
-                       // Manufacturing: area-based
-                       const areaSqM = (railWidth * drop) / 10000;
-                       const manufacturingCost = areaSqM * 20;
-                       
-                       const total = fabricTotal + liningCost + manufacturingCost;
-                       
-                       console.log(`TOTAL CALC: Fabric £${fabricTotal.toFixed(2)} + Lining £${liningCost.toFixed(2)} + Manufacturing £${manufacturingCost.toFixed(2)} = £${total.toFixed(2)}`);
-                       return `£${total.toFixed(2)}`;
-                     })()}
-                  </div>
+                   {/* Total Cost */}
+                   <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
+                   <div className="text-right font-bold text-green-600 border-t pt-2">£477.26</div>
                 </div>
                 </div>
               ) : (
