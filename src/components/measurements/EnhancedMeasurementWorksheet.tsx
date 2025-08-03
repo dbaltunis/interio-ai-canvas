@@ -26,6 +26,7 @@ interface EnhancedMeasurementWorksheetProps {
   clientId: string;
   projectId?: string;
   surfaceId?: string; // Add unique surface ID to isolate state
+  currentRoomId?: string; // Add current room ID to preselect
   existingMeasurement?: any;
   existingTreatments?: any[];
   onSave?: () => void;
@@ -45,7 +46,8 @@ const WINDOW_TYPES = [
 export const EnhancedMeasurementWorksheet = ({ 
   clientId, 
   projectId,
-  surfaceId, 
+  surfaceId,
+  currentRoomId, 
   existingMeasurement, 
   existingTreatments = [],
   onSave,
@@ -59,7 +61,7 @@ export const EnhancedMeasurementWorksheet = ({
     existingMeasurement?.measurement_type || "standard"
   );
   const [selectedRoom, setSelectedRoom] = useState(() => 
-    existingMeasurement?.room_id || "no_room"
+    existingMeasurement?.room_id || currentRoomId || "no_room"
   );
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
     existingMeasurement?.window_covering_id || "no_covering"
@@ -105,7 +107,7 @@ export const EnhancedMeasurementWorksheet = ({
   useEffect(() => {
     if (surfaceId) {
       setWindowType(existingMeasurement?.measurement_type || "standard");
-      setSelectedRoom(existingMeasurement?.room_id || "no_room");
+      setSelectedRoom(existingMeasurement?.room_id || currentRoomId || "no_room");
       setSelectedWindowCovering(existingMeasurement?.window_covering_id || "no_covering");
       setSelectedInventoryItem(null);
       setMeasurements(existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {});

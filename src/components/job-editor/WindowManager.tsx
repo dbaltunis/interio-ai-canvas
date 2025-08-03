@@ -143,6 +143,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
               clientId="" // We'll use project context instead
               projectId={projectId}
               surfaceId={selectedSurface.id} // Pass unique surface ID to isolate state
+              currentRoomId={activeRoomId} // Pass current room ID to preselect
               existingMeasurement={selectedSurface.measurements ? {
                 measurements: selectedSurface.measurements,
                 measurement_type: "standard",
