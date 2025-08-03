@@ -86,7 +86,13 @@ export const CostCalculationSummary = ({
     
     // Debug logging with proper manufacturing allowances
     console.log('Fabric calculation debug with proper hems and seams:', {
-      selectedFabric,
+      selectedFabric: selectedFabric ? {
+        id: selectedFabric.id,
+        name: selectedFabric.name,
+        selling_price: selectedFabric.selling_price,
+        unit_price: selectedFabric.unit_price,
+        price_per_meter: selectedFabric.price_per_meter
+      } : null,
       pricePerMeter,
       linearMeters,
       fabricWidthCm,
@@ -188,7 +194,24 @@ export const CostCalculationSummary = ({
   const liningCost = calculateLiningCost();
   const headingCost = calculateHeadingCost();
   const manufacturingCost = calculateManufacturingCost();
-  const totalCost = fabricUsage.cost + liningCost + headingCost + manufacturingCost;
+  
+  // If selectedFabric is missing but there's a fabric selection, try to find it in inventory
+  let effectiveFabricCost = fabricUsage.cost;
+  if (effectiveFabricCost === 0 && measurements.selectedFabric && inventory.length > 0) {
+    const fabricItem = inventory.find(item => item.id === measurements.selectedFabric);
+    if (fabricItem) {
+      const pricePerMeter = fabricItem.selling_price || fabricItem.unit_price || fabricItem.price_per_meter || 0;
+      effectiveFabricCost = fabricUsage.linearMeters * pricePerMeter;
+      console.log('Fallback fabric cost calculation:', {
+        fabricItem: fabricItem.name,
+        pricePerMeter,
+        linearMeters: fabricUsage.linearMeters,
+        effectiveFabricCost
+      });
+    }
+  }
+  
+  const totalCost = effectiveFabricCost + liningCost + headingCost + manufacturingCost;
 
   return (
     <Card>
@@ -218,7 +241,7 @@ export const CostCalculationSummary = ({
               </div>
             </div>
             <div className="text-right">
-              <div className="font-semibold text-lg">{formatPrice(fabricUsage.cost)}</div>
+              <div className="font-semibold text-lg">{formatPrice(effectiveFabricCost)}</div>
             </div>
           </div>
 
