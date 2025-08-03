@@ -135,7 +135,7 @@ export const EnhancedMeasurementWorksheet = ({
       );
       setCalculatedCost(0);
     }
-  }, [surfaceId, existingMeasurement, existingTreatments]);
+  }, [surfaceId]); // Only reset when surfaceId changes, not when measurement data changes
 
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
