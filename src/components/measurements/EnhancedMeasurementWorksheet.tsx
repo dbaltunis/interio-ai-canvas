@@ -287,7 +287,6 @@ export const EnhancedMeasurementWorksheet = ({
             onFabricChange={setSelectedFabric}
             selectedHeading={selectedHeading}
             onHeadingChange={setSelectedHeading}
-            inventory={inventoryItems}
           />
 
           {/* Treatment-Specific Sections - Only show when treatment is selected */}

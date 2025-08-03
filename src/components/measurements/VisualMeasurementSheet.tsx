@@ -5,8 +5,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useMemo } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
+import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -18,7 +21,6 @@ interface VisualMeasurementSheetProps {
   onFabricChange?: (fabricId: string) => void;
   selectedHeading?: string;
   onHeadingChange?: (headingId: string) => void;
-  inventory?: any[];
 }
 
 export const VisualMeasurementSheet = ({ 
@@ -30,8 +32,7 @@ export const VisualMeasurementSheet = ({
   selectedFabric,
   onFabricChange,
   selectedHeading,
-  onHeadingChange,
-  inventory = []
+  onHeadingChange
 }: VisualMeasurementSheetProps) => {
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
@@ -55,6 +56,61 @@ export const VisualMeasurementSheet = ({
 
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { units } = useMeasurementUnits();
+  const { data: inventory = [] } = useEnhancedInventory();
+
+  // Calculate fabric usage when measurements and fabric change
+  const fabricCalculation = useMemo(() => {
+    if (!selectedFabric || !measurements.rail_width || !measurements.drop) {
+      return null;
+    }
+
+    const selectedFabricItem = inventory.find(item => item.id === selectedFabric);
+    if (!selectedFabricItem) {
+      return null;
+    }
+
+    try {
+      // Create form data object for fabric calculation
+      const formData = {
+        rail_width: measurements.rail_width,
+        drop: measurements.drop,
+        fullness: measurements.fullness || "2.0", // Default fullness
+        quantity: "1",
+        pooling_amount: measurements.pooling_amount || "0",
+        fabric_width: selectedFabricItem.fabric_width || "137",
+        pattern_repeat_vertical: selectedFabricItem.pattern_repeat_vertical || "0",
+        fabric_type: selectedFabricItem.fabric_composition || "plain",
+        price_per_meter: selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0,
+        header_hem: "8",
+        bottom_hem: "8",
+        side_hem: "4",
+        seam_hem: "1.5"
+      };
+
+      const treatmentTypesData = [{
+        type: "Curtains",
+        base_labor_rate: 25,
+        seam_labor_rate: 15
+      }];
+
+      console.log('Calculating fabric usage with:', formData);
+      const result = calculateFabricUsage(formData, treatmentTypesData);
+      console.log('Fabric calculation result:', result);
+
+      if (result) {
+        return {
+          linearMeters: result.meters,
+          totalCost: result.meters * formData.price_per_meter,
+          pricePerMeter: formData.price_per_meter,
+          widthsRequired: result.widthsRequired || 1
+        };
+      }
+    } catch (error) {
+      console.error('Error calculating fabric usage:', error);
+    }
+
+    return null;
+  }, [selectedFabric, measurements.rail_width, measurements.drop, measurements.fullness, measurements.pooling_amount, inventory]);
   
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {
@@ -711,6 +767,7 @@ export const VisualMeasurementSheet = ({
                     selectedFabric={selectedFabric || ""}
                     onFabricChange={onFabricChange || (() => {})}
                     readOnly={readOnly}
+                    fabricCalculation={fabricCalculation}
                   />
                 </div>
 
