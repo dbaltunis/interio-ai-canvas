@@ -87,15 +87,6 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateSurface = async (roomId: string, surfaceType: string) => {
     try {
-      if (!clientId) {
-        toast({
-          title: "Error",
-          description: "Client ID is required to create measurements",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
       const windowNumber = roomSurfaces.filter(s => s.surface_type === 'window').length + 1;
       
@@ -109,9 +100,9 @@ export const useJobHandlers = (project: any) => {
         height: 48
       });
 
-      // Create corresponding client measurement
+      // Create corresponding client measurement (client_id can be null)
       await createClientMeasurement.mutateAsync({
-        client_id: clientId,
+        client_id: clientId || null,
         project_id: projectId,
         measurement_type: 'standard_window',
         measurements: {
