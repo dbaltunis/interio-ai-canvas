@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calculator, Palette, Layers, Wrench, DollarSign, Info } from "lucide-react";
+import { Calculator, Waves, Shield, Scissors, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
@@ -314,7 +314,7 @@ export const CostCalculationSummary = ({
           {/* Fabric - Always show even if no fabric selected */}
           <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <Palette className="h-5 w-5 text-blue-600" />
+              <Waves className="h-5 w-5 text-blue-600" />
               <div>
                 <div className="font-medium">Fabric</div>
                 <div className="text-sm text-gray-600">
@@ -343,7 +343,7 @@ export const CostCalculationSummary = ({
           {selectedLining && selectedLining !== 'none' && (
             <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <Layers className="h-5 w-5 text-purple-600" />
+                <Shield className="h-5 w-5 text-purple-600" />
                 <div>
                   <div className="font-medium">Lining</div>
                   <div className="text-sm text-gray-600">{selectedLining}</div>
@@ -371,7 +371,7 @@ export const CostCalculationSummary = ({
           {manufacturingCost > 0 && (
             <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <Wrench className="h-5 w-5 text-orange-600" />
+                <Scissors className="h-5 w-5 text-orange-600" />
                 <div>
                   <div className="font-medium">Manufacturing</div>
                   <div className="text-sm text-gray-600">{template.manufacturing_type}</div>
