@@ -113,9 +113,26 @@ export const EnhancedMeasurementWorksheet = ({
       setNotes(existingMeasurement?.notes || "");
       setMeasuredBy(existingMeasurement?.measured_by || "");
       setPhotos(existingMeasurement?.photos || []);
-      setSelectedHeading(existingTreatments?.[0]?.selected_heading || "standard");
-      setSelectedLining(existingTreatments?.[0]?.selected_lining || "none");
-      setSelectedFabric(existingTreatments?.[0]?.fabric_code || "");
+      
+      // Load fabric selections from saved data
+      setSelectedHeading(
+        existingTreatments?.[0]?.treatment_details?.selected_heading || 
+        existingTreatments?.[0]?.selected_heading || 
+        existingMeasurement?.measurements?.selected_heading || 
+        "standard"
+      );
+      setSelectedLining(
+        existingTreatments?.[0]?.treatment_details?.selected_lining || 
+        existingTreatments?.[0]?.selected_lining || 
+        existingMeasurement?.measurements?.selected_lining || 
+        "none"
+      );
+      setSelectedFabric(
+        existingTreatments?.[0]?.treatment_details?.selected_fabric || 
+        existingTreatments?.[0]?.fabric_details?.fabric_id || 
+        existingMeasurement?.measurements?.selected_fabric || 
+        ""
+      );
       setCalculatedCost(0);
     }
   }, [surfaceId, existingMeasurement, existingTreatments]);
@@ -182,7 +199,13 @@ export const EnhancedMeasurementWorksheet = ({
       room_id: selectedRoom === "no_room" ? null : selectedRoom,
       window_covering_id: selectedWindowCovering === "no_covering" ? null : selectedWindowCovering,
       measurement_type: windowType,
-      measurements,
+      measurements: {
+        ...measurements,
+        // Include fabric selection in measurements
+        selected_fabric: selectedFabric,
+        selected_heading: selectedHeading,
+        selected_lining: selectedLining
+      },
       photos,
       notes,
       measured_by: measuredBy,
@@ -213,13 +236,24 @@ export const EnhancedMeasurementWorksheet = ({
         ...measurements,
         ...treatmentData.measurements
       },
-      fabric_details: treatmentData.fabric_details || {},
+      fabric_details: {
+        fabric_id: selectedFabric,
+        selected_heading: selectedHeading,
+        selected_lining: selectedLining,
+        fabric_item: selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : null,
+        ...treatmentData.fabric_details
+      },
       material_cost: calculatedCost * 0.6, // Example cost breakdown
       labor_cost: calculatedCost * 0.4,
       total_price: calculatedCost,
       unit_price: calculatedCost,
       quantity: 1,
-      treatment_details: treatmentData,
+      treatment_details: {
+        ...treatmentData,
+        selected_fabric: selectedFabric,
+        selected_heading: selectedHeading, 
+        selected_lining: selectedLining
+      },
       notes: treatmentData.notes || "",
       status: "planned"
     };
