@@ -49,13 +49,17 @@ export const FabricSelectionSection = ({
           <Label>Choose Fabric</Label>
           <Select 
             value={selectedFabric} 
-            onValueChange={onFabricChange}
+            onValueChange={(value) => {
+              console.log('Fabric selected:', value);
+              console.log('Fabric data:', fabricItems.find(f => f.id === value));
+              onFabricChange(value);
+            }}
             disabled={readOnly}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-background">
               <SelectValue placeholder="Select fabric from inventory" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background z-50">
               {isLoading ? (
                 <SelectItem value="loading" disabled>
                   Loading fabrics...
