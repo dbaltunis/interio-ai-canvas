@@ -269,12 +269,6 @@ export const EnhancedMeasurementWorksheet = ({
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Ruler className="h-5 w-5" />
-            Measurement & Treatment Worksheet
-          </CardTitle>
-        </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Setup */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
