@@ -163,26 +163,16 @@ export const SurfaceList = ({
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
                       
-                      // Use proper fabric calculation
-                      const formData = {
-                        rail_width: measurements.rail_width,
-                        drop: measurements.drop,
-                        heading_fullness: 2.5,
-                        fabric_width: 140,
-                        quantity: 1,
-                        fabric_type: 'plain',
-                        fabric_cost_per_yard: 45 // £45 per metre as shown in your screenshots
-                      };
-                      
-                      const calculation = calculateFabricUsage(formData, []);
-                      
-                      // Calculate manufacturing cost - typically £20-30 per hour of work
+                      // Manufacturing cost calculation based on complexity
                       const railWidth = Number(measurements.rail_width || 0);
                       const drop = Number(measurements.drop || 0);
-                      const squareMetres = (railWidth * 2.54 * drop * 2.54) / 10000; // Convert inches to metres
-                      const manufacturingCost = squareMetres * 15; // £15 per sq metre for manufacturing
                       
-                      console.log(`Manufacturing calc: ${railWidth}" × ${drop}" = ${squareMetres.toFixed(2)} sq m × £15 = £${manufacturingCost.toFixed(2)}`);
+                      // More realistic manufacturing calculation: base rate + complexity
+                      const baseManufacturingCost = 50; // Base cost for curtain making
+                      const complexityFactor = (railWidth * drop) / 10000; // Factor based on size
+                      const manufacturingCost = baseManufacturingCost + (complexityFactor * 20);
+                      
+                      console.log(`Manufacturing calc: Base £${baseManufacturingCost} + complexity(${railWidth}" × ${drop}") = £${manufacturingCost.toFixed(2)}`);
                       return `£${manufacturingCost.toFixed(2)}`;
                     })()}
                   </div>
@@ -195,7 +185,7 @@ export const SurfaceList = ({
                       const liningType = measurements.selected_lining || measurements.lining_type || 'None';
                       
                       if (liningType && liningType !== 'none' && liningType !== 'None') {
-                        // Calculate lining cost based on fabric usage
+                        // Calculate lining based on fabric usage
                         const formData = {
                           rail_width: measurements.rail_width,
                           drop: measurements.drop,
@@ -206,7 +196,8 @@ export const SurfaceList = ({
                         };
                         
                         const calculation = calculateFabricUsage(formData, []);
-                        const liningCostPerMetre = liningType === 'Interlining' ? 18 : 15; // Different costs for different lining types
+                        // Lining typically uses same amount as fabric but different cost
+                        const liningCostPerMetre = liningType === 'Interlining' ? 25 : 15; // Adjusted rates
                         const liningCost = calculation.meters * liningCostPerMetre;
                         
                         console.log(`Lining calc: ${calculation.meters.toFixed(2)}m × £${liningCostPerMetre} = £${liningCost.toFixed(2)} for ${liningType}`);
@@ -236,7 +227,7 @@ export const SurfaceList = ({
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
                       
-                      // Use proper fabric calculation with pricing
+                      // Use proper fabric calculation with realistic pricing
                       const formData = {
                         rail_width: measurements.rail_width,
                         drop: measurements.drop,
@@ -247,10 +238,11 @@ export const SurfaceList = ({
                       };
                       
                       const calculation = calculateFabricUsage(formData, []);
-                      const fabricCostPerMetre = 45; // £45 per metre as shown in screenshots
+                      const fabricCostPerMetre = 45; // £45 per metre
                       const fabricTotal = calculation.meters * fabricCostPerMetre;
                       
                       console.log(`Fabric calc: ${calculation.meters.toFixed(2)}m × £${fabricCostPerMetre} = £${fabricTotal.toFixed(2)}`);
+                      console.log(`Fabric details:`, calculation);
                       return `£${fabricTotal.toFixed(2)}`;
                     })()}
                   </div>
@@ -273,23 +265,25 @@ export const SurfaceList = ({
                       
                       const calculation = calculateFabricUsage(formData, []);
                       
-                      // Calculate individual costs
+                      // Calculate individual costs with more realistic rates
                       const fabricCostPerMetre = 45;
                       const fabricTotal = calculation.meters * fabricCostPerMetre;
                       
                       const liningType = measurements.selected_lining || measurements.lining_type;
-                      const liningCostPerMetre = liningType === 'Interlining' ? 18 : 15;
+                      const liningCostPerMetre = liningType === 'Interlining' ? 25 : 15;
                       const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
                                         calculation.meters * liningCostPerMetre : 0;
                       
                       const railWidth = Number(measurements.rail_width || 0);
                       const drop = Number(measurements.drop || 0);
-                      const squareMetres = (railWidth * 2.54 * drop * 2.54) / 10000;
-                      const manufacturingCost = squareMetres * 15;
+                      const baseManufacturingCost = 50;
+                      const complexityFactor = (railWidth * drop) / 10000;
+                      const manufacturingCost = baseManufacturingCost + (complexityFactor * 20);
                       
                       const total = fabricTotal + liningCost + manufacturingCost;
                       
                       console.log(`TOTAL CALC: Fabric £${fabricTotal.toFixed(2)} + Lining £${liningCost.toFixed(2)} + Manufacturing £${manufacturingCost.toFixed(2)} = £${total.toFixed(2)}`);
+                      console.log(`Fabric usage details:`, calculation);
                       return `£${total.toFixed(2)}`;
                     })()}
                   </div>
