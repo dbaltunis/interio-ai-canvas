@@ -170,6 +170,63 @@ export const CostCalculationSummary = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Worksheet Total Information */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+              <Calculator className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-blue-800">Worksheet Total</h3>
+              <p className="text-xs text-blue-600">Summary of fabric requirements and costs</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/70 rounded-md p-3 border border-blue-200">
+              <div className="text-sm font-medium text-gray-700 mb-1">Total Fabric Required</div>
+              <div className="text-2xl font-bold text-blue-700">
+                {fabricUsage.linearMeters.toFixed(2)}m
+              </div>
+              <div className="text-xs text-gray-500">
+                {fabricUsage.widthsRequired} width(s) × {(fabricUsage.totalDrop/100).toFixed(2)}m drop
+              </div>
+            </div>
+            
+            <div className="bg-white/70 rounded-md p-3 border border-blue-200">
+              <div className="text-sm font-medium text-gray-700 mb-1">Total Project Cost</div>
+              <div className="text-2xl font-bold text-blue-700">
+                {formatPrice(totalCost)}
+              </div>
+              <div className="text-xs text-gray-500">
+                Fabric: {formatPrice(fabricUsage.cost)} + Other: {formatPrice(totalCost - fabricUsage.cost)}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick breakdown */}
+          <div className="mt-3 pt-3 border-t border-blue-200/50">
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <span className="text-gray-600">Fabric Cost:</span>
+                <div className="font-semibold">{formatPrice(fabricUsage.cost)}</div>
+              </div>
+              {liningCost > 0 && (
+                <div>
+                  <span className="text-gray-600">Lining:</span>
+                  <div className="font-semibold">{formatPrice(liningCost)}</div>
+                </div>
+              )}
+              {manufacturingCost > 0 && (
+                <div>
+                  <span className="text-gray-600">Manufacturing:</span>
+                  <div className="font-semibold">{formatPrice(manufacturingCost)}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-3">
           {/* Fabric Cost */}
           <div className="flex items-center justify-between">
