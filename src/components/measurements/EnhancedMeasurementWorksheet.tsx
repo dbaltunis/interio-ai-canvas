@@ -19,7 +19,7 @@ import { TreatmentVisualizer } from "./TreatmentVisualizer";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
-import { DynamicTreatmentVisualizer } from "./dynamic-options/DynamicTreatmentVisualizer";
+
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 
 interface EnhancedMeasurementWorksheetProps {
@@ -368,14 +368,6 @@ export const EnhancedMeasurementWorksheet = ({
           {/* Treatment-Specific Sections - Only show when treatment is selected */}
           {selectedCovering && (
             <div className="space-y-6">
-              {/* Dynamic Treatment Visualizer */}
-              <DynamicTreatmentVisualizer
-                template={selectedCovering}
-                measurements={measurements}
-                selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
-                selectedLining={selectedLining}
-              />
-
 
               {/* Lining Options - Full width if available */}
               {selectedCovering.lining_types && selectedCovering.lining_types.length > 0 && (
