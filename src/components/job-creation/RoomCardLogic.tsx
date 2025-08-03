@@ -39,19 +39,17 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     if (treatmentTotal > 0) {
       total = treatmentTotal;
     } else if (clientMeasurements) {
-      // Get measurements for surfaces in this room - only count each measurement once
+      // Get measurements for this specific room using room_id
       const roomMeasurements = clientMeasurements.filter(measurement => 
         measurement.project_id === projectId && 
-        roomSurfaces.some(surface => 
-          measurement.notes?.includes(surface.name)
-        )
+        measurement.room_id === room.id
       );
       
-      // Calculate total from worksheet measurements - avoid counting the same measurement multiple times
-      const uniqueMeasurements = new Map();
+      console.log(`Room ${room.name} measurements:`, roomMeasurements);
+      
+      // Calculate total from worksheet measurements
       roomMeasurements.forEach(measurement => {
-        if (!uniqueMeasurements.has(measurement.id) && measurement.measurements) {
-          uniqueMeasurements.set(measurement.id, measurement);
+        if (measurement.measurements) {
           const measurements = measurement.measurements as Record<string, any>;
           
           // Calculate totals from measurement components
@@ -59,12 +57,15 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
           const liningCost = Number(measurements.lining_cost || measurements.lining_price || 0);
           const manufacturingCost = Number(measurements.manufacturing_cost || measurements.manufacturing_price || 0);
           
+          console.log(`Measurement ${measurement.id} costs:`, { fabricCost, liningCost, manufacturingCost });
+          
           // Add worksheet total to room total
           total += fabricCost + liningCost + manufacturingCost;
         }
       });
     }
     
+    console.log(`Room ${room.name} total: ${total}`);
     return total;
   }, [roomTreatments, roomSurfaces, clientMeasurements, projectId, room.id]);
 
