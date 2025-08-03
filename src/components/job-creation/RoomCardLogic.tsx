@@ -56,6 +56,8 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
           const railWidth = Number(measurements.rail_width || 0);
           const drop = Number(measurements.drop || 0);
           
+          console.log(`Processing measurement ${measurement.id}: ${railWidth}" × ${drop}"`);
+          
           if (railWidth > 0 && drop > 0) {
             const squareFeet = (railWidth * drop) / 144;
             
@@ -67,7 +69,15 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
             
             const measurementTotal = fabricTotal + liningCost + manufacturingCost;
             total += measurementTotal;
-            console.log(`Added £${measurementTotal.toFixed(2)} from measurement ${measurement.id}, running total: £${total.toFixed(2)}`);
+            
+            console.log(`ROOM CALC: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft`);
+            console.log(`  Fabric: ${squareFeet.toFixed(2)} × £8 = £${fabricTotal.toFixed(2)}`);
+            console.log(`  Lining (${liningType}): ${liningCost > 0 ? `${squareFeet.toFixed(2)} × £3 = £${liningCost.toFixed(2)}` : '£0.00'}`);
+            console.log(`  Manufacturing: ${squareFeet.toFixed(2)} × £4 = £${manufacturingCost.toFixed(2)}`);
+            console.log(`  Window Total: £${measurementTotal.toFixed(2)}`);
+            console.log(`  Running Room Total: £${total.toFixed(2)}`);
+          } else {
+            console.log(`Skipping measurement ${measurement.id} - missing dimensions: rail_width=${railWidth}, drop=${drop}`);
           }
         }
       });

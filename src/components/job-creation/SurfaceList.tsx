@@ -161,11 +161,11 @@ export const SurfaceList = ({
                   <div className="text-right font-medium">
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Calculate basic manufacturing cost based on dimensions
                       const railWidth = Number(measurements.rail_width || 0);
                       const drop = Number(measurements.drop || 0);
-                      const squareFeet = (railWidth * drop) / 144; // Convert to sq ft
-                      const manufacturingCost = squareFeet * 4; // £4 per sq ft estimate
+                      const squareFeet = (railWidth * drop) / 144;
+                      const manufacturingCost = squareFeet * 4;
+                      console.log(`Manufacturing calc: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft × £4 = £${manufacturingCost.toFixed(2)}`);
                       return `£${manufacturingCost.toFixed(2)}`;
                     })()}
                   </div>
@@ -176,14 +176,18 @@ export const SurfaceList = ({
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
                       const liningType = measurements.selected_lining || measurements.lining_type || 'None';
+                      const railWidth = Number(measurements.rail_width || 0);
+                      const drop = Number(measurements.drop || 0);
+                      const squareFeet = (railWidth * drop) / 144;
+                      
                       if (liningType && liningType !== 'none' && liningType !== 'None') {
-                        const railWidth = Number(measurements.rail_width || 0);
-                        const drop = Number(measurements.drop || 0);
-                        const squareFeet = (railWidth * drop) / 144;
-                        const liningCost = squareFeet * 3; // £3 per sq ft for lining
+                        const liningCost = squareFeet * 3;
+                        console.log(`Lining calc: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft × £3 = £${liningCost.toFixed(2)} for ${liningType}`);
                         return `${liningType} - £${liningCost.toFixed(2)}`;
+                      } else {
+                        console.log(`No lining selected: ${liningType}`);
+                        return liningType;
                       }
-                      return liningType;
                     })()}
                   </div>
 
@@ -207,7 +211,8 @@ export const SurfaceList = ({
                       const railWidth = Number(measurements.rail_width || 0);
                       const drop = Number(measurements.drop || 0);
                       const squareFeet = (railWidth * drop) / 144;
-                      const fabricTotal = squareFeet * 8; // £8 per sq ft for fabric
+                      const fabricTotal = squareFeet * 8;
+                      console.log(`Fabric calc: ${railWidth}" × ${drop}" = ${squareFeet.toFixed(2)} sq ft × £8 = £${fabricTotal.toFixed(2)}`);
                       return `£${fabricTotal.toFixed(2)}`;
                     })()}
                   </div>
@@ -221,13 +226,13 @@ export const SurfaceList = ({
                       const drop = Number(measurements.drop || 0);
                       const squareFeet = (railWidth * drop) / 144;
                       
-                      // Calculate all components based on dimensions
-                      const fabricTotal = squareFeet * 8; // £8 per sq ft for fabric
+                      const fabricTotal = squareFeet * 8;
                       const liningType = measurements.selected_lining || measurements.lining_type;
                       const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? squareFeet * 3 : 0;
-                      const manufacturingCost = squareFeet * 4; // £4 per sq ft for manufacturing
+                      const manufacturingCost = squareFeet * 4;
                       
                       const total = fabricTotal + liningCost + manufacturingCost;
+                      console.log(`TOTAL CALC for surface: Fabric £${fabricTotal.toFixed(2)} + Lining £${liningCost.toFixed(2)} + Manufacturing £${manufacturingCost.toFixed(2)} = £${total.toFixed(2)}`);
                       return `£${total.toFixed(2)}`;
                     })()}
                   </div>
