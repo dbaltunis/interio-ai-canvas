@@ -218,22 +218,30 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   };
 
   const handleJobEdit = (jobId: string) => {
+    console.log("handleJobEdit called with jobId:", jobId);
     const quote = quotes.find(q => q.id === jobId);
+    console.log("Found quote for edit:", quote);
     if (quote) {
+      console.log("Calling onJobSelect with quote for edit");
       onJobSelect(quote);
     }
   };
 
   const handleJobView = (jobId: string) => {
+    console.log("handleJobView called with jobId:", jobId);
     const quote = quotes.find(q => q.id === jobId);
+    console.log("Found quote for view:", quote);
     if (quote) {
+      console.log("Calling onJobSelect with quote for view");
       onJobSelect(quote);
     }
   };
 
   const handleNotesClick = (quote: any) => {
+    console.log("handleNotesClick called with quote:", quote);
     setSelectedQuoteForNotes(quote);
     setNotesDialogOpen(true);
+    console.log("Notes dialog should be opening");
   };
 
   if (isLoading) {
@@ -328,29 +336,52 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
+                          <DropdownMenuItem onClick={(e) => {
+                            console.log("View Job clicked, preventing default and stopping propagation");
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleJobView(quote.id);
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Job
                           </DropdownMenuItem>
                           
-                          <DropdownMenuItem onClick={() => handleJobEdit(quote.id)}>
+                          <DropdownMenuItem onClick={(e) => {
+                            console.log("Edit Job clicked, preventing default and stopping propagation");
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleJobEdit(quote.id);
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             Edit Job
                           </DropdownMenuItem>
                           
-                          <DropdownMenuItem onClick={() => handleJobCopy(quote.id)}>
+                          <DropdownMenuItem onClick={(e) => {
+                            console.log("Copy Job clicked, preventing default and stopping propagation");
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleJobCopy(quote.id);
+                          }}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Job
                           </DropdownMenuItem>
 
-                          <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
+                          <DropdownMenuItem onClick={(e) => {
+                            console.log("Add Note clicked, preventing default and stopping propagation");
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleNotesClick(quote);
+                          }}>
                             <StickyNote className="mr-2 h-4 w-4" />
                             Add Note
                           </DropdownMenuItem>
                           
                           <DropdownMenuSeparator />
                           
-                          <DropdownMenuItem onClick={() => {
+                          <DropdownMenuItem onClick={(e) => {
+                            console.log("Delete Job clicked, preventing default and stopping propagation");
+                            e.preventDefault();
+                            e.stopPropagation();
                             setQuoteToDelete(quote);
                             setDeleteDialogOpen(true);
                           }}>
