@@ -284,7 +284,7 @@ export const CostCalculationSummary = ({
       <CardContent className="space-y-4">
         {/* Products & Services List */}
         <div className="space-y-3">
-          {/* Fabric */}
+          {/* Fabric - Always show even if no fabric selected */}
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
               <Shirt className="h-5 w-5 text-gray-600" />
@@ -293,7 +293,11 @@ export const CostCalculationSummary = ({
                 <div className="text-sm text-gray-600">
                   {fabricUsage.linearMeters.toFixed(2)}m linear ({fabricUsage.widthsRequired} width(s) × {(fabricUsage.totalDrop/100).toFixed(2)}m drop)
                 </div>
-                {(selectedFabric || fabricName !== "No fabric selected") && (
+                {effectiveFabricCost === 0 ? (
+                  <div className="text-xs text-red-500">
+                    No fabric selected - Click to select fabric from inventory
+                  </div>
+                ) : (
                   <div className="text-xs text-gray-500">
                     {fabricName} • {formatPrice(fabricPriceDisplay)}/m
                   </div>
@@ -302,6 +306,9 @@ export const CostCalculationSummary = ({
             </div>
             <div className="text-right">
               <div className="font-semibold text-lg">{formatPrice(effectiveFabricCost)}</div>
+              {effectiveFabricCost === 0 && (
+                <div className="text-xs text-red-500">£0.00</div>
+              )}
             </div>
           </div>
 
