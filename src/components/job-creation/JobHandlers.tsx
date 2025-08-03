@@ -31,27 +31,15 @@ export const useJobHandlers = (project: any) => {
     
     try {
       const roomNumber = (rooms?.length || 0) + 1;
-      const newRoom = await createRoom.mutateAsync({
+      await createRoom.mutateAsync({
         project_id: projectId,
         name: `Room ${roomNumber}`,
         room_type: "living_room"
       });
 
-      // Create a default window for the new room
-      if (newRoom) {
-        await createSurface.mutateAsync({
-          room_id: newRoom.id,
-          project_id: projectId,
-          name: "Window 1",
-          surface_type: 'window',
-          width: 60,
-          height: 48
-        });
-      }
-
       toast({
         title: "Success",
-        description: `Room created with default window`,
+        description: `Room created successfully`,
       });
     } catch (error) {
       console.error("Failed to create room:", error);
