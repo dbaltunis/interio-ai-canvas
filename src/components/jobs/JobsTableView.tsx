@@ -219,22 +219,26 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   const handleJobEdit = (jobId: string) => {
     console.log("handleJobEdit called with jobId:", jobId);
-    const quote = quotes.find(q => q.id === jobId);
-    console.log("Found quote for edit:", quote);
-    if (quote) {
-      console.log("Calling onJobSelect with quote for edit");
-      onJobSelect(quote);
-    }
+    // Temporarily disabled to test for freezing
+    // const quote = quotes.find(q => q.id === jobId);
+    // console.log("Found quote for edit:", quote);
+    // if (quote) {
+    //   console.log("Calling onJobSelect with quote for edit");
+    //   onJobSelect(quote);
+    // }
+    console.log("Edit action completed successfully");
   };
 
   const handleJobView = (jobId: string) => {
     console.log("handleJobView called with jobId:", jobId);
-    const quote = quotes.find(q => q.id === jobId);
-    console.log("Found quote for view:", quote);
-    if (quote) {
-      console.log("Calling onJobSelect with quote for view");
-      onJobSelect(quote);
-    }
+    // Temporarily disabled to test for freezing
+    // const quote = quotes.find(q => q.id === jobId);
+    // console.log("Found quote for view:", quote);
+    // if (quote) {
+    //   console.log("Calling onJobSelect with quote for view");
+    //   onJobSelect(quote);
+    // }
+    console.log("View action completed successfully");
   };
 
   const handleNotesClick = (quote: any) => {
@@ -282,7 +286,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                 <TableRow 
                   key={quote.id} 
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => onJobSelect(quote)}
+                  onClick={(e) => {
+                    console.log("Table row clicked, temporarily disabled");
+                    // Temporarily disabled: onJobSelect(quote);
+                  }}
                 >
                   <TableCell className="font-medium">
                     {quote.quote_number}
