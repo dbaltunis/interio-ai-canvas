@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, UserPlus, Shield, Mail, Settings, Edit, Plus, Trash2 } from "lucide-react";
+import { Users, UserPlus, Shield, Mail, Settings, Edit, Plus, Trash2, Clock, X } from "lucide-react";
 import { useState } from "react";
+import { InviteUserDialog } from "../InviteUserDialog";
+import { useUserInvitations, useDeleteInvitation } from "@/hooks/useUserInvitations";
 
 export const UserManagementTab = () => {
   const [users] = useState([
@@ -30,6 +32,10 @@ export const UserManagementTab = () => {
 
   const [editingStatus, setEditingStatus] = useState<any>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  
+  const { data: invitations } = useUserInvitations();
+  const deleteInvitation = useDeleteInvitation();
 
   const handleEditStatus = (status: any) => {
     setEditingStatus({ ...status });
@@ -93,9 +99,9 @@ export const UserManagementTab = () => {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-medium">Team Members</h4>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsInviteDialogOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add User
+                Invite User
               </Button>
             </div>
             
@@ -131,6 +137,55 @@ export const UserManagementTab = () => {
                 </div>
               ))}
             </div>
+
+            {/* Pending Invitations */}
+            {invitations && invitations.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Pending Invitations</h4>
+                  <Badge variant="secondary" className="text-xs">
+                    {invitations.filter(inv => inv.status === 'pending').length} pending
+                  </Badge>
+                </div>
+                
+                {invitations
+                  .filter(inv => inv.status === 'pending')
+                  .map((invitation) => (
+                    <div key={invitation.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">
+                            {invitation.invited_name || invitation.invited_email}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center">
+                            <Mail className="h-3 w-3 mr-1" />
+                            {invitation.invited_email}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs">
+                          {invitation.role}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Pending
+                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => deleteInvitation.mutate(invitation.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -343,6 +398,12 @@ export const UserManagementTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Invite User Dialog */}
+      <InviteUserDialog 
+        open={isInviteDialogOpen} 
+        onOpenChange={setIsInviteDialogOpen} 
+      />
     </div>
   );
 };

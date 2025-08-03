@@ -2322,6 +2322,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          invitation_token: string
+          invited_by_email: string | null
+          invited_by_name: string | null
+          invited_email: string
+          invited_name: string | null
+          permissions: Json | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          invited_by_email?: string | null
+          invited_by_name?: string | null
+          invited_email: string
+          invited_name?: string | null
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          invited_by_email?: string | null
+          invited_by_name?: string | null
+          invited_email?: string
+          invited_name?: string | null
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_messages: {
         Row: {
           created_at: string | null
