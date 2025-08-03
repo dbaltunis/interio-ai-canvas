@@ -153,6 +153,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
                 measured_at: new Date().toISOString()
               } : undefined}
               onSave={handleMeasurementSave}
+              onClose={() => setShowMeasurementDialog(false)}
             />
           )}
         </DialogContent>

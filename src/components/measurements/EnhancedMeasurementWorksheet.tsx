@@ -31,6 +31,7 @@ interface EnhancedMeasurementWorksheetProps {
   existingMeasurement?: any;
   existingTreatments?: any[];
   onSave?: () => void;
+  onClose?: () => void;
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
 }
@@ -56,6 +57,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   existingMeasurement, 
   existingTreatments = [],
   onSave,
+  onClose,
   onSaveTreatment,
   readOnly = false
 }, ref) => {
@@ -492,11 +494,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               
               <div className="flex gap-3">
                 <Button 
-                  onClick={() => {
-                    handleSaveMeasurements();
+                  onClick={async () => {
+                    await handleSaveMeasurements();
                     if (selectedCovering && selectedFabric) {
                       handleSaveTreatmentConfig();
                     }
+                    onClose?.();
                   }}
                   disabled={createMeasurement.isPending || updateMeasurement.isPending}
                   className="flex items-center gap-2"

@@ -135,6 +135,7 @@ export const WindowManagementDialog = ({
               projectId={projectId}
               surfaceId={surface?.id} // Pass unique surface ID to isolate state
               surfaceData={surface} // Pass surface data to extract room_id
+              onClose={onClose}
               existingMeasurement={existingMeasurement}
               existingTreatments={existingTreatments}
               onSave={() => console.log("Measurements saved")}
