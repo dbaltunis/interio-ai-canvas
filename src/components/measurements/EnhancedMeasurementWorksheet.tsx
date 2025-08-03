@@ -463,7 +463,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               <CostCalculationSummary
                 template={selectedCovering}
                 measurements={measurements}
-                selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : undefined}
+                selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : 
+                              inventoryItems.find(item => item.id === measurements.selected_fabric)}
                 selectedHeading={selectedHeading}
                 selectedLining={selectedLining}
                 inventory={inventoryItems}
