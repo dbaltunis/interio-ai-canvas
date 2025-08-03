@@ -123,13 +123,6 @@ export const WindowManagementDialog = ({
               <Ruler className="h-5 w-5" />
               Enhanced Window Management: {surface?.name}
             </DialogTitle>
-            <div className="text-sm text-muted-foreground">
-              {existingMeasurement?.measurements ? (
-                `${existingMeasurement.measurements.measurement_a || surface?.width}" × ${existingMeasurement.measurements.measurement_b || surface?.height}" • Room: ${surface?.room_name}`
-              ) : (
-                `${surface?.width}" × ${surface?.height}" (Basic dimensions) • Room: ${surface?.room_name}`
-              )}
-            </div>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
