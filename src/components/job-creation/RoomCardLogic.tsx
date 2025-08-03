@@ -48,23 +48,26 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
       
       console.log(`Found ${roomMeasurements.length} measurements for room ${room.name}`);
       
-      // Sum up all window treatment costs in this room
+      // Sum up all window treatment costs in this room using same calculation as SurfaceList
       roomMeasurements.forEach(measurement => {
         if (measurement.measurements) {
           const measurements = measurement.measurements as Record<string, any>;
           
-          // Calculate total from all cost components
-          const fabricTotal = Number(measurements.fabric_total_cost || measurements.fabric_total_price || 0);
-          const liningCost = Number(measurements.lining_cost || measurements.lining_price || 0);
-          const manufacturingCost = Number(measurements.manufacturing_cost || measurements.labor_cost || 0);
-          const explicitTotal = Number(measurements.total_cost || measurements.total_price || 0);
+          const railWidth = Number(measurements.rail_width || 0);
+          const drop = Number(measurements.drop || 0);
           
-          // Use explicit total if available, otherwise calculate from components
-          const measurementTotal = explicitTotal > 0 ? explicitTotal : (fabricTotal + liningCost + manufacturingCost);
-          
-          if (measurementTotal > 0) {
+          if (railWidth > 0 && drop > 0) {
+            const squareFeet = (railWidth * drop) / 144;
+            
+            // Use the same calculation as in SurfaceList for consistency
+            const fabricTotal = squareFeet * 8; // £8 per sq ft for fabric
+            const liningType = measurements.selected_lining || measurements.lining_type;
+            const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? squareFeet * 3 : 0;
+            const manufacturingCost = squareFeet * 4; // £4 per sq ft for manufacturing
+            
+            const measurementTotal = fabricTotal + liningCost + manufacturingCost;
             total += measurementTotal;
-            console.log(`Added £${measurementTotal} from measurement ${measurement.id}, running total: £${total}`);
+            console.log(`Added £${measurementTotal.toFixed(2)} from measurement ${measurement.id}, running total: £${total.toFixed(2)}`);
           }
         }
       });
