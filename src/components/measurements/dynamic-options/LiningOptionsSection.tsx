@@ -1,6 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
@@ -27,77 +26,79 @@ export const LiningOptionsSection = ({
     }).format(price);
   };
 
+  const getLiningBenefits = (liningType: string) => {
+    switch(liningType) {
+      case 'blackout':
+        return ['Complete light blockage', 'Enhanced privacy', 'Thermal insulation'];
+      case 'thermal':
+        return ['Energy efficiency', 'Temperature regulation', 'Noise reduction'];
+      case 'standard':
+        return ['Protects main fabric', 'Improved draping', 'Professional finish'];
+      default:
+        return [];
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Lining Options</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <RadioGroup 
+    <div className="space-y-2">
+      <div>
+        <Label className="text-xs font-medium mb-1 block text-gray-700">Lining Options</Label>
+        <Select 
           value={selectedLining} 
           onValueChange={onLiningChange}
           disabled={readOnly}
-          className="space-y-3"
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="none" id="no-lining" />
-            <Label htmlFor="no-lining" className="flex-1 cursor-pointer">
-              <div className="flex items-center justify-between">
-                <span>No Lining</span>
-                <Badge variant="outline">Standard</Badge>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Choose lining type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">
+              <div className="flex items-center justify-between w-full">
+                <span className="text-sm">No Lining</span>
+                <span className="text-xs text-muted-foreground ml-2">Standard</span>
               </div>
-            </Label>
-          </div>
-          
-          {template.lining_types.map((lining, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <RadioGroupItem value={lining.type} id={`lining-${index}`} />
-              <Label htmlFor={`lining-${index}`} className="flex-1 cursor-pointer">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{lining.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                    <Badge variant="secondary">{formatPrice(lining.price_per_metre)}/m</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Labor: {formatPrice(lining.labour_per_curtain)}/curtain
-                  </div>
+            </SelectItem>
+            {template.lining_types?.map((lining, index) => (
+              <SelectItem key={index} value={lining.type}>
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-sm">{lining.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {formatPrice(lining.price_per_metre)}/m
+                  </span>
                 </div>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
+      {/* Compact lining info */}
+      <div className="grid grid-cols-2 gap-1 p-2 bg-gray-50 rounded text-xs">
+        {selectedLining !== 'none' && template.lining_types?.find(l => l.type === selectedLining) && (
+          <>
+            <div>
+              <div className="font-medium text-gray-600 text-xs">Material Cost</div>
+              <div className="text-gray-800 text-xs">
+                {formatPrice(template.lining_types.find(l => l.type === selectedLining)?.price_per_metre || 0)}/m
+              </div>
+            </div>
+            <div>
+              <div className="font-medium text-gray-600 text-xs">Labor Cost</div>
+              <div className="text-gray-800 text-xs">
+                {formatPrice(template.lining_types.find(l => l.type === selectedLining)?.labour_per_curtain || 0)}/curtain
+              </div>
+            </div>
+          </>
+        )}
         {selectedLining !== 'none' && (
-          <div className="p-3 bg-muted rounded-lg">
-            <div className="text-sm">
-              <div className="font-medium mb-2">Selected Lining Benefits</div>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                {selectedLining === 'blackout' && (
-                  <>
-                    <li>• Complete light blockage</li>
-                    <li>• Enhanced privacy</li>
-                    <li>• Thermal insulation</li>
-                  </>
-                )}
-                {selectedLining === 'thermal' && (
-                  <>
-                    <li>• Energy efficiency</li>
-                    <li>• Temperature regulation</li>
-                    <li>• Noise reduction</li>
-                  </>
-                )}
-                {selectedLining === 'standard' && (
-                  <>
-                    <li>• Protects main fabric</li>
-                    <li>• Improved draping</li>
-                    <li>• Professional finish</li>
-                  </>
-                )}
-              </ul>
+          <div className="col-span-2">
+            <div className="font-medium text-gray-600 text-xs mb-1">Benefits</div>
+            <div className="text-gray-800 text-xs">
+              {getLiningBenefits(selectedLining).join(' • ')}
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
