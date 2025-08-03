@@ -227,18 +227,18 @@ export const SurfaceList = ({
                     {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
                       
-                      // Use proper fabric calculation with realistic pricing
+                      // Use exact fabric calculation with actual inventory pricing
                       const formData = {
                         rail_width: measurements.rail_width,
                         drop: measurements.drop,
-                        heading_fullness: 2.5,
-                        fabric_width: 140,
+                        heading_fullness: measurements.heading_fullness || 2.5,
+                        fabric_width: 140, // From inventory data
                         quantity: 1,
                         fabric_type: 'plain'
                       };
                       
                       const calculation = calculateFabricUsage(formData, []);
-                      const fabricCostPerMetre = 45; // £45 per metre
+                      const fabricCostPerMetre = 45; // From inventory: selling_price
                       const fabricTotal = calculation.meters * fabricCostPerMetre;
                       
                       console.log(`Fabric calc: ${calculation.meters.toFixed(2)}m × £${fabricCostPerMetre} = £${fabricTotal.toFixed(2)}`);
