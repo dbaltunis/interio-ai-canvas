@@ -104,7 +104,12 @@ export const SurfaceList = ({
               {/* Worksheet Treatments Display */}
               {hasMeasurements ? (
                 <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">
-                  <h5 className="font-medium text-gray-900 mb-3">Worksheet Details</h5>
+                  <h5 className="font-medium text-gray-900 mb-3">
+                    {(() => {
+                      const measurements = clientMeasurement.measurements as Record<string, any>;
+                      return measurements.selected_treatment || 'curtain testing 1';
+                    })()}
+                  </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                   {/* Width and Drop from Treatment */}
                   <div className="text-gray-600">Width × Drop</div>
@@ -118,15 +123,6 @@ export const SurfaceList = ({
                     })()}
                   </div>
 
-                  {/* Treatment Type from Settings */}
-                  <div className="text-gray-600">Treatment selected</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Try to get treatment name from window_covering_id or selected_treatment
-                      return measurements.selected_treatment || 'curtain testing 1'; // Default to the template name from logs
-                    })()}
-                  </div>
 
                   {/* Heading & Fullness */}
                   <div className="text-gray-600">Heading & Fullness</div>
