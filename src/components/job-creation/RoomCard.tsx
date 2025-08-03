@@ -56,7 +56,7 @@ export const RoomCard = ({
     setCalculatorDialogOpen,
     currentFormData,
     handleAddTreatment
-  } = useRoomCardLogic(room, projectId, onCreateTreatment);
+  } = useRoomCardLogic(room, projectId, clientId, onCreateTreatment);
 
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
