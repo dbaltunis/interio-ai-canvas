@@ -115,14 +115,6 @@ export const RoomCard = ({
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Room Type Badge */}
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary" className="capitalize">
-              {room.room_type?.replace('_', ' ') || 'Living Room'}
-            </Badge>
-            <div className="text-sm text-muted-foreground">
-              {roomSurfaces.length} worksheet{roomSurfaces.length !== 1 ? 's' : ''} • {roomTreatments.length} treatment{roomTreatments.length !== 1 ? 's' : ''}
-            </div>
-          </div>
 
           {/* Surfaces List */}
           {roomSurfaces.length > 0 ? (
