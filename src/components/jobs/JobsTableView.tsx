@@ -336,67 +336,37 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   </TableCell>
                   <TableCell>
                     <div onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
-                          <DropdownMenuItem onClick={(e) => {
-                            console.log("View Job clicked, preventing default and stopping propagation");
+                      {/* Temporarily replace dropdown with simple buttons for testing */}
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            console.log("View button clicked");
                             e.preventDefault();
                             e.stopPropagation();
                             handleJobView(quote.id);
-                          }}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Job
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem onClick={(e) => {
-                            console.log("Edit Job clicked, preventing default and stopping propagation");
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleJobEdit(quote.id);
-                          }}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Edit Job
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem onClick={(e) => {
-                            console.log("Copy Job clicked, preventing default and stopping propagation");
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleJobCopy(quote.id);
-                          }}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copy Job
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem onClick={(e) => {
-                            console.log("Add Note clicked, preventing default and stopping propagation");
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleNotesClick(quote);
-                          }}>
-                            <StickyNote className="mr-2 h-4 w-4" />
-                            Add Note
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          <DropdownMenuItem onClick={(e) => {
-                            console.log("Delete Job clicked, preventing default and stopping propagation");
+                          }}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            console.log("Delete button clicked");
                             e.preventDefault();
                             e.stopPropagation();
                             setQuoteToDelete(quote);
                             setDeleteDialogOpen(true);
-                          }}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Job
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
