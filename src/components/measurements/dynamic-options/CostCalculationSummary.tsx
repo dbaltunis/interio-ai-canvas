@@ -49,7 +49,7 @@ interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
   selectedFabric?: any;
-  selectedLining?: string;
+  selectedLining?: string | { name: string; cost_per_meter: number };
   selectedHeading?: string;
   inventory: any[];
 }
@@ -385,7 +385,7 @@ export const CostCalculationSummary = ({
                 <FabricSwatchIcon className="h-5 w-5 text-purple-600" />
                 <div>
                   <div className="font-medium">Lining</div>
-                  <div className="text-sm text-gray-600">{selectedLining}</div>
+                  <div className="text-sm text-gray-600">{typeof selectedLining === 'object' ? selectedLining.name : selectedLining}</div>
                 </div>
               </div>
               <div className="font-semibold text-lg">{formatPrice(liningCost)}</div>
