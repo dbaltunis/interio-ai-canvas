@@ -236,8 +236,17 @@ export const CostCalculationSummary = ({
           item.sku === fabricId
         );
         if (fabricItem) {
-          console.log('Found fabric item:', fabricItem.name);
+          console.log('Found fabric item:', {
+            searchId: fabricId,
+            foundItem: {
+              id: fabricItem.id,
+              name: fabricItem.name,
+              selling_price: fabricItem.selling_price
+            }
+          });
           break;
+        } else {
+          console.log('Fabric not found for ID:', fabricId, 'in inventory:', inventory.map(i => ({id: i.id, name: i.name})));
         }
       }
     }
