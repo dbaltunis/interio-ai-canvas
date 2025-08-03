@@ -218,34 +218,22 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   };
 
   const handleJobEdit = (jobId: string) => {
-    console.log("handleJobEdit called with jobId:", jobId);
-    // Temporarily disabled to test for freezing
-    // const quote = quotes.find(q => q.id === jobId);
-    // console.log("Found quote for edit:", quote);
-    // if (quote) {
-    //   console.log("Calling onJobSelect with quote for edit");
-    //   onJobSelect(quote);
-    // }
-    console.log("Edit action completed successfully");
+    const quote = quotes.find(q => q.id === jobId);
+    if (quote) {
+      onJobSelect(quote);
+    }
   };
 
   const handleJobView = (jobId: string) => {
-    console.log("handleJobView called with jobId:", jobId);
-    // Temporarily disabled to test for freezing
-    // const quote = quotes.find(q => q.id === jobId);
-    // console.log("Found quote for view:", quote);
-    // if (quote) {
-    //   console.log("Calling onJobSelect with quote for view");
-    //   onJobSelect(quote);
-    // }
-    console.log("View action completed successfully");
+    const quote = quotes.find(q => q.id === jobId);
+    if (quote) {
+      onJobSelect(quote);
+    }
   };
 
   const handleNotesClick = (quote: any) => {
-    console.log("handleNotesClick called with quote:", quote);
     setSelectedQuoteForNotes(quote);
     setNotesDialogOpen(true);
-    console.log("Notes dialog should be opening");
   };
 
   if (isLoading) {
@@ -286,10 +274,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                 <TableRow 
                   key={quote.id} 
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={(e) => {
-                    console.log("Table row clicked, temporarily disabled");
-                    // Temporarily disabled: onJobSelect(quote);
-                  }}
+                  onClick={() => onJobSelect(quote)}
                 >
                   <TableCell className="font-medium">
                     {quote.quote_number}
@@ -336,37 +321,44 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   </TableCell>
                   <TableCell>
                     <div onClick={(e) => e.stopPropagation()}>
-                      {/* Temporarily replace dropdown with simple buttons for testing */}
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 w-6 p-0"
-                          onClick={(e) => {
-                            console.log("View button clicked");
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleJobView(quote.id);
-                          }}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 w-6 p-0"
-                          onClick={(e) => {
-                            console.log("Delete button clicked");
-                            e.preventDefault();
-                            e.stopPropagation();
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
+                          <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Job
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleJobEdit(quote.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Edit Job
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleJobCopy(quote.id)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Job
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
+                            <StickyNote className="mr-2 h-4 w-4" />
+                            Add Note
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => {
                             setQuoteToDelete(quote);
                             setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+                          }}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Job
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
