@@ -867,6 +867,7 @@ export const VisualMeasurementSheet = ({
                     onFabricChange={onFabricChange || (() => {})}
                     readOnly={readOnly}
                     fabricCalculation={fabricCalculation}
+                    onMeasurementChange={onMeasurementChange}
                   />
                 </div>
 

@@ -12,6 +12,7 @@ interface FabricSelectionSectionProps {
   selectedFabric: string;
   onFabricChange: (fabricId: string) => void;
   readOnly?: boolean;
+  onMeasurementChange?: (field: string, value: string) => void;
   fabricCalculation?: {
     linearMeters: number;
     totalCost: number;
@@ -42,7 +43,8 @@ export const FabricSelectionSection = ({
   selectedFabric,
   onFabricChange,
   readOnly = false,
-  fabricCalculation
+  fabricCalculation,
+  onMeasurementChange
 }: FabricSelectionSectionProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const { units } = useMeasurementUnits();
@@ -74,6 +76,10 @@ export const FabricSelectionSection = ({
             console.log('Fabric selected:', value);
             console.log('Fabric data:', fabricItems.find(f => f.id === value));
             onFabricChange(value);
+            // Also update measurements to ensure fabric selection persists
+            if (onMeasurementChange) {
+              onMeasurementChange('selected_fabric', value);
+            }
           }}
           disabled={readOnly}
         >
