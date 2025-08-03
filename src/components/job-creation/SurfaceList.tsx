@@ -159,23 +159,89 @@ export const SurfaceList = ({
 
                    {/* Manufacturing Price */}
                    <div className="text-gray-600">Manufacturing price</div>
-                   <div className="text-right font-medium">£104.16</div>
+                   <div className="text-right font-medium">
+                     {(() => {
+                       const measurements = clientMeasurement.measurements as Record<string, any>;
+                       const railWidth = Number(measurements.rail_width || 0);
+                       const drop = Number(measurements.drop || 0);
+                       const areaSqM = (railWidth * drop) / 10000; // Convert cm² to m²
+                       const manufacturingCost = areaSqM * 20; // Rate per sq metre to match worksheet
+                       return `£${manufacturingCost.toFixed(2)}`;
+                     })()}
+                   </div>
 
                    {/* Lining */}
                    <div className="text-gray-600">Lining</div>
-                   <div className="text-right font-medium text-blue-600">Interlining - £138.74</div>
+                   <div className="text-right font-medium text-blue-600">
+                     {(() => {
+                       const measurements = clientMeasurement.measurements as Record<string, any>;
+                       const liningType = measurements.selected_lining || measurements.lining_type || 'None';
+                       
+                       if (liningType && liningType !== 'none' && liningType !== 'None') {
+                         const railWidth = Number(measurements.rail_width || 0);
+                         const drop = Number(measurements.drop || 0);
+                         // Calculate linear metres: 2 widths × drop in metres
+                         const fabricMetres = 2 * (drop / 100);
+                         const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
+                         const liningCost = fabricMetres * liningCostPerMetre;
+                         return `${liningType} - £${liningCost.toFixed(2)}`;
+                       } else {
+                         return liningType;
+                       }
+                     })()}
+                   </div>
 
                    {/* Fabric Selected */}
                    <div className="text-gray-600">Fabric selected</div>
-                   <div className="text-right font-medium">Fabric to test - £45.00/m</div>
+                   <div className="text-right font-medium">
+                     {(() => {
+                       const measurements = clientMeasurement.measurements as Record<string, any>;
+                       const fabricId = measurements.selected_fabric || measurements.fabric_id;
+                       const fabricName = fabricId === '9f6f9830-66bd-4e7c-b76a-df29d55b7a9f' ? 'Fabric to test' : 'Selected fabric';
+                       return `${fabricName} - £45.00/m`;
+                     })()}
+                   </div>
 
                    {/* Fabric Price Total */}
                    <div className="text-gray-600">Fabric price (total)</div>
-                   <div className="text-right font-medium">£234.36</div>
+                   <div className="text-right font-medium">
+                     {(() => {
+                       const measurements = clientMeasurement.measurements as Record<string, any>;
+                       const railWidth = Number(measurements.rail_width || 0);
+                       const drop = Number(measurements.drop || 0);
+                       // Calculate linear metres: 2 widths × drop in metres  
+                       const fabricMetres = 2 * (drop / 100);
+                       const fabricTotal = fabricMetres * 45;
+                       return `£${fabricTotal.toFixed(2)}`;
+                     })()}
+                   </div>
 
                    {/* Total Cost */}
                    <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
-                   <div className="text-right font-bold text-green-600 border-t pt-2">£477.26</div>
+                   <div className="text-right font-bold text-green-600 border-t pt-2">
+                     {(() => {
+                       const measurements = clientMeasurement.measurements as Record<string, any>;
+                       const railWidth = Number(measurements.rail_width || 0);
+                       const drop = Number(measurements.drop || 0);
+                       
+                       // Fabric: 2 widths × drop in metres
+                       const fabricMetres = 2 * (drop / 100);
+                       const fabricTotal = fabricMetres * 45;
+                       
+                       // Lining
+                       const liningType = measurements.selected_lining || measurements.lining_type;
+                       const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
+                       const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
+                                         fabricMetres * liningCostPerMetre : 0;
+                       
+                       // Manufacturing
+                       const areaSqM = (railWidth * drop) / 10000;
+                       const manufacturingCost = areaSqM * 20;
+                       
+                       const total = fabricTotal + liningCost + manufacturingCost;
+                       return `£${total.toFixed(2)}`;
+                     })()}
+                   </div>
                 </div>
                 </div>
               ) : (

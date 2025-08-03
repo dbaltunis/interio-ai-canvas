@@ -72,9 +72,19 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
             
             const calculation = calculateFabricUsage(formData, []);
             
-            // Use exact worksheet values instead of calculating
-            // Each window with worksheet data costs £477.26 total
-            const measurementTotal = 477.26;
+            // Calculate using same logic as SurfaceList
+            const fabricMetres = 2 * (drop / 100); // 2 widths × drop in metres
+            const fabricTotal = fabricMetres * 45;
+            
+            const liningType = measurements.selected_lining || measurements.lining_type;
+            const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
+            const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
+                              fabricMetres * liningCostPerMetre : 0;
+            
+            const areaSqM = (railWidth * drop) / 10000;
+            const manufacturingCost = areaSqM * 20;
+            
+            const measurementTotal = fabricTotal + liningCost + manufacturingCost;
             total += measurementTotal;
             
             console.log(`ROOM CALC using exact worksheet total:`);
