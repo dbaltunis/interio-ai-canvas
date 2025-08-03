@@ -25,6 +25,7 @@ import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary
 interface EnhancedMeasurementWorksheetProps {
   clientId: string;
   projectId?: string;
+  surfaceId?: string; // Add unique surface ID to isolate state
   existingMeasurement?: any;
   existingTreatments?: any[];
   onSave?: () => void;
@@ -43,16 +44,26 @@ const WINDOW_TYPES = [
 
 export const EnhancedMeasurementWorksheet = ({ 
   clientId, 
-  projectId, 
+  projectId,
+  surfaceId, 
   existingMeasurement, 
   existingTreatments = [],
   onSave,
   onSaveTreatment,
   readOnly = false
 }: EnhancedMeasurementWorksheetProps) => {
-  const [windowType, setWindowType] = useState(existingMeasurement?.measurement_type || "standard");
-  const [selectedRoom, setSelectedRoom] = useState(existingMeasurement?.room_id || "no_room");
-  const [selectedWindowCovering, setSelectedWindowCovering] = useState(existingMeasurement?.window_covering_id || "no_covering");
+  // Create state keys that include surfaceId to isolate state per window
+  const stateKey = surfaceId || 'default';
+  
+  const [windowType, setWindowType] = useState(() => 
+    existingMeasurement?.measurement_type || "standard"
+  );
+  const [selectedRoom, setSelectedRoom] = useState(() => 
+    existingMeasurement?.room_id || "no_room"
+  );
+  const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
+    existingMeasurement?.window_covering_id || "no_covering"
+  );
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => 
     existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
@@ -60,16 +71,28 @@ export const EnhancedMeasurementWorksheet = ({
   const [treatmentData, setTreatmentData] = useState<any>(() => 
     existingTreatments?.[0] ? { ...existingTreatments[0] } : {}
   );
-  const [notes, setNotes] = useState(existingMeasurement?.notes || "");
-  const [measuredBy, setMeasuredBy] = useState(existingMeasurement?.measured_by || "");
-  const [photos, setPhotos] = useState<string[]>(existingMeasurement?.photos || []);
+  const [notes, setNotes] = useState(() => 
+    existingMeasurement?.notes || ""
+  );
+  const [measuredBy, setMeasuredBy] = useState(() => 
+    existingMeasurement?.measured_by || ""
+  );
+  const [photos, setPhotos] = useState<string[]>(() => 
+    existingMeasurement?.photos || []
+  );
   const [activeTab, setActiveTab] = useState("measurements");
   const [calculatedCost, setCalculatedCost] = useState(0);
   
-  // Dynamic options state
-  const [selectedHeading, setSelectedHeading] = useState("standard");
-  const [selectedLining, setSelectedLining] = useState("none");
-  const [selectedFabric, setSelectedFabric] = useState("");
+  // Dynamic options state - isolated per window
+  const [selectedHeading, setSelectedHeading] = useState(() => 
+    existingTreatments?.[0]?.selected_heading || "standard"
+  );
+  const [selectedLining, setSelectedLining] = useState(() => 
+    existingTreatments?.[0]?.selected_lining || "none"
+  );
+  const [selectedFabric, setSelectedFabric] = useState(() => 
+    existingTreatments?.[0]?.fabric_code || ""
+  );
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -77,6 +100,25 @@ export const EnhancedMeasurementWorksheet = ({
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
+
+  // Reset state when surface changes to ensure each window has independent state
+  useEffect(() => {
+    if (surfaceId) {
+      setWindowType(existingMeasurement?.measurement_type || "standard");
+      setSelectedRoom(existingMeasurement?.room_id || "no_room");
+      setSelectedWindowCovering(existingMeasurement?.window_covering_id || "no_covering");
+      setSelectedInventoryItem(null);
+      setMeasurements(existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {});
+      setTreatmentData(existingTreatments?.[0] ? { ...existingTreatments[0] } : {});
+      setNotes(existingMeasurement?.notes || "");
+      setMeasuredBy(existingMeasurement?.measured_by || "");
+      setPhotos(existingMeasurement?.photos || []);
+      setSelectedHeading(existingTreatments?.[0]?.selected_heading || "standard");
+      setSelectedLining(existingTreatments?.[0]?.selected_lining || "none");
+      setSelectedFabric(existingTreatments?.[0]?.fabric_code || "");
+      setCalculatedCost(0);
+    }
+  }, [surfaceId, existingMeasurement, existingTreatments]);
 
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);

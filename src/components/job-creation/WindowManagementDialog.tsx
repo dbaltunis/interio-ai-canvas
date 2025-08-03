@@ -116,6 +116,7 @@ export const WindowManagementDialog = ({
             <EnhancedMeasurementWorksheet
               clientId={clientId}
               projectId={projectId}
+              surfaceId={surface?.id} // Pass unique surface ID to isolate state
               existingMeasurement={existingMeasurement}
               existingTreatments={existingTreatments}
               onSave={() => console.log("Measurements saved")}
