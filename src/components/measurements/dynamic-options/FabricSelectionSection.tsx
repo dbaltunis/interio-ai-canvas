@@ -44,153 +44,144 @@ export const FabricSelectionSection = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shirt className="h-5 w-5" />
-          Fabric Selection
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label>Choose Fabric</Label>
-          <Select 
-            value={selectedFabric} 
-            onValueChange={(value) => {
-              console.log('Fabric selected:', value);
-              console.log('Fabric data:', fabricItems.find(f => f.id === value));
-              onFabricChange(value);
-            }}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-background">
-              <SelectValue placeholder="Select fabric from inventory" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              {isLoading ? (
-                <SelectItem value="loading" disabled>
-                  Loading fabrics...
-                </SelectItem>
-              ) : fabricItems.length > 0 ? (
-                fabricItems.map((fabric) => (
-                <SelectItem key={fabric.id} value={fabric.id}>
-                  <div className="flex flex-col gap-1 w-full">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{fabric.name}</span>
-                      <Badge variant="outline">
-                        {formatPrice(fabric.price_per_meter || fabric.unit_price || 0)}/m
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {fabric.fabric_width && `Width: ${fabric.fabric_width}cm`}
-                      {fabric.fabric_composition && ` • ${fabric.fabric_composition}`}
-                      {fabric.color && ` • ${fabric.color}`}
-                    </div>
+    <div className="space-y-2">
+      {/* Compact Fabric Selection */}
+      <div>
+        <Label className="text-xs font-medium">Choose Fabric</Label>
+        <Select 
+          value={selectedFabric} 
+          onValueChange={(value) => {
+            console.log('Fabric selected:', value);
+            console.log('Fabric data:', fabricItems.find(f => f.id === value));
+            onFabricChange(value);
+          }}
+          disabled={readOnly}
+        >
+          <SelectTrigger className="bg-background h-8 text-sm">
+            <SelectValue placeholder="Select fabric from inventory" />
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            {isLoading ? (
+              <SelectItem value="loading" disabled>
+                Loading fabrics...
+              </SelectItem>
+            ) : fabricItems.length > 0 ? (
+              fabricItems.map((fabric) => (
+              <SelectItem key={fabric.id} value={fabric.id}>
+                <div className="flex flex-col gap-1 w-full">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">{fabric.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {formatPrice(fabric.price_per_meter || fabric.unit_price || 0)}/m
+                    </Badge>
                   </div>
-                </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-fabrics" disabled>
-                  No fabrics in inventory - Add fabrics in Settings
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+                  <div className="text-xs text-muted-foreground">
+                    {fabric.fabric_width && `${fabric.fabric_width}cm wide`}
+                    {fabric.fabric_composition && ` • ${fabric.fabric_composition}`}
+                  </div>
+                </div>
+              </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no-fabrics" disabled>
+                No fabrics in inventory - Add fabrics in Settings
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedFabricItem && (
+        <div className="space-y-2">
+          {/* Compact Fabric Info */}
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="text-center p-1 bg-muted/50 rounded">
+              <div className="font-medium">{selectedFabricItem.fabric_width || 137}cm</div>
+              <div className="text-muted-foreground">Width</div>
+            </div>
+            <div className="text-center p-1 bg-muted/50 rounded">
+              <div className="font-medium">
+                {selectedFabricItem.pattern_repeat_vertical ? 
+                  `${selectedFabricItem.pattern_repeat_vertical}cm` : 
+                  'Plain'
+                }
+              </div>
+              <div className="text-muted-foreground">Repeat</div>
+            </div>
+            <div className="text-center p-1 bg-muted/50 rounded">
+              <div className="font-medium">{formatPrice(selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0)}</div>
+              <div className="text-muted-foreground">Per Meter</div>
+            </div>
+          </div>
+
+          {fabricCalculation && (
+            <div className="p-2 bg-primary/5 border border-primary/20 rounded text-xs">
+              <div className="font-semibold text-primary mb-1">Calculated Requirements</div>
+              
+              {/* Main calculation results in compact grid */}
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="flex justify-between">
+                  <span>Linear Metres:</span>
+                  <span className="font-medium">{fabricCalculation.linearMeters.toFixed(2)}m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Widths Needed:</span>
+                  <span className="font-medium">{fabricCalculation.widthsRequired}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Price/Meter:</span>
+                  <span className="font-medium">{formatPrice(fabricCalculation.pricePerMeter)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-primary">Total Cost:</span>
+                  <span className="font-semibold text-primary">{formatPrice(fabricCalculation.totalCost)}</span>
+                </div>
+              </div>
+
+              {/* Expandable calculation details */}
+              <details className="group">
+                <summary className="cursor-pointer text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+                  <span className="text-xs">Show calculation breakdown</span>
+                  <span className="transform transition-transform group-open:rotate-90">▶</span>
+                </summary>
+                <div className="mt-2 p-2 bg-background/50 rounded border text-xs space-y-1">
+                  <div className="font-medium text-muted-foreground mb-1">How this was calculated:</div>
+                  <div>• Fabric width: {selectedFabricItem.fabric_width || 137}cm</div>
+                  <div>• Required fullness width determines widths needed</div>
+                  <div>• Drop + hem allowances × number of widths</div>
+                  <div>• Waste percentage applied for cutting efficiency</div>
+                  <div className="text-muted-foreground italic mt-1">
+                    Formula: (Drop + Hems) × Widths × Waste Factor
+                  </div>
+                </div>
+              </details>
+            </div>
+          )}
+
+          {selectedFabricItem.collection_name && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Palette className="h-3 w-3" />
+              <span>Collection: {selectedFabricItem.collection_name}</span>
+            </div>
+          )}
+
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" className="h-6 px-2 text-xs" disabled={readOnly}>
+              Details
+            </Button>
+            <Button variant="outline" size="sm" className="h-6 px-2 text-xs" disabled={readOnly}>
+              Sample
+            </Button>
+          </div>
         </div>
+      )}
 
-        {selectedFabricItem && (
-          <div className="space-y-3">
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="font-medium">Fabric Width</div>
-                  <div className="text-muted-foreground">
-                    {selectedFabricItem.fabric_width ? `${selectedFabricItem.fabric_width}cm` : 'Not specified'}
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Pattern Repeat</div>
-                  <div className="text-muted-foreground">
-                    {selectedFabricItem.pattern_repeat_vertical ? 
-                      `${selectedFabricItem.pattern_repeat_vertical}cm` : 
-                      'Plain'
-                    }
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Composition</div>
-                  <div className="text-muted-foreground">
-                    {selectedFabricItem.fabric_composition || 'Not specified'}
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Care</div>
-                  <div className="text-muted-foreground">
-                    {selectedFabricItem.fabric_care_instructions || 'Standard'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {fabricCalculation && (
-              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <div className="text-sm font-medium text-primary mb-2">Calculated Fabric Requirements</div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">Linear Metres Required</div>
-                    <div className="text-muted-foreground">
-                      {fabricCalculation.linearMeters.toFixed(2)}m
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Widths Required</div>
-                    <div className="text-muted-foreground">
-                      {fabricCalculation.widthsRequired}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Price per Metre</div>
-                    <div className="text-muted-foreground">
-                      {formatPrice(fabricCalculation.pricePerMeter)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Total Fabric Cost</div>
-                    <div className="text-lg font-semibold text-primary">
-                      {formatPrice(fabricCalculation.totalCost)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedFabricItem.collection_name && (
-              <div className="flex items-center gap-2">
-                <Palette className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Collection: {selectedFabricItem.collection_name}
-                </span>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={readOnly}>
-                View Fabric Details
-              </Button>
-              <Button variant="outline" size="sm" disabled={readOnly}>
-                Request Sample
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {!selectedFabric && (
-          <div className="p-4 border-2 border-dashed border-muted rounded-lg text-center text-muted-foreground">
-            <Shirt className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <div className="text-sm">Select a fabric to see details and calculate pricing</div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {!selectedFabric && (
+        <div className="p-3 border-2 border-dashed border-muted rounded text-center text-muted-foreground">
+          <Shirt className="h-6 w-6 mx-auto mb-1 opacity-50" />
+          <div className="text-xs">Select fabric to see calculations</div>
+        </div>
+      )}
+    </div>
   );
 };
