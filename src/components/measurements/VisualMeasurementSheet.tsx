@@ -769,6 +769,16 @@ export const VisualMeasurementSheet = ({
                         onValueChange={(value) => {
                           console.log("Pooling option changed to:", value);
                           handleInputChange("pooling_option", value);
+                          
+                          // Set default pooling amount when "below_floor" is selected
+                          if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
+                            const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
+                            handleInputChange("pooling_amount", defaultValue);
+                          }
+                          // Clear pooling amount when not below floor
+                          if (value !== "below_floor") {
+                            handleInputChange("pooling_amount", "");
+                          }
                         }}
                         disabled={readOnly}
                         className="space-y-2"
