@@ -208,6 +208,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const handleSaveMeasurements = async () => {
     if (readOnly) return;
     
+    // Ensure notes include surface name for proper linking
+    const surfaceName = surfaceData?.name || "Unknown Surface";
+    const measurementNotes = notes || `Measurement worksheet for ${surfaceName}`;
+    
+    console.log("Saving measurement with room_id:", selectedRoom);
+    console.log("Surface data:", surfaceData);
+    console.log("Notes:", measurementNotes);
+    
     const measurementData = {
       client_id: clientId || null, // Allow null for measurements without clients
       project_id: projectId,
@@ -222,21 +230,28 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         selected_lining: selectedLining
       },
       photos,
-      notes,
+      notes: measurementNotes,
       measured_by: measuredBy,
       measured_at: new Date().toISOString()
     };
 
-    if (existingMeasurement?.id) {
-      await updateMeasurement.mutateAsync({
-        id: existingMeasurement.id,
-        ...measurementData
-      });
-    } else {
-      await createMeasurement.mutateAsync(measurementData);
+    try {
+      if (existingMeasurement?.id) {
+        console.log("Updating existing measurement:", existingMeasurement.id);
+        await updateMeasurement.mutateAsync({
+          id: existingMeasurement.id,
+          ...measurementData
+        });
+      } else {
+        console.log("Creating new measurement");
+        await createMeasurement.mutateAsync(measurementData);
+      }
+      
+      console.log("Measurement saved successfully");
+      onSave?.();
+    } catch (error) {
+      console.error("Error saving measurement:", error);
     }
-
-    onSave?.();
   };
 
   const handleSaveTreatmentConfig = () => {
