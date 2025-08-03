@@ -6,42 +6,38 @@ import { Calculator, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
-// Custom SVG Icons based on user's design
+// Custom Icon Components using your uploaded icons
 const CurtainIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M3 4h18v2H3z"/>
-    <path d="M5 6v14c0 1 1 2 2 2h2c1 0 2-1 2-2V6"/>
-    <path d="M13 6v14c0 1 1 2 2 2h2c1 0 2-1 2-2V6"/>
-    <path d="M7 8v12"/>
-    <path d="M9 8v12"/>
-    <path d="M15 8v12"/>
-    <path d="M17 8v12"/>
-  </svg>
+  <div 
+    className={`${className} bg-no-repeat bg-contain`}
+    style={{
+      backgroundImage: `url('/lovable-uploads/fabaae93-4407-47f5-ab07-ad37b9ebdf3b.png')`,
+      backgroundPosition: '0% 50%',
+      backgroundSize: '300% 100%'
+    }}
+  />
 );
 
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M2 2h8v8H2z"/>
-    <path d="M14 2h8v8h-8z"/>
-    <path d="M2 14h8v8H2z"/>
-    <path d="M14 14h8v8h-8z"/>
-    <path d="M6 6l4 4"/>
-    <path d="M18 6l4 4"/>
-    <path d="M6 18l4 4"/>
-    <path d="M18 18l4 4"/>
-  </svg>
+  <div 
+    className={`${className} bg-no-repeat bg-contain`}
+    style={{
+      backgroundImage: `url('/lovable-uploads/fabaae93-4407-47f5-ab07-ad37b9ebdf3b.png')`,
+      backgroundPosition: '50% 50%',
+      backgroundSize: '300% 100%'
+    }}
+  />
 );
 
 const SewingMachineIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="2" y="8" width="20" height="10" rx="2"/>
-    <path d="M6 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
-    <circle cx="8" cy="13" r="1"/>
-    <circle cx="16" cy="13" r="1"/>
-    <path d="M12 8v5"/>
-    <path d="M10 18h4"/>
-    <path d="M12 18v3"/>
-  </svg>
+  <div 
+    className={`${className} bg-no-repeat bg-contain`}
+    style={{
+      backgroundImage: `url('/lovable-uploads/fabaae93-4407-47f5-ab07-ad37b9ebdf3b.png')`,
+      backgroundPosition: '100% 50%',
+      backgroundSize: '300% 100%'
+    }}
+  />
 );
 
 interface CostCalculationSummaryProps {
