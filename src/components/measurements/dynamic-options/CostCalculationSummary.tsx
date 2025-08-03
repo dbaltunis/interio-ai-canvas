@@ -6,38 +6,52 @@ import { Calculator, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
-// Custom Icon Components using your uploaded icons
+// Custom SVG Icons based on your uploaded image designs
 const CurtainIcon = ({ className }: { className?: string }) => (
-  <div 
-    className={`${className} bg-no-repeat bg-contain`}
-    style={{
-      backgroundImage: `url('/lovable-uploads/fabaae93-4407-47f5-ab07-ad37b9ebdf3b.png')`,
-      backgroundPosition: '0% 50%',
-      backgroundSize: '300% 100%'
-    }}
-  />
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    {/* Curtain rod */}
+    <rect x="2" y="3" width="20" height="1.5" rx="0.75" />
+    {/* Rod ends */}
+    <circle cx="2" cy="3.75" r="1" />
+    <circle cx="22" cy="3.75" r="1" />
+    {/* Curtain panels */}
+    <path d="M5 5 Q7 8 5 12 Q7 15 5 18 Q7 21 5 22 L7 22 Q9 21 7 18 Q9 15 7 12 Q9 8 7 5 Z" />
+    <path d="M9 5 Q11 8 9 12 Q11 15 9 18 Q11 21 9 22 L11 22 Q13 21 11 18 Q13 15 11 12 Q13 8 11 5 Z" />
+    <path d="M13 5 Q15 8 13 12 Q15 15 13 18 Q15 21 13 22 L15 22 Q17 21 15 18 Q17 15 15 12 Q17 8 15 5 Z" />
+    <path d="M17 5 Q19 8 17 12 Q19 15 17 18 Q19 21 17 22 L19 22 Q21 21 19 18 Q21 15 19 12 Q21 8 19 5 Z" />
+  </svg>
 );
 
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
-  <div 
-    className={`${className} bg-no-repeat bg-contain`}
-    style={{
-      backgroundImage: `url('/lovable-uploads/fabaae93-4407-47f5-ab07-ad37b9ebdf3b.png')`,
-      backgroundPosition: '50% 50%',
-      backgroundSize: '300% 100%'
-    }}
-  />
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    {/* Main fabric swatch */}
+    <path d="M4 6 L20 6 L19 7 L20 8 L19 9 L20 10 L19 11 L20 12 L19 13 L20 14 L19 15 L20 16 L19 17 L20 18 L4 18 L5 17 L4 16 L5 15 L4 14 L5 13 L4 12 L5 11 L4 10 L5 9 L4 8 L5 7 Z" />
+    {/* Fabric texture lines */}
+    <line x1="6" y1="8" x2="18" y2="8" stroke="white" strokeWidth="0.5" opacity="0.6" />
+    <line x1="6" y1="10" x2="18" y2="10" stroke="white" strokeWidth="0.5" opacity="0.6" />
+    <line x1="6" y1="12" x2="18" y2="12" stroke="white" strokeWidth="0.5" opacity="0.6" />
+    <line x1="6" y1="14" x2="18" y2="14" stroke="white" strokeWidth="0.5" opacity="0.6" />
+    <line x1="6" y1="16" x2="18" y2="16" stroke="white" strokeWidth="0.5" opacity="0.6" />
+  </svg>
 );
 
 const SewingMachineIcon = ({ className }: { className?: string }) => (
-  <div 
-    className={`${className} bg-no-repeat bg-contain`}
-    style={{
-      backgroundImage: `url('/lovable-uploads/fabaae93-4407-47f5-ab07-ad37b9ebdf3b.png')`,
-      backgroundPosition: '100% 50%',
-      backgroundSize: '300% 100%'
-    }}
-  />
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    {/* Machine base */}
+    <rect x="2" y="16" width="20" height="6" rx="1" />
+    {/* Machine body */}
+    <path d="M4 8 Q4 6 6 6 L18 6 Q20 6 20 8 L20 16 L4 16 Z" />
+    {/* Thread spool */}
+    <circle cx="8" cy="4" r="1.5" />
+    <rect x="7.5" y="2.5" width="1" height="3" />
+    {/* Needle arm */}
+    <rect x="10" y="8" width="4" height="2" rx="1" />
+    {/* Needle */}
+    <rect x="11.5" y="10" width="1" height="4" />
+    {/* Control dial */}
+    <circle cx="16" cy="12" r="1.5" />
+    <circle cx="16" cy="12" r="0.5" fill="white" />
+  </svg>
 );
 
 interface CostCalculationSummaryProps {
