@@ -1,33 +1,33 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { User } from "./useUsers";
 
 export const useBulkUserSelection = (users: User[]) => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  const selectUser = (userId: string, selected: boolean) => {
+  const selectUser = useCallback((userId: string, selected: boolean) => {
     if (selected) {
       setSelectedUsers(prev => [...prev, userId]);
     } else {
       setSelectedUsers(prev => prev.filter(id => id !== userId));
     }
-  };
+  }, []);
 
-  const selectAll = (selected: boolean) => {
+  const selectAll = useCallback((selected: boolean) => {
     if (selected) {
       setSelectedUsers(users.map(user => user.id));
     } else {
       setSelectedUsers([]);
     }
-  };
+  }, [users]);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedUsers([]);
-  };
+  }, []);
 
-  const toggleUser = (userId: string) => {
+  const toggleUser = useCallback((userId: string) => {
     const isSelected = selectedUsers.includes(userId);
     selectUser(userId, !isSelected);
-  };
+  }, [selectedUsers, selectUser]);
 
   const selectionStats = useMemo(() => ({
     total: users.length,

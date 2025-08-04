@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { User } from "./useUsers";
 
 export const useUserFilters = (users: User[]) => {
@@ -41,12 +41,24 @@ export const useUserFilters = (users: User[]) => {
     }
   }), [users, filteredUsers]);
 
+  const setSearchTermCallback = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
+
+  const setRoleFilterCallback = useCallback((role: string | null) => {
+    setRoleFilter(role);
+  }, []);
+
+  const setStatusFilterCallback = useCallback((status: string | null) => {
+    setStatusFilter(status);
+  }, []);
+
   return {
     filteredUsers,
     activeFilters,
     stats,
-    setSearchTerm,
-    setRoleFilter,
-    setStatusFilter,
+    setSearchTerm: setSearchTermCallback,
+    setRoleFilter: setRoleFilterCallback,
+    setStatusFilter: setStatusFilterCallback,
   };
 };

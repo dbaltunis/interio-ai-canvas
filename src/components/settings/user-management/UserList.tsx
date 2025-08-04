@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
     selectionStats,
   } = useBulkUserSelection(filteredUsers);
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = useCallback(async (userId: string) => {
     try {
       if (confirm("Are you sure you want to remove this user? This action cannot be undone.")) {
         await deleteUser.mutateAsync(userId);
@@ -58,7 +58,11 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
     } catch (error) {
       console.error('Error deleting user:', error);
     }
-  };
+  }, [deleteUser]);
+
+  const handleEditUser = useCallback((user: User) => {
+    setEditingUser(user);
+  }, []);
   return (
     <ErrorBoundary>
       <Card>
@@ -190,7 +194,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setEditingUser(user);
+                    handleEditUser(user);
                   }}
                 >
                   <Edit className="h-4 w-4" />

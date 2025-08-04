@@ -56,31 +56,29 @@ export const useUsers = () => {
         arr.findIndex(p => p.user_id === profile.user_id) === index
       );
 
-      // Transform profiles to users and get emails
-      const users: User[] = await Promise.all(
-        uniqueProfiles.map(async (profile) => {
-          let email = 'Protected Email';
-          
-          // Only show the actual email for the current user for security
-          if (profile.user_id === currentUser.id) {
-            email = currentUser.email || 'Unknown Email';
-          } else {
-            // For other users, try to extract from display_name if it looks like an email
-            if (profile.display_name && profile.display_name.includes('@')) {
-              email = profile.display_name;
-            }
+      // Transform profiles to users more efficiently (no async operations needed)
+      const users: User[] = uniqueProfiles.map((profile) => {
+        let email = 'Protected Email';
+        
+        // Only show the actual email for the current user for security
+        if (profile.user_id === currentUser.id) {
+          email = currentUser.email || 'Unknown Email';
+        } else {
+          // For other users, try to extract from display_name if it looks like an email
+          if (profile.display_name && profile.display_name.includes('@')) {
+            email = profile.display_name;
           }
-          
-          return {
-            id: profile.user_id,
-            name: profile.display_name || 'Unknown User',
-            email,
-            role: profile.role || 'Staff',
-            status: profile.is_active ? 'Active' : 'Inactive',
-            phone: profile.phone_number || ''
-          };
-        })
-      );
+        }
+        
+        return {
+          id: profile.user_id,
+          name: profile.display_name || 'Unknown User',
+          email,
+          role: profile.role || 'Staff',
+          status: profile.is_active ? 'Active' : 'Inactive',
+          phone: profile.phone_number || ''
+        };
+      });
 
       console.log('Transformed users:', users);
       return users;
