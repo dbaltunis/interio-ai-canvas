@@ -44,24 +44,24 @@ export const UserSearchFilter = ({
         </div>
         
         <div className="flex gap-2">
-          <Select value={activeFilters.role || ""} onValueChange={(value) => onRoleFilter(value || null)}>
+          <Select value={activeFilters.role || "all"} onValueChange={(value) => onRoleFilter(value === "all" ? null : value)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Roles" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Roles</SelectItem>
+              <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="Admin">Admin</SelectItem>
               <SelectItem value="Manager">Manager</SelectItem>
               <SelectItem value="Staff">Staff</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={activeFilters.status || ""} onValueChange={(value) => onStatusFilter(value || null)}>
+          <Select value={activeFilters.status || "all"} onValueChange={(value) => onStatusFilter(value === "all" ? null : value)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="Active">Active</SelectItem>
               <SelectItem value="Inactive">Inactive</SelectItem>
             </SelectContent>

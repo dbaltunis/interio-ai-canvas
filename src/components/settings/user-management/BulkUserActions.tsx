@@ -147,11 +147,12 @@ export const BulkUserActions = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <Select value={bulkAction} onValueChange={setBulkAction}>
+        <Select value={bulkAction || "none"} onValueChange={(value) => setBulkAction(value === "none" ? "" : value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Bulk Actions" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none" disabled>Select Action</SelectItem>
             <SelectItem value="activate">
               <div className="flex items-center gap-2">
                 <UserCheck className="h-4 w-4" />
