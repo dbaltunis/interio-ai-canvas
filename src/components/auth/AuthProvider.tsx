@@ -35,13 +35,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log("AuthProvider: Setting up auth listener");
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email || 'no user');
         console.log('Auth state change time:', new Date().toISOString());
+        console.log('Session details:', session ? 'Session exists' : 'No session');
+        console.log('Access token exists:', session?.access_token ? 'Yes' : 'No');
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
         console.log('AuthProvider: Loading set to false after auth change');
+        
+        // Test database connectivity when session changes
+        if (session?.user) {
+          try {
+            const { data, error } = await supabase
+              .from('user_profiles')
+              .select('user_id, display_name')
+              .eq('user_id', session.user.id)
+              .single();
+            console.log('Profile query result:', { data, error });
+          } catch (err) {
+            console.error('Profile query failed:', err);
+          }
+        }
       }
     );
 
