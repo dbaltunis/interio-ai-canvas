@@ -12,15 +12,21 @@ export const useQuotes = (projectId?: string) => {
     queryKey: ["quotes", projectId],
     queryFn: async () => {
       console.log("useQuotes: Starting fetch");
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("useQuotes: No user found, returning empty array");
-        return [];
-      }
-
-      console.log("Fetching quotes for user:", user.id);
-      
       try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        console.log("useQuotes: Auth result", { user: user?.id, authError });
+        
+        if (authError) {
+          console.error("useQuotes: Auth error", authError);
+          throw authError;
+        }
+        
+        if (!user) {
+          console.log("useQuotes: No user found, returning empty array");
+          return [];
+        }
+
+        console.log("useQuotes: Fetching quotes for user:", user.id);
         // First try the simple query without complex joins
         console.log("useQuotes: Attempting simple query first");
         let simpleQuery = supabase
