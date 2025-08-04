@@ -3,12 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Users, UserPlus, Mail, Settings, Edit, Trash2, MoreHorizontal, TrendingUp } from "lucide-react";
+import { Users, UserPlus, Mail, Settings, Edit, Trash2, MoreHorizontal, TrendingUp, Clock } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
 import { UserSearchFilter } from "./UserSearchFilter";
+import { BulkUserActions } from "./BulkUserActions";
 import { useDeleteUser } from "@/hooks/useUpdateUser";
 import { useUserFilters } from "@/hooks/useUserFilters";
+import { useBulkUserSelection } from "@/hooks/useBulkUserSelection";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 
 interface User {
@@ -38,6 +41,15 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
     setRoleFilter,
     setStatusFilter,
   } = useUserFilters(users);
+
+  const {
+    selectedUsers,
+    selectUser,
+    selectAll,
+    clearSelection,
+    toggleUser,
+    selectionStats,
+  } = useBulkUserSelection(filteredUsers);
 
   const handleDeleteUser = async (userId: string) => {
     try {
@@ -88,6 +100,13 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
             activeFilters={activeFilters}
           />
           
+          <BulkUserActions
+            users={filteredUsers}
+            selectedUsers={selectedUsers}
+            onSelectUser={selectUser}
+            onSelectAll={selectAll}
+            onClearSelection={clearSelection}
+          />
           <div className="flex justify-between items-center">
             <div>
               <h4 className="font-medium">
@@ -125,32 +144,48 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
             </div>
           ) : (
             filteredUsers.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-              <div className="flex items-center space-x-3">
+            <div
+              key={user.id}
+              className={`flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+                selectedUsers.includes(user.id) ? 'bg-muted/30 border-primary/50' : ''
+              }`}
+            >
+              <Checkbox
+                checked={selectedUsers.includes(user.id)}
+                onCheckedChange={(checked) => selectUser(user.id, !!checked)}
+              />
+              <div className="flex items-center justify-between flex-1">
+                <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="text-sm font-medium">
                     {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <div className="font-medium">{user.name || 'Unknown User'}</div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {user.email}
+                  <div>
+                    <div className="font-medium">{user.name || 'Unknown User'}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      {user.email}
+                    </div>
+                    <div className="flex items-center gap-4 mt-1">
+                      {user.phone && (
+                        <span className="text-xs text-muted-foreground">{user.phone}</span>
+                      )}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>Last seen: Recently</span>
+                      </div>
+                    </div>
                   </div>
-                  {user.phone && (
-                    <div className="text-xs text-muted-foreground">{user.phone}</div>
-                  )}
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Badge variant={user.role === 'Admin' ? 'default' : user.role === 'Manager' ? 'secondary' : 'outline'}>
-                  {user.role}
-                </Badge>
-                <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
-                  {user.status}
-                </Badge>
+                
+                <div className="flex items-center space-x-2">
+                  <Badge variant={user.role === 'Admin' ? 'default' : user.role === 'Manager' ? 'secondary' : 'outline'}>
+                    {user.role}
+                  </Badge>
+                  <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
+                    {user.status}
+                  </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
@@ -186,6 +221,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+            </div>
             </div>
             ))
           )}
