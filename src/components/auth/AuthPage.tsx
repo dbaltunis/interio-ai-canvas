@@ -97,7 +97,7 @@ export const AuthPage = () => {
           return;
         }
 
-        const { error } = await signUp(email, password);
+        const { data: signUpData, error } = await signUp(email, password);
 
         if (error) {
           toast({
@@ -105,22 +105,26 @@ export const AuthPage = () => {
             description: error.message,
             variant: "destructive"
           });
-        } else {
-          // Mark invitation as accepted
-          await supabase
-            .from('user_invitations')
-            .update({ 
-              status: 'accepted',
-              updated_at: new Date().toISOString()
-            })
-            .eq('invitation_token', invitationToken);
+        } else if (signUpData?.user) {
+          // Call the database function to handle invitation acceptance
+          const { data: acceptResult, error: acceptError } = await supabase
+            .rpc('accept_user_invitation', {
+              invitation_token_param: invitationToken,
+              user_id_param: signUpData.user.id
+            });
 
-          toast({
-            title: "Success",
-            description: `Welcome to the team! You've been assigned the ${invitation.role} role. Please check your email to confirm your account.`,
-          });
-
-          // Don't navigate immediately - let them confirm email first
+          if (acceptError || !(acceptResult as any)?.success) {
+            toast({
+              title: "Error",
+              description: acceptError?.message || (acceptResult as any)?.error || "Failed to accept invitation",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Success",
+              description: `Welcome to the team! You've been assigned the ${(acceptResult as any).role} role. Please check your email to confirm your account.`,
+            });
+          }
         }
       } else {
         // Handle regular login/signup
