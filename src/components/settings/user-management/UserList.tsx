@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Users, UserPlus, Mail, Settings, Edit, Trash2, MoreHorizontal, TrendingUp, Clock } from "lucide-react";
+import { Users, UserPlus, Mail, Edit, TrendingUp, Clock } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
 import { UserSearchFilter } from "./UserSearchFilter";
 import { BulkUserActions } from "./BulkUserActions";
@@ -186,40 +185,16 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                   <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
                     {user.status}
                   </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      disabled={deleteUser.isPending}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingUser(user);
-                      }}
-                      disabled={false}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit User
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteUser(user.id);
-                      }}
-                      className="text-destructive"
-                      disabled={deleteUser.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remove User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingUser(user);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
               </div>
             </div>
             </div>
