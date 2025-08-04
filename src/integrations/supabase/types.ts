@@ -2489,7 +2489,10 @@ export type Database = {
           display_name: string | null
           email_notifications: boolean | null
           id: string
+          is_active: boolean | null
+          permissions: Json | null
           phone_number: string | null
+          role: string | null
           sms_notifications: boolean | null
           status: string | null
           status_message: string | null
@@ -2503,7 +2506,10 @@ export type Database = {
           display_name?: string | null
           email_notifications?: boolean | null
           id?: string
+          is_active?: boolean | null
+          permissions?: Json | null
           phone_number?: string | null
+          role?: string | null
           sms_notifications?: boolean | null
           status?: string | null
           status_message?: string | null
@@ -2517,7 +2523,10 @@ export type Database = {
           display_name?: string | null
           email_notifications?: boolean | null
           id?: string
+          is_active?: boolean | null
+          permissions?: Json | null
           phone_number?: string | null
+          role?: string | null
           sms_notifications?: boolean | null
           status?: string | null
           status_message?: string | null
@@ -2663,6 +2672,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_user_invitation: {
+        Args: { invitation_token_param: string; user_id_param: string }
+        Returns: Json
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: string
