@@ -2,17 +2,14 @@
 import { useState } from "react";
 import { InviteUserDialog } from "../InviteUserDialog";
 import { useUserInvitations } from "@/hooks/useUserInvitations";
+import { useUsers } from "@/hooks/useUsers";
 import { UserList } from "../user-management/UserList";
 import { PendingInvitations } from "../user-management/PendingInvitations";
 import { StatusManagement } from "../user-management/StatusManagement";
 import { RolePermissions } from "../user-management/RolePermissions";
 
 export const UserManagementTab = () => {
-  const [users] = useState([
-    { id: 1, name: "John Smith", email: "john@company.com", role: "Admin", status: "Active", phone: "+1 234 567 8900" },
-    { id: 2, name: "Sarah Johnson", email: "sarah@company.com", role: "Manager", status: "Active", phone: "+1 234 567 8901" },
-    { id: 3, name: "Mike Wilson", email: "mike@company.com", role: "Staff", status: "Inactive", phone: "+1 234 567 8902" },
-  ]);
+  const { data: users = [], isLoading: usersLoading } = useUsers();
 
   const [statuses, setStatuses] = useState([
     { id: 1, name: "Draft", color: "gray", category: "Quote", action: "editable", description: "Initial quote creation" },
@@ -31,7 +28,11 @@ export const UserManagementTab = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <UserList users={users} onInviteUser={() => setIsInviteDialogOpen(true)} />
+        <UserList 
+          users={users} 
+          onInviteUser={() => setIsInviteDialogOpen(true)} 
+          isLoading={usersLoading}
+        />
         <StatusManagement statuses={statuses} onStatusUpdate={setStatuses} />
       </div>
       

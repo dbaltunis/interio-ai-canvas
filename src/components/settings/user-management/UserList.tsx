@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users, UserPlus, Mail, Settings } from "lucide-react";
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -16,9 +16,10 @@ interface User {
 interface UserListProps {
   users: User[];
   onInviteUser: () => void;
+  isLoading?: boolean;
 }
 
-export const UserList = ({ users, onInviteUser }: UserListProps) => {
+export const UserList = ({ users, onInviteUser, isLoading = false }: UserListProps) => {
   return (
     <Card>
       <CardHeader>
@@ -43,7 +44,20 @@ export const UserList = ({ users, onInviteUser }: UserListProps) => {
         </div>
         
         <div className="space-y-3">
-          {users.map((user) => (
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-sm text-muted-foreground">Loading users...</div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="flex items-center justify-center p-8 text-center">
+              <div>
+                <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">No team members found</p>
+                <p className="text-xs text-muted-foreground mt-1">Invite your first team member to get started</p>
+              </div>
+            </div>
+          ) : (
+            users.map((user) => (
             <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
               <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
@@ -72,7 +86,8 @@ export const UserList = ({ users, onInviteUser }: UserListProps) => {
                 </Button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </CardContent>
     </Card>
