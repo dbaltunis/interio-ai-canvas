@@ -71,7 +71,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    // Use the custom domain for email redirects
+    const redirectUrl = 'https://appinterio.app/';
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

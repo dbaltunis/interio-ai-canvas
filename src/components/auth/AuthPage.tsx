@@ -124,6 +124,11 @@ export const AuthPage = () => {
               title: "Success",
               description: `Welcome to the team! You've been assigned the ${(acceptResult as any).role} role. Please check your email to confirm your account.`,
             });
+            
+            // Redirect to main app after successful signup with invitation
+            setTimeout(() => {
+              navigate('/');
+            }, 2000);
           }
         }
       } else {
