@@ -14,7 +14,8 @@ const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
-  const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
+  const { data: quotes = [], refetch: refetchQuotes, isLoading, error } = useQuotes();
+  console.log("JobsPage: useQuotes result", { quotesCount: quotes.length, isLoading, error });
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
