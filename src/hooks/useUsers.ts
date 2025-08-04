@@ -69,7 +69,7 @@ export const useUsers = () => {
             email,
             role: profile.role || 'Staff',
             status: profile.is_active ? 'Active' : 'Inactive',
-            phone: profile.phone_number || undefined
+            phone: profile.phone_number || ''
           };
         })
       );

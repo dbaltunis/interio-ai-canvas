@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Users, UserPlus, Mail, Settings, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
 import { useDeleteUser } from "@/hooks/useUpdateUser";
+import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 
 interface User {
   id: string;
@@ -28,12 +29,17 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
   const deleteUser = useDeleteUser();
 
   const handleDeleteUser = async (userId: string) => {
-    if (confirm("Are you sure you want to remove this user? This action cannot be undone.")) {
-      await deleteUser.mutateAsync(userId);
+    try {
+      if (confirm("Are you sure you want to remove this user? This action cannot be undone.")) {
+        await deleteUser.mutateAsync(userId);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
     }
   };
   return (
-    <Card>
+    <ErrorBoundary>
+      <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
@@ -74,15 +80,18 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
               <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="text-sm font-medium">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{user.name}</div>
+                  <div className="font-medium">{user.name || 'Unknown User'}</div>
                   <div className="text-sm text-muted-foreground flex items-center gap-1">
                     <Mail className="h-3 w-3" />
                     {user.email}
                   </div>
+                  {user.phone && (
+                    <div className="text-xs text-muted-foreground">{user.phone}</div>
+                  )}
                 </div>
               </div>
               
@@ -100,12 +109,18 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditingUser(user)}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingUser(user);
+                    }}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit User
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => handleDeleteUser(user.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteUser(user.id);
+                      }}
                       className="text-destructive"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -125,6 +140,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
           onOpenChange={(open) => !open && setEditingUser(null)}
         />
       </CardContent>
-    </Card>
+      </Card>
+    </ErrorBoundary>
   );
 };

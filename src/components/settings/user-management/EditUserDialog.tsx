@@ -25,15 +25,18 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
   const handleSave = async () => {
     if (!user) return;
 
-    await updateUser.mutateAsync({
-      userId: user.id,
-      display_name: displayName,
-      role,
-      is_active: isActive,
-      phone_number: phone || null,
-    });
-
-    onOpenChange(false);
+    try {
+      await updateUser.mutateAsync({
+        userId: user.id,
+        display_name: displayName,
+        role,
+        is_active: isActive,
+        phone_number: phone || null,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
   };
 
   // Update local state when user prop changes
