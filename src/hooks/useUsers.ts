@@ -48,9 +48,17 @@ export const useUsers = () => {
         return [];
       }
 
+      // Filter out duplicate or invalid profiles
+      const uniqueProfiles = profiles.filter((profile, index, arr) => 
+        profile.user_id && 
+        profile.display_name && 
+        profile.display_name !== 'test@test.com' &&
+        arr.findIndex(p => p.user_id === profile.user_id) === index
+      );
+
       // Transform profiles to users and get emails
       const users: User[] = await Promise.all(
-        profiles.map(async (profile) => {
+        uniqueProfiles.map(async (profile) => {
           let email = 'Protected Email';
           
           // Only show the actual email for the current user for security

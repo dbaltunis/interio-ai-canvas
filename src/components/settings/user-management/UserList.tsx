@@ -64,7 +64,9 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
         <div className="space-y-3">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
-              <div className="text-sm text-muted-foreground">Loading users...</div>
+              <div className="animate-pulse">
+                <div className="text-sm text-muted-foreground">Loading users...</div>
+              </div>
             </div>
           ) : users.length === 0 ? (
             <div className="flex items-center justify-center p-8 text-center">
@@ -104,15 +106,22 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      disabled={deleteUser.isPending}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingUser(user);
-                    }}>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingUser(user);
+                      }}
+                      disabled={false}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit User
                     </DropdownMenuItem>
@@ -122,6 +131,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                         handleDeleteUser(user.id);
                       }}
                       className="text-destructive"
+                      disabled={deleteUser.isPending}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Remove User
