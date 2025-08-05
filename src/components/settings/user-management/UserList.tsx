@@ -77,15 +77,10 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                 </CardDescription>
               </div>
             </div>
-            {/* Disabled: User invitations temporarily disabled
             <Button onClick={onInviteUser} className="gap-2">
               <UserPlus className="h-4 w-4" />
               Invite User
             </Button>
-            */}
-            <div className="px-3 py-2 bg-muted rounded-md text-sm text-muted-foreground">
-              Team invitations temporarily disabled
-            </div>
           </div>
           
           {/* User Stats */}
