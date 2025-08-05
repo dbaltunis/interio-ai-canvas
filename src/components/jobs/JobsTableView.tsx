@@ -179,21 +179,39 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   const getOwnerInfo = (quote: any) => {
     if (!quote.user_id || users.length === 0) {
-      return { name: 'Unknown', initials: 'UN' };
+      return { firstName: 'Unknown', initials: 'UN', color: 'bg-gray-500' };
     }
     
     const owner = users.find(user => user.id === quote.user_id);
     if (owner) {
+      const firstName = owner.name.split(' ')[0]; // Get only first name
       const initials = owner.name
         .split(' ')
         .map(n => n[0])
         .join('')
         .toUpperCase()
         .substring(0, 2);
-      return { name: owner.name, initials };
+      
+      // Generate color based on user ID for consistency
+      const colors = [
+        'bg-blue-500',
+        'bg-green-500', 
+        'bg-purple-500',
+        'bg-orange-500',
+        'bg-pink-500',
+        'bg-indigo-500',
+        'bg-red-500',
+        'bg-yellow-500',
+        'bg-teal-500',
+        'bg-cyan-500'
+      ];
+      const colorIndex = quote.user_id.charCodeAt(0) % colors.length;
+      const color = colors[colorIndex];
+      
+      return { firstName, initials, color };
     }
     
-    return { name: 'Unknown', initials: 'UN' };
+    return { firstName: 'Unknown', initials: 'UN', color: 'bg-gray-500' };
   };
 
   const handleDeleteJob = async (quote: any) => {
@@ -332,11 +350,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarFallback className="bg-brand-primary text-white text-xs">
+                        <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
                           {ownerInfo.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-600">{ownerInfo.name}</span>
+                      <span className="text-sm text-gray-600 truncate">{ownerInfo.firstName}</span>
                     </div>
                   </TableCell>
                   <TableCell>
