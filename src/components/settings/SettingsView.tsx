@@ -1,11 +1,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell } from "lucide-react";
-import { BusinessConfigTab } from "./tabs/BusinessConfigTab";
+import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2 } from "lucide-react";
+import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
+import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
-
-
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
@@ -16,19 +15,26 @@ import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { EnhancedNotificationSettings } from "./EnhancedNotificationSettings";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
-  const [activeTab, setActiveTab] = useState("business");
+  const [activeTab, setActiveTab] = useState("personal");
+
+  // Permission checks
+  const canViewSettings = useHasPermission('view_settings');
+  const canManageSettings = useHasPermission('manage_settings');
+  const canManageUsers = useHasPermission('manage_users');
+  const canViewWindowTreatments = useHasPermission('view_window_treatments');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-brand-primary">Business Settings</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-brand-primary">Settings</h2>
           <p className="text-brand-neutral">
-            Configure your business rules and products
+            Configure your personal preferences and business settings
           </p>
         </div>
         <div className="flex gap-3">
@@ -50,73 +56,116 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 text-xs">
-          <TabsTrigger value="business" className="flex items-center gap-1">
-            <Settings className="h-3 w-3" />
-            <span className="hidden sm:inline">Business</span>
+        <TabsList className="grid w-full grid-cols-9 text-xs">
+          <TabsTrigger value="personal" className="flex items-center gap-1">
+            <User className="h-3 w-3" />
+            <span className="hidden sm:inline">Personal</span>
           </TabsTrigger>
-          <TabsTrigger value="units" className="flex items-center gap-1">
-            <Ruler className="h-3 w-3" />
-            <span className="hidden sm:inline">Units</span>
-          </TabsTrigger>
-          <TabsTrigger value="window-coverings" className="flex items-center gap-1">
-            <Package className="h-3 w-3" />
-            <span className="hidden sm:inline">Window Coverings</span>
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            <span className="hidden sm:inline">Users</span>
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-1">
-            <FileText className="h-3 w-3" />
-            <span className="hidden sm:inline">Documents</span>
-          </TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-1">
-            <Globe className="h-3 w-3" />
-            <span className="hidden sm:inline">System</span>
-          </TabsTrigger>
+          
+          {canViewSettings && (
+            <TabsTrigger value="business" className="flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              <span className="hidden sm:inline">Business</span>
+            </TabsTrigger>
+          )}
+          
+          {canViewSettings && (
+            <TabsTrigger value="units" className="flex items-center gap-1">
+              <Ruler className="h-3 w-3" />
+              <span className="hidden sm:inline">Units</span>
+            </TabsTrigger>
+          )}
+          
+          {canViewWindowTreatments && (
+            <TabsTrigger value="window-coverings" className="flex items-center gap-1">
+              <Package className="h-3 w-3" />
+              <span className="hidden sm:inline">Products</span>
+            </TabsTrigger>
+          )}
+          
+          {canManageUsers && (
+            <TabsTrigger value="users" className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              <span className="hidden sm:inline">Team</span>
+            </TabsTrigger>
+          )}
+          
+          {canViewSettings && (
+            <TabsTrigger value="documents" className="flex items-center gap-1">
+              <FileText className="h-3 w-3" />
+              <span className="hidden sm:inline">Documents</span>
+            </TabsTrigger>
+          )}
+          
+          {canViewSettings && (
+            <TabsTrigger value="system" className="flex items-center gap-1">
+              <Globe className="h-3 w-3" />
+              <span className="hidden sm:inline">System</span>
+            </TabsTrigger>
+          )}
+          
           <TabsTrigger value="notifications" className="flex items-center gap-1">
             <Bell className="h-3 w-3" />
-            <span className="hidden sm:inline">Notifications</span>
+            <span className="hidden sm:inline">Alerts</span>
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-1">
-            <Zap className="h-3 w-3" />
-            <span className="hidden sm:inline">Integrations</span>
-          </TabsTrigger>
+          
+          {canViewSettings && (
+            <TabsTrigger value="integrations" className="flex items-center gap-1">
+              <Zap className="h-3 w-3" />
+              <span className="hidden sm:inline">Integrations</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
-        <TabsContent value="business">
-          <BusinessConfigTab />
+        <TabsContent value="personal">
+          <PersonalSettingsTab />
         </TabsContent>
 
-        <TabsContent value="units">
-          <MeasurementUnitsTab />
-        </TabsContent>
+        {canViewSettings && (
+          <TabsContent value="business">
+            <BusinessSettingsTab />
+          </TabsContent>
+        )}
 
-        <TabsContent value="window-coverings">
-          <WindowCoveringsTab />
-        </TabsContent>
+        {canViewSettings && (
+          <TabsContent value="units">
+            <MeasurementUnitsTab />
+          </TabsContent>
+        )}
 
+        {canViewWindowTreatments && (
+          <TabsContent value="window-coverings">
+            <WindowCoveringsTab />
+          </TabsContent>
+        )}
 
-        <TabsContent value="users">
-          <UserManagementTab />
-        </TabsContent>
+        {canManageUsers && (
+          <TabsContent value="users">
+            <UserManagementTab />
+          </TabsContent>
+        )}
 
-        <TabsContent value="documents">
-          <DocumentTemplatesTab />
-        </TabsContent>
+        {canViewSettings && (
+          <TabsContent value="documents">
+            <DocumentTemplatesTab />
+          </TabsContent>
+        )}
 
-        <TabsContent value="system">
-          <SystemSettingsTab />
-        </TabsContent>
+        {canViewSettings && (
+          <TabsContent value="system">
+            <SystemSettingsTab />
+          </TabsContent>
+        )}
 
         <TabsContent value="notifications">
           <EnhancedNotificationSettings />
         </TabsContent>
 
-        <TabsContent value="integrations">
-          <IntegrationsTab />
-        </TabsContent>
+        {canViewSettings && (
+          <TabsContent value="integrations">
+            <IntegrationsTab />
+          </TabsContent>
+        )}
       </Tabs>
 
       <TutorialOverlay 

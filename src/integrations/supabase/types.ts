@@ -1706,6 +1706,30 @@ export type Database = {
         }
         Relationships: []
       }
+      permissions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       product_orders: {
         Row: {
           actual_order_date: string | null
@@ -2415,6 +2439,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          permission_name: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_name: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_permission_name_fkey"
+            columns: ["permission_name"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       user_presence: {
         Row: {
           created_at: string | null
@@ -2613,6 +2669,10 @@ export type Database = {
       get_user_email: {
         Args: { user_id: string }
         Returns: string
+      }
+      has_permission: {
+        Args: { permission_name: string }
+        Returns: boolean
       }
       is_admin: {
         Args: Record<PropertyKey, never>
