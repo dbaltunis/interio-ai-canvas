@@ -13,6 +13,7 @@ interface JobCardProps {
   quote: any;
   client?: any;
   project?: any;
+  owner?: any;
   onJobSelect: (jobId: string) => void;
   onClientEdit?: (clientId: string) => void;
   onJobCopy?: (jobId: string) => void;
@@ -23,6 +24,7 @@ export const JobCard = ({
   quote, 
   client, 
   project, 
+  owner,
   onJobSelect, 
   onClientEdit,
   onJobCopy,
@@ -82,10 +84,18 @@ export const JobCard = ({
                 {quote.status.toUpperCase()}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground flex items-center">
-              <Calendar className="h-3 w-3 mr-1" />
-              Created {formatDistanceToNow(new Date(quote.created_at), { addSuffix: true })}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground flex items-center">
+                <Calendar className="h-3 w-3 mr-1" />
+                Created {formatDistanceToNow(new Date(quote.created_at), { addSuffix: true })}
+              </p>
+              {owner && (
+                <p className="text-xs text-muted-foreground flex items-center">
+                  <User className="h-3 w-3 mr-1" />
+                  Owner: {owner.display_name || owner.email}
+                </p>
+              )}
+            </div>
           </div>
           
           <div className="flex space-x-1" onClick={(e) => e.stopPropagation()}>

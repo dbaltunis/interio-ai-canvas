@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
+import { useUsers } from "@/hooks/useUsers";
 import { JobsHeader } from "./JobsHeader";
 import { JobGridView } from "./JobGridView";
 import { JobListView } from "./JobListView";
@@ -44,8 +45,9 @@ export const JobsListView = ({
   
   const { data: quotes, isLoading: quotesLoading, error: quotesError } = useQuotes();
   const { data: clients, isLoading: clientsLoading } = useClients();
+  const { data: users, isLoading: usersLoading } = useUsers();
 
-  // Create client lookup for performance
+  // Create lookup maps for performance
   const clientsMap = useMemo(() => {
     if (!clients) return {};
     return clients.reduce((acc, client) => {
@@ -53,6 +55,14 @@ export const JobsListView = ({
       return acc;
     }, {} as Record<string, any>);
   }, [clients]);
+
+  const usersMap = useMemo(() => {
+    if (!users) return {};
+    return users.reduce((acc, user) => {
+      acc[user.id] = user;
+      return acc;
+    }, {} as Record<string, any>);
+  }, [users]);
 
   // Filter and process quotes with error handling
   const processedJobs = useMemo(() => {
@@ -65,11 +75,13 @@ export const JobsListView = ({
         .map(quote => {
           const client = quote.client_id ? clientsMap[quote.client_id] : null;
           const project = null;
+          const owner = quote.user_id ? usersMap[quote.user_id] : null;
           
           return {
             ...quote,
             client,
             project,
+            owner,
             name: project?.name || quote.quote_number || `Quote ${quote.id?.slice(0, 8)}`,
             status: project?.status || quote.status || 'draft',
             priority: project?.priority || 'medium',
@@ -119,7 +131,7 @@ export const JobsListView = ({
       console.error("Error processing jobs:", error);
       return [];
     }
-  }, [quotes, clientsMap, searchTerm, searchClient, searchJobNumber, filterStatus, sortBy]);
+  }, [quotes, clientsMap, usersMap, searchTerm, searchClient, searchJobNumber, filterStatus, sortBy]);
 
   const handleJobEdit = (jobId: string) => {
     onJobSelect(jobId);
@@ -129,7 +141,7 @@ export const JobsListView = ({
     onJobSelect(jobId);
   };
 
-  if (quotesLoading || clientsLoading) {
+  if (quotesLoading || clientsLoading || usersLoading) {
     return (
       <div className="space-y-6">
         <div className="h-16">

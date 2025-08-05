@@ -73,6 +73,7 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
             <TableHead className="font-semibold text-gray-900 w-32">Job Number</TableHead>
             <TableHead className="font-semibold text-gray-900">Job Title</TableHead>
             <TableHead className="font-semibold text-gray-900">Client</TableHead>
+            <TableHead className="font-semibold text-gray-900">Owner</TableHead>
             <TableHead className="font-semibold text-gray-900 w-24">Status</TableHead>
             <TableHead className="font-semibold text-gray-900 w-24">Priority</TableHead>
             <TableHead className="font-semibold text-gray-900 w-32">Value</TableHead>
@@ -118,6 +119,17 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
                   </div>
                 ) : (
                   <span className="text-gray-500 italic">No client</span>
+                )}
+              </TableCell>
+
+              <TableCell className="text-gray-900">
+                {job.owner ? (
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span className="font-medium">{job.owner.name}</span>
+                  </div>
+                ) : (
+                  <span className="text-gray-500 italic">No owner</span>
                 )}
               </TableCell>
               
