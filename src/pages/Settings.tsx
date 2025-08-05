@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 
 const Settings = () => {
-  const canAccessSettings = useHasPermission('view_settings');
+  const canAccessSettings = useHasPermission('view_settings') || useHasPermission('view_profile');
   
   const handleBackToApp = () => {
     window.location.href = "/";
@@ -18,7 +18,7 @@ const Settings = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-sm border border-brand-secondary/20 text-center max-w-md">
           <h3 className="text-lg font-semibold mb-2">Settings Access Required</h3>
-          <p className="text-muted-foreground mb-4">You need settings permissions to access this page.</p>
+          <p className="text-muted-foreground mb-4">You need profile or settings permissions to access this page.</p>
           <Button onClick={handleBackToApp} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to App

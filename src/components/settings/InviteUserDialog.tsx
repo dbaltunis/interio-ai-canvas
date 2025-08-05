@@ -14,13 +14,21 @@ interface InviteUserDialogProps {
 }
 
 const ROLE_PERMISSIONS = {
+  Owner: [
+    'view_jobs', 'create_jobs', 'delete_jobs',
+    'view_clients', 'create_clients', 'delete_clients', 
+    'view_calendar', 'create_appointments', 'delete_appointments',
+    'view_inventory', 'manage_inventory',
+    'view_window_treatments', 'manage_window_treatments',
+    'view_analytics', 'view_settings', 'manage_settings', 'manage_users', 'view_profile'
+  ],
   Admin: [
     'view_jobs', 'create_jobs', 'delete_jobs',
     'view_clients', 'create_clients', 'delete_clients',
     'view_calendar', 'create_appointments', 'delete_appointments', 
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings'
+    'view_analytics', 'view_settings', 'view_profile'
   ],
   Manager: [
     'view_jobs', 'create_jobs',
@@ -28,13 +36,13 @@ const ROLE_PERMISSIONS = {
     'view_calendar', 'create_appointments',
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
-    'view_analytics'
+    'view_analytics', 'view_profile'
   ],
   Staff: [
     'view_jobs', 'create_jobs',
     'view_clients', 'create_clients', 
     'view_calendar',
-    'view_inventory'
+    'view_inventory', 'view_profile'
   ]
 };
 
@@ -55,7 +63,8 @@ const PERMISSION_LABELS = {
   view_analytics: 'View Analytics',
   view_settings: 'View Settings',
   manage_settings: 'Manage Settings',
-  manage_users: 'Manage Users'
+  manage_users: 'Manage Users',
+  view_profile: 'View Profile'
 };
 
 export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) => {

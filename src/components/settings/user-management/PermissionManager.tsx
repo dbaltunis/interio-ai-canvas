@@ -38,7 +38,8 @@ const ROLE_PERMISSIONS = {
     'view_jobs', 'create_jobs',
     'view_clients', 'create_clients', 
     'view_calendar',
-    'view_inventory'
+    'view_inventory',
+    'view_profile'  // Allow staff to access their profile
   ]
 };
 
@@ -59,7 +60,8 @@ const PERMISSION_LABELS = {
   view_analytics: 'View Analytics',
   view_settings: 'View Settings',
   manage_settings: 'Manage Settings',
-  manage_users: 'Manage Users'
+  manage_users: 'Manage Users',
+  view_profile: 'View Profile'
 };
 
 export const PermissionManager = () => {
