@@ -25,6 +25,10 @@ export const UserProfile = () => {
     navigate("/settings");
   };
 
+  const handleProfile = () => {
+    navigate("/profile");
+  };
+
   const handleAuth = () => {
     navigate("/auth");
   };
@@ -66,6 +70,10 @@ export const UserProfile = () => {
           </div>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
+          <User className="mr-2 h-4 w-4" />
+          Profile
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           Settings
