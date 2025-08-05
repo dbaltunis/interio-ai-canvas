@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useUsers } from "@/hooks/useUsers";
 import { JobsHeader } from "./JobsHeader";
@@ -44,6 +45,7 @@ export const JobsListView = ({
   const [showFilters, setShowFilters] = useState(false);
   
   const { data: quotes, isLoading: quotesLoading, error: quotesError } = useQuotes();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: clients, isLoading: clientsLoading } = useClients();
   const { data: users, isLoading: usersLoading } = useUsers();
 
@@ -64,6 +66,14 @@ export const JobsListView = ({
     }, {} as Record<string, any>);
   }, [users]);
 
+  const projectsMap = useMemo(() => {
+    if (!projects) return {};
+    return projects.reduce((acc, project) => {
+      acc[project.id] = project;
+      return acc;
+    }, {} as Record<string, any>);
+  }, [projects]);
+
   // Filter and process quotes with error handling
   const processedJobs = useMemo(() => {
     if (!quotes || quotes.length === 0) {
@@ -71,11 +81,17 @@ export const JobsListView = ({
     }
 
     try {
+      
+      
       const processed = quotes
         .map(quote => {
-          const client = quote.client_id ? clientsMap[quote.client_id] : null;
-          const project = null;
+          const project = quote.project_id ? projectsMap[quote.project_id] : null;
+          // Try to get client from quote first, then from project
+          const clientId = quote.client_id || project?.client_id;
+          const client = clientId ? clientsMap[clientId] : null;
           const owner = quote.user_id ? usersMap[quote.user_id] : null;
+          
+          
           
           return {
             ...quote,
@@ -131,7 +147,7 @@ export const JobsListView = ({
       console.error("Error processing jobs:", error);
       return [];
     }
-  }, [quotes, clientsMap, usersMap, searchTerm, searchClient, searchJobNumber, filterStatus, sortBy]);
+  }, [quotes, projects, clientsMap, projectsMap, usersMap, searchTerm, searchClient, searchJobNumber, filterStatus, sortBy]);
 
   const handleJobEdit = (jobId: string) => {
     onJobSelect(jobId);
@@ -141,7 +157,7 @@ export const JobsListView = ({
     onJobSelect(jobId);
   };
 
-  if (quotesLoading || clientsLoading || usersLoading) {
+  if (quotesLoading || clientsLoading || usersLoading || projectsLoading) {
     return (
       <div className="space-y-6">
         <div className="h-16">
