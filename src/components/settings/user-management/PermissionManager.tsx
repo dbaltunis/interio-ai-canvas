@@ -15,6 +15,9 @@ import { RolePermissionPreview } from "./RolePermissionPreview";
 import { RoleGuide } from "./RoleGuide";
 import { PermissionAuditLog } from "./PermissionAuditLog";
 import { BulkPermissionManager } from "./BulkPermissionManager";
+import { PermissionTemplates } from "./PermissionTemplates";
+import { PermissionComparison } from "./PermissionComparison";
+import { RealtimePermissionUpdates } from "./RealtimePermissionUpdates";
 
 const ROLE_PERMISSIONS = {
   Owner: [
@@ -161,6 +164,11 @@ export const PermissionManager = () => {
     setHasChanges(false);
   };
 
+  const handleApplyTemplate = (templatePermissions: string[]) => {
+    setCustomPermissions([...templatePermissions]);
+    setHasChanges(true);
+  };
+
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -221,11 +229,13 @@ export const PermissionManager = () => {
 
             {/* Permission Management Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="role-based">Role-Based</TabsTrigger>
-                <TabsTrigger value="custom">Custom Permissions</TabsTrigger>
-                <TabsTrigger value="audit">Audit Log</TabsTrigger>
-                <TabsTrigger value="bulk">Bulk Operations</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="role-based">Roles</TabsTrigger>
+                <TabsTrigger value="custom">Custom</TabsTrigger>
+                <TabsTrigger value="templates">Templates</TabsTrigger>
+                <TabsTrigger value="comparison">Compare</TabsTrigger>
+                <TabsTrigger value="audit">Audit</TabsTrigger>
+                <TabsTrigger value="realtime">Live</TabsTrigger>
               </TabsList>
 
               <TabsContent value="role-based" className="space-y-4 mt-4">
@@ -275,19 +285,30 @@ export const PermissionManager = () => {
                 />
               </TabsContent>
 
+              <TabsContent value="templates" className="space-y-4 mt-4">
+                <PermissionTemplates onApplyTemplate={handleApplyTemplate} />
+              </TabsContent>
+
+              <TabsContent value="comparison" className="space-y-4 mt-4">
+                <PermissionComparison />
+              </TabsContent>
+
               <TabsContent value="audit" className="space-y-4 mt-4">
                 <PermissionAuditLog userId={selectedUser.id} />
               </TabsContent>
 
-              <TabsContent value="bulk" className="space-y-4 mt-4">
-                <div className="text-sm text-muted-foreground mb-4">
-                  Switch to the bulk operations view to manage multiple users at once.
-                </div>
-                <BulkPermissionManager />
+              <TabsContent value="realtime" className="space-y-4 mt-4">
+                <RealtimePermissionUpdates />
               </TabsContent>
             </Tabs>
           </div>
         )}
+
+        {/* Bulk Operations Section */}
+        <div className="border-t pt-6">
+          <h4 className="font-medium mb-4">Bulk Operations</h4>
+          <BulkPermissionManager />
+        </div>
 
         <RoleGuide />
       </CardContent>
