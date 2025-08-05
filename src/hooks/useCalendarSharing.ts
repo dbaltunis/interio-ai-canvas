@@ -45,13 +45,8 @@ export const useCalendarShares = () => {
   return useQuery({
     queryKey: ["calendar-shares"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("calendar_shares")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as CalendarShare[];
+      // Calendar sharing temporarily disabled - tables removed for stability
+      return [];
     },
   });
 };
@@ -75,13 +70,8 @@ export const useTeamWorkspaces = () => {
   return useQuery({
     queryKey: ["team-workspaces"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("team_workspaces")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as TeamWorkspace[];
+      // Team workspaces temporarily disabled - tables removed for stability
+      return [];
     },
   });
 };
@@ -90,16 +80,8 @@ export const useWorkspaceMembers = (workspaceId: string | null) => {
   return useQuery({
     queryKey: ["workspace-members", workspaceId],
     queryFn: async () => {
-      if (!workspaceId) return [];
-      
-      const { data, error } = await supabase
-        .from("workspace_members")
-        .select("*")
-        .eq("workspace_id", workspaceId)
-        .order("joined_at", { ascending: false });
-
-      if (error) throw error;
-      return data as WorkspaceMember[];
+      // Workspace members temporarily disabled - tables removed for stability
+      return [];
     },
     enabled: !!workspaceId,
   });
@@ -118,29 +100,15 @@ export const useShareCalendar = () => {
       sharedWithUserId: string; 
       permissionLevel?: 'view' | 'edit';
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("calendar_shares")
-        .insert({
-          calendar_id: calendarId,
-          owner_id: user.id,
-          shared_with_user_id: sharedWithUserId,
-          permission_level: permissionLevel,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Calendar sharing temporarily disabled - tables removed for stability
+      throw new Error("Calendar sharing temporarily disabled");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["calendar-shares"] });
       toast.success("Calendar shared successfully");
     },
     onError: (error) => {
-      toast.error("Failed to share calendar: " + error.message);
+      toast.error("Calendar sharing temporarily disabled");
     },
   });
 };
@@ -158,14 +126,11 @@ export const useShareAppointment = () => {
       sharedWithUserId: string; 
       permissionLevel?: 'view' | 'edit';
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const { data, error } = await supabase
         .from("appointment_shares")
         .insert({
           appointment_id: appointmentId,
-          owner_id: user.id,
+          owner_id: (await supabase.auth.getUser()).data.user?.id,
           shared_with_user_id: sharedWithUserId,
           permission_level: permissionLevel,
         })
@@ -190,28 +155,15 @@ export const useCreateWorkspace = () => {
 
   return useMutation({
     mutationFn: async ({ name, description }: { name: string; description?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("team_workspaces")
-        .insert({
-          name,
-          description,
-          owner_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Workspace creation temporarily disabled - tables removed for stability
+      throw new Error("Workspace creation temporarily disabled");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team-workspaces"] });
       toast.success("Workspace created successfully");
     },
     onError: (error) => {
-      toast.error("Failed to create workspace: " + error.message);
+      toast.error("Workspace creation temporarily disabled");
     },
   });
 };
@@ -229,25 +181,15 @@ export const useAddWorkspaceMember = () => {
       userId: string; 
       role?: 'owner' | 'admin' | 'member';
     }) => {
-      const { data, error } = await supabase
-        .from("workspace_members")
-        .insert({
-          workspace_id: workspaceId,
-          user_id: userId,
-          role,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Workspace members temporarily disabled - tables removed for stability
+      throw new Error("Workspace members temporarily disabled");
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["workspace-members", variables.workspaceId] });
       toast.success("Member added to workspace");
     },
     onError: (error) => {
-      toast.error("Failed to add member: " + error.message);
+      toast.error("Workspace functionality temporarily disabled");
     },
   });
 };
@@ -257,19 +199,15 @@ export const useRemoveCalendarShare = () => {
 
   return useMutation({
     mutationFn: async (shareId: string) => {
-      const { error } = await supabase
-        .from("calendar_shares")
-        .delete()
-        .eq("id", shareId);
-
-      if (error) throw error;
+      // Calendar sharing temporarily disabled - tables removed for stability
+      throw new Error("Calendar sharing temporarily disabled");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["calendar-shares"] });
       toast.success("Calendar share removed");
     },
     onError: (error) => {
-      toast.error("Failed to remove calendar share: " + error.message);
+      toast.error("Calendar sharing temporarily disabled");
     },
   });
 };

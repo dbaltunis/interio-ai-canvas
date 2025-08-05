@@ -16,43 +16,10 @@ export const useTeamMembers = () => {
   return useQuery({
     queryKey: ["team-members"],
     queryFn: async (): Promise<TeamMember[]> => {
-      console.log('Fetching team members...');
-      // For now, return mock data
-      // In a real implementation, this would fetch from a database table
-      const members = [
-        { 
-          id: "1", 
-          name: "John Smith", 
-          email: "john@company.com", 
-          role: "Project Manager",
-          phone: "+1 (555) 123-4567",
-          skills: ["Project Management", "Client Relations"],
-          active: true,
-          hourly_rate: 85
-        },
-        { 
-          id: "2", 
-          name: "Sarah Johnson", 
-          email: "sarah@company.com", 
-          role: "Designer",
-          phone: "+1 (555) 234-5678",
-          skills: ["Design", "Color Theory", "CAD"],
-          active: true,
-          hourly_rate: 75
-        },
-        { 
-          id: "3", 
-          name: "Mike Wilson", 
-          email: "mike@company.com", 
-          role: "Installer",
-          phone: "+1 (555) 345-6789",
-          skills: ["Installation", "Measurements", "Hardware"],
-          active: true,
-          hourly_rate: 65
-        },
-      ];
-      console.log('Team members loaded:', members);
-      return members;
+      console.log('Team functionality temporarily disabled');
+      // Team functionality temporarily disabled for stability
+      // Return empty array to prevent errors in components that expect this data
+      return [];
     },
   });
 };
