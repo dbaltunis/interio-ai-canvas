@@ -12,7 +12,7 @@ import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
+
 import AcceptInvitation from "./pages/AcceptInvitation";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 
@@ -73,14 +73,6 @@ const App = () => (
                   </ProtectedRoute>
                 } />
                 
-                {/* Profile page - requires authentication */}
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
-                      <Profile />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
-                } />
                 
                 {/* Main application - all functionality handled through tabs */}
                 <Route path="/" element={
