@@ -7,6 +7,7 @@ import { UserList } from "../user-management/UserList";
 import { PendingInvitations } from "../user-management/PendingInvitations";
 import { StatusManagement } from "../user-management/StatusManagement";
 import { RolePermissions } from "../user-management/RolePermissions";
+import { PermissionManager } from "../user-management/PermissionManager";
 
 export const UserManagementTab = () => {
   const { data: users = [], isLoading: usersLoading } = useUsers();
@@ -40,9 +41,12 @@ export const UserManagementTab = () => {
         <PendingInvitations invitations={invitations} />
       )}
       
-      <RolePermissions />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <RolePermissions />
+        <PermissionManager />
+      </div>
 
-      <InviteUserDialog 
+      <InviteUserDialog
         open={isInviteDialogOpen} 
         onOpenChange={setIsInviteDialogOpen} 
       />
