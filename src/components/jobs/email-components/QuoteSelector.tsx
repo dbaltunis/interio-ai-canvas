@@ -154,7 +154,7 @@ export const QuoteSelector = ({ selectedQuotes, onSelectionChange, selectedClien
                         </div>
                       </TableCell>
                       <TableCell>
-                        {quote.clients?.name || "No client"}
+                        {"No client"}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

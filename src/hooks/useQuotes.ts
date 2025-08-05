@@ -11,120 +11,28 @@ export const useQuotes = (projectId?: string) => {
   return useQuery({
     queryKey: ["quotes", projectId],
     queryFn: async () => {
-      console.log("useQuotes: Starting fetch");
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        console.log("useQuotes: Auth result", { user: user?.id, authError });
-        
-        if (authError) {
-          console.error("useQuotes: Auth error", authError);
-          throw authError;
-        }
-        
-        if (!user) {
-          console.log("useQuotes: No user found, returning empty array");
-          return [];
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
 
-        console.log("useQuotes: Fetching quotes for user:", user.id);
-        // First try the simple query without complex joins
-        console.log("useQuotes: Attempting simple query first");
-        let simpleQuery = supabase
-          .from("quotes")
-          .select("*")
-          .eq("user_id", user.id);
-        
-        if (projectId) {
-          simpleQuery = simpleQuery.eq("project_id", projectId);
-        }
-        
-        const { data: simpleData, error: simpleError } = await simpleQuery
-          .order("created_at", { ascending: false });
-
-        if (simpleError) {
-          console.error("useQuotes: Simple query failed:", simpleError);
-          throw simpleError;
-        }
-
-        console.log("useQuotes: Simple query successful, got", simpleData?.length, "quotes");
-
-        // Now try to enrich with project and client data
-        try {
-          console.log("useQuotes: Attempting enriched query");
-          let enrichedQuery = supabase
-            .from("quotes")
-            .select(`
-              *,
-              projects (
-                id,
-                name,
-                client_id,
-                job_number,
-                priority,
-                status,
-                start_date,
-                due_date,
-                completion_date,
-                description
-              ),
-              clients (
-                id,
-                name,
-                company_name,
-                email,
-                phone,
-                client_type
-              )
-            `)
-            .eq("user_id", user.id);
-          
-          if (projectId) {
-            enrichedQuery = enrichedQuery.eq("project_id", projectId);
-          }
-          
-          const { data, error } = await enrichedQuery
-            .order("created_at", { ascending: false });
-
-          if (error) {
-            console.warn("useQuotes: Enriched query failed, falling back to simple data:", error);
-            // Fall back to simple data if complex query fails
-            const quotesWithLock = simpleData?.map(quote => ({
-              ...quote,
-              is_locked: false,
-              projects: null,
-              clients: null
-            })) || [];
-            return quotesWithLock;
-          }
-          
-          console.log("Quotes fetched successfully with enriched data:", data?.length, "quotes");
-          const quotesWithLock = data?.map(quote => ({
-            ...quote,
-            is_locked: false
-          })) || [];
-          
-          return quotesWithLock;
-        } catch (enrichError) {
-          console.warn("useQuotes: Enriched query threw error, using simple data:", enrichError);
-          const quotesWithLock = simpleData?.map(quote => ({
-            ...quote,
-            is_locked: false,
-            projects: null,
-            clients: null
-          })) || [];
-          return quotesWithLock;
-        }
-      } catch (error) {
-        console.error("useQuotes: Error in fetch:", error);
-        throw error;
+      let query = supabase
+        .from("quotes")
+        .select("*")
+        .eq("user_id", user.id);
+      
+      if (projectId) {
+        query = query.eq("project_id", projectId);
       }
+      
+      const { data, error } = await query.order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false, // Reduce aggressive refetching
-    refetchOnMount: true,
-    retry: 2, // Reduce retries
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    refetchOnWindowFocus: false,
+    retry: 1,
+    retryDelay: 1000,
   });
 };
 

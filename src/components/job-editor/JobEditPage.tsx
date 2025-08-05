@@ -38,8 +38,8 @@ export const JobEditPage = ({ jobId, onBack }: JobEditPageProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <ProjectHeader 
-        projectName={job.projects?.name || job.quote_number || "Job"} 
-        projectNumber={job.projects?.job_number || job.quote_number}
+        projectName={job.quote_number || "Job"} 
+        projectNumber={job.quote_number}
         projectValue={job.total_amount}
         currentStatus={job.status}
         projectId={job} // Pass the whole job object so the component can extract project_id

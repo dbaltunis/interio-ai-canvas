@@ -65,10 +65,9 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const filteredQuotes = quotes.filter((quote) => {
     const matchesSearch = 
       quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.projects?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getClientName(quote).toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || quote.status === statusFilter || quote.projects?.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || quote.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });

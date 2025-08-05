@@ -63,8 +63,8 @@ export const JobsListView = ({
     try {
       const processed = quotes
         .map(quote => {
-          const client = quote.client_id ? clientsMap[quote.client_id] : quote.clients;
-          const project = quote.projects;
+          const client = quote.client_id ? clientsMap[quote.client_id] : null;
+          const project = null;
           
           return {
             ...quote,

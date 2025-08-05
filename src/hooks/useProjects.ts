@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +23,10 @@ export const useProjects = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };
 
@@ -31,6 +34,8 @@ export const useProject = (id: string) => {
   return useQuery({
     queryKey: ["projects", id],
     queryFn: async () => {
+      if (!id) return null;
+      
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -41,6 +46,8 @@ export const useProject = (id: string) => {
       return data;
     },
     enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
   });
 };
 
@@ -73,10 +80,9 @@ export const useCreateProject = () => {
       });
     },
     onError: (error: any) => {
-      console.error("Failed to create project:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create project. Please try again.",
+        description: error.message || "Failed to create project",
         variant: "destructive"
       });
     },
@@ -107,44 +113,9 @@ export const useUpdateProject = () => {
       });
     },
     onError: (error: any) => {
-      console.error("Failed to update project:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update project. Please try again.",
-        variant: "destructive"
-      });
-    },
-  });
-};
-
-export const useDeleteProject = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from("projects")
-        .delete()
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({
-        title: "Success",
-        description: "Project deleted successfully",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Failed to delete project:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete project. Please try again.",
+        description: error.message || "Failed to update project",
         variant: "destructive"
       });
     },

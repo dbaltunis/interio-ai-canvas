@@ -31,6 +31,7 @@ import { ClientManagementSkeleton } from "@/components/clients/skeleton/ClientMa
 import { CalendarSkeleton } from "@/components/calendar/skeleton/CalendarSkeleton";
 import { EmailManagementSkeleton } from "@/components/jobs/email/skeleton/EmailManagementSkeleton";
 import { InventorySkeleton } from "@/components/inventory/skeleton/InventorySkeleton";
+import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,7 +60,9 @@ const Index = () => {
 
   const renderActiveComponent = () => {
     const ComponentWrapper = ({ children }: { children: React.ReactNode }) => (
-      <div className="animate-fade-in">{children}</div>
+      <ErrorBoundary>
+        <div className="animate-fade-in">{children}</div>
+      </ErrorBoundary>
     );
 
     switch (activeTab) {

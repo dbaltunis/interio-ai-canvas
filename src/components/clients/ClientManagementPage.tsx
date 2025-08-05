@@ -10,6 +10,8 @@ import { ClientListView } from "../crm/ClientListView";
 import { ClientFilters } from "./ClientFilters";
 import { ClientImportExport } from "./ClientImportExport";
 import { JobsPagination } from "../jobs/JobsPagination";
+import { ErrorFallback } from "@/components/ui/error-fallback";
+import { LoadingFallback } from "@/components/ui/loading-fallback";
 
 export const ClientManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,14 +93,7 @@ export const ClientManagementPage = () => {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="text-gray-600">Loading clients...</p>
-        </div>
-      </div>
-    );
+    return <LoadingFallback title="Loading clients..." />;
   }
 
   return (

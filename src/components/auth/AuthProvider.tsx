@@ -32,50 +32,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthProvider: Setting up auth listener");
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email || 'no user');
-        console.log('Auth state change time:', new Date().toISOString());
-        console.log('Session details:', session ? 'Session exists' : 'No session');
-        console.log('Access token exists:', session?.access_token ? 'Yes' : 'No');
-        
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        console.log('AuthProvider: Loading set to false after auth change');
-        
-        // Test database connectivity when session changes
-        if (session?.user) {
-          try {
-            const { data, error } = await supabase
-              .from('user_profiles')
-              .select('user_id, display_name')
-              .eq('user_id', session.user.id)
-              .single();
-            console.log('Profile query result:', { data, error });
-          } catch (err) {
-            console.error('Profile query failed:', err);
-          }
-        }
       }
     );
 
-    // Get initial session
-    console.log("AuthProvider: Getting initial session");
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('AuthProvider: Error getting session:', error);
+    // Get initial session with timeout
+    const initAuth = async () => {
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000))
+        ]);
+        
+        if (result?.data?.session) {
+          setSession(result.data.session);
+          setUser(result.data.session.user);
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+      } finally {
+        setLoading(false);
       }
-      console.log('Initial session:', session?.user?.email || 'no user', 'Error:', error);
-      console.log('Initial session time:', new Date().toISOString());
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      console.log('AuthProvider: Loading set to false after initial session');
-    });
+    };
 
+    initAuth();
     return () => subscription.unsubscribe();
   }, []);
 
