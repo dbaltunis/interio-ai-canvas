@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { useDeleteUser } from "@/hooks/useUpdateUser";
 import { useUserFilters } from "@/hooks/useUserFilters";
 import { useBulkUserSelection } from "@/hooks/useBulkUserSelection";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -30,7 +31,17 @@ interface UserListProps {
 
 export const UserList = ({ users, onInviteUser, isLoading = false }: UserListProps) => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const deleteUser = useDeleteUser();
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
   
   const {
     filteredUsers,
@@ -156,6 +167,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
               <Checkbox
                 checked={selectedUsers.includes(user.id)}
                 onCheckedChange={(checked) => selectUser(user.id, !!checked)}
+                disabled={user.id === currentUserId}
               />
               <div className="flex items-center justify-between flex-1">
                 <div className="flex items-center space-x-3">

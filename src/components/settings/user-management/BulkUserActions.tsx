@@ -7,6 +7,8 @@ import { Trash2, UserCheck, UserX, Download, ChevronDown } from "lucide-react";
 import { User } from "@/hooks/useUsers";
 import { useUpdateUser, useDeleteUser } from "@/hooks/useUpdateUser";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BulkUserActionsProps {
   users: User[];
@@ -28,6 +30,17 @@ export const BulkUserActions = ({
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   const { toast } = useToast();
+  
+  // Permission checks
+  const canExport = useHasPermission('export_data');
+  const canDelete = useHasPermission('delete_users');
+  const canManageUsers = useHasPermission('manage_users');
+  
+  // Get current user ID to prevent self-actions
+  const getCurrentUserId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id;
+  };
 
   const allSelected = users.length > 0 && selectedUsers.length === users.length;
   const someSelected = selectedUsers.length > 0 && selectedUsers.length < users.length;
@@ -53,65 +66,90 @@ export const BulkUserActions = ({
   const executeBulkAction = async () => {
     if (!bulkAction || selectedUsers.length === 0) return;
 
+    // Prevent self-targeting actions
+    const currentUserId = await getCurrentUserId();
+    const targetUsers = selectedUsers.filter(userId => userId !== currentUserId);
+    
+    if (targetUsers.length === 0) {
+      toast({
+        title: "Cannot perform action",
+        description: "You cannot perform this action on yourself.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (targetUsers.length !== selectedUsers.length) {
+      toast({
+        title: "Self-action prevented",
+        description: "Your own account was excluded from this action for security.",
+      });
+    }
+
     setIsExecuting(true);
     try {
       switch (bulkAction) {
         case 'activate':
+          if (!canManageUsers) break;
           await Promise.all(
-            selectedUsers.map(userId => 
+            targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, is_active: true })
             )
           );
           toast({
             title: "Users activated",
-            description: `${selectedUsers.length} users have been activated.`,
+            description: `${targetUsers.length} users have been activated.`,
           });
           break;
 
         case 'deactivate':
+          if (!canManageUsers) break;
           await Promise.all(
-            selectedUsers.map(userId => 
+            targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, is_active: false })
             )
           );
           toast({
             title: "Users deactivated",
-            description: `${selectedUsers.length} users have been deactivated.`,
+            description: `${targetUsers.length} users have been deactivated.`,
           });
           break;
 
         case 'set_role_admin':
+          if (!canManageUsers) break;
           await Promise.all(
-            selectedUsers.map(userId => 
+            targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, role: 'Admin' })
             )
           );
           toast({
             title: "Role updated",
-            description: `${selectedUsers.length} users set to Admin role.`,
+            description: `${targetUsers.length} users set to Admin role.`,
           });
           break;
 
         case 'set_role_staff':
+          if (!canManageUsers) break;
           await Promise.all(
-            selectedUsers.map(userId => 
+            targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, role: 'Staff' })
             )
           );
           toast({
             title: "Role updated",
-            description: `${selectedUsers.length} users set to Staff role.`,
+            description: `${targetUsers.length} users set to Staff role.`,
           });
           break;
 
         case 'delete':
-          if (confirm(`Are you sure you want to delete ${selectedUsers.length} users? This action cannot be undone.`)) {
+          if (!canDelete) break;
+          if (confirm(`Are you sure you want to delete ${targetUsers.length} users? This action cannot be undone.`)) {
             await Promise.all(
-              selectedUsers.map(userId => deleteUser.mutateAsync(userId))
+              targetUsers.map(userId => deleteUser.mutateAsync(userId))
             );
             toast({
               title: "Users deleted",
-              description: `${selectedUsers.length} users have been removed.`,
+              description: `${targetUsers.length} users have been removed.`,
             });
           }
           break;
@@ -153,26 +191,32 @@ export const BulkUserActions = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none" disabled>Select Action</SelectItem>
-            <SelectItem value="activate">
-              <div className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4" />
-                Activate Users
-              </div>
-            </SelectItem>
-            <SelectItem value="deactivate">
-              <div className="flex items-center gap-2">
-                <UserX className="h-4 w-4" />
-                Deactivate Users
-              </div>
-            </SelectItem>
-            <SelectItem value="set_role_admin">Set Role: Admin</SelectItem>
-            <SelectItem value="set_role_staff">Set Role: Staff</SelectItem>
-            <SelectItem value="delete" className="text-destructive">
-              <div className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4" />
-                Delete Users
-              </div>
-            </SelectItem>
+            {canManageUsers && (
+              <>
+                <SelectItem value="activate">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4" />
+                    Activate Users
+                  </div>
+                </SelectItem>
+                <SelectItem value="deactivate">
+                  <div className="flex items-center gap-2">
+                    <UserX className="h-4 w-4" />
+                    Deactivate Users
+                  </div>
+                </SelectItem>
+                <SelectItem value="set_role_admin">Set Role: Admin</SelectItem>
+                <SelectItem value="set_role_staff">Set Role: Staff</SelectItem>
+              </>
+            )}
+            {canDelete && (
+              <SelectItem value="delete" className="text-destructive">
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Users
+                </div>
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
 
@@ -185,15 +229,17 @@ export const BulkUserActions = ({
           {isExecuting ? 'Processing...' : 'Apply'}
         </Button>
 
-        <Button
-          onClick={exportUsers}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
+        {canExport && (
+          <Button
+            onClick={exportUsers}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        )}
 
         <Button
           onClick={onClearSelection}

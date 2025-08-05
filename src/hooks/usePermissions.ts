@@ -21,12 +21,17 @@ export const useUserPermissions = () => {
         `)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user permissions:', error);
+        throw error;
+      }
+      console.log('User permissions fetched:', data);
       return data || [];
     },
-    enabled: !!supabase.auth.getUser(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 1000, // 30 seconds - shorter for more frequent updates
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    refetchOnWindowFocus: true,
   });
 };
 
