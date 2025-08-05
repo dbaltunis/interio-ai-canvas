@@ -13,88 +13,110 @@ interface InviteUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const ROLE_PERMISSIONS = {
+  Admin: [
+    'view_jobs', 'create_jobs', 'delete_jobs',
+    'view_clients', 'create_clients', 'delete_clients',
+    'view_calendar', 'create_appointments', 'delete_appointments', 
+    'view_inventory', 'manage_inventory',
+    'view_window_treatments', 'manage_window_treatments',
+    'view_analytics', 'view_settings'
+  ],
+  Manager: [
+    'view_jobs', 'create_jobs',
+    'view_clients', 'create_clients',
+    'view_calendar', 'create_appointments',
+    'view_inventory', 'manage_inventory',
+    'view_window_treatments', 'manage_window_treatments',
+    'view_analytics'
+  ],
+  Staff: [
+    'view_jobs', 'create_jobs',
+    'view_clients', 'create_clients', 
+    'view_calendar',
+    'view_inventory'
+  ]
+};
+
+const PERMISSION_LABELS = {
+  view_jobs: 'View Jobs',
+  create_jobs: 'Create Jobs',
+  delete_jobs: 'Delete Jobs',
+  view_clients: 'View Clients',
+  create_clients: 'Create Clients',
+  delete_clients: 'Delete Clients',
+  view_calendar: 'View Calendar',
+  create_appointments: 'Create Appointments',
+  delete_appointments: 'Delete Appointments',
+  view_inventory: 'View Inventory',
+  manage_inventory: 'Manage Inventory',
+  view_window_treatments: 'View Window Treatments',
+  manage_window_treatments: 'Manage Window Treatments',
+  view_analytics: 'View Analytics',
+  view_settings: 'View Settings',
+  manage_settings: 'Manage Settings',
+  manage_users: 'Manage Users'
+};
+
 export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) => {
   const [formData, setFormData] = useState({
     invited_email: "",
     invited_name: "",
     role: "Staff",
-    permissions: {
-      manage_users: false,
-      business_settings: false,
-      view_reports: false,
-      manage_projects: false,
-      update_tasks: false,
-    },
+    customPermissions: [] as string[],
   });
 
   const createInvitation = useCreateInvitation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createInvitation.mutate(formData, {
+    
+    // Convert permissions array to object format expected by backend
+    const permissionsObj = formData.customPermissions.reduce((acc, permission) => {
+      acc[permission] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    createInvitation.mutate({
+      invited_email: formData.invited_email,
+      invited_name: formData.invited_name,
+      role: formData.role,
+      permissions: permissionsObj,
+    }, {
       onSuccess: () => {
         onOpenChange(false);
         setFormData({
           invited_email: "",
           invited_name: "",
           role: "Staff",
-          permissions: {
-            manage_users: false,
-            business_settings: false,
-            view_reports: false,
-            manage_projects: false,
-            update_tasks: false,
-          },
+          customPermissions: [],
         });
       },
     });
-  };
-
-  const handlePermissionChange = (permission: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [permission]: checked,
-      },
-    }));
-  };
-
-  const rolePermissions = {
-    Admin: {
-      manage_users: true,
-      business_settings: true,
-      view_reports: true,
-      manage_projects: true,
-      update_tasks: true,
-    },
-    Manager: {
-      manage_users: false,
-      business_settings: false,
-      view_reports: true,
-      manage_projects: true,
-      update_tasks: true,
-    },
-    Staff: {
-      manage_users: false,
-      business_settings: false,
-      view_reports: false,
-      manage_projects: false,
-      update_tasks: true,
-    },
   };
 
   const handleRoleChange = (role: string) => {
     setFormData(prev => ({
       ...prev,
       role,
-      permissions: rolePermissions[role as keyof typeof rolePermissions],
+      customPermissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [],
     }));
   };
 
+  const handlePermissionChange = (permission: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      customPermissions: checked 
+        ? [...prev.customPermissions, permission]
+        : prev.customPermissions.filter(p => p !== permission)
+    }));
+  };
+
+  const rolePermissions = ROLE_PERMISSIONS[formData.role as keyof typeof ROLE_PERMISSIONS] || [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -149,49 +171,21 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
           <div className="space-y-3">
             <Label className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Permissions
+              Permissions for {formData.role}
             </Label>
-            <div className="space-y-3 pl-6">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="manage_users"
-                  checked={formData.permissions.manage_users}
-                  onCheckedChange={(checked) => handlePermissionChange("manage_users", checked as boolean)}
-                />
-                <Label htmlFor="manage_users" className="text-sm">Manage Users</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="business_settings"
-                  checked={formData.permissions.business_settings}
-                  onCheckedChange={(checked) => handlePermissionChange("business_settings", checked as boolean)}
-                />
-                <Label htmlFor="business_settings" className="text-sm">Business Settings</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="view_reports"
-                  checked={formData.permissions.view_reports}
-                  onCheckedChange={(checked) => handlePermissionChange("view_reports", checked as boolean)}
-                />
-                <Label htmlFor="view_reports" className="text-sm">View Reports</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="manage_projects"
-                  checked={formData.permissions.manage_projects}
-                  onCheckedChange={(checked) => handlePermissionChange("manage_projects", checked as boolean)}
-                />
-                <Label htmlFor="manage_projects" className="text-sm">Manage Projects</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="update_tasks"
-                  checked={formData.permissions.update_tasks}
-                  onCheckedChange={(checked) => handlePermissionChange("update_tasks", checked as boolean)}
-                />
-                <Label htmlFor="update_tasks" className="text-sm">Update Tasks</Label>
-              </div>
+            <div className="grid grid-cols-1 gap-2 pl-6 max-h-48 overflow-y-auto">
+              {rolePermissions.map((permission) => (
+                <div key={permission} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={permission}
+                    checked={formData.customPermissions.includes(permission)}
+                    onCheckedChange={(checked) => handlePermissionChange(permission, checked as boolean)}
+                  />
+                  <Label htmlFor={permission} className="text-sm">
+                    {PERMISSION_LABELS[permission as keyof typeof PERMISSION_LABELS]}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
 

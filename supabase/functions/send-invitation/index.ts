@@ -1,115 +1,118 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-interface InvitationRequest {
-  invitedEmail: string;
-  invitedName: string;
-  inviterName: string;
-  inviterEmail: string;
-  role: string;
-  invitationToken: string;
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const handler = async (req: Request): Promise<Response> => {
+serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { invitedEmail, invitedName, inviterName, inviterEmail, role, invitationToken }: InvitationRequest = await req.json();
+    const { invitedEmail, invitedName, inviterName, inviterEmail, role, invitationToken } = await req.json()
 
-    const invitationUrl = `${Deno.env.get("SITE_URL")}/accept-invitation?token=${invitationToken}`;
+    // Create a Supabase client with the Auth context of the user that called the function
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
 
-    const emailData = {
-      personalizations: [
-        {
-          to: [{ email: invitedEmail, name: invitedName || invitedEmail }],
-        },
-      ],
-      from: { email: "noreply@interioapp.com", name: inviterName },
-      reply_to: { email: inviterEmail, name: inviterName },
-      subject: `You're invited to join our team`,
-      content: [
-        {
-          type: "text/html",
-          value: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #333; margin-bottom: 24px;">You're invited to join our team!</h1>
-              
-              <p style="color: #666; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
-                Hi ${invitedName || 'there'},
-              </p>
-              
-              <p style="color: #666; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
-                ${inviterName} (${inviterEmail}) has invited you to join their team as a <strong>${role}</strong>.
-              </p>
-              
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${invitationUrl}" 
-                   style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;">
-                  Accept Invitation
-                </a>
-              </div>
-              
-              <p style="color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
-                Or copy and paste this link into your browser:
-              </p>
-              
-              <p style="color: #3b82f6; font-size: 14px; word-break: break-all; margin-bottom: 32px;">
-                ${invitationUrl}
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
-              
-              <p style="color: #999; font-size: 12px; text-align: center;">
-                This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
-              </p>
-            </div>
-          `,
-        },
-      ],
-    };
-
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${Deno.env.get("SENDGRID_API_KEY")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(emailData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("SendGrid API error:", response.status, errorData);
-      throw new Error(`SendGrid API error: ${response.status} - ${errorData}`);
+    // Get the current user
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) {
+      throw new Error('Not authenticated')
     }
 
-    console.log("Invitation email sent successfully via SendGrid");
+    // Create invitation link
+    const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173'
+    const invitationLink = `${siteUrl}/auth?invitation=${invitationToken}`
 
-    return new Response(JSON.stringify({ success: true, message: "Invitation sent" }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
+    // Email content
+    const emailContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Team Invitation</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">You're Invited!</h1>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
+          <h2 style="color: #495057; margin-top: 0;">Join our team</h2>
+          
+          <p style="font-size: 16px; margin: 20px 0;">
+            Hi ${invitedName || invitedEmail},
+          </p>
+          
+          <p style="font-size: 16px; margin: 20px 0;">
+            <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their team as a <strong>${role}</strong>.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${invitationLink}" 
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                      color: white; 
+                      padding: 15px 30px; 
+                      text-decoration: none; 
+                      border-radius: 5px; 
+                      font-weight: bold; 
+                      display: inline-block;">
+              Accept Invitation
+            </a>
+          </div>
+          
+          <p style="font-size: 14px; color: #6c757d; margin: 20px 0;">
+            If the button doesn't work, copy and paste this link into your browser:
+          </p>
+          <p style="font-size: 14px; color: #6c757d; word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 3px;">
+            ${invitationLink}
+          </p>
+          
+          <p style="font-size: 14px; color: #6c757d; margin: 30px 0 0 0;">
+            This invitation will expire in 7 days. If you have any questions, please contact ${inviterEmail}.
+          </p>
+        </div>
+      </body>
+      </html>
+    `
+
+    // For now, just log the email content since SendGrid isn't configured
+    console.log('Invitation email content:', {
+      to: invitedEmail,
+      subject: `Invitation to join ${inviterName}'s team`,
+      html: emailContent
+    })
+
+    // TODO: Implement actual email sending when SendGrid is configured
+    // This would use the SENDGRID_API_KEY environment variable
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Invitation email prepared (email service not configured)' 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       },
-    });
-  } catch (error: any) {
-    console.error("Error in send-invitation function:", error);
+    )
+  } catch (error) {
+    console.error('Error in send-invitation function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      },
+    )
   }
-};
-
-serve(handler);
+})

@@ -8,6 +8,7 @@ import { PendingInvitations } from "../user-management/PendingInvitations";
 import { StatusManagement } from "../user-management/StatusManagement";
 import { RolePermissions } from "../user-management/RolePermissions";
 import { PermissionManager } from "../user-management/PermissionManager";
+import { TeamOverview } from "../user-management/TeamOverview";
 
 export const UserManagementTab = () => {
   const { data: users = [], isLoading: usersLoading } = useUsers();
@@ -28,6 +29,8 @@ export const UserManagementTab = () => {
 
   return (
     <div className="space-y-6">
+      <TeamOverview />
+      
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <UserList 
           users={users} 
@@ -46,7 +49,7 @@ export const UserManagementTab = () => {
         <PermissionManager />
       </div>
 
-      <InviteUserDialog
+      <InviteUserDialog 
         open={isInviteDialogOpen} 
         onOpenChange={setIsInviteDialogOpen} 
       />
