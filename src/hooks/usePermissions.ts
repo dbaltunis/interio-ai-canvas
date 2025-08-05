@@ -24,16 +24,29 @@ export const useUserPermissions = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!supabase.auth.getUser(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
 export const useHasPermission = (permission: string) => {
-  const { data: permissions } = useUserPermissions();
+  const { data: permissions, isLoading } = useUserPermissions();
+  
+  // Return false only if we're done loading and don't have the permission
+  // While loading, return undefined to prevent premature denials
+  if (isLoading) return undefined;
+  
   return permissions?.some(p => p.permission_name === permission) || false;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {
-  const { data: permissions } = useUserPermissions();
+  const { data: permissions, isLoading } = useUserPermissions();
+  
+  // Return false only if we're done loading and don't have any permissions
+  // While loading, return undefined to prevent premature denials
+  if (isLoading) return undefined;
+  
   return permissionList.some(permission => 
     permissions?.some(p => p.permission_name === permission)
   ) || false;

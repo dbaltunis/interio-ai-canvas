@@ -16,16 +16,27 @@ export const PermissionGuard = ({
   children, 
   requireAll = false 
 }: PermissionGuardProps) => {
-  let hasPermission = false;
+  let hasPermission: boolean | undefined = false;
 
   if (permission) {
     hasPermission = useHasPermission(permission);
   } else if (permissions) {
     if (requireAll) {
-      hasPermission = permissions.every(p => useHasPermission(p));
+      // For requireAll, check if any permission is still loading
+      const permissionChecks = permissions.map(p => useHasPermission(p));
+      if (permissionChecks.some(check => check === undefined)) {
+        hasPermission = undefined; // Still loading
+      } else {
+        hasPermission = permissionChecks.every(check => check === true);
+      }
     } else {
       hasPermission = useHasAnyPermission(permissions);
     }
+  }
+
+  // Show loading state while permissions are being checked
+  if (hasPermission === undefined) {
+    return null; // Or return a loading spinner if desired
   }
 
   if (!hasPermission) {

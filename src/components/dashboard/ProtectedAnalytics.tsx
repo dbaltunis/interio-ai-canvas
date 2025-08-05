@@ -9,6 +9,11 @@ interface ProtectedAnalyticsProps {
 export const ProtectedAnalytics = ({ children, fallback }: ProtectedAnalyticsProps) => {
   const canViewAnalytics = useHasPermission('view_analytics');
 
+  // Show nothing while loading permissions
+  if (canViewAnalytics === undefined) {
+    return null;
+  }
+
   if (!canViewAnalytics) {
     return fallback || (
       <div className="bg-muted/50 rounded-lg p-6 text-center">
