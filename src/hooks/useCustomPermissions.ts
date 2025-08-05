@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useValidatePermissions } from "@/hooks/usePermissionAudit";
 
 export const useCustomPermissions = (userId?: string) => {
   return useQuery({
@@ -27,9 +28,19 @@ export const useCustomPermissions = (userId?: string) => {
 export const useUpdateCustomPermissions = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const validatePermissions = useValidatePermissions();
 
   return useMutation({
     mutationFn: async ({ userId, permissions }: { userId: string; permissions: string[] }) => {
+      // Validate permission dependencies first
+      const validation = await validatePermissions(userId, permissions);
+      
+      if (validation && typeof validation === 'object' && 'valid' in validation) {
+        const validationResult = validation as { valid: boolean; missing_dependencies?: string[] };
+        if (!validationResult.valid) {
+          throw new Error(`Missing dependencies: ${validationResult.missing_dependencies?.join(', ') || 'Unknown dependencies'}`);
+        }
+      }
       // Delete existing custom permissions
       await supabase
         .from('user_permissions')

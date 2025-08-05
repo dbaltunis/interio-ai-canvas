@@ -1706,6 +1706,45 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          id: string
+          new_value: boolean | null
+          permission_name: string
+          previous_value: boolean | null
+          reason: string | null
+          target_user_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_value?: boolean | null
+          permission_name: string
+          previous_value?: boolean | null
+          reason?: string | null
+          target_user_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_value?: boolean | null
+          permission_name?: string
+          previous_value?: boolean | null
+          reason?: string | null
+          target_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string
@@ -2681,6 +2720,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      validate_permission_dependencies: {
+        Args: { user_id_param: string; permissions_param: string[] }
+        Returns: Json
       }
     }
     Enums: {

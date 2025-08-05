@@ -13,6 +13,8 @@ import { Shield, Save, RotateCcw, Info } from "lucide-react";
 import { PermissionGrid } from "./PermissionGrid";
 import { RolePermissionPreview } from "./RolePermissionPreview";
 import { RoleGuide } from "./RoleGuide";
+import { PermissionAuditLog } from "./PermissionAuditLog";
+import { BulkPermissionManager } from "./BulkPermissionManager";
 
 const ROLE_PERMISSIONS = {
   Owner: [
@@ -219,9 +221,11 @@ export const PermissionManager = () => {
 
             {/* Permission Management Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="role-based">Role-Based</TabsTrigger>
                 <TabsTrigger value="custom">Custom Permissions</TabsTrigger>
+                <TabsTrigger value="audit">Audit Log</TabsTrigger>
+                <TabsTrigger value="bulk">Bulk Operations</TabsTrigger>
               </TabsList>
 
               <TabsContent value="role-based" className="space-y-4 mt-4">
@@ -269,6 +273,17 @@ export const PermissionManager = () => {
                   permissions={customPermissions}
                   onToggle={handlePermissionToggle}
                 />
+              </TabsContent>
+
+              <TabsContent value="audit" className="space-y-4 mt-4">
+                <PermissionAuditLog userId={selectedUser.id} />
+              </TabsContent>
+
+              <TabsContent value="bulk" className="space-y-4 mt-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Switch to the bulk operations view to manage multiple users at once.
+                </div>
+                <BulkPermissionManager />
               </TabsContent>
             </Tabs>
           </div>
