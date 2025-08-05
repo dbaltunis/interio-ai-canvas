@@ -9,24 +9,77 @@ export const useUserPermissions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // First try to get custom permissions from user_permissions table
+      const { data: customPermissions, error: customError } = await supabase
         .from('user_permissions')
-        .select(`
-          permission_name,
-          permissions (
-            name,
-            description,
-            category
-          )
-        `)
+        .select('permission_name')
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching user permissions:', error);
-        throw error;
+      if (customError && customError.code !== 'PGRST116') {
+        console.error('Error fetching custom permissions:', customError);
       }
-      console.log('User permissions fetched:', data);
-      return data || [];
+
+      // If user has custom permissions, use those
+      if (customPermissions && customPermissions.length > 0) {
+        console.log('Using custom permissions:', customPermissions);
+        return customPermissions.map(p => ({ permission_name: p.permission_name }));
+      }
+
+      // Otherwise, fall back to role-based permissions
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return [];
+      }
+
+      // Define role-based permissions
+      const rolePermissions = {
+        Owner: [
+          'view_jobs', 'create_jobs', 'delete_jobs',
+          'view_clients', 'create_clients', 'delete_clients', 
+          'view_calendar', 'create_appointments', 'delete_appointments',
+          'view_inventory', 'manage_inventory',
+          'view_window_treatments', 'manage_window_treatments',
+          'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
+          'view_profile'
+        ],
+        Admin: [
+          'view_jobs', 'create_jobs', 'delete_jobs',
+          'view_clients', 'create_clients', 'delete_clients',
+          'view_calendar', 'create_appointments', 'delete_appointments', 
+          'view_inventory', 'manage_inventory',
+          'view_window_treatments', 'manage_window_treatments',
+          'view_analytics', 'view_settings',
+          'view_profile'
+        ],
+        Manager: [
+          'view_jobs', 'create_jobs',
+          'view_clients', 'create_clients',
+          'view_calendar', 'create_appointments',
+          'view_inventory', 'manage_inventory',
+          'view_window_treatments', 'manage_window_treatments',
+          'view_analytics',
+          'view_profile'
+        ],
+        Staff: [
+          'view_jobs', 'create_jobs',
+          'view_clients', 'create_clients', 
+          'view_calendar',
+          'view_inventory',
+          'view_profile'
+        ]
+      };
+
+      const userRole = profile?.role || 'Staff';
+      const permissions = rolePermissions[userRole as keyof typeof rolePermissions] || [];
+      
+      console.log(`Using role-based permissions for ${userRole}:`, permissions);
+      return permissions.map(permission => ({ permission_name: permission }));
     },
     staleTime: 30 * 1000, // 30 seconds - shorter for more frequent updates
     gcTime: 5 * 60 * 1000, // 5 minutes

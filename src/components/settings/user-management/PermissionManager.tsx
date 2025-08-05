@@ -1,17 +1,18 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUsers } from "@/hooks/useUsers";
 import { useUpdateUser } from "@/hooks/useUpdateUser";
+import { useCustomPermissions, useUpdateCustomPermissions } from "@/hooks/useCustomPermissions";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Shield, Users, Eye, Search, Save, RotateCcw, Info, AlertTriangle } from "lucide-react";
+import { Shield, Save, RotateCcw, Info } from "lucide-react";
+import { PermissionGrid } from "./PermissionGrid";
+import { RolePermissionPreview } from "./RolePermissionPreview";
+import { RoleGuide } from "./RoleGuide";
 
 const ROLE_PERMISSIONS = {
   Owner: [
@@ -86,47 +87,31 @@ const PERMISSION_DETAILS = {
 export const PermissionManager = () => {
   const { data: users = [] } = useUsers();
   const { mutate: updateUser } = useUpdateUser();
+  const { mutate: updateCustomPermissions } = useUpdateCustomPermissions();
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("role-based");
   const [customPermissions, setCustomPermissions] = useState<string[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+
+  const { data: currentCustomPermissions = [] } = useCustomPermissions(selectedUserId);
 
   const selectedUser = users.find(user => user.id === selectedUserId);
   
   // Initialize custom permissions when user is selected
   useEffect(() => {
     if (selectedUser) {
-      const rolePermissions = ROLE_PERMISSIONS[selectedUser.role as keyof typeof ROLE_PERMISSIONS] || [];
-      setCustomPermissions([...rolePermissions]);
+      // Use existing custom permissions if they exist, otherwise use role permissions
+      if (currentCustomPermissions.length > 0) {
+        setCustomPermissions([...currentCustomPermissions]);
+      } else {
+        const rolePermissions = ROLE_PERMISSIONS[selectedUser.role as keyof typeof ROLE_PERMISSIONS] || [];
+        setCustomPermissions([...rolePermissions]);
+      }
       setHasChanges(false);
     }
-  }, [selectedUser]);
+  }, [selectedUser, currentCustomPermissions]);
 
-  // Filter permissions based on search
-  const filteredPermissions = useMemo(() => {
-    const allPermissions = Object.entries(PERMISSION_DETAILS);
-    if (!searchTerm) return allPermissions;
-    
-    return allPermissions.filter(([key, details]) => 
-      details.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      details.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      details.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm]);
-
-  // Group permissions by category
-  const permissionsByCategory = useMemo(() => {
-    const grouped: Record<string, Array<[string, any]>> = {};
-    filteredPermissions.forEach(([key, details]) => {
-      if (!grouped[details.category]) {
-        grouped[details.category] = [];
-      }
-      grouped[details.category].push([key, details]);
-    });
-    return grouped;
-  }, [filteredPermissions]);
 
   const handleRoleChange = (newRole: string) => {
     if (!selectedUser) return;
@@ -159,11 +144,9 @@ export const PermissionManager = () => {
   const handleSaveCustomPermissions = () => {
     if (!selectedUser) return;
     
-    // Here we would need to implement custom permission saving
-    // For now, we'll show a toast indicating the feature
-    toast({
-      title: "Custom permissions",
-      description: "Custom permission override will be implemented in the next update.",
+    updateCustomPermissions({
+      userId: selectedUser.id,
+      permissions: customPermissions
     });
     setHasChanges(false);
   };
@@ -176,12 +159,6 @@ export const PermissionManager = () => {
     setHasChanges(false);
   };
 
-  const checkPermissionDependencies = (permission: string): string[] => {
-    const details = PERMISSION_DETAILS[permission as keyof typeof PERMISSION_DETAILS];
-    if (!details?.required) return [];
-    
-    return details.required.filter(req => !customPermissions.includes(req));
-  };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -264,32 +241,10 @@ export const PermissionManager = () => {
                   </Select>
                 </div>
 
-                {/* Role Permissions Preview */}
-                <div className="space-y-3">
-                  <h4 className="font-medium">Permissions for {selectedUser.role}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {ROLE_PERMISSIONS[selectedUser.role as keyof typeof ROLE_PERMISSIONS]?.map((permission) => (
-                      <div key={permission} className="flex items-center space-x-2 p-2 border rounded bg-muted/20">
-                        <Checkbox checked={true} disabled />
-                        <span className="text-sm">{PERMISSION_DETAILS[permission as keyof typeof PERMISSION_DETAILS]?.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <RolePermissionPreview role={selectedUser.role} />
               </TabsContent>
 
               <TabsContent value="custom" className="space-y-4 mt-4">
-                {/* Search Permissions */}
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search permissions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-
                 {/* Changes Alert */}
                 {hasChanges && (
                   <Alert>
@@ -310,103 +265,16 @@ export const PermissionManager = () => {
                   </Alert>
                 )}
 
-                {/* Permission Categories */}
-                <div className="space-y-4">
-                  {Object.entries(permissionsByCategory).map(([categoryKey, permissions]) => {
-                    const category = PERMISSION_CATEGORIES[categoryKey as keyof typeof PERMISSION_CATEGORIES];
-                    if (!category || permissions.length === 0) return null;
-
-                    return (
-                      <div key={categoryKey} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${category.color}`} />
-                          <h5 className="font-medium text-sm">{category.label}</h5>
-                          <span className="text-xs text-muted-foreground">({permissions.length})</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 gap-2 pl-5">
-                          {permissions.map(([permissionKey, details]) => {
-                            const isEnabled = customPermissions.includes(permissionKey);
-                            const missingDeps = checkPermissionDependencies(permissionKey);
-                            const hasWarning = details.warning;
-                            
-                            return (
-                              <div key={permissionKey} className={`flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/20 transition-colors ${isEnabled ? 'bg-muted/10' : ''}`}>
-                                <Checkbox
-                                  checked={isEnabled}
-                                  onCheckedChange={(checked) => handlePermissionToggle(permissionKey, !!checked)}
-                                  className="mt-0.5"
-                                />
-                                <div className="flex-1 space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium">{details.label}</span>
-                                    {hasWarning && (
-                                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">{details.description}</p>
-                                  {missingDeps.length > 0 && isEnabled && (
-                                    <p className="text-xs text-red-500">
-                                      Missing dependencies: {missingDeps.join(', ')}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <Separator className="my-3" />
-                      </div>
-                    );
-                  })}
-                </div>
+                <PermissionGrid 
+                  permissions={customPermissions}
+                  onToggle={handlePermissionToggle}
+                />
               </TabsContent>
             </Tabs>
           </div>
         )}
 
-        {/* Role Guide */}
-        <div className="border-t pt-6">
-          <h4 className="font-medium mb-4">Role Guide</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2 p-3 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <Badge variant="default">Owner</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Full system access including user management and all settings
-              </p>
-            </div>
-            <div className="space-y-2 p-3 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <Badge variant="secondary">Admin</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Most permissions except sensitive business settings
-              </p>
-            </div>
-            <div className="space-y-2 p-3 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <Badge variant="outline">Manager</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Day-to-day operations, inventory, and client management
-              </p>
-            </div>
-            <div className="space-y-2 p-3 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                <Badge variant="secondary">Staff</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Basic operations like viewing and creating jobs/clients
-              </p>
-            </div>
-          </div>
-        </div>
+        <RoleGuide />
       </CardContent>
     </Card>
   );
