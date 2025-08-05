@@ -222,10 +222,12 @@ export const JobActionsMenu = ({
             </>
           )}
           
+          {/* Disabled: Team invitations temporarily disabled
           <DropdownMenuItem onClick={() => setShowTeam(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Invite Team
           </DropdownMenuItem>
+          */}
           
           <DropdownMenuSeparator />
           
@@ -247,12 +249,14 @@ export const JobActionsMenu = ({
         project={project}
       />
 
+      {/* Disabled: Team functionality temporarily disabled
       <JobTeamDialog 
         open={showTeam} 
         onOpenChange={setShowTeam}
         quote={quote}
         project={project}
       />
+      */}
 
       <JobProgressDialog 
         open={showProgress} 

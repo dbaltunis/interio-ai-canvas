@@ -77,10 +77,15 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                 </CardDescription>
               </div>
             </div>
+            {/* Disabled: User invitations temporarily disabled
             <Button onClick={onInviteUser} className="gap-2">
               <UserPlus className="h-4 w-4" />
               Invite User
             </Button>
+            */}
+            <div className="px-3 py-2 bg-muted rounded-md text-sm text-muted-foreground">
+              Team invitations temporarily disabled
+            </div>
           </div>
           
           {/* User Stats */}
@@ -142,7 +147,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
               <div>
                 <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">No team members found</p>
-                <p className="text-xs text-muted-foreground mt-1">Invite your first team member to get started</p>
+                <p className="text-xs text-muted-foreground mt-1">Team invitations currently disabled for stability</p>
               </div>
             </div>
           ) : (
