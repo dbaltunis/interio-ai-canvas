@@ -36,6 +36,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmailStatusDisplay } from "./EmailStatusDisplay";
 import { JobsPagination } from "./JobsPagination";
 import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
+import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -51,6 +52,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
+  const userCurrency = useUserCurrency();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
@@ -303,7 +305,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    ${quote.total_amount?.toFixed(2) || '0.00'}
+                    {formatCurrency(quote.total_amount || 0, userCurrency)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">

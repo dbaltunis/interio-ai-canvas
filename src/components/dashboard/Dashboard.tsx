@@ -9,9 +9,11 @@ import {
   DollarSign
 } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 
 const Dashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
+  const userCurrency = useUserCurrency();
 
   if (isLoading) {
     return (
@@ -54,7 +56,7 @@ const Dashboard = () => {
     },
     {
       title: "Total Revenue",
-      value: `$${(stats?.totalRevenue || 0).toLocaleString()}`,
+      value: formatCurrency(stats?.totalRevenue || 0, userCurrency),
       icon: DollarSign,
       description: "This month"
     }
