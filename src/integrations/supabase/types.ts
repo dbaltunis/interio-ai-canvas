@@ -2666,6 +2666,10 @@ export type Database = {
         Args: { invitation_token_param: string; user_id_param: string }
         Returns: Json
       }
+      get_default_permissions_for_role: {
+        Args: { user_role: string }
+        Returns: string[]
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: string
