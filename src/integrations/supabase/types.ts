@@ -581,36 +581,6 @@ export type Database = {
           },
         ]
       }
-      calendar_shares: {
-        Row: {
-          calendar_id: string
-          created_at: string
-          id: string
-          owner_id: string
-          permission_level: string
-          shared_with_user_id: string
-          updated_at: string
-        }
-        Insert: {
-          calendar_id: string
-          created_at?: string
-          id?: string
-          owner_id: string
-          permission_level?: string
-          shared_with_user_id: string
-          updated_at?: string
-        }
-        Update: {
-          calendar_id?: string
-          created_at?: string
-          id?: string
-          owner_id?: string
-          permission_level?: string
-          shared_with_user_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       client_measurements: {
         Row: {
           client_id: string | null
@@ -2211,33 +2181,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_workspaces: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          owner_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          owner_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          owner_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       todos: {
         Row: {
           id: number
@@ -2655,36 +2598,6 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      workspace_members: {
-        Row: {
-          created_at: string
-          id: string
-          joined_at: string
-          role: string
-          updated_at: string
-          user_id: string
-          workspace_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          joined_at?: string
-          role?: string
-          updated_at?: string
-          user_id: string
-          workspace_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          joined_at?: string
-          role?: string
-          updated_at?: string
-          user_id?: string
-          workspace_id?: string
         }
         Relationships: []
       }
