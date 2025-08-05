@@ -48,7 +48,6 @@ const ITEMS_PER_PAGE = 20;
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
   const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: clients = [] } = useClients();
-  console.log("JobsTableView: useQuotes result", { quotesCount: quotes.length, isLoading, hasQuotes: quotes.length > 0 });
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
