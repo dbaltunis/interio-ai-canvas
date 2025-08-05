@@ -13,6 +13,7 @@ import {
 import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
+import { useUsers } from "@/hooks/useUsers";
 import { useToast } from "@/hooks/use-toast";
 import { 
   DropdownMenu, 
@@ -49,6 +50,7 @@ const ITEMS_PER_PAGE = 20;
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
   const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: clients = [] } = useClients();
+  const { data: users = [] } = useUsers();
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
@@ -175,6 +177,25 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     return quote.projects?.status || quote.status || 'draft';
   };
 
+  const getOwnerInfo = (quote: any) => {
+    if (!quote.user_id || users.length === 0) {
+      return { name: 'Unknown', initials: 'UN' };
+    }
+    
+    const owner = users.find(user => user.id === quote.user_id);
+    if (owner) {
+      const initials = owner.name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+      return { name: owner.name, initials };
+    }
+    
+    return { name: 'Unknown', initials: 'UN' };
+  };
+
   const handleDeleteJob = async (quote: any) => {
     try {
       await deleteQuote.mutateAsync(quote.id);
@@ -270,6 +291,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
               const clientName = getClientName(quote);
               const client = getClientForQuote(quote);
               const currentStatus = getCurrentStatus(quote);
+              const ownerInfo = getOwnerInfo(quote);
               
               return (
                 <TableRow 
@@ -311,10 +333,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-6 w-6">
                         <AvatarFallback className="bg-brand-primary text-white text-xs">
-                          ME
+                          {ownerInfo.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-600">You</span>
+                      <span className="text-sm text-gray-600">{ownerInfo.name}</span>
                     </div>
                   </TableCell>
                   <TableCell>
