@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
@@ -14,11 +15,27 @@ const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
+  // Permission checks
+  const canViewJobs = useHasPermission('view_jobs');
+  const canCreateJobs = useHasPermission('create_jobs');
+  
   const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
+
+  // If user doesn't have permission to view jobs, show access denied
+  if (!canViewJobs) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to view jobs.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleNewJob = async () => {
     try {
@@ -157,14 +174,16 @@ const JobsPage = () => {
             onStatusChange={setStatusFilter}
             onClearFilters={handleClearFilters}
           />
-          <Button 
-            onClick={handleNewJob}
-            disabled={createProject.isPending || createQuote.isPending}
-            className="bg-brand-primary hover:bg-brand-accent text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Job"}
-          </Button>
+          {canCreateJobs && (
+            <Button 
+              onClick={handleNewJob}
+              disabled={createProject.isPending || createQuote.isPending}
+              className="bg-brand-primary hover:bg-brand-accent text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Job"}
+            </Button>
+          )}
         </div>
       </div>
 

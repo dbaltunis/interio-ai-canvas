@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";
@@ -26,7 +27,24 @@ export const ClientManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // Permission checks
+  const canViewClients = useHasPermission('view_clients');
+  const canCreateClients = useHasPermission('create_clients');
+  const canDeleteClients = useHasPermission('delete_clients');
+
   const { data: clients, isLoading } = useClients();
+
+  // If user doesn't have permission to view clients, show access denied
+  if (!canViewClients) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to view clients.</p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredClients = clients?.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,13 +144,15 @@ export const ClientManagementPage = () => {
             <Download className="h-4 w-4" />
           </Button>
           
-          <Button 
-            onClick={() => setShowCreateForm(true)}
-            className="bg-brand-primary hover:bg-brand-accent text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Client
-          </Button>
+          {canCreateClients && (
+            <Button 
+              onClick={() => setShowCreateForm(true)}
+              className="bg-brand-primary hover:bg-brand-accent text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Client
+            </Button>
+          )}
         </div>
       </div>
 

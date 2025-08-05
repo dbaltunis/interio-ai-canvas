@@ -5,10 +5,27 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, AlertTriangle, TrendingUp, Package } from "lucide-react";
 import { useInventory, useLowStockItems } from "@/hooks/useInventory";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const InventoryManagement = () => {
+  // Permission checks
+  const canViewInventory = useHasPermission('view_inventory');
+  const canManageInventory = useHasPermission('manage_inventory');
+
   const { data: inventory, isLoading } = useInventory();
   const { data: lowStockItems } = useLowStockItems();
+
+  // If user doesn't have permission to view inventory, show access denied
+  if (!canViewInventory) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to view inventory.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <div>Loading inventory...</div>;
@@ -34,10 +51,12 @@ export const InventoryManagement = () => {
             Smart inventory tracking with real-time stock levels
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Item
-        </Button>
+        {canManageInventory && (
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
+        )}
       </div>
 
       {/* Inventory Overview */}

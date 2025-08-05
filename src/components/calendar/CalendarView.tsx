@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronL
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useBookedAppointments } from "@/hooks/useBookedAppointments";
