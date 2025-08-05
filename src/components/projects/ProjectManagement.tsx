@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, Clock, CheckCircle, Eye, FileText, Edit } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { PermissionGuard } from "@/components/common/PermissionGuard";
 
 interface ProjectManagementProps {
   onViewProject?: (project: any) => void;
@@ -15,6 +17,18 @@ interface ProjectManagementProps {
 
 export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocuments }: ProjectManagementProps) => {
   const { data: projects, isLoading } = useProjects();
+  const canViewProjects = useHasPermission('view_projects');
+  const canCreateProjects = useHasPermission('create_projects');
+  const canEditProjects = useHasPermission('edit_projects');
+
+  if (!canViewProjects) {
+    return (
+      <div className="bg-muted/50 rounded-lg p-6 text-center">
+        <h3 className="text-lg font-semibold mb-2">Projects Access Required</h3>
+        <p className="text-muted-foreground">You need project permissions to view this data.</p>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -59,14 +73,18 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={onViewDocuments}>
-            <FileText className="mr-2 h-4 w-4" />
-            Documents
-          </Button>
-          <Button onClick={onCreateProject}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
+          <PermissionGuard permission="view_documents">
+            <Button onClick={onViewDocuments}>
+              <FileText className="mr-2 h-4 w-4" />
+              Documents
+            </Button>
+          </PermissionGuard>
+          <PermissionGuard permission="create_projects">
+            <Button onClick={onCreateProject}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
+          </PermissionGuard>
         </div>
       </div>
 
@@ -150,10 +168,12 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="mx-auto h-12 w-12 mb-4" />
               <p>No projects found. Create your first project to get started!</p>
-              <Button onClick={onCreateProject} className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Project
-              </Button>
+              <PermissionGuard permission="create_projects">
+                <Button onClick={onCreateProject} className="mt-4">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Project
+                </Button>
+              </PermissionGuard>
             </div>
           ) : (
             <Table>
@@ -199,14 +219,16 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onViewProject?.(project)}
-                          title="View Details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <PermissionGuard permission="view_projects">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onViewProject?.(project)}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </PermissionGuard>
                       </div>
                     </TableCell>
                   </TableRow>
