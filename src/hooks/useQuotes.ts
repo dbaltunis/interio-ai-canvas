@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Quote = Tables<"quotes">;
@@ -8,16 +9,22 @@ type QuoteInsert = TablesInsert<"quotes">;
 type QuoteUpdate = TablesUpdate<"quotes">;
 
 export const useQuotes = (projectId?: string) => {
+  const canViewAllJobs = useHasPermission('view_all_jobs');
+  
   return useQuery({
-    queryKey: ["quotes", projectId],
+    queryKey: ["quotes", projectId, canViewAllJobs],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
       let query = supabase
         .from("quotes")
-        .select("*")
-        .eq("user_id", user.id);
+        .select("*");
+      
+      // If user doesn't have view_all_jobs permission, filter by user_id
+      if (!canViewAllJobs) {
+        query = query.eq("user_id", user.id);
+      }
       
       if (projectId) {
         query = query.eq("project_id", projectId);
@@ -28,6 +35,7 @@ export const useQuotes = (projectId?: string) => {
       if (error) throw error;
       return data || [];
     },
+    enabled: canViewAllJobs !== undefined, // Wait for permission to load
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

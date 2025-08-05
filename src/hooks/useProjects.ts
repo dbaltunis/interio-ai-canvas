@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Project = Tables<"projects">;
@@ -8,21 +9,29 @@ type ProjectInsert = TablesInsert<"projects">;
 type ProjectUpdate = TablesUpdate<"projects">;
 
 export const useProjects = () => {
+  const canViewAllProjects = useHasPermission('view_all_projects');
+  
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: ["projects", canViewAllProjects],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("projects")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .select("*");
+      
+      // If user doesn't have view_all_projects permission, filter by user_id
+      if (!canViewAllProjects) {
+        query = query.eq("user_id", user.id);
+      }
+      
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: canViewAllProjects !== undefined, // Wait for permission to load
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

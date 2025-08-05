@@ -25,6 +25,15 @@ const JobsPage = () => {
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
 
+  // Show loading while permissions are being checked
+  if (canViewJobs === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   // If user doesn't have permission to view jobs, show access denied
   if (!canViewJobs) {
     return (

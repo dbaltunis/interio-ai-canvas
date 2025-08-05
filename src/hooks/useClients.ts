@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Client = Tables<"clients">;
@@ -9,22 +10,29 @@ type ClientInsert = TablesInsert<"clients">;
 type ClientUpdate = TablesUpdate<"clients">;
 
 export const useClients = (enabled: boolean = true) => {
+  const canViewAllClients = useHasPermission('view_all_clients');
+  
   return useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", canViewAllClients],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("clients")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .select("*");
+      
+      // If user doesn't have view_all_clients permission, filter by user_id
+      if (!canViewAllClients) {
+        query = query.eq("user_id", user.id);
+      }
+      
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    enabled,
+    enabled: enabled && canViewAllClients !== undefined, // Wait for permission to load
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
