@@ -318,7 +318,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   onClick={() => onJobSelect(quote)}
                 >
                   <TableCell className="font-medium">
-                    {quote.quote_number}
+                    <span 
+                      title={quote.quote_number}
+                      className="font-mono text-sm"
+                    >
+                      {quote.quote_number?.length > 12 
+                        ? `...${quote.quote_number.slice(-8)}` 
+                        : quote.quote_number
+                      }
+                    </span>
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <EmailStatusDisplay 
