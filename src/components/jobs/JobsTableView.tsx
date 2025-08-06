@@ -322,10 +322,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       title={quote.quote_number}
                       className="font-mono text-sm"
                     >
-                      {quote.quote_number?.length > 12 
-                        ? `...${quote.quote_number.slice(-8)}` 
-                        : quote.quote_number
-                      }
+                      {(() => {
+                        // Extract number from quote_number and format as Job-XXXX
+                        const match = quote.quote_number?.match(/(\d+)/);
+                        const number = match ? match[1] : '0000';
+                        return `Job-${number.padStart(4, '0')}`;
+                      })()}
                     </span>
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
