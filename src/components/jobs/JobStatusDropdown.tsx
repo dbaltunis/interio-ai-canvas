@@ -40,7 +40,7 @@ export const JobStatusDropdown = ({
 
   // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(
-    status => status.category.toLowerCase() === jobType
+    status => status.category.toLowerCase() === jobType.toLowerCase()
   );
 
   // Get current status details
