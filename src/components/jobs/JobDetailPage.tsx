@@ -81,7 +81,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     <div className="min-h-screen bg-background w-full">
       {/* Compact Header Bar */}
       <div className="bg-card border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+        <div className="px-4 py-3">
           {/* Navigation & Main Info in Single Row */}
           <div className="flex items-center justify-between">
             {/* Left: Navigation + Job Info */}
@@ -150,7 +150,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Tab Navigation */}
           <div className="bg-card border-b">
