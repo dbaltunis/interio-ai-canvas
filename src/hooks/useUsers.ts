@@ -8,6 +8,7 @@ export interface User {
   role: string;
   status: string;
   phone?: string;
+  avatar_url?: string;
 }
 
 export const useUsers = () => {
@@ -32,6 +33,7 @@ export const useUsers = () => {
           role,
           is_active,
           phone_number,
+          avatar_url,
           created_at
         `)
         .order('created_at', { ascending: false });
@@ -76,7 +78,8 @@ export const useUsers = () => {
           email,
           role: profile.role || 'Staff',
           status: profile.is_active ? 'Active' : 'Inactive',
-          phone: profile.phone_number || ''
+          phone: profile.phone_number || '',
+          avatar_url: profile.avatar_url || null
         };
       });
 

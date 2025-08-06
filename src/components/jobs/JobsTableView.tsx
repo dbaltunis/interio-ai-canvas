@@ -360,9 +360,21 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
-                          {ownerInfo.initials}
-                        </AvatarFallback>
+                        {(() => {
+                          const owner = users.find(user => user.id === quote.user_id);
+                          const avatarUrl = owner?.avatar_url;
+                          return avatarUrl ? (
+                            <img 
+                              src={avatarUrl} 
+                              alt={ownerInfo.firstName}
+                              className="h-6 w-6 rounded-full object-cover"
+                            />
+                          ) : (
+                            <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
+                              {ownerInfo.initials}
+                            </AvatarFallback>
+                          );
+                        })()}
                       </Avatar>
                       <span className="text-sm text-gray-600 truncate">{ownerInfo.firstName}</span>
                     </div>
