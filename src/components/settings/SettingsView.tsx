@@ -1,9 +1,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2 } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2, CreditCard } from "lucide-react";
 import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
+import { BillingTab } from "./tabs/BillingTab";
 import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
@@ -57,10 +58,15 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10 text-xs">
+        <TabsList className="grid w-full grid-cols-11 text-xs">
           <TabsTrigger value="personal" className="flex items-center gap-1">
             <User className="h-3 w-3" />
             <span className="hidden sm:inline">Personal</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="billing" className="flex items-center gap-1">
+            <CreditCard className="h-3 w-3" />
+            <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
           
           {canViewSettings && (
@@ -127,6 +133,10 @@ export const SettingsView = () => {
 
         <TabsContent value="personal">
           <PersonalSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="billing">
+          <BillingTab />
         </TabsContent>
 
         {canViewSettings && (
