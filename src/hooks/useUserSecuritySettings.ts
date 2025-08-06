@@ -24,7 +24,7 @@ export const useUserSecuritySettings = () => {
         .from("user_security_settings")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       return data as UserSecuritySettings | null;
