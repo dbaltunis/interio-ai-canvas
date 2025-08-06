@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin, Check, Globe, Edit, X, Save } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Globe } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
+import { FormSection } from "@/components/ui/form-section";
+import { FormFieldGroup } from "@/components/ui/form-field-group";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -118,211 +118,154 @@ export const BusinessSettingsTab = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       {/* Company Information */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
-              <Building2 className="h-5 w-5" />
-              <span>Company Information</span>
-            </CardTitle>
-            {!isEditing && (
-              <Button variant="outline" onClick={handleEdit} size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="company-name">Company Name</Label>
-              <Input
-                id="company-name"
-                value={formData.company_name}
-                onChange={(e) => handleInputChange("company_name", e.target.value)}
-                placeholder="Enter company name"
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="abn">ABN / Tax ID</Label>
-              <Input
-                id="abn"
-                value={formData.abn}
-                onChange={(e) => handleInputChange("abn", e.target.value)}
-                placeholder="Enter ABN or Tax ID"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="website">Website</Label>
+      <FormSection
+        title="Company Information"
+        description="Manage your business details and company profile"
+        icon={<Building2 className="h-5 w-5" />}
+        isEditing={isEditing}
+        onEdit={handleEdit}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+        savedSuccessfully={savedSuccessfully}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Company Name" required>
             <Input
-              id="website"
-              value={formData.website}
-              onChange={(e) => handleInputChange("website", e.target.value)}
-              placeholder="https://www.example.com"
+              value={formData.company_name}
+              onChange={(e) => handleInputChange("company_name", e.target.value)}
+              placeholder="Enter company name"
               disabled={!isEditing}
             />
-          </div>
-
-          <div>
-            <Label htmlFor="logo-url">Company Logo URL</Label>
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="ABN / Tax ID">
             <Input
-              id="logo-url"
-              value={formData.company_logo_url}
-              onChange={(e) => handleInputChange("company_logo_url", e.target.value)}
-              placeholder="https://example.com/logo.png"
+              value={formData.abn}
+              onChange={(e) => handleInputChange("abn", e.target.value)}
+              placeholder="Enter ABN or Tax ID"
               disabled={!isEditing}
             />
-          </div>
-        </CardContent>
-      </Card>
+          </FormFieldGroup>
+        </div>
+
+        <FormFieldGroup 
+          label="Website" 
+          description="Your company website URL"
+        >
+          <Input
+            value={formData.website}
+            onChange={(e) => handleInputChange("website", e.target.value)}
+            placeholder="https://www.example.com"
+            disabled={!isEditing}
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup 
+          label="Company Logo URL" 
+          description="URL to your company logo image"
+        >
+          <Input
+            value={formData.company_logo_url}
+            onChange={(e) => handleInputChange("company_logo_url", e.target.value)}
+            placeholder="https://example.com/logo.png"
+            disabled={!isEditing}
+          />
+        </FormFieldGroup>
+      </FormSection>
 
       {/* Contact Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Mail className="h-5 w-5" />
-            <span>Contact Information</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="business-email">Business Email</Label>
-              <Input
-                id="business-email"
-                type="email"
-                value={formData.business_email}
-                onChange={(e) => handleInputChange("business_email", e.target.value)}
-                placeholder="business@example.com"
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="business-phone">Business Phone</Label>
-              <Input
-                id="business-phone"
-                value={formData.business_phone}
-                onChange={(e) => handleInputChange("business_phone", e.target.value)}
-                placeholder="+61 2 1234 5678"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <FormSection
+        title="Contact Information"
+        description="Business contact details for customer communication"
+        icon={<Mail className="h-5 w-5" />}
+        isEditing={isEditing}
+        onEdit={() => {}}
+        onSave={() => {}}
+        onCancel={() => {}}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Business Email">
+            <Input
+              type="email"
+              value={formData.business_email}
+              onChange={(e) => handleInputChange("business_email", e.target.value)}
+              placeholder="business@example.com"
+              disabled={!isEditing}
+            />
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="Business Phone">
+            <Input
+              value={formData.business_phone}
+              onChange={(e) => handleInputChange("business_phone", e.target.value)}
+              placeholder="+61 2 1234 5678"
+              disabled={!isEditing}
+            />
+          </FormFieldGroup>
+        </div>
+      </FormSection>
 
       {/* Business Address */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5" />
-            <span>Business Address</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="address">Street Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              placeholder="Enter street address"
-              rows={2}
-              disabled={!isEditing}
-            />
-          </div>
+      <FormSection
+        title="Business Address"
+        description="Your business location and address details"
+        icon={<MapPin className="h-5 w-5" />}
+        isEditing={isEditing}
+        onEdit={() => {}}
+        onSave={() => {}}
+        onCancel={() => {}}
+      >
+        <FormFieldGroup label="Street Address">
+          <Textarea
+            value={formData.address}
+            onChange={(e) => handleInputChange("address", e.target.value)}
+            placeholder="Enter street address"
+            rows={2}
+            disabled={!isEditing}
+          />
+        </FormFieldGroup>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-                placeholder="Enter city"
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange("state", e.target.value)}
-                placeholder="Enter state"
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="zip-code">Zip Code</Label>
-              <Input
-                id="zip-code"
-                value={formData.zip_code}
-                onChange={(e) => handleInputChange("zip_code", e.target.value)}
-                placeholder="Enter zip code"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="country">Country</Label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormFieldGroup label="City">
             <Input
-              id="country"
-              value={formData.country}
-              onChange={(e) => handleInputChange("country", e.target.value)}
-              placeholder="Enter country"
+              value={formData.city}
+              onChange={(e) => handleInputChange("city", e.target.value)}
+              placeholder="Enter city"
               disabled={!isEditing}
             />
-          </div>
-        </CardContent>
-      </Card>
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="State / Province">
+            <Input
+              value={formData.state}
+              onChange={(e) => handleInputChange("state", e.target.value)}
+              placeholder="Enter state"
+              disabled={!isEditing}
+            />
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="Zip / Postal Code">
+            <Input
+              value={formData.zip_code}
+              onChange={(e) => handleInputChange("zip_code", e.target.value)}
+              placeholder="Enter zip code"
+              disabled={!isEditing}
+            />
+          </FormFieldGroup>
+        </div>
 
-      {/* Action Buttons */}
-      {isEditing && (
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleSave}
-            disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending}
-            className="flex-1"
-          >
-            {(createBusinessSettings.isPending || updateBusinessSettings.isPending) ? (
-              "Saving..."
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleCancel}
-            disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-        </div>
-      )}
-      
-      {savedSuccessfully && !isEditing && (
-        <div className="flex items-center justify-center text-green-600 text-sm">
-          <Check className="h-4 w-4 mr-2" />
-          Business settings updated successfully
-        </div>
-      )}
+        <FormFieldGroup label="Country">
+          <Input
+            value={formData.country}
+            onChange={(e) => handleInputChange("country", e.target.value)}
+            placeholder="Enter country"
+            disabled={!isEditing}
+          />
+        </FormFieldGroup>
+      </FormSection>
     </div>
   );
 };

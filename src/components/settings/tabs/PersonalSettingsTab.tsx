@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,8 +11,10 @@ import { useUserSecuritySettings, useUpdateUserSecuritySettings } from "@/hooks/
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, User, Bell, Save, Check, Shield, Globe, Clock, Edit, X } from "lucide-react";
+import { Upload, User, Bell, Globe, Shield } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
+import { FormSection } from "@/components/ui/form-section";
+import { FormFieldGroup } from "@/components/ui/form-field-group";
 
 export const PersonalSettingsTab = () => {
   const { data: userProfile, isLoading } = useCurrentUserProfile();
@@ -198,189 +198,172 @@ export const PersonalSettingsTab = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       {/* Profile Information */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      <FormSection
+        title="Profile Information"
+        description="Update your personal information and profile picture"
+        icon={<User className="h-5 w-5" />}
+        isEditing={isEditing}
+        onEdit={handleEdit}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        isSaving={updateProfile.isPending}
+        savedSuccessfully={savedSuccessfully}
+      >
+        {/* Avatar Section */}
+        <div className="flex items-start space-x-6 p-4 bg-muted/30 rounded-lg">
+          <Avatar className="h-20 w-20 ring-2 ring-border">
+            <AvatarImage src={profileData.avatar_url} alt="Profile" />
+            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-medium">
+              {getInitials(profileData.display_name || user?.email || 'U')}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-3">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>
-                Update your personal information and profile picture
-              </CardDescription>
-            </div>
-            {!isEditing && (
-              <Button variant="outline" onClick={handleEdit} size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Avatar Section */}
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={profileData.avatar_url} alt="Profile" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-medium">
-                {getInitials(profileData.display_name || user?.email || 'U')}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-2">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="avatar-upload"
-              />
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={!isEditing}
-                onClick={() => document.getElementById('avatar-upload')?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Photo
-              </Button>
-              <p className="text-sm text-muted-foreground">
+              <h4 className="font-medium text-sm">Profile Picture</h4>
+              <p className="text-xs text-muted-foreground">
                 JPG, PNG or GIF. Max size 2MB.
               </p>
             </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="avatar-upload"
+            />
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={!isEditing}
+              onClick={() => document.getElementById('avatar-upload')?.click()}
+              className="w-full"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Photo
+            </Button>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first-name">First Name</Label>
-              <Input
-                id="first-name"
-                value={profileData.first_name}
-                onChange={(e) => handleInputChange("first_name", e.target.value)}
-                placeholder="Your first name"
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="last-name">Last Name</Label>
-              <Input
-                id="last-name"
-                value={profileData.last_name}
-                onChange={(e) => handleInputChange("last_name", e.target.value)}
-                placeholder="Your last name"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">Display Name</Label>
-              <Input
-                id="display-name"
-                value={profileData.display_name}
-                onChange={(e) => handleInputChange("display_name", e.target.value)}
-                placeholder="Your display name"
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="user-phone">Phone Number</Label>
-              <Input
-                id="user-phone"
-                value={profileData.phone_number}
-                onChange={(e) => handleInputChange("phone_number", e.target.value)}
-                placeholder="+1 (555) 123-4567"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="avatar-url">Profile Picture URL (Alternative)</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="First Name">
             <Input
-              id="avatar-url"
-              value={profileData.avatar_url}
-              onChange={(e) => handleInputChange("avatar_url", e.target.value)}
-              placeholder="https://example.com/avatar.jpg"
+              value={profileData.first_name}
+              onChange={(e) => handleInputChange("first_name", e.target.value)}
+              placeholder="Your first name"
               disabled={!isEditing}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status-message">Status Message</Label>
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="Last Name">
             <Input
-              id="status-message"
-              value={profileData.status_message}
-              onChange={(e) => handleInputChange("status_message", e.target.value)}
-              placeholder="Available, In a meeting, etc."
+              value={profileData.last_name}
+              onChange={(e) => handleInputChange("last_name", e.target.value)}
+              placeholder="Your last name"
               disabled={!isEditing}
             />
-          </div>
+          </FormFieldGroup>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="user-email">Email Address</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Display Name">
             <Input
-              id="user-email"
-              value={user?.email || ""}
-              disabled
-              className="bg-muted"
+              value={profileData.display_name}
+              onChange={(e) => handleInputChange("display_name", e.target.value)}
+              placeholder="Your display name"
+              disabled={!isEditing}
             />
-            <p className="text-sm text-muted-foreground">
-              Email cannot be changed here. Contact support if needed.
-            </p>
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="Phone Number">
+            <Input
+              value={profileData.phone_number}
+              onChange={(e) => handleInputChange("phone_number", e.target.value)}
+              placeholder="+1 (555) 123-4567"
+              disabled={!isEditing}
+            />
+          </FormFieldGroup>
+        </div>
+
+        <FormFieldGroup 
+          label="Status Message" 
+          description="Let others know your current availability"
+        >
+          <Input
+            value={profileData.status_message}
+            onChange={(e) => handleInputChange("status_message", e.target.value)}
+            placeholder="Available, In a meeting, etc."
+            disabled={!isEditing}
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup 
+          label="Email Address" 
+          description="Email cannot be changed here. Contact support if needed."
+        >
+          <Input
+            value={user?.email || ""}
+            disabled
+            className="bg-muted"
+          />
+        </FormFieldGroup>
+
+        <div className="bg-muted/50 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Account Role</p>
+              <p className="text-xs text-muted-foreground">Your current role in the system</p>
+            </div>
+            <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              {userProfile?.role || 'Staff'}
+            </div>
           </div>
+        </div>
 
-          <div className="bg-muted/50 rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">
-              <strong>Role:</strong> {userProfile?.role || 'Staff'}
-            </p>
+        {/* Notification Settings */}
+        <Separator />
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Notification Preferences</h3>
           </div>
-
-          {/* Notification Settings Section */}
-          <Separator />
-          <div>
-            <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notification Preferences
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email notifications for appointments and updates
-                  </p>
-                </div>
-                <Switch
-                  checked={profileData.email_notifications}
-                  onCheckedChange={(checked) => handleInputChange("email_notifications", checked)}
-                  disabled={!isEditing}
-                />
+          
+          <div className="grid gap-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-1">
+                <p className="font-medium text-sm">Email Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  Receive email notifications for appointments and updates
+                </p>
               </div>
+              <Switch
+                checked={profileData.email_notifications}
+                onCheckedChange={(checked) => handleInputChange("email_notifications", checked)}
+                disabled={!isEditing}
+              />
+            </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>SMS Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive SMS notifications for urgent updates
-                  </p>
-                </div>
-                <Switch
-                  checked={profileData.sms_notifications}
-                  onCheckedChange={(checked) => handleInputChange("sms_notifications", checked)}
-                  disabled={!isEditing}
-                />
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-1">
+                <p className="font-medium text-sm">SMS Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  Receive SMS notifications for urgent updates
+                </p>
               </div>
+              <Switch
+                checked={profileData.sms_notifications}
+                onCheckedChange={(checked) => handleInputChange("sms_notifications", checked)}
+                disabled={!isEditing}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notification-timing">Default Notification Timing (minutes)</Label>
+            <FormFieldGroup 
+              label="Default Notification Timing" 
+              description="Minutes before appointments to send notifications"
+            >
+              <div className="flex items-center space-x-2">
                 <Input
-                  id="notification-timing"
                   type="number"
                   value={profileData.default_notification_minutes}
                   onChange={(e) => handleInputChange("default_notification_minutes", parseInt(e.target.value) || 15)}
@@ -389,238 +372,189 @@ export const PersonalSettingsTab = () => {
                   className="w-32"
                   disabled={!isEditing}
                 />
-                <p className="text-sm text-muted-foreground">
-                  Minutes before appointments to send notifications
-                </p>
+                <span className="text-sm text-muted-foreground">minutes</span>
               </div>
-            </div>
+            </FormFieldGroup>
           </div>
-
-          {isEditing && (
-            <div className="pt-4 flex gap-2">
-              <Button 
-                onClick={handleSave}
-                disabled={updateProfile.isPending}
-                className="flex-1"
-              >
-                {updateProfile.isPending ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleCancel}
-                disabled={updateProfile.isPending}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          )}
-          
-          {savedSuccessfully && !isEditing && (
-            <div className="pt-4">
-              <div className="flex items-center justify-center text-green-600 text-sm">
-                <Check className="h-4 w-4 mr-2" />
-                Profile updated successfully
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </FormSection>
 
       {/* Localization & Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Localization & Preferences
-          </CardTitle>
-          <CardDescription>
-            Configure your timezone, language, and regional settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
-              <Select 
-                value={preferencesData.timezone} 
-                onValueChange={(value) => setPreferencesData({...preferencesData, timezone: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="UTC">UTC</SelectItem>
-                  <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                  <SelectItem value="America/Chicago">Central Time</SelectItem>
-                  <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                  <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                  <SelectItem value="Europe/London">London</SelectItem>
-                  <SelectItem value="Europe/Paris">Paris</SelectItem>
-                  <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <FormSection
+        title="Localization & Preferences"
+        description="Configure your timezone, language, and regional settings"
+        icon={<Globe className="h-5 w-5" />}
+        isEditing={false}
+        onEdit={() => {}}
+        onSave={handleSavePreferences}
+        onCancel={() => {}}
+        isSaving={updatePreferences.isPending}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Timezone">
+            <Select 
+              value={preferencesData.timezone} 
+              onValueChange={(value) => setPreferencesData({...preferencesData, timezone: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="UTC">UTC</SelectItem>
+                <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                <SelectItem value="America/Chicago">Central Time</SelectItem>
+                <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                <SelectItem value="Europe/London">London</SelectItem>
+                <SelectItem value="Europe/Paris">Paris</SelectItem>
+                <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
 
-            <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Select 
-                value={preferencesData.language} 
-                onValueChange={(value) => setPreferencesData({...preferencesData, language: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Spanish</SelectItem>
-                  <SelectItem value="fr">French</SelectItem>
-                  <SelectItem value="de">German</SelectItem>
-                  <SelectItem value="it">Italian</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <FormFieldGroup label="Language">
+            <Select 
+              value={preferencesData.language} 
+              onValueChange={(value) => setPreferencesData({...preferencesData, language: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Spanish</SelectItem>
+                <SelectItem value="fr">French</SelectItem>
+                <SelectItem value="de">German</SelectItem>
+                <SelectItem value="it">Italian</SelectItem>
+                <SelectItem value="pt">Portuguese</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dateFormat">Date Format</Label>
-              <Select 
-                value={preferencesData.date_format} 
-                onValueChange={(value) => setPreferencesData({...preferencesData, date_format: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select date format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MM/dd/yyyy">MM/dd/yyyy</SelectItem>
-                  <SelectItem value="dd/MM/yyyy">dd/MM/yyyy</SelectItem>
-                  <SelectItem value="yyyy-MM-dd">yyyy-MM-dd</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormFieldGroup label="Date Format">
+            <Select 
+              value={preferencesData.date_format} 
+              onValueChange={(value) => setPreferencesData({...preferencesData, date_format: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
+                <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
+                <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
+                <SelectItem value="dd-MMM-yyyy">DD-MMM-YYYY</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
 
-            <div className="space-y-2">
-              <Label htmlFor="timeFormat">Time Format</Label>
-              <Select 
-                value={preferencesData.time_format} 
-                onValueChange={(value) => setPreferencesData({...preferencesData, time_format: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select time format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="12h">12 Hour</SelectItem>
-                  <SelectItem value="24h">24 Hour</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <FormFieldGroup label="Time Format">
+            <Select 
+              value={preferencesData.time_format} 
+              onValueChange={(value) => setPreferencesData({...preferencesData, time_format: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="12h">12 Hour (AM/PM)</SelectItem>
+                <SelectItem value="24h">24 Hour</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
 
-          <Button 
-            onClick={handleSavePreferences}
-            disabled={updatePreferences.isPending}
-            variant="outline"
-            className="w-full"
-          >
-            {updatePreferences.isPending ? "Saving..." : "Save Preferences"}
-          </Button>
-        </CardContent>
-      </Card>
+          <FormFieldGroup label="Currency">
+            <Select 
+              value={preferencesData.currency} 
+              onValueChange={(value) => setPreferencesData({...preferencesData, currency: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD ($)</SelectItem>
+                <SelectItem value="EUR">EUR (€)</SelectItem>
+                <SelectItem value="GBP">GBP (£)</SelectItem>
+                <SelectItem value="AUD">AUD (A$)</SelectItem>
+                <SelectItem value="CAD">CAD (C$)</SelectItem>
+                <SelectItem value="NZD">NZD (NZ$)</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
+        </div>
+      </FormSection>
 
-      {/* Security & Privacy */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Security & Privacy
-          </CardTitle>
-          <CardDescription>
-            Manage your security settings and privacy preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Two-Factor Authentication</Label>
-                <p className="text-sm text-muted-foreground">
-                  Add an extra layer of security to your account
-                </p>
-              </div>
-              <Switch
-                checked={securityData.two_factor_enabled}
-                onCheckedChange={(checked) => 
-                  setSecurityData({...securityData, two_factor_enabled: checked})
-                }
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Login Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when someone logs into your account
-                </p>
-              </div>
-              <Switch
-                checked={securityData.login_notifications}
-                onCheckedChange={(checked) => 
-                  setSecurityData({...securityData, login_notifications: checked})
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Security Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive alerts about suspicious activity
-                </p>
-              </div>
-              <Switch
-                checked={securityData.security_alerts}
-                onCheckedChange={(checked) => 
-                  setSecurityData({...securityData, security_alerts: checked})
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
-              <Input
-                id="sessionTimeout"
-                type="number"
-                value={securityData.session_timeout_minutes}
-                onChange={(e) => 
-                  setSecurityData({...securityData, session_timeout_minutes: parseInt(e.target.value) || 480})
-                }
-                min="30"
-                max="1440"
-              />
-              <p className="text-sm text-muted-foreground">
-                How long you stay logged in when inactive (30-1440 minutes)
+      {/* Security Settings */}
+      <FormSection
+        title="Security & Privacy"
+        description="Manage your account security and privacy settings"
+        icon={<Shield className="h-5 w-5" />}
+        isEditing={false}
+        onEdit={() => {}}
+        onSave={handleSaveSecuritySettings}
+        onCancel={() => {}}
+        isSaving={updateSecuritySettings.isPending}
+      >
+        <div className="grid gap-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-1">
+              <p className="font-medium text-sm">Two-Factor Authentication</p>
+              <p className="text-xs text-muted-foreground">
+                Add an extra layer of security to your account
               </p>
             </div>
+            <Switch
+              checked={securityData.two_factor_enabled}
+              onCheckedChange={(checked) => setSecurityData({...securityData, two_factor_enabled: checked})}
+            />
           </div>
 
-          <Button 
-            onClick={handleSaveSecuritySettings}
-            disabled={updateSecuritySettings.isPending}
-            variant="outline"
-            className="w-full"
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-1">
+              <p className="font-medium text-sm">Login Notifications</p>
+              <p className="text-xs text-muted-foreground">
+                Get notified when someone logs into your account
+              </p>
+            </div>
+            <Switch
+              checked={securityData.login_notifications}
+              onCheckedChange={(checked) => setSecurityData({...securityData, login_notifications: checked})}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-1">
+              <p className="font-medium text-sm">Security Alerts</p>
+              <p className="text-xs text-muted-foreground">
+                Receive alerts about important security events
+              </p>
+            </div>
+            <Switch
+              checked={securityData.security_alerts}
+              onCheckedChange={(checked) => setSecurityData({...securityData, security_alerts: checked})}
+            />
+          </div>
+
+          <FormFieldGroup 
+            label="Session Timeout" 
+            description="Automatically sign out after this many minutes of inactivity"
           >
-            {updateSecuritySettings.isPending ? "Saving..." : "Save Security Settings"}
-          </Button>
-        </CardContent>
-      </Card>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                value={securityData.session_timeout_minutes}
+                onChange={(e) => setSecurityData({...securityData, session_timeout_minutes: parseInt(e.target.value) || 480})}
+                min="15"
+                max="1440"
+                className="w-32"
+              />
+              <span className="text-sm text-muted-foreground">minutes</span>
+            </div>
+          </FormFieldGroup>
+        </div>
+      </FormSection>
     </div>
   );
 };
