@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useJobStatuses, useCreateJobStatus, useUpdateJobStatus, useDeleteJobStatus } from "@/hooks/useJobStatuses";
+import { LoadingFallback } from "@/components/ui/loading-fallback";
 
 interface Status {
   id: number;
@@ -37,48 +39,65 @@ const actionOptions = [
   { value: "requires_reason", label: "Requires Reason", description: "Status change requires reason input" },
 ];
 
-interface StatusManagementProps {
-  statuses: Status[];
-  onStatusUpdate: (statuses: Status[]) => void;
-}
-
-export const StatusManagement = ({ statuses, onStatusUpdate }: StatusManagementProps) => {
-  const [editingStatus, setEditingStatus] = useState<Status | null>(null);
+export const StatusManagement = () => {
+  const { data: statuses = [], isLoading } = useJobStatuses();
+  const createStatus = useCreateJobStatus();
+  const updateStatus = useUpdateJobStatus();
+  const deleteStatus = useDeleteJobStatus();
+  
+  const [editingStatus, setEditingStatus] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEditStatus = (status: Status) => {
+  const handleEditStatus = (status: any) => {
     setEditingStatus({ ...status });
     setIsDialogOpen(true);
   };
 
   const handleAddStatus = () => {
     const newStatus = {
-      id: Date.now(),
       name: "New Status",
       color: "blue",
       category: "Quote",
       action: "editable",
-      description: ""
+      description: "",
+      sort_order: statuses.length + 1
     };
     setEditingStatus(newStatus);
     setIsDialogOpen(true);
   };
 
-  const handleSaveStatus = () => {
+  const handleSaveStatus = async () => {
     if (editingStatus) {
-      const updatedStatuses = statuses.find(s => s.id === editingStatus.id)
-        ? statuses.map(s => s.id === editingStatus.id ? editingStatus : s)
-        : [...statuses, editingStatus];
-      
-      onStatusUpdate(updatedStatuses);
-      setIsDialogOpen(false);
-      setEditingStatus(null);
+      try {
+        if (editingStatus.id) {
+          // Update existing status
+          await updateStatus.mutateAsync({
+            id: editingStatus.id,
+            ...editingStatus
+          });
+        } else {
+          // Create new status
+          await createStatus.mutateAsync(editingStatus);
+        }
+        setIsDialogOpen(false);
+        setEditingStatus(null);
+      } catch (error) {
+        console.error("Error saving status:", error);
+      }
     }
   };
 
-  const handleDeleteStatus = (statusId: number) => {
-    onStatusUpdate(statuses.filter(s => s.id !== statusId));
+  const handleDeleteStatus = async (statusId: string) => {
+    try {
+      await deleteStatus.mutateAsync(statusId);
+    } catch (error) {
+      console.error("Error deleting status:", error);
+    }
   };
+
+  if (isLoading) {
+    return <LoadingFallback title="Loading job statuses..." rows={3} />;
+  }
 
   return (
     <>
@@ -141,7 +160,7 @@ export const StatusManagement = ({ statuses, onStatusUpdate }: StatusManagementP
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingStatus?.id && statuses.find(s => s.id === editingStatus.id) ? 'Edit Status' : 'Add New Status'}
+              {editingStatus?.id ? 'Edit Status' : 'Add New Status'}
             </DialogTitle>
             <DialogDescription>
               Configure the status name, color, and behavior in the application

@@ -14,6 +14,7 @@ import { QuotationTab } from "./tabs/QuotationTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 import { EmailsTab } from "./tabs/EmailsTab";
 import { CalendarTab } from "./tabs/CalendarTab";
+import { JobStatusDropdown } from "./JobStatusDropdown";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -102,9 +103,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 <h1 className="text-xl font-bold text-foreground">
                   {project.name}
                 </h1>
-                <Badge className={getStatusColor(project.status)}>
-                  {project.status}
-                </Badge>
+                <JobStatusDropdown
+                  currentStatus={project.status}
+                  jobType="project"
+                  jobId={project.id}
+                  onStatusChange={(newStatus) => {
+                    // The status will be updated via the mutation, just for UI feedback
+                  }}
+                />
                 <span className="font-mono bg-muted px-2 py-1 rounded text-xs text-muted-foreground">
                   {project.job_number}
                 </span>
