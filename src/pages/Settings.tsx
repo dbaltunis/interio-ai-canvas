@@ -7,11 +7,22 @@ import { ArrowLeft } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 
 const Settings = () => {
-  const canAccessSettings = useHasPermission('view_settings') || useHasPermission('view_profile');
+  const hasViewSettings = useHasPermission('view_settings');
+  const hasViewProfile = useHasPermission('view_profile');
+  const canAccessSettings = hasViewSettings || hasViewProfile;
   
   const handleBackToApp = () => {
     window.location.href = "/";
   };
+
+  // Show loading while permissions are being checked
+  if (hasViewSettings === undefined || hasViewProfile === undefined) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   if (!canAccessSettings) {
     return (
