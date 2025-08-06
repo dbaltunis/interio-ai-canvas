@@ -2669,8 +2669,10 @@ export type Database = {
           default_notification_minutes: number | null
           display_name: string | null
           email_notifications: boolean | null
+          first_name: string | null
           invited_by_user_id: string | null
           is_active: boolean | null
+          last_name: string | null
           parent_account_id: string | null
           permissions: Json | null
           phone_number: string | null
@@ -2687,8 +2689,10 @@ export type Database = {
           default_notification_minutes?: number | null
           display_name?: string | null
           email_notifications?: boolean | null
+          first_name?: string | null
           invited_by_user_id?: string | null
           is_active?: boolean | null
+          last_name?: string | null
           parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null
@@ -2705,8 +2709,10 @@ export type Database = {
           default_notification_minutes?: number | null
           display_name?: string | null
           email_notifications?: boolean | null
+          first_name?: string | null
           invited_by_user_id?: string | null
           is_active?: boolean | null
+          last_name?: string | null
           parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null

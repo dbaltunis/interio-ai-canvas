@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Bell, Shield, Eye, Check, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const PersonalSettingsTab = () => {
   const { data: userProfile, isLoading } = useCurrentUserProfile();
@@ -20,6 +21,8 @@ export const PersonalSettingsTab = () => {
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
 
   const [profileData, setProfileData] = useState({
+    first_name: "",
+    last_name: "",
     display_name: "",
     phone_number: "",
     avatar_url: "",
@@ -32,6 +35,8 @@ export const PersonalSettingsTab = () => {
   useEffect(() => {
     if (userProfile) {
       setProfileData({
+        first_name: userProfile.first_name || "",
+        last_name: userProfile.last_name || "",
         display_name: userProfile.display_name || "",
         phone_number: userProfile.phone_number || "",
         avatar_url: userProfile.avatar_url || "",
@@ -72,6 +77,39 @@ export const PersonalSettingsTab = () => {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('project-images')
+        .getPublicUrl(fileName);
+
+      handleInputChange("avatar_url", data.publicUrl);
+      
+      toast({
+        title: "Success",
+        description: "Profile picture uploaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload profile picture",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
@@ -100,13 +138,46 @@ export const PersonalSettingsTab = () => {
               </AvatarFallback>
             </Avatar>
             <div className="space-y-2">
-              <Button variant="outline" size="sm">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="avatar-upload"
+              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => document.getElementById('avatar-upload')?.click()}
+              >
                 <Upload className="h-4 w-4 mr-2" />
                 Change Photo
               </Button>
               <p className="text-sm text-muted-foreground">
                 JPG, PNG or GIF. Max size 2MB.
               </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="first-name">First Name</Label>
+              <Input
+                id="first-name"
+                value={profileData.first_name}
+                onChange={(e) => handleInputChange("first_name", e.target.value)}
+                placeholder="Your first name"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="last-name">Last Name</Label>
+              <Input
+                id="last-name"
+                value={profileData.last_name}
+                onChange={(e) => handleInputChange("last_name", e.target.value)}
+                placeholder="Your last name"
+              />
             </div>
           </div>
 
@@ -152,12 +223,21 @@ export const PersonalSettingsTab = () => {
             />
           </div>
 
+          <div>
+            <Label htmlFor="user-email">Email Address</Label>
+            <Input
+              id="user-email"
+              value={user?.email || ""}
+              disabled
+              className="bg-muted"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Email cannot be changed here. Contact support if needed.
+            </p>
+          </div>
+
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Shield className="h-4 w-4" />
-              <span><strong>Email:</strong> {user?.email}</span>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
               <Eye className="h-4 w-4" />
               <span><strong>Role:</strong> {userProfile?.role || 'Staff'}</span>
             </div>
