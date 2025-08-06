@@ -1,62 +1,43 @@
 
 import { Badge } from "@/components/ui/badge";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 
 interface JobStatusBadgeProps {
   status: string;
 }
 
 export const JobStatusBadge = ({ status }: JobStatusBadgeProps) => {
-  const getStatusConfig = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "completed":
-        return { 
-          color: "bg-green-100 text-green-800 border-green-200", 
-          label: "Completed" 
-        };
-      case "in_progress":
-      case "in-production":
-        return { 
-          color: "bg-blue-100 text-blue-800 border-blue-200", 
-          label: "In Progress" 
-        };
-      case "quote":
-        return { 
-          color: "bg-purple-100 text-purple-800 border-purple-200", 
-          label: "Quote" 
-        };
-      case "planning":
-        return { 
-          color: "bg-yellow-100 text-yellow-800 border-yellow-200", 
-          label: "Planning" 
-        };
-      case "draft":
-        return { 
-          color: "bg-gray-100 text-gray-800 border-gray-200", 
-          label: "Draft" 
-        };
-      case "approved":
-        return { 
-          color: "bg-green-100 text-green-700 border-green-200", 
-          label: "Approved" 
-        };
-      case "cancelled":
-        return { 
-          color: "bg-red-100 text-red-800 border-red-200", 
-          label: "Cancelled" 
-        };
-      default:
-        return { 
-          color: "bg-gray-100 text-gray-800 border-gray-200", 
-          label: status || "Unknown" 
-        };
-    }
+  const { data: jobStatuses = [] } = useJobStatuses();
+
+  // Find the status details from the database
+  const statusDetails = jobStatuses.find(
+    s => s.name.toLowerCase() === status.toLowerCase()
+  );
+
+  const getStatusColor = (color: string) => {
+    const colorMap: Record<string, string> = {
+      'gray': 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
+      'blue': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800', 
+      'green': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
+      'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
+      'orange': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800',
+      'red': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+      'purple': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800',
+    };
+    return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const { color, label } = getStatusConfig(status);
+  const displayColor = statusDetails 
+    ? getStatusColor(statusDetails.color)
+    : 'bg-gray-100 text-gray-800 border-gray-200';
+
+  const displayLabel = statusDetails 
+    ? statusDetails.name
+    : status?.charAt(0).toUpperCase() + status?.slice(1).replace('_', ' ') || "Unknown";
 
   return (
-    <Badge className={`${color} font-medium px-2 py-1 text-xs`}>
-      {label}
+    <Badge className={`${displayColor} font-medium px-2 py-1 text-xs`}>
+      {displayLabel}
     </Badge>
   );
 };
