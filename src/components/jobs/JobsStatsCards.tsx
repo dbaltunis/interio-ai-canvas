@@ -1,16 +1,24 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, CheckCircle, Clock, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 
 interface JobsStatsCardsProps {
   quotes?: any[];
 }
 
 export const JobsStatsCards = ({ quotes }: JobsStatsCardsProps) => {
+  const { data: jobStatuses = [] } = useJobStatuses();
+  
+  // Get dynamic status names by action type
+  const approvedStatuses = jobStatuses.filter(s => s.action === 'approve').map(s => s.name.toLowerCase());
+  const pendingStatuses = jobStatuses.filter(s => s.action === 'pending' || s.name.toLowerCase().includes('pending')).map(s => s.name.toLowerCase());
+  const completedStatuses = jobStatuses.filter(s => s.action === 'complete').map(s => s.name.toLowerCase());
+  
   const totalJobs = quotes?.length || 0;
-  const activeJobs = quotes?.filter(q => q.status === 'approved').length || 0;
-  const pendingJobs = quotes?.filter(q => q.status === 'pending').length || 0;
-  const completedJobs = quotes?.filter(q => q.status === 'completed').length || 0;
+  const activeJobs = quotes?.filter(q => approvedStatuses.includes(q.status?.toLowerCase())).length || 0;
+  const pendingJobs = quotes?.filter(q => pendingStatuses.includes(q.status?.toLowerCase())).length || 0;
+  const completedJobs = quotes?.filter(q => completedStatuses.includes(q.status?.toLowerCase())).length || 0;
   const thisMonthJobs = quotes?.filter(quote => {
     const createdAt = new Date(quote.created_at);
     const thisMonth = new Date();

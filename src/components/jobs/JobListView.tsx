@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Eye, Edit, Copy, Calendar, User, DollarSign } from "lucide-react";
 import { JobActionsMenu } from "./JobActionsMenu";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 
 interface JobListViewProps {
   jobs: any[];
@@ -12,20 +13,37 @@ interface JobListViewProps {
 }
 
 export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListViewProps) => {
+  const { data: jobStatuses = [] } = useJobStatuses();
+  
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      draft: { bg: "bg-gray-100", text: "text-gray-800", label: "Draft" },
-      planning: { bg: "bg-blue-100", text: "text-blue-800", label: "Planning" },
-      active: { bg: "bg-brand-secondary", text: "text-white", label: "Active" },
-      completed: { bg: "bg-green-100", text: "text-green-800", label: "Completed" },
-      cancelled: { bg: "bg-red-100", text: "text-red-800", label: "Cancelled" }
-    };
+    // Find status details from database
+    const statusDetails = jobStatuses.find(
+      s => s.name.toLowerCase() === status.toLowerCase()
+    );
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    if (statusDetails) {
+      const colorMap: Record<string, string> = {
+        'gray': 'bg-gray-100 text-gray-800',
+        'blue': 'bg-blue-100 text-blue-800', 
+        'green': 'bg-green-100 text-green-800',
+        'yellow': 'bg-yellow-100 text-yellow-800',
+        'orange': 'bg-orange-100 text-orange-800',
+        'red': 'bg-red-100 text-red-800',
+        'purple': 'bg-purple-100 text-purple-800',
+      };
+      const colorClass = colorMap[statusDetails.color] || 'bg-gray-100 text-gray-800';
+      
+      return (
+        <Badge className={`${colorClass} hover:${colorClass}`}>
+          {statusDetails.name}
+        </Badge>
+      );
+    }
     
+    // Fallback for unknown statuses
     return (
-      <Badge className={`${config.bg} ${config.text} hover:${config.bg}`}>
-        {config.label}
+      <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+        {status?.charAt(0).toUpperCase() + status?.slice(1).replace('_', ' ') || "Unknown"}
       </Badge>
     );
   };

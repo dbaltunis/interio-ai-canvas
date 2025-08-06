@@ -8,6 +8,7 @@ import { JobActionsMenu } from "./JobActionsMenu";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 
 interface JobCardProps {
   quote: any;
@@ -34,19 +35,29 @@ export const JobCard = ({
   const { data: rooms } = useRooms(project?.id);
   const { data: surfaces } = useSurfaces(project?.id);  
   const { data: treatments } = useTreatments(project?.id);
+  const { data: jobStatuses = [] } = useJobStatuses();
+  
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "rejected":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "draft":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      default:
-        return "bg-blue-100 text-blue-800 border-blue-200";
+    // Find status details from database
+    const statusDetails = jobStatuses.find(
+      s => s.name.toLowerCase() === status.toLowerCase()
+    );
+    
+    if (statusDetails) {
+      const colorMap: Record<string, string> = {
+        'gray': 'bg-gray-100 text-gray-800 border-gray-200',
+        'blue': 'bg-blue-100 text-blue-800 border-blue-200', 
+        'green': 'bg-green-100 text-green-800 border-green-200',
+        'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        'orange': 'bg-orange-100 text-orange-800 border-orange-200',
+        'red': 'bg-red-100 text-red-800 border-red-200',
+        'purple': 'bg-purple-100 text-purple-800 border-purple-200',
+      };
+      return colorMap[statusDetails.color] || 'bg-gray-100 text-gray-800 border-gray-200';
     }
+    
+    // Fallback for unknown statuses
+    return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const formatCurrency = (amount: number) => {
@@ -81,7 +92,10 @@ export const JobCard = ({
             <div className="flex items-center space-x-2">
               <h3 className="font-semibold text-lg">{quote.quote_number}</h3>
               <Badge className={`${getStatusColor(quote.status)} text-xs`}>
-                {quote.status.toUpperCase()}
+                {(() => {
+                  const statusDetails = jobStatuses.find(s => s.name.toLowerCase() === quote.status?.toLowerCase());
+                  return statusDetails ? statusDetails.name : quote.status?.toUpperCase();
+                })()}
               </Badge>
             </div>
             <div className="space-y-1">
@@ -189,13 +203,11 @@ export const JobCard = ({
                 )}
               </div>
               
-              <Badge variant="outline" className={`text-xs ${
-                project.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                project.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                project.status === 'planning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                'bg-gray-50 text-gray-700 border-gray-200'
-              }`}>
-                {project.status?.replace('_', ' ').toUpperCase() || 'DRAFT'}
+              <Badge variant="outline" className={`text-xs ${getStatusColor(project.status || 'draft')}`}>
+                {(() => {
+                  const statusDetails = jobStatuses.find(s => s.name.toLowerCase() === project.status?.toLowerCase());
+                  return statusDetails ? statusDetails.name : (project.status?.replace('_', ' ').toUpperCase() || 'DRAFT');
+                })()}
               </Badge>
             </div>
 
