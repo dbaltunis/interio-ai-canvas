@@ -10,6 +10,7 @@ import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
+import { AccountManagementTab } from "./tabs/AccountManagementTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { EnhancedNotificationSettings } from "./EnhancedNotificationSettings";
@@ -56,7 +57,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 text-xs">
+        <TabsList className="grid w-full grid-cols-10 text-xs">
           <TabsTrigger value="personal" className="flex items-center gap-1">
             <User className="h-3 w-3" />
             <span className="hidden sm:inline">Personal</span>
@@ -66,6 +67,13 @@ export const SettingsView = () => {
             <TabsTrigger value="business" className="flex items-center gap-1">
               <Building2 className="h-3 w-3" />
               <span className="hidden sm:inline">Business</span>
+            </TabsTrigger>
+          )}
+
+          {canManageUsers && (
+            <TabsTrigger value="account" className="flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              <span className="hidden sm:inline">Account</span>
             </TabsTrigger>
           )}
           
@@ -124,6 +132,12 @@ export const SettingsView = () => {
         {canViewSettings && (
           <TabsContent value="business">
             <BusinessSettingsTab />
+          </TabsContent>
+        )}
+
+        {canManageUsers && (
+          <TabsContent value="account">
+            <AccountManagementTab />
           </TabsContent>
         )}
 
