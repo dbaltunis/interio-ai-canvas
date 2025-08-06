@@ -12,6 +12,7 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface JobStatusDropdownProps {
   currentStatus: string;
@@ -31,6 +32,11 @@ export const JobStatusDropdown = ({
   const updateProject = useUpdateProject();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Permission checks
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditOwnJobs = useHasPermission('edit_own_jobs');
+  const canEditJobs = canEditAllJobs || canEditOwnJobs;
 
   // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(
@@ -79,6 +85,21 @@ export const JobStatusDropdown = ({
       });
     }
   };
+
+  // If user doesn't have permission to edit jobs, show status as read-only
+  if (!canEditJobs) {
+    return (
+      <Badge 
+        className={`${
+          currentStatusDetails 
+            ? getStatusColor(currentStatusDetails.color)
+            : 'bg-gray-100 text-gray-800'
+        }`}
+      >
+        {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
+      </Badge>
+    );
+  }
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
