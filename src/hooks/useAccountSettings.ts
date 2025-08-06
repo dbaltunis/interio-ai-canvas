@@ -4,51 +4,27 @@ import { useToast } from "@/hooks/use-toast";
 
 export interface AccountSettings {
   id: string;
-  user_id: string;
-  account_name: string;
-  industry?: string;
-  timezone: string;
-  default_currency: string;
-  logo_url?: string;
-  billing_email?: string;
-  max_child_accounts: number;
-  features_enabled: Record<string, boolean>;
+  account_owner_id: string;
+  business_settings: any;
+  integration_settings: any;
+  language: string;
+  currency: string;
+  measurement_units: any;
   created_at: string;
   updated_at: string;
-}
-
-export interface AccessRequest {
-  id: string;
-  requester_id: string;
-  parent_account_id: string;
-  requested_role: string;
-  message?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  requester_email?: string;
-  requester_name?: string;
 }
 
 export const useAccountSettings = () => {
   return useQuery({
-    queryKey: ["account-settings"],
+    queryKey: ["accountSettings"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      const { data, error } = await supabase
+        .from("account_settings")
+        .select("*")
+        .single();
 
-      // Since account_settings table doesn't exist yet, return mock data
-      return {
-        id: "mock-id",
-        user_id: user.id,
-        account_name: "My Organization",
-        timezone: "UTC",
-        default_currency: "USD",
-        max_child_accounts: 5,
-        features_enabled: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as AccountSettings;
+      if (error) throw error;
+      return data as AccountSettings;
     },
   });
 };
@@ -60,27 +36,31 @@ export const useUpdateAccountSettings = () => {
   return useMutation({
     mutationFn: async (settings: Partial<AccountSettings>) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error("User not authenticated");
 
-      // Mock update for now
-      return {
-        id: "mock-id",
-        user_id: user.id,
-        ...settings,
-        updated_at: new Date().toISOString(),
-      } as AccountSettings;
+      const { data, error } = await supabase
+        .from("account_settings")
+        .upsert({
+          account_owner_id: user.id,
+          ...settings,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["account-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["accountSettings"] });
       toast({
-        title: "Success",
-        description: "Account settings updated successfully.",
+        title: "Settings updated",
+        description: "Account settings have been updated successfully.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update account settings.",
+        description: "Failed to update account settings. Please try again.",
         variant: "destructive",
       });
       console.error("Error updating account settings:", error);
@@ -88,102 +68,21 @@ export const useUpdateAccountSettings = () => {
   });
 };
 
-export const useChildAccounts = () => {
+export const useUserAccountInfo = () => {
   return useQuery({
-    queryKey: ["child-accounts"],
+    queryKey: ["userAccountInfo"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!user) return null;
 
-      // Mock data for now - will be implemented after migration
-      return [];
-    },
-  });
-};
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("*, parent_account:parent_account_id(user_id, display_name, role)")
+        .eq("user_id", user.id)
+        .single();
 
-export const useAccessRequests = () => {
-  return useQuery({
-    queryKey: ["access-requests"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      // Mock data for now - will be implemented after migration
-      return [];
-    },
-  });
-};
-
-export const useProcessAccessRequest = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async ({ requestId, action, role }: { 
-      requestId: string; 
-      action: 'approve' | 'reject';
-      role?: string;
-    }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Mock implementation for now
-      console.log('Processing access request:', { requestId, action, role });
-
-      return { success: true };
-    },
-    onSuccess: (_, { action }) => {
-      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["child-accounts"] });
-      toast({
-        title: "Success",
-        description: `Access request ${action === 'approve' ? 'approved' : 'rejected'} successfully.`,
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to process access request.",
-        variant: "destructive",
-      });
-      console.error("Error processing access request:", error);
-    },
-  });
-};
-
-export const useCreateAccessRequest = () => {
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async ({ 
-      parentAccountId, 
-      requestedRole, 
-      message 
-    }: { 
-      parentAccountId: string; 
-      requestedRole: string; 
-      message?: string; 
-    }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Mock implementation for now
-      console.log('Creating access request:', { parentAccountId, requestedRole, message });
-      return { success: true };
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Access request sent successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to send access request.",
-        variant: "destructive",
-      });
-      console.error("Error creating access request:", error);
+      if (error) throw error;
+      return data;
     },
   });
 };

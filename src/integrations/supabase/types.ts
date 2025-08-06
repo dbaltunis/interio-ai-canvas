@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          approver_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          record_id: string
+          record_type: string
+          request_reason: string | null
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          record_id: string
+          record_type: string
+          request_reason?: string | null
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          record_id?: string
+          record_type?: string
+          request_reason?: string | null
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "access_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      account_settings: {
+        Row: {
+          account_owner_id: string
+          business_settings: Json | null
+          created_at: string
+          currency: string | null
+          id: string
+          integration_settings: Json | null
+          language: string | null
+          measurement_units: Json | null
+          updated_at: string
+        }
+        Insert: {
+          account_owner_id: string
+          business_settings?: Json | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          integration_settings?: Json | null
+          language?: string | null
+          measurement_units?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          account_owner_id?: string
+          business_settings?: Json | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          integration_settings?: Json | null
+          language?: string | null
+          measurement_units?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_settings_account_owner_id_fkey"
+            columns: ["account_owner_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       appointment_notifications: {
         Row: {
           appointment_id: string
@@ -663,6 +761,7 @@ export type Database = {
           contact_person: string | null
           country: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           funnel_stage: string | null
           id: string
@@ -684,6 +783,7 @@ export type Database = {
           contact_person?: string | null
           country?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           funnel_stage?: string | null
           id?: string
@@ -705,6 +805,7 @@ export type Database = {
           contact_person?: string | null
           country?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           funnel_stage?: string | null
           id?: string
@@ -718,7 +819,15 @@ export type Database = {
           user_id?: string
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       components_temp: {
         Row: {
@@ -1833,6 +1942,7 @@ export type Database = {
           client_id: string | null
           completion_date: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           due_date: string | null
           funnel_stage: string | null
@@ -1849,6 +1959,7 @@ export type Database = {
           client_id?: string | null
           completion_date?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           funnel_stage?: string | null
@@ -1865,6 +1976,7 @@ export type Database = {
           client_id?: string | null
           completion_date?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           funnel_stage?: string | null
@@ -1884,6 +1996,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2550,7 +2669,9 @@ export type Database = {
           default_notification_minutes: number | null
           display_name: string | null
           email_notifications: boolean | null
+          invited_by_user_id: string | null
           is_active: boolean | null
+          parent_account_id: string | null
           permissions: Json | null
           phone_number: string | null
           role: string | null
@@ -2566,7 +2687,9 @@ export type Database = {
           default_notification_minutes?: number | null
           display_name?: string | null
           email_notifications?: boolean | null
+          invited_by_user_id?: string | null
           is_active?: boolean | null
+          parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null
           role?: string | null
@@ -2582,7 +2705,9 @@ export type Database = {
           default_notification_minutes?: number | null
           display_name?: string | null
           email_notifications?: boolean | null
+          invited_by_user_id?: string | null
           is_active?: boolean | null
+          parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null
           role?: string | null
@@ -2592,7 +2717,22 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_invited_by_user_id_fkey"
+            columns: ["invited_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_profiles_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       vendors: {
         Row: {
@@ -2704,6 +2844,19 @@ export type Database = {
       accept_user_invitation: {
         Args: { invitation_token_param: string; user_id_param: string }
         Returns: Json
+      }
+      can_edit_record: {
+        Args: {
+          record_user_id: string
+          record_created_by: string
+          record_type: string
+          record_id: string
+        }
+        Returns: boolean
+      }
+      get_account_owner: {
+        Args: { user_id_param: string }
+        Returns: string
       }
       get_default_permissions_for_role: {
         Args: { user_role: string }
