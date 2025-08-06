@@ -13,7 +13,7 @@ import { useUserSecuritySettings, useUpdateUserSecuritySettings } from "@/hooks/
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, User, Bell, Save, Check, Shield, Globe, Clock } from "lucide-react";
+import { Upload, User, Bell, Save, Check, Shield, Globe, Clock, Edit, X } from "lucide-react";
 
 export const PersonalSettingsTab = () => {
   const { data: userProfile, isLoading } = useCurrentUserProfile();
@@ -54,6 +54,7 @@ export const PersonalSettingsTab = () => {
   });
   
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (userProfile) {
@@ -107,9 +108,34 @@ export const PersonalSettingsTab = () => {
     try {
       await updateProfile.mutateAsync(profileData);
       setSavedSuccessfully(true);
+      setIsEditing(false);
       setTimeout(() => setSavedSuccessfully(false), 2000);
     } catch (error) {
       console.error("Error saving profile:", error);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setSavedSuccessfully(false);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    if (userProfile) {
+      setProfileData({
+        display_name: userProfile.display_name || "",
+        first_name: userProfile.first_name || "",
+        last_name: userProfile.last_name || "",
+        phone_number: userProfile.phone_number || "",
+        status: userProfile.status || "available",
+        status_message: userProfile.status_message || "",
+        email_notifications: userProfile.email_notifications ?? true,
+        sms_notifications: userProfile.sms_notifications ?? false,
+        default_notification_minutes: userProfile.default_notification_minutes ?? 15,
+        avatar_url: userProfile.avatar_url || "",
+      });
     }
   };
 
@@ -175,13 +201,23 @@ export const PersonalSettingsTab = () => {
       {/* Profile Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile Information
-          </CardTitle>
-          <CardDescription>
-            Update your personal information and profile picture
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profile Information
+              </CardTitle>
+              <CardDescription>
+                Update your personal information and profile picture
+              </CardDescription>
+            </div>
+            {!isEditing && (
+              <Button variant="outline" onClick={handleEdit} size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Avatar Section */}
@@ -203,6 +239,7 @@ export const PersonalSettingsTab = () => {
               <Button 
                 variant="outline" 
                 size="sm"
+                disabled={!isEditing}
                 onClick={() => document.getElementById('avatar-upload')?.click()}
               >
                 <Upload className="h-4 w-4 mr-2" />
@@ -222,6 +259,7 @@ export const PersonalSettingsTab = () => {
                 value={profileData.first_name}
                 onChange={(e) => handleInputChange("first_name", e.target.value)}
                 placeholder="Your first name"
+                disabled={!isEditing}
               />
             </div>
             
@@ -232,6 +270,7 @@ export const PersonalSettingsTab = () => {
                 value={profileData.last_name}
                 onChange={(e) => handleInputChange("last_name", e.target.value)}
                 placeholder="Your last name"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -244,6 +283,7 @@ export const PersonalSettingsTab = () => {
                 value={profileData.display_name}
                 onChange={(e) => handleInputChange("display_name", e.target.value)}
                 placeholder="Your display name"
+                disabled={!isEditing}
               />
             </div>
             
@@ -254,6 +294,7 @@ export const PersonalSettingsTab = () => {
                 value={profileData.phone_number}
                 onChange={(e) => handleInputChange("phone_number", e.target.value)}
                 placeholder="+1 (555) 123-4567"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -265,6 +306,7 @@ export const PersonalSettingsTab = () => {
               value={profileData.avatar_url}
               onChange={(e) => handleInputChange("avatar_url", e.target.value)}
               placeholder="https://example.com/avatar.jpg"
+              disabled={!isEditing}
             />
           </div>
 
@@ -275,6 +317,7 @@ export const PersonalSettingsTab = () => {
               value={profileData.status_message}
               onChange={(e) => handleInputChange("status_message", e.target.value)}
               placeholder="Available, In a meeting, etc."
+              disabled={!isEditing}
             />
           </div>
 
@@ -315,6 +358,7 @@ export const PersonalSettingsTab = () => {
                 <Switch
                   checked={profileData.email_notifications}
                   onCheckedChange={(checked) => handleInputChange("email_notifications", checked)}
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -328,6 +372,7 @@ export const PersonalSettingsTab = () => {
                 <Switch
                   checked={profileData.sms_notifications}
                   onCheckedChange={(checked) => handleInputChange("sms_notifications", checked)}
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -341,6 +386,7 @@ export const PersonalSettingsTab = () => {
                   min="0"
                   max="1440"
                   className="w-32"
+                  disabled={!isEditing}
                 />
                 <p className="text-sm text-muted-foreground">
                   Minutes before appointments to send notifications
@@ -349,27 +395,41 @@ export const PersonalSettingsTab = () => {
             </div>
           </div>
 
-          <div className="pt-4">
-            <Button 
-              onClick={handleSave}
-              disabled={updateProfile.isPending}
-              className="w-full"
-            >
-              {updateProfile.isPending ? (
-                "Saving..."
-              ) : savedSuccessfully ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Saved Successfully
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Profile
-                </>
-              )}
-            </Button>
-          </div>
+          {isEditing && (
+            <div className="pt-4 flex gap-2">
+              <Button 
+                onClick={handleSave}
+                disabled={updateProfile.isPending}
+                className="flex-1"
+              >
+                {updateProfile.isPending ? (
+                  "Saving..."
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleCancel}
+                disabled={updateProfile.isPending}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          )}
+          
+          {savedSuccessfully && !isEditing && (
+            <div className="pt-4">
+              <div className="flex items-center justify-center text-green-600 text-sm">
+                <Check className="h-4 w-4 mr-2" />
+                Profile updated successfully
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin, Check, Globe } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Check, Globe, Edit, X, Save } from "lucide-react";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -15,6 +15,7 @@ export const BusinessSettingsTab = () => {
   const updateBusinessSettings = useUpdateBusinessSettings();
   const { toast } = useToast();
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -68,6 +69,7 @@ export const BusinessSettingsTab = () => {
       }
       
       setSavedSuccessfully(true);
+      setIsEditing(false);
       
       toast({
         title: "Success",
@@ -85,6 +87,31 @@ export const BusinessSettingsTab = () => {
     }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+    setSavedSuccessfully(false);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    if (businessSettings) {
+      setFormData({
+        company_name: businessSettings.company_name || "",
+        abn: businessSettings.abn || "",
+        business_email: businessSettings.business_email || "",
+        business_phone: businessSettings.business_phone || "",
+        address: businessSettings.address || "",
+        city: businessSettings.city || "",
+        state: businessSettings.state || "",
+        zip_code: businessSettings.zip_code || "",
+        country: businessSettings.country || "Australia",
+        website: businessSettings.website || "",
+        company_logo_url: businessSettings.company_logo_url || ""
+      });
+    }
+  };
+
   if (isLoading) {
     return <div>Loading business settings...</div>;
   }
@@ -94,10 +121,18 @@ export const BusinessSettingsTab = () => {
       {/* Company Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Building2 className="h-5 w-5" />
-            <span>Company Information</span>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Building2 className="h-5 w-5" />
+              <span>Company Information</span>
+            </CardTitle>
+            {!isEditing && (
+              <Button variant="outline" onClick={handleEdit} size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -108,6 +143,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.company_name}
                 onChange={(e) => handleInputChange("company_name", e.target.value)}
                 placeholder="Enter company name"
+                disabled={!isEditing}
               />
             </div>
             
@@ -118,6 +154,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.abn}
                 onChange={(e) => handleInputChange("abn", e.target.value)}
                 placeholder="Enter ABN or Tax ID"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -129,6 +166,7 @@ export const BusinessSettingsTab = () => {
               value={formData.website}
               onChange={(e) => handleInputChange("website", e.target.value)}
               placeholder="https://www.example.com"
+              disabled={!isEditing}
             />
           </div>
 
@@ -139,6 +177,7 @@ export const BusinessSettingsTab = () => {
               value={formData.company_logo_url}
               onChange={(e) => handleInputChange("company_logo_url", e.target.value)}
               placeholder="https://example.com/logo.png"
+              disabled={!isEditing}
             />
           </div>
         </CardContent>
@@ -162,6 +201,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.business_email}
                 onChange={(e) => handleInputChange("business_email", e.target.value)}
                 placeholder="business@example.com"
+                disabled={!isEditing}
               />
             </div>
             
@@ -172,6 +212,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.business_phone}
                 onChange={(e) => handleInputChange("business_phone", e.target.value)}
                 placeholder="+61 2 1234 5678"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -195,6 +236,7 @@ export const BusinessSettingsTab = () => {
               onChange={(e) => handleInputChange("address", e.target.value)}
               placeholder="Enter street address"
               rows={2}
+              disabled={!isEditing}
             />
           </div>
 
@@ -206,6 +248,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.city}
                 onChange={(e) => handleInputChange("city", e.target.value)}
                 placeholder="Enter city"
+                disabled={!isEditing}
               />
             </div>
             
@@ -216,6 +259,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.state}
                 onChange={(e) => handleInputChange("state", e.target.value)}
                 placeholder="Enter state"
+                disabled={!isEditing}
               />
             </div>
             
@@ -226,6 +270,7 @@ export const BusinessSettingsTab = () => {
                 value={formData.zip_code}
                 onChange={(e) => handleInputChange("zip_code", e.target.value)}
                 placeholder="Enter zip code"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -237,36 +282,46 @@ export const BusinessSettingsTab = () => {
               value={formData.country}
               onChange={(e) => handleInputChange("country", e.target.value)}
               placeholder="Enter country"
+              disabled={!isEditing}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      <div className="flex justify-end items-center space-x-3">
-        {savedSuccessfully && (
-          <div className="flex items-center text-green-600 text-sm">
-            <Check className="h-4 w-4 mr-1" />
-            <span>Saved successfully</span>
-          </div>
-        )}
-        <Button 
-          onClick={handleSave}
-          disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending || savedSuccessfully}
-          variant={savedSuccessfully ? "secondary" : "default"}
-        >
-          {savedSuccessfully ? (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              Saved
-            </>
-          ) : (createBusinessSettings.isPending || updateBusinessSettings.isPending) ? (
-            "Saving..."
-          ) : (
-            "Save Business Settings"
-          )}
-        </Button>
-      </div>
+      {/* Action Buttons */}
+      {isEditing && (
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleSave}
+            disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+            className="flex-1"
+          >
+            {(createBusinessSettings.isPending || updateBusinessSettings.isPending) ? (
+              "Saving..."
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={handleCancel}
+            disabled={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+        </div>
+      )}
+      
+      {savedSuccessfully && !isEditing && (
+        <div className="flex items-center justify-center text-green-600 text-sm">
+          <Check className="h-4 w-4 mr-2" />
+          Business settings updated successfully
+        </div>
+      )}
     </div>
   );
 };
