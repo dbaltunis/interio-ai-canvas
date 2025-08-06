@@ -114,20 +114,3 @@ export const useUpdateAccessRequest = () => {
     },
   });
 };
-
-export const useCanEditRecord = (recordType: string, recordId: string, recordUserId: string, recordCreatedBy: string) => {
-  return useQuery({
-    queryKey: ["canEditRecord", recordType, recordId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('can_edit_record', {
-        record_user_id: recordUserId,
-        record_created_by: recordCreatedBy,
-        record_type: recordType,
-        record_id: recordId
-      });
-
-      if (error) throw error;
-      return data as boolean;
-    },
-  });
-};

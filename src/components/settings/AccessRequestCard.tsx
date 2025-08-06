@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { AccessRequest } from "@/hooks/useAccountSettings";
+import { AccessRequest } from "@/hooks/useAccessRequests";
 import { formatDistanceToNow } from "date-fns";
 import { User, Clock, MessageSquare, CheckCircle, XCircle } from "lucide-react";
 import { useState } from "react";
