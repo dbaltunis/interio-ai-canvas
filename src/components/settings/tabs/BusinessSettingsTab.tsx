@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Mail, Phone, MapPin, Check, Globe, Edit, X, Save } from "lucide-react";
+import { LoadingFallback } from "@/components/ui/loading-fallback";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -113,7 +114,7 @@ export const BusinessSettingsTab = () => {
   };
 
   if (isLoading) {
-    return <div>Loading business settings...</div>;
+    return <LoadingFallback title="Loading business settings..." rows={4} />;
   }
 
   return (

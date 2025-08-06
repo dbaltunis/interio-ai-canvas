@@ -14,6 +14,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, User, Bell, Save, Check, Shield, Globe, Clock, Edit, X } from "lucide-react";
+import { LoadingFallback } from "@/components/ui/loading-fallback";
 
 export const PersonalSettingsTab = () => {
   const { data: userProfile, isLoading } = useCurrentUserProfile();
@@ -193,7 +194,7 @@ export const PersonalSettingsTab = () => {
   };
 
   if (isLoading) {
-    return <div>Loading personal settings...</div>;
+    return <LoadingFallback title="Loading personal settings..." rows={6} />;
   }
 
   return (
