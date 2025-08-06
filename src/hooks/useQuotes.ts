@@ -19,7 +19,25 @@ export const useQuotes = (projectId?: string) => {
 
       let query = supabase
         .from("quotes")
-        .select("*");
+        .select(`
+          *,
+          clients (
+            id,
+            name,
+            email
+          ),
+          projects (
+            id,
+            name,
+            status,
+            client_id,
+            clients (
+              id,
+              name,
+              email
+            )
+          )
+        `);
       
       // If user doesn't have view_all_jobs permission, filter by user_id
       if (!canViewAllJobs) {
