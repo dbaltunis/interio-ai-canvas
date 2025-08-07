@@ -235,7 +235,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                     </SelectTrigger>
                     <SelectContent>
                       {jobStatuses
-                        .filter(status => status.category.toLowerCase() === 'project')
                         .map(status => (
                           <SelectItem key={status.id} value={status.name.toLowerCase()}>
                             <div className="flex items-center space-x-2">
