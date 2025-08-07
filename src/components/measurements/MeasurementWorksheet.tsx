@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Save, Upload } from "lucide-react";
 import { useCreateClientMeasurement, useUpdateClientMeasurement } from "@/hooks/useClientMeasurements";
+import { useSaveWindowSummary } from "@/hooks/useWindowSummary";
+import { calculateFabricUsage } from "@/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { useRooms } from "@/hooks/useRooms";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
@@ -46,6 +48,7 @@ export const MeasurementWorksheet = ({
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
+  const saveWindowSummary = useSaveWindowSummary();
   const { data: rooms = [] } = useRooms(projectId);
   const { data: windowCoverings = [] } = useWindowCoverings();
 
@@ -89,16 +92,52 @@ export const MeasurementWorksheet = ({
       measured_at: new Date().toISOString()
     };
 
-    if (existingMeasurement?.id) {
-      await updateMeasurement.mutateAsync({
-        id: existingMeasurement.id,
-        ...measurementData
-      });
-    } else {
-      await createMeasurement.mutateAsync(measurementData);
-    }
+    try {
+      let savedMeasurement;
+      if (existingMeasurement?.id) {
+        savedMeasurement = await updateMeasurement.mutateAsync({
+          id: existingMeasurement.id,
+          ...measurementData
+        });
+      } else {
+        savedMeasurement = await createMeasurement.mutateAsync(measurementData);
+      }
+      
+      // Calculate and save window summary if we have the required data
+      const templateId = measurements.selected_template || measurements.selected_heading;
+      if (templateId && measurements.width && measurements.height) {
+        try {
+          // Create a simplified fabric calculation for pricing
+          const railWidth = Number(measurements.rail_width || measurements.width || 0);
+          const drop = Number(measurements.drop || measurements.height || 0);
+          const linearMeters = (railWidth * drop) / 10000; // Basic calculation
+          const pricePerMeter = 25; // Default price
+          
+          await saveWindowSummary.mutateAsync({
+            window_id: savedMeasurement.id,
+            linear_meters: linearMeters,
+            widths_required: Math.ceil(railWidth / 137) || 1,
+            price_per_meter: pricePerMeter,
+            fabric_cost: linearMeters * pricePerMeter,
+            lining_type: measurements.lining_type || null,
+            lining_cost: Number(measurements.lining_cost || 0),
+            manufacturing_type: measurements.manufacturing_type || 'machine',
+            manufacturing_cost: Number(measurements.manufacturing_cost || 50),
+            total_cost: (linearMeters * pricePerMeter) + Number(measurements.lining_cost || 0) + Number(measurements.manufacturing_cost || 50),
+            template_id: templateId,
+            pricing_type: 'per_metre',
+            waste_percent: Number(measurements.waste_percent || 5),
+            currency: 'GBP',
+          });
+        } catch (summaryError) {
+          console.error('Error saving window summary:', summaryError);
+        }
+      }
 
-    onSave?.();
+      onSave?.();
+    } catch (error) {
+      console.error('Error saving measurement:', error);
+    }
   };
 
   const getRoomName = () => {

@@ -3112,6 +3112,68 @@ export type Database = {
         }
         Relationships: []
       }
+      windows_summary: {
+        Row: {
+          currency: string | null
+          fabric_cost: number | null
+          linear_meters: number | null
+          lining_cost: number | null
+          lining_type: string | null
+          manufacturing_cost: number | null
+          manufacturing_type: string | null
+          price_per_meter: number | null
+          pricing_type: string | null
+          template_id: string | null
+          total_cost: number | null
+          updated_at: string | null
+          waste_percent: number | null
+          widths_required: number | null
+          window_id: string
+        }
+        Insert: {
+          currency?: string | null
+          fabric_cost?: number | null
+          linear_meters?: number | null
+          lining_cost?: number | null
+          lining_type?: string | null
+          manufacturing_cost?: number | null
+          manufacturing_type?: string | null
+          price_per_meter?: number | null
+          pricing_type?: string | null
+          template_id?: string | null
+          total_cost?: number | null
+          updated_at?: string | null
+          waste_percent?: number | null
+          widths_required?: number | null
+          window_id: string
+        }
+        Update: {
+          currency?: string | null
+          fabric_cost?: number | null
+          linear_meters?: number | null
+          lining_cost?: number | null
+          lining_type?: string | null
+          manufacturing_cost?: number | null
+          manufacturing_type?: string | null
+          price_per_meter?: number | null
+          pricing_type?: string | null
+          template_id?: string | null
+          total_cost?: number | null
+          updated_at?: string | null
+          waste_percent?: number | null
+          widths_required?: number | null
+          window_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "windows_summary_window_id_fkey"
+            columns: ["window_id"]
+            isOneToOne: true
+            referencedRelation: "surfaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       user_presence_view: {
