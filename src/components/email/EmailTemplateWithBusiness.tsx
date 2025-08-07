@@ -1,6 +1,7 @@
 import React from 'react';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { useEnhancedEmailSettings } from '@/hooks/useEnhancedEmailSettings';
+import { SafeHTML } from '@/utils/htmlSanitizer';
 
 interface EmailTemplateWithBusinessProps {
   subject: string;
@@ -90,20 +91,16 @@ export const EmailTemplateWithBusiness = ({
 
       {/* Email Body */}
       <div className="p-6">
-        <div 
+        <SafeHTML 
           className="prose max-w-none"
-          dangerouslySetInnerHTML={{ 
-            __html: processedContent.replace(/\n/g, '<br/>') 
-          }} 
+          html={processedContent.replace(/\n/g, '<br/>')}
         />
         
         {/* Email Signature */}
         <div className="mt-6 pt-4 border-t">
-          <div 
+          <SafeHTML 
             className="text-gray-600 whitespace-pre-line"
-            dangerouslySetInnerHTML={{ 
-              __html: signature.replace(/\n/g, '<br/>') 
-            }} 
+            html={signature.replace(/\n/g, '<br/>')}
           />
         </div>
       </div>
