@@ -48,7 +48,6 @@ export const LibraryTabs = ({ activeTab, onTabChange, viewMode, onViewModeChange
             variant={viewMode === "card" ? "default" : "outline"}
             size="sm"
             onClick={() => onViewModeChange("card")}
-            className="bg-slate-600 hover:bg-slate-700 text-white"
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
             Card

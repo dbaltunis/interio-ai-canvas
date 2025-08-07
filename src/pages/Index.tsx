@@ -128,18 +128,15 @@ const Index = () => {
   };
 
   return (
-    <AIBackground variant="default" className="min-h-screen w-full">
-      {/* AI Background with floating orbs */}
+    <AIBackground variant="subtle" className="min-h-screen w-full">
       <div className="relative min-h-screen">
-        {/* Use the new ResponsiveHeader */}
         <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-        {/* Main Content with AI styling */}
         <motion.main 
           className="w-full"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3 }}
         >
           {renderActiveComponent()}
         </motion.main>

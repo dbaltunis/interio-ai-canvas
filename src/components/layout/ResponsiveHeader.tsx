@@ -42,9 +42,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
   return (
     <>
-      {/* Desktop Header with AI styling */}
-      <header className="glass-morphism border-b border-company-secondary/30 shadow-xl sticky top-0 z-40 backdrop-blur-md">
-        <div className="w-full px-4 sm:px-6 lg:px-8 ai-gradient-bg">
+      {/* Desktop Header */}
+      <header className="bg-background border-b border-border sticky top-0 z-40">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Left side - Logo (made twice bigger) */}
             <div className="flex items-center">
@@ -65,40 +65,35 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       size="sm"
                       onClick={() => onTabChange(item.id)}
                       className={cn(
-                        "px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 relative overflow-hidden",
+                        "px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                         isActive
-                          ? "bg-gradient-to-r from-[#415e6b] to-[#9bb6bc] text-white shadow-lg scale-105"
-                          : "text-gray-700 hover:text-[#415e6b] hover:bg-[#9bb6bc]/10 backdrop-blur-sm"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
                       )}
                     >
                       <Icon className="h-5 w-5 mr-2" />
-                      <span className="relative z-10">{item.label}</span>
-                      {isActive && (
-                        <div className="absolute inset-0 ai-shimmer opacity-20" />
-                      )}
+                      {item.label}
                     </Button>
                   );
                 })}
               </nav>
               
-              {/* Collaboration Tools - AI styled */}
+              {/* Collaboration Tools */}
               <div className="hidden md:flex items-center space-x-2">
                 <Button
-                  variant="ai"
+                  variant="outline"
                   size="sm"
                   onClick={() => setMessageDialogOpen(true)}
                   className="relative"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  {/* AI notification indicator with your colors */}
-                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-[#9bb6bc] to-[#415e6b] rounded-full animate-pulse" />
+                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full" />
                 </Button>
                 
                 <Button
-                  variant="ai"
+                  variant="outline"
                   size="sm"
                   onClick={() => setPresencePanelOpen(!presencePanelOpen)}
-                  className="relative"
                 >
                   <Users className="h-5 w-5" />
                 </Button>
@@ -116,7 +111,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden text-brand-neutral hover:text-brand-primary"
+                className="md:hidden"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
@@ -131,7 +126,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-brand-secondary/20">
+          <div className="md:hidden bg-background border-t border-border">
             <div className="px-4 py-3 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -146,10 +141,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       setMobileMenuOpen(false);
                     }}
                     className={cn(
-                      "w-full justify-start px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300",
+                      "w-full justify-start px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                       isActive
-                        ? "bg-gradient-to-r from-[#415e6b] to-[#9bb6bc] text-white shadow-lg"
-                        : "text-gray-700 hover:text-[#415e6b] hover:bg-[#9bb6bc]/10"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
                     <Icon className="h-4 w-4 mr-3" />

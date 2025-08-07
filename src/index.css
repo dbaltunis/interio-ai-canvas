@@ -81,52 +81,24 @@
   }
 }
 
-/* AI-Style Design System with Company Colors */
+/* Subtle AI-Style Design System with Company Colors */
 .ai-gradient-bg {
   background: linear-gradient(135deg, 
-    hsl(var(--company-primary) / 0.15) 0%,
-    hsl(var(--company-secondary) / 0.1) 25%,
-    transparent 50%,
-    hsl(var(--company-primary) / 0.12) 75%,
-    hsl(var(--company-secondary) / 0.18) 100%
+    hsl(var(--company-primary) / 0.02) 0%,
+    hsl(var(--company-secondary) / 0.02) 100%
   );
-  background-size: 400% 400%;
-  animation: floating-gradient 12s ease-in-out infinite;
-}
-
-.ai-orb {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, 
-    hsl(var(--company-primary) / 0.6) 0%,
-    hsl(var(--company-secondary) / 0.4) 40%,
-    transparent 70%
-  );
-  animation: float-orb 8s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.ai-orb-secondary {
-  background: radial-gradient(circle, 
-    hsl(var(--company-secondary) / 0.5) 0%,
-    hsl(var(--company-primary) / 0.3) 40%,
-    transparent 70%
-  );
-  animation: float-orb 10s ease-in-out infinite reverse;
 }
 
 .glass-morphism {
-  background: rgba(65, 94, 107, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(155, 182, 188, 0.2);
-  box-shadow: 0 12px 40px rgba(65, 94, 107, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid hsl(var(--company-secondary) / 0.3);
+  box-shadow: 0 2px 8px rgba(65, 94, 107, 0.1);
 }
 
 .glass-morphism-strong {
-  background: rgba(65, 94, 107, 0.2);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(155, 182, 188, 0.3);
-  box-shadow: 0 16px 48px rgba(65, 94, 107, 0.2);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid hsl(var(--company-secondary) / 0.4);
+  box-shadow: 0 4px 12px rgba(65, 94, 107, 0.15);
 }
 
 .company-gradient {
@@ -140,49 +112,14 @@
   );
 }
 
-.presence-pulse {
-  animation: presence-glow 3s ease-in-out infinite;
-}
-
 .ai-shimmer {
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(155, 182, 188, 0.4) 50%, 
+    hsl(var(--company-secondary) / 0.1) 50%, 
     transparent 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
-}
-
-@keyframes floating-gradient {
-  0%, 100% { background-position: 0% 50%; }
-  25% { background-position: 100% 25%; }
-  50% { background-position: 100% 75%; }
-  75% { background-position: 0% 75%; }
-}
-
-@keyframes float-orb {
-  0%, 100% { 
-    transform: translateY(0px) translateX(0px) scale(1);
-    opacity: 0.4;
-  }
-  33% { 
-    transform: translateY(-15px) translateX(10px) scale(1.1);
-    opacity: 0.7;
-  }
-  66% { 
-    transform: translateY(10px) translateX(-8px) scale(0.9);
-    opacity: 0.5;
-  }
-}
-
-@keyframes presence-glow {
-  0%, 100% { 
-    box-shadow: 0 0 25px hsl(var(--company-secondary) / 0.6);
-  }
-  50% { 
-    box-shadow: 0 0 35px hsl(var(--company-primary) / 0.8);
-  }
 }
 
 @keyframes shimmer {
