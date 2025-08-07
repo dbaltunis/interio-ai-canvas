@@ -4,6 +4,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 
 interface RoomsTabProps {
   projectId: string;
@@ -14,6 +15,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
+  const userCurrency = useUserCurrency();
   
   const project = projects?.find(p => p.id === projectId);
 
@@ -59,7 +61,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-primary">
-            ${total.toFixed(2)}
+            {formatCurrency(total, userCurrency)}
           </div>
           <p className="text-sm text-muted-foreground">
             Total Project Cost ({roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''})
