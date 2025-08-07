@@ -25,15 +25,15 @@ export const JobsPageTabs = ({
   ];
 
   return (
-    <div className="flex space-x-1 border-b border-gray-200">
+    <div className="flex space-x-1 border-b border-company-secondary/30 glass-morphism">
       {tabs.map((tab) => (
         <Button
           key={tab.id}
           variant="ghost"
-          className={`flex items-center space-x-2 px-4 py-2 border-b-2 rounded-none transition-colors ${
+          className={`flex items-center space-x-2 px-4 py-2 border-b-2 rounded-none transition-all duration-300 ${
             activeTab === tab.id
-              ? "border-brand-primary text-brand-primary bg-brand-secondary/5"
-              : "border-transparent text-gray-600 hover:text-brand-primary hover:border-gray-300"
+              ? "border-company-primary text-company-primary bg-company-primary/10 ai-shimmer"
+              : "border-transparent text-company-secondary hover:text-company-primary hover:border-company-secondary"
           }`}
           onClick={() => setActiveTab(tab.id)}
         >
@@ -41,7 +41,7 @@ export const JobsPageTabs = ({
           {tab.count > 0 && (
             <Badge 
               variant="secondary" 
-              className="ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-1"
+              className="ml-2 bg-company-secondary/20 text-company-primary text-xs px-2 py-1"
             >
               {tab.count}
             </Badge>

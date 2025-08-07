@@ -165,12 +165,12 @@ const JobsPage = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-6 ai-gradient-bg min-h-screen">
+      {/* Header with AI styling */}
+      <div className="flex items-center justify-between ai-gradient-bg glass-morphism p-6 rounded-xl">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-brand-primary">Jobs</h1>
-          <div className="bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full text-sm font-medium">
+          <h1 className="text-3xl font-bold text-company-primary">Jobs</h1>
+          <div className="bg-company-primary/20 text-company-primary px-4 py-2 rounded-full text-sm font-medium glass-morphism">
             {quotes.length} jobs
           </div>
         </div>
@@ -185,9 +185,9 @@ const JobsPage = () => {
           />
           {canCreateJobs && (
             <Button 
+              variant="ai"
               onClick={handleNewJob}
               disabled={createProject.isPending || createQuote.isPending}
-              className="bg-brand-primary hover:bg-brand-accent text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Job"}
