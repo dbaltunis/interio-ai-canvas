@@ -384,7 +384,13 @@ export const SurfaceList = ({
                          </div>
                          
                            {/* Template Status */}
-                           <div className="text-gray-600">Template</div>
+                           <div className="text-gray-600">
+                             {(() => {
+                               const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                              curtainTemplates.find(t => t.name === measurements.treatment_type);
+                               return template ? template.name : (measurements.treatment_type || 'Template');
+                             })()}
+                           </div>
                            <div className="text-right font-medium">
                              {(() => {
                                const hasTemplate = selectedTemplate || measurements.treatment_type || measurements.selected_treatment || measurements.template_id;
