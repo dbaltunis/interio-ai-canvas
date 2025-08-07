@@ -238,18 +238,28 @@ export const SurfaceList = ({
                      })()}
                    </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  {/* Fabric Calculation - Using actual worksheet data */}
-                  {(() => {
-                    const measurements = clientMeasurement.measurements as Record<string, any>;
-                    const selectedTemplate = measurements.selected_template;
-                    const selectedFabric = measurements.selected_fabric;
-                    const railWidth = Number(measurements.rail_width || 0);
-                    const drop = Number(measurements.drop || 0);
-                    
-                    if (selectedTemplate && selectedFabric && railWidth && drop) {
-                      // Use the actual fabric calculation from the worksheet
-                      try {
-                        const fabricCalculation = calculateSurfaceFabricUsage(measurements);
+                   {/* Fabric Calculation - Using actual worksheet data */}
+                   {(() => {
+                     const measurements = clientMeasurement.measurements as Record<string, any>;
+                     const selectedTemplate = measurements.selected_template;
+                     const selectedFabric = measurements.selected_fabric;
+                     const railWidth = Number(measurements.rail_width || 0);
+                     const drop = Number(measurements.drop || 0);
+                     
+                     // Debug logging to see what data we have
+                     console.log('SurfaceList - Measurement data check:', {
+                       selectedTemplate,
+                       selectedFabric,
+                       railWidth,
+                       drop,
+                       allMeasurements: measurements
+                     });
+                     
+                     if (selectedTemplate && selectedFabric && railWidth && drop) {
+                       // Use the actual fabric calculation from the worksheet
+                       try {
+                         const fabricCalculation = calculateSurfaceFabricUsage(measurements);
+                         console.log('SurfaceList - Fabric calculation result:', fabricCalculation);
                         
                         if (fabricCalculation) {
                           return (
@@ -325,36 +335,56 @@ export const SurfaceList = ({
                       }
                     }
                     
-                    // Fallback to basic display
-                    return (
-                      <>
-                        {/* Width and Drop */}
-                        <div className="text-gray-600">Width × Drop</div>
-                        <div className="text-right font-medium">
-                          {formatMeasurement(railWidth || measurements.measurement_a || surface.width, units.length)} × 
-                          {formatMeasurement(drop || measurements.measurement_b || surface.height, units.length)}
-                        </div>
-                        
-                        {/* Heading & Fullness */}
-                        <div className="text-gray-600">Heading & Fullness</div>
-                        <div className="text-right font-medium">
-                          {(() => {
-                            const headingId = measurements.selected_heading || measurements.heading_type;
-                            const headingName = headingId === 'ebe338d1-1d37-478f-91dd-1243204f0adc' ? 'Pencil Pleat' :
-                                               headingId === '857c7f18-a7a1-4fe3-a09f-abd699ac2719' ? 'Eyelet' :
-                                               'Standard';
-                            const fullness = measurements.heading_fullness || selectedTemplate?.fullness_ratio || '2';
-                            return `${headingName} - ${fullness}x`;
-                          })()}
-                        </div>
-                        
-                        {/* Status */}
-                        <div className="text-gray-600">Status</div>
-                        <div className="text-right font-medium text-orange-600">
-                          Calculation pending - missing template or fabric data
-                        </div>
-                      </>
-                    );
+                     // Fallback to detailed diagnostic display
+                     return (
+                       <>
+                         {/* Diagnostic Information */}
+                         <div className="col-span-2 font-medium text-orange-600 mb-2 pb-2 border-b border-orange-200">
+                           Missing Data for Calculation
+                         </div>
+                         
+                         {/* Width and Drop */}
+                         <div className="text-gray-600">Width × Drop</div>
+                         <div className="text-right font-medium">
+                           {railWidth ? `${formatMeasurement(railWidth, units.length)}` : '❌ Missing'} × 
+                           {drop ? `${formatMeasurement(drop, units.length)}` : '❌ Missing'}
+                         </div>
+                         
+                         {/* Template Status */}
+                         <div className="text-gray-600">Template</div>
+                         <div className="text-right font-medium">
+                           {selectedTemplate ? (
+                             <span className="text-green-600">✓ Selected</span>
+                           ) : (
+                             <span className="text-red-600">❌ Not selected</span>
+                           )}
+                         </div>
+                         
+                         {/* Fabric Status */}
+                         <div className="text-gray-600">Fabric</div>
+                         <div className="text-right font-medium">
+                           {selectedFabric ? (
+                             <span className="text-green-600">✓ Selected</span>
+                           ) : (
+                             <span className="text-red-600">❌ Not selected</span>
+                           )}
+                         </div>
+                         
+                         {/* Available Data Summary */}
+                         <div className="col-span-2 mt-3 p-3 bg-orange-50 rounded border border-orange-200">
+                           <div className="text-xs text-orange-700">
+                             <div className="font-medium mb-1">Available data in worksheet:</div>
+                             <div>• Rail Width: {railWidth || 'Missing'}</div>
+                             <div>• Drop: {drop || 'Missing'}</div>
+                             <div>• Template ID: {selectedTemplate ? 'Present' : 'Missing'}</div>
+                             <div>• Fabric ID: {selectedFabric ? 'Present' : 'Missing'}</div>
+                             <div className="mt-2 text-xs">
+                               Complete the measurement worksheet to see pricing calculations.
+                             </div>
+                           </div>
+                         </div>
+                       </>
+                     );
                   })()}
                 </div>
                 </div>
