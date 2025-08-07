@@ -27,6 +27,13 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
 
 export function WindowSummaryCard({ surface, measurement, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
   const measurementId = measurement?.id;
+  console.log(`WindowSummaryCard debug:`, { 
+    surfaceName: surface.name, 
+    surfaceId: surface.id, 
+    measurement: measurement ? { id: measurement.id, hasData: !!measurement.measurements } : null,
+    measurementId 
+  });
+  
   const { data: summary, isLoading, error } = useWindowSummary(measurementId);
 
   return (
