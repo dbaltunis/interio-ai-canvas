@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
+import { ActiveUsersDropdown } from '../collaboration/ActiveUsersDropdown';
+import { UserPresencePanel } from '../collaboration/UserPresencePanel';
+import { DirectMessageDialog } from '../collaboration/DirectMessageDialog';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -12,7 +15,8 @@ import {
   Package, 
   Calendar,
   Menu,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +36,8 @@ const navItems = [
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [presencePanelOpen, setPresencePanelOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
 
   return (
     <>
@@ -73,6 +79,26 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                   );
                 })}
               </nav>
+              
+              {/* Collaboration Tools */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMessageDialogOpen(true)}
+                >
+                  <MessageCircle className="h-5 w-5" />
+                </Button>
+                <ActiveUsersDropdown />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPresencePanelOpen(!presencePanelOpen)}
+                  className="hidden lg:flex"
+                >
+                  <Users className="h-5 w-5" />
+                </Button>
+              </div>
               
               {/* Notification Bell */}
               <div className="hidden md:block">
@@ -131,6 +157,21 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           </div>
         )}
       </header>
+
+      {/* User Presence Panel */}
+      {presencePanelOpen && (
+        <div className="fixed top-16 right-4 z-50 hidden lg:block">
+          <UserPresencePanel 
+            onToggleCollapse={() => setPresencePanelOpen(false)}
+          />
+        </div>
+      )}
+
+      {/* Direct Message Dialog */}
+      <DirectMessageDialog 
+        isOpen={messageDialogOpen}
+        onClose={() => setMessageDialogOpen(false)}
+      />
     </>
   );
 };
