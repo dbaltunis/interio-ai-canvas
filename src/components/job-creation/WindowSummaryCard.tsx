@@ -26,15 +26,10 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
 }
 
 export function WindowSummaryCard({ surface, measurement, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
-  const measurementId = measurement?.id;
-  console.log(`WindowSummaryCard debug:`, { 
-    surfaceName: surface.name, 
-    surfaceId: surface.id, 
-    measurement: measurement ? { id: measurement.id, hasData: !!measurement.measurements } : null,
-    measurementId 
-  });
+  // Use surface.id directly as the window_id - no complex room_id linking
+  const windowId = surface.id;
   
-  const { data: summary, isLoading, error } = useWindowSummary(measurementId);
+  const { data: summary, isLoading, error } = useWindowSummary(windowId);
 
   return (
     <Card className="mb-4">
