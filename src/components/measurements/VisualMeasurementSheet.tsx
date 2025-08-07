@@ -208,8 +208,8 @@ export const VisualMeasurementSheet = ({
       <CardContent>
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Visual Diagram - Always visible on large screens */}
-          <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-hidden">
-            <div className="relative bg-gradient-to-br from-blue-50 to-gray-50 border-2 border-gray-300 rounded-lg p-8 min-h-[400px] shadow-inner">
+          <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible z-10">
+            <div className="relative bg-gradient-to-br from-blue-50 to-gray-50 border-2 border-gray-300 rounded-lg p-8 min-h-[400px] shadow-inner overflow-visible">
               {/* Ceiling Line */}
               <div className="absolute top-4 left-8 right-8 border-t-2 border-gray-800">
                 <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
@@ -307,10 +307,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Rail Width measurement - positioned near the hardware */}
               {hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center z-10`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center z-20`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -320,9 +320,9 @@ export const VisualMeasurementSheet = ({
               
               {/* Rail Width placeholder when empty */}
               {!hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center opacity-30`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center opacity-50 z-20`}>
                   <div className="flex-1 border-t-2 border-dashed border-gray-400 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white px-3 py-2 rounded-lg text-xs font-medium z-30 whitespace-nowrap">
                       Enter Rail Width →
                     </span>
                   </div>
@@ -331,10 +331,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Window Width Measurement (A) */}
               {hasValue(measurements.measurement_a) && (
-                <div className="absolute top-20 left-16 right-16 flex items-center">
+                <div className="absolute top-20 left-16 right-16 flex items-center z-20">
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
                   <div className="flex-1 border-t-2 border-green-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       A: {displayValue(measurements.measurement_a)}
                     </span>
                   </div>
@@ -344,10 +344,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Drop measurement - from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center z-10`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center z-20`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
                   <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
-                    <span className="absolute -left-24 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg animate-pulse">
+                    <span className="absolute -left-28 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-lg z-30">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
@@ -357,9 +357,9 @@ export const VisualMeasurementSheet = ({
               
               {/* Drop placeholder when empty */}
               {!hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center opacity-30`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center opacity-50 z-20`}>
                   <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-dashed border-gray-400 relative`}>
-                    <span className="absolute -left-24 top-1/2 transform -translate-y-1/2 bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+                    <span className="absolute -left-28 top-1/2 transform -translate-y-1/2 bg-gray-400 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap z-30">
                       Enter Drop Height ↓
                     </span>
                   </div>
