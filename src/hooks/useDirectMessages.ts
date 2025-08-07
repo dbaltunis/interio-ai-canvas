@@ -33,6 +33,7 @@ export const useDirectMessages = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
+  const [localMessages, setLocalMessages] = useState<DirectMessage[]>([]);
 
   // Get all conversations for current user
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
@@ -68,16 +69,17 @@ export const useDirectMessages = () => {
     enabled: !!user,
   });
 
-  // Get messages for active conversation
+  // Get messages for active conversation (using local messages for now)
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', activeConversation, user?.id],
     queryFn: async (): Promise<DirectMessage[]> => {
       if (!user || !activeConversation) return [];
 
-      // Since we don't have a messages table yet, return empty array
-      // TODO: Implement actual message querying when table exists
-      console.log('Would fetch messages between', user.id, 'and', activeConversation);
-      return [];
+      // Filter local messages for the active conversation
+      return localMessages.filter(msg => 
+        (msg.sender_id === user.id && msg.recipient_id === activeConversation) ||
+        (msg.sender_id === activeConversation && msg.recipient_id === user.id)
+      );
     },
     enabled: !!user && !!activeConversation,
   });
@@ -87,14 +89,26 @@ export const useDirectMessages = () => {
     mutationFn: async ({ recipientId, content }: { recipientId: string; content: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // TODO: Implement actual message sending when table exists
-      console.log('Would send message from', user.id, 'to', recipientId, ':', content);
+      // Create a new local message
+      const newMessage: DirectMessage = {
+        id: `temp-${Date.now()}-${Math.random()}`,
+        sender_id: user.id,
+        recipient_id: recipientId,
+        content,
+        created_at: new Date().toISOString(),
+        sender_profile: {
+          display_name: user.email || 'You',
+          avatar_url: undefined
+        }
+      };
+
+      // Add to local messages immediately
+      setLocalMessages(prev => [...prev, newMessage]);
       
-      // For now, just show a toast
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully.",
-      });
+      // TODO: Send to actual database when table exists
+      console.log('Would send message to database:', newMessage);
+      
+      return newMessage;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
