@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, User, Edit, Save, X, Search } from "lucide-react";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
@@ -32,6 +33,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   });
 
   const { data: clients, refetch: refetchClients } = useClients();
+  const { data: jobStatuses = [] } = useJobStatuses();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
   
@@ -137,21 +139,25 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800";
-      case "on_hold":
-        return "bg-yellow-100 text-yellow-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "planning":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const getStatusColor = (statusName: string) => {
+    const statusDetails = jobStatuses.find(
+      s => s.name.toLowerCase() === statusName.toLowerCase()
+    );
+    
+    if (statusDetails) {
+      const colorMap: Record<string, string> = {
+        'gray': 'bg-gray-100 text-gray-800 border-gray-200',
+        'blue': 'bg-blue-100 text-blue-800 border-blue-200', 
+        'green': 'bg-green-100 text-green-800 border-green-200',
+        'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        'orange': 'bg-orange-100 text-orange-800 border-orange-200',
+        'red': 'bg-red-100 text-red-800 border-red-200',
+        'purple': 'bg-purple-100 text-purple-800 border-purple-200',
+      };
+      return colorMap[statusDetails.color] || 'bg-gray-100 text-gray-800 border-gray-200';
     }
+    
+    return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getPriorityColor = (priority: string) => {
@@ -228,16 +234,22 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="planning">Planning</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="on_hold">On Hold</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      {jobStatuses
+                        .filter(status => status.category.toLowerCase() === 'project')
+                        .map(status => (
+                          <SelectItem key={status.id} value={status.name.toLowerCase()}>
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-3 h-3 rounded-full bg-${status.color}-500`} />
+                              <span>{status.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 ) : (
                   <Badge className={getStatusColor(formData.status)}>
-                    {formData.status.replace('_', ' ').toUpperCase()}
+                    {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
+                     formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
                   </Badge>
                 )}
               </div>
