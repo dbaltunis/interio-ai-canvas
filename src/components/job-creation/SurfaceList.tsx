@@ -63,6 +63,7 @@ export const SurfaceList = ({
             surface={surface} 
             onEditSurface={() => handleViewWindow(surface)}
             onDeleteSurface={onDeleteSurface}
+            onViewDetails={() => handleViewWindow(surface)}
           />
         ))}
       </div>

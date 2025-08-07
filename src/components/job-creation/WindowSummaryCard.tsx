@@ -7,6 +7,7 @@ interface WindowSummaryCardProps {
   surface: any;
   onEditSurface?: (surface: any) => void;
   onDeleteSurface?: (id: string) => void;
+  onViewDetails?: (surface: any) => void;
 }
 
 function formatCurrency(amount: number, currency: string = 'GBP') {
@@ -23,7 +24,7 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
   );
 }
 
-export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface }: WindowSummaryCardProps) {
+export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
   const { data: summary, isLoading, error } = useWindowSummary(surface.id);
 
   return (
@@ -87,7 +88,11 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface }: W
                   {summary.pricing_type} • waste {summary.waste_percent ?? 0}%
                 </div>
               </div>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onViewDetails?.(surface)}
+              >
                 View details
               </Button>
             </div>
