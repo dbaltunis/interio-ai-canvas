@@ -230,7 +230,7 @@ const CalendarView = () => {
       switch (event.appointment_type) {
         case 'meeting': return 'bg-blue-500';
         case 'consultation': return 'bg-green-500';
-        case 'call': return 'bg-purple-500';
+        case 'call': return 'bg-primary';
         case 'follow-up': return 'bg-orange-500';
         default: return 'bg-primary';
       }
@@ -631,12 +631,12 @@ const CalendarView = () => {
                 </Label>
                 <div className="flex gap-2 mt-2">
                   {[
+                    { name: 'Primary', value: '#415e6b', bg: 'bg-primary' },
+                    { name: 'Secondary', value: '#9bb6bc', bg: 'bg-secondary' },
                     { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
                     { name: 'Green', value: '#10B981', bg: 'bg-green-500' },
-                    { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-500' },
                     { name: 'Orange', value: '#F59E0B', bg: 'bg-orange-500' },
                     { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
-                    { name: 'Pink', value: '#EC4899', bg: 'bg-pink-500' },
                     { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
                   ].map((color) => (
                     <button

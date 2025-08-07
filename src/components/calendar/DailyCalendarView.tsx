@@ -180,7 +180,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                   switch (event.appointment_type) {
                     case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
                     case 'consultation': return 'bg-green-500/90 text-white border-green-600';
-                    case 'call': return 'bg-purple-500/90 text-white border-purple-600';
+                    case 'call': return 'bg-primary/90 text-primary-foreground border-primary';
                     case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
                     default: return 'bg-primary/90 text-primary-foreground border-primary';
                   }
