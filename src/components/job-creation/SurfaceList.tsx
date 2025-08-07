@@ -195,6 +195,13 @@ export const SurfaceList = ({
           const clientMeasurement = getClientMeasurementForSurface(surface);
           const hasMeasurements = clientMeasurement?.measurements && Object.keys(clientMeasurement.measurements).length > 0;
 
+          console.log(`=== SURFACE LIST DEBUG FOR ${surface.name} ===`);
+          console.log('Surface:', surface);
+          console.log('Client measurement found:', clientMeasurement);
+          console.log('Has measurements:', hasMeasurements);
+          console.log('All client measurements:', clientMeasurements);
+          console.log('=== END SURFACE DEBUG ===');
+
           return (
             <div key={surface.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
@@ -251,23 +258,24 @@ export const SurfaceList = ({
                    </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                    {/* Fabric Calculation - Using actual worksheet data */}
-                   {(() => {
-                     const measurements = clientMeasurement.measurements as Record<string, any>;
-                     const selectedTemplate = measurements.selected_template;
-                     const selectedFabric = measurements.selected_fabric;
-                     const railWidth = Number(measurements.rail_width || 0);
-                     const drop = Number(measurements.drop || 0);
-                     
-                     // Debug logging to see what data we have
-                     console.log('SurfaceList - Measurement data check:', {
-                       selectedTemplate,
-                       selectedFabric,
-                       railWidth,
-                       drop,
-                       allMeasurements: measurements
-                     });
-                     
-                     if (selectedTemplate && selectedFabric && railWidth && drop) {
+                     {(() => {
+                      const measurements = clientMeasurement.measurements as Record<string, any>;
+                      const selectedTemplate = measurements.selected_template;
+                      const selectedFabric = measurements.selected_fabric;
+                      const railWidth = Number(measurements.rail_width || 0);
+                      const drop = Number(measurements.drop || 0);
+                      
+                      // Debug logging to see what data we have
+                      console.log('SurfaceList - Measurement data check:', {
+                        selectedTemplate,
+                        selectedFabric,
+                        railWidth,
+                        drop,
+                        allMeasurements: measurements,
+                        measurementKeys: Object.keys(measurements)
+                      });
+                      
+                      if (selectedTemplate && selectedFabric && railWidth && drop) {
                        // Use the actual fabric calculation from the worksheet
                        try {
                          const fabricCalculation = calculateSurfaceFabricUsage(measurements);
