@@ -79,8 +79,12 @@ export const StatusManagement = () => {
           // Create new status
           await createStatus.mutateAsync(editingStatus);
         }
+        
         setIsDialogOpen(false);
         setEditingStatus(null);
+        
+        // Force immediate refresh of job statuses across the app
+        window.location.reload();
       } catch (error) {
         console.error("Error saving status:", error);
       }
