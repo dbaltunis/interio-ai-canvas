@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Users, MessageCircle, Zap, Circle, Send, X } from 'lucide-react';
 import { DirectMessageDialog } from './DirectMessageDialog';
 
@@ -15,12 +16,16 @@ interface TeamCollaborationCenterProps {
 }
 
 export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationCenterProps) => {
+  const { user } = useAuth();
   const { activeUsers = [] } = useUserPresence();
-  const { openConversation, totalUnreadCount = 0 } = useDirectMessages();
+  const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
 
-  const onlineUsers = activeUsers.filter(u => u.status === 'online');
-  const offlineUsers = activeUsers.filter(u => u.status !== 'online');
+  // Separate current user and others
+  const currentUser = activeUsers.find(u => u.user_id === user?.id);
+  const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
+  const onlineUsers = otherUsers.filter(u => u.status === 'online');
+  const offlineUsers = otherUsers.filter(u => u.status !== 'online');
   const totalUsers = activeUsers.length;
 
   const getStatusColor = (status: string) => {
@@ -144,6 +149,64 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     </TabsList>
 
                     <TabsContent value="team" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
+                      {/* Current User */}
+                      {currentUser && (
+                        <div>
+                          <p className="text-white/80 text-sm mb-3 font-medium flex items-center gap-2">
+                            You <span className="text-xs bg-white/10 px-2 py-1 rounded-full">Currently Active</span>
+                          </p>
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="group relative"
+                          >
+                            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                              
+                              {/* Status indicator gradient line */}
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-500 rounded-l-xl" />
+                              
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <Avatar className="h-12 w-12 ring-2 ring-white/30">
+                                    <AvatarImage src={currentUser.user_profile?.avatar_url} />
+                                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                                      {currentUser.user_profile?.display_name?.charAt(0) || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  
+                                  {/* Animated status dot */}
+                                  <motion.div
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
+                                  />
+                                </div>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-semibold text-white truncate">
+                                      {currentUser.user_profile?.display_name}
+                                    </p>
+                                    <Badge 
+                                      variant="secondary" 
+                                      className="text-xs bg-white/10 text-white/80 border-white/20"
+                                    >
+                                      {currentUser.user_profile?.role}
+                                    </Badge>
+                                  </div>
+                                  
+                                  {currentUser.current_activity && (
+                                    <p className="text-sm text-white/60 truncate">
+                                      🎯 {currentUser.current_activity}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        </div>
+                      )}
+
                       {/* Online Users */}
                       {onlineUsers.length > 0 && (
                         <div>
@@ -278,17 +341,73 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     </TabsContent>
 
                     <TabsContent value="messages" className="flex-1 overflow-y-auto p-4 mt-0">
-                      <div className="text-center py-8">
-                        <MessageCircle className="mx-auto h-12 w-12 text-white/50 mb-4" />
-                        <p className="text-white/70 mb-4">Start conversations with your team</p>
-                        <Button 
-                          onClick={() => setMessageDialogOpen(true)}
-                          className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                        >
-                          <Send className="h-4 w-4 mr-2" />
-                          Open Message Center
-                        </Button>
-                      </div>
+                      {conversations.length > 0 ? (
+                        <div className="space-y-3">
+                          <p className="text-white/80 text-sm mb-3 font-medium">Recent Conversations</p>
+                           {conversations.map((conversation, index) => (
+                             <motion.div
+                               key={conversation.user_id || index}
+                               initial={{ opacity: 0, y: 20 }}
+                               animate={{ opacity: 1, y: 0 }}
+                               transition={{ delay: index * 0.1 }}
+                               className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
+                               onClick={() => {
+                                 openConversation(conversation.user_id);
+                                 setMessageDialogOpen(true);
+                               }}
+                             >
+                               <div className="flex items-center gap-3">
+                                 <Avatar className="h-10 w-10">
+                                   <AvatarImage src={conversation.user_profile?.avatar_url} />
+                                   <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-sm">
+                                     {conversation.user_profile?.display_name?.charAt(0) || 'U'}
+                                   </AvatarFallback>
+                                 </Avatar>
+                                 
+                                 <div className="flex-1 min-w-0">
+                                   <div className="flex items-center justify-between mb-1">
+                                     <p className="font-medium text-white truncate">
+                                       {conversation.user_profile?.display_name || 'Unknown User'}
+                                     </p>
+                                     {conversation.unread_count > 0 && (
+                                       <Badge className="bg-red-500 text-white text-xs">
+                                         {conversation.unread_count}
+                                       </Badge>
+                                     )}
+                                   </div>
+                                   <p className="text-sm text-white/60 truncate">
+                                     {conversation.last_message?.content || 'No messages yet'}
+                                   </p>
+                                   {conversation.last_message?.created_at && (
+                                     <p className="text-xs text-white/50 mt-1">
+                                       {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
+                                         day: 'numeric', 
+                                         month: 'short',
+                                         hour: '2-digit',
+                                         minute: '2-digit'
+                                       })}
+                                     </p>
+                                   )}
+                                 </div>
+                                 
+                                 <MessageCircle className="h-4 w-4 text-white/50" />
+                               </div>
+                             </motion.div>
+                           ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <MessageCircle className="mx-auto h-12 w-12 text-white/50 mb-4" />
+                          <p className="text-white/70 mb-4">Start conversations with your team</p>
+                          <Button 
+                            onClick={() => setMessageDialogOpen(true)}
+                            className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Open Message Center
+                          </Button>
+                        </div>
+                      )}
                     </TabsContent>
                   </Tabs>
                 </div>

@@ -21,7 +21,7 @@ export const useUserPresence = () => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState<string>('');
 
-  // Get all active users with real presence data, excluding current user
+  // Get all active users with real presence data, including current user
   const { data: activeUsers = [], isLoading } = useQuery({
     queryKey: ['user-presence'],
     queryFn: async (): Promise<UserPresence[]> => {
@@ -31,19 +31,17 @@ export const useUserPresence = () => {
 
       if (error) throw error;
 
-      return data
-        .filter(profile => profile.user_id !== user?.id) // Exclude current user
-        .map(profile => ({
-          user_id: profile.user_id,
-          status: profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
-          last_seen: profile.last_seen,
-          user_profile: {
-            display_name: profile.display_name || 'Unknown User',
-            avatar_url: profile.avatar_url,
-            role: profile.role
-          },
-          current_activity: profile.status_message
-        }));
+      return data.map(profile => ({
+        user_id: profile.user_id,
+        status: profile.user_id === user?.id ? 'online' : profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
+        last_seen: profile.last_seen,
+        user_profile: {
+          display_name: profile.display_name || 'Unknown User',
+          avatar_url: profile.avatar_url,
+          role: profile.role
+        },
+        current_activity: profile.status_message
+      }));
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
