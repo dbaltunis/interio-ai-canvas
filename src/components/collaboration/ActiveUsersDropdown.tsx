@@ -14,8 +14,8 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { Users, MessageCircle, Circle } from 'lucide-react';
 
 export const ActiveUsersDropdown = () => {
-  const { activeUsers, isLoading } = useUserPresence();
-  const { openConversation, totalUnreadCount } = useDirectMessages();
+  const { activeUsers = [], isLoading } = useUserPresence();
+  const { openConversation, totalUnreadCount = 0 } = useDirectMessages();
 
   const onlineUsers = activeUsers.filter(u => u.status === 'online');
   const awayUsers = activeUsers.filter(u => u.status === 'away' || u.status === 'busy');

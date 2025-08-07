@@ -126,11 +126,17 @@ export const useDirectMessages = () => {
   useEffect(() => {
     if (!user) return;
 
+    // Create unique channel name to avoid conflicts
+    const channelName = `messages-${user.id}-${Date.now()}`;
+    
+    console.log('Setting up message subscription for user', user.id);
+    
     // TODO: Set up real-time subscription for messages table when it exists
-    console.log('Would set up real-time message subscription for user', user.id);
-
+    // For now, just log that we would set it up
+    
     return () => {
-      // Cleanup subscription
+      // Cleanup subscription when implemented
+      console.log('Cleaning up message subscription');
     };
   }, [user, queryClient]);
 

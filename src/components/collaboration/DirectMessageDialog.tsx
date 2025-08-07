@@ -16,8 +16,8 @@ interface DirectMessageDialogProps {
 }
 
 export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProps) => {
-  const { conversations, messages, activeConversation, sendMessage, sendingMessage, closeConversation } = useDirectMessages();
-  const { activeUsers } = useUserPresence();
+  const { conversations = [], messages = [], activeConversation, sendMessage, sendingMessage, closeConversation } = useDirectMessages();
+  const { activeUsers = [] } = useUserPresence();
   const [messageInput, setMessageInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

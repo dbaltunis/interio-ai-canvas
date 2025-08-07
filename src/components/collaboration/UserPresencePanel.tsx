@@ -15,7 +15,7 @@ interface UserPresencePanelProps {
 }
 
 export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: UserPresencePanelProps) => {
-  const { activeUsers, isLoading } = useUserPresence();
+  const { activeUsers = [], isLoading } = useUserPresence();
   const { openConversation } = useDirectMessages();
   const [expandedSections, setExpandedSections] = useState({
     online: true,

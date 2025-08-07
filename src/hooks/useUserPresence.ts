@@ -115,8 +115,11 @@ export const useUserPresence = () => {
 
   // Set up real-time subscriptions
   useEffect(() => {
+    if (!user) return;
+
+    const channelName = `user-presence-${Date.now()}-${Math.random()}`;
     const channel = supabase
-      .channel('user-presence-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -133,7 +136,7 @@ export const useUserPresence = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const updateStatus = (status: UserPresence['status'], activity?: string) => {
     updatePresenceMutation.mutate({ status, activity });
