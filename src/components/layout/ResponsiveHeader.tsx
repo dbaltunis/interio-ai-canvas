@@ -82,16 +82,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setMessageDialogOpen(true)}
-                  className="relative"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full" />
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => setPresencePanelOpen(!presencePanelOpen)}
                 >
                   <Users className="h-5 w-5" />
