@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
-import { ActiveUsersDropdown } from '../collaboration/ActiveUsersDropdown';
-import { UserPresencePanel } from '../collaboration/UserPresencePanel';
-import { DirectMessageDialog } from '../collaboration/DirectMessageDialog';
+import { ModernUserPresence } from '../collaboration/ModernUserPresence';
+import { ModernMessageCenter } from '../collaboration/ModernMessageCenter';
+import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
@@ -38,6 +38,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   return (
     <>
@@ -80,21 +81,25 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 })}
               </nav>
               
-              {/* Collaboration Tools */}
+              {/* Collaboration Tools - Updated with modern design */}
               <div className="hidden md:flex items-center space-x-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setMessageDialogOpen(true)}
+                  className="relative glass-morphism border-0 hover:bg-white/10 rounded-full"
                 >
                   <MessageCircle className="h-5 w-5" />
+                  {/* AI-style notification dot */}
+                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse" />
                 </Button>
-                <ActiveUsersDropdown />
+                
+                {/* Simplified presence trigger - the floating button will handle the main UI */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setPresencePanelOpen(!presencePanelOpen)}
-                  className="hidden lg:flex"
+                  className="glass-morphism border-0 hover:bg-white/10 rounded-full"
                 >
                   <Users className="h-5 w-5" />
                 </Button>
@@ -158,19 +163,25 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         )}
       </header>
 
-      {/* User Presence Panel */}
-      {presencePanelOpen && (
-        <div className="fixed top-16 right-4 z-50 hidden lg:block">
-          <UserPresencePanel 
-            onToggleCollapse={() => setPresencePanelOpen(false)}
-          />
-        </div>
-      )}
+      {/* Modern AI-style components */}
+      <ModernUserPresence 
+        isOpen={presencePanelOpen}
+        onToggle={() => setPresencePanelOpen(!presencePanelOpen)}
+      />
 
-      {/* Direct Message Dialog */}
-      <DirectMessageDialog 
+      <ModernMessageCenter 
         isOpen={messageDialogOpen}
         onClose={() => setMessageDialogOpen(false)}
+      />
+
+      <AINotificationToast
+        notifications={notifications}
+        onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))}
+        onAction={(id) => {
+          // Handle notification action
+          setMessageDialogOpen(true);
+          setNotifications(prev => prev.filter(n => n.id !== id));
+        }}
       />
     </>
   );
