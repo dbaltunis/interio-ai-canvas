@@ -12,6 +12,7 @@ import { Send, Circle, X, Paperclip, Image, File, Download, Eye } from 'lucide-r
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DirectMessageDialogProps {
   isOpen: boolean;
@@ -25,8 +26,10 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
   const { activeUsers = [] } = useUserPresence();
   const [messageInput, setMessageInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [localMessages, setLocalMessages] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const activeUserPresence = activeConversation ? 
     activeUsers.find(u => u.user_id === activeConversation) : null;
@@ -72,9 +75,27 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
         .from('project-documents')
         .getPublicUrl(filePath);
 
-      // Send message with file attachment
+      // Create and send message with file attachment immediately
       const fileMessage = `📎 **${file.name}**\n\n[View File](${publicUrl})`;
-      sendMessage(activeConversation, fileMessage);
+      
+      // Create local message for immediate display
+      const newMessage = {
+        id: `file-${Date.now()}-${Math.random()}`,
+        sender_id: user.id,
+        recipient_id: activeConversation,
+        content: fileMessage,
+        created_at: new Date().toISOString(),
+        sender_profile: {
+          display_name: user.email || 'You',
+          avatar_url: undefined
+        }
+      };
+
+      // Add to local messages immediately for instant display
+      setLocalMessages(prev => [...prev, newMessage]);
+      
+      // Trigger query invalidation to refresh the messages
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
 
       toast({
         title: "File uploaded",
