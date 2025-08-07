@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { RectangleHorizontal, Trash2, Eye } from "lucide-react";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { WindowManagementDialog } from "./WindowManagementDialog";
-import { calculateFabricUsage } from "./treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { useBusinessSettings, formatMeasurement } from "@/hooks/useBusinessSettings";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -31,6 +32,8 @@ export const SurfaceList = ({
   const [showWindowDialog, setShowWindowDialog] = useState(false);
   
   const { data: clientMeasurements } = useClientMeasurements(clientId);
+  const { data: inventory = [] } = useEnhancedInventory();
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
   const userCurrency = useUserCurrency();
   const { data: businessSettings } = useBusinessSettings();
   
@@ -80,6 +83,95 @@ export const SurfaceList = ({
 
   const getSurfaceTreatments = (surfaceId: string) => {
     return treatments.filter(t => t.window_id === surfaceId);
+  };
+
+  // Calculate fabric usage for a surface (using same logic as VisualMeasurementSheet)
+  const calculateSurfaceFabricUsage = (measurements: Record<string, any>) => {
+    const selectedFabric = measurements.selected_fabric;
+    const railWidth = Number(measurements.rail_width || 0);
+    const drop = Number(measurements.drop || 0);
+    const selectedTemplate = measurements.selected_template;
+    
+    if (!selectedFabric || !railWidth || !drop || !selectedTemplate) {
+      return null;
+    }
+
+    const selectedFabricItem = inventory.find(item => item.id === selectedFabric);
+    if (!selectedFabricItem) {
+      return null;
+    }
+
+    try {
+      const pooling = parseFloat(measurements.pooling_amount || "0");
+      
+      // Get template data
+      const template = curtainTemplates.find(t => t.id === selectedTemplate);
+      if (!template) return null;
+      
+      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+      
+      // Manufacturing allowances from template
+      const headerHem = template.header_allowance || 8;
+      const bottomHem = template.bottom_hem || 8;
+      const sideHems = template.side_hems || 0;
+      const seamHems = template.seam_hems || 0;
+      const returnLeft = template.return_left || 0;
+      const returnRight = template.return_right || 0;
+      
+      // Calculate required width with fullness
+      const requiredWidth = railWidth * template.fullness_ratio;
+      const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+      const totalSideHems = sideHems * 2 * curtainCount;
+      const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+      
+      // Calculate widths needed
+      const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
+      const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+      
+      // Calculate total drop with allowances
+      const totalDrop = drop + headerHem + bottomHem + pooling;
+      const wasteMultiplier = 1 + ((template.waste_percent || 0) / 100);
+      
+      // Linear metres calculation
+      const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
+      
+      // Pricing
+      const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || selectedFabricItem.selling_price || 0;
+      const fabricCost = linearMeters * pricePerMeter;
+      
+      // Lining cost
+      let liningCost = 0;
+      const liningType = measurements.selected_lining;
+      if (liningType && liningType !== 'none') {
+        const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
+        liningCost = linearMeters * liningCostPerMetre;
+      }
+      
+      // Manufacturing cost (based on template pricing)
+      let manufacturingCost = 0;
+      if (template.pricing_type === 'per_metre') {
+        manufacturingCost = linearMeters * (template.machine_price_per_metre || 0);
+      } else if (template.pricing_type === 'per_drop') {
+        manufacturingCost = widthsRequired * (template.machine_price_per_drop || 0);
+      }
+      
+      const totalCost = fabricCost + liningCost + manufacturingCost;
+      
+      return {
+        linearMeters,
+        widthsRequired,
+        fabricCost,
+        liningCost,
+        manufacturingCost,
+        totalCost,
+        pricePerMeter,
+        fabricName: selectedFabricItem.name || 'Selected Fabric',
+        liningType: liningType || 'None'
+      };
+    } catch (error) {
+      console.error('Error calculating fabric usage:', error);
+      return null;
+    }
   };
 
 
@@ -146,119 +238,101 @@ export const SurfaceList = ({
                      })()}
                    </h5>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  {/* Width and Drop from Treatment */}
-                  <div className="text-gray-600">Width × Drop</div>
-                  <div className="text-right font-medium">
-                    {(() => {
-                      const measurements = clientMeasurement.measurements as Record<string, any>;
-                      // Get dimensions from treatment measurements or fallback to surface dimensions  
-                      const width = measurements.rail_width || measurements.measurement_a || surface.width;
-                      const drop = measurements.drop || measurements.measurement_b || surface.height;
-                      return `${formatMeasurement(width, units.length)} × ${formatMeasurement(drop, units.length)}`;
-                    })()}
-                  </div>
-
-
-                  {/* Heading & Fullness */}
-                   <div className="text-gray-600">Heading & Fullness</div>
-                   <div className="text-right font-medium">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       // Display actual heading type from worksheet  
-                       const headingId = measurements.selected_heading || measurements.heading_type;
-                       const headingName = headingId === 'ebe338d1-1d37-478f-91dd-1243204f0adc' ? 'Pencil Pleat' :
-                                          headingId === '857c7f18-a7a1-4fe3-a09f-abd699ac2719' ? 'Eyelet' :
-                                          'Eyelet'; // Default from worksheet
-                       const fullness = measurements.heading_fullness || '2';
-                       return `${headingName} - ${fullness}x`;
-                     })()}
-                   </div>
-
-                   {/* Manufacturing Price */}
-                   <div className="text-gray-600">Manufacturing price</div>
-                   <div className="text-right font-medium">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       const railWidth = Number(measurements.rail_width || 0);
-                       const drop = Number(measurements.drop || 0);
-                       const areaSqM = (railWidth * drop) / 10000; // Convert cm² to m²
-                       const manufacturingCost = areaSqM * 20; // Rate per sq metre to match worksheet
-                       return formatCurrency(manufacturingCost, userCurrency);
-                     })()}
-                   </div>
-
-                   {/* Lining */}
-                   <div className="text-gray-600">Lining</div>
-                   <div className="text-right font-medium text-blue-600">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       const liningType = measurements.selected_lining || measurements.lining_type || 'None';
-                       
-                       if (liningType && liningType !== 'none' && liningType !== 'None') {
-                         const railWidth = Number(measurements.rail_width || 0);
-                         const drop = Number(measurements.drop || 0);
-                         // Calculate linear metres: 2 widths × drop in metres
-                         const fabricMetres = 2 * (drop / 100);
-                         const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
-                         const liningCost = fabricMetres * liningCostPerMetre;
-                         return `${liningType} - ${formatCurrency(liningCost, userCurrency)}`;
-                       } else {
-                         return liningType;
-                       }
-                     })()}
-                   </div>
-
-                   {/* Fabric Selected */}
-                   <div className="text-gray-600">Fabric selected</div>
-                   <div className="text-right font-medium">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       const fabricId = measurements.selected_fabric || measurements.fabric_id;
-                       const fabricName = fabricId === '9f6f9830-66bd-4e7c-b76a-df29d55b7a9f' ? 'Fabric to test' : 'Selected fabric';
-                       return `${fabricName} - ${formatCurrency(45.00, userCurrency)}/m`;
-                     })()}
-                   </div>
-
-                   {/* Fabric Price Total */}
-                   <div className="text-gray-600">Fabric price (total)</div>
-                   <div className="text-right font-medium">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       const railWidth = Number(measurements.rail_width || 0);
-                       const drop = Number(measurements.drop || 0);
-                       // Calculate linear metres: 2 widths × drop in metres  
-                       const fabricMetres = 2 * (drop / 100);
-                       const fabricTotal = fabricMetres * 45;
-                       return formatCurrency(fabricTotal, userCurrency);
-                     })()}
-                   </div>
-
-                   {/* Total Cost */}
-                   <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
-                   <div className="text-right font-bold text-green-600 border-t pt-2">
-                     {(() => {
-                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                       const railWidth = Number(measurements.rail_width || 0);
-                       const drop = Number(measurements.drop || 0);
-                       
-                       // Fabric: 2 widths × drop in metres
-                       const fabricMetres = 2 * (drop / 100);
-                       const fabricTotal = fabricMetres * 45;
-                       
-                       // Lining
-                       const liningType = measurements.selected_lining || measurements.lining_type;
-                       const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
-                       const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
-                                         fabricMetres * liningCostPerMetre : 0;
-                       
-                       // Manufacturing
-                       const areaSqM = (railWidth * drop) / 10000;
-                       const manufacturingCost = areaSqM * 20;
-                       
-                       const total = fabricTotal + liningCost + manufacturingCost;
-                       return formatCurrency(total, userCurrency);
-                     })()}
-                   </div>
+                  {/* Fabric Calculation - Using actual worksheet data */}
+                  {(() => {
+                    const measurements = clientMeasurement.measurements as Record<string, any>;
+                    const selectedTemplate = measurements.selected_template;
+                    const selectedFabric = measurements.selected_fabric;
+                    const railWidth = Number(measurements.rail_width || 0);
+                    const drop = Number(measurements.drop || 0);
+                    
+                    if (selectedTemplate && selectedFabric && railWidth && drop) {
+                      // Use the actual fabric calculation from the worksheet
+                      try {
+                        const fabricCalculation = calculateSurfaceFabricUsage(measurements);
+                        
+                        if (fabricCalculation) {
+                          return (
+                            <>
+                              {/* Fabric Usage */}
+                              <div className="text-gray-600">Fabric</div>
+                              <div className="text-right font-medium">
+                                {fabricCalculation.linearMeters.toFixed(2)}m linear 
+                                ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
+                              </div>
+                              
+                              {/* Fabric Cost */}
+                              <div className="text-gray-600">Selected Fabric</div>
+                              <div className="text-right font-medium">
+                                {fabricCalculation.fabricName} • {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+                              </div>
+                              
+                              {/* Fabric Total */}
+                              <div className="text-gray-600">Fabric Total</div>
+                              <div className="text-right font-medium">
+                                {formatCurrency(fabricCalculation.fabricCost, userCurrency)}
+                              </div>
+                              
+                              {/* Lining */}
+                              {measurements.selected_lining && measurements.selected_lining !== 'none' && (
+                                <>
+                                  <div className="text-gray-600">Lining</div>
+                                  <div className="text-right font-medium text-blue-600">
+                                    {measurements.selected_lining} • {formatCurrency(fabricCalculation.liningCost || 0, userCurrency)}
+                                  </div>
+                                </>
+                              )}
+                              
+                              {/* Manufacturing */}
+                              <div className="text-gray-600">Manufacturing</div>
+                              <div className="text-right font-medium">
+                                {selectedTemplate.manufacturing_type || 'machine'} • {formatCurrency(fabricCalculation.manufacturingCost || 0, userCurrency)}
+                              </div>
+                              
+                              {/* Total Cost */}
+                              <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
+                              <div className="text-right font-bold text-green-600 border-t pt-2">
+                                {formatCurrency(fabricCalculation.totalCost, userCurrency)}
+                              </div>
+                            </>
+                          );
+                        }
+                      } catch (error) {
+                        console.error('Error calculating fabric usage for display:', error);
+                      }
+                    }
+                    
+                    // Fallback to basic display
+                    return (
+                      <>
+                        {/* Width and Drop */}
+                        <div className="text-gray-600">Width × Drop</div>
+                        <div className="text-right font-medium">
+                          {formatMeasurement(railWidth || measurements.measurement_a || surface.width, units.length)} × 
+                          {formatMeasurement(drop || measurements.measurement_b || surface.height, units.length)}
+                        </div>
+                        
+                        {/* Heading & Fullness */}
+                        <div className="text-gray-600">Heading & Fullness</div>
+                        <div className="text-right font-medium">
+                          {(() => {
+                            const headingId = measurements.selected_heading || measurements.heading_type;
+                            const headingName = headingId === 'ebe338d1-1d37-478f-91dd-1243204f0adc' ? 'Pencil Pleat' :
+                                               headingId === '857c7f18-a7a1-4fe3-a09f-abd699ac2719' ? 'Eyelet' :
+                                               'Standard';
+                            const fullness = measurements.heading_fullness || selectedTemplate?.fullness_ratio || '2';
+                            return `${headingName} - ${fullness}x`;
+                          })()}
+                        </div>
+                        
+                        {/* Status */}
+                        <div className="text-gray-600">Status</div>
+                        <div className="text-right font-medium text-orange-600">
+                          Calculation pending - missing template or fabric data
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
                 </div>
               ) : (
