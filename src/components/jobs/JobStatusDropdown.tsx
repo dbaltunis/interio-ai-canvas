@@ -41,9 +41,9 @@ export const JobStatusDropdown = ({
   // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(status => {
     if (jobType === "quote") {
-      return status.category === "Quote";
+      return status.category.toLowerCase() === "quote";
     } else {
-      return status.category === "Project";
+      return status.category.toLowerCase() === "project";
     }
   });
 
