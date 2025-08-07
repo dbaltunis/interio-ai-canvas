@@ -8,12 +8,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useNavigate } from "react-router-dom";
 
 export const UserProfile = () => {
   const { user, signOut } = useAuth();
+  const { data: userProfile } = useCurrentUserProfile();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -54,6 +56,12 @@ export const UserProfile = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
+            {userProfile?.avatar_url && (
+              <AvatarImage 
+                src={userProfile.avatar_url} 
+                alt={userProfile.display_name || user.email || "User avatar"} 
+              />
+            )}
             <AvatarFallback className="bg-brand-secondary text-brand-primary">
               {userInitials}
             </AvatarFallback>
