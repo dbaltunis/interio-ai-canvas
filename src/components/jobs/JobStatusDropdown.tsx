@@ -43,10 +43,9 @@ export const JobStatusDropdown = ({
     status => status.category.toLowerCase() === jobType.toLowerCase()
   );
 
-  // Get current status details
-  const currentStatusDetails = jobStatuses.find(
-    status => status.name.toLowerCase() === currentStatus.toLowerCase()
-  );
+  // Get current status details - exact match first, then case-insensitive
+  const currentStatusDetails = jobStatuses.find(status => status.name === currentStatus) || 
+                               jobStatuses.find(status => status.name.toLowerCase() === currentStatus.toLowerCase());
 
   const getStatusColor = (color: string) => {
     const colorMap: Record<string, string> = {
@@ -64,9 +63,9 @@ export const JobStatusDropdown = ({
   const handleStatusChange = async (newStatus: string) => {
     try {
       if (jobType === "quote") {
-        await updateQuote.mutateAsync({ id: jobId, status: newStatus.toLowerCase() });
+        await updateQuote.mutateAsync({ id: jobId, status: newStatus });
       } else {
-        await updateProject.mutateAsync({ id: jobId, status: newStatus.toLowerCase() });
+        await updateProject.mutateAsync({ id: jobId, status: newStatus });
       }
       
       onStatusChange?.(newStatus);
@@ -133,7 +132,7 @@ export const JobStatusDropdown = ({
                 )}
               </div>
             </div>
-            {status.name.toLowerCase() === currentStatus.toLowerCase() && (
+            {(status.name === currentStatus || status.name.toLowerCase() === currentStatus.toLowerCase()) && (
               <Check className="h-4 w-4" />
             )}
           </DropdownMenuItem>

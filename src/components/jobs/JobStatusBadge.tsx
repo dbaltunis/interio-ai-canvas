@@ -9,10 +9,9 @@ interface JobStatusBadgeProps {
 export const JobStatusBadge = ({ status }: JobStatusBadgeProps) => {
   const { data: jobStatuses = [] } = useJobStatuses();
 
-  // Find the status details from the database
-  const statusDetails = jobStatuses.find(
-    s => s.name.toLowerCase() === status.toLowerCase()
-  );
+  // Find the status details from the database - exact match first, then case-insensitive
+  const statusDetails = jobStatuses.find(s => s.name === status) || 
+                        jobStatuses.find(s => s.name.toLowerCase() === status.toLowerCase());
 
   const getStatusColor = (color: string) => {
     const colorMap: Record<string, string> = {
