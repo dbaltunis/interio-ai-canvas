@@ -3164,15 +3164,7 @@ export type Database = {
           widths_required?: number | null
           window_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "windows_summary_window_id_fkey"
-            columns: ["window_id"]
-            isOneToOne: true
-            referencedRelation: "surfaces"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
