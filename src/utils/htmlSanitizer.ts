@@ -1,5 +1,3 @@
-import React from 'react';
-
 // HTML Sanitization utility to prevent XSS attacks
 class HTMLSanitizer {
   private static allowedTags = [
@@ -136,18 +134,6 @@ export const sanitizeHTML = (html: string): string => {
   }
   
   return HTMLSanitizer.sanitize(html);
-};
-
-// React component for safe HTML rendering
-export const SafeHTML: React.FC<SafeHTMLProps> = ({ html, className }) => {
-  const sanitizedHTML = sanitizeHTML(html);
-  
-  return (
-    <div 
-      className={className}
-      dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
-    />
-  );
 };
 
 // Utility for safe text content extraction

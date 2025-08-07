@@ -1,7 +1,7 @@
 import React from 'react';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { useEnhancedEmailSettings } from '@/hooks/useEnhancedEmailSettings';
-import { SafeHTML } from '@/utils/htmlSanitizer';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 
 interface EmailTemplateWithBusinessProps {
   subject: string;
