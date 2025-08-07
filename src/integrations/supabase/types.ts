@@ -56,7 +56,21 @@ export type Database = {
             foreignKeyName: "access_requests_approver_id_fkey"
             columns: ["approver_id"]
             isOneToOne: false
+            referencedRelation: "user_presence_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "access_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "access_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_presence_view"
             referencedColumns: ["user_id"]
           },
           {
@@ -103,6 +117,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "account_settings_account_owner_id_fkey"
+            columns: ["account_owner_id"]
+            isOneToOne: true
+            referencedRelation: "user_presence_view"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "account_settings_account_owner_id_fkey"
             columns: ["account_owner_id"]
@@ -820,6 +841,13 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_presence_view"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "clients_created_by_fkey"
             columns: ["created_by"]
@@ -2043,6 +2071,13 @@ export type Database = {
             foreignKeyName: "projects_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "user_presence_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["user_id"]
           },
@@ -2796,9 +2831,12 @@ export type Database = {
           display_name: string | null
           email_notifications: boolean | null
           first_name: string | null
+          has_logged_in: boolean | null
           invited_by_user_id: string | null
           is_active: boolean | null
+          is_online: boolean | null
           last_name: string | null
+          last_seen: string | null
           parent_account_id: string | null
           permissions: Json | null
           phone_number: string | null
@@ -2816,9 +2854,12 @@ export type Database = {
           display_name?: string | null
           email_notifications?: boolean | null
           first_name?: string | null
+          has_logged_in?: boolean | null
           invited_by_user_id?: string | null
           is_active?: boolean | null
+          is_online?: boolean | null
           last_name?: string | null
+          last_seen?: string | null
           parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null
@@ -2836,9 +2877,12 @@ export type Database = {
           display_name?: string | null
           email_notifications?: boolean | null
           first_name?: string | null
+          has_logged_in?: boolean | null
           invited_by_user_id?: string | null
           is_active?: boolean | null
+          is_online?: boolean | null
           last_name?: string | null
+          last_seen?: string | null
           parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null
@@ -2854,7 +2898,21 @@ export type Database = {
             foreignKeyName: "user_profiles_invited_by_user_id_fkey"
             columns: ["invited_by_user_id"]
             isOneToOne: false
+            referencedRelation: "user_presence_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_profiles_invited_by_user_id_fkey"
+            columns: ["invited_by_user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_profiles_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "user_presence_view"
             referencedColumns: ["user_id"]
           },
           {
@@ -3056,7 +3114,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_presence_view: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          has_logged_in: boolean | null
+          is_online: boolean | null
+          last_seen: string | null
+          role: string | null
+          status: string | null
+          status_message: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name?: string | null
+          has_logged_in?: boolean | null
+          is_online?: boolean | null
+          last_seen?: string | null
+          role?: string | null
+          status?: never
+          status_message?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string | null
+          has_logged_in?: boolean | null
+          is_online?: boolean | null
+          last_seen?: string | null
+          role?: string | null
+          status?: never
+          status_message?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_user_invitation: {
@@ -3091,6 +3187,14 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      mark_user_offline: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      update_user_last_seen: {
+        Args: { user_id: string }
+        Returns: undefined
       }
       validate_permission_dependencies: {
         Args: { user_id_param: string; permissions_param: string[] }
