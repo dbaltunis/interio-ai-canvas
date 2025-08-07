@@ -206,9 +206,9 @@ export const VisualMeasurementSheet = ({
         <CardTitle className="text-center">Window Measurement Worksheet</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Visual Diagram */}
-          <div className="flex-1">
+        <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-200px)]">
+          {/* Visual Diagram - Fixed position on large screens */}
+          <div className="lg:w-1/2 lg:flex-shrink-0 sticky top-4">
             <div className="relative bg-gray-50 border-2 border-gray-300 rounded-lg p-8 min-h-[400px]">
               {/* Ceiling Line */}
               <div className="absolute top-4 left-8 right-8 border-t-2 border-gray-800">
@@ -611,8 +611,8 @@ export const VisualMeasurementSheet = ({
             </div>
           </div>
 
-          {/* Measurement Inputs */}
-          <div className="flex-1 space-y-4">
+          {/* Measurement Inputs - Scrollable on large screens */}
+          <div className="lg:w-1/2 lg:flex-shrink-0 lg:overflow-y-auto lg:max-h-[calc(100vh-200px)] space-y-4">
             {/* Hardware Type */}
             <div className="border rounded-lg p-4 bg-gray-50">
               <h4 className="font-medium mb-3 text-gray-800">Hardware Type</h4>
