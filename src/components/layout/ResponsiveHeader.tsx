@@ -6,6 +6,8 @@ import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
+import { useUserPresence } from '@/hooks/useUserPresence';
+import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -38,6 +40,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  
+  const { activeUsers, currentUser } = useUserPresence();
+  const { conversations } = useDirectMessages();
+  
+  // Check if there are other active users or unread messages
+  const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
+  const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
+  const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
 
   return (
     <>
@@ -83,8 +93,12 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                   variant="outline"
                   size="sm"
                   onClick={() => setPresencePanelOpen(!presencePanelOpen)}
+                  className="relative"
                 >
                   <Users className="h-5 w-5" />
+                  {hasActivity && (
+                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
+                  )}
                 </Button>
               </div>
               
