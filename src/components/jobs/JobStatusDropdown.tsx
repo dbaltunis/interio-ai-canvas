@@ -39,9 +39,13 @@ export const JobStatusDropdown = ({
   const canEditJobs = canEditAllJobs || canEditOwnJobs;
 
   // Filter statuses based on job type
-  const availableStatuses = jobStatuses.filter(
-    status => status.category.toLowerCase() === jobType.toLowerCase()
-  );
+  const availableStatuses = jobStatuses.filter(status => {
+    if (jobType === "quote") {
+      return status.category === "Quote";
+    } else {
+      return status.category === "Project";
+    }
+  });
 
   // Get current status details - exact match first, then case-insensitive
   const currentStatusDetails = jobStatuses.find(status => status.name === currentStatus) || 
