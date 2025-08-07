@@ -84,7 +84,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         </Card>
         <Card className="p-4">
           <div className="flex items-center space-x-2">
-            <Package className="h-5 w-5 text-purple-600" />
+            <Package className="h-5 w-5 text-primary" />
             <div>
               <p className="text-sm text-gray-600">Materials Needed</p>
               <p className="text-xl font-bold">5</p>

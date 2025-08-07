@@ -382,7 +382,7 @@ export const CostCalculationSummary = ({
           {selectedLining && selectedLining !== 'none' && (
             <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <FabricSwatchIcon className="h-5 w-5 text-purple-600" />
+                <FabricSwatchIcon className="h-5 w-5 text-primary" />
                 <div>
                   <div className="font-medium">Lining</div>
                   <div className="text-sm text-gray-600">{selectedLining}</div>

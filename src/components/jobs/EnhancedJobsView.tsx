@@ -100,9 +100,9 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
               </div>
 
               <div className="space-y-3">
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <h4 className="font-medium text-purple-900 mb-2">Key Dates</h4>
-                  <div className="space-y-1 text-sm text-purple-700">
+                <div className="p-3 bg-primary/5 rounded-lg">
+                  <h4 className="font-medium text-primary mb-2">Key Dates</h4>
+                  <div className="space-y-1 text-sm text-primary/70">
                     <p>Start: {formatDate(job.start_date)}</p>
                     <p>Due: {formatDate(job.due_date)}</p>
                     {job.completion_date && (

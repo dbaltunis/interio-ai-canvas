@@ -335,8 +335,8 @@ export const VisualMeasurementSheet = ({
               {hasValue(measurements.drop) && (
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-purple-600"></div>
-                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-purple-600 relative`}>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
@@ -407,8 +407,8 @@ export const VisualMeasurementSheet = ({
               {hasValue(measurements.measurement_e) && (
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-0 bottom-4 flex flex-col items-center`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-pink-600"></div>
-                  <div className="flex-1 border-l-2 border-pink-600 relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-pink-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                  <div className="flex-1 border-l-2 border-secondary relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       E: {displayValue(measurements.measurement_e)}
                     </span>
                   </div>
@@ -728,7 +728,7 @@ export const VisualMeasurementSheet = ({
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xs">H</span>
+                    <span className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs">H</span>
                     <Label htmlFor="drop" className="text-sm font-medium text-gray-900">
                       Curtain Drop
                     </Label>
@@ -742,7 +742,7 @@ export const VisualMeasurementSheet = ({
                       onChange={(e) => handleInputChange("drop", e.target.value)}
                       placeholder="0.00"
                       readOnly={readOnly}
-                      className="pr-16 font-semibold text-center border-2 focus:border-purple-500"
+                      className="pr-16 font-semibold text-center border-2 focus:border-primary"
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                       {units.length}

@@ -96,7 +96,7 @@ export const JobTeamInviteDialog = ({ open, onOpenChange, quote, project }: JobT
   };
 
   const getRoleColor = (role: string, type: string) => {
-    if (type === "admin") return "bg-purple-100 text-purple-800";
+    if (type === "admin") return "bg-primary/10 text-primary";
     if (type === "maker") return "bg-orange-100 text-orange-800";
     return "bg-blue-100 text-blue-800";
   };

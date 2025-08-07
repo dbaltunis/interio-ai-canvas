@@ -76,7 +76,7 @@ export const JobsAnalytics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">14 days</div>
+            <div className="text-2xl font-bold text-primary">14 days</div>
             <p className="text-xs text-gray-500 mt-1">
               -3 days from last quarter
             </p>

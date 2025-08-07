@@ -145,7 +145,7 @@ export const JobCard = ({
                   {client.client_type === 'B2B' ? (
                     <Building2 className="h-4 w-4 text-blue-600" />
                   ) : (
-                    <User className="h-4 w-4 text-purple-600" />
+                    <User className="h-4 w-4 text-primary" />
                   )}
                   <span className="font-medium">
                     {client.client_type === 'B2B' ? client.company_name : client.name}

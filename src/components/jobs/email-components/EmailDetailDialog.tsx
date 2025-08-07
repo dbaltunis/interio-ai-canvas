@@ -152,7 +152,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
       case 'mp4':
       case 'mov':
       case 'avi':
-        return <Play className="h-8 w-8 text-purple-500" />;
+        return <Play className="h-8 w-8 text-primary" />;
       case 'doc':
       case 'docx':
         return <FileText className="h-8 w-8 text-blue-600" />;
@@ -302,8 +302,8 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
-                  <Eye className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium text-purple-600">Opens</span>
+                  <Eye className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">Opens</span>
                 </div>
                 <div className="text-2xl font-bold">{currentEmail.open_count || 0}</div>
                 <div className="text-sm text-muted-foreground">
@@ -423,7 +423,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                       const getEventIcon = (eventType: string) => {
                         switch (eventType) {
                           case 'open':
-                            return 'bg-purple-500';
+                            return 'bg-primary';
                           case 'click':
                             return 'bg-orange-500';
                           case 'download':

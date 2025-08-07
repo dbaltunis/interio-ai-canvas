@@ -28,7 +28,7 @@ const getTemplateTypeColor = (type: string) => {
     case 'quote':
       return 'bg-green-100 text-green-800';
     case 'project':
-      return 'bg-purple-100 text-purple-800';
+      return 'bg-primary/10 text-primary';
     case 'marketing':
       return 'bg-orange-100 text-orange-800';
     case 'reminder':
@@ -115,10 +115,10 @@ export const SMSTemplates = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Project</CardTitle>
-            <Building className="h-4 w-4 text-purple-600" />
+            <Building className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-primary">
               {templateTypeStats.project || 0}
             </div>
           </CardContent>
@@ -183,7 +183,7 @@ export const SMSTemplates = () => {
             <Card className="cursor-pointer hover:bg-gray-50" onClick={handleCreateNew}>
               <CardHeader className="pb-3">
                 <div className="flex items-center space-x-2">
-                  <Building className="h-5 w-5 text-purple-600" />
+                  <Building className="h-5 w-5 text-primary" />
                   <CardTitle className="text-base">Project Update</CardTitle>
                 </div>
               </CardHeader>

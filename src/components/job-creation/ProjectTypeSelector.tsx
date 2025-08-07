@@ -40,7 +40,7 @@ const projectTypes: ProjectType[] = [
     icon: Building,
     features: ["Bulk Room Creation", "Standardized Measurements", "Volume Pricing", "Project Management"],
     workflow: ["Client Info", "Property Assessment", "Bulk Configuration", "Volume Quote", "Production Planning"],
-    color: "purple"
+    color: "primary"
   },
   {
     id: "ready-made-retail",
@@ -89,7 +89,7 @@ export const ProjectTypeSelector = ({ onSelectType, onCancel }: ProjectTypeSelec
   const getColorClasses = (color: string) => {
     const colorMap: Record<string, string> = {
       blue: "border-blue-200 hover:border-blue-300 hover:bg-blue-50",
-      purple: "border-purple-200 hover:border-purple-300 hover:bg-purple-50",
+      primary: "border-primary/20 hover:border-primary/30 hover:bg-primary/5",
       green: "border-green-200 hover:border-green-300 hover:bg-green-50",
       orange: "border-orange-200 hover:border-orange-300 hover:bg-orange-50",
       yellow: "border-yellow-200 hover:border-yellow-300 hover:bg-yellow-50",
@@ -101,7 +101,7 @@ export const ProjectTypeSelector = ({ onSelectType, onCancel }: ProjectTypeSelec
   const getIconColor = (color: string) => {
     const colorMap: Record<string, string> = {
       blue: "text-blue-600",
-      purple: "text-purple-600",
+      primary: "text-primary",
       green: "text-green-600",
       orange: "text-orange-600",
       yellow: "text-yellow-600",

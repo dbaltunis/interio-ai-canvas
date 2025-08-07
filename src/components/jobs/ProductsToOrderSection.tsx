@@ -48,7 +48,7 @@ export const ProductsToOrderSection = ({ projectId, jobNumber, clientName }: Pro
   const getProductTypeColor = (type: string) => {
     switch (type) {
       case "fabric":
-        return "bg-purple-100 text-purple-800";
+        return "bg-primary/10 text-primary";
       case "hardware":
         return "bg-gray-100 text-gray-800";
       case "track":
@@ -58,7 +58,7 @@ export const ProductsToOrderSection = ({ projectId, jobNumber, clientName }: Pro
       case "lining":
         return "bg-orange-100 text-orange-800";
       default:
-        return "bg-pink-100 text-pink-800";
+        return "bg-secondary/20 text-secondary-foreground";
     }
   };
 

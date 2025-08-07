@@ -52,7 +52,7 @@ export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClient
                 {client.client_type === 'B2B' ? (
                   <Building2 className="h-5 w-5 text-blue-600" />
                 ) : (
-                  <User className="h-5 w-5 text-purple-600" />
+                  <User className="h-5 w-5 text-primary" />
                 )}
                 <h3 className="text-lg font-semibold">
                   {client.client_type === 'B2B' ? client.company_name : client.name}

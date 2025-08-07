@@ -26,7 +26,7 @@ export const AppointmentsList = ({ projectId }: AppointmentsListProps) => {
       consultation: "bg-blue-100 text-blue-800",
       measurement: "bg-green-100 text-green-800",
       installation: "bg-orange-100 text-orange-800",
-      "follow-up": "bg-purple-100 text-purple-800",
+      "follow-up": "bg-primary/10 text-primary",
     };
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };

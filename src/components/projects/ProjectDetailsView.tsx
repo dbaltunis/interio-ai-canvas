@@ -23,7 +23,7 @@ export const ProjectDetailsView = ({ project, onBack, onEdit }: ProjectDetailsVi
     switch (status) {
       case "completed": return "bg-green-100 text-green-800";
       case "in-production": return "bg-blue-100 text-blue-800";
-      case "approved": return "bg-purple-100 text-purple-800";
+      case "approved": return "bg-primary/10 text-primary";
       case "quoted": return "bg-yellow-100 text-yellow-800";
       case "measuring": return "bg-orange-100 text-orange-800";
       case "cancelled": return "bg-red-100 text-red-800";
@@ -106,7 +106,7 @@ export const ProjectDetailsView = ({ project, onBack, onEdit }: ProjectDetailsVi
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-purple-600" />
+              <User className="h-4 w-4 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Client</p>
                 <p className="font-semibold">Client #{project.client_id?.slice(0, 8) || 'Unassigned'}</p>

@@ -260,7 +260,7 @@ export const EmailHistoryTab = ({
                         <div className="flex items-center gap-2">
                           <div className="text-sm font-medium">{email.open_count || 0}</div>
                           {email.open_count > 0 && (
-                            <Eye className="h-3 w-3 text-purple-600" />
+                            <Eye className="h-3 w-3 text-primary" />
                           )}
                           {email.click_count > 0 && (
                             <MousePointer className="h-3 w-3 text-orange-600" />

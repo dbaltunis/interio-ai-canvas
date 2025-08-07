@@ -48,11 +48,11 @@ export const JobsTable = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "draft": return "bg-pink-100 text-pink-800";
+      case "draft": return "bg-secondary/20 text-secondary-foreground";
       case "order": return "bg-blue-100 text-blue-800";
-      case "invoice": return "bg-purple-100 text-purple-800";
+      case "invoice": return "bg-primary/10 text-primary";
       case "completed": return "bg-green-100 text-green-800";
-      default: return "bg-pink-100 text-pink-800";
+      default: return "bg-secondary/20 text-secondary-foreground";
     }
   };
 

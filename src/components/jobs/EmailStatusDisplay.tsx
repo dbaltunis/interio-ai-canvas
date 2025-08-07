@@ -67,7 +67,7 @@ export const EmailStatusDisplay = ({ jobId, clientEmail }: EmailStatusDisplayPro
     }
     
     if (kpis.totalClicked > 0) {
-      return <MousePointer className="h-4 w-4 text-purple-500" />;
+      return <MousePointer className="h-4 w-4 text-primary" />;
     }
     
     if (kpis.totalOpened > 0) {
@@ -84,7 +84,7 @@ export const EmailStatusDisplay = ({ jobId, clientEmail }: EmailStatusDisplayPro
   const getStatusColor = () => {
     if (!hasEmails) return 'bg-gray-100 text-gray-800';
     
-    if (kpis.totalClicked > 0) return 'bg-purple-100 text-purple-800';
+    if (kpis.totalClicked > 0) return 'bg-primary/10 text-primary';
     if (kpis.totalOpened > 0) return 'bg-green-100 text-green-800';
     if (kpis.totalSent > 0) return 'bg-blue-100 text-blue-800';
     
@@ -145,10 +145,10 @@ export const EmailStatusDisplay = ({ jobId, clientEmail }: EmailStatusDisplayPro
               <div className="text-sm text-green-600">Opened</div>
             </div>
             
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <MousePointer className="h-6 w-6 mx-auto mb-2 text-purple-600" />
-              <div className="text-2xl font-bold text-purple-800">{kpis.totalClicked}</div>
-              <div className="text-sm text-purple-600">Clicked</div>
+            <div className="text-center p-4 bg-primary/5 rounded-lg">
+              <MousePointer className="h-6 w-6 mx-auto mb-2 text-primary" />
+              <div className="text-2xl font-bold text-primary">{kpis.totalClicked}</div>
+              <div className="text-sm text-primary/70">Clicked</div>
             </div>
             
             <div className="text-center p-4 bg-orange-50 rounded-lg">

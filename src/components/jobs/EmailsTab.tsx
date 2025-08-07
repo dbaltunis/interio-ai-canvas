@@ -118,7 +118,7 @@ export const EmailsTab = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{emailKPIs.clickRate}%</div>
+            <div className="text-2xl font-bold text-primary">{emailKPIs.clickRate}%</div>
             <p className="text-xs text-gray-500 mt-1">+5.2% improvement</p>
           </CardContent>
         </Card>

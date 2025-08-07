@@ -147,7 +147,7 @@ export const ProjectStatusManager = ({ project, onUpdate }: ProjectStatusManager
                 size="sm"
                 onClick={() => handleStatusUpdate(status.name)}
                 disabled={isUpdating}
-                className="text-purple-600 hover:text-purple-700"
+                className="text-primary hover:text-primary/80"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
                 {status.name}

@@ -124,9 +124,9 @@ export const ClientListView = ({
     const colors = [
       'bg-blue-500',
       'bg-green-500', 
-      'bg-purple-500',
+      'bg-primary',
       'bg-orange-500',
-      'bg-pink-500',
+      'bg-secondary',
       'bg-indigo-500'
     ];
     const index = (name?.length || 0) % colors.length;

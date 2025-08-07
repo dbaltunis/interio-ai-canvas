@@ -160,10 +160,10 @@ export const WorkshopManagement = () => {
 
             <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-purple-600" />
-                <span className="font-medium text-purple-900">Quality Check</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
+                <span className="font-medium text-primary">Quality Check</span>
               </div>
-              <p className="text-sm text-purple-700 mt-1">
+              <p className="text-sm text-primary/70 mt-1">
                 Auto-generate QC checklist based on treatment type
               </p>
             </div>

@@ -93,12 +93,12 @@ export const JobsDashboard = () => {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center">
-              <FileText className="w-4 h-4 mr-2 text-purple-600" />
+              <FileText className="w-4 h-4 mr-2 text-primary" />
               Quotes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{totalQuotes}</div>
+            <div className="text-2xl font-bold text-primary">{totalQuotes}</div>
             <p className="text-xs text-gray-500 mt-1">
               {pendingQuotes} pending • {acceptedQuotes} accepted
             </p>
@@ -310,7 +310,7 @@ export const JobsDashboard = () => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-purple-600 h-2 rounded-full" 
+                      className="bg-primary h-2 rounded-full" 
                       style={{ width: `${Math.min((totalQuotes / 40) * 100, 100)}%` }}
                     />
                   </div>

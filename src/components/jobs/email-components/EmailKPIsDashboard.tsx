@@ -44,7 +44,7 @@ export const EmailKPIsDashboard = ({ kpis }: EmailKPIsProps) => {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center space-x-2">
-            <Eye className="h-5 w-5 text-purple-500" />
+            <Eye className="h-5 w-5 text-primary" />
             <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
           </div>
         </CardHeader>

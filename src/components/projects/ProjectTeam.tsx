@@ -78,10 +78,10 @@ export const ProjectTeam = ({ projectId }: ProjectTeamProps) => {
 
   const getRoleColor = (role: string) => {
     switch (role.toLowerCase()) {
-      case 'project lead': return 'bg-purple-100 text-purple-800';
+      case 'project lead': return 'bg-primary/10 text-primary';
       case 'installer': return 'bg-blue-100 text-blue-800';
       case 'measurer': return 'bg-green-100 text-green-800';
-      case 'designer': return 'bg-pink-100 text-pink-800';
+      case 'designer': return 'bg-secondary/20 text-secondary-foreground';
       default: return 'bg-gray-100 text-gray-800';
     }
   };

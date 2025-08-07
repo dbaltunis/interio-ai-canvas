@@ -23,7 +23,7 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
     switch (status) {
       case 'online': return 'from-green-400 to-emerald-500';
       case 'away': return 'from-yellow-400 to-orange-500';
-      case 'busy': return 'from-red-400 to-pink-500';
+      case 'busy': return 'from-red-400 to-red-600';
       default: return 'from-gray-300 to-gray-400';
     }
   };

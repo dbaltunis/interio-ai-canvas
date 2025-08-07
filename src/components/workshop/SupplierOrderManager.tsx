@@ -110,7 +110,7 @@ export const SupplierOrderManager = ({
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <FolderOpen className="mx-auto h-8 w-8 mb-2 text-purple-600" />
+            <FolderOpen className="mx-auto h-8 w-8 mb-2 text-primary" />
             <p className="text-2xl font-bold">{suppliers.length}</p>
             <p className="text-sm text-muted-foreground">Suppliers</p>
           </CardContent>

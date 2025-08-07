@@ -15,7 +15,7 @@
     --primary: var(--company-primary);
     --primary-foreground: 255 255 255;
     --secondary: var(--company-secondary);
-    --secondary-foreground: var(--company-primary);
+    --secondary-foreground: 65 94 107;
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
     

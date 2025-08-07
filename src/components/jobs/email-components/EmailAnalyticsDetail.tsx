@@ -14,7 +14,7 @@ export const EmailAnalyticsDetail = ({ analytics }: EmailAnalyticsDetailProps) =
       case 'open': return <Eye className="h-4 w-4 text-blue-500" />;
       case 'click': return <MousePointer className="h-4 w-4 text-green-500" />;
       case 'screenshot': return <Camera className="h-4 w-4 text-orange-500" />;
-      case 'time_spent': return <Clock className="h-4 w-4 text-purple-500" />;
+      case 'time_spent': return <Clock className="h-4 w-4 text-primary" />;
       case 'engagement': return <Activity className="h-4 w-4 text-indigo-500" />;
       case 'session_end': return <LogOut className="h-4 w-4 text-gray-500" />;
       case 'delivered': return <CheckCircle className="h-4 w-4 text-green-600" />;

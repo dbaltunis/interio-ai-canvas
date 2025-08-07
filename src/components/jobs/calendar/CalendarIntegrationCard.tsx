@@ -91,9 +91,9 @@ export const CalendarIntegrationCard = () => {
                     {integration?.sync_enabled ? "Enabled" : "Disabled"}
                   </div>
                 </div>
-                <div className="text-center p-3 bg-purple-50 rounded-lg">
-                  <div className="font-medium text-purple-800">Calendar</div>
-                  <div className="text-purple-600">
+                <div className="text-center p-3 bg-primary/5 rounded-lg">
+                  <div className="font-medium text-primary">Calendar</div>
+                  <div className="text-primary/70">
                     {integration?.calendar_id || "Primary"}
                   </div>
                 </div>

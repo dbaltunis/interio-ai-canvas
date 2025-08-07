@@ -60,7 +60,7 @@ export const ProjectTimeline = ({ projectId }: ProjectTimelineProps) => {
       date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       user: 'Admin',
       icon: User,
-      color: 'bg-purple-500'
+      color: 'bg-primary'
     },
     {
       id: '5',

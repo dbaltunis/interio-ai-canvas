@@ -30,7 +30,7 @@ export const AINotificationToast = ({ notifications, onDismiss, onAction }: AINo
 
   const getGradient = (type: string) => {
     switch (type) {
-      case 'message': return 'from-blue-400 to-purple-500';
+      case 'message': return 'from-blue-400 to-primary';
       case 'presence': return 'from-green-400 to-emerald-500';
       case 'activity': return 'from-yellow-400 to-orange-500';
       default: return 'from-primary to-accent';

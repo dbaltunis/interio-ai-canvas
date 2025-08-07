@@ -102,7 +102,7 @@ export const NotificationDropdown = () => {
                               "text-xs",
                               channel === 'email' && "border-blue-200 text-blue-700",
                               channel === 'sms' && "border-green-200 text-green-700",
-                              channel === 'push' && "border-purple-200 text-purple-700"
+                              channel === 'push' && "border-primary/20 text-primary"
                             )}
                           >
                             {channel === 'email' && '📧'} 

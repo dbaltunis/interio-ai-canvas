@@ -39,7 +39,7 @@ export const EmailStats = ({ email }: EmailStatsProps) => {
         </div>
       </div>
       <div className="text-center p-3 bg-gray-50 rounded-lg">
-        <MousePointer className="h-4 w-4 mx-auto mb-1 text-purple-600" />
+        <MousePointer className="h-4 w-4 mx-auto mb-1 text-primary" />
         <div className="text-lg font-semibold">{email.click_count}</div>
         <div className="text-xs text-gray-600">Clicks</div>
       </div>

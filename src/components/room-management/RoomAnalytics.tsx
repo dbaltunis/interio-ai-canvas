@@ -100,8 +100,8 @@ export const RoomAnalytics = ({ rooms, surfaces, treatments }: RoomAnalyticsProp
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Package className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Surfaces</p>

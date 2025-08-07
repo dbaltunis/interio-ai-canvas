@@ -57,8 +57,8 @@ export const JobsStatsCards = ({ quotes }: JobsStatsCardsProps) => {
       title: "This Month",
       value: thisMonthJobs,
       icon: Calendar,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50", 
+      color: "text-primary",
+      bgColor: "bg-primary/5",
       description: "New this month"
     },
     {
