@@ -5,7 +5,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 
 export interface UserPresence {
   user_id: string;
-  status: 'online' | 'away' | 'busy' | 'offline';
+  status: 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in';
   last_seen: string;
   current_page?: string;
   current_activity?: string;
@@ -21,40 +21,32 @@ export const useUserPresence = () => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState<string>('');
 
-  // Get all active users
+  // Get all active users with real presence data
   const { data: activeUsers = [], isLoading } = useQuery({
     queryKey: ['user-presence'],
     queryFn: async (): Promise<UserPresence[]> => {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          user_id,
-          display_name,
-          avatar_url,
-          role,
-          status,
-          status_message,
-          updated_at
-        `)
-        .eq('is_active', true);
+        .from('user_presence_view')
+        .select('*');
 
       if (error) throw error;
 
       return data.map(profile => ({
         user_id: profile.user_id,
-        status: profile.status === 'available' ? 'online' : 'offline',
-        last_seen: profile.updated_at,
+        status: profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
+        last_seen: profile.last_seen,
         user_profile: {
           display_name: profile.display_name || 'Unknown User',
           avatar_url: profile.avatar_url,
           role: profile.role
-        }
+        },
+        current_activity: profile.status_message
       }));
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Update current user's presence
+  // Update current user's presence using the new database functions
   const updatePresenceMutation = useMutation({
     mutationFn: async ({ status, currentPage, activity }: {
       status: UserPresence['status'];
@@ -63,16 +55,28 @@ export const useUserPresence = () => {
     }) => {
       if (!user) return;
 
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          status: status === 'online' ? 'available' : status,
-          status_message: activity,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
+      if (status === 'online') {
+        // Call the database function to update last seen and mark online
+        const { error } = await supabase.rpc('update_user_last_seen', {
+          user_id: user.id
+        });
+        if (error) throw error;
 
-      if (error) throw error;
+        // Update status message if provided
+        if (activity) {
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ status_message: activity })
+            .eq('user_id', user.id);
+          if (updateError) throw updateError;
+        }
+      } else {
+        // Mark user as offline
+        const { error } = await supabase.rpc('mark_user_offline', {
+          user_id: user.id
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-presence'] });
@@ -86,8 +90,10 @@ export const useUserPresence = () => {
 
       // Set user offline when page unloads
       const handleBeforeUnload = () => {
-        // Use a simple approach since we can't access private supabase properties
-        updatePresenceMutation.mutate({ status: 'offline' });
+        if (user) {
+          // Use sendBeacon for reliable offline marking during page unload
+          navigator.sendBeacon('/api/mark-offline', JSON.stringify({ user_id: user.id }));
+        }
       };
 
       window.addEventListener('beforeunload', handleBeforeUnload);

@@ -28,6 +28,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'text-green-400';
       case 'away': return 'text-yellow-400';
       case 'busy': return 'text-red-400';
+      case 'never_logged_in': return 'text-gray-500';
       default: return 'text-gray-400';
     }
   };
@@ -37,6 +38,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'from-green-400 to-emerald-500';
       case 'away': return 'from-yellow-400 to-orange-500';
       case 'busy': return 'from-red-400 to-red-600';
+      case 'never_logged_in': return 'from-gray-300 to-gray-500';
       default: return 'from-gray-300 to-gray-400';
     }
   };
@@ -220,7 +222,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         </div>
                       )}
 
-                      {/* Offline Users */}
+                      {/* Offline/Away Users */}
                       {offlineUsers.length > 0 && (
                         <motion.div
                           initial={{ opacity: 0 }}
@@ -228,27 +230,38 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           transition={{ delay: onlineUsers.length * 0.1 + 0.3 }}
                         >
                           <div className="pt-4 border-t border-white/20">
-                            <p className="text-white/70 text-sm mb-3 font-medium">Away/Offline</p>
+                            <p className="text-white/70 text-sm mb-3 font-medium">Offline/Away</p>
                             <div className="space-y-2">
                               {offlineUsers.map((user) => (
                                 <div key={user.user_id} 
-                                     className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                                     className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
                                      onClick={() => {
                                        openConversation(user.user_id);
                                        setMessageDialogOpen(true);
                                      }}>
-                                  <Avatar className="h-8 w-8">
+                                  <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.user_profile?.avatar_url} />
-                                    <AvatarFallback className="bg-gray-500/50 text-white text-xs">
+                                    <AvatarFallback className="bg-gray-500/50 text-white text-sm">
                                       {user.user_profile?.display_name?.charAt(0) || 'U'}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-white/80 truncate">
-                                      {user.user_profile?.display_name}
-                                    </p>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <p className="text-sm text-white/80 truncate">
+                                        {user.user_profile?.display_name}
+                                      </p>
+                                      <Badge variant="outline" className="text-xs text-white/60 border-white/20">
+                                        {user.user_profile?.role}
+                                      </Badge>
+                                    </div>
                                     <p className="text-xs text-white/60 capitalize">
-                                      {user.status}
+                                      {user.status === 'never_logged_in' ? 'Never logged in' : 
+                                       user.status === 'away' ? 'Away' : 'Offline'}
+                                      {user.last_seen && user.status !== 'never_logged_in' && (
+                                        <span className="ml-2">
+                                          • Last seen {new Date(user.last_seen).toLocaleDateString()}
+                                        </span>
+                                      )}
                                     </p>
                                   </div>
                                   <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
