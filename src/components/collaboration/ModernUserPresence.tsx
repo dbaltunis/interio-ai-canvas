@@ -38,29 +38,32 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
       >
         <Button
           onClick={onToggle}
-          className="relative h-16 w-16 rounded-full glass-morphism border-0 shadow-2xl overflow-hidden group"
+          className="relative h-16 w-16 rounded-full bg-gradient-to-br from-primary to-secondary shadow-2xl overflow-hidden group border-2 border-white/20"
           variant="ghost"
         >
           {/* Animated background orbs */}
           <div className="ai-orb absolute -top-2 -right-2 w-8 h-8" />
           <div className="ai-orb absolute -bottom-1 -left-1 w-6 h-6" style={{ animationDelay: '2s' }} />
           
-          {/* Icon with gradient */}
+          {/* Icon with proper contrast */}
           <div className="relative z-10 flex items-center justify-center">
             <Users className="h-7 w-7 text-white drop-shadow-lg" />
             {onlineUsers.length > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-white presence-pulse"
+                className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg"
+                style={{
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                }}
               >
                 {onlineUsers.length}
               </motion.div>
             )}
           </div>
           
-          {/* Gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/30 group-hover:from-primary/30 group-hover:to-accent/40 transition-all duration-300" />
+          {/* Improved gradient background with better contrast */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/90 group-hover:from-primary group-hover:to-secondary transition-all duration-300" />
         </Button>
       </motion.div>
 
@@ -83,10 +86,10 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-96 z-50 glass-morphism shadow-2xl overflow-hidden"
+              className="fixed right-0 top-0 h-full w-96 z-50 bg-gradient-to-br from-primary/95 to-secondary/95 backdrop-blur-lg shadow-2xl overflow-hidden border-l-2 border-white/20"
             >
               {/* Animated background */}
-              <div className="absolute inset-0 ai-gradient-bg" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10" />
               <div className="ai-orb absolute top-20 -right-10 w-24 h-24" />
               <div className="ai-orb absolute bottom-32 -left-6 w-16 h-16" style={{ animationDelay: '3s' }} />
               
@@ -125,7 +128,7 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
                       transition={{ delay: index * 0.1 }}
                       className="group relative"
                     >
-                      <div className="glass-morphism rounded-xl p-4 hover:bg-white/15 transition-all duration-300 cursor-pointer"
+                      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
                            onClick={() => openConversation(user.user_id)}>
                         
                         {/* Status indicator gradient line */}
@@ -197,19 +200,24 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
                         <p className="text-white/50 text-sm mb-3 font-medium">Away</p>
                         <div className="space-y-2">
                           {activeUsers.filter(u => u.status !== 'online').map((user) => (
-                            <div key={user.user_id} className="flex items-center gap-3 p-2 rounded-lg opacity-60">
+                            <div key={user.user_id} 
+                                 className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                                 onClick={() => openConversation(user.user_id)}>
                               <Avatar className="h-8 w-8">
                                 <AvatarImage src={user.user_profile?.avatar_url} />
-                                <AvatarFallback className="bg-gray-400 text-white text-xs">
+                                <AvatarFallback className="bg-gray-500/50 text-white text-xs">
                                   {user.user_profile?.display_name?.charAt(0) || 'U'}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-white/70 truncate">
+                                <p className="text-sm text-white/80 truncate">
                                   {user.user_profile?.display_name}
                                 </p>
+                                <p className="text-xs text-white/60 capitalize">
+                                  {user.status}
+                                </p>
                               </div>
-                              <Circle className={`h-3 w-3 fill-current text-gray-400`} />
+                              <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
                             </div>
                           ))}
                         </div>

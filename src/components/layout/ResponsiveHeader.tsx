@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
-import { ModernUserPresence } from '../collaboration/ModernUserPresence';
-import { ModernMessageCenter } from '../collaboration/ModernMessageCenter';
+import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { 
@@ -157,15 +156,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         )}
       </header>
 
-      {/* Modern AI-style components */}
-      <ModernUserPresence 
+      {/* Modern AI-style Team Collaboration */}
+      <TeamCollaborationCenter 
         isOpen={presencePanelOpen}
         onToggle={() => setPresencePanelOpen(!presencePanelOpen)}
-      />
-
-      <ModernMessageCenter 
-        isOpen={messageDialogOpen}
-        onClose={() => setMessageDialogOpen(false)}
       />
 
       <AINotificationToast
