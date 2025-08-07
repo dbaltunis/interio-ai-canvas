@@ -254,31 +254,44 @@ export const SurfaceList = ({
                         if (fabricCalculation) {
                           return (
                             <>
+                              {/* Cost Calculation Header */}
+                              <div className="col-span-2 font-medium text-gray-800 mb-2 pb-2 border-b border-gray-200">
+                                Cost Calculation
+                              </div>
+                              
                               {/* Fabric Usage */}
                               <div className="text-gray-600">Fabric</div>
                               <div className="text-right font-medium">
-                                {fabricCalculation.linearMeters.toFixed(2)}m linear 
-                                ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
+                                <div>{fabricCalculation.linearMeters.toFixed(2)}m linear</div>
+                                <div className="text-xs text-gray-500">
+                                  ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
+                                </div>
                               </div>
                               
-                              {/* Fabric Cost */}
+                              {/* Selected Fabric with pricing */}
                               <div className="text-gray-600">Selected Fabric</div>
                               <div className="text-right font-medium">
-                                {fabricCalculation.fabricName} • {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+                                <div className="text-sm">{fabricCalculation.fabricName}</div>
+                                <div className="text-blue-600 font-semibold">
+                                  {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+                                </div>
                               </div>
                               
                               {/* Fabric Total */}
-                              <div className="text-gray-600">Fabric Total</div>
-                              <div className="text-right font-medium">
+                              <div className="text-gray-600">Fabric Cost</div>
+                              <div className="text-right font-bold text-blue-600">
                                 {formatCurrency(fabricCalculation.fabricCost, userCurrency)}
                               </div>
                               
-                              {/* Lining */}
-                              {measurements.selected_lining && measurements.selected_lining !== 'none' && (
+                              {/* Lining (if selected) */}
+                              {fabricCalculation.liningCost > 0 && (
                                 <>
                                   <div className="text-gray-600">Lining</div>
-                                  <div className="text-right font-medium text-blue-600">
-                                    {measurements.selected_lining} • {formatCurrency(fabricCalculation.liningCost || 0, userCurrency)}
+                                  <div className="text-right font-medium">
+                                    <div className="text-sm">{fabricCalculation.liningType}</div>
+                                    <div className="font-bold text-purple-600">
+                                      {formatCurrency(fabricCalculation.liningCost, userCurrency)}
+                                    </div>
                                   </div>
                                 </>
                               )}
@@ -286,12 +299,22 @@ export const SurfaceList = ({
                               {/* Manufacturing */}
                               <div className="text-gray-600">Manufacturing</div>
                               <div className="text-right font-medium">
-                                {selectedTemplate.manufacturing_type || 'machine'} • {formatCurrency(fabricCalculation.manufacturingCost || 0, userCurrency)}
+                                <div className="text-sm">{selectedTemplate.manufacturing_type || 'machine'}</div>
+                                <div className="font-bold text-orange-600">
+                                  {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
+                                </div>
+                              </div>
+                              
+                              {/* View calculation details link */}
+                              <div className="col-span-2 text-center mt-2">
+                                <button className="text-xs text-blue-500 hover:text-blue-700 underline">
+                                  View calculation details
+                                </button>
                               </div>
                               
                               {/* Total Cost */}
-                              <div className="text-gray-600 font-medium border-t pt-2">Total Cost</div>
-                              <div className="text-right font-bold text-green-600 border-t pt-2">
+                              <div className="text-gray-800 font-semibold border-t pt-3 mt-3">Total Cost</div>
+                              <div className="text-right font-bold text-green-600 text-lg border-t pt-3 mt-3">
                                 {formatCurrency(fabricCalculation.totalCost, userCurrency)}
                               </div>
                             </>
