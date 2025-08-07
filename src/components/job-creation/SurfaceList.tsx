@@ -102,7 +102,7 @@ export const SurfaceList = ({
     const selectedFabric = measurements.selected_fabric;
     const railWidth = Number(measurements.rail_width || 0);
     const drop = Number(measurements.drop || 0);
-    const selectedTemplate = measurements.selected_template;
+    const selectedTemplate = measurements.selected_template || measurements.selected_heading;
     
     if (!selectedFabric || !railWidth || !drop || !selectedTemplate) {
       return null;
@@ -260,7 +260,7 @@ export const SurfaceList = ({
                    {/* Fabric Calculation - Using actual worksheet data */}
                      {(() => {
                       const measurements = clientMeasurement.measurements as Record<string, any>;
-                      const selectedTemplate = measurements.selected_template;
+                      const selectedTemplate = measurements.selected_template || measurements.selected_heading;
                       const selectedFabric = measurements.selected_fabric;
                       const railWidth = Number(measurements.rail_width || 0);
                       const drop = Number(measurements.drop || 0);
@@ -292,22 +292,25 @@ export const SurfaceList = ({
                                
                                 {/* Template Information */}
                                 <div className="col-span-2 bg-blue-50 p-3 rounded-lg mb-3">
-                                  <div className="text-sm text-gray-600 mb-1">
-                                    Template: <span className="font-medium text-blue-700">
-                                      {(() => {
-                                        const template = curtainTemplates.find(t => t.id === selectedTemplate);
-                                        return template?.name || selectedTemplate || measurements.treatment_type || 'Unknown Template';
+                                   <div className="text-sm text-gray-600 mb-1">
+                                     Template: <span className="font-medium text-blue-700">
+                                       {(() => {
+                                         const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                         curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                         return template?.name || selectedTemplate || measurements.selected_heading || 'Unknown Template';
                                       })()}
                                     </span>
                                   </div>
-                                  <div className="text-xs text-gray-500">
-                                    Pricing: {(() => {
-                                      const template = curtainTemplates.find(t => t.id === selectedTemplate);
-                                      return template?.pricing_type || 'per_metre';
-                                    })()} • 
-                                    Waste factor: {(() => {
-                                      const template = curtainTemplates.find(t => t.id === selectedTemplate);
-                                      return measurements.waste_factor || template?.waste_percent || 5;
+                                   <div className="text-xs text-gray-500">
+                                     Pricing: {(() => {
+                                       const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                       curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                       return template?.pricing_type || 'per_metre';
+                                     })()} • 
+                                     Waste factor: {(() => {
+                                       const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                       curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                       return measurements.waste_factor || template?.waste_percent || 5;
                                     })()}%
                                   </div>
                                 </div>
@@ -355,9 +358,10 @@ export const SurfaceList = ({
                                  <div className="font-bold text-lg text-orange-600">
                                    {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
                                  </div>
-                                  <div className="text-sm text-gray-600">{(() => {
-                                    const template = curtainTemplates.find(t => t.id === selectedTemplate);
-                                    return template?.manufacturing_type || 'machine';
+                                   <div className="text-sm text-gray-600">{(() => {
+                                     const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                     curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                     return template?.manufacturing_type || 'machine';
                                   })()}</div>
                                </div>
                                
