@@ -21,7 +21,7 @@ interface DirectMessageDialogProps {
 export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { conversations = [], messages = [], activeConversation, sendMessage, sendingMessage, closeConversation } = useDirectMessages();
+  const { conversations = [], messages = [], activeConversation, sendMessage, sendingMessage, closeConversation, openConversation } = useDirectMessages();
   const { activeUsers = [] } = useUserPresence();
   const [messageInput, setMessageInput] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -205,8 +205,7 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
                        variant={isActive ? "secondary" : "ghost"}
                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200"
                        onClick={() => {
-                         // This would be handled by useDirectMessages hook
-                         console.log('Opening conversation with', conversation.user_id);
+                         openConversation(conversation.user_id);
                        }}
                      >
                       <div className="flex items-center gap-3 w-full">

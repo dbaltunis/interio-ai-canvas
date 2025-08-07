@@ -219,11 +219,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               transition={{ delay: index * 0.1 }}
                               className="group relative"
                             >
-                              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
-                                   onClick={() => {
-                                     openConversation(user.user_id);
-                                     setMessageDialogOpen(true);
-                                   }}>
+                               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openConversation(user.user_id);
+                                      setMessageDialogOpen(true);
+                                    }}>
                                 
                                 {/* Status indicator gradient line */}
                                 <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getStatusBgColor(user.status)} rounded-l-xl`} />
@@ -296,12 +297,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                             <p className="text-white/70 text-sm mb-3 font-medium">Offline/Away</p>
                             <div className="space-y-2">
                               {offlineUsers.map((user) => (
-                                <div key={user.user_id} 
-                                     className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
-                                     onClick={() => {
-                                       openConversation(user.user_id);
-                                       setMessageDialogOpen(true);
-                                     }}>
+                                 <div key={user.user_id} 
+                                      className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openConversation(user.user_id);
+                                        setMessageDialogOpen(true);
+                                      }}>
                                   <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.user_profile?.avatar_url} />
                                     <AvatarFallback className="bg-gray-500/50 text-white text-sm">
