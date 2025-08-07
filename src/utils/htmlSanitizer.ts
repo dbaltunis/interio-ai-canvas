@@ -136,7 +136,9 @@ export const sanitizeHTML = (html: string): string => {
   return HTMLSanitizer.sanitize(html);
 };
 
-// React component for safe HTML rendering
+// React component for safe HTML rendering  
+import React from 'react';
+
 export const SafeHTML: React.FC<SafeHTMLProps> = ({ html, className }) => {
   const sanitizedHTML = sanitizeHTML(html);
   

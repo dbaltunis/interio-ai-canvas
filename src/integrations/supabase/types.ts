@@ -3208,6 +3208,14 @@ export type Database = {
         Args: { user_id_param: string; permissions_param: string[] }
         Returns: Json
       }
+      validate_role_hierarchy: {
+        Args: {
+          current_user_id: string
+          target_user_id: string
+          new_role: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
