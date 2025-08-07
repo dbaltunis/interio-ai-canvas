@@ -350,15 +350,15 @@ export const SurfaceList = ({
                            {drop ? `${formatMeasurement(drop, units.length)}` : '❌ Missing'}
                          </div>
                          
-                         {/* Template Status */}
-                         <div className="text-gray-600">Template</div>
-                         <div className="text-right font-medium">
-                           {selectedTemplate ? (
-                             <span className="text-green-600">✓ Selected</span>
-                           ) : (
-                             <span className="text-red-600">❌ Not selected</span>
-                           )}
-                         </div>
+                          {/* Template Status */}
+                          <div className="text-gray-600">Template</div>
+                          <div className="text-right font-medium">
+                            {selectedTemplate || measurements.treatment_type || measurements.selected_treatment ? (
+                              <span className="text-green-600">✓ Selected</span>
+                            ) : (
+                              <span className="text-red-600">❌ Not selected</span>
+                            )}
+                          </div>
                          
                          {/* Fabric Status */}
                          <div className="text-gray-600">Fabric</div>
