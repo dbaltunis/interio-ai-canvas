@@ -207,9 +207,9 @@ export const VisualMeasurementSheet = ({
       </CardHeader>
       <CardContent>
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Visual Diagram - Fixed position on large screens */}
+          {/* Visual Diagram - Always visible on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-hidden">
-            <div className="relative bg-gray-50 border-2 border-gray-300 rounded-lg p-8 min-h-[400px]">
+            <div className="relative bg-gradient-to-br from-blue-50 to-gray-50 border-2 border-gray-300 rounded-lg p-8 min-h-[400px] shadow-inner">
               {/* Ceiling Line */}
               <div className="absolute top-4 left-8 right-8 border-t-2 border-gray-800">
                 <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
@@ -307,14 +307,25 @@ export const VisualMeasurementSheet = ({
 
               {/* Rail Width measurement - positioned near the hardware */}
               {hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center z-10`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
+                </div>
+              )}
+              
+              {/* Rail Width placeholder when empty */}
+              {!hasValue(measurements.rail_width) && (
+                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center opacity-30`}>
+                  <div className="flex-1 border-t-2 border-dashed border-gray-400 relative">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-medium">
+                      Enter Rail Width →
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -333,14 +344,25 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Drop measurement - from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center z-10`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
                   <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                    <span className="absolute -left-24 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg animate-pulse">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-primary"></div>
+                </div>
+              )}
+              
+              {/* Drop placeholder when empty */}
+              {!hasValue(measurements.drop) && (
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center opacity-30`}>
+                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-dashed border-gray-400 relative`}>
+                    <span className="absolute -left-24 top-1/2 transform -translate-y-1/2 bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+                      Enter Drop Height ↓
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -430,184 +452,225 @@ export const VisualMeasurementSheet = ({
               )}
             </div>
 
-            {/* Measurement Guide */}
-            <div className="mt-4 text-sm text-gray-600 space-y-1">
-              <p><strong>A:</strong> Window Width (inside frame to inside frame)</p>
-              <p><strong>B:</strong> Window Height (inside frame top to bottom)</p>
-              {hardwareType === "rod" && (
-                <p><strong>C:</strong> Distance from Rod to Ceiling</p>
-              )}
-              <p><strong>D:</strong> Distance from Window Bottom to Floor</p>
-              <p><strong>E:</strong> Total Height from {hardwareType === "track" ? "Track" : "Rod"} to Floor</p>
-              <p><strong>F:</strong> Total Width including {hardwareType === "track" ? "Track" : "Rod"} Extensions</p>
+            {/* Measurement Guide - More User-Friendly */}
+            <div className="mt-4 p-3 bg-blue-50/50 border border-blue-200 rounded-lg">
+              <h5 className="font-medium text-blue-800 mb-2 text-sm">What to Measure</h5>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p><strong>Width (W):</strong> {hardwareType === "track" ? "Track" : "Rail"} width - how wide your curtain needs to be</p>
+                <p><strong>Drop (H):</strong> Height from {hardwareType === "track" ? "track" : "rod"} to where curtain should end</p>
+                {hasValue(measurements.rail_width) && hasValue(measurements.drop) && (
+                  <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-green-800">
+                    ✓ Great! These measurements will update the visual above as you type
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Additional Measurements for Curtain Makers */}
+            {/* Additional Measurements for Curtain Makers - Collapsible */}
             <div className="mt-4">
               <details className="group">
-                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors p-2 bg-gray-50 rounded border">
                   <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  Additional Measurements (for Curtain Makers)
-                  <span className="text-xs text-gray-500 ml-auto">Click to expand</span>
+                  More Details for Curtain Makers
+                  <span className="text-xs text-gray-500 ml-auto">Optional measurements - Click to expand</span>
                 </summary>
-                <div className="mt-3 p-3 bg-gray-50/50 rounded-lg border border-gray-200">
-                  <div className="grid grid-cols-4 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="rod_extension_left" className="text-xs font-medium text-gray-700">
-                        Left Extension
-                      </Label>
-                      <Input
-                        id="rod_extension_left"
-                        type="number"
-                        step="0.25"
-                        value={measurements.rod_extension_left || ""}
-                        onChange={(e) => handleInputChange("rod_extension_left", e.target.value)}
-                        placeholder="8-10"
-                        readOnly={readOnly}
-                        className="h-8 text-sm"
-                      />
-                      <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends left</p>
+                
+                <div className="mt-3 space-y-4">
+                  {/* Professional Extension Measurements */}
+                  <div className="p-3 bg-gray-50/50 rounded-lg border border-gray-200">
+                    <h6 className="font-medium text-gray-800 mb-3 text-sm">Hardware Extensions & Overlaps</h6>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="rod_extension_left" className="text-xs font-medium text-gray-700">
+                          Left Extension
+                        </Label>
+                        <Input
+                          id="rod_extension_left"
+                          type="number"
+                          step="0.25"
+                          value={measurements.rod_extension_left || ""}
+                          onChange={(e) => handleInputChange("rod_extension_left", e.target.value)}
+                          placeholder="8-10"
+                          readOnly={readOnly}
+                          className="h-8 text-sm"
+                        />
+                        <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends left</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="rod_extension_right" className="text-xs font-medium text-gray-700">
+                          Right Extension
+                        </Label>
+                        <Input
+                          id="rod_extension_right"
+                          type="number"
+                          step="0.25"
+                          value={measurements.rod_extension_right || ""}
+                          onChange={(e) => handleInputChange("rod_extension_right", e.target.value)}
+                          placeholder="8-10"
+                          readOnly={readOnly}
+                          className="h-8 text-sm"
+                        />
+                        <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends right</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="panel_overlap" className="text-xs font-medium text-gray-700">
+                          Panel Overlap
+                        </Label>
+                        <Input
+                          id="panel_overlap"
+                          type="number"
+                          step="0.25"
+                          value={measurements.panel_overlap || ""}
+                          onChange={(e) => handleInputChange("panel_overlap", e.target.value)}
+                          placeholder="2-3"
+                          readOnly={readOnly}
+                          className="h-8 text-sm"
+                        />
+                        <p className="text-xs text-gray-500">Overlap in center</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="floor_clearance" className="text-xs font-medium text-gray-700">
+                          Floor Clearance
+                        </Label>
+                        <Input
+                          id="floor_clearance"
+                          type="number"
+                          step="0.25"
+                          value={measurements.floor_clearance || ""}
+                          onChange={(e) => handleInputChange("floor_clearance", e.target.value)}
+                          placeholder="0.5"
+                          readOnly={readOnly}
+                          className="h-8 text-sm"
+                        />
+                        <p className="text-xs text-gray-500">Gap from floor</p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="rod_extension_right" className="text-xs font-medium text-gray-700">
-                        Right Extension
-                      </Label>
-                      <Input
-                        id="rod_extension_right"
-                        type="number"
-                        step="0.25"
-                        value={measurements.rod_extension_right || ""}
-                        onChange={(e) => handleInputChange("rod_extension_right", e.target.value)}
-                        placeholder="8-10"
-                        readOnly={readOnly}
-                        className="h-8 text-sm"
-                      />
-                      <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends right</p>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="panel_overlap" className="text-xs font-medium text-gray-700">
-                        Panel Overlap
-                      </Label>
-                      <Input
-                        id="panel_overlap"
-                        type="number"
-                        step="0.25"
-                        value={measurements.panel_overlap || ""}
-                        onChange={(e) => handleInputChange("panel_overlap", e.target.value)}
-                        placeholder="2-3"
-                        readOnly={readOnly}
-                        className="h-8 text-sm"
-                      />
-                      <p className="text-xs text-gray-500">Overlap in center</p>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="floor_clearance" className="text-xs font-medium text-gray-700">
-                        Floor Clearance
-                      </Label>
-                      <Input
-                        id="floor_clearance"
-                        type="number"
-                        step="0.25"
-                        value={measurements.floor_clearance || ""}
-                        onChange={(e) => handleInputChange("floor_clearance", e.target.value)}
-                        placeholder="0.5"
-                        readOnly={readOnly}
-                        className="h-8 text-sm"
-                      />
-                      <p className="text-xs text-gray-500">Gap from floor</p>
-                    </div>
+                  </div>
+
+                  {/* Detailed Window Frame Measurements - Now Collapsible */}
+                  <div className="bg-amber-50/50 border border-amber-200 rounded-lg">
+                    <details className="group">
+                      <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors p-3">
+                        <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Detailed Window Frame Measurements (A, B, C, D, E, F)
+                        <span className="text-xs text-amber-600 ml-auto">Professional measurements - Click to expand</span>
+                      </summary>
+                      
+                      <div className="p-3 border-t border-amber-200">
+                        <div className="mb-3 text-xs text-amber-700 bg-amber-100/50 p-2 rounded">
+                          <strong>Note:</strong> These detailed measurements are primarily used by curtain manufacturers. 
+                          The main measurements above (Width & Drop) are usually sufficient for most projects.
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="measurement_a" className="text-sm font-medium flex items-center gap-2">
+                              <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xs">A</span>
+                              Window Width (Inside Frame)
+                            </Label>
+                            <p className="text-xs text-gray-600 mb-1">Measure inside the window frame from side to side</p>
+                            <Input
+                              id="measurement_a"
+                              type="number"
+                              step="0.25"
+                              value={measurements.measurement_a || ""}
+                              onChange={(e) => handleInputChange("measurement_a", e.target.value)}
+                              placeholder="0.00"
+                              readOnly={readOnly}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="measurement_b" className="text-sm font-medium flex items-center gap-2">
+                              <span className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-xs">B</span>
+                              Window Height (Inside Frame)
+                            </Label>
+                            <p className="text-xs text-gray-600 mb-1">Measure inside the window frame from top to bottom</p>
+                            <Input
+                              id="measurement_b"
+                              type="number"
+                              step="0.25"
+                              value={measurements.measurement_b || ""}
+                              onChange={(e) => handleInputChange("measurement_b", e.target.value)}
+                              placeholder="0.00"
+                              readOnly={readOnly}
+                            />
+                          </div>
+                          {hardwareType === "rod" && (
+                            <div>
+                              <Label htmlFor="measurement_c" className="text-sm font-medium flex items-center gap-2">
+                                <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xs">C</span>
+                                Rod to Ceiling Distance
+                              </Label>
+                              <p className="text-xs text-gray-600 mb-1">Distance from curtain rod to ceiling</p>
+                              <Input
+                                id="measurement_c"
+                                type="number"
+                                step="0.25"
+                                value={measurements.measurement_c || ""}
+                                onChange={(e) => handleInputChange("measurement_c", e.target.value)}
+                                placeholder="0.00"
+                                readOnly={readOnly}
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <Label htmlFor="measurement_d" className="text-sm font-medium flex items-center gap-2">
+                              <span className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs">D</span>
+                              Window Bottom to Floor
+                            </Label>
+                            <p className="text-xs text-gray-600 mb-1">Distance from bottom of window to floor</p>
+                            <Input
+                              id="measurement_d"
+                              type="number"
+                              step="0.25"
+                              value={measurements.measurement_d || ""}
+                              onChange={(e) => handleInputChange("measurement_d", e.target.value)}
+                              placeholder="0.00"
+                              readOnly={readOnly}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="measurement_e" className="text-sm font-medium flex items-center gap-2">
+                              <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xs">E</span>
+                              Total Height ({hardwareType === "track" ? "Track" : "Rod"} to Floor)
+                            </Label>
+                            <p className="text-xs text-gray-600 mb-1">Full height from {hardwareType === "track" ? "track" : "rod"} to floor</p>
+                            <Input
+                              id="measurement_e"
+                              type="number"
+                              step="0.25"
+                              value={measurements.measurement_e || ""}
+                              onChange={(e) => handleInputChange("measurement_e", e.target.value)}
+                              placeholder="0.00"
+                              readOnly={readOnly}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="measurement_f" className="text-sm font-medium flex items-center gap-2">
+                              <span className="w-5 h-5 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 font-bold text-xs">F</span>
+                              Total Width (Including Extensions)
+                            </Label>
+                            <p className="text-xs text-gray-600 mb-1">Full width including {hardwareType === "track" ? "track" : "rod"} extensions</p>
+                            <Input
+                              id="measurement_f"
+                              type="number"
+                              step="0.25"
+                              value={measurements.measurement_f || ""}
+                              onChange={(e) => handleInputChange("measurement_f", e.target.value)}
+                              placeholder="0.00"
+                              readOnly={readOnly}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </details>
                   </div>
                 </div>
               </details>
-            </div>
-
-            {/* Detailed Window Measurements */}
-            <div className="mt-4 border rounded-lg p-4 bg-gray-50">
-              <h4 className="font-medium mb-3">Detailed Window Measurements</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="measurement_a" className="text-sm font-medium">A - Window Width</Label>
-                  <p className="text-xs text-gray-600 mb-1">Inside frame width</p>
-                  <Input
-                    id="measurement_a"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_a || ""}
-                    onChange={(e) => handleInputChange("measurement_a", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measurement_b" className="text-sm font-medium">B - Window Height</Label>
-                  <p className="text-xs text-gray-600 mb-1">Inside frame height</p>
-                  <Input
-                    id="measurement_b"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_b || ""}
-                    onChange={(e) => handleInputChange("measurement_b", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                {hardwareType === "rod" && (
-                  <div>
-                    <Label htmlFor="measurement_c" className="text-sm font-medium">C - Rod to Ceiling</Label>
-                    <p className="text-xs text-gray-600 mb-1">Distance from rod to ceiling</p>
-                    <Input
-                      id="measurement_c"
-                      type="number"
-                      step="0.25"
-                      value={measurements.measurement_c || ""}
-                      onChange={(e) => handleInputChange("measurement_c", e.target.value)}
-                      placeholder="0.00"
-                      readOnly={readOnly}
-                    />
-                  </div>
-                )}
-                <div>
-                  <Label htmlFor="measurement_d" className="text-sm font-medium">D - Window to Floor</Label>
-                  <p className="text-xs text-gray-600 mb-1">Distance from window bottom to floor</p>
-                  <Input
-                    id="measurement_d"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_d || ""}
-                    onChange={(e) => handleInputChange("measurement_d", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measurement_e" className="text-sm font-medium">E - Total Height</Label>
-                  <p className="text-xs text-gray-600 mb-1">{hardwareType === "track" ? "Track" : "Rod"} to floor total height</p>
-                  <Input
-                    id="measurement_e"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_e || ""}
-                    onChange={(e) => handleInputChange("measurement_e", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="measurement_f" className="text-sm font-medium">F - Total Width</Label>
-                  <p className="text-xs text-gray-600 mb-1">Total width including extensions</p>
-                  <Input
-                    id="measurement_f"
-                    type="number"
-                    step="0.25"
-                    value={measurements.measurement_f || ""}
-                    onChange={(e) => handleInputChange("measurement_f", e.target.value)}
-                    placeholder="0.00"
-                    readOnly={readOnly}
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
