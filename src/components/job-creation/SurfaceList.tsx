@@ -67,13 +67,25 @@ export const SurfaceList = ({
     console.log(`All client measurements:`, clientMeasurements);
     
     const matchedMeasurement = clientMeasurements?.find(measurement => {
-      // First priority: exact match by room_id and surface name in notes
+      // Priority 1: exact match by room_id and surface name in notes
       const roomMatch = measurement.room_id === surface.room_id;
       const nameMatch = measurement.notes?.includes(surface.name);
       
-      console.log(`Checking measurement ${measurement.id}: room_match=${roomMatch}, name_match=${nameMatch}, notes="${measurement.notes}"`);
+      // Priority 2: match by surface_id in measurements data
+      const measurementData = typeof measurement.measurements === 'object' && measurement.measurements !== null 
+        ? measurement.measurements as Record<string, any> 
+        : {};
+      const surfaceIdMatch = measurementData.surface_id === surface.id;
       
-      return roomMatch && nameMatch;
+      // Priority 3: match by surface_name in measurements data  
+      const surfaceNameMatch = measurementData.surface_name === surface.name;
+      
+      // Priority 4: if room matches and no specific surface assignment, use first available
+      const generalRoomMatch = roomMatch && !measurementData.surface_id && !measurement.notes?.includes('Window');
+      
+      console.log(`Checking measurement ${measurement.id}: room_match=${roomMatch}, name_match=${nameMatch}, surface_id_match=${surfaceIdMatch}, surface_name_match=${surfaceNameMatch}, notes="${measurement.notes}"`);
+      
+      return (roomMatch && nameMatch) || surfaceIdMatch || surfaceNameMatch || generalRoomMatch;
     });
     
     console.log(`Found measurement for ${surface.name}:`, matchedMeasurement?.id || 'none');
