@@ -115,7 +115,7 @@ export const MeasurementWorksheet = ({
             drop: measurements.drop || measurements.height,
             selected_heading: measurements.selected_heading || measurements.selected_template,
             fabric_width: measurements.fabric_width || 137,
-            fullness: measurements.fullness || 2.5,
+            heading_fullness: measurements.fullness || 2.5,
             return_left: measurements.return_left || 7.5,
             return_right: measurements.return_right || 7.5,
             overlap: measurements.overlap || 10,
@@ -124,8 +124,7 @@ export const MeasurementWorksheet = ({
             fabric_item_id: measurements.fabric_item_id,
           };
           
-          // Import and use the actual calculation
-          const { calculateFabricUsage } = await import('@/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator');
+          // Use the direct import to calculate fabric usage
           const fabricCalculation = calculateFabricUsage(formData, [], measurements.fabric_item);
           
           console.log('Fabric calculation result:', fabricCalculation);

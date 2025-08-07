@@ -69,7 +69,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface }: W
           </div>
         )}
 
-        {!summary && !isLoading && (
+        {!summary && !isLoading && !error && (
           <div className="text-muted-foreground text-sm">
             No pricing data available. Open worksheet to calculate costs.
           </div>
