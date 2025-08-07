@@ -254,28 +254,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                 )}
               </div>
             </div>
-
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Priority</Label>
-              <div className="mt-2">
-                {isEditing ? (
-                  <Select value={formData.priority} onValueChange={(value) => updateFormData("priority", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className={getPriorityColor(formData.priority)}>
-                    {formData.priority.toUpperCase()}
-                  </Badge>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Client Section */}
