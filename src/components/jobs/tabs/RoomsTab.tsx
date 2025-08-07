@@ -17,13 +17,15 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   
   const project = projects?.find(p => p.id === projectId);
 
-  // Calculate job total by summing all room totals
-  // This will be calculated in the EnhancedRoomView component and passed up
+  // Calculate comprehensive project total
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
-  // For now, use treatment total as base - this will be enhanced by room calculations
+  const roomCount = rooms?.length || 0;
+  const treatmentCount = treatments?.length || 0;
+
+  // Project pricing calculation
   const subtotal = treatmentTotal;
   const markupPercentage = 25;
   const taxRate = 0.08;
@@ -40,8 +42,10 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   }
 
   console.log('RoomsTab: Project ID:', projectId);
-  console.log('RoomsTab: Calculated job total:', total);
-  console.log('RoomsTab: Base treatment total:', treatmentTotal);
+  console.log('RoomsTab: Rooms count:', roomCount);
+  console.log('RoomsTab: Treatments count:', treatmentCount);
+  console.log('RoomsTab: Treatment total:', treatmentTotal);
+  console.log('RoomsTab: Final total:', total);
 
   return (
     <div className="space-y-6">
@@ -57,7 +61,9 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
           <div className="text-3xl font-bold text-primary">
             ${total.toFixed(2)}
           </div>
-          <p className="text-sm text-muted-foreground">Total Project Cost</p>
+          <p className="text-sm text-muted-foreground">
+            Total Project Cost ({roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''})
+          </p>
         </div>
       </div>
 
