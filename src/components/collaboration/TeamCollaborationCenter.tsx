@@ -254,15 +254,19 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         {user.user_profile?.role}
                                       </Badge>
                                     </div>
-                                    <p className="text-xs text-white/60 capitalize">
-                                      {user.status === 'never_logged_in' ? 'Never logged in' : 
-                                       user.status === 'away' ? 'Away' : 'Offline'}
-                                      {user.last_seen && user.status !== 'never_logged_in' && (
-                                        <span className="ml-2">
-                                          • Last seen {new Date(user.last_seen).toLocaleDateString()}
-                                        </span>
-                                      )}
-                                    </p>
+                                     <p className="text-xs text-white/60 capitalize">
+                                       {user.status === 'never_logged_in' ? 'Never signed up' : 
+                                        user.status === 'away' ? 'Away' : 'Offline'}
+                                       {user.last_seen && user.status !== 'never_logged_in' && (
+                                         <span className="ml-2">
+                                           • Last seen {new Date(user.last_seen).toLocaleDateString('en-US', { 
+                                             day: 'numeric', 
+                                             month: 'short', 
+                                             year: 'numeric' 
+                                           })}
+                                         </span>
+                                       )}
+                                     </p>
                                   </div>
                                   <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
                                 </div>
