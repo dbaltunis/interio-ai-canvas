@@ -107,21 +107,40 @@ export const MeasurementWorksheet = ({
       const templateId = measurements.selected_template || measurements.selected_heading;
       if (templateId && (measurements.width || measurements.rail_width) && (measurements.height || measurements.drop)) {
         try {
-          console.log('Saving window summary for measurement:', savedMeasurement.id);
+          console.log('Calculating window summary for measurement:', savedMeasurement.id);
           
-          // Use actual calculation data from the logs
-          const railWidth = Number(measurements.rail_width || measurements.width || 0);
-          const drop = Number(measurements.drop || measurements.height || 0);
-          const linearMeters = 6.468; // From the logs
-          const fabricCost = 291.06; // From the logs
-          const manufacturingCost = 50;
+          // Use real fabric calculation
+          const formData = {
+            rail_width: measurements.rail_width || measurements.width,
+            drop: measurements.drop || measurements.height,
+            selected_heading: measurements.selected_heading || measurements.selected_template,
+            fabric_width: measurements.fabric_width || 137,
+            fullness: measurements.fullness || 2.5,
+            return_left: measurements.return_left || 7.5,
+            return_right: measurements.return_right || 7.5,
+            overlap: measurements.overlap || 10,
+            bottom_hem: measurements.bottom_hem || 15,
+            side_hems: measurements.side_hems || 7.5,
+            fabric_item_id: measurements.fabric_item_id,
+          };
+          
+          // Import and use the actual calculation
+          const { calculateFabricUsage } = await import('@/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator');
+          const fabricCalculation = calculateFabricUsage(formData, [], measurements.fabric_item);
+          
+          console.log('Fabric calculation result:', fabricCalculation);
+          
+          // Extract costs from fabric calculation result
+          const fabricCostPerMeter = measurements.fabric_item?.price_per_meter || 25;
+          const fabricCost = fabricCalculation.meters * fabricCostPerMeter;
+          const manufacturingCost = 50; // Default manufacturing cost
           const totalCost = fabricCost + manufacturingCost;
           
           const summaryData = {
             window_id: savedMeasurement.id,
-            linear_meters: linearMeters,
-            widths_required: 4, // From the logs
-            price_per_meter: 45, // Fallback price from logs
+            linear_meters: fabricCalculation.meters,
+            widths_required: fabricCalculation.widthsRequired,
+            price_per_meter: fabricCostPerMeter,
             fabric_cost: fabricCost,
             lining_type: measurements.selected_lining || null,
             lining_cost: 0,

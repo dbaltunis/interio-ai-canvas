@@ -24,20 +24,13 @@ export const useWindowSummary = (windowId: string | undefined) => {
   return useQuery({
     queryKey: ["window-summary", windowId],
     queryFn: async () => {
-      if (!windowId) {
-        console.log('useWindowSummary: No windowId provided');
-        return null;
-      }
-      
-      console.log('useWindowSummary: Fetching summary for windowId:', windowId);
+      if (!windowId) return null;
       
       const { data, error } = await supabase
         .from("windows_summary")
         .select("*")
         .eq("window_id", windowId)
         .maybeSingle();
-
-      console.log('useWindowSummary: Result for', windowId, { data, error });
 
       if (error) throw error;
       return data as WindowSummary | null;

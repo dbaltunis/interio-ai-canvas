@@ -25,8 +25,6 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
 
 export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface }: WindowSummaryCardProps) {
   const { data: summary, isLoading, error } = useWindowSummary(surface.id);
-  
-  console.log(`WindowSummaryCard for ${surface.name}:`, { surface, summary, isLoading, error });
 
   return (
     <Card className="mb-4">
