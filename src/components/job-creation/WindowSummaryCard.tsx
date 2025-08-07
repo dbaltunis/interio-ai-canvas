@@ -5,7 +5,6 @@ import { useWindowSummary } from "@/hooks/useWindowSummary";
 
 interface WindowSummaryCardProps {
   surface: any;
-  measurement?: any;
   onEditSurface?: (surface: any) => void;
   onDeleteSurface?: (id: string) => void;
   onViewDetails?: (surface: any) => void;
@@ -25,10 +24,9 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
   );
 }
 
-export function WindowSummaryCard({ surface, measurement, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
-  // Use surface.id directly as the window_id - no complex room_id linking
+export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
+  // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
-  
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
 
   return (

@@ -17,6 +17,7 @@ import { MeasurementSummary } from "./MeasurementSummary";
 interface MeasurementWorksheetProps {
   clientId: string;
   projectId?: string;
+  surfaceId?: string; // Add surfaceId prop
   existingMeasurement?: any;
   onSave?: () => void;
   readOnly?: boolean;
@@ -33,7 +34,8 @@ const WINDOW_TYPES = [
 
 export const MeasurementWorksheet = ({ 
   clientId, 
-  projectId, 
+  projectId,
+  surfaceId, 
   existingMeasurement, 
   onSave,
   readOnly = false
@@ -146,7 +148,7 @@ export const MeasurementWorksheet = ({
           const totalCost = fabricCost + manufacturingCost;
           
           const summaryData = {
-            window_id: savedMeasurement.id,
+            window_id: surfaceId || savedMeasurement.id, // Use surfaceId if available, fallback to measurement ID
             linear_meters: fabricCalculation.meters,
             widths_required: fabricCalculation.widthsRequired,
             price_per_meter: fabricCostPerMeter,
