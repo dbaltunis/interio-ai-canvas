@@ -47,14 +47,6 @@ export const JobStatusDropdown = ({
     }
   });
 
-  console.log("DEBUG STATUS DROPDOWN:", {
-    jobType,
-    currentStatus,
-    allJobStatuses: jobStatuses,
-    filteredStatuses: availableStatuses,
-    projectStatuses: jobStatuses.filter(s => s.category === "Project")
-  });
-
   // Get current status details - exact match first, then case-insensitive
   const currentStatusDetails = jobStatuses.find(status => status.name === currentStatus) || 
                                jobStatuses.find(status => status.name.toLowerCase() === currentStatus.toLowerCase());
