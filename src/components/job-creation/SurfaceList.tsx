@@ -383,39 +383,64 @@ export const SurfaceList = ({
                            {drop ? `${formatMeasurement(drop, units.length)}` : '❌ Missing'}
                          </div>
                          
-                          {/* Template Status */}
-                          <div className="text-gray-600">Template</div>
-                          <div className="text-right font-medium">
-                            {selectedTemplate || measurements.treatment_type || measurements.selected_treatment ? (
-                              <span className="text-green-600">✓ Selected</span>
-                            ) : (
-                              <span className="text-red-600">❌ Not selected</span>
-                            )}
-                          </div>
-                         
-                         {/* Fabric Status */}
-                         <div className="text-gray-600">Fabric</div>
-                         <div className="text-right font-medium">
-                           {selectedFabric ? (
-                             <span className="text-green-600">✓ Selected</span>
-                           ) : (
-                             <span className="text-red-600">❌ Not selected</span>
-                           )}
-                         </div>
-                         
-                         {/* Available Data Summary */}
-                         <div className="col-span-2 mt-3 p-3 bg-orange-50 rounded border border-orange-200">
-                           <div className="text-xs text-orange-700">
-                             <div className="font-medium mb-1">Available data in worksheet:</div>
-                             <div>• Rail Width: {railWidth || 'Missing'}</div>
-                             <div>• Drop: {drop || 'Missing'}</div>
-                             <div>• Template ID: {selectedTemplate ? 'Present' : 'Missing'}</div>
-                             <div>• Fabric ID: {selectedFabric ? 'Present' : 'Missing'}</div>
-                             <div className="mt-2 text-xs">
-                               Complete the measurement worksheet to see pricing calculations.
-                             </div>
+                           {/* Template Status */}
+                           <div className="text-gray-600">Template</div>
+                           <div className="text-right font-medium">
+                             {(() => {
+                               const hasTemplate = selectedTemplate || measurements.treatment_type || measurements.selected_treatment || measurements.template_id;
+                               if (hasTemplate) {
+                                 const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                curtainTemplates.find(t => t.name === measurements.treatment_type);
+                                 return (
+                                   <div>
+                                     <span className="text-green-600">✓ Selected</span>
+                                     {template && <div className="text-xs text-gray-500">{template.name}</div>}
+                                   </div>
+                                 );
+                               }
+                               return <span className="text-red-600">❌ Not selected</span>;
+                             })()}
                            </div>
-                         </div>
+                          
+                          {/* Fabric Status */}
+                          <div className="text-gray-600">Fabric</div>
+                          <div className="text-right font-medium">
+                            {(() => {
+                              if (selectedFabric) {
+                                const fabricItem = inventory.find(item => item.id === selectedFabric);
+                                return (
+                                  <div>
+                                    <span className="text-green-600">✓ Selected</span>
+                                    {fabricItem && <div className="text-xs text-gray-500">{fabricItem.name}</div>}
+                                  </div>
+                                );
+                              }
+                              return <span className="text-red-600">❌ Not selected</span>;
+                            })()}
+                          </div>
+                          
+                          {/* Available Data Summary */}
+                          <div className="col-span-2 mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                            <div className="text-xs text-blue-700">
+                              <div className="font-medium mb-1">Available data in worksheet:</div>
+                              <div>• Rail Width: {railWidth ? `${railWidth}cm` : 'Missing'}</div>
+                              <div>• Drop: {drop ? `${drop}cm` : 'Missing'}</div>
+                              <div>• Template: {(() => {
+                                const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                               curtainTemplates.find(t => t.name === measurements.treatment_type);
+                                return template ? template.name : (selectedTemplate ? 'ID: ' + selectedTemplate : 'Missing');
+                              })()}</div>
+                              <div>• Fabric: {(() => {
+                                const fabricItem = inventory.find(item => item.id === selectedFabric);
+                                return fabricItem ? fabricItem.name : (selectedFabric ? 'ID: ' + selectedFabric : 'Missing');
+                              })()}</div>
+                              {(!selectedTemplate || !selectedFabric || !railWidth || !drop) && (
+                                <div className="mt-2 text-xs text-orange-600">
+                                  Complete the measurement worksheet to see pricing calculations.
+                                </div>
+                              )}
+                            </div>
+                          </div>
                        </>
                      );
                   })()}
