@@ -280,113 +280,190 @@ export const SurfaceList = ({
                        try {
                          const fabricCalculation = calculateSurfaceFabricUsage(measurements);
                          console.log('SurfaceList - Fabric calculation result:', fabricCalculation);
-                        
-                         if (fabricCalculation) {
-                           return (
-                             <>
-                               {/* Cost Calculation Header */}
-                               <div className="col-span-2 font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
-                                 <span className="text-lg">💰</span>
-                                 Cost Calculation
-                               </div>
-                               
-                                {/* Template Information */}
-                                <div className="col-span-2 bg-blue-50 p-3 rounded-lg mb-3">
-                                   <div className="text-sm text-gray-600 mb-1">
-                                     Template: <span className="font-medium text-blue-700">
-                                       {(() => {
-                                         const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
-                                                         curtainTemplates.find(t => t.id === measurements.selected_heading);
-                                         return template?.name || selectedTemplate || measurements.selected_heading || 'Unknown Template';
+                          if (fabricCalculation) {
+                            return (
+                              <div className="animate-fade-in">
+                                {/* Enhanced Cost Calculation Header */}
+                                <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl mb-4 border border-green-200">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <span className="text-2xl">💰</span>
+                                      </div>
+                                      <div>
+                                        <h3 className="text-lg font-semibold text-gray-800">Cost Calculation</h3>
+                                        <p className="text-sm text-gray-600">Complete pricing breakdown</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-2xl font-bold text-green-600">
+                                        {formatCurrency(fabricCalculation.totalCost, userCurrency)}
+                                      </div>
+                                      <div className="text-sm text-gray-500">Total Cost</div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Template Badge */}
+                                  <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-blue-200">
+                                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                    <span className="text-sm font-medium text-blue-700">
+                                      {(() => {
+                                        const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                        curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                        return template?.name || 'Standard Template';
+                                      })()}
+                                    </span>
+                                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                      {(() => {
+                                        const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                        curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                        return template?.pricing_type || 'per_metre';
                                       })()}
                                     </span>
                                   </div>
-                                   <div className="text-xs text-gray-500">
-                                     Pricing: {(() => {
-                                       const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
-                                                       curtainTemplates.find(t => t.id === measurements.selected_heading);
-                                       return template?.pricing_type || 'per_metre';
-                                     })()} • 
-                                     Waste factor: {(() => {
-                                       const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
-                                                       curtainTemplates.find(t => t.id === measurements.selected_heading);
-                                       return measurements.waste_factor || template?.waste_percent || 5;
-                                    })()}%
+                                </div>
+
+                                {/* Enhanced Cost Breakdown Grid */}
+                                <div className="space-y-3">
+                                  {/* Fabric Cost Card */}
+                                  <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                          <span className="text-blue-600">🧵</span>
+                                        </div>
+                                        <div className="flex-1">
+                                          <h4 className="font-semibold text-gray-800">Fabric</h4>
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            {(() => {
+                                              const fabricItem = inventory.find(item => item.id === selectedFabric);
+                                              return fabricItem?.name || 'Selected Fabric';
+                                            })()}
+                                          </p>
+                                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                                            <span className="flex items-center gap-1">
+                                              📏 {fabricCalculation.linearMeters.toFixed(2)}m linear
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                              📐 {fabricCalculation.widthsRequired} width(s)
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                              💷 {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-xl font-bold text-blue-600">
+                                          {formatCurrency(fabricCalculation.fabricCost, userCurrency)}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {((fabricCalculation.fabricCost / fabricCalculation.totalCost) * 100).toFixed(0)}% of total
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Lining Cost Card */}
+                                  {fabricCalculation.liningCost > 0 && (
+                                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex items-start gap-3">
+                                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <span className="text-purple-600">📋</span>
+                                          </div>
+                                          <div className="flex-1">
+                                            <h4 className="font-semibold text-gray-800">Lining</h4>
+                                            <p className="text-sm text-gray-600 mb-2">{fabricCalculation.liningType}</p>
+                                            <div className="text-xs text-gray-500">
+                                              Same linear metres as fabric
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className="text-xl font-bold text-purple-600">
+                                            {formatCurrency(fabricCalculation.liningCost, userCurrency)}
+                                          </div>
+                                          <div className="text-xs text-gray-500">
+                                            {((fabricCalculation.liningCost / fabricCalculation.totalCost) * 100).toFixed(0)}% of total
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Manufacturing Cost Card */}
+                                  <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                          <span className="text-orange-600">🏭</span>
+                                        </div>
+                                        <div className="flex-1">
+                                          <h4 className="font-semibold text-gray-800">Manufacturing</h4>
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            {(() => {
+                                              const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                              curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                              return template?.manufacturing_type === 'hand' ? 'Hand finished' : 'Machine made';
+                                            })()}
+                                          </p>
+                                          <div className="text-xs text-gray-500">
+                                            {(() => {
+                                              const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
+                                                              curtainTemplates.find(t => t.id === measurements.selected_heading);
+                                              return template?.pricing_type === 'per_drop' ? 
+                                                `${fabricCalculation.widthsRequired} drops` : 
+                                                `${fabricCalculation.linearMeters.toFixed(2)}m`;
+                                            })()}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-xl font-bold text-orange-600">
+                                          {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {((fabricCalculation.manufacturingCost / fabricCalculation.totalCost) * 100).toFixed(0)}% of total
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                               
-                               {/* Fabric Usage */}
-                               <div className="text-gray-600 flex items-center gap-1">
-                                 <span className="text-blue-600">🧵</span>
-                                 Fabric
-                               </div>
-                               <div className="text-right font-medium">
-                                 <div className="font-bold text-lg">{formatCurrency(fabricCalculation.fabricCost, userCurrency)}</div>
-                                 <div className="text-sm text-gray-600">
-                                   {fabricCalculation.linearMeters.toFixed(2)}m linear ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
-                                 </div>
-                                  <div className="text-xs text-blue-600">
-                                    {(() => {
-                                      const fabricItem = inventory.find(item => item.id === selectedFabric);
-                                      return fabricItem?.name || 'Selected Fabric';
-                                    })()} • {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+
+                                {/* Enhanced Total Summary */}
+                                <div className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                        <span className="text-2xl">💲</span>
+                                      </div>
+                                      <div>
+                                        <h3 className="text-lg font-semibold">Total Investment</h3>
+                                        <p className="text-green-100 text-sm">Complete window treatment</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-3xl font-bold">
+                                        {formatCurrency(fabricCalculation.totalCost, userCurrency)}
+                                      </div>
+                                      <div className="text-green-100 text-sm">Ready for approval</div>
+                                    </div>
                                   </div>
-                               </div>
-                               
-                               {/* Lining (if selected) */}
-                               {fabricCalculation.liningCost > 0 && (
-                                 <>
-                                   <div className="text-gray-600 flex items-center gap-1">
-                                     <span className="text-purple-600">📋</span>
-                                     Lining
-                                   </div>
-                                   <div className="text-right font-medium">
-                                     <div className="font-bold text-lg text-purple-600">
-                                       {formatCurrency(fabricCalculation.liningCost, userCurrency)}
-                                     </div>
-                                     <div className="text-sm text-gray-600">{fabricCalculation.liningType}</div>
-                                   </div>
-                                 </>
-                               )}
-                               
-                               {/* Manufacturing */}
-                               <div className="text-gray-600 flex items-center gap-1">
-                                 <span className="text-orange-600">🏭</span>
-                                 Manufacturing
-                               </div>
-                               <div className="text-right font-medium">
-                                 <div className="font-bold text-lg text-orange-600">
-                                   {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
-                                 </div>
-                                   <div className="text-sm text-gray-600">{(() => {
-                                     const template = curtainTemplates.find(t => t.id === selectedTemplate) || 
-                                                     curtainTemplates.find(t => t.id === measurements.selected_heading);
-                                     return template?.manufacturing_type || 'machine';
-                                  })()}</div>
-                               </div>
-                               
-                               {/* View calculation details link */}
-                               <div className="col-span-2 text-center mt-2">
-                                 <button className="text-xs text-blue-500 hover:text-blue-700 underline">
-                                   View calculation details
-                                 </button>
-                               </div>
-                               
-                               {/* Total Cost */}
-                               <div className="col-span-2 border-t pt-3 mt-3">
-                                 <div className="flex items-center justify-between">
-                                   <span className="text-gray-800 font-semibold flex items-center gap-1">
-                                     <span className="text-green-600">💲</span>
-                                     Total Cost
-                                   </span>
-                                   <span className="font-bold text-green-600 text-xl">
-                                     {formatCurrency(fabricCalculation.totalCost, userCurrency)}
-                                   </span>
-                                 </div>
-                               </div>
-                             </>
-                           );
-                         }
+                                </div>
+
+                                {/* Quick Actions */}
+                                <div className="mt-4 flex gap-2">
+                                  <button className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    📊 View Details
+                                  </button>
+                                  <button className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    📋 Generate Quote
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
                       } catch (error) {
                         console.error('Error calculating fabric usage for display:', error);
                       }
