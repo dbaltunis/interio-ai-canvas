@@ -261,75 +261,89 @@ export const SurfaceList = ({
                          const fabricCalculation = calculateSurfaceFabricUsage(measurements);
                          console.log('SurfaceList - Fabric calculation result:', fabricCalculation);
                         
-                        if (fabricCalculation) {
-                          return (
-                            <>
-                              {/* Cost Calculation Header */}
-                              <div className="col-span-2 font-medium text-gray-800 mb-2 pb-2 border-b border-gray-200">
-                                Cost Calculation
-                              </div>
-                              
-                              {/* Fabric Usage */}
-                              <div className="text-gray-600">Fabric</div>
-                              <div className="text-right font-medium">
-                                <div>{fabricCalculation.linearMeters.toFixed(2)}m linear</div>
-                                <div className="text-xs text-gray-500">
-                                  ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
-                                </div>
-                              </div>
-                              
-                              {/* Selected Fabric with pricing */}
-                              <div className="text-gray-600">Selected Fabric</div>
-                              <div className="text-right font-medium">
-                                <div className="text-sm">{fabricCalculation.fabricName}</div>
-                                <div className="text-blue-600 font-semibold">
-                                  {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
-                                </div>
-                              </div>
-                              
-                              {/* Fabric Total */}
-                              <div className="text-gray-600">Fabric Cost</div>
-                              <div className="text-right font-bold text-blue-600">
-                                {formatCurrency(fabricCalculation.fabricCost, userCurrency)}
-                              </div>
-                              
-                              {/* Lining (if selected) */}
-                              {fabricCalculation.liningCost > 0 && (
-                                <>
-                                  <div className="text-gray-600">Lining</div>
-                                  <div className="text-right font-medium">
-                                    <div className="text-sm">{fabricCalculation.liningType}</div>
-                                    <div className="font-bold text-purple-600">
-                                      {formatCurrency(fabricCalculation.liningCost, userCurrency)}
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                              
-                              {/* Manufacturing */}
-                              <div className="text-gray-600">Manufacturing</div>
-                              <div className="text-right font-medium">
-                                <div className="text-sm">{selectedTemplate.manufacturing_type || 'machine'}</div>
-                                <div className="font-bold text-orange-600">
-                                  {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
-                                </div>
-                              </div>
-                              
-                              {/* View calculation details link */}
-                              <div className="col-span-2 text-center mt-2">
-                                <button className="text-xs text-blue-500 hover:text-blue-700 underline">
-                                  View calculation details
-                                </button>
-                              </div>
-                              
-                              {/* Total Cost */}
-                              <div className="text-gray-800 font-semibold border-t pt-3 mt-3">Total Cost</div>
-                              <div className="text-right font-bold text-green-600 text-lg border-t pt-3 mt-3">
-                                {formatCurrency(fabricCalculation.totalCost, userCurrency)}
-                              </div>
-                            </>
-                          );
-                        }
+                         if (fabricCalculation) {
+                           return (
+                             <>
+                               {/* Cost Calculation Header */}
+                               <div className="col-span-2 font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
+                                 <span className="text-lg">💰</span>
+                                 Cost Calculation
+                               </div>
+                               
+                               {/* Template Information */}
+                               <div className="col-span-2 bg-blue-50 p-3 rounded-lg mb-3">
+                                 <div className="text-sm text-gray-600 mb-1">Template: <span className="font-medium text-blue-700">{selectedTemplate.name || 'curtain testing 1'}</span></div>
+                                 <div className="text-xs text-gray-500">
+                                   Pricing: {selectedTemplate.pricing_type || 'per_metre'} • 
+                                   Waste factor: {measurements.waste_factor || selectedTemplate.waste_percent || 5}%
+                                 </div>
+                               </div>
+                               
+                               {/* Fabric Usage */}
+                               <div className="text-gray-600 flex items-center gap-1">
+                                 <span className="text-blue-600">🧵</span>
+                                 Fabric
+                               </div>
+                               <div className="text-right font-medium">
+                                 <div className="font-bold text-lg">{formatCurrency(fabricCalculation.fabricCost, userCurrency)}</div>
+                                 <div className="text-sm text-gray-600">
+                                   {fabricCalculation.linearMeters.toFixed(2)}m linear ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
+                                 </div>
+                                 <div className="text-xs text-blue-600">
+                                   Selected Fabric • {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+                                 </div>
+                               </div>
+                               
+                               {/* Lining (if selected) */}
+                               {fabricCalculation.liningCost > 0 && (
+                                 <>
+                                   <div className="text-gray-600 flex items-center gap-1">
+                                     <span className="text-purple-600">📋</span>
+                                     Lining
+                                   </div>
+                                   <div className="text-right font-medium">
+                                     <div className="font-bold text-lg text-purple-600">
+                                       {formatCurrency(fabricCalculation.liningCost, userCurrency)}
+                                     </div>
+                                     <div className="text-sm text-gray-600">{fabricCalculation.liningType}</div>
+                                   </div>
+                                 </>
+                               )}
+                               
+                               {/* Manufacturing */}
+                               <div className="text-gray-600 flex items-center gap-1">
+                                 <span className="text-orange-600">🏭</span>
+                                 Manufacturing
+                               </div>
+                               <div className="text-right font-medium">
+                                 <div className="font-bold text-lg text-orange-600">
+                                   {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
+                                 </div>
+                                 <div className="text-sm text-gray-600">{selectedTemplate.manufacturing_type || 'machine'}</div>
+                               </div>
+                               
+                               {/* View calculation details link */}
+                               <div className="col-span-2 text-center mt-2">
+                                 <button className="text-xs text-blue-500 hover:text-blue-700 underline">
+                                   View calculation details
+                                 </button>
+                               </div>
+                               
+                               {/* Total Cost */}
+                               <div className="col-span-2 border-t pt-3 mt-3">
+                                 <div className="flex items-center justify-between">
+                                   <span className="text-gray-800 font-semibold flex items-center gap-1">
+                                     <span className="text-green-600">💲</span>
+                                     Total Cost
+                                   </span>
+                                   <span className="font-bold text-green-600 text-xl">
+                                     {formatCurrency(fabricCalculation.totalCost, userCurrency)}
+                                   </span>
+                                 </div>
+                               </div>
+                             </>
+                           );
+                         }
                       } catch (error) {
                         console.error('Error calculating fabric usage for display:', error);
                       }
