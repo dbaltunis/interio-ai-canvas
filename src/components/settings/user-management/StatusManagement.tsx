@@ -27,7 +27,7 @@ const colorOptions = [
   { value: "yellow", label: "Yellow", class: "bg-yellow-500" },
   { value: "orange", label: "Orange", class: "bg-orange-500" },
   { value: "red", label: "Red", class: "bg-red-500" },
-  { value: "purple", label: "Purple", class: "bg-purple-500" },
+  { value: "primary", label: "Primary", class: "bg-primary" },
 ];
 
 const actionOptions = [

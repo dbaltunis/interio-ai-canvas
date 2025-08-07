@@ -114,7 +114,7 @@ export const SavedTemplatesManager = () => {
     switch (style) {
       case 'simple': return 'bg-blue-100 text-blue-700';
       case 'detailed': return 'bg-green-100 text-green-700';
-      case 'brochure': return 'bg-purple-100 text-purple-700';
+      case 'brochure': return 'bg-secondary/20 text-secondary-foreground';
       default: return 'bg-gray-100 text-gray-700';
     }
   };

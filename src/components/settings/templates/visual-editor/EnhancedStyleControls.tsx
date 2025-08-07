@@ -87,7 +87,7 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-600" />
+            <Sparkles className="h-4 w-4 text-primary" />
             <h3 className="font-semibold">Advanced Styling</h3>
           </div>
           <div className="flex gap-1">

@@ -96,7 +96,7 @@ export const PermissionComparison = () => {
     switch (status) {
       case 'both': return 'bg-green-100 text-green-800 border-green-200';
       case 'user1': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'user2': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'user2': return 'bg-secondary/20 text-secondary-foreground border-secondary';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -170,9 +170,9 @@ export const PermissionComparison = () => {
                 <div className="text-2xl font-bold text-blue-700">{user1OnlyPermissions.length}</div>
                 <div className="text-sm text-blue-600">Only {user1.name}</div>
               </div>
-              <div className="text-center p-4 border rounded-lg bg-purple-50">
-                <div className="text-2xl font-bold text-purple-700">{user2OnlyPermissions.length}</div>
-                <div className="text-sm text-purple-600">Only {user2.name}</div>
+              <div className="text-center p-4 border rounded-lg bg-secondary/10">
+                <div className="text-2xl font-bold text-secondary-foreground">{user2OnlyPermissions.length}</div>
+                <div className="text-sm text-muted-foreground">Only {user2.name}</div>
               </div>
             </div>
 
@@ -187,7 +187,7 @@ export const PermissionComparison = () => {
                 <span className="text-sm">{user1.name} only</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-purple-500"></div>
+                <div className="w-3 h-3 rounded bg-secondary"></div>
                 <span className="text-sm">{user2.name} only</span>
               </div>
             </div>

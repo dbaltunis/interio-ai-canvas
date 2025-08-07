@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 const PERMISSION_CATEGORIES = {
   jobs: { label: 'Jobs & Quotes', icon: '💼', color: 'bg-blue-500' },
   clients: { label: 'Client Management', icon: '👥', color: 'bg-green-500' },
-  calendar: { label: 'Calendar & Appointments', icon: '📅', color: 'bg-purple-500' },
+  calendar: { label: 'Calendar & Appointments', icon: '📅', color: 'bg-primary' },
   inventory: { label: 'Inventory', icon: '📦', color: 'bg-orange-500' },
   treatments: { label: 'Window Treatments', icon: '🪟', color: 'bg-teal-500' },
   analytics: { label: 'Analytics & Reports', icon: '📊', color: 'bg-indigo-500' },

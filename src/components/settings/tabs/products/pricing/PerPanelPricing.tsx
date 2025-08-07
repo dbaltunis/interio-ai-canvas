@@ -24,9 +24,9 @@ export const PerPanelPricing = ({
         </p>
       </div>
       
-      <div className="bg-purple-50 dark:bg-purple-950 p-3 rounded-lg">
-        <h5 className="font-medium text-xs text-purple-900 dark:text-purple-100">Calculation Example:</h5>
-        <p className="text-xs text-purple-800 dark:text-purple-200 mt-1">
+      <div className="bg-primary/10 p-3 rounded-lg">
+        <h5 className="font-medium text-xs text-primary">Calculation Example:</h5>
+        <p className="text-xs text-primary/80 mt-1">
           Pair of curtains (2 panels) regardless of fabric complexity<br/>
           Final price: 2 panels × £{machinePricePerPanel || '180'} = £{(2 * parseFloat(machinePricePerPanel || '180')).toFixed(2)}
         </p>

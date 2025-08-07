@@ -175,7 +175,7 @@ export const TutorialOverlay = ({ isOpen, onClose, onTabChange }: TutorialOverla
 
             {step.id === "components" && (
               <div className="grid grid-cols-3 gap-2 mt-4 text-xs">
-                <div className="bg-purple-50 p-2 rounded">
+                <div className="bg-primary/10 p-2 rounded">
                   <strong>Headings</strong><br/>
                   Pencil Pleat 2.0x
                 </div>
