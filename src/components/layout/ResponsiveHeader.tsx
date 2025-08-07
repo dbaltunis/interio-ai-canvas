@@ -42,9 +42,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
   return (
     <>
-      {/* Desktop Header */}
-      <header className="bg-white border-b border-brand-secondary/20 shadow-sm sticky top-0 z-40">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
+      {/* Desktop Header with AI styling */}
+      <header className="glass-morphism border-b border-company-secondary/30 shadow-xl sticky top-0 z-40 backdrop-blur-md">
+        <div className="w-full px-4 sm:px-6 lg:px-8 ai-gradient-bg">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Left side - Logo (made twice bigger) */}
             <div className="flex items-center">
@@ -65,41 +65,40 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       size="sm"
                       onClick={() => onTabChange(item.id)}
                       className={cn(
-                        "px-2.5 py-2 text-sm font-medium rounded-md transition-all duration-200 relative",
+                        "px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 relative overflow-hidden",
                         isActive
-                          ? "bg-brand-primary text-white shadow-md hover:bg-brand-primary/90"
-                          : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
+                          ? "bg-gradient-to-r from-[#415e6b] to-[#9bb6bc] text-white shadow-lg scale-105"
+                          : "text-gray-700 hover:text-[#415e6b] hover:bg-[#9bb6bc]/10 backdrop-blur-sm"
                       )}
                     >
-                      <Icon className="h-5 w-5 mr-1.5" />
-                      {item.label}
+                      <Icon className="h-5 w-5 mr-2" />
+                      <span className="relative z-10">{item.label}</span>
                       {isActive && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" />
+                        <div className="absolute inset-0 ai-shimmer opacity-20" />
                       )}
                     </Button>
                   );
                 })}
               </nav>
               
-              {/* Collaboration Tools - Updated with modern design */}
+              {/* Collaboration Tools - AI styled */}
               <div className="hidden md:flex items-center space-x-2">
                 <Button
-                  variant="ghost"
+                  variant="ai"
                   size="sm"
                   onClick={() => setMessageDialogOpen(true)}
-                  className="relative glass-morphism border-0 hover:bg-white/10 rounded-full"
+                  className="relative"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  {/* AI-style notification dot */}
-                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse" />
+                  {/* AI notification indicator with your colors */}
+                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-gradient-to-r from-[#9bb6bc] to-[#415e6b] rounded-full animate-pulse" />
                 </Button>
                 
-                {/* Simplified presence trigger - the floating button will handle the main UI */}
                 <Button
-                  variant="ghost"
+                  variant="ai"
                   size="sm"
                   onClick={() => setPresencePanelOpen(!presencePanelOpen)}
-                  className="glass-morphism border-0 hover:bg-white/10 rounded-full"
+                  className="relative"
                 >
                   <Users className="h-5 w-5" />
                 </Button>
@@ -147,10 +146,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       setMobileMenuOpen(false);
                     }}
                     className={cn(
-                      "w-full justify-start px-3 py-2 text-sm font-medium rounded-md",
+                      "w-full justify-start px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300",
                       isActive
-                        ? "bg-brand-primary text-white"
-                        : "text-brand-neutral hover:text-brand-primary hover:bg-brand-primary/10"
+                        ? "bg-gradient-to-r from-[#415e6b] to-[#9bb6bc] text-white shadow-lg"
+                        : "text-gray-700 hover:text-[#415e6b] hover:bg-[#9bb6bc]/10"
                     )}
                   >
                     <Icon className="h-4 w-4 mr-3" />

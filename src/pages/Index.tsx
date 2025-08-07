@@ -3,6 +3,8 @@ import { useState, useEffect, Suspense, lazy } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { motion } from "framer-motion";
+import { AIBackground } from "@/components/common/AIBackground";
 
 // Lazy load heavy components with proper error handling
 const Dashboard = lazy(() => 
@@ -126,16 +128,23 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background w-full">
-      {/* Use the new ResponsiveHeader */}
-      <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
+    <AIBackground variant="default" className="min-h-screen w-full">
+      {/* AI Background with floating orbs */}
+      <div className="relative min-h-screen">
+        {/* Use the new ResponsiveHeader */}
+        <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-
-      {/* Main Content - Full Width with smooth transitions */}
-      <main className="w-full">
-        {renderActiveComponent()}
-      </main>
-    </div>
+        {/* Main Content with AI styling */}
+        <motion.main 
+          className="w-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {renderActiveComponent()}
+        </motion.main>
+      </div>
+    </AIBackground>
   );
 };
 
