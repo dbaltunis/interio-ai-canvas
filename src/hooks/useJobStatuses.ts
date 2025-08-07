@@ -22,17 +22,9 @@ export const useJobStatuses = () => {
 
       if (error) throw error;
       
-      // Filter to show statuses created by the current user or their account owner
+      // Filter to show statuses created by the current user
       const filteredData = (data || []).filter(status => {
-        // Show status if it belongs to the current user
         return status.user_id === user.id;
-      });
-      
-      console.log("FILTERED JOB STATUSES:", {
-        currentUserId: user.id,
-        allStatuses: data?.length,
-        filteredStatuses: filteredData.length,
-        filteredData
       });
       
       return filteredData;
