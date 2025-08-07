@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { Filter, Search, X } from "lucide-react";
 
 interface JobsFilterProps {
@@ -22,6 +23,7 @@ export const JobsFilter = ({
   onClearFilters
 }: JobsFilterProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: jobStatuses = [] } = useJobStatuses();
   
   const hasActiveFilters = searchTerm || statusFilter !== "all";
 
@@ -75,14 +77,14 @@ export const JobsFilter = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="planning">Planning</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  {jobStatuses.map(status => (
+                    <SelectItem key={status.id} value={status.name.toLowerCase()}>
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full bg-${status.color}-500`} />
+                        <span>{status.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

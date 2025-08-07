@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, Clock, CheckCircle, Eye, FileText, Edit } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 
@@ -17,6 +18,7 @@ interface ProjectManagementProps {
 
 export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocuments }: ProjectManagementProps) => {
   const { data: projects, isLoading } = useProjects();
+  const { data: jobStatuses = [] } = useJobStatuses();
   const canViewProjects = useHasPermission('view_projects');
   const canCreateProjects = useHasPermission('create_projects');
   const canEditProjects = useHasPermission('edit_projects');
@@ -30,16 +32,25 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800";
-      case "in-production": return "bg-blue-100 text-blue-800";
-      case "approved": return "bg-purple-100 text-purple-800";
-      case "quoted": return "bg-yellow-100 text-yellow-800";
-      case "measuring": return "bg-orange-100 text-orange-800";
-      case "cancelled": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+  const getStatusColor = (statusName: string) => {
+    const statusDetails = jobStatuses.find(
+      s => s.name.toLowerCase() === statusName.toLowerCase()
+    );
+    
+    if (statusDetails) {
+      const colorMap: Record<string, string> = {
+        'gray': 'bg-gray-100 text-gray-800',
+        'blue': 'bg-blue-100 text-blue-800', 
+        'green': 'bg-green-100 text-green-800',
+        'yellow': 'bg-yellow-100 text-yellow-800',
+        'orange': 'bg-orange-100 text-orange-800',
+        'red': 'bg-red-100 text-red-800',
+        'purple': 'bg-purple-100 text-purple-800',
+      };
+      return colorMap[statusDetails.color] || 'bg-gray-100 text-gray-800';
     }
+    
+    return 'bg-gray-100 text-gray-800';
   };
 
   const getPriorityColor = (priority: string) => {
@@ -97,7 +108,10 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {projects?.filter(p => !['completed', 'cancelled'].includes(p.status)).length || 0}
+              {projects?.filter(p => {
+                const statusDetails = jobStatuses.find(s => s.name.toLowerCase() === p.status.toLowerCase());
+                return statusDetails ? statusDetails.action !== 'completed' : !['completed', 'cancelled'].includes(p.status);
+              }).length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               In progress
@@ -148,7 +162,10 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {projects?.filter(p => p.status === 'completed').length || 0}
+              {projects?.filter(p => {
+                const statusDetails = jobStatuses.find(s => s.name.toLowerCase() === p.status.toLowerCase());
+                return statusDetails ? statusDetails.action === 'completed' : p.status === 'completed';
+              }).length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               This month
@@ -203,7 +220,8 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                     <TableCell>Client #{project.client_id?.slice(0, 8) || 'Unassigned'}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(project.status)}>
-                        {project.status}
+                        {jobStatuses.find(s => s.name.toLowerCase() === project.status.toLowerCase())?.name || 
+                         project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('_', ' ')}
                       </Badge>
                     </TableCell>
                     <TableCell>
