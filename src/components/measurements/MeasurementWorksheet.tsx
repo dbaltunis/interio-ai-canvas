@@ -105,7 +105,17 @@ export const MeasurementWorksheet = ({
       
       // Calculate and save window summary if we have the required data
       const templateId = measurements.selected_template || measurements.selected_heading;
-      if (templateId && (measurements.width || measurements.rail_width) && (measurements.height || measurements.drop)) {
+      const hasWidth = measurements.width || measurements.rail_width;
+      const hasHeight = measurements.height || measurements.drop;
+      
+      console.log('Window summary check:', { 
+        templateId, 
+        hasWidth, 
+        hasHeight, 
+        measurements: Object.keys(measurements) 
+      });
+       
+      if (templateId && hasWidth && hasHeight) {
         try {
           console.log('Calculating window summary for measurement:', savedMeasurement.id);
           
