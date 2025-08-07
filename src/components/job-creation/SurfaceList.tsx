@@ -57,15 +57,19 @@ export const SurfaceList = ({
   return (
     <>
       <div className="space-y-3">
-        {surfaces.map((surface) => (
-          <WindowSummaryCard 
-            key={surface.id} 
-            surface={surface} 
-            onEditSurface={() => handleViewWindow(surface)}
-            onDeleteSurface={onDeleteSurface}
-            onViewDetails={() => handleViewWindow(surface)}
-          />
-        ))}
+        {surfaces.map((surface) => {
+          const measurement = getClientMeasurementForSurface(surface);
+          return (
+            <WindowSummaryCard 
+              key={surface.id} 
+              surface={surface} 
+              measurement={measurement}
+              onEditSurface={() => handleViewWindow(surface)}
+              onDeleteSurface={onDeleteSurface}
+              onViewDetails={() => handleViewWindow(surface)}
+            />
+          );
+        })}
       </div>
 
       {/* Window Management Dialog */}

@@ -5,6 +5,7 @@ import { useWindowSummary } from "@/hooks/useWindowSummary";
 
 interface WindowSummaryCardProps {
   surface: any;
+  measurement?: any;
   onEditSurface?: (surface: any) => void;
   onDeleteSurface?: (id: string) => void;
   onViewDetails?: (surface: any) => void;
@@ -24,8 +25,9 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
   );
 }
 
-export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
-  const { data: summary, isLoading, error } = useWindowSummary(surface.id);
+export function WindowSummaryCard({ surface, measurement, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
+  const measurementId = measurement?.id;
+  const { data: summary, isLoading, error } = useWindowSummary(measurementId);
 
   return (
     <Card className="mb-4">
