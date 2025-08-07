@@ -63,10 +63,10 @@ export const EmailTimeline = ({ email }: EmailTimelineProps) => {
         message: `Email was opened ${openCount} times.`,
         recommendation: "Very high interest! Client is highly engaged. This is an excellent opportunity - reach out now!",
         level: "very-high",
-        bgColor: "bg-purple-50",
-        borderColor: "border-purple-200", 
-        textColor: "text-purple-700",
-        iconColor: "text-purple-600"
+        bgColor: "bg-primary/5",
+        borderColor: "border-primary/20", 
+        textColor: "text-primary",
+        iconColor: "text-primary"
       };
     } else {
       return {
@@ -107,7 +107,7 @@ export const EmailTimeline = ({ email }: EmailTimelineProps) => {
       timestamp: email.opened_at,
       label: "First Opened",
       icon: Eye,
-      color: "bg-purple-500",
+      color: "bg-primary",
       badge: email.open_count > 1 ? `${email.open_count} total opens` : undefined
     });
   }

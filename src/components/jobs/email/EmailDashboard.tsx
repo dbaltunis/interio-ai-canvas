@@ -92,7 +92,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
       case 'delivered':
         return "bg-green-100 text-green-700";
       case 'opened':
-        return "bg-purple-100 text-purple-700";
+        return "bg-primary/10 text-primary";
       case 'clicked':
         return "bg-cyan-100 text-cyan-700";
       case 'bounced':
@@ -269,10 +269,10 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
             onClick={() => handleKPIClick('opened')}
           >
             <div className="flex items-center gap-1 mb-0.5">
-              <Eye className="h-3 w-3 text-purple-600 group-hover:text-purple-700 transition-colors" />
+              <Eye className="h-3 w-3 text-primary group-hover:text-primary/80 transition-colors" />
               <span className="text-xs font-medium text-muted-foreground">Opened</span>
             </div>
-            <div className="text-lg font-bold text-purple-600">{openedEmails}</div>
+            <div className="text-lg font-bold text-primary">{openedEmails}</div>
             <span className="text-xs text-muted-foreground">{openRate}%</span>
           </div>
 
@@ -441,7 +441,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                         {/* Always show open count for sent/delivered emails */}
                         {['sent', 'delivered', 'opened'].includes(email.status) && (
                           <div className="flex items-center space-x-1">
-                            <Eye className="h-3 w-3 text-purple-500" />
+                            <Eye className="h-3 w-3 text-primary" />
                             <span className={`font-medium ${email.open_count > 0 ? 'text-green-600' : 'text-gray-500'}`}>
                               {email.open_count} {email.open_count === 1 ? 'open' : 'opens'}
                             </span>

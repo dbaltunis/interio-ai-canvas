@@ -7,13 +7,13 @@
 
 @layer base {
   :root {
-    /* Company Color Palette */
-    --company-primary: 65 94 107; /* #415e6b */
-    --company-secondary: 155 182 188; /* #9bb6bc */
+    /* Company Color Palette - Proper HSL space values */
+    --company-primary: 200 25% 34%; /* #415e6b */
+    --company-secondary: 189 20% 60%; /* #9bb6bc */
     
     /* AI Design System */
     --primary: var(--company-primary);
-    --primary-foreground: 255 255 255;
+    --primary-foreground: var(--company-secondary);
     --secondary: var(--company-secondary);
     --secondary-foreground: 65 94 107;
     --accent: var(--company-secondary);

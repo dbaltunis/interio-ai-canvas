@@ -9,12 +9,12 @@ export interface CalendarSource {
 }
 
 const DEFAULT_COLORS = [
+  '#415e6b', // Company Primary
+  '#9bb6bc', // Company Secondary
   '#3B82F6', // Blue
   '#EF4444', // Red
   '#10B981', // Green
   '#F59E0B', // Amber
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
   '#06B6D4', // Cyan
   '#84CC16', // Lime
   '#F97316', // Orange

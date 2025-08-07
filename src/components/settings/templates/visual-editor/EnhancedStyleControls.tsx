@@ -33,7 +33,7 @@ const colorPresets = [
   { name: "Brand Blue", value: "#415e6b" },
   { name: "Ocean", value: "#0ea5e9" },
   { name: "Emerald", value: "#10b981" },
-  { name: "Purple", value: "#8b5cf6" },
+  { name: "Company Primary", value: "hsl(var(--company-primary))" },
   { name: "Rose", value: "#f43f5e" },
   { name: "Amber", value: "#f59e0b" },
   { name: "Slate", value: "#64748b" },
@@ -181,7 +181,7 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
                   onClick={() => updateStyles({ 
                     color: '#1e293b', 
                     backgroundColor: '#f8fafc',
-                    primaryColor: '#8b5cf6' 
+                    primaryColor: 'hsl(var(--company-primary))' 
                   })}
                   className="h-16 flex flex-col items-center justify-center gap-1 border-2"
                 >

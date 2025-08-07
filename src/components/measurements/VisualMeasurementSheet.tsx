@@ -334,13 +334,13 @@ export const VisualMeasurementSheet = ({
               {/* Curtain Drop measurement - from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center`}>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-purple-600"></div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
                   <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
                     <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-purple-600"></div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-primary"></div>
                 </div>
               )}
 
@@ -406,13 +406,13 @@ export const VisualMeasurementSheet = ({
               {/* Total Height measurement (E) - from hardware to floor */}
               {hasValue(measurements.measurement_e) && (
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-0 bottom-4 flex flex-col items-center`}>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-pink-600"></div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-secondary"></div>
                   <div className="flex-1 border-l-2 border-secondary relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       E: {displayValue(measurements.measurement_e)}
                     </span>
                   </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-pink-600"></div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-secondary"></div>
                 </div>
               )}
 

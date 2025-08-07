@@ -80,7 +80,7 @@ export const EmailCampaigns = () => {
 
             <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="h-5 w-5 text-purple-600" />
+                <Users className="h-5 w-5 text-primary" />
                 <h3 className="font-medium">Promotion</h3>
               </div>
               <p className="text-sm text-gray-600 mb-3">

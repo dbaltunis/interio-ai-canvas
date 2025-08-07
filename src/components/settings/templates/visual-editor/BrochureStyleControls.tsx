@@ -18,7 +18,7 @@ const gradientPresets = [
   { name: "Ocean Blue", value: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" },
   { name: "Sunset", value: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" },
   { name: "Forest", value: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" },
-  { name: "Royal Purple", value: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" },
+  { name: "Company Gradient", value: "linear-gradient(135deg, hsl(var(--company-primary)) 0%, hsl(var(--company-secondary)) 100%)" },
   { name: "Golden Hour", value: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" },
   { name: "Emerald", value: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)" }
 ];
@@ -103,12 +103,12 @@ export const BrochureStyleControls = ({ block, onUpdate }: BrochureStyleControls
                     <div className="flex gap-2 items-center mt-1">
                       <input
                         type="color"
-                        value={block.content.style?.accentColor || "#a855f7"}
+                        value={block.content.style?.accentColor || "hsl(var(--primary))"}
                         onChange={(e) => updateStyle('accentColor', e.target.value)}
                         className="w-10 h-10 border rounded cursor-pointer"
                       />
                       <Input
-                        value={block.content.style?.accentColor || "#a855f7"}
+                        value={block.content.style?.accentColor || "hsl(var(--primary))"}
                         onChange={(e) => updateStyle('accentColor', e.target.value)}
                         className="text-xs"
                       />
@@ -297,7 +297,7 @@ export const BrochureStyleControls = ({ block, onUpdate }: BrochureStyleControls
             >
               <div className="text-xs">
                 <div className="font-medium">Elegant</div>
-                <div className="text-muted-foreground">Purple gradient</div>
+                <div className="text-muted-foreground">Company gradient</div>
               </div>
             </Button>
 

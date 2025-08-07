@@ -205,11 +205,11 @@ const templatePresets = [
           style: { 
             primaryColor: '#7c3aed', 
             textColor: '#ffffff',
-            backgroundColor: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)'
+            backgroundColor: 'linear-gradient(135deg, hsl(var(--company-primary)) 0%, hsl(var(--company-secondary)) 100%)'
           }
         },
         styles: {
-          background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+          background: 'linear-gradient(135deg, hsl(var(--company-primary)) 0%, hsl(var(--company-secondary)) 100%)',
           color: '#ffffff',
           borderRadius: '1rem',
           padding: '3rem',

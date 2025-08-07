@@ -124,7 +124,7 @@ export const EmailAnalytics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{clickRate}%</div>
+            <div className="text-2xl font-bold text-primary">{clickRate}%</div>
             <p className="text-xs text-gray-600 mt-1">
               {totalClicks} total clicks
             </p>
@@ -170,7 +170,7 @@ export const EmailAnalytics = () => {
                 <Tooltip />
                 <Line type="monotone" dataKey="sent" stroke="#3B82F6" strokeWidth={2} name="Sent" />
                 <Line type="monotone" dataKey="opened" stroke="#10B981" strokeWidth={2} name="Opened" />
-                <Line type="monotone" dataKey="clicked" stroke="#8B5CF6" strokeWidth={2} name="Clicked" />
+                <Line type="monotone" dataKey="clicked" stroke="hsl(var(--primary))" strokeWidth={2} name="Clicked" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>

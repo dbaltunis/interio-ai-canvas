@@ -257,7 +257,7 @@ function getTypeColor(type: string): string {
     living_room: "#3B82F6",
     bedroom: "#10B981",
     kitchen: "#F59E0B",
-    bathroom: "#8B5CF6",
+    bathroom: "hsl(var(--primary))",
     dining_room: "#EF4444",
     office: "#6B7280",
     unknown: "#9CA3AF"

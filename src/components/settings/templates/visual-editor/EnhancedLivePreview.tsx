@@ -221,7 +221,7 @@ export const EnhancedLivePreview = ({
                   ))}
                 </div>
               ) : (
-                <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-gray-600 text-lg font-medium mb-2">
                       {block.content.caption || "Beautiful Window Treatments"}
@@ -243,7 +243,7 @@ export const EnhancedLivePreview = ({
               // Detailed itemized view for brochure style
               <div className="space-y-6">
                 <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 border-b">
+                  <div className="bg-gradient-to-r from-primary/5 to-secondary/5 px-4 py-3 border-b">
                     <h4 className="font-semibold text-brand-primary">Living Room - Main Window</h4>
                   </div>
                   <div className="overflow-x-auto">
