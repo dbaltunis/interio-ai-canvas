@@ -17,7 +17,7 @@ export const EnhancedClientManagement = () => {
   const getTypeColor = (type: string) => {
     return type === "B2B" 
       ? "bg-blue-100 text-blue-800" 
-      : "bg-purple-100 text-purple-800";
+      : "bg-secondary text-secondary-foreground";
   };
 
   const getTypeIcon = (type: string) => {

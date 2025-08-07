@@ -482,7 +482,7 @@ export const InteractiveProjectDialog = ({
                       </Card>
                       <Card>
                         <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold text-purple-600">{surfaces.length}</div>
+                          <div className="text-2xl font-bold text-primary">{surfaces.length}</div>
                           <div className="text-sm text-muted-foreground">Surfaces</div>
                         </CardContent>
                       </Card>

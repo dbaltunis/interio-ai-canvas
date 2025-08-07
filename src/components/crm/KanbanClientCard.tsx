@@ -34,7 +34,7 @@ const FUNNEL_STAGES = [
   { key: "lead", label: "Lead", icon: User, color: "bg-gray-100 text-gray-800" },
   { key: "contacted", label: "Contacted", icon: Mail, color: "bg-blue-100 text-blue-800" },
   { key: "measuring_scheduled", label: "Measuring", icon: Calendar, color: "bg-yellow-100 text-yellow-800" },
-  { key: "quoted", label: "Quoted", icon: FileText, color: "bg-purple-100 text-purple-800" },
+  { key: "quoted", label: "Quoted", icon: FileText, color: "bg-secondary text-secondary-foreground" },
   { key: "approved", label: "Approved", icon: CheckCircle, color: "bg-green-100 text-green-800" },
   { key: "in_production", label: "In Production", icon: Settings, color: "bg-orange-100 text-orange-800" },
   { key: "completed", label: "Completed", icon: CheckCircle, color: "bg-emerald-100 text-emerald-800" }

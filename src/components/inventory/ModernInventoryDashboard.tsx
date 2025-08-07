@@ -215,7 +215,7 @@ export const ModernInventoryDashboard = () => {
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("assemblies")}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Package className="h-5 w-5 text-purple-500" />
+                  <Package className="h-5 w-5 text-primary" />
                   Assembly Kits
                 </CardTitle>
                 <CardDescription>

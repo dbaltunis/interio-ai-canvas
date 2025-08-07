@@ -217,7 +217,7 @@ export const InventoryDemoData = () => {
           </div>
           
           <div className="flex items-center gap-3 p-3 border rounded-lg">
-            <Package className="h-8 w-8 text-purple-500" />
+            <Package className="h-8 w-8 text-primary" />
             <div>
               <div className="font-semibold">{sampleInventoryData.length} Total Items</div>
               <div className="text-sm text-muted-foreground">Ready to use</div>

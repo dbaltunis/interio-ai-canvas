@@ -59,8 +59,8 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-1">
-                <Eye className="h-4 w-4 text-purple-600" />
-                <div className="text-2xl font-bold text-purple-600">{emailStats.totalOpens}</div>
+                <Eye className="h-4 w-4 text-primary" />
+                <div className="text-2xl font-bold text-primary">{emailStats.totalOpens}</div>
               </div>
               <div className="text-sm text-muted-foreground">Total Opens</div>
             </CardContent>

@@ -43,11 +43,11 @@ export const ProjectStats = ({ roomsCount, surfacesCount, treatmentsCount, proje
       <Card className="bg-card border-border hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Package className="h-4 w-4 text-purple-600" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Package className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-purple-600">{treatmentsCount}</p>
+              <p className="text-2xl font-bold text-primary">{treatmentsCount}</p>
               <p className="text-sm text-muted-foreground">Treatments</p>
             </div>
           </div>

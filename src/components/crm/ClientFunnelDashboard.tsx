@@ -28,7 +28,7 @@ const FUNNEL_STAGES = [
   { key: "lead", label: "Leads", icon: Users, color: "bg-gray-100 text-gray-800" },
   { key: "contacted", label: "Contacted", icon: Mail, color: "bg-blue-100 text-blue-800" },
   { key: "measuring_scheduled", label: "Measuring", icon: Calendar, color: "bg-yellow-100 text-yellow-800" },
-  { key: "quoted", label: "Quoted", icon: FileText, color: "bg-purple-100 text-purple-800" },
+  { key: "quoted", label: "Quoted", icon: FileText, color: "bg-secondary text-secondary-foreground" },
   { key: "approved", label: "Approved", icon: CheckCircle, color: "bg-green-100 text-green-800" },
   { key: "in_production", label: "In Production", icon: Settings, color: "bg-orange-100 text-orange-800" },
   { key: "completed", label: "Completed", icon: CheckCircle, color: "bg-emerald-100 text-emerald-800" }
@@ -142,13 +142,13 @@ export const ClientFunnelDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg. Deal Size</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-primary">
               ${clientsByStage.approved?.length > 0 ? Math.round(totalValue / clientsByStage.approved.length).toLocaleString() : 0}
             </div>
             <p className="text-xs text-muted-foreground">Per project</p>

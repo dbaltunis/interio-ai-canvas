@@ -137,7 +137,7 @@ export const ModernMessageCenter = ({ isOpen, onClose }: ModernMessageCenterProp
                                   {user.display_name}
                                 </p>
                                 {conversation.unread_count > 0 && (
-                                  <Badge className="bg-gradient-to-r from-red-400 to-pink-500 text-white border-0 text-xs">
+                                  <Badge className="bg-primary text-primary-foreground border-0 text-xs">
                                     {conversation.unread_count}
                                   </Badge>
                                 )}

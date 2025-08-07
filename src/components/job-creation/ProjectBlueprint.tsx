@@ -41,8 +41,8 @@ export const ProjectBlueprint = ({ rooms, surfaces, treatments, projectTotal }: 
           </div>
           <div className="text-center p-4 bg-white rounded-lg shadow-sm">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Package className="h-5 w-5 text-purple-600" />
-              <span className="text-2xl font-bold text-purple-600">{treatments.length}</span>
+              <Package className="h-5 w-5 text-primary" />
+              <span className="text-2xl font-bold text-primary">{treatments.length}</span>
             </div>
             <p className="text-sm text-gray-600">Treatments</p>
           </div>

@@ -326,7 +326,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <CalendarIcon className="h-4 w-4 text-purple-500" />
+                      <CalendarIcon className="h-4 w-4 text-primary" />
                       <Label htmlFor="calendar-event" className="text-sm">Calendar Event</Label>
                     </div>
                     <Switch

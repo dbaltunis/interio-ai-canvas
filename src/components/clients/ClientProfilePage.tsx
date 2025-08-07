@@ -52,7 +52,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
   const getTypeColor = (type: string) => {
     return type === "B2B" 
       ? "bg-blue-100 text-blue-800 border-blue-200" 
-      : "bg-purple-100 text-purple-800 border-purple-200";
+      : "bg-secondary text-secondary-foreground border-secondary";
   };
 
   const getTypeIcon = (type: string) => {

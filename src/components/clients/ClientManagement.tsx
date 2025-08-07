@@ -15,7 +15,7 @@ export const ClientManagement = () => {
   const getTypeColor = (type: string) => {
     return type === "B2B" 
       ? "bg-blue-100 text-blue-800" 
-      : "bg-purple-100 text-purple-800";
+      : "bg-secondary text-secondary-foreground";
   };
 
   const getTypeIcon = (type: string) => {
@@ -72,7 +72,7 @@ export const ClientManagement = () => {
             <CardTitle className="text-lg">B2C Clients</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-primary">
               {clients?.filter(client => client.client_type === 'B2C').length || 0}
             </div>
           </CardContent>

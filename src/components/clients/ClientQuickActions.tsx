@@ -40,7 +40,7 @@ export const ClientQuickActions = ({ client }: ClientQuickActionsProps) => {
       label: 'Start Job',
       action: () => setJobDialogOpen(true),
       disabled: false,
-      color: 'text-purple-600 hover:text-purple-700 hover:bg-purple-50',
+      color: 'text-primary hover:text-primary/80 hover:bg-primary/10',
     },
     {
       icon: Phone,
