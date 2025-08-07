@@ -33,20 +33,6 @@ export const JobStatusDropdown = ({
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Debug logging
-  console.log("JobStatusDropdown Debug:", {
-    currentStatus,
-    jobType,
-    jobStatuses,
-    availableStatuses: jobStatuses.filter(status => {
-      if (jobType === "quote") {
-        return status.category === "Quote";
-      } else {
-        return status.category === "Project";
-      }
-    })
-  });
-
   // Permission checks
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditOwnJobs = useHasPermission('edit_own_jobs');
@@ -64,13 +50,6 @@ export const JobStatusDropdown = ({
   // Get current status details - exact match first, then case-insensitive
   const currentStatusDetails = jobStatuses.find(status => status.name === currentStatus) || 
                                jobStatuses.find(status => status.name.toLowerCase() === currentStatus.toLowerCase());
-
-  console.log("Status matching debug:", {
-    currentStatus,
-    currentStatusDetails,
-    exactMatch: jobStatuses.find(status => status.name === currentStatus),
-    caseInsensitiveMatch: jobStatuses.find(status => status.name.toLowerCase() === currentStatus.toLowerCase())
-  });
 
   const getStatusColor = (color: string) => {
     const colorMap: Record<string, string> = {
