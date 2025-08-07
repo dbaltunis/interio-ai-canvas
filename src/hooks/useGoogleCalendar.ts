@@ -56,13 +56,16 @@ export const useGoogleCalendarIntegration = () => {
 
   const connect = useMutation({
     mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Real Google OAuth flow - would redirect to Google
-      const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+      const clientId = '1080600437939-i9nb8ctb5dqvu59dvvtor9j6mt2n02ve.apps.googleusercontent.com';
       if (!clientId) {
         throw new Error('Google Client ID not configured');
       }
 
-      const redirectUri = `${window.location.origin}/auth/google/callback`;
+      const redirectUri = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`;
       const scope = 'https://www.googleapis.com/auth/calendar';
       
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -71,7 +74,8 @@ export const useGoogleCalendarIntegration = () => {
         `scope=${encodeURIComponent(scope)}&` +
         `response_type=code&` +
         `access_type=offline&` +
-        `prompt=consent`;
+        `prompt=consent&` +
+        `state=${user.id}`;
 
       window.location.href = googleAuthUrl;
     },

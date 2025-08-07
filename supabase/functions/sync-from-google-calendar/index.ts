@@ -34,9 +34,10 @@ serve(async (req) => {
 
     // Get the Google Calendar integration
     const { data: integration, error: integrationError } = await supabaseClient
-      .from('google_calendar_integrations')
+      .from('integration_settings')
       .select('*')
       .eq('user_id', user.id)
+      .eq('integration_type', 'google_calendar')
       .single();
 
     if (integrationError || !integration) {
@@ -47,10 +48,10 @@ serve(async (req) => {
     const timeMin = new Date().toISOString();
     const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 days
 
-    let accessToken = integration.access_token;
+    let accessToken = integration.api_credentials?.access_token;
     
     // Check if token needs refresh
-    if (integration.token_expires_at && new Date(integration.token_expires_at) <= new Date()) {
+    if (integration.api_credentials?.expires_at && new Date(integration.api_credentials.expires_at) <= new Date()) {
       // Refresh the token
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -58,9 +59,9 @@ serve(async (req) => {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: '1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com',
-          client_secret: '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',
-          refresh_token: integration.refresh_token ?? '',
+          client_id: Deno.env.get('GOOGLE_CLIENT_ID') || '',
+          client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') || '',
+          refresh_token: integration.api_credentials?.refresh_token ?? '',
           grant_type: 'refresh_token',
         }),
       });
@@ -73,10 +74,14 @@ serve(async (req) => {
       accessToken = refreshData.access_token;
 
       await supabaseClient
-        .from('google_calendar_integrations')
+        .from('integration_settings')
         .update({
-          access_token: accessToken,
-          token_expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+          api_credentials: {
+            ...integration.api_credentials,
+            access_token: accessToken,
+            expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+          },
+          updated_at: new Date().toISOString(),
         })
         .eq('id', integration.id);
     }

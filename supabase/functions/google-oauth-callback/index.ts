@@ -57,13 +57,13 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        client_id: Deno.env.get('GOOGLE_CLIENT_ID') || '1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com',
-        client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') || '',
-        code: code,
-        grant_type: 'authorization_code',
-        redirect_uri: `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`,
-      }),
+        body: new URLSearchParams({
+          client_id: Deno.env.get('GOOGLE_CLIENT_ID') || '',
+          client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') || '',
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`,
+        }),
     });
 
     if (!tokenResponse.ok) {
@@ -114,17 +114,23 @@ serve(async (req) => {
 
     // Store or update the integration
     const { error: dbError } = await supabaseClient
-      .from('google_calendar_integrations')
+      .from('integration_settings')
       .upsert({
         user_id: userId,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        token_expires_at: expiresAt,
-        calendar_id: 'primary',
-        sync_enabled: true,
+        integration_type: 'google_calendar',
+        active: true,
+        api_credentials: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: expiresAt,
+        },
+        configuration: {
+          calendar_id: 'primary',
+          sync_enabled: true,
+        },
         updated_at: new Date().toISOString(),
       }, {
-        onConflict: 'user_id'
+        onConflict: 'user_id,integration_type'
       });
 
     if (dbError) {
