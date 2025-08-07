@@ -307,10 +307,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Rail Width measurement - positioned near the hardware */}
               {hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center z-20`}>
+                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-20`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-lg z-30 whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -320,9 +320,9 @@ export const VisualMeasurementSheet = ({
               
               {/* Rail Width placeholder when empty */}
               {!hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-0" : "top-12"} left-12 right-12 flex items-center opacity-50 z-20`}>
+                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center opacity-50 z-20`}>
                   <div className="flex-1 border-t-2 border-dashed border-gray-400 relative">
-                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white px-3 py-2 rounded-lg text-xs font-medium z-30 whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white px-2 py-1 rounded text-xs font-medium z-30 whitespace-nowrap">
                       Enter Rail Width →
                     </span>
                   </div>
@@ -331,10 +331,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Window Width Measurement (A) */}
               {hasValue(measurements.measurement_a) && (
-                <div className="absolute top-20 left-16 right-16 flex items-center z-20">
+                <div className="absolute top-16 left-16 right-16 flex items-center z-15">
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
                   <div className="flex-1 border-t-2 border-green-600 relative">
-                    <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-lg z-30 whitespace-nowrap">
+                    <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       A: {displayValue(measurements.measurement_a)}
                     </span>
                   </div>
@@ -344,10 +344,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Drop measurement - from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center z-20`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-2 flex flex-col items-center z-15`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
                   <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
-                    <span className="absolute -left-28 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap shadow-lg z-30">
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap shadow-lg z-30">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
@@ -357,9 +357,9 @@ export const VisualMeasurementSheet = ({
               
               {/* Drop placeholder when empty */}
               {!hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-4 flex flex-col items-center opacity-50 z-20`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-2 flex flex-col items-center opacity-50 z-15`}>
                   <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-dashed border-gray-400 relative`}>
-                    <span className="absolute -left-28 top-1/2 transform -translate-y-1/2 bg-gray-400 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap z-30">
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-gray-400 text-white px-2 py-1 rounded text-xs font-medium whitespace-nowrap z-30">
                       Enter Drop Height ↓
                     </span>
                   </div>
@@ -368,10 +368,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Window Height Measurement (B) */}
               {hasValue(measurements.measurement_b) && (
-                <div className="absolute top-24 left-8 bottom-16 flex flex-col items-center">
+                <div className="absolute top-24 left-6 bottom-16 flex flex-col items-center z-15">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
                   <div className="flex-1 border-l-2 border-orange-600 relative">
-                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap shadow-lg z-30">
                       B: {displayValue(measurements.measurement_b)}
                     </span>
                   </div>
