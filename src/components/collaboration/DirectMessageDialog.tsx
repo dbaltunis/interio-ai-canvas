@@ -59,53 +59,51 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
     setUploading(true);
     
     try {
-      // Upload file to Supabase Storage
+      // Generate a unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const filePath = `messages/${user.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('project-documents')
-        .upload(filePath, file);
+      console.log('Uploading file:', fileName, 'to path:', filePath);
 
-      if (uploadError) throw uploadError;
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('project-documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('project-documents')
         .getPublicUrl(filePath);
 
-      // Create and send message with file attachment immediately
+      console.log('Public URL:', publicUrl);
+
+      // Create file message content
       const fileMessage = `📎 **${file.name}**\n\n[View File](${publicUrl})`;
       
-      // Create local message for immediate display
-      const newMessage = {
-        id: `file-${Date.now()}-${Math.random()}`,
-        sender_id: user.id,
-        recipient_id: activeConversation,
-        content: fileMessage,
-        created_at: new Date().toISOString(),
-        sender_profile: {
-          display_name: user.email || 'You',
-          avatar_url: undefined
-        }
-      };
-
-      // Add to local messages immediately for instant display
-      setLocalMessages(prev => [...prev, newMessage]);
-      
-      // Trigger query invalidation to refresh the messages
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      // Use the existing sendMessage function instead of manual local state
+      sendMessage(activeConversation, fileMessage);
 
       toast({
         title: "File uploaded",
         description: `${file.name} has been shared successfully.`,
       });
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
-        title: "Upload failed",
-        description: "There was an error uploading your file. Please try again.",
+        title: "Upload failed", 
+        description: error.message || "There was an error uploading your file. Please try again.",
         variant: "destructive",
       });
     } finally {
