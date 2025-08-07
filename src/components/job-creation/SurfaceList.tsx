@@ -270,14 +270,27 @@ export const SurfaceList = ({
                                  Cost Calculation
                                </div>
                                
-                               {/* Template Information */}
-                               <div className="col-span-2 bg-blue-50 p-3 rounded-lg mb-3">
-                                 <div className="text-sm text-gray-600 mb-1">Template: <span className="font-medium text-blue-700">{selectedTemplate.name || 'curtain testing 1'}</span></div>
-                                 <div className="text-xs text-gray-500">
-                                   Pricing: {selectedTemplate.pricing_type || 'per_metre'} • 
-                                   Waste factor: {measurements.waste_factor || selectedTemplate.waste_percent || 5}%
-                                 </div>
-                               </div>
+                                {/* Template Information */}
+                                <div className="col-span-2 bg-blue-50 p-3 rounded-lg mb-3">
+                                  <div className="text-sm text-gray-600 mb-1">
+                                    Template: <span className="font-medium text-blue-700">
+                                      {(() => {
+                                        const template = curtainTemplates.find(t => t.id === selectedTemplate);
+                                        return template?.name || selectedTemplate || measurements.treatment_type || 'Unknown Template';
+                                      })()}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Pricing: {(() => {
+                                      const template = curtainTemplates.find(t => t.id === selectedTemplate);
+                                      return template?.pricing_type || 'per_metre';
+                                    })()} • 
+                                    Waste factor: {(() => {
+                                      const template = curtainTemplates.find(t => t.id === selectedTemplate);
+                                      return measurements.waste_factor || template?.waste_percent || 5;
+                                    })()}%
+                                  </div>
+                                </div>
                                
                                {/* Fabric Usage */}
                                <div className="text-gray-600 flex items-center gap-1">
@@ -289,9 +302,12 @@ export const SurfaceList = ({
                                  <div className="text-sm text-gray-600">
                                    {fabricCalculation.linearMeters.toFixed(2)}m linear ({fabricCalculation.widthsRequired} width(s) × {(drop/100).toFixed(2)}m drop)
                                  </div>
-                                 <div className="text-xs text-blue-600">
-                                   Selected Fabric • {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
-                                 </div>
+                                  <div className="text-xs text-blue-600">
+                                    {(() => {
+                                      const fabricItem = inventory.find(item => item.id === selectedFabric);
+                                      return fabricItem?.name || 'Selected Fabric';
+                                    })()} • {formatCurrency(fabricCalculation.pricePerMeter, userCurrency)}/m
+                                  </div>
                                </div>
                                
                                {/* Lining (if selected) */}
@@ -319,7 +335,10 @@ export const SurfaceList = ({
                                  <div className="font-bold text-lg text-orange-600">
                                    {formatCurrency(fabricCalculation.manufacturingCost, userCurrency)}
                                  </div>
-                                 <div className="text-sm text-gray-600">{selectedTemplate.manufacturing_type || 'machine'}</div>
+                                  <div className="text-sm text-gray-600">{(() => {
+                                    const template = curtainTemplates.find(t => t.id === selectedTemplate);
+                                    return template?.manufacturing_type || 'machine';
+                                  })()}</div>
                                </div>
                                
                                {/* View calculation details link */}
