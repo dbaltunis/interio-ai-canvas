@@ -19,7 +19,12 @@ export default {
 		},
 		extend: {
 			colors: {
-				// InterioApp Brand Colors
+				// Company brand colors with AI design system
+				company: {
+					primary: 'hsl(var(--company-primary))',
+					secondary: 'hsl(var(--company-secondary))',
+				},
+				// InterioApp Brand Colors (legacy support)
 				brand: {
 					primary: '#415e6b',
 					secondary: '#9bb6bc',
