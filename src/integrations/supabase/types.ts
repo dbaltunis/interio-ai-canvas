@@ -3168,6 +3168,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      current_user_has_permission: {
+        Args: { permission_name: string }
+        Returns: boolean
+      }
       get_account_owner: {
         Args: { user_id_param: string }
         Returns: string
