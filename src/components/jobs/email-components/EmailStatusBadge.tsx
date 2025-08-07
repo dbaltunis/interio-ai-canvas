@@ -13,7 +13,7 @@ export const EmailStatusBadge = ({ status }: EmailStatusBadgeProps) => {
       case 'delivered':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'opened':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-primary/10 text-primary border-primary/20';
       case 'clicked':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'bounced':

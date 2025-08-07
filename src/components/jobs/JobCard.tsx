@@ -51,7 +51,7 @@ export const JobCard = ({
         'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
         'orange': 'bg-orange-100 text-orange-800 border-orange-200',
         'red': 'bg-red-100 text-red-800 border-red-200',
-        'purple': 'bg-purple-100 text-purple-800 border-purple-200',
+        'primary': 'bg-primary/10 text-primary border-primary/20',
       };
       return colorMap[statusDetails.color] || 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -175,7 +175,7 @@ export const JobCard = ({
               </div>
               
               <Badge variant="outline" className={`text-xs ${
-                client.client_type === 'B2B' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-purple-50 text-purple-700 border-purple-200'
+                client.client_type === 'B2B' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-secondary/20 text-secondary-foreground border-secondary'
               }`}>
                 {client.client_type || 'B2C'}
               </Badge>

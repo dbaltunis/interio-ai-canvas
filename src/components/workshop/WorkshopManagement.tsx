@@ -158,7 +158,7 @@ export const WorkshopManagement = () => {
               </p>
             </div>
 
-            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-purple-600" />
                 <span className="font-medium text-purple-900">Quality Check</span>

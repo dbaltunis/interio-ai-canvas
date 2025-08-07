@@ -21,7 +21,7 @@ export const JobStatusBadge = ({ status }: JobStatusBadgeProps) => {
       'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
       'orange': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800',
       'red': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
-      'purple': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800',
+      'primary': 'bg-primary/10 text-primary border-primary/20',
     };
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200';
   };

@@ -67,7 +67,7 @@ export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClient
             </div>
             
             <Badge variant="outline" className={`${
-              client.client_type === 'B2B' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-purple-50 text-purple-700 border-purple-200'
+              client.client_type === 'B2B' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-secondary/20 text-secondary-foreground border-secondary'
             }`}>
               {client.client_type || 'B2C'}
             </Badge>
