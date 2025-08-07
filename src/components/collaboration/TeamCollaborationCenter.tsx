@@ -343,62 +343,77 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     <TabsContent value="messages" className="flex-1 overflow-y-auto p-4 mt-0">
                       {conversations.length > 0 ? (
                         <div className="space-y-3">
-                          <p className="text-white/80 text-sm mb-3 font-medium">Recent Conversations</p>
-                           {conversations.map((conversation, index) => (
-                             <motion.div
-                               key={conversation.user_id || index}
-                               initial={{ opacity: 0, y: 20 }}
-                               animate={{ opacity: 1, y: 0 }}
-                               transition={{ delay: index * 0.1 }}
-                               className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
-                               onClick={() => {
-                                 openConversation(conversation.user_id);
-                                 setMessageDialogOpen(true);
-                               }}
-                             >
-                               <div className="flex items-center gap-3">
-                                 <Avatar className="h-10 w-10">
-                                   <AvatarImage src={conversation.user_profile?.avatar_url} />
-                                   <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-sm">
-                                     {conversation.user_profile?.display_name?.charAt(0) || 'U'}
-                                   </AvatarFallback>
-                                 </Avatar>
-                                 
-                                 <div className="flex-1 min-w-0">
-                                   <div className="flex items-center justify-between mb-1">
-                                     <p className="font-medium text-white truncate">
-                                       {conversation.user_profile?.display_name || 'Unknown User'}
-                                     </p>
-                                     {conversation.unread_count > 0 && (
-                                       <Badge className="bg-red-500 text-white text-xs">
-                                         {conversation.unread_count}
-                                       </Badge>
-                                     )}
-                                   </div>
-                                   <p className="text-sm text-white/60 truncate">
-                                     {conversation.last_message?.content || 'No messages yet'}
-                                   </p>
-                                   {conversation.last_message?.created_at && (
-                                     <p className="text-xs text-white/50 mt-1">
-                                       {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
-                                         day: 'numeric', 
-                                         month: 'short',
-                                         hour: '2-digit',
-                                         minute: '2-digit'
-                                       })}
-                                     </p>
-                                   )}
-                                 </div>
-                                 
-                                 <MessageCircle className="h-4 w-4 text-white/50" />
-                               </div>
-                             </motion.div>
-                           ))}
+                          <p className="text-white/80 text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
+                          {conversations.map((conversation, index) => (
+                            <motion.div
+                              key={conversation.user_id || index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
+                              onClick={() => {
+                                openConversation(conversation.user_id);
+                                setMessageDialogOpen(true);
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={conversation.user_profile?.avatar_url} />
+                                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-sm">
+                                    {conversation.user_profile?.display_name?.charAt(0) || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <p className="font-medium text-white truncate">
+                                      {conversation.user_profile?.display_name || 'Unknown User'}
+                                    </p>
+                                    {conversation.unread_count > 0 && (
+                                      <Badge className="bg-red-500 text-white text-xs">
+                                        {conversation.unread_count}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-white/60 truncate">
+                                    {conversation.last_message?.content || 'No messages yet'}
+                                  </p>
+                                  {conversation.last_message?.created_at && (
+                                    <p className="text-xs text-white/50 mt-1">
+                                      {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
+                                        day: 'numeric', 
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                  )}
+                                </div>
+                                
+                                <MessageCircle className="h-4 w-4 text-white/50" />
+                              </div>
+                            </motion.div>
+                          ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8">
-                          <MessageCircle className="mx-auto h-12 w-12 text-white/50 mb-4" />
-                          <p className="text-white/70 mb-4">Start conversations with your team</p>
+                        <div className="text-center py-8 space-y-4">
+                          <MessageCircle className="mx-auto h-16 w-16 text-white/40 mb-4" />
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold text-white">No Conversations Yet</h3>
+                            <p className="text-white/70 text-sm max-w-xs mx-auto leading-relaxed">
+                              You haven't started any conversations yet. 
+                            </p>
+                          </div>
+                          
+                          <div className="bg-white/5 rounded-lg p-4 border border-white/10 max-w-sm mx-auto">
+                            <p className="text-white/80 text-sm mb-3 font-medium">💡 How to start a conversation:</p>
+                            <p className="text-white/60 text-xs text-left">
+                              1. Go to the <strong>Team</strong> tab above<br/>
+                              2. Click on any team member's profile<br/>
+                              3. Start messaging them directly
+                            </p>
+                          </div>
+                          
                           <Button 
                             onClick={() => setMessageDialogOpen(true)}
                             className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
