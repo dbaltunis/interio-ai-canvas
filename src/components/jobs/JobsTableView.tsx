@@ -369,7 +369,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       variant="secondary" 
                       className={getStatusColor(currentStatus)}
                     >
-                      {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
+                      {(() => {
+                        // Find the custom status to get the proper display name
+                        const customStatus = jobStatuses.find(s => s.name.toLowerCase() === currentStatus?.toLowerCase());
+                        if (customStatus) {
+                          return customStatus.name;
+                        }
+                        // Fallback to formatted version
+                        return currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ');
+                      })()}
                     </Badge>
                   </TableCell>
                   <TableCell>
