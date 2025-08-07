@@ -5,6 +5,8 @@ import { RectangleHorizontal, Trash2, Eye } from "lucide-react";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { WindowManagementDialog } from "./WindowManagementDialog";
 import { calculateFabricUsage } from "./treatment-pricing/fabric-calculation/fabricUsageCalculator";
+import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
+import { useBusinessSettings, formatMeasurement } from "@/hooks/useBusinessSettings";
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -29,6 +31,21 @@ export const SurfaceList = ({
   const [showWindowDialog, setShowWindowDialog] = useState(false);
   
   const { data: clientMeasurements } = useClientMeasurements(clientId);
+  const userCurrency = useUserCurrency();
+  const { data: businessSettings } = useBusinessSettings();
+  
+  // Get measurement units from business settings
+  const getMeasurementUnits = () => {
+    try {
+      return businessSettings?.measurement_units 
+        ? JSON.parse(businessSettings.measurement_units) 
+        : { length: 'inches', currency: 'USD' };
+    } catch {
+      return { length: 'inches', currency: 'USD' };
+    }
+  };
+  
+  const units = getMeasurementUnits();
 
   const handleViewWindow = (surface: any) => {
     setSelectedSurface(surface);
@@ -89,10 +106,10 @@ export const SurfaceList = ({
                           // Use rail_width/drop if available (from worksheet), otherwise use measurement_a/b
                           const width = measurements.rail_width || measurements.measurement_a || surface.width;
                           const height = measurements.drop || measurements.measurement_b || surface.height;
-                          return `${width}" × ${height}" (From worksheet)`;
+                          return `${formatMeasurement(width, units.length)} × ${formatMeasurement(height, units.length)} (From worksheet)`;
                         })()
                       ) : (
-                        `${surface.width}" × ${surface.height}" (Basic dimensions)`
+                        `${formatMeasurement(surface.width, units.length)} × ${formatMeasurement(surface.height, units.length)} (Basic dimensions)`
                       )}
                     </p>
                   </div>
@@ -137,7 +154,7 @@ export const SurfaceList = ({
                       // Get dimensions from treatment measurements or fallback to surface dimensions  
                       const width = measurements.rail_width || measurements.measurement_a || surface.width;
                       const drop = measurements.drop || measurements.measurement_b || surface.height;
-                      return `${width}" × ${drop}"`;
+                      return `${formatMeasurement(width, units.length)} × ${formatMeasurement(drop, units.length)}`;
                     })()}
                   </div>
 
@@ -166,7 +183,7 @@ export const SurfaceList = ({
                        const drop = Number(measurements.drop || 0);
                        const areaSqM = (railWidth * drop) / 10000; // Convert cm² to m²
                        const manufacturingCost = areaSqM * 20; // Rate per sq metre to match worksheet
-                       return `£${manufacturingCost.toFixed(2)}`;
+                       return formatCurrency(manufacturingCost, userCurrency);
                      })()}
                    </div>
 
@@ -184,7 +201,7 @@ export const SurfaceList = ({
                          const fabricMetres = 2 * (drop / 100);
                          const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
                          const liningCost = fabricMetres * liningCostPerMetre;
-                         return `${liningType} - £${liningCost.toFixed(2)}`;
+                         return `${liningType} - ${formatCurrency(liningCost, userCurrency)}`;
                        } else {
                          return liningType;
                        }
@@ -198,7 +215,7 @@ export const SurfaceList = ({
                        const measurements = clientMeasurement.measurements as Record<string, any>;
                        const fabricId = measurements.selected_fabric || measurements.fabric_id;
                        const fabricName = fabricId === '9f6f9830-66bd-4e7c-b76a-df29d55b7a9f' ? 'Fabric to test' : 'Selected fabric';
-                       return `${fabricName} - £45.00/m`;
+                       return `${fabricName} - ${formatCurrency(45.00, userCurrency)}/m`;
                      })()}
                    </div>
 
@@ -212,7 +229,7 @@ export const SurfaceList = ({
                        // Calculate linear metres: 2 widths × drop in metres  
                        const fabricMetres = 2 * (drop / 100);
                        const fabricTotal = fabricMetres * 45;
-                       return `£${fabricTotal.toFixed(2)}`;
+                       return formatCurrency(fabricTotal, userCurrency);
                      })()}
                    </div>
 
@@ -239,7 +256,7 @@ export const SurfaceList = ({
                        const manufacturingCost = areaSqM * 20;
                        
                        const total = fabricTotal + liningCost + manufacturingCost;
-                       return `£${total.toFixed(2)}`;
+                       return formatCurrency(total, userCurrency);
                      })()}
                    </div>
                 </div>
@@ -288,14 +305,14 @@ export const SurfaceList = ({
                         <div className="text-right font-medium">{treatment.hardware || 'Not specified'}</div>
 
                         <div className="text-gray-600">Material Cost</div>
-                        <div className="text-right font-medium">£{treatment.material_cost?.toFixed(2) || '0.00'}</div>
+                        <div className="text-right font-medium">{formatCurrency(treatment.material_cost || 0, userCurrency)}</div>
 
                         <div className="text-gray-600">Labor Cost</div>
-                        <div className="text-right font-medium">£{treatment.labor_cost?.toFixed(2) || '0.00'}</div>
+                        <div className="text-right font-medium">{formatCurrency(treatment.labor_cost || 0, userCurrency)}</div>
 
                         <div className="text-gray-600 font-medium">Total Price</div>
                         <div className="text-right font-bold text-green-600">
-                          £{treatment.total_price?.toFixed(2) || '0.00'}
+                          {formatCurrency(treatment.total_price || 0, userCurrency)}
                         </div>
                       </div>
 
