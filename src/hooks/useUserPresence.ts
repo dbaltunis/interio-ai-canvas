@@ -21,7 +21,7 @@ export const useUserPresence = () => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState<string>('');
 
-  // Get all active users with real presence data
+  // Get all active users with real presence data, excluding current user
   const { data: activeUsers = [], isLoading } = useQuery({
     queryKey: ['user-presence'],
     queryFn: async (): Promise<UserPresence[]> => {
@@ -31,17 +31,19 @@ export const useUserPresence = () => {
 
       if (error) throw error;
 
-      return data.map(profile => ({
-        user_id: profile.user_id,
-        status: profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
-        last_seen: profile.last_seen,
-        user_profile: {
-          display_name: profile.display_name || 'Unknown User',
-          avatar_url: profile.avatar_url,
-          role: profile.role
-        },
-        current_activity: profile.status_message
-      }));
+      return data
+        .filter(profile => profile.user_id !== user?.id) // Exclude current user
+        .map(profile => ({
+          user_id: profile.user_id,
+          status: profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
+          last_seen: profile.last_seen,
+          user_profile: {
+            display_name: profile.display_name || 'Unknown User',
+            avatar_url: profile.avatar_url,
+            role: profile.role
+          },
+          current_activity: profile.status_message
+        }));
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -83,10 +85,17 @@ export const useUserPresence = () => {
     }
   });
 
-  // Set user online when component mounts
+  // Set user online when component mounts and track activity properly
   useEffect(() => {
     if (user) {
       updatePresenceMutation.mutate({ status: 'online' });
+
+      // Keep updating user activity every 30 seconds while active
+      const activityInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          updatePresenceMutation.mutate({ status: 'online' });
+        }
+      }, 30000);
 
       // Set user offline when page unloads
       const handleBeforeUnload = () => {
@@ -99,6 +108,7 @@ export const useUserPresence = () => {
       window.addEventListener('beforeunload', handleBeforeUnload);
       
       return () => {
+        clearInterval(activityInterval);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         updatePresenceMutation.mutate({ status: 'offline' });
       };
