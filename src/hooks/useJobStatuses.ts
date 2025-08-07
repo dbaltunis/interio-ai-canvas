@@ -21,7 +21,21 @@ export const useJobStatuses = () => {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      
+      // Filter to show statuses created by the current user or their account owner
+      const filteredData = (data || []).filter(status => {
+        // Show status if it belongs to the current user
+        return status.user_id === user.id;
+      });
+      
+      console.log("FILTERED JOB STATUSES:", {
+        currentUserId: user.id,
+        allStatuses: data?.length,
+        filteredStatuses: filteredData.length,
+        filteredData
+      });
+      
+      return filteredData;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
