@@ -58,8 +58,8 @@ serve(async (req) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: '1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com',
-        client_secret: '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',
+        client_id: Deno.env.get('GOOGLE_CLIENT_ID') || '1080600437939-9ct52n3q0qj362tgq2je28uhp9bof29p.apps.googleusercontent.com',
+        client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET') || '',
         code: code,
         grant_type: 'authorization_code',
         redirect_uri: `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`,
@@ -86,8 +86,8 @@ serve(async (req) => {
 
     // Create Supabase client with service role key
     const supabaseClient = createClient(
-      'https://ldgrcodffsalkevafbkb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkZ3Jjb2RmZnNhbGtldmFmYmtiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY5MDIwMSwiZXhwIjoyMDY2MjY2MjAxfQ.QMPtI88SaDNZY5g8V5x4mPCY5HnUZ55jlLN49x9aXW4'
+      Deno.env.get('SUPABASE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 
     // Parse state to get user_id (passed from frontend)
