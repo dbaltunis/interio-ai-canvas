@@ -122,16 +122,18 @@ export const WindowManagementDialog = ({
   };
 
   // Auto-save function when dialog closes
-  const handleDialogClose = async (open: boolean) => {
-    if (!open && worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
-      try {
-        await worksheetRef.current.autoSave();
-        console.log("Auto-saved measurements on dialog close");
-      } catch (error) {
-        console.error("Auto-save failed:", error);
+  const handleDialogOpenChange = async (open: boolean) => {
+    if (!open) {
+      if (worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
+        try {
+          await worksheetRef.current.autoSave();
+          console.log("Auto-saved measurements on dialog close");
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+        }
       }
+      onClose();
     }
-    onClose();
   };
 
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
@@ -140,7 +142,7 @@ export const WindowManagementDialog = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
