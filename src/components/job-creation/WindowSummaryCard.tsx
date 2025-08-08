@@ -2,16 +2,13 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
+import { formatCurrency, formatLinearMeters } from "@/utils/unitConversion";
 
 interface WindowSummaryCardProps {
   surface: any;
   onEditSurface?: (surface: any) => void;
   onDeleteSurface?: (id: string) => void;
   onViewDetails?: (surface: any) => void;
-}
-
-function formatCurrency(amount: number, currency: string = 'GBP') {
-  return `${currency === 'GBP' ? '£' : '$'}${amount.toFixed(2)}`;
 }
 
 function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: string }) {
@@ -28,6 +25,21 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
+
+  // Debug logging
+  console.log('WindowSummaryCard render:', {
+    windowId,
+    surfaceName: surface.name,
+    isLoading,
+    error: error?.message,
+    hasSummary: !!summary,
+    summary: summary ? {
+      total_cost: summary.total_cost,
+      linear_meters: summary.linear_meters,
+      widths_required: summary.widths_required,
+      fabric_cost: summary.fabric_cost
+    } : null
+  });
 
   return (
     <Card className="mb-4">

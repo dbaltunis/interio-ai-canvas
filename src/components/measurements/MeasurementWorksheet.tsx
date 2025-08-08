@@ -13,6 +13,8 @@ import { useRooms } from "@/hooks/useRooms";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { MeasurementSummary } from "./MeasurementSummary";
+import { cmToM } from "@/utils/unitConversion";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MeasurementWorksheetProps {
   clientId: string;
@@ -78,6 +80,8 @@ export const MeasurementWorksheet = ({
     });
   };
 
+  const queryClient = useQueryClient();
+
   const handleSave = async () => {
     if (readOnly) return;
     
@@ -106,70 +110,105 @@ export const MeasurementWorksheet = ({
       }
       
       // Calculate and save window summary if we have the required data
-      const templateId = measurements.selected_template || measurements.selected_heading;
-      const hasWidth = measurements.width || measurements.rail_width;
-      const hasHeight = measurements.height || measurements.drop;
+      const templateId = measurements.selected_template ?? measurements.selected_heading ?? null;
+      const railWidthCm = measurements.rail_width ?? measurements.width ?? 0;
+      const dropCm = measurements.drop ?? measurements.height ?? 0;
       
       console.log('Window summary check:', { 
+        surfaceId,
         templateId, 
-        hasWidth, 
-        hasHeight, 
+        railWidthCm, 
+        dropCm,
         measurements: Object.keys(measurements) 
       });
        
-      if (templateId && hasWidth && hasHeight) {
+      if (surfaceId && templateId && railWidthCm > 0 && dropCm > 0) {
         try {
-          console.log('Calculating window summary for measurement:', savedMeasurement.id);
+          console.log('Calculating window summary for window_id:', surfaceId);
           
-          // Use real fabric calculation
-          const formData = {
-            rail_width: measurements.rail_width || measurements.width,
-            drop: measurements.drop || measurements.height,
-            selected_heading: measurements.selected_heading || measurements.selected_template,
-            fabric_width: measurements.fabric_width || 137,
-            heading_fullness: measurements.fullness || 2.5,
-            return_left: measurements.return_left || 7.5,
-            return_right: measurements.return_right || 7.5,
-            overlap: measurements.overlap || 10,
-            bottom_hem: measurements.bottom_hem || 15,
-            side_hems: measurements.side_hems || 7.5,
-            fabric_item_id: measurements.fabric_item_id,
-          };
+          // Use consistent unit conversion - all calculations in metres
+          const railWidthM = cmToM(railWidthCm);
+          const dropM = cmToM(dropCm);
           
-          // Use the direct import to calculate fabric usage
-          const fabricCalculation = calculateFabricUsage(formData, [], measurements.fabric_item);
+          // Get fabric details with fallback pricing
+          const fabricItem = measurements.fabric_item || measurements.selected_fabric || null;
+          const fabricPricePerMeter = fabricItem?.price_per_meter ?? measurements.fabric_price_per_meter ?? 45;
+          const fabricWidthCm = measurements.fabric_width ?? fabricItem?.fabric_width ?? 140;
+          const fabricWidthM = cmToM(fabricWidthCm);
           
-          console.log('Fabric calculation result:', fabricCalculation);
+          // Calculate fabric requirements using the same logic as VisualMeasurementSheet
+          const fullnessRatio = measurements.fullness ?? 2.0;
+          const returnLeft = cmToM(measurements.return_left ?? 7.5);
+          const returnRight = cmToM(measurements.return_right ?? 7.5);
+          const overlap = cmToM(measurements.overlap ?? 10);
+          const bottomHem = cmToM(measurements.bottom_hem ?? 15);
+          const headerHem = cmToM(measurements.header_allowance ?? 8);
+          const sideHems = cmToM(measurements.side_hems ?? 7.5);
+          const seamHems = cmToM(measurements.seam_hems ?? 1.5);
+          const wastePercent = measurements.waste_percent ?? 5;
           
-          // Extract costs from fabric calculation result
-          const fabricCostPerMeter = measurements.fabric_item?.price_per_meter || 25;
-          const fabricCost = fabricCalculation.meters * fabricCostPerMeter;
-          const manufacturingCost = 50; // Default manufacturing cost
-          const totalCost = fabricCost + manufacturingCost;
+          // Required width calculation
+          const requiredWidthM = railWidthM * fullnessRatio + returnLeft + returnRight + overlap;
+          
+          // Calculate widths needed (round up)
+          const widthsRequired = Math.ceil(requiredWidthM / fabricWidthM);
+          
+          // Total drop including hems
+          const totalDropM = dropM + bottomHem + headerHem;
+          
+          // Linear metres calculation (with seam allowances for joining widths)
+          const seamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems : 0;
+          const linearMetersBase = widthsRequired * totalDropM;
+          const linearMetersWithWaste = linearMetersBase * (1 + wastePercent / 100);
+          const linearMeters = linearMetersWithWaste;
+          
+          // Cost calculations
+          const fabricCost = linearMeters * fabricPricePerMeter;
+          
+          // Lining calculations
+          const liningType = measurements.selected_lining ?? null;
+          const liningPricePerMeter = measurements.lining_price_per_meter ?? 22;
+          const liningCost = liningType ? linearMeters * liningPricePerMeter : 0;
+          
+          // Manufacturing costs
+          const manufacturingType = measurements.manufacturing_type ?? 'machine';
+          const manufacturingCost = manufacturingType === 'hand' ? 150 : 50;
+          
+          // Total cost
+          const totalCost = fabricCost + liningCost + manufacturingCost;
           
           const summaryData = {
-            window_id: surfaceId || savedMeasurement.id, // Use surfaceId if available, fallback to measurement ID
-            linear_meters: fabricCalculation.meters,
-            widths_required: fabricCalculation.widthsRequired,
-            price_per_meter: fabricCostPerMeter,
-            fabric_cost: fabricCost,
-            lining_type: measurements.selected_lining || null,
-            lining_cost: 0,
-            manufacturing_type: 'machine',
-            manufacturing_cost: manufacturingCost,
-            total_cost: totalCost,
-            template_id: templateId,
+            window_id: surfaceId,
+            linear_meters: Number(linearMeters.toFixed(2)),
+            widths_required: widthsRequired,
+            price_per_meter: Number(fabricPricePerMeter.toFixed(2)),
+            fabric_cost: Number(fabricCost.toFixed(2)),
+            lining_type: liningType,
+            lining_cost: Number(liningCost.toFixed(2)),
+            manufacturing_type: manufacturingType,
+            manufacturing_cost: Number(manufacturingCost.toFixed(2)),
+            total_cost: Number(totalCost.toFixed(2)),
             pricing_type: 'per_metre',
-            waste_percent: 5,
+            waste_percent: wastePercent,
             currency: 'GBP',
           };
           
           console.log('Saving window summary data:', summaryData);
           await saveWindowSummary.mutateAsync(summaryData);
           console.log('Window summary saved successfully');
+          
+          // Invalidate queries to refresh the card
+          queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
         } catch (summaryError) {
           console.error('Error saving window summary:', summaryError);
         }
+      } else {
+        console.log('Skipping window summary - missing required data:', {
+          surfaceId: !!surfaceId,
+          templateId: !!templateId,
+          railWidthCm: railWidthCm > 0,
+          dropCm: dropCm > 0
+        });
       }
 
       onSave?.();

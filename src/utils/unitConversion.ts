@@ -1,0 +1,21 @@
+/**
+ * Unit conversion utilities for consistent measurement handling
+ * Fixes the unit consistency issues between cm inputs and metre calculations
+ */
+
+export const cmToM = (cm?: number): number => {
+  return (cm ?? 0) / 100;
+};
+
+export const mToCm = (m?: number): number => {
+  return (m ?? 0) * 100;
+};
+
+export const formatCurrency = (amount: number, currency: string = 'GBP'): string => {
+  const symbol = currency === 'GBP' ? '£' : '$';
+  return `${symbol}${amount.toFixed(2)}`;
+};
+
+export const formatLinearMeters = (meters: number): string => {
+  return `${meters.toFixed(2)}m`;
+};
