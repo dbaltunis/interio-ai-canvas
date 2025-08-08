@@ -238,7 +238,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         
         {/* Compact Action Bar */}
         <div className="flex items-center space-x-2">
-          {/* Template Selector - Compact */}
+           {/* Template Selector - Compact */}
           <Select
             value={selectedTemplateId}
             onValueChange={setSelectedTemplateId}

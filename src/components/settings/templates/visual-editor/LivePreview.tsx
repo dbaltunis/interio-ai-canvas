@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
@@ -27,6 +28,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
   const [editableContent, setEditableContent] = useState<Record<string, any>>({});
+  const [viewMode, setViewMode] = useState<'simple' | 'detailed' | 'itemized' | 'visual'>('detailed');
 
   // Get client data if project data is available
   const client = projectData?.project?.client_id 
@@ -242,8 +244,8 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
       );
     }
 
-    // Determine layout: simple | detailed | itemized | visual
-    const layout = content.layout || 'simple';
+    // Use the viewMode instead of template layout
+    const layout = viewMode;
 
     // Visual layout: card/grid presentation
     if (layout === 'visual') {
@@ -700,9 +702,25 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
   };
 
   return (
-    <div className="bg-white border rounded-lg shadow-sm max-w-4xl mx-auto">
-      <div className="p-8">
-        {blocks.map((block) => {
+    <div className="space-y-4">
+      {/* View Mode Selector */}
+      <div className="flex justify-end">
+        <Select value={viewMode} onValueChange={(v) => setViewMode(v as 'simple' | 'detailed' | 'itemized' | 'visual')}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="View" />
+          </SelectTrigger>
+          <SelectContent className="z-50 bg-background">
+            <SelectItem value="simple">Simple</SelectItem>
+            <SelectItem value="detailed">Detailed</SelectItem>
+            <SelectItem value="itemized">Itemized</SelectItem>
+            <SelectItem value="visual">Visual</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="bg-white border rounded-lg shadow-sm max-w-4xl mx-auto">
+        <div className="p-8">
+          {blocks.map((block) => {
           switch (block.type) {
             case 'header':
               return <div key={block.id}>{renderHeader(block)}</div>;
@@ -729,7 +747,8 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
             default:
               return null;
           }
-        })}
+          })}
+        </div>
       </div>
     </div>
   );
