@@ -97,7 +97,12 @@ export const RoomCard = ({
   }
 
   return (
-    <Card className="bg-white border-brand-secondary/20 shadow-sm hover:shadow-md transition-shadow">
+    <Card className="relative overflow-hidden rounded-3xl border border-brand-secondary/30 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-0.5 hover-scale ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter">
+      {/* Ambient water-drop blobs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-primary/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-28 -right-16 w-80 h-80 bg-brand-secondary/15 rounded-full blur-3xl" />
+      </div>
       <RoomHeader
         room={room}
         roomTotal={roomTotal}
