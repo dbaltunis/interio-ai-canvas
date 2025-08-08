@@ -20,11 +20,36 @@ export function useCompactMode() {
     }
   }, [compact]);
 
+  // Keep all hook instances in sync across the app
+  useEffect(() => {
+    const storageKey = "ui.compactMode";
+
+    const handleExternalChange = () => {
+      try {
+        const next = localStorage.getItem(storageKey) === "1";
+        setCompact(next);
+      } catch {}
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      if (typeof detail === "boolean") setCompact(detail);
+    };
+
+    window.addEventListener("storage", handleExternalChange);
+    window.addEventListener("compact-mode-change", handleCustomEvent as EventListener);
+    return () => {
+      window.removeEventListener("storage", handleExternalChange);
+      window.removeEventListener("compact-mode-change", handleCustomEvent as EventListener);
+    };
+  }, []);
+
   const toggleCompact = () => {
     setCompact((prev) => {
       const next = !prev;
       try {
         localStorage.setItem("ui.compactMode", next ? "1" : "0");
+        window.dispatchEvent(new CustomEvent("compact-mode-change", { detail: next }));
       } catch {}
       return next;
     });

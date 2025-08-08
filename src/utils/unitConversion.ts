@@ -11,7 +11,7 @@ export const mToCm = (m?: number): number => {
   return (m ?? 0) * 100;
 };
 
-export const formatCurrency = (amount: number, currency: string = 'GBP'): string => {
+export const formatCurrency = (amount?: number | string, currency: string = 'GBP'): string => {
   const currencySymbols: Record<string, string> = {
     'NZD': 'NZ$',
     'AUD': 'A$',
@@ -20,11 +20,15 @@ export const formatCurrency = (amount: number, currency: string = 'GBP'): string
     'EUR': '€',
     'ZAR': 'R'
   };
-  
+
   const symbol = currencySymbols[currency] || currency;
-  return `${symbol}${amount.toFixed(2)}`;
+  const n = Number(amount ?? 0);
+  const safe = Number.isFinite(n) ? n : 0;
+  return `${symbol}${safe.toFixed(2)}`;
 };
 
-export const formatLinearMeters = (meters: number): string => {
-  return `${meters.toFixed(2)}m`;
+export const formatLinearMeters = (meters?: number): string => {
+  const n = Number(meters ?? 0);
+  const safe = Number.isFinite(n) ? n : 0;
+  return `${safe.toFixed(2)}m`;
 };

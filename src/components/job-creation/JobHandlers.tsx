@@ -179,10 +179,11 @@ export const useJobHandlers = (project: any) => {
         room_type: room.room_type
       });
 
-      // Copy surfaces from the original room to the new room
+      // Copy surfaces from the original room to the new room and build an ID map
       const roomSurfaces = allSurfaces?.filter(s => s.room_id === room.id) || [];
+      const surfaceIdMap: Record<string, string> = {};
       for (const surface of roomSurfaces) {
-        await createSurface.mutateAsync({
+        const newSurface = await createSurface.mutateAsync({
           room_id: newRoom.id,
           project_id: projectId,
           name: surface.name,
@@ -190,19 +191,28 @@ export const useJobHandlers = (project: any) => {
           width: surface.width,
           height: surface.height
         });
+        surfaceIdMap[surface.id] = newSurface.id;
       }
 
-      // Copy treatments from the original room to the new room
+      // Copy treatments and re-link to the newly created surfaces
       const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
       for (const treatment of roomTreatments) {
+        const mappedWindowId = surfaceIdMap[treatment.window_id];
+        if (!mappedWindowId) continue; // skip if the original window wasn't copied
         await createTreatment.mutateAsync({
           project_id: projectId,
           room_id: newRoom.id,
-          window_id: treatment.window_id,
+          window_id: mappedWindowId,
           treatment_type: treatment.treatment_type,
           material_cost: treatment.material_cost,
           labor_cost: treatment.labor_cost,
-          total_price: treatment.total_price
+          total_price: treatment.total_price,
+          unit_price: treatment.unit_price,
+          quantity: treatment.quantity,
+          measurements: treatment.measurements,
+          fabric_details: treatment.fabric_details,
+          treatment_details: treatment.treatment_details,
+          calculation_details: treatment.calculation_details
         });
       }
 
