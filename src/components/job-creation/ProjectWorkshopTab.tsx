@@ -6,6 +6,8 @@ import { Wrench, CheckCircle, Clock, AlertCircle, Users, Package, MapPin, Scisso
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { formatCurrency } from "@/utils/currency";
 
 interface ProjectWorkshopTabProps {
   project: any;
@@ -15,33 +17,59 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
   const { data: treatments = [] } = useTreatments(project?.id);
   const { data: rooms = [] } = useRooms(project?.id);
   const { data: surfaces = [] } = useSurfaces(project?.id);
+  const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
   
-  // Generate work orders from treatments
-  const workOrders = treatments.map(treatment => {
-    const room = rooms.find(r => r.id === treatment.room_id);
-    const surface = surfaces.find(s => s.id === treatment.window_id);
-    
-    return {
-      id: treatment.id,
-      item: `${treatment.product_name || treatment.treatment_type}`,
-      location: room?.name || 'Unknown Room',
-      window: surface?.name || 'Window',
-      status: treatment.status || "pending",
-      assignee: "Workshop Team",
-      dueDate: "2024-01-20",
-      treatment_type: treatment.treatment_type,
-      fabric_type: treatment.fabric_type,
-      color: treatment.color,
-      pattern: treatment.pattern,
-      hardware: treatment.hardware,
-      measurements: treatment.measurements || {},
-      material_cost: treatment.material_cost || 0,
-      labor_cost: treatment.labor_cost || 0,
-      total_cost: treatment.total_price || 0,
-      fabric_details: treatment.fabric_details || {},
-      notes: treatment.notes
-    };
-  });
+  // Generate work orders from treatments or fallback to window summaries
+  const hasTreatments = (treatments?.length || 0) > 0;
+  const workOrders = hasTreatments
+    ? treatments.map(treatment => {
+        const room = rooms.find(r => r.id === treatment.room_id);
+        const surface = surfaces.find(s => s.id === treatment.window_id);
+        
+        return {
+          id: treatment.id,
+          item: `${treatment.product_name || treatment.treatment_type}`,
+          location: room?.name || 'Unknown Room',
+          window: surface?.name || 'Window',
+          status: treatment.status || "pending",
+          assignee: "Workshop Team",
+          dueDate: "2024-01-20",
+          treatment_type: treatment.treatment_type,
+          fabric_type: treatment.fabric_type,
+          color: treatment.color,
+          pattern: treatment.pattern,
+          hardware: treatment.hardware,
+          measurements: treatment.measurements || {},
+          material_cost: treatment.material_cost || 0,
+          labor_cost: treatment.labor_cost || 0,
+          total_cost: treatment.total_price || 0,
+          fabric_details: treatment.fabric_details || {},
+          notes: treatment.notes
+        };
+      })
+    : (projectSummaries?.windows || []).map((w) => {
+        const room = rooms.find(r => r.id === w.room_id);
+        return {
+          id: `${w.window_id}-workorder`,
+          item: `${w.summary?.template_name || 'Window Treatment'}`,
+          location: room?.name || 'Unknown Room',
+          window: w.surface_name || 'Window',
+          status: 'pending',
+          assignee: 'Workshop Team',
+          dueDate: new Date().toISOString().split('T')[0],
+          treatment_type: w.summary?.manufacturing_type,
+          fabric_type: w.summary?.fabric_details?.name,
+          color: w.summary?.fabric_details?.color,
+          pattern: w.summary?.fabric_details?.pattern,
+          hardware: w.summary?.heading_details?.hardware,
+          measurements: w.summary?.measurements_details || {},
+          material_cost: Number(w.summary?.fabric_cost || 0) + Number(w.summary?.lining_cost || 0),
+          labor_cost: Number(w.summary?.manufacturing_cost || 0),
+          total_cost: Number(w.summary?.total_cost || 0),
+          fabric_details: w.summary?.fabric_details || {},
+          notes: ''
+        };
+      });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -173,10 +201,10 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
                     <span className="text-gray-600">Assigned to {order.assignee}</span>
                     <div className="space-x-3">
                       {order.material_cost > 0 && (
-                        <span className="text-gray-600">Materials: £{order.material_cost.toFixed(2)}</span>
+                        <span className="text-gray-600">Materials: {formatCurrency(order.material_cost)}</span>
                       )}
                       {order.labor_cost > 0 && (
-                        <span className="text-gray-600">Labor: £{order.labor_cost.toFixed(2)}</span>
+                        <span className="text-gray-600">Labor: {formatCurrency(order.labor_cost)}</span>
                       )}
                     </div>
                   </div>

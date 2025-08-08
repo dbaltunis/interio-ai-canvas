@@ -4,11 +4,13 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { calculateFabricUsage } from "./treatment-pricing/fabric-calculation/fabricUsageCalculator";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 
 export const useRoomCardLogic = (room: any, projectId: string, clientId?: string, onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   const { data: clientMeasurements } = useClientMeasurements(clientId);
+  const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
@@ -32,76 +34,86 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
   
   const roomTotal = useMemo(() => {
     console.log(`=== ROOM TOTAL CALCULATION FOR ${room.name} ===`);
+    // Prefer authoritative window summaries when available
+    const summaryRoomTotal = (projectSummaries?.windows || [])
+      .filter((w) => w.room_id === room.id)
+      .reduce((sum, w) => sum + Number(w.summary?.total_cost || 0), 0);
+
+    if (summaryRoomTotal > 0) {
+      console.log(`ROOM CALC using windows_summary total: £${summaryRoomTotal.toFixed(2)}`);
+      console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${summaryRoomTotal.toFixed(2)} ===`);
+      return summaryRoomTotal;
+    }
+
     let total = 0;
-    
-    // First check if we have any treatments with pricing
+
+    // Fallback: use treatments with pricing
     const treatmentTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-    
     if (treatmentTotal > 0) {
       console.log(`Using treatment total: £${treatmentTotal}`);
       total = treatmentTotal;
     } else if (clientMeasurements) {
-      // Get measurements for this specific room
-      const roomMeasurements = clientMeasurements.filter(measurement => 
-        measurement.project_id === projectId && 
-        measurement.room_id === room.id
+      // Fallback: estimate from raw measurements (legacy)
+      const roomMeasurements = clientMeasurements.filter(
+        (measurement) => measurement.project_id === projectId && measurement.room_id === room.id
       );
-      
+
       console.log(`Found ${roomMeasurements.length} measurements for room ${room.name}`);
-      
-      // Sum up all window treatment costs in this room using proper fabric calculation
-      roomMeasurements.forEach(measurement => {
+
+      roomMeasurements.forEach((measurement) => {
         if (measurement.measurements) {
           const measurements = measurement.measurements as Record<string, any>;
-          
+
           const railWidth = Number(measurements.rail_width || 0);
           const drop = Number(measurements.drop || 0);
-          
+
           console.log(`Processing measurement ${measurement.id}: ${railWidth}" × ${drop}"`);
-          
+
           if (railWidth > 0 && drop > 0) {
-            // Use proper fabric calculation
+            // Use proper fabric calculation (kept for compatibility)
             const formData = {
               rail_width: measurements.rail_width,
               drop: measurements.drop,
               heading_fullness: 2.5,
               fabric_width: 140,
               quantity: 1,
-              fabric_type: 'plain'
+              fabric_type: 'plain',
             };
-            
+
             const calculation = calculateFabricUsage(formData, []);
-            
-            // Calculate using same logic as SurfaceList
+
+            // Legacy rough costs
             const fabricMetres = 2 * (drop / 100); // 2 widths × drop in metres
             const fabricTotal = fabricMetres * 45;
-            
+
             const liningType = measurements.selected_lining || measurements.lining_type;
             const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
-            const liningCost = (liningType && liningType !== 'none' && liningType !== 'None') ? 
-                              fabricMetres * liningCostPerMetre : 0;
-            
+            const liningCost =
+              liningType && liningType !== 'none' && liningType !== 'None' ? fabricMetres * liningCostPerMetre : 0;
+
             const areaSqM = (railWidth * drop) / 10000;
             const manufacturingCost = areaSqM * 20;
-            
+
             const measurementTotal = fabricTotal + liningCost + manufacturingCost;
             total += measurementTotal;
-            
+
             console.log(`ROOM CALC using exact worksheet total:`);
             console.log(`  Measurement ID: ${measurement.id}`);
             console.log(`  Dimensions: ${railWidth}" × ${drop}"`);
             console.log(`  Window Total: £${measurementTotal.toFixed(2)} (from worksheet)`);
             console.log(`  Running Room Total: £${total.toFixed(2)}`);
           } else {
-            console.log(`Skipping measurement ${measurement.id} - missing dimensions: rail_width=${railWidth}, drop=${drop}`);
+            console.log(
+              `Skipping measurement ${measurement.id} - missing dimensions: rail_width=${railWidth}, drop=${drop}`
+            );
           }
         }
       });
     }
-    
+
     console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total} ===`);
     return total;
-  }, [roomTreatments, clientMeasurements, projectId, room.id, room.name]);
+  }, [projectSummaries, roomTreatments, clientMeasurements, projectId, room.id, room.name]);
 
   // Remove surface creation logic from here - it will be handled by parent
 

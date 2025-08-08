@@ -2,6 +2,7 @@
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { RoomActionsMenu } from "./RoomActionsMenu";
+import { formatCurrency } from "@/utils/currency";
 
 interface RoomHeaderProps {
   room: any;
@@ -46,7 +47,7 @@ export const RoomHeader = ({
           ) : (
             <CardTitle className="text-xl text-brand-primary">{room.name}</CardTitle>
           )}
-          <p className="text-2xl font-bold text-brand-accent mt-1">£{roomTotal.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-brand-accent mt-1">{formatCurrency(roomTotal)}</p>
         </div>
         <RoomActionsMenu
           room={room}
