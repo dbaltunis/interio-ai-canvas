@@ -386,7 +386,8 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
               taxRate,
               taxAmount,
               total,
-              markupPercentage
+              markupPercentage,
+              windowSummaries: projectSummaries?.windows || []
             }}
             isEditable={true}
           />

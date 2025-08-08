@@ -20,6 +20,7 @@ interface LivePreviewProps {
     taxAmount: number;
     total: number;
     markupPercentage: number;
+    windowSummaries?: any[];
   };
   isEditable?: boolean;
 }
@@ -353,72 +354,109 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                           const surface = surfaces.find(s => s.id === treatment.window_id);
                           const surfaceName = surface?.name || 'Window';
                           
-                           // Create detailed breakdown items with proper calculations
-                          const fabricMeterage = treatment.width || treatment.fabric_meters || 0;
-                          const fabricCostPerMeter = treatment.fabric_cost_per_meter || ((treatment.material_cost || 0) * 0.6) / Math.max(fabricMeterage, 1);
-                          const fabricTotal = fabricMeterage * fabricCostPerMeter;
+                          // Get window summary data for dynamic breakdown
+                          const windowSummary = projectData?.windowSummaries?.find(
+                            (ws: any) => ws.window_id === treatment.window_id
+                          );
                           
-                          const manufacturingCost = treatment.manufacturing_cost || treatment.labor_cost || ((treatment.total_price || 0) * 0.3);
-                          const liningMeterage = treatment.lining_meters || fabricMeterage;
-                          const liningCostPerMeter = treatment.lining_cost_per_meter || 10.00;
-                          const liningTotal = treatment.lining ? liningMeterage * liningCostPerMeter : 0;
-                          
-                          const headingLength = treatment.heading_length || (treatment.width * 100) || 0; // convert to cm
-                          const headingCostPerCm = treatment.heading_cost_per_cm || 0;
-                          const headingTotal = treatment.hardware ? headingLength * headingCostPerCm : 0;
+                           const items: Array<{
+                             number: string | number;
+                             productService: string;
+                             description: string;
+                             quantity: string | number;
+                             priceRate: number;
+                             total: number;
+                             isMain: boolean;
+                           }> = [
+                             // Main product line
+                             {
+                               number: treatmentIndex + 1,
+                               productService: treatment.treatment_type || windowSummary?.template_name || 'Treatment',
+                               description: surfaceName,
+                               quantity: treatment.quantity || 1,
+                               priceRate: treatment.unit_price || 0,
+                               total: treatment.total_price || windowSummary?.total_cost || 0,
+                               isMain: true
+                             }
+                           ];
 
-                          const items = [
-                            // Main product line
-                            {
-                              number: treatmentIndex + 1,
-                              productService: treatment.treatment_type || 'Roman Blinds',
-                              description: surfaceName,
-                              quantity: treatment.quantity || 1,
-                              priceRate: treatment.unit_price || 0,
-                              total: treatment.total_price || 0,
-                              isMain: true
-                            },
-                            // Fabric line (always show if fabric exists)
-                            ...(treatment.fabric_type || fabricMeterage > 0 ? [{
-                              number: '',
-                              productService: 'Fabric',
-                              description: treatment.fabric_type || treatment.fabric_name || `Fabric | ${fabricMeterage.toFixed(1)}m`,
-                              quantity: `${fabricMeterage.toFixed(1)} m`,
-                              priceRate: fabricCostPerMeter,
-                              total: fabricTotal,
-                              isMain: false
-                            }] : []),
-                            // Manufacturing line (always show)
-                            {
-                              number: '',
-                              productService: 'Manufacturing price',
-                              description: '-',
-                              quantity: treatment.quantity || 1,
-                              priceRate: manufacturingCost / (treatment.quantity || 1),
-                              total: manufacturingCost,
-                              isMain: false
-                            },
-                            // Lining line (show if lining exists)
-                            ...(treatment.lining || treatment.lining_type || liningTotal > 0 ? [{
-                              number: '',
-                              productService: 'Lining',
-                              description: treatment.lining || treatment.lining_type || 'Blackout',
-                              quantity: `${liningMeterage.toFixed(1)} m`,
-                              priceRate: liningCostPerMeter,
-                              total: liningTotal,
-                              isMain: false
-                            }] : []),
-                            // Heading line (show if hardware/heading exists)
-                            ...(treatment.hardware || treatment.heading_type || headingTotal > 0 ? [{
-                              number: '',
-                              productService: 'Heading',
-                              description: treatment.hardware || treatment.heading_type || 'Regular Headrail',
-                              quantity: `${headingLength.toFixed(0)} cm`,
-                              priceRate: headingCostPerCm,
-                              total: headingTotal,
-                              isMain: false
-                            }] : [])
-                          ];
+                          // Add dynamic breakdown components from cost_breakdown
+                          if (windowSummary?.cost_breakdown && Array.isArray(windowSummary.cost_breakdown)) {
+                            windowSummary.cost_breakdown.forEach((component: any) => {
+                              if (component.label && component.amount > 0) {
+                                // Determine quantity and rate based on component type
+                                let quantity: string | number = 1;
+                                let priceRate = component.amount;
+
+                                // Special handling for different component types
+                                if (component.label.toLowerCase().includes('fabric')) {
+                                  const meters = windowSummary.linear_meters || treatment.width || 0;
+                                  if (meters > 0) {
+                                    quantity = `${meters.toFixed(1)} m`;
+                                    priceRate = component.amount / meters;
+                                  }
+                                } else if (component.label.toLowerCase().includes('lining')) {
+                                  const meters = windowSummary.linear_meters || treatment.width || 0;
+                                  if (meters > 0) {
+                                    quantity = `${meters.toFixed(1)} m`;
+                                    priceRate = component.amount / meters;
+                                  }
+                                } else if (component.label.toLowerCase().includes('heading')) {
+                                  const width = treatment.width || windowSummary.measurements_details?.rail_width || 0;
+                                  if (width > 0) {
+                                    quantity = `${(width * 100).toFixed(0)} cm`;
+                                    priceRate = component.amount / (width * 100);
+                                  }
+                                } else if (component.label.toLowerCase().includes('manufacturing')) {
+                                  quantity = treatment.quantity || 1;
+                                  priceRate = component.amount / (treatment.quantity || 1);
+                                }
+
+                                items.push({
+                                  number: '',
+                                  productService: component.label,
+                                  description: component.description || '-',
+                                  quantity: quantity,
+                                  priceRate: priceRate,
+                                  total: component.amount,
+                                  isMain: false
+                                });
+                              }
+                            });
+                          }
+
+                          // Add extra components from extras_details
+                          if (windowSummary?.extras_details && Array.isArray(windowSummary.extras_details)) {
+                            windowSummary.extras_details.forEach((extra: any) => {
+                              if (extra.label && extra.amount > 0) {
+                                items.push({
+                                  number: '',
+                                  productService: extra.label,
+                                  description: extra.description || '-',
+                                  quantity: extra.quantity || 1,
+                                  priceRate: extra.amount / (extra.quantity || 1),
+                                  total: extra.amount,
+                                  isMain: false
+                                });
+                              }
+                            });
+                          }
+
+                          // Fallback: if no cost breakdown, create basic manufacturing entry
+                          if (!windowSummary?.cost_breakdown || windowSummary.cost_breakdown.length === 0) {
+                            const manufacturingCost = treatment.total_price || windowSummary?.total_cost || 0;
+                            if (manufacturingCost > 0) {
+                              items.push({
+                                number: '',
+                                productService: 'Manufacturing price',
+                                description: '-',
+                                quantity: treatment.quantity || 1,
+                                priceRate: manufacturingCost / (treatment.quantity || 1),
+                                total: manufacturingCost,
+                                isMain: false
+                              });
+                            }
+                          }
 
                           return items.map((item, itemIndex) => (
                             <tr key={`${treatmentIndex}-${itemIndex}`} className={`${item.isMain ? 'bg-white' : 'bg-gray-50'} border-t`}>
