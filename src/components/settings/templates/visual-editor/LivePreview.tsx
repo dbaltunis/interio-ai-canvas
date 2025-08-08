@@ -317,8 +317,111 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     return (
       <div className="mb-8">
         <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title || 'Quote Items'}</h3>
-        {layout === 'detailed' || layout === 'itemized' ? (
-          // Detailed breakdown view (also used for 'itemized')
+        {layout === 'itemized' ? (
+          // Itemized view with room groupings and detailed breakdowns
+          <div className="space-y-6">
+            {(() => {
+              // Group treatments by room
+              const treatmentsByRoom = treatments.reduce((acc, treatment) => {
+                const room = rooms.find(r => r.id === treatment.room_id);
+                const roomName = room?.name || 'Unspecified Room';
+                if (!acc[roomName]) acc[roomName] = [];
+                acc[roomName].push(treatment);
+                return acc;
+              }, {} as Record<string, any[]>);
+
+              return Object.entries(treatmentsByRoom).map(([roomName, roomTreatments]) => (
+                <div key={roomName} className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-3 border-b">
+                    <h4 className="font-medium text-gray-900">{roomName}</h4>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700 w-12">#</th>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700">Product/Service</th>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700">Description</th>
+                          <th className="text-center p-3 text-sm font-medium text-gray-700">Quantity</th>
+                          <th className="text-right p-3 text-sm font-medium text-gray-700">Price rate</th>
+                          <th className="text-right p-3 text-sm font-medium text-gray-700">Total without GST</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(roomTreatments as any[]).map((treatment, treatmentIndex) => {
+                          const surface = surfaces.find(s => s.id === treatment.window_id);
+                          const surfaceName = surface?.name || 'Window';
+                          
+                          // Create detailed breakdown items
+                          const items = [
+                            {
+                              number: treatmentIndex + 1,
+                              productService: treatment.treatment_type || 'Treatment',
+                              description: surfaceName,
+                              quantity: treatment.quantity || 1,
+                              priceRate: treatment.unit_price || 0,
+                              total: treatment.total_price || 0,
+                              isMain: true
+                            },
+                            ...(treatment.fabric_type ? [{
+                              number: '',
+                              productService: 'Fabric',
+                              description: `${treatment.fabric_type} | ${treatment.width || 0}m`,
+                              quantity: `${treatment.width || 0} m`,
+                              priceRate: ((treatment.material_cost || 0) * 0.4) / (treatment.width || 1),
+                              total: (treatment.material_cost || 0) * 0.4,
+                              isMain: false
+                            }] : []),
+                            {
+                              number: '',
+                              productService: 'Manufacturing price',
+                              description: '-',
+                              quantity: treatment.quantity || 1,
+                              priceRate: ((treatment.total_price || 0) - (treatment.material_cost || 0)) / (treatment.quantity || 1),
+                              total: (treatment.total_price || 0) - (treatment.material_cost || 0),
+                              isMain: false
+                            },
+                            ...(treatment.lining ? [{
+                              number: '',
+                              productService: 'Lining',
+                              description: treatment.lining,
+                              quantity: `${treatment.width || 0} m`,
+                              priceRate: 10.00,
+                              total: (treatment.width || 0) * 10.00,
+                              isMain: false
+                            }] : []),
+                            ...(treatment.hardware ? [{
+                              number: '',
+                              productService: 'Heading',
+                              description: treatment.hardware,
+                              quantity: `${treatment.width || 0} cm`,
+                              priceRate: 0.00,
+                              total: 0.00,
+                              isMain: false
+                            }] : [])
+                          ];
+
+                          return items.map((item, itemIndex) => (
+                            <tr key={`${treatmentIndex}-${itemIndex}`} className={`${item.isMain ? 'bg-white' : 'bg-gray-50'} border-t`}>
+                              <td className="p-3 text-sm font-medium">{item.number}</td>
+                              <td className="p-3 text-sm">{item.productService}</td>
+                              <td className="p-3 text-sm text-gray-600">{item.description}</td>
+                              <td className="p-3 text-sm text-center">{typeof item.quantity === 'number' ? item.quantity : item.quantity}</td>
+                              <td className="p-3 text-sm text-right">{formatCurrency(typeof item.priceRate === 'number' ? item.priceRate : 0)}</td>
+                              <td className="p-3 text-sm text-right font-medium">{formatCurrency(typeof item.total === 'number' ? item.total : 0)}</td>
+                            </tr>
+                          ));
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        ) : layout === 'detailed' ? (
+          // Detailed breakdown view
           <div className="space-y-6">
             {treatments.map((treatment, index) => {
               const room = rooms.find(r => r.id === treatment.room_id);
