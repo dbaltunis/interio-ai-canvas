@@ -77,7 +77,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   const [showItemsEditor, setShowItemsEditor] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [layoutType, setLayoutType] = useState<'simple' | 'detailed' | 'itemized' | 'visual'>('detailed');
   const project = projects?.find(p => p.id === projectId);
 
   // Filter quotes for this specific project (already filtered by hook)
@@ -92,17 +91,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   // Get selected template
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
-
-  // Sync layout with template style when template changes
-  useEffect(() => {
-    const style = selectedTemplate?.template_style as string | undefined;
-    const mapped =
-      style === 'brochure' ? 'visual' :
-      style === 'simple' ? 'simple' :
-      style === 'detailed' ? 'detailed' :
-      'detailed';
-    setLayoutType(mapped);
-  }, [selectedTemplate?.template_style]);
 
   // Calculate totals with fallback to window summaries
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
@@ -232,16 +220,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     );
   }
 
-// Use template blocks as-is but guard against duplicate products blocks
-const baseBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks))
+// Use template blocks as-is to mirror Settings preview precisely, but guard against duplicate products blocks
+const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) 
   ? removeDuplicateProductsBlocks(selectedTemplate.blocks)
   : [];
-// Override products block layout from UI dropdown
-const templateBlocks = baseBlocks.map((b: any) => 
-  b?.type === 'products'
-    ? { ...b, content: { ...(b.content || {}), layout: layoutType } }
-    : b
-);
 
   return (
     <div className="space-y-6">
@@ -270,22 +252,6 @@ const templateBlocks = baseBlocks.map((b: any) =>
                   {template.name}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-
-          {/* Layout Selector */}
-          <Select
-            value={layoutType}
-            onValueChange={(v) => setLayoutType(v as 'simple' | 'detailed' | 'itemized' | 'visual')}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Layout" />
-            </SelectTrigger>
-            <SelectContent className="z-50 bg-background">
-              <SelectItem value="simple">Simple</SelectItem>
-              <SelectItem value="detailed">Detailed</SelectItem>
-              <SelectItem value="itemized">Itemized</SelectItem>
-              <SelectItem value="visual">Visual</SelectItem>
             </SelectContent>
           </Select>
 
