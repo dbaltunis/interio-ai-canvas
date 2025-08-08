@@ -65,13 +65,16 @@ export const RoomCard = ({
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
   const handleSurfaceCreation = async () => {
+    if (isCreatingSurface) return; // guard against rapid double clicks
     setIsCreatingSurface(true);
     try {
+      console.log('[RoomCard] Creating surface for room:', room.id);
       await onCreateSurface(room.id, 'window');
     } catch (error) {
       console.error("Surface creation failed:", error);
     } finally {
       setIsCreatingSurface(false);
+      console.log('[RoomCard] Surface creation finished for room:', room.id);
     }
   };
 
