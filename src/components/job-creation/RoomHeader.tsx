@@ -3,6 +3,10 @@ import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { RoomActionsMenu } from "./RoomActionsMenu";
 import { formatCurrency } from "@/utils/currency";
+import { Button } from "@/components/ui/button";
+import { Minimize2, Maximize2 } from "lucide-react";
+import { useCompactMode } from "@/hooks/useCompactMode";
+
 
 interface RoomHeaderProps {
   room: any;
@@ -31,6 +35,7 @@ export const RoomHeader = ({
   onDeleteRoom,
   onChangeRoomType
 }: RoomHeaderProps) => {
+  const { compact, toggleCompact } = useCompactMode();
   return (
     <CardHeader className="relative overflow-hidden pb-6 rounded-b-3xl bg-gradient-to-b from-background/40 via-background/20 to-background/10 border-b border-brand-secondary/30 backdrop-blur-md">
       {/* Water-drop blobs & gloss like Team Hub */}
@@ -56,17 +61,29 @@ export const RoomHeader = ({
           )}
           <p className="text-2xl font-bold text-brand-accent mt-1">{formatCurrency(roomTotal)}</p>
         </div>
-        <RoomActionsMenu
-          room={room}
-          onEditName={onStartEditing}
-          onCopyRoom={() => onCopyRoom(room)}
-          onDeleteRoom={() => {
-            if (confirm("Delete this room and all its contents?")) {
-              onDeleteRoom.mutate(room.id);
-            }
-          }}
-          onChangeRoomType={(type) => onChangeRoomType(room.id, type)}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleCompact}
+            aria-label="Toggle compact mode"
+            className="shrink-0"
+            title={compact ? "Switch to comfortable spacing" : "Switch to compact spacing"}
+          >
+            {compact ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+          </Button>
+          <RoomActionsMenu
+            room={room}
+            onEditName={onStartEditing}
+            onCopyRoom={() => onCopyRoom(room)}
+            onDeleteRoom={() => {
+              if (confirm("Delete this room and all its contents?")) {
+                onDeleteRoom.mutate(room.id);
+              }
+            }}
+            onChangeRoomType={(type) => onChangeRoomType(room.id, type)}
+          />
+        </div>
       </div>
     </CardHeader>
   );

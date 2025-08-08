@@ -7,6 +7,8 @@ import { Plus, RectangleHorizontal } from "lucide-react";
 import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceList } from "./SurfaceList";
+import { useCompactMode } from "@/hooks/useCompactMode";
+
 
 interface RoomCardProps {
   room: any;
@@ -57,6 +59,8 @@ export const RoomCard = ({
     currentFormData,
     handleAddTreatment
   } = useRoomCardLogic(room, projectId, clientId, onCreateTreatment);
+
+  const { compact } = useCompactMode();
 
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
@@ -122,8 +126,8 @@ export const RoomCard = ({
         onChangeRoomType={onChangeRoomType}
       />
 
-      <CardContent className="p-6">
-        <div className="space-y-4">
+      <CardContent className={compact ? "p-4" : "p-6"}>
+        <div className={compact ? "space-y-3" : "space-y-4"}>
           {/* Room Type Badge */}
 
           {/* Surfaces List */}
@@ -151,7 +155,7 @@ export const RoomCard = ({
               onClick={handleSurfaceCreation}
               disabled={isCreatingSurface}
               variant="outline"
-              size="sm"
+              size={compact ? "sm" : "sm"}
               className="flex-1"
             >
               <RectangleHorizontal className="h-4 w-4 mr-2" />

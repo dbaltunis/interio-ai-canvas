@@ -2,6 +2,8 @@ import { useState } from "react";
 import { WindowSummaryCard } from "./WindowSummaryCard";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { WindowManagementDialog } from "./WindowManagementDialog";
+import { useCompactMode } from "@/hooks/useCompactMode";
+
 
 interface SurfaceListProps {
   surfaces: any[];
@@ -24,6 +26,7 @@ export const SurfaceList = ({
 }: SurfaceListProps) => {
   const [selectedSurface, setSelectedSurface] = useState<any>(null);
   const [showWindowDialog, setShowWindowDialog] = useState(false);
+  const { compact } = useCompactMode();
   
   const { data: clientMeasurements } = useClientMeasurements(clientId);
 
@@ -56,7 +59,7 @@ export const SurfaceList = ({
 
   return (
     <>
-      <div className="space-y-3">
+      <div className={compact ? "space-y-2" : "space-y-3"}>
         {surfaces.map((surface) => (
           <WindowSummaryCard 
             key={surface.id} 
