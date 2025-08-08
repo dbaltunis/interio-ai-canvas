@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -76,7 +77,6 @@ export const TreatmentLineItems = ({
                   <TableHead>Surface</TableHead>
                   <TableHead>Treatment</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead>Details</TableHead>
                   <TableHead className="text-right">Base Cost</TableHead>
                   <TableHead className="text-right">Markup</TableHead>
                   <TableHead className="text-right">Line Total</TableHead>
@@ -87,11 +87,6 @@ export const TreatmentLineItems = ({
                   const baseCost = treatment.total_price || 0;
                   const markupAmount = baseCost * (markupPercentage / 100);
                   const lineTotal = baseCost + markupAmount;
-
-                  // Parse treatment details for display
-                  const treatmentDetails = treatment.treatment_details || {};
-                  const fabricDetails = treatment.fabric_details || {};
-                  const measurements = treatment.measurements || {};
 
                   return (
                     <TableRow key={treatment.id}>
@@ -104,46 +99,13 @@ export const TreatmentLineItems = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          <Badge variant="secondary" className="capitalize">
-                            {treatment.treatment_type}
-                          </Badge>
-                          {treatmentDetails.template_name && (
-                            <div className="text-xs text-gray-500">
-                              {treatmentDetails.template_name}
-                            </div>
-                          )}
-                        </div>
+                        <Badge variant="secondary" className="capitalize">
+                          {treatment.treatment_type}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">
-                            {treatment.product_name || treatment.treatment_type}
-                          </div>
-                          {fabricDetails.name && (
-                            <div className="text-xs text-gray-500">
-                              {fabricDetails.name}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-xs space-y-1">
-                          {measurements.rail_width_cm && measurements.drop_cm && (
-                            <div className="text-gray-600">
-                              {measurements.rail_width_cm}cm × {measurements.drop_cm}cm
-                            </div>
-                          )}
-                          {measurements.linear_meters && (
-                            <div className="text-gray-600">
-                              {Number(measurements.linear_meters).toFixed(1)}m fabric
-                            </div>
-                          )}
-                          {treatmentDetails.manufacturing_type && (
-                            <Badge variant="outline" className="text-xs">
-                              {treatmentDetails.manufacturing_type}
-                            </Badge>
-                          )}
+                          {treatment.product_name || treatment.treatment_type}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

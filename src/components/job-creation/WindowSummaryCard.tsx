@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
-import { useTreatments } from "@/hooks/useTreatments";
 import { formatCurrency } from "@/utils/unitConversion";
 import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
 
@@ -29,11 +28,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
-  const { data: treatments = [] } = useTreatments(surface.project_id);
   const [showBreakdown, setShowBreakdown] = useState(false);
-
-  // Find treatment for this window
-  const windowTreatment = treatments.find(t => t.window_id === windowId);
 
   // Debug logging
   console.log('📊 CARD: WindowSummaryCard render:', {
@@ -57,25 +52,13 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              {surface.name}
-              {windowTreatment && (
-                <Badge variant="default" className="text-xs">
-                  Treatment Configured
-                </Badge>
-              )}
-            </CardTitle>
+            <CardTitle className="text-lg">{surface.name}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Type: {surface.type} | Room: {surface.room_name}
             </p>
             {surface.width && surface.height && (
               <p className="text-sm text-muted-foreground">
                 Dimensions: {surface.width} × {surface.height} cm
-              </p>
-            )}
-            {windowTreatment && (
-              <p className="text-sm text-primary mt-1">
-                {windowTreatment.treatment_type} • {windowTreatment.product_name}
               </p>
             )}
           </div>
