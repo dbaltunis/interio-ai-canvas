@@ -1,15 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { offlineQueueService } from "@/services/offlineQueueService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-interface OfflineSupportOptions {
-  trackQueue?: boolean; // when false, avoid polling queue status to reduce re-renders
-}
-
-export const useOfflineSupport = (options?: OfflineSupportOptions) => {
-  const trackQueue = options?.trackQueue ?? true;
-
+export const useOfflineSupport = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [queueStatus, setQueueStatus] = useState(offlineQueueService.getQueueStatus());
   const queryClient = useQueryClient();
@@ -27,13 +20,10 @@ export const useOfflineSupport = (options?: OfflineSupportOptions) => {
       setIsOnline(false);
     };
 
-    // Update queue status periodically only if tracking is enabled
-    let intervalId: number | undefined;
-    if (trackQueue) {
-      intervalId = window.setInterval(() => {
-        setQueueStatus(offlineQueueService.getQueueStatus());
-      }, 1000);
-    }
+    // Update queue status periodically
+    const interval = setInterval(() => {
+      setQueueStatus(offlineQueueService.getQueueStatus());
+    }, 1000);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -41,15 +31,12 @@ export const useOfflineSupport = (options?: OfflineSupportOptions) => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      clearInterval(interval);
     };
-  }, [queryClient, trackQueue]);
+  }, [queryClient]);
 
   const queueOfflineOperation = (type: 'create' | 'update' | 'delete', table: string, data: any) => {
     offlineQueueService.queueOperation(type, table, data);
-    // Update once after queueing to reflect latest status (rare)
     setQueueStatus(offlineQueueService.getQueueStatus());
   };
 

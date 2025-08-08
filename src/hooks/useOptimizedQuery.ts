@@ -1,4 +1,3 @@
-
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { useOfflineSupport } from './useOfflineSupport';
 
@@ -19,8 +18,7 @@ export const useOptimizedQuery = <T>({
   refetchOnWindowFocus = false,
   ...options
 }: OptimizedQueryOptions<T>) => {
-  // Avoid tracking queue status here to prevent global re-renders every second
-  const { isOnline, getCachedData, updateCache } = useOfflineSupport({ trackQueue: false });
+  const { isOnline, getCachedData, updateCache } = useOfflineSupport();
 
   return useQuery({
     queryKey,

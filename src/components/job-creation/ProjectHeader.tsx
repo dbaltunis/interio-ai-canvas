@@ -405,7 +405,6 @@ export const ProjectHeader = ({
                           <Badge key={memberId} variant="secondary" className="text-xs">
                             {member.name}
                             <button
-                              type="button"
                               onClick={() => setSelectedTeamMembers(selectedTeamMembers.filter(id => id !== memberId))}
                               className="ml-1 text-red-500 hover:text-red-700"
                             >
