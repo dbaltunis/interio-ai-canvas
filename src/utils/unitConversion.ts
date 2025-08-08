@@ -12,7 +12,16 @@ export const mToCm = (m?: number): number => {
 };
 
 export const formatCurrency = (amount: number, currency: string = 'GBP'): string => {
-  const symbol = currency === 'GBP' ? '£' : '$';
+  const currencySymbols: Record<string, string> = {
+    'NZD': 'NZ$',
+    'AUD': 'A$',
+    'USD': '$',
+    'GBP': '£',
+    'EUR': '€',
+    'ZAR': 'R'
+  };
+  
+  const symbol = currencySymbols[currency] || currency;
   return `${symbol}${amount.toFixed(2)}`;
 };
 

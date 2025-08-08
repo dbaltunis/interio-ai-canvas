@@ -2,7 +2,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
-import { formatCurrency, formatLinearMeters } from "@/utils/unitConversion";
+import { formatCurrency } from "@/utils/unitConversion";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -27,17 +27,19 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
 
   // Debug logging
-  console.log('WindowSummaryCard render:', {
+  console.log('📊 CARD: WindowSummaryCard render:', {
     windowId,
     surfaceName: surface.name,
     isLoading,
     error: error?.message,
     hasSummary: !!summary,
     summary: summary ? {
+      window_id: summary.window_id,
       total_cost: summary.total_cost,
       linear_meters: summary.linear_meters,
       widths_required: summary.widths_required,
-      fabric_cost: summary.fabric_cost
+      fabric_cost: summary.fabric_cost,
+      updated_at: summary.updated_at
     } : null
   });
 
@@ -86,7 +88,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
 
         {!summary && !isLoading && !error && (
           <div className="text-muted-foreground text-sm">
-            No pricing data available. Open worksheet to calculate costs.
+            No pricing data available. Open worksheet, enter measurements, and save to calculate costs.
           </div>
         )}
 

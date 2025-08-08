@@ -110,21 +110,40 @@ export const MeasurementWorksheet = ({
       }
       
       // Calculate and save window summary if we have the required data
-      const templateId = measurements.selected_template ?? measurements.selected_heading ?? null;
-      const railWidthCm = measurements.rail_width ?? measurements.width ?? 0;
-      const dropCm = measurements.drop ?? measurements.height ?? 0;
+      // Check all possible template/heading field names
+      const templateId = measurements.selected_template ?? 
+                        measurements.selected_heading ?? 
+                        measurements.heading_type ??
+                        measurements.template_id ??
+                        'default_template'; // Use default if none selected
       
-      console.log('Window summary check:', { 
+      // Check all possible width field names                  
+      const railWidthCm = measurements.rail_width ?? 
+                         measurements.width ?? 
+                         measurements.window_width ??
+                         measurements.track_width ?? 0;
+                         
+      // Check all possible drop/height field names
+      const dropCm = measurements.drop ?? 
+                    measurements.height ?? 
+                    measurements.window_height ??
+                    measurements.curtain_drop ?? 0;
+      
+      console.log('💾 SAVE: Window summary check:', { 
         surfaceId,
         templateId, 
         railWidthCm, 
         dropCm,
-        measurements: Object.keys(measurements) 
+        hasTemplateId: !!templateId,
+        hasWidth: railWidthCm > 0,
+        hasDrop: dropCm > 0,
+        measurements: Object.keys(measurements),
+        measurementValues: measurements
       });
        
-      if (surfaceId && templateId && railWidthCm > 0 && dropCm > 0) {
+      if (surfaceId && railWidthCm > 0 && dropCm > 0) {
         try {
-          console.log('Calculating window summary for window_id:', surfaceId);
+          console.log('💾 SAVE: Calculating window summary for window_id:', surfaceId);
           
           // Use consistent unit conversion - all calculations in metres
           const railWidthM = cmToM(railWidthCm);
@@ -193,9 +212,9 @@ export const MeasurementWorksheet = ({
             currency: 'GBP',
           };
           
-          console.log('Saving window summary data:', summaryData);
+          console.log('💾 SAVE: Saving window summary data:', summaryData);
           await saveWindowSummary.mutateAsync(summaryData);
-          console.log('Window summary saved successfully');
+          console.log('💾 SAVE: Window summary saved successfully for window_id:', surfaceId);
           
           // Invalidate queries to refresh the card
           queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
@@ -203,11 +222,12 @@ export const MeasurementWorksheet = ({
           console.error('Error saving window summary:', summaryError);
         }
       } else {
-        console.log('Skipping window summary - missing required data:', {
+        console.log('❌ SAVE: Skipping window summary - missing required data:', {
           surfaceId: !!surfaceId,
           templateId: !!templateId,
           railWidthCm: railWidthCm > 0,
-          dropCm: dropCm > 0
+          dropCm: dropCm > 0,
+          actualValues: { surfaceId, templateId, railWidthCm, dropCm }
         });
       }
 
