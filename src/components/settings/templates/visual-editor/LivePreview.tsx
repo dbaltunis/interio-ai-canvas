@@ -184,18 +184,27 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
   };
 
   const renderProducts = (block: any) => {
-    const content = block.content;
+    const content = block.content || {};
     const treatments = projectData?.treatments || [];
     const rooms = projectData?.rooms || [];
     const surfaces = projectData?.surfaces || [];
-    
+
+    // Derive columns from booleans when columns array isn't provided
+    const columns = (content.columns && Array.isArray(content.columns) && content.columns.length > 0)
+      ? content.columns
+      : [
+          content.showProduct !== false ? 'product' : null,
+          content.showDescription ? 'description' : null,
+          content.showQuantity !== false ? 'qty' : null,
+          content.showUnitPrice !== false ? 'unit_price' : null,
+          content.showTotal !== false ? 'total' : null,
+        ].filter(Boolean);
+
     if (!projectData) {
       return (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
-          <div className="text-center py-8 text-gray-500">
-            No product data available
-          </div>
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title || 'Quote Items'}</h3>
+          <div className="text-center py-8 text-gray-500">No product data available</div>
         </div>
       );
     }
@@ -204,7 +213,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     if (treatments.length === 0 && (rooms.length > 0 || surfaces.length > 0)) {
       return (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title || 'Quote Items'}</h3>
           <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
             <div className="text-gray-600 mb-2">No treatments added yet</div>
             <div className="text-sm text-gray-500">
@@ -233,18 +242,86 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
       );
     }
 
+    // Determine layout: simple | detailed | itemized | visual
+    const layout = content.layout || 'simple';
+
+    // Visual layout: card/grid presentation
+    if (layout === 'visual') {
+      return (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title || 'Quote Items'}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {treatments.map((treatment, index) => {
+              const room = rooms.find(r => r.id === treatment.room_id);
+              const surface = surfaces.find(s => s.id === treatment.window_id);
+
+              // Try match a product image if provided in block content
+              const productImages: any[] = content.productImages || [];
+              const match = productImages.find((pi: any) =>
+                (pi.productName && (
+                  (treatment.product_name && pi.productName.toLowerCase().includes(String(treatment.product_name).toLowerCase())) ||
+                  (treatment.treatment_type && pi.productName.toLowerCase().includes(String(treatment.treatment_type).toLowerCase()))
+                ))
+              );
+
+              return (
+                <div key={treatment.id || index} className="border rounded-lg overflow-hidden bg-white">
+                  <div className="aspect-video bg-gray-100">
+                    <img
+                      src={match?.imageUrl || '/placeholder.svg'}
+                      alt={`${treatment.treatment_type || 'Treatment'} ${treatment.product_name ? ' - ' + treatment.product_name : ''}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                    />
+                  </div>
+                  <div className="p-4 space-y-1">
+                    <div className="font-medium">{treatment.treatment_type} {treatment.product_name ? ' - ' + treatment.product_name : ''}</div>
+                    <div className="text-sm text-gray-600">{room?.name || 'Room'} • {surface?.name || 'Window'}</div>
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-sm text-gray-600">Qty: {treatment.quantity || 1}</span>
+                      <span className="font-semibold">{formatCurrency(treatment.total_price || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Totals */}
+          <div className="flex justify-end mt-6">
+            <div className="w-80 space-y-2">
+              {content.showSubtotal !== false && (
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-medium">{formatCurrency(projectData.subtotal)}</span>
+                </div>
+              )}
+              {content.showTax && (
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">{content.taxLabel || 'Tax'} ({(projectData.taxRate * 100).toFixed(1)}%):</span>
+                  <span className="font-medium">{formatCurrency(projectData.taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-3">
+                <span>Total:</span>
+                <span className="text-brand-primary">{formatCurrency(projectData.total)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title}</h3>
-        
-        {content.tableStyle === 'detailed' ? (
-          // Detailed breakdown view
+        <h3 className="text-lg font-semibold mb-4 text-brand-primary">{content.title || 'Quote Items'}</h3>
+        {layout === 'detailed' || layout === 'itemized' ? (
+          // Detailed breakdown view (also used for 'itemized')
           <div className="space-y-6">
             {treatments.map((treatment, index) => {
               const room = rooms.find(r => r.id === treatment.room_id);
               const surface = surfaces.find(s => s.id === treatment.window_id);
-              
-              // Create breakdown items
+
               const breakdownItems = [
                 {
                   description: `${treatment.treatment_type} - ${treatment.product_name || 'Custom Treatment'}`,
@@ -277,11 +354,9 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
               ];
 
               return (
-                <div key={index} className="border rounded-lg overflow-hidden">
+                <div key={treatment.id || index} className="border rounded-lg overflow-hidden">
                   <div className="bg-gray-50 px-4 py-2 border-b">
-                    <h4 className="font-medium text-brand-primary">
-                      {room?.name || 'Room'} - {surface?.name || 'Window'}
-                    </h4>
+                    <h4 className="font-medium text-brand-primary">{room?.name || 'Room'} - {surface?.name || 'Window'}</h4>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -299,9 +374,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                           <tr key={bIndex} className="border-t">
                             <td className="p-3">{item.description}</td>
                             <td className="p-3">
-                              <Badge variant="outline" className="text-xs">
-                                {item.category}
-                              </Badge>
+                              <Badge variant="outline" className="text-xs">{item.category}</Badge>
                             </td>
                             <td className="p-3 text-center">{item.quantity}</td>
                             <td className="p-3 text-right">{formatCurrency(item.unit_price)}</td>
@@ -321,19 +394,19 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  {content.columns?.includes('product') && (
+                  {columns.includes('product') && (
                     <th className="text-left p-4 font-medium text-gray-700">Product/Service</th>
                   )}
-                  {content.columns?.includes('description') && (
+                  {columns.includes('description') && (
                     <th className="text-left p-4 font-medium text-gray-700">Description</th>
                   )}
-                  {content.columns?.includes('qty') && (
+                  {columns.includes('qty') && (
                     <th className="text-center p-4 font-medium text-gray-700">Qty</th>
                   )}
-                  {content.columns?.includes('unit_price') && (
+                  {columns.includes('unit_price') && (
                     <th className="text-right p-4 font-medium text-gray-700">Unit Price</th>
                   )}
-                  {content.columns?.includes('total') && (
+                  {columns.includes('total') && (
                     <th className="text-right p-4 font-medium text-gray-700">Total</th>
                   )}
                 </tr>
@@ -344,12 +417,12 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                   const surface = surfaces.find(s => s.id === treatment.window_id);
                   return (
                     <tr key={treatment.id || index} className="border-t">
-                      {content.columns?.includes('product') && (
+                      {columns.includes('product') && (
                         <td className="p-4 font-medium">
                           {treatment.treatment_type} - {treatment.product_name || 'Custom Treatment'}
                         </td>
                       )}
-                      {content.columns?.includes('description') && (
+                      {columns.includes('description') && (
                         <td className="p-4">
                           <div className="text-sm text-gray-600">
                             {room?.name} • {surface?.name}
@@ -357,13 +430,13 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                           </div>
                         </td>
                       )}
-                      {content.columns?.includes('qty') && (
+                      {columns.includes('qty') && (
                         <td className="p-4 text-center">{treatment.quantity || 1}</td>
                       )}
-                      {content.columns?.includes('unit_price') && (
+                      {columns.includes('unit_price') && (
                         <td className="p-4 text-right">{formatCurrency(treatment.unit_price || 0)}</td>
                       )}
-                      {content.columns?.includes('total') && (
+                      {columns.includes('total') && (
                         <td className="p-4 text-right font-medium">{formatCurrency(treatment.total_price || 0)}</td>
                       )}
                     </tr>
@@ -377,7 +450,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
         {/* Totals */}
         <div className="flex justify-end mt-6">
           <div className="w-80 space-y-2">
-            {content.showSubtotal && (
+            {content.showSubtotal !== false && (
               <div className="flex justify-between py-2">
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="font-medium">{formatCurrency(projectData.subtotal)}</span>
@@ -385,7 +458,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
             )}
             {content.showTax && (
               <div className="flex justify-between py-2">
-                <span className="text-gray-600">{content.taxLabel} ({(projectData.taxRate * 100).toFixed(1)}%):</span>
+                <span className="text-gray-600">{content.taxLabel || 'Tax'} ({(projectData.taxRate * 100).toFixed(1)}%):</span>
                 <span className="font-medium">{formatCurrency(projectData.taxAmount)}</span>
               </div>
             )}

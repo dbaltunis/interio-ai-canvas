@@ -404,7 +404,7 @@ const ProductsBlock = ({ content, onUpdate }: { content: any; onUpdate: (content
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50 bg-background shadow-md">
               <SelectItem value="simple">Simple</SelectItem>
               <SelectItem value="detailed">Detailed</SelectItem>
               <SelectItem value="itemized">Itemized</SelectItem>
