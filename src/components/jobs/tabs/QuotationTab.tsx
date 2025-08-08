@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
+import { TreatmentLineItems } from "../quotation/TreatmentLineItems";
 import { QuoteViewer } from "../QuoteViewer";
 
 interface QuotationTabProps {
@@ -59,6 +60,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [markupPercentage, setMarkupPercentage] = useState(25);
 
   const project = projects?.find(p => p.id === projectId);
   
@@ -80,7 +82,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
-  const markupPercentage = 25;
   const taxRate = 0.08;
   const subtotal = treatmentTotal * (1 + markupPercentage / 100);
   const taxAmount = subtotal * taxRate;
@@ -326,6 +327,15 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Treatment Line Items Section */}
+      <TreatmentLineItems
+        treatments={treatments || []}
+        rooms={rooms || []}
+        surfaces={surfaces || []}
+        markupPercentage={markupPercentage}
+        onMarkupChange={setMarkupPercentage}
+      />
 
       {/* Quote Document Preview */}
       {selectedTemplate && (
