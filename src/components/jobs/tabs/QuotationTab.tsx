@@ -366,33 +366,29 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
       {/* Quote Document Preview */}
       {selectedTemplate && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Quote Document Preview</CardTitle>
-              <div className="text-sm text-muted-foreground">
-                Using: <strong>{selectedTemplate.name}</strong>
-              </div>
+        <section className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">Quote Document Preview</h3>
+            <div className="text-sm text-muted-foreground">
+              Using: <strong>{selectedTemplate.name}</strong>
             </div>
-          </CardHeader>
-          <CardContent>
-            <LivePreview
-              blocks={templateBlocks}
-              projectData={{
-                project,
-                treatments: sourceTreatments,
-                rooms: rooms || [],
-                surfaces: surfaces || [],
-                subtotal,
-                taxRate,
-                taxAmount,
-                total,
-                markupPercentage
-              }}
-              isEditable={true}
-            />
-          </CardContent>
-        </Card>
+          </div>
+          <LivePreview
+            blocks={templateBlocks}
+            projectData={{
+              project,
+              treatments: sourceTreatments,
+              rooms: rooms || [],
+              surfaces: surfaces || [],
+              subtotal,
+              taxRate,
+              taxAmount,
+              total,
+              markupPercentage
+            }}
+            isEditable={true}
+          />
+        </section>
       )}
     </div>
   );
