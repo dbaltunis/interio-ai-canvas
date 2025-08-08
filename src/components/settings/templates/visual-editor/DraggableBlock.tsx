@@ -132,7 +132,7 @@ export const DraggableBlock = ({
         </div>
 
         {/* Block Content */}
-        <div className="p-6 pt-8">
+        <div className="p-4 md:p-6">
           {renderBlockContent()}
         </div>
       </Card>
