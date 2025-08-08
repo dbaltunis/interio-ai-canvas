@@ -212,6 +212,22 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
               <br />
               Add treatments to see them in your quote.
             </div>
+            {rooms.length > 0 && (
+              <div className="mt-4 text-left max-h-48 overflow-auto px-4">
+                <ul className="space-y-2 text-sm text-gray-600">
+                  {rooms.map((r) => (
+                    <li key={r.id}>
+                      <span className="font-medium">{r.name}</span>
+                      <ul className="ml-4 list-disc">
+                        {surfaces.filter(s => s.room_id === r.id).map(s => (
+                          <li key={s.id}>{s.name}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       );

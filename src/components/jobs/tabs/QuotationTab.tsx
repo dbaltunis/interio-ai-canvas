@@ -16,6 +16,7 @@ import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
+import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
 
 interface QuotationTabProps {
   projectId: string;
@@ -80,7 +81,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
-  const markupPercentage = 25;
+  const [markupPercentage, setMarkupPercentage] = useState<number>(25);
   const taxRate = 0.08;
   const subtotal = treatmentTotal * (1 + markupPercentage / 100);
   const taxAmount = subtotal * taxRate;
@@ -194,8 +195,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         ...block,
         content: {
           ...block.content,
-          // Update products block to use the correct view mode
-          ...(block.type === 'products' ? { tableStyle: viewMode } : {})
+          // Update products block to use the correct view mode and ensure columns exist for simple view
+          ...(block.type === 'products'
+            ? { tableStyle: viewMode, columns: block.content?.columns ?? ['product','description','qty','unit_price','total'] }
+            : {})
         }
       })) 
     : [];
@@ -326,6 +329,22 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Selected Treatments */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Selected Treatments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TreatmentLineItems
+            treatments={treatments || []}
+            rooms={rooms || []}
+            surfaces={surfaces || []}
+            markupPercentage={markupPercentage}
+            onMarkupChange={setMarkupPercentage}
+          />
+        </CardContent>
+      </Card>
 
       {/* Quote Document Preview */}
       {selectedTemplate && (
