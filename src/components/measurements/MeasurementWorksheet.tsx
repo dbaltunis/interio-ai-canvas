@@ -9,6 +9,7 @@ import { Camera, Save, Upload } from "lucide-react";
 import { useCreateClientMeasurement, useUpdateClientMeasurement } from "@/hooks/useClientMeasurements";
 import { useSaveWindowSummary } from "@/hooks/useWindowSummary";
 import { calculateFabricUsage } from "@/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
+import { useCreateTreatment, useUpdateTreatment, useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
@@ -67,6 +68,9 @@ export const MeasurementWorksheet = ({
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
   const saveWindowSummary = useSaveWindowSummary();
+  const createTreatment = useCreateTreatment();
+  const updateTreatment = useUpdateTreatment();
+  const { data: existingTreatments = [] } = useTreatments(projectId);
   const { data: rooms = [] } = useRooms(projectId);
   const { data: windowCoverings = [] } = useWindowCoverings();
 
@@ -321,6 +325,89 @@ export const MeasurementWorksheet = ({
           
           // Invalidate queries to refresh the card
           queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+          
+          // CREATE TREATMENT RECORD if a template is selected
+          if (templateId && templateId !== 'default_template' && surfaceId && projectId) {
+            console.log('🔧 TREATMENT: Creating treatment record for template:', templateId);
+            
+            // Check if there's already a treatment for this window
+            const existingTreatment = existingTreatments.find(t => t.window_id === surfaceId);
+            
+            const treatmentData = {
+              project_id: projectId,
+              room_id: selectedRoom === "no_room" ? null : selectedRoom,
+              window_id: surfaceId,
+              treatment_type: 'curtains', // Default to curtains for now
+              product_name: fabricItem?.name || 'Curtain Treatment',
+              quantity: 1,
+              material_cost: Number(fabricCost.toFixed(2)),
+              labor_cost: Number(manufacturingCost.toFixed(2)),
+              total_price: Number(totalCost.toFixed(2)),
+              measurements: {
+                rail_width_cm: railWidthCm,
+                drop_cm: dropCm,
+                fullness_ratio: fullnessRatio,
+                linear_meters: Number(linearMeters.toFixed(2)),
+                widths_required: widthsRequired,
+                ...measurements // Include all other measurements
+              },
+              fabric_details: {
+                name: fabricItem?.name || 'Fabric',
+                width_cm: fabricWidthCm,
+                price_per_meter: fabricPricePerMeter,
+                meters_used: Number(linearMeters.toFixed(2)),
+                total_cost: Number(fabricCost.toFixed(2)),
+                widths_required: widthsRequired
+              },
+              treatment_details: {
+                template_id: templateId,
+                template_name: 'Curtain Template',
+                lining_type: liningType,
+                manufacturing_type: manufacturingType,
+                waste_percent: wastePercent,
+                cost_breakdown: costBreakdown
+              },
+              calculation_details: {
+                linear_meters: Number(linearMeters.toFixed(2)),
+                fabric_cost: Number(fabricCost.toFixed(2)),
+                lining_cost: Number(liningCost.toFixed(2)),
+                manufacturing_cost: Number(manufacturingCost.toFixed(2)),
+                total_cost: Number(totalCost.toFixed(2))
+              },
+              notes: notes || `Treatment created from measurement worksheet for ${windowType}`,
+              status: 'configured'
+            };
+            
+            try {
+              if (existingTreatment) {
+                console.log('🔧 TREATMENT: Updating existing treatment:', existingTreatment.id);
+                await updateTreatment.mutateAsync({
+                  id: existingTreatment.id,
+                  ...treatmentData
+                });
+                console.log('✅ TREATMENT: Treatment updated successfully');
+              } else {
+                console.log('🔧 TREATMENT: Creating new treatment record');
+                await createTreatment.mutateAsync(treatmentData);
+                console.log('✅ TREATMENT: Treatment created successfully');
+              }
+              
+              // Invalidate treatment queries to refresh quotation
+              queryClient.invalidateQueries({ queryKey: ['treatments'] });
+              queryClient.invalidateQueries({ queryKey: ['treatments', projectId] });
+              
+            } catch (treatmentError) {
+              console.error('❌ TREATMENT: Error saving treatment:', treatmentError);
+            }
+          } else {
+            console.log('❌ TREATMENT: Skipping treatment creation - no template selected or missing data:', {
+              templateId: templateId,
+              surfaceId: !!surfaceId,
+              projectId: !!projectId,
+              isDefaultTemplate: templateId === 'default_template'
+            });
+          }
+          
         } catch (summaryError) {
           console.error('Error saving window summary:', summaryError);
         }
