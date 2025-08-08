@@ -49,7 +49,7 @@ export function CostBreakdownDisplay({
   }, {} as Record<string, CostBreakdownItem[]>);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full rounded-2xl border border-brand-secondary/30">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">Cost Breakdown</CardTitle>

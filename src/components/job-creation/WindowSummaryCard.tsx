@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
@@ -50,8 +50,61 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
     } : null
   });
 
+  const enrichedBreakdown = useMemo(() => {
+    if (!summary) return [] as any[];
+
+    const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
+    const hasStructured = raw.some((it: any) => it && 'category' in it && 'total_cost' in it);
+    if (hasStructured) return raw as any[];
+
+    const items: any[] = [];
+
+    items.push({
+      id: 'fabric',
+      name: summary.fabric_details?.name || 'Fabric',
+      description: summary.fabric_details?.name
+        ? `${summary.fabric_details.name} • ${Number(summary.linear_meters).toFixed(2)}m • ${summary.widths_required} width(s)`
+        : `${Number(summary.linear_meters).toFixed(2)}m • ${summary.widths_required} width(s) • ${formatCurrency(summary.price_per_meter, summary.currency)}/m`,
+      quantity: Number(summary.linear_meters) || 0,
+      unit: 'm',
+      unit_price: Number(summary.price_per_meter) || 0,
+      total_cost: Number(summary.fabric_cost) || 0,
+      category: 'fabric',
+      details: {
+        widths_required: summary.widths_required,
+        linear_meters: summary.linear_meters,
+        price_per_meter: summary.price_per_meter,
+      },
+    });
+
+    if (Number(summary.lining_cost) > 0) {
+      items.push({
+        id: 'lining',
+        name: summary.lining_details?.type || 'Lining',
+        description: summary.lining_details?.type,
+        quantity: Number(summary.linear_meters) || 0,
+        unit: 'm',
+        unit_price: Number(summary.lining_details?.price_per_metre) || undefined,
+        total_cost: Number(summary.lining_cost) || 0,
+        category: 'lining',
+        details: summary.lining_details || undefined,
+      });
+    }
+
+    items.push({
+      id: 'manufacturing',
+      name: 'Manufacturing',
+      description: summary.manufacturing_type,
+      total_cost: Number(summary.manufacturing_cost) || 0,
+      category: 'manufacturing',
+      details: { type: summary.manufacturing_type },
+    });
+
+    return items;
+  }, [summary]);
+
   return (
-    <Card className="relative overflow-hidden rounded-2xl border border-brand-secondary/30 bg-gradient-to-br from-background/90 to-background/70 supports-[backdrop-filter]:bg-background/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 hover:scale-[1.005] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter mb-4">
+    <Card className="relative overflow-hidden rounded-2xl border border-brand-secondary/30 bg-background shadow-md hover:shadow-lg transition-colors ring-1 ring-brand-secondary/20 animate-enter mb-4">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand-secondary/20" />
       </div>
@@ -175,9 +228,9 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
             {/* Detailed Breakdown */}
             {showBreakdown && (
               <div className="mt-4">
-                {summary.cost_breakdown && summary.cost_breakdown.length > 0 ? (
+                {enrichedBreakdown && enrichedBreakdown.length > 0 ? (
                   <CostBreakdownDisplay 
-                    breakdown={summary.cost_breakdown}
+                    breakdown={enrichedBreakdown as any}
                     currency={summary.currency}
                     totalCost={summary.total_cost}
                     showDetails={true}
