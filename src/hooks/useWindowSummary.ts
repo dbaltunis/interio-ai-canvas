@@ -18,6 +18,15 @@ export interface WindowSummary {
   waste_percent: number;
   currency: string;
   updated_at: string;
+  // New detailed breakdown fields
+  template_name?: string;
+  template_details?: any;
+  fabric_details?: any;
+  lining_details?: any;
+  heading_details?: any;
+  extras_details?: any[];
+  cost_breakdown?: any[];
+  measurements_details?: any;
 }
 
 export const useWindowSummary = (windowId: string | undefined) => {

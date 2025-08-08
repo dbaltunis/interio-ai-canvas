@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,20 @@ export const MeasurementWorksheet = ({
   const [notes, setNotes] = useState(existingMeasurement?.notes || "");
   const [measuredBy, setMeasuredBy] = useState(existingMeasurement?.measured_by || "");
   const [photos, setPhotos] = useState<string[]>(existingMeasurement?.photos || []);
+
+  // Reset state when creating new measurements (when existingMeasurement becomes null)
+  useEffect(() => {
+    if (!existingMeasurement) {
+      setWindowType("standard");
+      setSelectedRoom("no_room");
+      setSelectedWindowCovering("no_covering");
+      setMeasurements({});
+      setNotes("");
+      setMeasuredBy("");
+      setPhotos([]);
+      console.log('🔄 RESET: Cleared form state for new measurement');
+    }
+  }, [existingMeasurement]);
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -196,6 +210,56 @@ export const MeasurementWorksheet = ({
           // Total cost
           const totalCost = fabricCost + liningCost + manufacturingCost;
           
+          // Build detailed breakdown for itemized display
+          const costBreakdown: any[] = [
+            {
+              id: 'fabric',
+              name: fabricItem?.name || 'Fabric',
+              description: `${Number(linearMeters.toFixed(2))}m × ${widthsRequired} width(s)`,
+              quantity: Number(linearMeters.toFixed(2)),
+              unit: 'meters',
+              unit_price: fabricPricePerMeter,
+              total_cost: Number(fabricCost.toFixed(2)),
+              category: 'fabric',
+              details: {
+                fabric_width_cm: fabricWidthCm,
+                fullness_ratio: fullnessRatio,
+                waste_percent: wastePercent,
+                required_width_m: Number(requiredWidthM.toFixed(2)),
+                total_drop_m: Number(totalDropM.toFixed(2))
+              }
+            }
+          ];
+
+          if (liningType && liningCost > 0) {
+            costBreakdown.push({
+              id: 'lining',
+              name: liningType,
+              description: `${Number(linearMeters.toFixed(2))}m`,
+              quantity: Number(linearMeters.toFixed(2)),
+              unit: 'meters',
+              unit_price: liningPricePerMeter,
+              total_cost: Number(liningCost.toFixed(2)),
+              category: 'lining',
+              details: { 
+                type: liningType,
+                price_per_meter: liningPricePerMeter
+              }
+            });
+          }
+
+          costBreakdown.push({
+            id: 'manufacturing',
+            name: `${manufacturingType} Manufacturing`,
+            description: manufacturingType === 'hand' ? 'Hand-finished curtains' : 'Machine-made curtains',
+            total_cost: Number(manufacturingCost.toFixed(2)),
+            category: 'manufacturing',
+            details: { 
+              type: manufacturingType,
+              description: manufacturingType === 'hand' ? 'Hand-finished curtains' : 'Machine-made curtains'
+            }
+          });
+
           const summaryData = {
             window_id: surfaceId,
             linear_meters: Number(linearMeters.toFixed(2)),
@@ -210,6 +274,45 @@ export const MeasurementWorksheet = ({
             pricing_type: 'per_metre',
             waste_percent: wastePercent,
             currency: 'GBP',
+            // Enhanced breakdown data
+            template_name: templateId ? 'Curtain Template' : null,
+            template_details: templateId ? { 
+              id: templateId,
+              name: 'Curtain Template'
+            } : {},
+            fabric_details: {
+              name: fabricItem?.name || 'Fabric',
+              width_cm: fabricWidthCm,
+              price_per_meter: fabricPricePerMeter,
+              meters_used: Number(linearMeters.toFixed(2)),
+              total_cost: Number(fabricCost.toFixed(2)),
+              widths_required: widthsRequired
+            },
+            lining_details: liningType ? {
+              type: liningType,
+              price_per_meter: liningPricePerMeter,
+              meters_used: Number(linearMeters.toFixed(2)),
+              total_cost: Number(liningCost.toFixed(2))
+            } : {},
+            heading_details: templateId ? {
+              type: 'Template Based',
+              cost: 0
+            } : {},
+            extras_details: [],
+            cost_breakdown: costBreakdown,
+            measurements_details: {
+              rail_width_cm: railWidthCm,
+              drop_cm: dropCm,
+              fullness_ratio: fullnessRatio,
+              return_left: returnLeft,
+              return_right: returnRight,
+              overlap: overlap,
+              bottom_hem: bottomHem,
+              header_hem: headerHem,
+              side_hems: sideHems,
+              seam_hems: seamHems,
+              waste_percent: wastePercent
+            }
           };
           
           console.log('💾 SAVE: Saving window summary data:', summaryData);
