@@ -32,8 +32,13 @@ export const RoomHeader = ({
   onChangeRoomType
 }: RoomHeaderProps) => {
   return (
-    <CardHeader className="pb-4 bg-brand-primary/5 border-b border-brand-secondary/20">
-      <div className="flex items-center justify-between">
+    <CardHeader className="relative overflow-hidden pb-6 rounded-b-3xl bg-gradient-to-b from-brand-primary/10 via-transparent to-brand-secondary/10 border-b border-brand-secondary/30 backdrop-blur-md">
+      {/* Water-drop blobs background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-16 -left-20 w-72 h-72 bg-brand-primary/20 rounded-full blur-3xl animate-enter" />
+        <div className="absolute -bottom-24 -right-10 w-80 h-80 bg-brand-secondary/20 rounded-full blur-3xl animate-enter" />
+      </div>
+      <div className="flex items-center justify-between relative animate-fade-in">
         <div className="flex-1">
           {editingRoomId === room.id ? (
             <Input
