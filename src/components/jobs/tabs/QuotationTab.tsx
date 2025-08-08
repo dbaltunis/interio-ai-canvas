@@ -24,6 +24,20 @@ interface QuotationTabProps {
   projectId: string;
 }
 
+// Helper: keep only the first 'products' block to avoid duplicates in preview
+const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
+  let seen = false;
+  return (blocks || []).filter((b) => {
+    if (b?.type !== 'products') return true;
+    if (!seen) {
+      seen = true;
+      return true;
+    }
+    return false;
+  });
+};
+
+
 export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { toast } = useToast();
   const { data: projects } = useProjects();
@@ -206,10 +220,11 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     );
   }
 
-  // Use template blocks as-is to mirror Settings preview precisely
-  const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) 
-    ? selectedTemplate.blocks 
-    : [];
+// Use template blocks as-is to mirror Settings preview precisely, but guard against duplicate products blocks
+const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) 
+  ? removeDuplicateProductsBlocks(selectedTemplate.blocks)
+  : [];
+
   return (
     <div className="space-y-6">
       {/* Modern Compact Header */}

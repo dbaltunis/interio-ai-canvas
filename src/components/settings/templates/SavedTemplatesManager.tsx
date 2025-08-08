@@ -29,10 +29,25 @@ interface QuoteTemplate {
   updated_at: string;
 }
 
+
 export const SavedTemplatesManager = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<QuoteTemplate | null>(null);
   const queryClient = useQueryClient();
+
+  // Helper: keep only the first 'products' block
+  const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
+    let seen = false;
+    return (blocks || []).filter((b) => {
+      if (b?.type !== 'products') return true;
+      if (!seen) {
+        seen = true;
+        return true;
+      }
+      return false;
+    });
+  };
+
 
   // Fetch saved templates
   const { data: templates = [], isLoading } = useQuery({
@@ -48,6 +63,30 @@ export const SavedTemplatesManager = () => {
       return data as QuoteTemplate[];
     }
   });
+
+  // Auto-clean templates that contain duplicate 'products' blocks
+  useEffect(() => {
+    const runCleanup = async () => {
+      if (!templates || templates.length === 0) return;
+      let changed = false;
+      for (const t of templates) {
+        if (!Array.isArray(t.blocks)) continue;
+        const cleaned = removeDuplicateProductsBlocks(t.blocks);
+        if (cleaned.length !== t.blocks.length) {
+          const { error } = await supabase
+            .from('quote_templates')
+            .update({ blocks: cleaned })
+            .eq('id', t.id);
+          if (!error) changed = true;
+        }
+      }
+      if (changed) {
+        queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
+      }
+    };
+    runCleanup();
+  }, [templates, queryClient]);
+
 
   // Delete template mutation
   const deleteTemplate = useMutation({
