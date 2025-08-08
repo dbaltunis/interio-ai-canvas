@@ -222,13 +222,26 @@ export const useJobHandlers = (project: any) => {
 
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     try {
-      await createTreatment.mutateAsync({
+      const payload: any = {
         project_id: projectId,
         room_id: roomId,
         window_id: surfaceId,
         treatment_type: treatmentType,
-        ...treatmentData
-      });
+      };
+
+      if (treatmentData) {
+        payload.measurements = treatmentData.measurements || {};
+        payload.fabric_details = treatmentData.fabric_details || {};
+        payload.treatment_details = treatmentData.treatment_details || {};
+        payload.calculation_details = treatmentData.calculation_details || {};
+        payload.material_cost = treatmentData.material_cost ?? 0;
+        payload.labor_cost = treatmentData.labor_cost ?? 0;
+        payload.total_price = treatmentData.total_price ?? treatmentData.unit_price ?? 0;
+        payload.unit_price = treatmentData.unit_price ?? treatmentData.total_price ?? 0;
+        payload.quantity = treatmentData.quantity ?? 1;
+      }
+
+      await createTreatment.mutateAsync(payload);
 
       toast({
         title: "Success",

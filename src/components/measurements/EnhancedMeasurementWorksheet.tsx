@@ -21,6 +21,7 @@ import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
+import { useSaveWindowSummary } from "@/hooks/useWindowSummary";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -109,6 +110,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
+  const saveWindowSummary = useSaveWindowSummary();
 
   // Reset state when surface changes to ensure each window has independent state
   useEffect(() => {
@@ -254,41 +256,142 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     }
   };
 
-  const handleSaveTreatmentConfig = () => {
-    if (!selectedInventoryItem || !selectedCovering) return;
+  const handleSaveTreatmentConfig = async () => {
+    if (!selectedCovering) return;
+
+    // Resolve selected fabric item from state or saved measurements
+    const fabricItem = selectedFabric
+      ? inventoryItems.find((item) => item.id === selectedFabric)
+      : inventoryItems.find((item) => item.id === (measurements as any)?.selected_fabric);
+
+    if (!fabricItem) {
+      console.warn("No fabric selected; skipping treatment and summary save");
+      return;
+    }
+
+    // Measurements
+    const widthCm = parseFloat((measurements as any).rail_width || (measurements as any).measurement_a || '0');
+    const heightCm = parseFloat((measurements as any).drop || (measurements as any).measurement_b || '0');
+    const pooling = parseFloat((measurements as any).pooling_amount || '0');
+
+    // Manufacturing allowances from template
+    const curtainCount = selectedCovering.curtain_type === 'pair' ? 2 : 1;
+    const sideHems = selectedCovering.side_hems || 0;
+    const totalSideHems = sideHems * 2 * curtainCount;
+    const returnLeft = selectedCovering.return_left || 0;
+    const returnRight = selectedCovering.return_right || 0;
+    const seamHems = selectedCovering.seam_hems || 0;
+    const headerHem = selectedCovering.header_allowance || 8;
+    const bottomHem = selectedCovering.bottom_hem || 8;
+    const requiredWidth = widthCm * (selectedCovering.fullness_ratio || 2);
+    const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+    const fabricWidthCm = (fabricItem as any).fabric_width || (fabricItem as any).fabric_width_cm || 137;
+    const widthsRequired = Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm));
+    const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+    const totalDrop = heightCm + headerHem + bottomHem + pooling;
+    const wasteMultiplier = 1 + ((selectedCovering.waste_percent || 0) / 100);
+
+    const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
+    const pricePerMeter = (fabricItem as any).price_per_meter || (fabricItem as any).unit_price || (fabricItem as any).selling_price || 0;
+    const fabricCost = linearMeters * pricePerMeter;
+
+    // Lining
+    let liningCost = 0;
+    let liningDetails: any = null;
+    if (selectedLining && selectedLining !== 'none') {
+      liningDetails = (selectedCovering.lining_types || []).find((l: any) => l.type === selectedLining) || null;
+      if (liningDetails) {
+        liningCost = linearMeters * (liningDetails.price_per_metre || 0) + (liningDetails.labour_per_curtain || 0) * curtainCount;
+      }
+    }
+
+    // Manufacturing
+    let manufacturingCost = 0;
+    if (selectedCovering.machine_price_per_metre) manufacturingCost += selectedCovering.machine_price_per_metre * linearMeters;
+    if (selectedCovering.machine_price_per_drop) manufacturingCost += selectedCovering.machine_price_per_drop * curtainCount;
+    if (selectedCovering.machine_price_per_panel) manufacturingCost += selectedCovering.machine_price_per_panel * curtainCount;
+
+    const totalCost = fabricCost + liningCost + manufacturingCost;
+
+    const calculation_details = {
+      widths_required: widthsRequired,
+      linear_meters: linearMeters,
+      total_drop_cm: totalDrop,
+      price_per_meter: pricePerMeter,
+      breakdown: [
+        { label: 'Fabric', amount: fabricCost },
+        { label: 'Lining', amount: liningCost },
+        { label: 'Manufacturing', amount: manufacturingCost }
+      ]
+    };
 
     const treatmentConfigData = {
       treatment_type: selectedCovering.name.toLowerCase(),
       product_name: selectedCovering.name,
       window_covering: selectedCovering,
-      inventory_item: selectedInventoryItem,
+      inventory_item: fabricItem,
       measurements: {
         ...measurements,
         ...treatmentData.measurements
       },
       fabric_details: {
-        fabric_id: selectedFabric,
+        fabric_id: fabricItem.id,
+        name: fabricItem.name,
+        price_per_meter: pricePerMeter,
         selected_heading: selectedHeading,
         selected_lining: selectedLining,
-        fabric_item: selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : null,
+        fabric_item: fabricItem,
         ...treatmentData.fabric_details
       },
-      material_cost: calculatedCost * 0.6, // Example cost breakdown
-      labor_cost: calculatedCost * 0.4,
-      total_price: calculatedCost,
-      unit_price: calculatedCost,
+      material_cost: fabricCost + liningCost,
+      labor_cost: manufacturingCost,
+      total_price: totalCost,
+      unit_price: totalCost,
       quantity: 1,
       treatment_details: {
         ...treatmentData,
-        selected_fabric: selectedFabric,
-        selected_heading: selectedHeading, 
+        selected_fabric: fabricItem.id,
+        selected_heading: selectedHeading,
         selected_lining: selectedLining
       },
+      calculation_details,
       notes: treatmentData.notes || "",
       status: "planned"
     };
 
+    // Create/update treatment via parent handler
     onSaveTreatment?.(treatmentConfigData);
+
+    // Upsert window summary for card/quotation views
+    try {
+      if (surfaceId) {
+        await saveWindowSummary.mutateAsync({
+          window_id: surfaceId,
+          linear_meters: linearMeters,
+          widths_required: widthsRequired,
+          price_per_meter: pricePerMeter,
+          fabric_cost: fabricCost,
+          lining_cost: liningCost,
+          manufacturing_cost: manufacturingCost,
+          total_cost: totalCost,
+          template_id: selectedCovering.id,
+          pricing_type: selectedCovering.pricing_type,
+          waste_percent: selectedCovering.waste_percent || 0,
+          manufacturing_type: selectedCovering.manufacturing_type,
+          currency: units.currency,
+          template_name: selectedCovering.name,
+          template_details: selectedCovering as any,
+          fabric_details: { id: fabricItem.id, name: fabricItem.name, price_per_meter: pricePerMeter },
+          lining_details: liningDetails,
+          heading_details: { id: selectedHeading },
+          extras_details: [],
+          cost_breakdown: calculation_details.breakdown,
+          measurements_details: measurements
+        } as any);
+      }
+    } catch (e) {
+      console.error('Failed to save window summary:', e);
+    }
   };
 
   const canConfigureTreatment = selectedWindowCovering !== "no_covering" && 
@@ -512,8 +615,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 <Button 
                   onClick={async () => {
                     await handleSaveMeasurements();
-                    if (selectedCovering && selectedFabric) {
-                      handleSaveTreatmentConfig();
+                    if (selectedCovering && (selectedFabric || (measurements as any)?.selected_fabric)) {
+                      await handleSaveTreatmentConfig();
                     }
                     onClose?.();
                   }}
