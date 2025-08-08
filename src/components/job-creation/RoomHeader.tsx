@@ -32,11 +32,13 @@ export const RoomHeader = ({
   onChangeRoomType
 }: RoomHeaderProps) => {
   return (
-    <CardHeader className="relative overflow-hidden pb-6 rounded-b-3xl bg-gradient-to-b from-brand-primary/10 via-transparent to-brand-secondary/10 border-b border-brand-secondary/30 backdrop-blur-md">
-      {/* Water-drop blobs background */}
+    <CardHeader className="relative overflow-hidden pb-6 rounded-b-3xl bg-gradient-to-b from-background/40 via-background/20 to-background/10 border-b border-brand-secondary/30 backdrop-blur-md">
+      {/* Water-drop blobs & gloss like Team Hub */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-16 -left-20 w-72 h-72 bg-brand-primary/20 rounded-full blur-3xl animate-enter" />
         <div className="absolute -bottom-24 -right-10 w-80 h-80 bg-brand-secondary/20 rounded-full blur-3xl animate-enter" />
+        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-brand-light/25 to-transparent" />
+        <div className="absolute inset-0 ring-1 ring-inset ring-brand-secondary/20 rounded-b-3xl" />
       </div>
       <div className="flex items-center justify-between relative animate-fade-in">
         <div className="flex-1">
