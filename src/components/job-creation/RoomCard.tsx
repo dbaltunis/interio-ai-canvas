@@ -101,15 +101,10 @@ export const RoomCard = ({
   }
 
   return (
-      <Card className="relative overflow-hidden rounded-3xl border border-brand-secondary/30 bg-gradient-to-br from-background/85 to-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/70 hover:backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 hover:scale-[1.01] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter">
+      <Card className="relative overflow-hidden rounded-3xl border border-brand-secondary/30 bg-gradient-to-br from-background/90 to-background/70 supports-[backdrop-filter]:bg-background/80 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 hover:scale-[1.01] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter">
       {/* Ambient water-drop/glass layers */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Soft blobs */}
-        <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-primary/15 rounded-full blur-3xl" />
-        <div className="absolute -bottom-28 -right-16 w-80 h-80 bg-brand-secondary/15 rounded-full blur-3xl" />
-        {/* Top sheen like Team Hub */}
-        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-brand-light/30 to-transparent rounded-t-3xl" />
-        {/* Subtle inner border */}
+        {/* Subtle inner border only for crispness */}
         <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-brand-secondary/20" />
       </div>
       <RoomHeader

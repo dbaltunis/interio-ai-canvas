@@ -51,11 +51,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   });
 
   return (
-    <Card className="relative overflow-hidden rounded-2xl border border-brand-secondary/30 bg-gradient-to-br from-background/85 to-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/70 hover:backdrop-blur-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 hover:scale-[1.005] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter mb-4">
+    <Card className="relative overflow-hidden rounded-2xl border border-brand-secondary/30 bg-gradient-to-br from-background/90 to-background/70 supports-[backdrop-filter]:bg-background/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 hover:scale-[1.005] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter mb-4">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-0 right-0 h-14 bg-gradient-to-b from-brand-light/25 to-transparent" />
-        <div className="absolute -top-16 -left-24 w-56 h-56 bg-brand-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-brand-secondary/10 rounded-full blur-3xl" />
         <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand-secondary/20" />
       </div>
       <CardHeader className="relative pb-3">
