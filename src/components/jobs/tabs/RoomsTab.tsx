@@ -4,7 +4,8 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
-import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
+import { formatCurrency } from "@/utils/currency";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 
 interface RoomsTabProps {
   projectId: string;
@@ -15,8 +16,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
-  const userCurrency = useUserCurrency();
-  
+const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const project = projects?.find(p => p.id === projectId);
 
   // Calculate comprehensive project total
@@ -28,7 +28,8 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const treatmentCount = treatments?.length || 0;
 
   // Project pricing calculation
-  const subtotal = treatmentTotal;
+  const summariesTotal = projectSummaries?.projectTotal || 0;
+  const subtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
   const markupPercentage = 25;
   const taxRate = 0.08;
   const finalSubtotal = subtotal * (1 + markupPercentage / 100);
@@ -61,7 +62,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-primary">
-            {formatCurrency(total, userCurrency)}
+            {formatCurrency(total)}
           </div>
           <p className="text-sm text-muted-foreground">
             Total Project Cost ({roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''})

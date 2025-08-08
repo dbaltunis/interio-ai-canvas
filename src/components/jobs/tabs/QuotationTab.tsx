@@ -8,6 +8,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
@@ -29,6 +30,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
+  const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   // Fetch quote templates from database
   const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
     queryKey: ["quote-templates"],
@@ -77,14 +79,29 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   // Get selected template
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
 
-  // Calculate totals
+  // Calculate totals with fallback to window summaries
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
+  const summariesTotal = projectSummaries?.projectTotal || 0;
+  const hasTreatments = (treatments?.length || 0) > 0;
+  const syntheticTreatments = !hasTreatments
+    ? (projectSummaries?.windows || []).map((w) => ({
+        id: `${w.window_id}-synthetic`,
+        room_id: w.room_id,
+        window_id: w.window_id,
+        treatment_type: w.summary?.template_name || 'Window Treatment',
+        product_name: w.surface_name || 'Window',
+        total_price: Number(w.summary?.total_cost || 0),
+      }))
+    : [];
+  const sourceTreatments = hasTreatments ? (treatments || []) : syntheticTreatments;
+
   const [markupPercentage, setMarkupPercentage] = useState<number>(25);
   const taxRate = 0.08;
-  const subtotal = treatmentTotal * (1 + markupPercentage / 100);
+  const baseSubtotal = hasTreatments ? treatmentTotal : summariesTotal;
+  const subtotal = baseSubtotal * (1 + markupPercentage / 100);
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
 
@@ -305,7 +322,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
                       </Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
-                      <p>Total: {formatCurrency(quote.total_amount || 0)}</p>
+                       <p>Total: {formatCurrency(quote.total_amount || 0)}</p>
                       <p>Created: {new Date(quote.created_at).toLocaleDateString()}</p>
                       {quote.valid_until && (
                         <p>Valid until: {new Date(quote.valid_until).toLocaleDateString()}</p>
@@ -338,7 +355,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         </CardHeader>
         <CardContent>
           <TreatmentLineItems
-            treatments={treatments || []}
+            treatments={sourceTreatments}
             rooms={rooms || []}
             surfaces={surfaces || []}
             markupPercentage={markupPercentage}
@@ -363,7 +380,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
               blocks={templateBlocks}
               projectData={{
                 project,
-                treatments: treatments || [],
+                treatments: sourceTreatments,
                 rooms: rooms || [],
                 surfaces: surfaces || [],
                 subtotal,
