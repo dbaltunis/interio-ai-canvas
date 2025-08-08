@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { formatCurrency } from "@/utils/currency";
 
 interface ProjectQuoteTabProps {
   project: any;
@@ -46,12 +47,6 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const handleEmailQuote = () => {
     toast({ title: "Email sent", description: "Quote has been emailed to client" });

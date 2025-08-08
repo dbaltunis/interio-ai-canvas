@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calculator, Settings } from "lucide-react";
+import { formatCurrency } from "@/utils/currency";
 
 interface TreatmentLineItemsProps {
   treatments: any[];
@@ -31,12 +32,6 @@ export const TreatmentLineItems = ({
     return surface?.name || 'Unknown Surface';
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   return (
     <Card>

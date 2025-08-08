@@ -22,6 +22,7 @@ import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection
 
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { useSaveWindowSummary } from "@/hooks/useWindowSummary";
+import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPricing";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -281,61 +282,25 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       });
     }
 
-    // Measurements
-    const widthCm = parseFloat((measurements as any).rail_width || (measurements as any).measurement_a || '0');
-    const heightCm = parseFloat((measurements as any).drop || (measurements as any).measurement_b || '0');
-    const pooling = parseFloat((measurements as any).pooling_amount || '0');
-
-    // Manufacturing allowances from template
-    const curtainCount = selectedCovering.curtain_type === 'pair' ? 2 : 1;
-    const sideHems = selectedCovering.side_hems || 0;
-    const totalSideHems = sideHems * 2 * curtainCount;
-    const returnLeft = selectedCovering.return_left || 0;
-    const returnRight = selectedCovering.return_right || 0;
-    const seamHems = selectedCovering.seam_hems || 0;
-    const headerHem = selectedCovering.header_allowance || 8;
-    const bottomHem = selectedCovering.bottom_hem || 8;
-    const requiredWidth = widthCm * (selectedCovering.fullness_ratio || 2);
-    const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
-    const fabricWidthCm = (fabricItem as any).fabric_width || (fabricItem as any).fabric_width_cm || 137;
-    const widthsRequired = Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm));
-    const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
-    const totalDrop = heightCm + headerHem + bottomHem + pooling;
-    const wasteMultiplier = 1 + ((selectedCovering.waste_percent || 0) / 100);
-
-    const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
-    const pricePerMeter = (fabricItem as any).price_per_meter || (fabricItem as any).unit_price || (fabricItem as any).selling_price || 0;
-    const fabricCost = linearMeters * pricePerMeter;
-
-    // Lining
-    let liningCost = 0;
-    let liningDetails: any = null;
-    if (selectedLining && selectedLining !== 'none') {
-      liningDetails = (selectedCovering.lining_types || []).find((l: any) => l.type === selectedLining) || null;
-      if (liningDetails) {
-        liningCost = linearMeters * (liningDetails.price_per_metre || 0) + (liningDetails.labour_per_curtain || 0) * curtainCount;
-      }
-    }
-
-    // Manufacturing
-    let manufacturingCost = 0;
-    if (selectedCovering.machine_price_per_metre) manufacturingCost += selectedCovering.machine_price_per_metre * linearMeters;
-    if (selectedCovering.machine_price_per_drop) manufacturingCost += selectedCovering.machine_price_per_drop * curtainCount;
-    if (selectedCovering.machine_price_per_panel) manufacturingCost += selectedCovering.machine_price_per_panel * curtainCount;
-
-    const totalCost = fabricCost + liningCost + manufacturingCost;
-
-    const calculation_details = {
-      widths_required: widthsRequired,
-      linear_meters: linearMeters,
-      total_drop_cm: totalDrop,
-      price_per_meter: pricePerMeter,
-      breakdown: [
-        { label: 'Fabric', amount: fabricCost },
-        { label: 'Lining', amount: liningCost },
-        { label: 'Manufacturing', amount: manufacturingCost }
-      ]
-    };
+    // Centralized pricing
+    const {
+      linearMeters,
+      widthsRequired,
+      pricePerMeter,
+      fabricCost,
+      liningCost,
+      manufacturingCost,
+      totalCost,
+      liningDetails,
+      calculation_details,
+    } = calculateTreatmentPricing({
+      template: selectedCovering,
+      measurements,
+      fabricItem,
+      selectedHeading,
+      selectedLining,
+      unitsCurrency: units.currency,
+    });
 
     const treatmentConfigData = {
       treatment_type: selectedCovering.name.toLowerCase(),

@@ -17,6 +17,7 @@ import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus } from "lucide-rea
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
+import { formatCurrency } from "@/utils/currency";
 
 interface QuotationTabProps {
   projectId: string;
@@ -304,7 +305,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
                       </Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
-                      <p>Total: ${quote.total_amount?.toFixed(2) || '0.00'}</p>
+                      <p>Total: {formatCurrency(quote.total_amount || 0)}</p>
                       <p>Created: {new Date(quote.created_at).toLocaleDateString()}</p>
                       {quote.valid_until && (
                         <p>Valid until: {new Date(quote.valid_until).toLocaleDateString()}</p>
