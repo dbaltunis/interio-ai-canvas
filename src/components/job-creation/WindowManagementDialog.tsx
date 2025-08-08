@@ -13,6 +13,8 @@ import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { TreatmentEditDialog } from "./TreatmentEditDialog";
 import { TreatmentListPanel } from "./TreatmentListPanel";
+import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
+import { ErrorFallback } from "@/components/ui/error-fallback";
 
 interface WindowManagementDialogProps {
   isOpen: boolean;
@@ -141,7 +143,7 @@ export const WindowManagementDialog = ({
   if (!surface) return null;
 
   return (
-    <>
+    <ErrorBoundary fallback={<ErrorFallback title="Window management error" description="Please close and reopen the window manager." />}> 
       <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
@@ -208,6 +210,6 @@ export const WindowManagementDialog = ({
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </ErrorBoundary>
   );
 };

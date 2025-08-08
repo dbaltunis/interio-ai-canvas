@@ -8,7 +8,8 @@ import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceList } from "./SurfaceList";
 import { useCompactMode } from "@/hooks/useCompactMode";
-
+import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
+import { ErrorFallback } from "@/components/ui/error-fallback";
 
 interface RoomCardProps {
   room: any;
@@ -104,6 +105,7 @@ export const RoomCard = ({
   }
 
   return (
+    <ErrorBoundary fallback={<ErrorFallback title="Room failed to load" description="Please refresh or try again." />}> 
       <Card className="relative overflow-hidden rounded-3xl border border-brand-secondary/30 bg-gradient-to-br from-background/90 to-background/70 supports-[backdrop-filter]:bg-background/80 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 hover:scale-[1.01] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter">
       {/* Ambient water-drop/glass layers */}
       <div className="pointer-events-none absolute inset-0">
@@ -163,5 +165,6 @@ export const RoomCard = ({
         </div>
       </CardContent>
     </Card>
+    </ErrorBoundary>
   );
 };
