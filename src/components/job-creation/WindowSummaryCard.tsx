@@ -1,12 +1,11 @@
+import React, { useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
 import { formatCurrency } from "@/utils/unitConversion";
 import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
-import { useState } from "react";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -168,8 +167,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
             </div>
 
             {/* Detailed Breakdown */}
-            <Collapsible open={showBreakdown} onOpenChange={setShowBreakdown}>
-              <CollapsibleContent>
+            {showBreakdown && (
+              <div className="mt-4">
                 {summary.cost_breakdown && summary.cost_breakdown.length > 0 ? (
                   <CostBreakdownDisplay 
                     breakdown={summary.cost_breakdown}
@@ -186,8 +185,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                     </CardContent>
                   </Card>
                 )}
-              </CollapsibleContent>
-            </Collapsible>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

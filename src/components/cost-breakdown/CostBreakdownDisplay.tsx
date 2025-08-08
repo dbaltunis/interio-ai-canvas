@@ -1,8 +1,7 @@
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
 import { formatCurrency } from "@/utils/unitConversion";
 
 interface CostBreakdownItem {
@@ -62,13 +61,18 @@ export function CostBreakdownDisplay({
       </CardHeader>
       
       <CardContent>
-        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-          <CollapsibleTrigger className="flex items-center gap-2 w-full text-left mb-4 hover:text-primary transition-colors">
+        <div className="mb-4">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 w-full text-left hover:text-primary transition-colors"
+          >
             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             <span className="font-medium">Detailed Breakdown</span>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent className="space-y-4">
+          </button>
+        </div>
+        
+        {isExpanded ? (
+          <div className="space-y-4">
             {Object.entries(groupedBreakdown).map(([category, items]) => (
               <div key={category} className="border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -110,10 +114,8 @@ export function CostBreakdownDisplay({
                 </div>
               </div>
             ))}
-          </CollapsibleContent>
-        </Collapsible>
-        
-        {!isExpanded && (
+          </div>
+        ) : (
           <div className="space-y-2">
             {Object.entries(groupedBreakdown).map(([category, items]) => (
               <div key={category} className="flex justify-between items-center py-2 border-b last:border-b-0">
