@@ -9,6 +9,7 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { formatCurrency } from "@/utils/currency";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 
 interface ProjectQuoteTabProps {
   project: any;
@@ -20,30 +21,47 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: treatments = [] } = useTreatments(project?.id);
   const { data: rooms = [] } = useRooms(project?.id);
   const { data: surfaces = [] } = useSurfaces(project?.id);
+  const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
   const { toast } = useToast();
 
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Generate quote items from treatments
-  const quoteItems = treatments.map(treatment => {
-    const room = rooms.find(r => r.id === treatment.room_id);
-    const surface = surfaces.find(s => s.id === treatment.window_id);
-    
-    return {
-      id: treatment.id,
-      description: `${room?.name || 'Room'} - ${treatment.product_name || treatment.treatment_type}`,
-      location: room?.name || 'Unknown Room',
-      window: surface?.name || 'Window',
-      quantity: treatment.quantity || 1,
-      unitPrice: treatment.unit_price || 0,
-      total: treatment.total_price || 0,
-      treatment_type: treatment.treatment_type,
-      fabric_type: treatment.fabric_type,
-      measurements: treatment.measurements || {}
-    };
-  });
+  // Generate quote items from treatments or fallback to window summaries
+  const hasTreatments = (treatments?.length || 0) > 0;
+  const quoteItems = hasTreatments
+    ? treatments.map(treatment => {
+        const room = rooms.find(r => r.id === treatment.room_id);
+        const surface = surfaces.find(s => s.id === treatment.window_id);
+        return {
+          id: treatment.id,
+          description: `${room?.name || 'Room'} - ${treatment.product_name || treatment.treatment_type}`,
+          location: room?.name || 'Unknown Room',
+          window: surface?.name || 'Window',
+          quantity: treatment.quantity || 1,
+          unitPrice: treatment.unit_price || 0,
+          total: treatment.total_price || 0,
+          treatment_type: treatment.treatment_type,
+          fabric_type: treatment.fabric_type,
+          measurements: treatment.measurements || {}
+        };
+      })
+    : (projectSummaries?.windows || []).map((w) => {
+        const room = rooms.find(r => r.id === w.room_id);
+        return {
+          id: `${w.window_id}-summary`,
+          description: `${room?.name || 'Room'} - ${w.summary?.template_name || 'Window Treatment'}`,
+          location: room?.name || 'Unknown Room',
+          window: w.surface_name || 'Window',
+          quantity: 1,
+          unitPrice: Number(w.summary?.total_cost || 0),
+          total: Number(w.summary?.total_cost || 0),
+          treatment_type: w.summary?.manufacturing_type,
+          fabric_type: w.summary?.fabric_details?.name,
+          measurements: w.summary?.measurements_details || {}
+        };
+      });
   
-  const subtotal = quoteItems.reduce((sum, item) => sum + item.total, 0);
+  const subtotal = quoteItems.reduce((sum, item) => sum + (item.total || 0), 0);
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 

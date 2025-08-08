@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { User, Calendar, DollarSign, FileText } from "lucide-react";
 import { JobStatusBadge } from "./JobStatusBadge";
 import { JobActionsMenu } from "./JobActionsMenu";
+import { formatCurrency } from "@/utils/currency";
 
 interface JobGridViewProps {
   jobs: any[];
@@ -12,13 +13,6 @@ interface JobGridViewProps {
 }
 
 export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridViewProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount || 0);
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -62,7 +56,7 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridVi
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="h-4 w-4 text-gray-400" />
                 <span className="font-medium text-gray-900">
-                  {formatCurrency(job.total_amount)}
+                  {formatCurrency(job.total_amount || 0)}
                 </span>
               </div>
               
