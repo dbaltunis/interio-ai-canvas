@@ -61,9 +61,8 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
 
-  const [viewMode, setViewMode] = useState<'simple' | 'detailed'>('simple');
+  const [showItemsEditor, setShowItemsEditor] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-
   const project = projects?.find(p => p.id === projectId);
   
   // Filter quotes for this specific project (already filtered by hook)
@@ -207,20 +206,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     );
   }
 
-  // Get template blocks and update view mode for products block
-  const templateBlocks = selectedTemplate && selectedTemplate.blocks && Array.isArray(selectedTemplate.blocks) 
-    ? selectedTemplate.blocks.map((block: any) => ({
-        ...block,
-        content: {
-          ...block.content,
-          // Update products block to use the correct view mode and ensure columns exist for simple view
-          ...(block.type === 'products'
-            ? { tableStyle: viewMode, columns: block.content?.columns ?? ['product','description','qty','unit_price','total'] }
-            : {})
-        }
-      })) 
+  // Use template blocks as-is to mirror Settings preview precisely
+  const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) 
+    ? selectedTemplate.blocks 
     : [];
-
   return (
     <div className="space-y-6">
       {/* Modern Compact Header */}
@@ -273,21 +262,18 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
             <span>Templates</span>
           </Button>
 
-          {/* View Toggle */}
+          {/* Items Editor Toggle */}
           <div className="flex items-center space-x-2">
-            <Badge variant={viewMode === 'simple' ? 'default' : 'outline'} className="text-xs">
-              {viewMode === 'simple' ? 'Simple' : 'Detailed'}
-            </Badge>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setViewMode(viewMode === 'simple' ? 'detailed' : 'simple')}
+              onClick={() => setShowItemsEditor(!showItemsEditor)}
               className="flex items-center space-x-1"
             >
-              {viewMode === 'simple' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              {showItemsEditor ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span>{showItemsEditor ? 'Hide Items Editor' : 'Show Items Editor'}</span>
             </Button>
           </div>
-
           {/* Actions Menu */}
           <ThreeDotMenu items={actionMenuItems} />
         </div>
@@ -348,22 +334,23 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         </Card>
       )}
 
-      {/* Selected Treatments */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Selected Treatments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TreatmentLineItems
-            treatments={sourceTreatments}
-            rooms={rooms || []}
-            surfaces={surfaces || []}
-            markupPercentage={markupPercentage}
-            onMarkupChange={setMarkupPercentage}
-          />
-        </CardContent>
-      </Card>
-
+      {/* Items Editor (optional) */}
+      {showItemsEditor && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Selected Treatments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TreatmentLineItems
+              treatments={sourceTreatments}
+              rooms={rooms || []}
+              surfaces={surfaces || []}
+              markupPercentage={markupPercentage}
+              onMarkupChange={setMarkupPercentage}
+            />
+          </CardContent>
+        </Card>
+      )}
       {/* Quote Document Preview */}
       {selectedTemplate && (
         <section className="mt-6">
