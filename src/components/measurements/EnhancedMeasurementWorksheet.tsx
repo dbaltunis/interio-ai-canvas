@@ -260,13 +260,25 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     if (!selectedCovering) return;
 
     // Resolve selected fabric item from state or saved measurements
-    const fabricItem = selectedFabric
+    let fabricItem = selectedFabric
       ? inventoryItems.find((item) => item.id === selectedFabric)
       : inventoryItems.find((item) => item.id === (measurements as any)?.selected_fabric);
 
+    // Allow calculation without explicit fabric by using sensible fallbacks
     if (!fabricItem) {
-      console.warn("No fabric selected; skipping treatment and summary save");
-      return;
+      console.warn("No fabric item found from any source, trying fallback...");
+      fabricItem = {
+        id: null,
+        name: "Fabric (default)",
+        fabric_width: (measurements as any)?.fabric_width || 140,
+        price_per_meter: (measurements as any)?.fabric_price_per_meter || 45,
+        unit_price: (measurements as any)?.fabric_price_per_meter || 45,
+        selling_price: (measurements as any)?.fabric_price_per_meter || 45,
+      } as any;
+      console.log("Using fallback fabric pricing:", {
+        fabricId: (fabricItem as any).id,
+        fallbackPrice: (fabricItem as any).price_per_meter || (fabricItem as any).unit_price || (fabricItem as any).selling_price,
+      });
     }
 
     // Measurements
@@ -359,8 +371,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       status: "planned"
     };
 
-    // Create/update treatment via parent handler
-    onSaveTreatment?.(treatmentConfigData);
+    // Create/update treatment only when a real fabric is selected
+    if ((fabricItem as any)?.id) {
+      onSaveTreatment?.(treatmentConfigData);
+    }
 
     // Upsert window summary for card/quotation views
     try {
@@ -615,7 +629,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 <Button 
                   onClick={async () => {
                     await handleSaveMeasurements();
-                    if (selectedCovering && (selectedFabric || (measurements as any)?.selected_fabric)) {
+                    if (selectedCovering) {
                       await handleSaveTreatmentConfig();
                     }
                     onClose?.();
