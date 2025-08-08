@@ -3114,7 +3114,7 @@ export type Database = {
       }
       windows_summary: {
         Row: {
-          currency: string | null
+          currency: string
           fabric_cost: number | null
           linear_meters: number | null
           lining_cost: number | null
@@ -3131,7 +3131,7 @@ export type Database = {
           window_id: string
         }
         Insert: {
-          currency?: string | null
+          currency?: string
           fabric_cost?: number | null
           linear_meters?: number | null
           lining_cost?: number | null
@@ -3148,7 +3148,7 @@ export type Database = {
           window_id: string
         }
         Update: {
-          currency?: string | null
+          currency?: string
           fabric_cost?: number | null
           linear_meters?: number | null
           lining_cost?: number | null
