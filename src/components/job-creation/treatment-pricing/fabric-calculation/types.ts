@@ -10,6 +10,11 @@ export interface FabricCalculationParams {
   bottomHem: number;
   sideHem: number;
   seamHem: number;
+  // New: repeats and returns (cm)
+  verticalPatternRepeatCm?: number;
+  horizontalPatternRepeatCm?: number;
+  returnLeft?: number;
+  returnRight?: number;
 }
 
 export interface OrientationResult {

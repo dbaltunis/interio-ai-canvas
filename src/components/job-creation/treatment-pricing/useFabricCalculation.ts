@@ -12,7 +12,12 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
 
   // Auto-detect fabric properties for smarter calculations
   const detectFabricProperties = () => {
-    const fabricWidth = parseFloat(formData.fabric_width) || 137;
+    const fabricWidth = ((): number => {
+      const f1 = parseFloat(formData.fabric_width);
+      const f2 = parseFloat(selectedFabricItem?.fabric_width);
+      const f3 = parseFloat(selectedFabricItem?.fabric_width_cm);
+      return Number.isFinite(f1) && f1 > 0 ? f1 : Number.isFinite(f2) && f2 > 0 ? f2 : Number.isFinite(f3) && f3 > 0 ? f3 : 0;
+    })();
     const fabricType = formData.fabric_type?.toLowerCase() || '';
     
     // Detect if fabric is plain (no pattern matching required)
@@ -145,6 +150,12 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     // If making cost is linked, use integrated calculation
     if (makingCostId && windowCovering?.id) {
       try {
+        const fabricWidthVal = ((): number => {
+          const f1 = parseFloat(formData.fabric_width);
+          const f2 = parseFloat(selectedFabricItem?.fabric_width);
+          const f3 = parseFloat(selectedFabricItem?.fabric_width_cm);
+          return Number.isFinite(f1) && f1 > 0 ? f1 : Number.isFinite(f2) && f2 > 0 ? f2 : Number.isFinite(f3) && f3 > 0 ? f3 : 0;
+        })();
         const params: FabricCalculationParams = {
           windowCoveringId: windowCovering.id,
           makingCostId,
@@ -155,7 +166,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
           },
           selectedOptions: formData.selected_options || [],
           fabricDetails: {
-            fabricWidth: parseFloat(formData.fabric_width) || 137,
+            fabricWidth: fabricWidthVal,
             fabricCostPerYard: parseFloat(formData.fabric_cost_per_yard) || 0,
             rollDirection: formData.roll_direction || 'vertical'
           }

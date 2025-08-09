@@ -58,11 +58,15 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     ? Math.ceil(totalWidthWithAllowancesRaw / hRepeatCm) * hRepeatCm
     : totalWidthWithAllowancesRaw;
 
-  // Fabric width (cm)
-  const fabricWidthCm = fabricItem?.fabric_width || fabricItem?.fabric_width_cm || 137;
-
+  // Fabric width (cm) from measurements or fabric item; no hard-coded default
+  const fabricWidthCandidate1 = parseFloat(measurements?.fabric_width_cm ?? measurements?.fabric_width ?? '');
+  const fabricWidthCandidate2 = parseFloat(fabricItem?.fabric_width_cm ?? fabricItem?.fabric_width ?? '');
+  const fabricWidthCm = Number.isFinite(fabricWidthCandidate1) && fabricWidthCandidate1 > 0
+    ? fabricWidthCandidate1
+    : (Number.isFinite(fabricWidthCandidate2) && fabricWidthCandidate2 > 0 ? fabricWidthCandidate2 : undefined);
+  
   // Determine number of widths required
-  const widthsRequired = Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm));
+  const widthsRequired = fabricWidthCm ? Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm)) : 0;
 
   // Seams and drop
   const seamsRequired = Math.max(0, widthsRequired - 1);
@@ -100,7 +104,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
 
   // Leftovers with repeat-aware width usage
   const returnsTotal = returnLeft + returnRight;
-  const fabricCapacityWidthTotal = widthsRequired * fabricWidthCm;
+  const fabricCapacityWidthTotal = fabricWidthCm ? widthsRequired * fabricWidthCm : 0;
   const leftoverWidthTotal = Math.max(0, fabricCapacityWidthTotal - totalWidthWithAllowances);
   const leftoverPerPanel = widthsRequired > 0 ? leftoverWidthTotal / widthsRequired : 0;
 
@@ -120,7 +124,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     return_right_cm: returnRight,
     returns_total_cm: returnsTotal,
     fullness_ratio: fullnessRatio,
-    fabric_width_cm: fabricWidthCm,
+    fabric_width_cm: fabricWidthCm ?? 0,
     vertical_pattern_repeat_cm: vRepeatCm || undefined,
     horizontal_pattern_repeat_cm: hRepeatCm || undefined,
     total_drop_per_width_cm: totalDropPerWidth,

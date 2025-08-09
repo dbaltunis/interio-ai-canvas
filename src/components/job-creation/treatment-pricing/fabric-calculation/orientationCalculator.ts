@@ -17,37 +17,55 @@ export const calculateOrientation = (
     headerHem,
     bottomHem,
     sideHem,
-    seamHem
+    seamHem,
+    returnLeft = 0,
+    returnRight = 0,
+    verticalPatternRepeatCm = 0,
+    horizontalPatternRepeatCm = 0,
   } = params;
 
   let effectiveFabricWidth, requiredLength, requiredWidth;
   let warnings: string[] = [];
   let feasible = true;
 
-  // Calculate total drop including hems and pooling
-  const totalDrop = drop + pooling + headerHem + bottomHem;
-  const totalWidth = railWidth * fullness;
+  // Calculate totals with allowances
+  const vRepeat = verticalPatternRepeatCm > 0 ? verticalPatternRepeatCm : 0;
+  const hRepeat = horizontalPatternRepeatCm > 0 ? horizontalPatternRepeatCm : 0;
+
+  const totalDropRaw = drop + pooling + headerHem + bottomHem; // cm
+  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight + (sideHem * 2); // cm
 
   if (orientation === 'horizontal') {
-    // Standard orientation: fabric width used for curtain width
+    // Standard orientation: fabric width used across width; lengths run along the bolt
     effectiveFabricWidth = fabricWidth;
-    requiredLength = totalDrop;
-    requiredWidth = totalWidth;
+
+    const requiredLengthUnrounded = totalDropRaw;
+    requiredLength = vRepeat > 0 ? Math.ceil(requiredLengthUnrounded / vRepeat) * vRepeat : requiredLengthUnrounded;
+
+    const requiredWidthUnrounded = totalWidthRaw;
+    requiredWidth = hRepeat > 0 ? Math.ceil(requiredWidthUnrounded / hRepeat) * hRepeat : requiredWidthUnrounded;
     
-    // Check if curtain drop exceeds fabric width
-    if (totalDrop > fabricWidth) {
-      warnings.push(`Curtain drop (${totalDrop.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm). Not feasible in horizontal orientation.`);
+    // Check feasibility: length must not exceed fabric width in horizontal orientation
+    if (requiredLength > fabricWidth) {
+      warnings.push(`Curtain drop (${requiredLength.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm). Not feasible in horizontal orientation.`);
       feasible = false;
     }
   } else {
-    // Vertical/Rotated orientation: fabric width used for curtain length
+    // Vertical/Rotated orientation: fabric width used along the drop; panels are cut across width
     effectiveFabricWidth = fabricWidth;
-    requiredLength = totalWidth;
-    requiredWidth = totalDrop;
+
+    // Panel width (across the fabric) equals the drop with hems (and repeat rounding)
+    const requiredPanelWidthUnrounded = totalDropRaw + (sideHem * 2);
+    const requiredPanelWidth = vRepeat > 0 ? Math.ceil(requiredPanelWidthUnrounded / vRepeat) * vRepeat : requiredPanelWidthUnrounded;
+    requiredWidth = requiredPanelWidth;
+
+    // The running length along the bolt covers the rail width with returns (and horizontal repeat rounding)
+    const requiredLengthUnrounded = railWidth * fullness + returnLeft + returnRight;
+    requiredLength = hRepeat > 0 ? Math.ceil(requiredLengthUnrounded / hRepeat) * hRepeat : requiredLengthUnrounded;
     
-    // Check if total width exceeds fabric width when rotated
-    if (totalWidth > fabricWidth) {
-      warnings.push(`Required width (${totalWidth.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm) in vertical orientation.`);
+    // Feasibility: panel width must fit within the fabric width when rotated
+    if (requiredPanelWidth > fabricWidth) {
+      warnings.push(`Required panel width (${requiredPanelWidth.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm) in vertical orientation.`);
       feasible = false;
     }
   }
@@ -63,10 +81,10 @@ export const calculateOrientation = (
     widthsRequired = panelsNeeded;
     dropsPerWidth = 1;
   } else {
-    // In vertical orientation, we might fit multiple panels across the width
-    const panelWidthWithHems = requiredWidth + (sideHem * 2);
-    dropsPerWidth = Math.floor(effectiveFabricWidth / panelWidthWithHems);
-    widthsRequired = Math.ceil(panelsNeeded / Math.max(dropsPerWidth, 1));
+    // In vertical orientation, fit multiple panels across the fabric width
+    const panelWidthWithHems = requiredWidth; // already includes side hems and repeat rounding
+    dropsPerWidth = Math.max(1, Math.floor(effectiveFabricWidth / panelWidthWithHems));
+    widthsRequired = Math.ceil(panelsNeeded / dropsPerWidth);
   }
 
   // Calculate seams needed

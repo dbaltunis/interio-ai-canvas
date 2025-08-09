@@ -10,7 +10,10 @@ export const calculateFabricUsage = (
   const railWidth = parseFloat(formData.rail_width) || 0;
   const drop = parseFloat(formData.drop) || 0;
   const fullness = parseFloat(formData.heading_fullness) || 2.5;
-  const fabricWidth = parseFloat(formData.fabric_width) || 137;
+  const fw1 = parseFloat(formData.fabric_width);
+  const fw2 = parseFloat(selectedFabricItem?.fabric_width);
+  const fw3 = parseFloat(selectedFabricItem?.fabric_width_cm);
+  const fabricWidth = Number.isFinite(fw1) && fw1 > 0 ? fw1 : Number.isFinite(fw2) && fw2 > 0 ? fw2 : Number.isFinite(fw3) && fw3 > 0 ? fw3 : 0;
   const quantity = formData.quantity || 1;
   const pooling = parseFloat(formData.pooling) || 0;
 
@@ -31,20 +34,31 @@ export const calculateFabricUsage = (
     fabricType.includes('paisley')
   );
 
-  // Hem allowances
   const headerHem = parseFloat(formData.header_hem) || 15;
   const bottomHem = parseFloat(formData.bottom_hem) || 10;
   const sideHem = parseFloat(formData.side_hem) || 5;
   const seamHem = parseFloat(formData.seam_hem) || 3;
+  const verticalPatternRepeatCm = parseFloat(
+    (formData.vertical_pattern_repeat_cm ?? formData.vertical_pattern_repeat ?? formData.pattern_repeat_vertical_cm ?? formData.pattern_repeat_vertical ?? formData.vertical_repeat_cm ?? formData.vertical_repeat) as any
+  ) || 0;
+  const horizontalPatternRepeatCm = parseFloat(
+    (formData.horizontal_pattern_repeat_cm ?? formData.horizontal_pattern_repeat ?? formData.pattern_repeat_horizontal_cm ?? formData.pattern_repeat_horizontal ?? formData.horizontal_repeat_cm ?? formData.horizontal_repeat) as any
+  ) || 0;
+  const returnLeft = parseFloat(formData.return_left) || 0;
+  const returnRight = parseFloat(formData.return_right) || 0;
 
-  if (!railWidth || !drop) {
+  if (!railWidth || !drop || !fabricWidth) {
+    const missing: string[] = [];
+    if (!railWidth) missing.push('rail width');
+    if (!drop) missing.push('drop');
+    if (!fabricWidth) missing.push('fabric width');
     return { 
       yards: 0, 
       meters: 0, 
       details: {},
       fabricOrientation: 'vertical',
       costComparison: null,
-      warnings: ['Missing measurements'],
+      warnings: [`Missing ${missing.join(', ')}`],
       seamsRequired: 0,
       seamLaborHours: 0,
       widthsRequired: 0
@@ -61,7 +75,11 @@ export const calculateFabricUsage = (
     headerHem,
     bottomHem,
     sideHem,
-    seamHem
+    seamHem,
+    verticalPatternRepeatCm,
+    horizontalPatternRepeatCm,
+    returnLeft,
+    returnRight
   };
 
   // Get labor rate
