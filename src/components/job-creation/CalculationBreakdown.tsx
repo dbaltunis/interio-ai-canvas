@@ -1,12 +1,17 @@
 
-import React, { useMemo } from "react";
+import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
+import { formatCurrency } from "@/utils/unitConversion";
 
 interface CalculationBreakdownProps {
   summary: any;
   surface: any;
   compact?: boolean;
+  // New: embed cost breakdown directly in this container
+  costBreakdown?: any[];
+  currency?: string;
+  totalCost?: number;
 }
 
 const toNumber = (val: any): number | undefined => {
@@ -22,7 +27,7 @@ const pickFirstNumber = (...vals: any[]): number | undefined => {
   return undefined;
 };
 
-export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summary, surface, compact }) => {
+export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summary, surface, compact, costBreakdown, currency, totalCost }) => {
   // Attempt to extract meaningful inputs with broad key coverage and safe fallbacks
   const fabricWidthCm = pickFirstNumber(
     summary?.fabric_details?.width_cm,
@@ -165,6 +170,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
   const metersFmt = (n?: number, digits = 2) =>
     n === undefined ? undefined : `${n.toFixed(digits)}m`;
 
+  const hasCostBreakdown = Array.isArray(costBreakdown) && costBreakdown.length > 0;
+
   return (
     <div className={compact ? "rounded-lg border p-3 bg-muted/30" : "rounded-lg border p-4 bg-muted/30"}>
       <div className="flex items-center justify-between mb-2">
@@ -179,7 +186,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
       <div className="flex flex-wrap gap-2 mb-2">
         {fabricName && (
           <Badge variant="secondary" className="text-xs">
-            {fabricName}{fabricWidthCm ? ` • ${numberFmt(fabricWidthCm)}cm` : ""}{fabricPricePerM ? ` • £${numberFmt(fabricPricePerM, 2)}/m` : ""}
+            {fabricName}{fabricWidthCm ? ` • ${numberFmt(fabricWidthCm)}cm` : ""}{fabricPricePerM ? ` • ${formatCurrency(fabricPricePerM, currency || summary?.currency || 'GBP')}/m` : ""}
           </Badge>
         )}
         {liningType && (
@@ -241,16 +248,57 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
           value={wastePercent !== undefined ? `${numberFmt(wastePercent)}%` : undefined}
         />
         <div className="text-xs text-muted-foreground">
-          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {computedWidthsNeeded ?? "—"} piece(s){seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {metersFmt(linearMeters, 2)} linear
+          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {computedWidthsNeeded ?? "—"} piece(s){seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {linearMeters !== undefined ? `${linearMeters.toFixed(2)}m` : "—"} linear
         </div>
       </div>
 
       <div className="mt-2 text-xs italic text-muted-foreground">
         Linear meters = length to buy from fabric roll (not area calculation)
       </div>
+
+      {/* Unified Cost Breakdown inside same container */}
+      <div className="mt-4 border-t pt-3">
+        <div className="mb-2 text-sm font-medium">Cost breakdown</div>
+        {hasCostBreakdown ? (
+          <div className="space-y-2">
+            {costBreakdown?.map((item: any, idx: number) => (
+              <div key={item.id || `${item.category || 'row'}-${idx}`} className="flex items-start justify-between">
+                <div className="text-xs">
+                  <div className="font-medium">{item.name || item.category || "Item"}</div>
+                  {item.description && (
+                    <div className="text-muted-foreground">{item.description}</div>
+                  )}
+                  {(item.quantity || item.unit_price) && (
+                    <div className="text-muted-foreground">
+                      {(Number(item.quantity) || 0) > 0 ? `${Number(item.quantity)}${item.unit ? ` ${item.unit}` : ""}` : ""}
+                      {(Number(item.quantity) || 0) > 0 && (Number(item.unit_price) || 0) > 0 ? " × " : ""}
+                      {(Number(item.unit_price) || 0) > 0 ? `${formatCurrency(Number(item.unit_price), currency || summary?.currency || 'GBP')}` : ""}
+                    </div>
+                  )}
+                </div>
+                <div className="text-sm font-medium">
+                  {formatCurrency(Number(item.total_cost) || 0, currency || summary?.currency || 'GBP')}
+                </div>
+              </div>
+            ))}
+
+            {typeof totalCost === "number" && totalCost > 0 && (
+              <div className="flex items-center justify-between border-t mt-2 pt-2">
+                <div className="text-sm font-medium">Total</div>
+                <div className="text-sm font-semibold">
+                  {formatCurrency(totalCost, currency || summary?.currency || 'GBP')}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground">
+            No detailed breakdown available. This pricing was calculated with an older version.
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default CalculationBreakdown;
-

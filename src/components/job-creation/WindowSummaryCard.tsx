@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
 import { formatCurrency } from "@/utils/unitConversion";
-import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
+// Removed: import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
 
@@ -229,25 +230,14 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
             {/* Detailed Breakdown */}
             {showBreakdown && (
               <div className="mt-4 space-y-4">
-                {/* New in-container calculation breakdown */}
-                <CalculationBreakdown summary={summary} surface={surface} compact={compact} />
-
-                {enrichedBreakdown && enrichedBreakdown.length > 0 ? (
-                  <CostBreakdownDisplay 
-                    breakdown={enrichedBreakdown as any}
-                    currency={summary.currency}
-                    totalCost={summary.total_cost}
-                    showDetails={true}
-                  />
-                ) : (
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-center text-muted-foreground">
-                        No detailed breakdown available. This pricing was calculated with an older version.
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                <CalculationBreakdown
+                  summary={summary}
+                  surface={surface}
+                  compact={compact}
+                  costBreakdown={enrichedBreakdown}
+                  currency={summary.currency}
+                  totalCost={summary.total_cost}
+                />
               </div>
             )}
           </div>
