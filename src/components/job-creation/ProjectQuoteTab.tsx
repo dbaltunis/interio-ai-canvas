@@ -10,7 +10,8 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { formatCurrency } from "@/utils/currency";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
-
+import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
+import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -32,6 +33,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
     ? treatments.map(treatment => {
         const room = rooms.find(r => r.id === treatment.room_id);
         const surface = surfaces.find(s => s.id === treatment.window_id);
+        const summary = (projectSummaries?.windows || []).find(w => w.window_id === treatment.window_id)?.summary;
+        const breakdown = summary ? buildClientBreakdown(summary) : [];
+        const currency = summary?.currency;
         return {
           id: treatment.id,
           description: `${room?.name || 'Room'} - ${treatment.product_name || treatment.treatment_type}`,
@@ -42,22 +46,29 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           total: treatment.total_price || 0,
           treatment_type: treatment.treatment_type,
           fabric_type: treatment.fabric_type,
-          measurements: treatment.measurements || {}
+          measurements: treatment.measurements || {},
+          breakdown,
+          currency,
         };
       })
     : (projectSummaries?.windows || []).map((w) => {
         const room = rooms.find(r => r.id === w.room_id);
+        const summary = w.summary;
+        const breakdown = summary ? buildClientBreakdown(summary) : [];
+        const currency = summary?.currency;
         return {
           id: `${w.window_id}-summary`,
-          description: `${room?.name || 'Room'} - ${w.summary?.template_name || 'Window Treatment'}`,
+          description: `${room?.name || 'Room'} - ${summary?.template_name || 'Window Treatment'}`,
           location: room?.name || 'Unknown Room',
           window: w.surface_name || 'Window',
           quantity: 1,
-          unitPrice: Number(w.summary?.total_cost || 0),
-          total: Number(w.summary?.total_cost || 0),
-          treatment_type: w.summary?.manufacturing_type,
-          fabric_type: w.summary?.fabric_details?.name,
-          measurements: w.summary?.measurements_details || {}
+          unitPrice: Number(summary?.total_cost || 0),
+          total: Number(summary?.total_cost || 0),
+          treatment_type: summary?.manufacturing_type,
+          fabric_type: summary?.fabric_details?.name,
+          measurements: summary?.measurements_details || {},
+          breakdown,
+          currency,
         };
       });
   
@@ -165,6 +176,13 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
                         <div className="text-xs text-gray-500">
                           {item.fabric_type} • {item.treatment_type}
                         </div>
+                      )}
+                      {Array.isArray(item.breakdown) && item.breakdown.length > 0 && (
+                        <QuoteItemBreakdown
+                          breakdown={item.breakdown}
+                          currency={item.currency || 'GBP'}
+                          formatCurrencyFn={(n) => formatCurrency(n, item.currency || 'GBP')}
+                        />
                       )}
                     </div>
                   </TableCell>

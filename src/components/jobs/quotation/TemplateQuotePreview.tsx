@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings, formatCurrency } from "@/hooks/useBusinessSettings";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
+import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 
 interface TemplateQuotePreviewProps {
   project: any;
@@ -33,61 +36,27 @@ export const TemplateQuotePreview = ({
   const { data: businessSettings } = useBusinessSettings();
   const client = clients?.find(c => c.id === project.client_id);
 
-  // Generate quote items from treatments with detailed breakdown
-  const quoteItems = treatments.map(treatment => {
+  const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
+
+  // Generate quote items from treatments with detailed breakdown from saved window summaries
+  const quoteItems = treatments.map((treatment) => {
     const room = rooms.find(r => r.id === treatment.room_id);
     const surface = surfaces.find(s => s.id === treatment.window_id);
-    
-    // Create detailed breakdown items for each treatment
-    const breakdown = [];
-    
-    // Main product
-    breakdown.push({
-      description: `${treatment.treatment_type} - ${treatment.product_name || 'Custom Treatment'}`,
-      category: 'Product',
-      quantity: treatment.quantity || 1,
-      unit_price: treatment.unit_price || 0,
-      total: treatment.total_price || 0
-    });
-
-    // Add fabric if specified
-    if (treatment.fabric_type) {
-      breakdown.push({
-        description: `Fabric: ${treatment.fabric_type}`,
-        category: 'Materials',
-        quantity: treatment.quantity || 1,
-        unit_price: (treatment.material_cost || 0) * 0.7,
-        total: ((treatment.material_cost || 0) * 0.7) * (treatment.quantity || 1)
-      });
-    }
-
-    // Add labor
-    if (treatment.labor_cost && treatment.labor_cost > 0) {
-      breakdown.push({
-        description: 'Installation & Labor',
-        category: 'Labor',
-        quantity: 1,
-        unit_price: treatment.labor_cost,
-        total: treatment.labor_cost
-      });
-    }
-
-    // Add hardware if specified
-    if (treatment.hardware) {
-      breakdown.push({
-        description: `Hardware: ${treatment.hardware}`,
-        category: 'Hardware',
-        quantity: treatment.quantity || 1,
-        unit_price: (treatment.material_cost || 0) * 0.3,
-        total: ((treatment.material_cost || 0) * 0.3) * (treatment.quantity || 1)
-      });
-    }
+    const summary = (projectSummaries?.windows || []).find(w => w.window_id === treatment.window_id)?.summary;
+    const breakdown = summary ? buildClientBreakdown(summary) : [];
+    const currency = summary?.currency;
 
     return {
       id: treatment.id,
       room: room?.name || 'Unknown Room',
       window: surface?.name || 'Window',
-      breakdown
+      breakdown,
+      currency,
+      quantity: treatment.quantity || 1,
+      unitPrice: treatment.unit_price || 0,
+      totalPrice: treatment.total_price || 0,
+      title: `${treatment.treatment_type} - ${treatment.product_name || 'Custom Treatment'}`,
+      fabric: treatment.fabric_type,
     };
   });
 
@@ -194,15 +163,15 @@ export const TemplateQuotePreview = ({
                   <tbody>
                     {item.breakdown.map((breakdownItem, bIndex) => (
                       <tr key={bIndex} className="border-t">
-                        <td className="p-3">{breakdownItem.description}</td>
+                        <td className="p-3">{breakdownItem.name || breakdownItem.category}</td>
                         <td className="p-3">
                           <Badge variant="outline" className="text-xs">
-                            {breakdownItem.category}
+                            {breakdownItem.category || 'Item'}
                           </Badge>
                         </td>
-                        <td className="p-3 text-center">{breakdownItem.quantity}</td>
-                        <td className="p-3 text-right">{formatCurrencyWithSettings(breakdownItem.unit_price)}</td>
-                        <td className="p-3 text-right font-medium">{formatCurrencyWithSettings(breakdownItem.total)}</td>
+                        <td className="p-3 text-center">{breakdownItem.quantity ?? ''}</td>
+                        <td className="p-3 text-right">{formatCurrencyWithSettings(breakdownItem.unit_price || 0)}</td>
+                        <td className="p-3 text-right font-medium">{formatCurrencyWithSettings(breakdownItem.total_cost || 0)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -224,28 +193,28 @@ export const TemplateQuotePreview = ({
               </tr>
             </thead>
             <tbody>
-              {treatments.map((treatment) => {
-                const room = rooms.find(r => r.id === treatment.room_id);
-                const surface = surfaces.find(s => s.id === treatment.window_id);
-                return (
-                  <tr key={treatment.id} className="border-t">
-                    <td className="p-4">
-                      <div>
-                        <div className="font-medium">
-                          {treatment.treatment_type} - {treatment.product_name || 'Custom Treatment'}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {room?.name} • {surface?.name}
-                          {treatment.fabric_type && ` • ${treatment.fabric_type}`}
-                        </div>
+              {quoteItems.map((item) => (
+                <tr key={item.id} className="border-t">
+                  <td className="p-4">
+                    <div>
+                      <div className="font-medium">{item.title}</div>
+                      <div className="text-sm text-gray-600">
+                        {item.room} • {item.window}
                       </div>
-                    </td>
-                    <td className="p-4 text-center">{treatment.quantity || 1}</td>
-                    <td className="p-4 text-right">{formatCurrencyWithSettings(treatment.unit_price || 0)}</td>
-                    <td className="p-4 text-right font-medium">{formatCurrencyWithSettings(treatment.total_price || 0)}</td>
-                  </tr>
-                );
-              })}
+                      {Array.isArray(item.breakdown) && item.breakdown.length > 0 && (
+                        <QuoteItemBreakdown
+                          breakdown={item.breakdown}
+                          currency={item.currency || 'USD'}
+                          formatCurrencyFn={formatCurrencyWithSettings}
+                        />
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-center">{item.quantity}</td>
+                  <td className="p-4 text-right">{formatCurrencyWithSettings(item.unitPrice)}</td>
+                  <td className="p-4 text-right font-medium">{formatCurrencyWithSettings(item.totalPrice)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
