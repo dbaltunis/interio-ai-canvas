@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
@@ -58,25 +59,49 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
     return Number.isFinite(n as number) ? (n as number) : undefined;
   };
 
-  // Base materials/measurements from saved data
-  const fabricWidthCm = getNum(md.fabric_width_cm ?? md.fabric_width ?? summary?.fabric_details?.width_cm ?? summary?.fabric_details?.width);
-  const railWidthCm = getNum(md.rail_width_cm ?? md.rail_width ?? md.width_cm ?? md.width);
-  const fullness = getNum(md.fullness_ratio ?? md.fullness);
-  const sideHems = getNum(md.side_hems_cm ?? md.side_hems);
-  const headerHem = getNum(md.header_allowance_cm ?? md.header_hem_cm ?? md.header_allowance ?? md.header_hem);
-  const bottomHem = getNum(md.bottom_hem_cm ?? md.bottom_hem);
-  const seamHems = getNum(md.seam_hems_cm ?? md.seam_hems);
-  const dropCm = getNum(md.drop_cm ?? md.height_cm ?? md.drop ?? md.height);
-  const pooling = getNum(md.pooling_amount_cm ?? md.pooling_cm ?? md.pooling_amount ?? md.pooling);
-  const returnLeft = getNum(md.return_left_cm ?? md.return_left);
-  const returnRight = getNum(md.return_right_cm ?? md.return_right);
+  // Base materials/measurements from saved data with robust fallbacks to template_details
+  const fabricWidthCm = getNum(
+    md.fabric_width_cm ?? md.fabric_width ?? summary?.fabric_details?.width_cm ?? summary?.fabric_details?.width
+  );
+  const railWidthCm = getNum(
+    md.rail_width_cm ?? md.rail_width ?? md.width_cm ?? md.width ?? summary?.rail_width
+  );
+  const fullness = getNum(
+    md.fullness_ratio ?? md.fullness ?? summary?.fullness_ratio ?? summary?.template_details?.fullness_ratio
+  );
+  const sideHems = getNum(
+    md.side_hems_cm ?? md.side_hems ?? summary?.template_details?.side_hems
+  );
+  const headerHem = getNum(
+    md.header_allowance_cm ?? md.header_hem_cm ?? md.header_allowance ?? md.header_hem ?? summary?.template_details?.header_allowance
+  );
+  const bottomHem = getNum(
+    md.bottom_hem_cm ?? md.bottom_hem ?? summary?.template_details?.bottom_hem
+  );
+  const seamHems = getNum(
+    md.seam_hems_cm ?? md.seam_hems ?? summary?.template_details?.seam_hems
+  );
+  const dropCm = getNum(
+    md.drop_cm ?? md.height_cm ?? md.drop ?? md.height ?? summary?.drop
+  );
+  const pooling = getNum(
+    md.pooling_amount_cm ?? md.pooling_cm ?? md.pooling_amount ?? md.pooling
+  );
+  const returnLeft = getNum(
+    md.return_left_cm ?? md.return_left ?? summary?.template_details?.return_left
+  );
+  const returnRight = getNum(
+    md.return_right_cm ?? md.return_right ?? summary?.template_details?.return_right
+  );
   const vRepeat = getNum(
     md.vertical_pattern_repeat_cm ?? md.vertical_pattern_repeat ?? md.vertical_repeat_cm ?? md.vertical_repeat
   );
   const hRepeat = getNum(
     md.horizontal_pattern_repeat_cm ?? md.horizontal_pattern_repeat ?? md.horizontal_repeat_cm ?? md.horizontal_repeat
   );
-  const wastePercent = getNum(md.waste_percent ?? summary?.waste_percent);
+  const wastePercent = getNum(
+    md.waste_percent ?? summary?.waste_percent
+  );
   const curtainCount = getNum(md.curtain_count) ?? (md.curtain_type === "pair" ? 2 : md.curtain_type ? 1 : undefined);
 
   // Saved outputs from worksheet
@@ -270,7 +295,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
           value={wastePercent !== undefined ? `${numberFmt(wastePercent)}%` : undefined}
         />
         <div className="text-xs text-muted-foreground">
-          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {widthsRequired ?? "—"} piece(s)
+          {/* Guard against undefined to avoid NaN */}
+          • Final calculation: {totalDropPerWidth !== undefined ? (metersFmt(totalDropPerWidth / 100, 2) ?? "—") : "—"} drop × {widthsRequired ?? "—"} piece(s)
           {seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {linearMeters !== undefined ? `${Number(linearMeters).toFixed(2)}m` : "—"} linear
         </div>
       </div>
