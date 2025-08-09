@@ -3,6 +3,7 @@ import { useProject } from "@/hooks/useProjects";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 
 export interface WorkshopRoomItem {
   id: string;
@@ -17,6 +18,8 @@ export interface WorkshopRoomItem {
   };
   treatmentType?: string;
   notes?: string;
+  summary?: any;
+  surface?: any;
 }
 
 export interface WorkshopRoomSection {
@@ -49,11 +52,17 @@ export const useWorkshopData = (projectId?: string) => {
   const { data: project, isLoading: loadingProject, error: errorProject } = useProject(projectId || "");
   const { data: rooms = [], isLoading: loadingRooms, error: errorRooms } = useRooms(projectId);
   const { data: surfaces = [], isLoading: loadingSurfaces, error: errorSurfaces } = useSurfaces(projectId);
+  const { data: projectSummaries, isLoading: loadingSummaries, error: errorSummaries } = useProjectWindowSummaries(projectId);
   const { convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
 
   const workshopData: WorkshopData | undefined = useMemo(() => {
     // Build sections from rooms and surfaces
     const roomsMap = new Map<string, WorkshopRoomSection>();
+
+    // Build summary map for quick lookup by window_id
+    const summaryMap = new Map<string, any>(
+      ((projectSummaries?.windows || []) as any[]).map((w: any) => [w.window_id, w.summary])
+    );
 
     // Seed sections from existing rooms
     (rooms || []).forEach((r: any) => {
@@ -92,6 +101,8 @@ export const useWorkshopData = (projectId?: string) => {
         },
         treatmentType: s.surface_type || s.type || undefined,
         notes: s.notes || undefined,
+        summary: summaryMap.get(s.id),
+        surface: s,
       };
 
       const section = ensureSectionByRoomId(s.room_id);
@@ -119,11 +130,11 @@ export const useWorkshopData = (projectId?: string) => {
       rooms: sections,
       projectTotals: { itemsCount: (surfaces || []).length },
     } as WorkshopData;
-  }, [project, rooms, surfaces, convertToUserUnit, getLengthUnitLabel]);
+  }, [project, rooms, surfaces, projectSummaries, convertToUserUnit, getLengthUnitLabel]);
 
   return {
     data: workshopData,
-    isLoading: loadingProject || loadingRooms || loadingSurfaces,
-    error: errorProject || errorRooms || errorSurfaces,
+    isLoading: loadingProject || loadingRooms || loadingSurfaces || loadingSummaries,
+    error: errorProject || errorRooms || errorSurfaces || errorSummaries,
   } as const;
 };

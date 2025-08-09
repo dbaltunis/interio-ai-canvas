@@ -28,6 +28,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         
         return {
           id: treatment.id,
+          window_id: treatment.window_id,
           item: `${treatment.product_name || treatment.treatment_type}`,
           location: room?.name || 'Unknown Room',
           window: surface?.name || 'Window',
@@ -51,6 +52,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         const room = rooms.find(r => r.id === w.room_id);
         return {
           id: `${w.window_id}-workorder`,
+          window_id: w.window_id,
           item: `${w.summary?.template_name || 'Window Treatment'}`,
           location: room?.name || 'Unknown Room',
           window: w.surface_name || 'Window',
