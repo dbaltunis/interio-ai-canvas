@@ -6,6 +6,7 @@ import { ProjectWorkshopTab } from "./ProjectWorkshopTab";
 import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
+import { EmailManagement } from "@/components/jobs/EmailManagement";
 
 interface ProjectTabContentProps {
   activeTab: string;
@@ -115,10 +116,7 @@ export const ProjectTabContent = ({
         return <ProjectWorkshopTab project={project} />;
       case "emails":
         return (
-          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
-            <h2 className="text-lg font-semibold">Emails</h2>
-            <p className="text-muted-foreground mt-1">Email communications for this job will appear here.</p>
-          </div>
+          <EmailManagement />
         );
       case "calendar":
         return (

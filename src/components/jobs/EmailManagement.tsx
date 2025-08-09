@@ -29,10 +29,10 @@ export const EmailManagement = () => {
   // Show loading while checking integration status
   if (integrationLoading) {
     return (
-      <div className="min-h-screen bg-white w-full">
+      <div className="w-full">
         <div className="w-full px-6 py-6">
           <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-brand-neutral">Loading email management...</div>
+            <div className="text-lg text-muted-foreground">Loading email management...</div>
           </div>
         </div>
       </div>
@@ -43,8 +43,8 @@ export const EmailManagement = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold text-gray-900">Email Management</h1>
-          <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+          <h1 className="text-3xl font-bold text-foreground">Email Management</h1>
+          <div className="bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm font-medium">
             {emails?.length || 0} emails
           </div>
         </div>
@@ -53,7 +53,7 @@ export const EmailManagement = () => {
             <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="border-gray-300"
+              className="border-border"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -62,7 +62,8 @@ export const EmailManagement = () => {
           
           <Button 
             onClick={() => setActiveTab("composer")}
-            className="bg-brand-primary hover:bg-brand-accent text-white"
+            variant="default"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
             disabled={!hasSendGridIntegration || !emailSettings}
           >
             <Send className="h-4 w-4 mr-2" />
@@ -123,25 +124,25 @@ export const EmailManagement = () => {
     switch (activeTab) {
       case "composer":
         return (
-          <div className="bg-white rounded-lg p-6">
+          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
             <EmailComposer onClose={() => setActiveTab("dashboard")} />
           </div>
         );
       case "campaigns":
         return (
-          <div className="bg-white rounded-lg p-6">
+          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
             <EmailCampaigns />
           </div>
         );
       case "analytics":
         return (
-          <div className="bg-white rounded-lg p-6">
+          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
             <EmailAnalytics />
           </div>
         );
       case "settings":
         return (
-          <div className="bg-white rounded-lg p-6">
+          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
             <EmailSettings />
           </div>
         );
@@ -163,7 +164,7 @@ export const EmailManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="w-full">
       <div className="w-full px-6 py-6 space-y-6">
         {renderHeader()}
         {renderContent()}
