@@ -148,8 +148,11 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
     ) ?? 2.0;
 
   // Fabric and repeats (cm)
+  // Prefer worksheet-saved values, including nested under fabric_details or fabric
   const fabricWidthCm =
-    pickLengthFromMd(md, ["fabric_width_cm", "fabric_width"]);
+    pickLengthFromMd(md, ["fabric_width_cm", "fabric_width"]) ??
+    pickLengthFromMd((md as any)?.fabric_details || {}, ["width_cm", "width", "fabric_width_cm", "fabric_width"]) ??
+    pickLengthFromMd((md as any)?.fabric || {}, ["width_cm", "width", "fabric_width_cm", "fabric_width"]);
 
   const vRepeat =
     pickLengthFromMd(md, [
@@ -159,6 +162,18 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
       "pattern_repeat_vertical",
       "vertical_repeat_cm",
       "vertical_repeat"
+    ]) ??
+    pickLengthFromMd((md as any)?.fabric_details || {}, [
+      "vertical_repeat_cm",
+      "vertical_repeat",
+      "pattern_repeat_vertical_cm",
+      "pattern_repeat_vertical"
+    ]) ??
+    pickLengthFromMd((md as any)?.fabric || {}, [
+      "vertical_repeat_cm",
+      "vertical_repeat",
+      "pattern_repeat_vertical_cm",
+      "pattern_repeat_vertical"
     ]);
 
   const hRepeat =
@@ -169,6 +184,18 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
       "pattern_repeat_horizontal",
       "horizontal_repeat_cm",
       "horizontal_repeat"
+    ]) ??
+    pickLengthFromMd((md as any)?.fabric_details || {}, [
+      "horizontal_repeat_cm",
+      "horizontal_repeat",
+      "pattern_repeat_horizontal_cm",
+      "pattern_repeat_horizontal"
+    ]) ??
+    pickLengthFromMd((md as any)?.fabric || {}, [
+      "horizontal_repeat_cm",
+      "horizontal_repeat",
+      "pattern_repeat_horizontal_cm",
+      "pattern_repeat_horizontal"
     ]);
 
   const wastePercent =

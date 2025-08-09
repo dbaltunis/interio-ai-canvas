@@ -1,3 +1,4 @@
+
 export interface TreatmentPricingInput {
   template: any;
   measurements: any; // expects keys: rail_width/measurement_a, drop/measurement_b, pooling_amount
@@ -45,15 +46,37 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const bottomHem = template?.bottom_hem || 8;
   const fullnessRatio = template?.fullness_ratio || 2;
 
+  // Pattern repeats (cm) — ensure they influence the cut lengths and widths
+  const vRepeatCm = parseFloat(measurements?.vertical_pattern_repeat_cm ?? measurements?.vertical_pattern_repeat ?? measurements?.pattern_repeat_vertical_cm ?? measurements?.pattern_repeat_vertical ?? measurements?.vertical_repeat_cm ?? measurements?.vertical_repeat ?? '0') || 0;
+  const hRepeatCm = parseFloat(measurements?.horizontal_pattern_repeat_cm ?? measurements?.horizontal_pattern_repeat ?? measurements?.pattern_repeat_horizontal_cm ?? measurements?.pattern_repeat_horizontal ?? measurements?.horizontal_repeat_cm ?? measurements?.horizontal_repeat ?? '0') || 0;
+
   const requiredWidth = widthCm * fullnessRatio;
-  const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+  const totalWidthWithAllowancesRaw = requiredWidth + returnLeft + returnRight + totalSideHems;
+
+  // Apply horizontal repeat rounding across overall width
+  const totalWidthWithAllowances = hRepeatCm > 0
+    ? Math.ceil(totalWidthWithAllowancesRaw / hRepeatCm) * hRepeatCm
+    : totalWidthWithAllowancesRaw;
+
+  // Fabric width (cm)
   const fabricWidthCm = fabricItem?.fabric_width || fabricItem?.fabric_width_cm || 137;
+
+  // Determine number of widths required
   const widthsRequired = Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm));
-  const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
-  const totalDrop = heightCm + headerHem + bottomHem + pooling;
+
+  // Seams and drop
+  const seamsRequired = Math.max(0, widthsRequired - 1);
+  const totalSeamAllowance = seamsRequired > 0 ? seamsRequired * seamHems * 2 : 0;
+
+  // Total drop per width (apply vertical repeat rounding)
+  const totalDropUnrounded = heightCm + headerHem + bottomHem + pooling;
+  const totalDropPerWidth = vRepeatCm > 0
+    ? Math.ceil(totalDropUnrounded / vRepeatCm) * vRepeatCm
+    : totalDropUnrounded;
+
   const wasteMultiplier = 1 + ((template?.waste_percent || 0) / 100);
 
-  const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
+  const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
   const pricePerMeter = fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.selling_price || 0;
   const fabricCost = linearMeters * pricePerMeter;
 
@@ -75,22 +98,19 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
 
   const totalCost = fabricCost + liningCost + manufacturingCost;
 
-  const seamsRequired = Math.max(0, widthsRequired - 1);
+  // Leftovers with repeat-aware width usage
   const returnsTotal = returnLeft + returnRight;
-  const totalDropPerWidth = totalDrop;
   const fabricCapacityWidthTotal = widthsRequired * fabricWidthCm;
   const leftoverWidthTotal = Math.max(0, fabricCapacityWidthTotal - totalWidthWithAllowances);
   const leftoverPerPanel = widthsRequired > 0 ? leftoverWidthTotal / widthsRequired : 0;
-  const vRepeatCm = parseFloat(measurements?.vertical_pattern_repeat_cm ?? measurements?.vertical_pattern_repeat ?? '0');
-  const hRepeatCm = parseFloat(measurements?.horizontal_pattern_repeat_cm ?? measurements?.horizontal_pattern_repeat ?? '0');
 
   const calculation_details = {
     widths_required: widthsRequired,
     linear_meters: linearMeters,
-    total_drop_cm: totalDrop,
+    total_drop_cm: totalDropPerWidth,
     price_per_meter: pricePerMeter,
     required_width_cm: requiredWidth,
-    total_width_with_allowances_cm: totalWidthWithAllowances,
+    total_width_with_allowances_cm: totalWidthWithAllowances, // repeat-adjusted
     seams_required: seamsRequired,
     seam_allow_total_cm: totalSeamAllowance,
     side_hems_cm: sideHems,
@@ -113,6 +133,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       { label: 'Manufacturing', amount: manufacturingCost },
     ],
   };
+
   return {
     linearMeters,
     widthsRequired,
