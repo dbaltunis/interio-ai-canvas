@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
 import { formatCurrency } from "@/utils/unitConversion";
+import { extractWindowMetrics, numberFmt, metersFmt } from "@/utils/windowSummaryExtractors";
 
 interface CalculationBreakdownProps {
   summary: any;
@@ -27,166 +27,108 @@ const pickFirstNumber = (...vals: any[]): number | undefined => {
   return undefined;
 };
 
-export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summary, surface, compact, costBreakdown, currency, totalCost }) => {
-  // Attempt to extract meaningful inputs with broad key coverage and safe fallbacks
-  const fabricWidthCm = pickFirstNumber(
-    summary?.fabric_details?.width_cm,
-    summary?.fabric_details?.fabric_width_cm,
-    summary?.fabric_details?.width,
-    summary?.fabric_width_cm,
-    summary?.fabric_width,
-    137
-  );
+export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
+  summary,
+  surface,
+  compact,
+  costBreakdown,
+  currency,
+  totalCost
+}) => {
+  // Extract accurate worksheet-backed metrics with clear precedence
+  const metrics = extractWindowMetrics(summary, surface);
 
-  const railWidthCm = pickFirstNumber(
-    summary?.rail_width,
-    surface?.rail_width,
-    surface?.width
-  );
-
-  const dropCm = pickFirstNumber(
-    summary?.drop,
-    surface?.drop,
-    surface?.height
-  );
-
-  const fullness = pickFirstNumber(
-    summary?.fullness_ratio,
-    summary?.fullness,
-    summary?.manufacturing_details?.fullness_ratio,
-    2.0
-  );
-
-  const sideHems = pickFirstNumber(
-    summary?.side_hems,
-    summary?.manufacturing_details?.side_hems,
-    0
-  );
-
-  const seamHems = pickFirstNumber(
-    summary?.seam_hems,
-    summary?.manufacturing_details?.seam_hems,
-    summary?.seam_allowance,
-    0
-  );
-
-  const headerHem = pickFirstNumber(
-    summary?.header_allowance,
-    summary?.header_hem,
-    summary?.manufacturing_details?.header_allowance,
-    0
-  );
-
-  const bottomHem = pickFirstNumber(
-    summary?.bottom_hem,
-    summary?.manufacturing_details?.bottom_hem,
-    0
-  );
-
-  const returnLeft = pickFirstNumber(
-    summary?.return_left,
-    summary?.manufacturing_details?.return_left,
-    0
-  );
-
-  const returnRight = pickFirstNumber(
-    summary?.return_right,
-    summary?.manufacturing_details?.return_right,
-    0
-  );
-
-  const pooling = pickFirstNumber(
-    summary?.pooling_amount,
-    summary?.pooling,
-    0
-  );
-
-  const vRepeat = pickFirstNumber(
-    summary?.fabric_details?.vertical_repeat_cm,
-    summary?.vertical_pattern_repeat,
-    0
-  );
-
-  const hRepeat = pickFirstNumber(
-    summary?.fabric_details?.horizontal_repeat_cm,
-    summary?.horizontal_pattern_repeat,
-    0
-  );
-
-  const wastePercent = pickFirstNumber(
-    summary?.waste_percent,
-    summary?.manufacturing_details?.waste_percent,
-    0
-  );
-
-  const widthsRequired = pickFirstNumber(
-    summary?.widths_required
-  );
-
-  const curtainCount = (summary?.curtain_type === "pair") ? 2 : 1;
+  const {
+    railWidthCm,
+    dropCm,
+    pooling,
+    sideHems,
+    seamHems,
+    headerHem,
+    bottomHem,
+    returnLeft,
+    returnRight,
+    fullness,
+    fabricWidthCm,
+    vRepeat,
+    hRepeat,
+    wastePercent,
+    curtainCount,
+    currency: detectedCurrency,
+    pricePerMeter,
+    widthsRequired: widthsFromSummary,
+    linearMeters: linearFromSummary,
+    fabricName,
+    liningType,
+    manufacturingType
+  } = metrics;
 
   // Derived metrics
   const requiredWidth = railWidthCm && fullness ? railWidthCm * fullness : undefined;
-  const totalSideHems = sideHems ? (sideHems * 2 * curtainCount) : 0;
-  const totalWidthWithAllowances = (requiredWidth ?? 0) + totalSideHems + (returnLeft ?? 0) + (returnRight ?? 0);
+  const totalSideHems = sideHems ? sideHems * 2 * curtainCount : 0;
+  const totalWidthWithAllowances =
+    (requiredWidth ?? 0) + totalSideHems + (returnLeft ?? 0) + (returnRight ?? 0);
 
-  const computedWidthsNeeded = !widthsRequired && fabricWidthCm
-    ? Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm))
-    : widthsRequired;
+  const computedWidthsNeeded =
+    widthsFromSummary !== undefined && widthsFromSummary !== null
+      ? widthsFromSummary
+      : fabricWidthCm
+      ? Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm))
+      : undefined;
 
   const seamsRequired = computedWidthsNeeded ? Math.max(0, computedWidthsNeeded - 1) : 0;
-  const seamAllowTotalCm = seamHems ? (seamsRequired * seamHems * 2) : 0;
+  const seamAllowTotalCm = seamHems ? seamsRequired * seamHems * 2 : 0;
 
   const totalDropPerWidth = (dropCm ?? 0) + (headerHem ?? 0) + (bottomHem ?? 0) + (pooling ?? 0);
 
-  // Linear metres calculation (approx), align with summary if provided
+  // Linear metres calculation - prefer saved value for exact parity
   const dropMetersTimesPieces = ((totalDropPerWidth || 0) / 100) * (computedWidthsNeeded || 0);
   const seamAllowanceMeters = (seamAllowTotalCm || 0) / 100;
-  const linearMeters = pickFirstNumber(summary?.linear_meters) ?? (dropMetersTimesPieces + seamAllowanceMeters);
+  const computedLinearMeters = dropMetersTimesPieces + seamAllowanceMeters;
+  const linearMeters =
+    typeof linearFromSummary === "number" && Number.isFinite(linearFromSummary)
+      ? linearFromSummary
+      : computedLinearMeters;
 
-  const fabricName = summary?.fabric_details?.name || "Fabric";
-  const fabricPricePerM = pickFirstNumber(
-    summary?.price_per_meter,
-    summary?.fabric_details?.price_per_meter,
-    summary?.fabric_details?.unit_price,
-    0
-  );
-  const liningType = summary?.lining_details?.type || summary?.lining_type || undefined;
-
-  const manufacturingType = summary?.manufacturing_type || undefined;
-
-  const Item = ({ label, value }: { label: string; value?: string }) => {
-    if (!value) return null;
-    return (
-      <div className="text-xs text-muted-foreground">
-        • {label}: {value}
-      </div>
-    );
-  };
-
-  const numberFmt = (n?: number, digits = 0) =>
-    n === undefined ? undefined : n.toFixed(digits);
-
-  const metersFmt = (n?: number, digits = 2) =>
-    n === undefined ? undefined : `${n.toFixed(digits)}m`;
+  const activeCurrency = currency || detectedCurrency || summary?.currency || "GBP";
 
   const hasCostBreakdown = Array.isArray(costBreakdown) && costBreakdown.length > 0;
 
+  // Simple inline item subcomponent
+  const Item = ({ label, value }: { label: string; value?: string }) => {
+    if (!value) return null;
+    return <div className="text-xs text-muted-foreground">• {label}: {value}</div>;
+  };
+
   return (
     <div className={compact ? "rounded-lg border p-3 bg-muted/30" : "rounded-lg border p-4 bg-muted/30"}>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Info className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">Calculation breakdown</span>
         </div>
-        {manufacturingType && <Badge variant="outline" className="text-xs">Manufacturing: {manufacturingType}</Badge>}
+        <div className="flex flex-wrap gap-2">
+          {manufacturingType && (
+            <Badge variant="outline" className="text-xs">Manufacturing: {manufacturingType}</Badge>
+          )}
+          {typeof computedWidthsNeeded === "number" && (
+            <Badge variant="secondary" className="text-xs">Widths: {computedWidthsNeeded}</Badge>
+          )}
+          {typeof linearMeters === "number" && linearMeters > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              Linear: {metersFmt(linearMeters, 2)}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Materials quick info */}
       <div className="flex flex-wrap gap-2 mb-2">
         {fabricName && (
           <Badge variant="secondary" className="text-xs">
-            {fabricName}{fabricWidthCm ? ` • ${numberFmt(fabricWidthCm)}cm` : ""}{fabricPricePerM ? ` • ${formatCurrency(fabricPricePerM, currency || summary?.currency || 'GBP')}/m` : ""}
+            {fabricName}
+            {fabricWidthCm ? ` • ${numberFmt(fabricWidthCm)}cm` : ""}
+            {pricePerMeter ? ` • ${formatCurrency(pricePerMeter, activeCurrency)}/m` : ""}
           </Badge>
         )}
         {liningType && (
@@ -194,7 +136,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
             Lining: {liningType}
           </Badge>
         )}
-        {fullness && (
+        {fullness !== undefined && (
           <Badge variant="secondary" className="text-xs">
             Fullness: {numberFmt(fullness, 2)}x
           </Badge>
@@ -248,7 +190,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
           value={wastePercent !== undefined ? `${numberFmt(wastePercent)}%` : undefined}
         />
         <div className="text-xs text-muted-foreground">
-          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {computedWidthsNeeded ?? "—"} piece(s){seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {linearMeters !== undefined ? `${linearMeters.toFixed(2)}m` : "—"} linear
+          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {computedWidthsNeeded ?? "—"} piece(s)
+          {seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {linearMeters !== undefined ? `${(linearMeters as number).toFixed(2)}m` : "—"} linear
         </div>
       </div>
 
@@ -272,12 +215,12 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
                     <div className="text-muted-foreground">
                       {(Number(item.quantity) || 0) > 0 ? `${Number(item.quantity)}${item.unit ? ` ${item.unit}` : ""}` : ""}
                       {(Number(item.quantity) || 0) > 0 && (Number(item.unit_price) || 0) > 0 ? " × " : ""}
-                      {(Number(item.unit_price) || 0) > 0 ? `${formatCurrency(Number(item.unit_price), currency || summary?.currency || 'GBP')}` : ""}
+                      {(Number(item.unit_price) || 0) > 0 ? `${formatCurrency(Number(item.unit_price), activeCurrency)}` : ""}
                     </div>
                   )}
                 </div>
                 <div className="text-sm font-medium">
-                  {formatCurrency(Number(item.total_cost) || 0, currency || summary?.currency || 'GBP')}
+                  {formatCurrency(Number(item.total_cost) || 0, activeCurrency)}
                 </div>
               </div>
             ))}
@@ -286,7 +229,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({ summ
               <div className="flex items-center justify-between border-t mt-2 pt-2">
                 <div className="text-sm font-medium">Total</div>
                 <div className="text-sm font-semibold">
-                  {formatCurrency(totalCost, currency || summary?.currency || 'GBP')}
+                  {formatCurrency(totalCost, activeCurrency)}
                 </div>
               </div>
             )}
