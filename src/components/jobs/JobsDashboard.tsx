@@ -50,7 +50,7 @@ export const JobsDashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="panel rounded-xl p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-brand-primary">Jobs Dashboard</h1>
@@ -122,7 +122,7 @@ export const JobsDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full overflow-x-auto justify-start gap-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="activity">Recent Activity</TabsTrigger>
@@ -209,7 +209,7 @@ export const JobsDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 {recentProjects.map((project) => (
-                  <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={project.id} className="panel flex items-center justify-between p-3 rounded-lg">
                     <div className="flex items-center space-x-3">
                     <div className="p-2 bg-muted rounded-lg">
                         <Target className="h-4 w-4" />
@@ -284,7 +284,7 @@ export const JobsDashboard = () => {
                     <span className="text-sm">Revenue Goal</span>
                     <span className="text-sm">$30,000</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className="bg-green-600 h-2 rounded-full" 
                       style={{ width: `${Math.min((totalRevenue / 30000) * 100, 100)}%` }}
@@ -296,7 +296,7 @@ export const JobsDashboard = () => {
                     <span className="text-sm">Jobs Goal</span>
                     <span className="text-sm">25</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className="bg-blue-600 h-2 rounded-full" 
                       style={{ width: `${Math.min((totalJobs / 25) * 100, 100)}%` }}
@@ -308,7 +308,7 @@ export const JobsDashboard = () => {
                     <span className="text-sm">Quotes Goal</span>
                     <span className="text-sm">40</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className="bg-primary h-2 rounded-full" 
                       style={{ width: `${Math.min((totalQuotes / 40) * 100, 100)}%` }}
@@ -330,7 +330,7 @@ export const JobsDashboard = () => {
               <CardContent>
                 <div className="space-y-3">
                   {recentQuotes.map((quote) => (
-                    <div key={quote.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={quote.id} className="panel flex items-center justify-between p-3 rounded-lg">
                       <div>
                         <h4 className="font-medium">{quote.quote_number}</h4>
                         <p className="text-sm text-gray-500">
@@ -347,7 +347,7 @@ export const JobsDashboard = () => {
                   ))}
                   
                   {recentQuotes.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       No quotes found. Generate your first quote to see it here.
                     </div>
                   )}
