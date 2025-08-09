@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -258,7 +259,7 @@ export const TreatmentVisualizer = ({
     } else if (coveringId.includes('shutter')) {
       return renderShutterVisualization();
     } else {
-      // Generic visualization with full measurement display
+      // Generic visualization with full measurement display (IMPROVED)
       const scaledWidth = Math.min(Number(width) * 3, 220);
       const scaledHeight = Math.min(Number(height) * 2, 160);
 
@@ -273,9 +274,9 @@ export const TreatmentVisualizer = ({
 
       return (
         <div className="panel relative rounded-lg p-6 min-h-[280px]">
-          {/* Scaled window */}
+          {/* Scaled window with glass effect */}
           <div 
-            className="absolute border-2 border-gray-400 bg-white/70"
+            className="absolute rounded-md border border-border bg-card/70 backdrop-blur-sm shadow-sm"
             style={{
               width: `${scaledWidth}px`,
               height: `${scaledHeight}px`,
@@ -284,7 +285,15 @@ export const TreatmentVisualizer = ({
               transform: 'translate(-50%, -60%)'
             }}
           >
-            <div className="absolute inset-1 border border-gray-300 bg-gradient-to-b from-sky-100/70 to-sky-200/70" />
+            <div className="absolute inset-1 rounded-md border border-border/50 bg-primary/5" />
+            
+            {/* Subtle pane detail */}
+            <div className="absolute inset-3 rounded-sm grid grid-cols-2 gap-2 opacity-60">
+              <div className="border border-border/40 bg-background/40" />
+              <div className="border border-border/40 bg-background/40" />
+              <div className="border border-border/40 bg-background/40" />
+              <div className="border border-border/40 bg-background/40" />
+            </div>
 
             {/* Width label */}
             <div
@@ -303,6 +312,27 @@ export const TreatmentVisualizer = ({
                 H: {Number(height).toFixed(1)} {units.length}
               </Badge>
             </div>
+
+            {/* Horizontal ruler with ticks (below window) */}
+            <div
+              className="absolute h-1 rounded-sm"
+              style={{
+                width: `${scaledWidth + 24}px`,
+                left: `calc(50% - ${(scaledWidth + 24) / 2}px)`,
+                top: `calc(50% - ${scaledHeight * 0.6}px + ${scaledHeight + 8}px)`,
+                backgroundImage: `repeating-linear-gradient(to right, hsl(var(--muted-foreground)/0.8) 0, hsl(var(--muted-foreground)/0.8) 1px, transparent 1px, transparent 6px)`
+              }}
+            />
+            {/* Vertical ruler with ticks (left of window) */}
+            <div
+              className="absolute w-1 rounded-sm"
+              style={{
+                height: `${scaledHeight + 24}px`,
+                left: `calc(50% - ${scaledWidth / 2}px - 12px)`,
+                top: `calc(50% - ${scaledHeight * 0.6}px - 12px)`,
+                backgroundImage: `repeating-linear-gradient(to bottom, hsl(var(--muted-foreground)/0.8) 0, hsl(var(--muted-foreground)/0.8) 1px, transparent 1px, transparent 6px)`
+              }}
+            />
           </div>
 
           {/* Labels */}
@@ -322,7 +352,6 @@ export const TreatmentVisualizer = ({
                   <div key={key} className="flex items-center justify-between rounded-md px-2 py-1 bg-muted/50">
                     <span className="text-muted-foreground truncate">{label}</span>
                     <span className="font-medium ml-2">
-                      {/* Heuristic: append length unit to obvious length fields */}
                       {/(width|height|drop|pool|repeat|measurement|rail)/i.test(key)
                         ? `${Number(value)} ${units.length}`
                         : String(value)}
