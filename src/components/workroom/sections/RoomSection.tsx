@@ -15,47 +15,56 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
         <CardTitle>{section.roomName}</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Measurements</TableHead>
-              <TableHead>Treatment</TableHead>
-              <TableHead className="text-right">Qty</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {section.items.map((item) => (
-              <React.Fragment key={item.id}>
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Left: Items list */}
+          <div className="md:col-span-2">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>
-                    {item.measurements?.width && item.measurements?.height
-                      ? `${item.measurements.width} × ${item.measurements.height} ${item.measurements.unit ?? ''}`
-                      : "—"}
-                  </TableCell>
-                  <TableCell>{item.treatmentType ?? "—"}</TableCell>
-                  <TableCell className="text-right">{item.quantity ?? 1}</TableCell>
+                  <TableHead>Item</TableHead>
+                  <TableHead>Measurements</TableHead>
+                  <TableHead>Treatment</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
                 </TableRow>
-                {item.summary && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="bg-muted/20 p-3">
-                      <CalculationBreakdown
-                        summary={item.summary}
-                        surface={item.surface}
-                        compact
-                        costBreakdown={Array.isArray(item.summary?.cost_breakdown) ? item.summary.cost_breakdown : []}
-                        currency={item.summary?.currency}
-                        totalCost={item.summary?.total_cost}
-                        embedded
-                      />
+              </TableHeader>
+              <TableBody>
+                {section.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>
+                      {item.measurements?.width && item.measurements?.height
+                        ? `${item.measurements.width} × ${item.measurements.height} ${item.measurements.unit ?? ''}`
+                        : "—"}
                     </TableCell>
+                    <TableCell>{item.treatmentType ?? "—"}</TableCell>
+                    <TableCell className="text-right">{item.quantity ?? 1}</TableCell>
                   </TableRow>
-                )}
-              </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Right: Compact worksheet visuals */}
+          <aside className="space-y-3">
+            {section.items.filter((it) => !!it.summary).map((item) => (
+              <div key={`${item.id}-visual`} className="rounded-md border p-3 bg-muted/20">
+                <div className="text-sm font-medium mb-2">{item.name}</div>
+                <CalculationBreakdown
+                  summary={item.summary}
+                  surface={item.surface}
+                  compact
+                  costBreakdown={Array.isArray(item.summary?.cost_breakdown) ? item.summary.cost_breakdown : []}
+                  currency={item.summary?.currency}
+                  totalCost={item.summary?.total_cost}
+                  embedded
+                />
+              </div>
             ))}
-          </TableBody>
-        </Table>
+            {section.items.filter((it) => !!it.summary).length === 0 && (
+              <div className="text-sm text-muted-foreground">No worksheet data saved yet for this room.</div>
+            )}
+          </aside>
+        </div>
       </CardContent>
     </Card>
   );
