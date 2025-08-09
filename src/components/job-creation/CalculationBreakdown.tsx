@@ -3,7 +3,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
 import { formatCurrency } from "@/utils/unitConversion";
-import { extractWindowMetrics, numberFmt, metersFmt } from "@/utils/windowSummaryExtractors";
+import { numberFmt, metersFmt } from "@/utils/windowSummaryExtractors";
 
 interface CalculationBreakdownProps {
   summary: any;
@@ -42,96 +42,99 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
   currency,
   totalCost
 }) => {
-  // Extract accurate worksheet-backed metrics with clear precedence
-  const metrics = extractWindowMetrics(summary, surface);
+  // Use only saved worksheet values; do not recompute derived metrics
+  const mdRaw = summary?.measurements_details;
+  const md = React.useMemo(() => {
+    try {
+      return typeof mdRaw === "string" ? JSON.parse(mdRaw) : (mdRaw || {});
+    } catch {
+      return {} as Record<string, any>;
+    }
+  }, [mdRaw]);
 
-  const {
-    railWidthCm,
-    dropCm,
-    pooling,
-    sideHems,
-    seamHems,
-    headerHem,
-    bottomHem,
-    returnLeft,
-    returnRight,
-    fullness,
-    fabricWidthCm,
-    vRepeat,
-    hRepeat,
-    wastePercent,
-    curtainCount,
-    currency: detectedCurrency,
-    pricePerMeter,
-    widthsRequired: widthsFromSummary,
-    linearMeters: linearFromSummary,
-    fabricName,
-    liningType,
-    manufacturingType
-  } = metrics;
+  const getNum = (val: any): number | undefined => {
+    const n = typeof val === "string" ? parseFloat(val) : typeof val === "number" ? val : undefined;
+    return Number.isFinite(n as number) ? (n as number) : undefined;
+  };
 
-  // Derived metrics
-  const requiredWidth = railWidthCm && fullness ? railWidthCm * fullness : undefined;
-  const totalSideHems = sideHems ? sideHems * 2 * curtainCount : 0;
-  const totalWidthWithAllowances =
-    (requiredWidth ?? 0) + totalSideHems + (returnLeft ?? 0) + (returnRight ?? 0);
+  // Base materials/measurements from saved data
+  const fabricWidthCm = getNum(md.fabric_width_cm ?? md.fabric_width ?? summary?.fabric_details?.width_cm ?? summary?.fabric_details?.width);
+  const railWidthCm = getNum(md.rail_width_cm ?? md.rail_width ?? md.width_cm ?? md.width);
+  const fullness = getNum(md.fullness_ratio ?? md.fullness);
+  const sideHems = getNum(md.side_hems_cm ?? md.side_hems);
+  const headerHem = getNum(md.header_allowance_cm ?? md.header_hem_cm ?? md.header_allowance ?? md.header_hem);
+  const bottomHem = getNum(md.bottom_hem_cm ?? md.bottom_hem);
+  const seamHems = getNum(md.seam_hems_cm ?? md.seam_hems);
+  const dropCm = getNum(md.drop_cm ?? md.height_cm ?? md.drop ?? md.height);
+  const pooling = getNum(md.pooling_amount_cm ?? md.pooling_cm ?? md.pooling_amount ?? md.pooling);
+  const returnLeft = getNum(md.return_left_cm ?? md.return_left);
+  const returnRight = getNum(md.return_right_cm ?? md.return_right);
+  const vRepeat = getNum(
+    md.vertical_pattern_repeat_cm ?? md.vertical_pattern_repeat ?? md.vertical_repeat_cm ?? md.vertical_repeat
+  );
+  const hRepeat = getNum(
+    md.horizontal_pattern_repeat_cm ?? md.horizontal_pattern_repeat ?? md.horizontal_repeat_cm ?? md.horizontal_repeat
+  );
+  const wastePercent = getNum(md.waste_percent ?? summary?.waste_percent);
+  const curtainCount = getNum(md.curtain_count) ?? (md.curtain_type === "pair" ? 2 : md.curtain_type ? 1 : undefined);
 
-  const computedWidthsNeeded =
-    widthsFromSummary !== undefined && widthsFromSummary !== null
-      ? widthsFromSummary
-      : fabricWidthCm
-      ? Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm))
-      : undefined;
+  // Saved outputs from worksheet
+  const widthsRequired = getNum(summary?.widths_required ?? md.widths_required);
+  const linearMeters = getNum(summary?.linear_meters ?? md.linear_meters);
+  const manufacturingType = summary?.manufacturing_type ?? md.manufacturing_type;
+  const pricePerMeter = getNum(
+    summary?.price_per_meter ?? summary?.fabric_details?.price_per_meter ?? summary?.fabric_details?.unit_price
+  );
+  const fabricName = summary?.fabric_details?.name ?? md.fabric_name;
+  const liningType = summary?.lining_details?.type ?? summary?.lining_type ?? md.lining_type;
 
-  const seamsRequired = computedWidthsNeeded ? Math.max(0, computedWidthsNeeded - 1) : 0;
-  const seamAllowTotalCm = seamHems ? seamsRequired * seamHems * 2 : 0;
+  // Saved derived steps (use only if present)
+  const requiredWidthCm = getNum(md.required_width_cm ?? md.required_width);
+  const totalWidthWithAllowancesCm = getNum(
+    md.total_width_with_allowances_cm ?? md.total_width_with_allowances
+  );
+  const seamsRequired = getNum(md.seams_required ?? md.seams_count);
+  const seamAllowTotalCm = getNum(
+    md.seam_allow_total_cm ?? md.seam_allowances_total_cm ?? md.seam_allow_total ?? md.seam_allowances_total
+  );
+  const totalDropPerWidth = getNum(
+    md.total_drop_per_width_cm ?? md.total_drop_cm ?? md.drop_total_cm
+  );
 
-  const totalDropPerWidth = (dropCm ?? 0) + (headerHem ?? 0) + (bottomHem ?? 0) + (pooling ?? 0);
+  // Saved leftovers (if provided by worksheet)
+  const totalCapacityWidth = getNum(md.fabric_capacity_width_total_cm ?? md.fabric_capacity_total_cm);
+  const leftoverWidthCm = getNum(
+    md.leftover_width_total_cm ?? md.leftover_total_cm ?? md.leftover_width_cm
+  );
+  const leftoverPerPanelCm = getNum(
+    md.leftover_per_panel_cm ?? md.leftover_width_per_panel_cm
+  );
 
-  // Linear metres calculation - prefer saved value for exact parity
-  const dropMetersTimesPieces = ((totalDropPerWidth || 0) / 100) * (computedWidthsNeeded || 0);
-  const seamAllowanceMeters = (seamAllowTotalCm || 0) / 100;
-  const computedLinearMeters = dropMetersTimesPieces + seamAllowanceMeters;
-  const linearMeters =
-    typeof linearFromSummary === "number" && Number.isFinite(linearFromSummary)
-      ? linearFromSummary
-      : computedLinearMeters;
-
-  const activeCurrency = currency || detectedCurrency || summary?.currency || "GBP";
-
+  const activeCurrency = currency || summary?.currency || "GBP";
   const hasCostBreakdown = Array.isArray(costBreakdown) && costBreakdown.length > 0;
 
-  // Leftover (offcut) calculation across fabric widths
-  const totalCapacityWidth =
-    typeof computedWidthsNeeded === "number" && typeof fabricWidthCm === "number"
-      ? computedWidthsNeeded * fabricWidthCm
-      : undefined;
-  const leftoverWidthCm =
-    totalCapacityWidth !== undefined && totalWidthWithAllowances !== undefined
-      ? Math.max(0, totalCapacityWidth - totalWidthWithAllowances)
-      : undefined;
-  const leftoverPerPanelCm =
-    leftoverWidthCm !== undefined && typeof computedWidthsNeeded === "number" && computedWidthsNeeded > 0
-      ? leftoverWidthCm / computedWidthsNeeded
-      : undefined;
+  // Pre-format complex line items using saved totals if available
+  const totalSideHemsSaved = getNum(md.total_side_hems_cm ?? md.side_hems_total_cm);
+  const sideHemsDisplay = (() => {
+    if (totalSideHemsSaved !== undefined && sideHems !== undefined && curtainCount !== undefined) {
+      return `${numberFmt(sideHems)}cm × 2 sides × ${curtainCount} curtain(s) = ${numberFmt(totalSideHemsSaved)}cm total`;
+    }
+    if (totalSideHemsSaved !== undefined) return `${numberFmt(totalSideHemsSaved)}cm total`;
+    if (sideHems !== undefined) return `${numberFmt(sideHems)}cm`;
+    return undefined;
+  })();
 
-  // Make debug info available in console to verify mismatches
-  if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
-    console.log("🧮 CalculationBreakdown metrics:", {
-      metrics,
-      requiredWidth,
-      totalWidthWithAllowances,
-      computedWidthsNeeded,
-      seamsRequired,
-      seamAllowTotalCm,
-      totalDropPerWidth,
-      linearMeters,
-      activeCurrency,
-      leftoverWidthCm,
-      leftoverPerPanelCm,
-    });
-  }
+  const returnsTotalSaved = getNum(md.returns_total_cm ?? md.returns_total);
+  const returnsDisplay = (() => {
+    if (returnsTotalSaved !== undefined) return `${numberFmt(returnsTotalSaved)}cm`;
+    if ((returnLeft ?? 0) > 0 || (returnRight ?? 0) > 0) {
+      // Show components without computing total
+      const leftStr = returnLeft !== undefined ? `${numberFmt(returnLeft)}cm` : undefined;
+      const rightStr = returnRight !== undefined ? `${numberFmt(returnRight)}cm` : undefined;
+      return [leftStr, rightStr].filter(Boolean).join(" + ");
+    }
+    return undefined;
+  })();
 
   // Row component with dotted leader between label and value
   const Item = ({ label, value }: { label: string; value?: string | number }) => {
@@ -157,8 +160,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
           {manufacturingType && (
             <Badge variant="outline" className="text-xs">Manufacturing: {manufacturingType}</Badge>
           )}
-          {typeof computedWidthsNeeded === "number" && (
-            <Badge variant="secondary" className="text-xs">Widths: {computedWidthsNeeded}</Badge>
+          {typeof widthsRequired === "number" && (
+            <Badge variant="secondary" className="text-xs">Widths: {widthsRequired}</Badge>
           )}
           {typeof linearMeters === "number" && linearMeters > 0 && (
             <Badge variant="secondary" className="text-xs">
@@ -194,26 +197,20 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         <Item label="Fabric width" value={fabricWidthCm !== undefined ? `${numberFmt(fabricWidthCm)}cm` : undefined} />
         <Item label="Rail width" value={railWidthCm !== undefined ? `${numberFmt(railWidthCm)}cm` : undefined} />
         <Item label="Fullness multiplier" value={fullness !== undefined ? `${trimFixed(fullness, 2)}x` : undefined} />
-        <Item label="Required width" value={requiredWidth !== undefined ? `${numberFmt(requiredWidth)}cm` : undefined} />
-        {sideHems !== undefined && curtainCount !== undefined && (
-          <Item
-            label="Side hems"
-            value={`${numberFmt(sideHems ?? 0)}cm × 2 sides × ${curtainCount} curtain(s) = ${numberFmt(totalSideHems)}cm total`}
-          />
+        <Item label="Required width" value={requiredWidthCm !== undefined ? `${numberFmt(requiredWidthCm)}cm` : undefined} />
+        {sideHemsDisplay && (
+          <Item label="Side hems" value={sideHemsDisplay} />
         )}
-        {(returnLeft !== undefined || returnRight !== undefined) && (Number(returnLeft) > 0 || Number(returnRight) > 0) && (
-          <Item
-            label="Returns"
-            value={`${numberFmt(returnLeft ?? 0)}cm + ${numberFmt(returnRight ?? 0)}cm = ${numberFmt((returnLeft ?? 0) + (returnRight ?? 0))}cm`}
-          />
+        {returnsDisplay && (
+          <Item label="Returns" value={returnsDisplay} />
         )}
         <Item
           label="Total width with allowances"
-          value={totalWidthWithAllowances !== undefined ? `${numberFmt(totalWidthWithAllowances)}cm` : undefined}
+          value={totalWidthWithAllowancesCm !== undefined ? `${numberFmt(totalWidthWithAllowancesCm)}cm` : undefined}
         />
         <Item
           label="Widths needed"
-          value={computedWidthsNeeded !== undefined ? `${computedWidthsNeeded}` : undefined}
+          value={widthsRequired !== undefined ? `${widthsRequired}` : undefined}
         />
         {seamHems !== undefined && seamsRequired !== undefined && seamsRequired > 0 && (
           <Item
