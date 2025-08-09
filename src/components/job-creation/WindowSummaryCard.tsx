@@ -9,7 +9,7 @@ import { formatCurrency } from "@/utils/unitConversion";
 // Removed: import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-
+import WorkshopSendDialog from "@/components/workroom/WorkshopSendDialog";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -33,6 +33,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showWorkshop, setShowWorkshop] = useState(false);
   const { compact } = useCompactMode();
 
   // Debug logging
@@ -160,7 +161,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
         {summary && (
           <div className="space-y-4">
             {/* Summary Header */}
-            <div className={compact ? "rounded-lg border p-3" : "rounded-lg border p-4"}>
+            <div className="rounded-lg border p-4">
               <div className="flex items-baseline justify-between mb-4">
                 <div>
                   <div className="text-sm text-muted-foreground">Total Cost</div>
@@ -196,6 +197,13 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                     onClick={() => onViewDetails?.(surface)}
                   >
                     Edit
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowWorkshop(true)}
+                    title="Open workshop sheet"
+                  >
+                    Send to workshop
                   </Button>
                 </div>
               </div>
@@ -233,7 +241,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                 <CalculationBreakdown
                   summary={summary}
                   surface={surface}
-                  compact={compact}
+                  compact={true}
                   costBreakdown={enrichedBreakdown}
                   currency={summary.currency}
                   totalCost={summary.total_cost}
@@ -243,7 +251,18 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
           </div>
         )}
       </CardContent>
+
+      {/* Workshop sheet dialog (print-ready, dynamic per treatment) */}
+      {summary && (
+        <WorkshopSendDialog
+          open={showWorkshop}
+          onOpenChange={setShowWorkshop}
+          summary={summary}
+          surface={surface}
+          breakdown={enrichedBreakdown}
+          currency={summary.currency}
+        />
+      )}
     </Card>
   );
 }
-
