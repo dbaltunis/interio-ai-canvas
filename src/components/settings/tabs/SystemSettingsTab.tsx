@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Globe, Mail, Bell, Shield, Database, Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
 
@@ -20,6 +20,16 @@ export const SystemSettingsTab = () => {
   });
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { compact, toggleCompact } = useCompactMode();
+  const [accent, setAccent] = useState<'primary' | 'secondary'>('primary');
+
+  useEffect(() => {
+    const existing = document.documentElement.getAttribute('data-accent') as 'primary' | 'secondary' | null;
+    if (existing) setAccent(existing);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-accent', accent);
+  }, [accent]);
 
   return (
     <div className="space-y-6">
@@ -49,6 +59,20 @@ export const SystemSettingsTab = () => {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">Current: {resolvedTheme} mode</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Accent color</Label>
+              <Select value={accent} onValueChange={(v) => setAccent(v as 'primary' | 'secondary')}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select accent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="primary">Brand Primary</SelectItem>
+                  <SelectItem value="secondary">Brand Secondary</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Used for buttons, links and highlights</p>
             </div>
 
             <div className="flex items-center justify-between">

@@ -73,7 +73,8 @@
   /* Apple Graphite dark preset */
   .apple-graphite {
     --company-primary: 220 13% 10%;
-    --company-secondary: 216 92% 56%;
+    /* Use brand secondary as accent (no bright blue) */
+    --company-secondary: 189 20% 60%;
 
     --background: 220 13% 10%;
     --foreground: 0 0% 100%;
@@ -81,19 +82,19 @@
     --card-foreground: 0 0% 100%;
     --popover: 220 13% 10%;
     --popover-foreground: 0 0% 100%;
-    --primary: 216 92% 56%;
+    --primary: var(--company-secondary);
     --primary-foreground: 0 0% 100%;
     --secondary: 220 12% 18%;
     --secondary-foreground: 0 0% 100%;
     --muted: 220 12% 22%;
-    --muted-foreground: 220 10% 70%;
-    --accent: 216 92% 56%;
+    --muted-foreground: 220 10% 82%;
+    --accent: var(--company-secondary);
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 12% 24%;
     --input: 220 12% 24%;
-    --ring: 216 92% 56%;
+    --ring: var(--company-secondary);
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -114,6 +115,18 @@
   }
 }
 
+/* Accent switcher (applies across all themes) */
+:root[data-accent='primary'] {
+  --primary: var(--company-primary);
+  --accent: var(--company-primary);
+  --ring: var(--company-primary);
+}
+:root[data-accent='secondary'] {
+  --primary: var(--company-secondary);
+  --accent: var(--company-secondary);
+  --ring: var(--company-secondary);
+}
+
 
 @layer base {
   * {
@@ -123,7 +136,12 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
+  /* Improve readability in dark themes */
+  .dark, .apple-graphite {
+    color-scheme: dark;
+  }
 }
+
 
 /* Subtle AI-Style Design System with Company Colors */
 .ai-gradient-bg {
@@ -237,10 +255,31 @@
   animation: shimmer 2s ease-in-out infinite;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* Accessibility and contrast tweaks */
+.dark input, .dark textarea, .dark select,
+.apple-graphite input, .apple-graphite textarea, .apple-graphite select {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
 }
+
+/* Reduce harsh white hovers and rows in dark themes */
+.dark .bg-white, .apple-graphite .bg-white {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+.dark .hover\:bg-white:hover, .apple-graphite .hover\:bg-white:hover {
+  background-color: hsl(var(--muted)) !important;
+}
+.dark .text-black, .apple-graphite .text-black {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Make logo white in dark themes */
+.dark img.logo-white, .apple-graphite img.logo-white {
+  filter: invert(1) brightness(1.2) saturate(0);
+}
+
 
 /* Print Styles */
 @media print {

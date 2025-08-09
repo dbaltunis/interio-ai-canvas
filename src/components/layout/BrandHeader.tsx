@@ -27,7 +27,7 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
       <img 
         src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
         alt="InterioApp Logo" 
-        className={`${sizeClasses[size]} w-auto object-contain`}
+        className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all`}
       />
       {showTagline && (
         <>
