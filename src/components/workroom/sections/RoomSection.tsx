@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Camera, Trash2 } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
+import { TreatmentVisualizer } from "@/components/measurements/TreatmentVisualizer";
+import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
+import { toTreatmentVisualizerData } from "@/components/workroom/utils/visual-adapter";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -148,14 +151,8 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
                 {/* Left: Visual */}
                 <div className="space-y-2">
                   <div className="text-sm font-medium">{item.name}</div>
-                  <Visual
-                    width={item.measurements?.width}
-                    height={item.measurements?.height}
-                    unit={item.measurements?.unit}
-                    itemId={item.id}
-                    treatment={item.treatmentType ?? null}
-                    defaultImageUrl={undefined}
-                  />
+                  <WorkItemPhotoGallery itemId={item.id} />
+                  <TreatmentVisualizer {...toTreatmentVisualizerData(item)} />
                   <div className="text-xs text-muted-foreground">
                     {item.treatmentType ?? "—"} • Qty: {item.quantity ?? 1}
                   </div>
