@@ -256,5 +256,3 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
     </Card>
   );
 }
-
-export { WindowSummaryCard };
