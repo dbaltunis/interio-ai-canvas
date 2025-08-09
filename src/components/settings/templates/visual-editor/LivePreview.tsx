@@ -358,6 +358,10 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                           const windowSummary = projectData?.windowSummaries?.find(
                             (ws: any) => ws.window_id === treatment.window_id
                           );
+                          // Normalize summary shape (some callers pass { summary: {...} })
+                          const ws: any = (windowSummary && (windowSummary as any).summary)
+                            ? (windowSummary as any).summary
+                            : windowSummary;
                           
                            const items: Array<{
                              number: string | number;
@@ -371,18 +375,18 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                              // Main product line
                              {
                                number: treatmentIndex + 1,
-                               productService: treatment.treatment_type || windowSummary?.template_name || 'Treatment',
+                               productService: treatment.treatment_type || ws?.template_name || 'Treatment',
                                description: surfaceName,
                                quantity: treatment.quantity || 1,
                                priceRate: treatment.unit_price || 0,
-                               total: treatment.total_price || windowSummary?.total_cost || 0,
+                               total: treatment.total_price || ws?.total_cost || 0,
                                isMain: true
                              }
                            ];
-
+ 
                           // Add dynamic breakdown components from cost_breakdown (supports legacy and structured formats)
-                          if (windowSummary?.cost_breakdown && Array.isArray(windowSummary.cost_breakdown)) {
-                            windowSummary.cost_breakdown.forEach((component: any) => {
+                          if (ws?.cost_breakdown && Array.isArray(ws.cost_breakdown)) {
+                            ws.cost_breakdown.forEach((component: any) => {
                               // Structured format: { name?, category?, description?, quantity?, unit?, unit_price?, total_cost? }
                               if ((component.total_cost ?? 0) > 0) {
                                 const label = component.name || component.category || 'Item';
@@ -400,28 +404,28 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                                 });
                                 return; // proceed to next component
                               }
-
+ 
                               // Legacy format: { label, amount, description? }
                               if (component.label && component.amount > 0) {
                                 // Determine quantity and rate based on component type
                                 let quantity: string | number = 1;
                                 let priceRate = component.amount;
-
+ 
                                 // Special handling for different component types
                                 if (component.label.toLowerCase().includes('fabric')) {
-                                  const meters = windowSummary.linear_meters || treatment.width || 0;
+                                  const meters = ws?.linear_meters || treatment.width || 0;
                                   if (meters > 0) {
                                     quantity = `${meters.toFixed(1)} m`;
                                     priceRate = component.amount / meters;
                                   }
                                 } else if (component.label.toLowerCase().includes('lining')) {
-                                  const meters = windowSummary.linear_meters || treatment.width || 0;
+                                  const meters = ws?.linear_meters || treatment.width || 0;
                                   if (meters > 0) {
                                     quantity = `${meters.toFixed(1)} m`;
                                     priceRate = component.amount / meters;
                                   }
                                 } else if (component.label.toLowerCase().includes('heading')) {
-                                  const width = treatment.width || windowSummary.measurements_details?.rail_width || 0;
+                                  const width = treatment.width || ws?.measurements_details?.rail_width || 0;
                                   if (width > 0) {
                                     quantity = `${(width * 100).toFixed(0)} cm`;
                                     priceRate = component.amount / (width * 100);
@@ -430,7 +434,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                                   quantity = treatment.quantity || 1;
                                   priceRate = component.amount / (treatment.quantity || 1);
                                 }
-
+ 
                                 items.push({
                                   number: '',
                                   productService: component.label,
@@ -443,10 +447,10 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                               }
                             });
                           }
-
+ 
                           // Add extra components from extras_details
-                          if (windowSummary?.extras_details && Array.isArray(windowSummary.extras_details)) {
-                            windowSummary.extras_details.forEach((extra: any) => {
+                          if (ws?.extras_details && Array.isArray(ws.extras_details)) {
+                            ws.extras_details.forEach((extra: any) => {
                               if (extra.label && extra.amount > 0) {
                                 items.push({
                                   number: '',
@@ -460,10 +464,10 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                               }
                             });
                           }
-
+ 
                           // Fallback: if no cost breakdown, create basic manufacturing entry
-                          if (!windowSummary?.cost_breakdown || windowSummary.cost_breakdown.length === 0) {
-                            const manufacturingCost = treatment.total_price || windowSummary?.total_cost || 0;
+                          if (!ws?.cost_breakdown || ws.cost_breakdown.length === 0) {
+                            const manufacturingCost = treatment.total_price || ws?.total_cost || 0;
                             if (manufacturingCost > 0) {
                               items.push({
                                 number: '',
