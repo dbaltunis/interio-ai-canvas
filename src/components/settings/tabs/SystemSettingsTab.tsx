@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Globe, Mail, Bell, Shield, Database, Download } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "next-themes";
+import { useCompactMode } from "@/hooks/useCompactMode";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -16,10 +18,48 @@ export const SystemSettingsTab = () => {
     desktop: true,
     reminders: true,
   });
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { compact, toggleCompact } = useCompactMode();
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Appearance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Appearance
+            </CardTitle>
+            <CardDescription>
+              Theme and density preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Theme</Label>
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Current: {resolvedTheme} mode</p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Compact mode</Label>
+                <p className="text-xs text-muted-foreground">Denser layout with tighter spacing</p>
+              </div>
+              <Switch checked={compact} onCheckedChange={() => toggleCompact()} />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Language & Localization */}
         <Card>
           <CardHeader>
