@@ -7,6 +7,7 @@ import { useWindowSummary } from "@/hooks/useWindowSummary";
 import { formatCurrency } from "@/utils/unitConversion";
 import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
 import { useCompactMode } from "@/hooks/useCompactMode";
+import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
 
 
 interface WindowSummaryCardProps {
@@ -227,7 +228,10 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
 
             {/* Detailed Breakdown */}
             {showBreakdown && (
-              <div className="mt-4">
+              <div className="mt-4 space-y-4">
+                {/* New in-container calculation breakdown */}
+                <CalculationBreakdown summary={summary} surface={surface} compact={compact} />
+
                 {enrichedBreakdown && enrichedBreakdown.length > 0 ? (
                   <CostBreakdownDisplay 
                     breakdown={enrichedBreakdown as any}
@@ -252,3 +256,5 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
     </Card>
   );
 }
+
+export { WindowSummaryCard };
