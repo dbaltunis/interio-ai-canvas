@@ -1,0 +1,9 @@
+/* Hide elements marked as no-print in print output */
+@media print {
+  .no-print { display: none !important; }
+  /* Avoid breaking cards across pages */
+  .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+  /* Improve print readability */
+  body { background: white !important; }
+  main { padding: 0 !important; }
+}
