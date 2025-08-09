@@ -82,20 +82,6 @@ export const TreatmentVisualizer = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-medium">Fabric Width</div>
-            <div className="text-muted-foreground">{fabricWidth.toFixed(1)}{units.length}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Total Drop</div>
-            <div className="text-muted-foreground">{totalDrop.toFixed(1)}{units.length}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Fullness</div>
-            <div className="text-muted-foreground">{fullness}x</div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -144,20 +130,6 @@ export const TreatmentVisualizer = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-medium">Slat Count</div>
-            <div className="text-muted-foreground">{numSlats}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Slat Size</div>
-            <div className="text-muted-foreground">{slatSize}"</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Mount Type</div>
-            <div className="text-muted-foreground">{treatmentData.mounting_type || 'Inside'}</div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -208,20 +180,6 @@ export const TreatmentVisualizer = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-medium">Fold Count</div>
-            <div className="text-muted-foreground">{numFolds}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Fold Spacing</div>
-            <div className="text-muted-foreground">{foldSpacing}"</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Style</div>
-            <div className="text-muted-foreground">{treatmentData.fold_style || 'Flat'}</div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -284,20 +242,6 @@ export const TreatmentVisualizer = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-medium">Panels</div>
-            <div className="text-muted-foreground">{numPanels}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Louver Size</div>
-            <div className="text-muted-foreground">{louverSize}"</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">Louver Count</div>
-            <div className="text-muted-foreground">{numLouvers}</div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -328,7 +272,10 @@ export const TreatmentVisualizer = ({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Treatment Preview</span>
-          <Badge variant="outline">{covering.name}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{covering.name}</Badge>
+            <Badge variant="secondary">{`${Number(width).toFixed(1)} × ${Number(height).toFixed(1)} ${units.length}`}</Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>

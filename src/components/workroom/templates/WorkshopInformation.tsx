@@ -52,8 +52,8 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data }
       <MaterialsTable data={data} />
 
       <div className="space-y-4">
-        {data.rooms.map((section) => (
-          <RoomSection key={section.roomName} section={section} />)
+        {data.rooms.map((section, idx) => (
+          <RoomSection key={`${section.roomName}-${idx}`} section={section} />)
         )}
       </div>
     </section>
