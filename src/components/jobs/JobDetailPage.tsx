@@ -183,10 +183,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           <div className="bg-background min-h-[calc(100vh-160px)]">
             <div className="p-4">
               <TabsContent value="details" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
-                  </div>
+                <div className="bg-card rounded-lg shadow-sm border p-6">
+                  <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
                 </div>
               </TabsContent>
 
