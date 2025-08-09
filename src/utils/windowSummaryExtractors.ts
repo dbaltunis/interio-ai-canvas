@@ -149,22 +149,27 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
 
   // Fabric and repeats (cm)
   const fabricWidthCm =
-    pickLengthFromMd(md, ["fabric_width_cm", "fabric_width"]) ??
-    pickLengthFromMd(summary?.fabric_details || {}, ["width_cm", "width"]) ??
-    pickNumber(summary?.fabric_width_cm, summary?.fabric_width) ??
-    137;
+    pickLengthFromMd(md, ["fabric_width_cm", "fabric_width"]);
 
   const vRepeat =
-    pickLengthFromMd(md, ["vertical_pattern_repeat_cm", "vertical_pattern_repeat"]) ??
-    pickLengthFromMd(summary?.fabric_details || {}, ["vertical_repeat_cm", "vertical_repeat"]) ??
-    pickNumber(md.vertical_pattern_repeat, summary?.vertical_pattern_repeat) ??
-    0;
+    pickLengthFromMd(md, [
+      "vertical_pattern_repeat_cm",
+      "vertical_pattern_repeat",
+      "pattern_repeat_vertical_cm",
+      "pattern_repeat_vertical",
+      "vertical_repeat_cm",
+      "vertical_repeat"
+    ]);
 
   const hRepeat =
-    pickLengthFromMd(md, ["horizontal_pattern_repeat_cm", "horizontal_pattern_repeat"]) ??
-    pickLengthFromMd(summary?.fabric_details || {}, ["horizontal_repeat_cm", "horizontal_repeat"]) ??
-    pickNumber(md.horizontal_pattern_repeat, summary?.horizontal_pattern_repeat) ??
-    0;
+    pickLengthFromMd(md, [
+      "horizontal_pattern_repeat_cm",
+      "horizontal_pattern_repeat",
+      "pattern_repeat_horizontal_cm",
+      "pattern_repeat_horizontal",
+      "horizontal_repeat_cm",
+      "horizontal_repeat"
+    ]);
 
   const wastePercent =
     pickNumber(md.waste_percent, summary?.waste_percent) ?? 0;
