@@ -103,7 +103,7 @@
     --chart-5: 340 75% 55%;
   }
 
-  .apple-graphite .liquid-glass {
+  .apple-graphite .liquid-glass, .apple-graphite .surface, .apple-graphite .panel {
     background: linear-gradient(180deg,
       hsl(var(--background) / 0.22) 0%,
       hsl(var(--background) / 0.16) 100%
@@ -192,7 +192,7 @@
 }
 
 /* Premium liquid glass variant */
-.liquid-glass {
+.liquid-glass, .surface, .panel {
   position: relative;
   background: linear-gradient(180deg,
     hsl(var(--background) / 0.65) 0%,
@@ -206,7 +206,7 @@
     inset 0 1px 0 hsl(var(--company-secondary) / 0.35);
 }
 
-.liquid-glass::before {
+.liquid-glass::before, .surface::before, .panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -217,7 +217,7 @@
   pointer-events: none;
 }
 
-.dark .liquid-glass {
+.dark .liquid-glass, .dark .surface, .dark .panel {
   background: linear-gradient(180deg,
     hsl(var(--background) / 0.22) 0%,
     hsl(var(--background) / 0.16) 100%
@@ -228,7 +228,7 @@
     inset 0 1px 0 hsl(var(--company-secondary) / 0.25);
 }
 
-.dark .liquid-glass::before {
+.dark .liquid-glass::before, .dark .surface::before, .dark .panel::before {
   background:
     radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.20), transparent 40%),
     radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.12), transparent 45%);
