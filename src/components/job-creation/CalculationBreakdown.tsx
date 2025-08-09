@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
 import { formatCurrency } from "@/utils/unitConversion";
 import { numberFmt, metersFmt } from "@/utils/windowSummaryExtractors";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface CalculationBreakdownProps {
   summary: any;
@@ -140,24 +140,29 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
   const activeCurrency = currency || summary?.currency || "GBP";
   const hasCostBreakdown = Array.isArray(costBreakdown) && costBreakdown.length > 0;
 
+  // Unit-aware formatting helpers
+  const { convertToUserUnit, formatLength, formatFabric } = useMeasurementUnits();
+  const fmtLen = (cm?: number) => (cm !== undefined ? formatLength(convertToUserUnit(cm, 'cm')) : undefined);
+  const fmtFabric = (m?: number) => (m !== undefined ? formatFabric(convertToUserUnit(m, 'm')) : undefined);
+
   // Pre-format complex line items using saved totals if available
   const totalSideHemsSaved = getNum(md.total_side_hems_cm ?? md.side_hems_total_cm);
   const sideHemsDisplay = (() => {
     if (totalSideHemsSaved !== undefined && sideHems !== undefined && curtainCount !== undefined) {
-      return `${numberFmt(sideHems)}cm × 2 sides × ${curtainCount} curtain(s) = ${numberFmt(totalSideHemsSaved)}cm total`;
+      return `${fmtLen(sideHems)} × 2 sides × ${curtainCount} curtain(s) = ${fmtLen(totalSideHemsSaved)} total`;
     }
-    if (totalSideHemsSaved !== undefined) return `${numberFmt(totalSideHemsSaved)}cm total`;
-    if (sideHems !== undefined) return `${numberFmt(sideHems)}cm`;
+    if (totalSideHemsSaved !== undefined) return `${fmtLen(totalSideHemsSaved)} total`;
+    if (sideHems !== undefined) return `${fmtLen(sideHems)}`;
     return undefined;
   })();
 
   const returnsTotalSaved = getNum(md.returns_total_cm ?? md.returns_total);
   const returnsDisplay = (() => {
-    if (returnsTotalSaved !== undefined) return `${numberFmt(returnsTotalSaved)}cm`;
+    if (returnsTotalSaved !== undefined) return `${fmtLen(returnsTotalSaved)}`;
     if ((returnLeft ?? 0) > 0 || (returnRight ?? 0) > 0) {
       // Show components without computing total
-      const leftStr = returnLeft !== undefined ? `${numberFmt(returnLeft)}cm` : undefined;
-      const rightStr = returnRight !== undefined ? `${numberFmt(returnRight)}cm` : undefined;
+      const leftStr = returnLeft !== undefined ? `${fmtLen(returnLeft)}` : undefined;
+      const rightStr = returnRight !== undefined ? `${fmtLen(returnRight)}` : undefined;
       return [leftStr, rightStr].filter(Boolean).join(" + ");
     }
     return undefined;
@@ -203,8 +208,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         {fabricName && (
           <Badge variant="secondary" className="text-xs">
             {fabricName}
-            {fabricWidthCm ? ` • ${numberFmt(fabricWidthCm)}cm` : ""}
-            {pricePerMeter ? ` • ${formatCurrency(pricePerMeter, activeCurrency)}/m` : ""}
+            {fabricWidthCm ? ` • ${fmtLen(fabricWidthCm)}` : ""}
+            {pricePerMeter ? ` • ${formatCurrency(pricePerMeter, activeCurrency)}` : ""}
           </Badge>
         )}
         {liningType && (
@@ -226,10 +231,10 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
 
       {/* Step-by-step points */}
       <div className="space-y-1">
-        <Item label="Fabric width" value={fabricWidthCm !== undefined ? `${numberFmt(fabricWidthCm)}cm` : undefined} />
-        <Item label="Rail width" value={railWidthCm !== undefined ? `${numberFmt(railWidthCm)}cm` : undefined} />
+        <Item label="Fabric width" value={fmtLen(fabricWidthCm)} />
+        <Item label="Rail width" value={fmtLen(railWidthCm)} />
         <Item label="Fullness multiplier" value={fullness !== undefined ? `${trimFixed(fullness, 2)}x` : undefined} />
-        <Item label="Required width" value={requiredWidthCm !== undefined ? `${numberFmt(requiredWidthCm)}cm` : undefined} />
+        <Item label="Required width" value={fmtLen(requiredWidthCm)} />
         {sideHemsDisplay && (
           <Item label="Side hems" value={sideHemsDisplay} />
         )}
@@ -238,7 +243,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         )}
         <Item
           label="Total width with allowances"
-          value={totalWidthWithAllowancesCm !== undefined ? `${numberFmt(totalWidthWithAllowancesCm)}cm` : undefined}
+          value={fmtLen(totalWidthWithAllowancesCm)}
         />
         <Item
           label="Widths needed"
@@ -247,27 +252,27 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         {seamHems !== undefined && seamsRequired !== undefined && seamsRequired > 0 && (
           <Item
             label="Seam allowances"
-            value={`${numberFmt(seamHems ?? 0)}cm × 2 sides × ${seamsRequired} seam(s) = ${numberFmt(seamAllowTotalCm)}cm`}
+            value={`${fmtLen(seamHems ?? 0)} × 2 sides × ${seamsRequired} seam(s) = ${fmtLen(seamAllowTotalCm)}`}
           />
         )}
 
         {/* Repeats */}
         {vRepeat !== undefined && Number(vRepeat) > 0 && (
-          <Item label="Vertical pattern repeat" value={`${numberFmt(vRepeat)}cm`} />
+          <Item label="Vertical pattern repeat" value={`${fmtLen(vRepeat)}`} />
         )}
         {hRepeat !== undefined && Number(hRepeat) > 0 && (
-          <Item label="Horizontal pattern repeat" value={`${numberFmt(hRepeat)}cm`} />
+          <Item label="Horizontal pattern repeat" value={`${fmtLen(hRepeat)}`} />
         )}
 
         {/* Drops and hems */}
-        <Item label="Drop measurement" value={dropCm !== undefined ? `${numberFmt(dropCm)}cm` : undefined} />
-        {headerHem !== undefined && Number(headerHem) > 0 && <Item label="Header hem allowance" value={`${numberFmt(headerHem)}cm`} />}
-        {bottomHem !== undefined && Number(bottomHem) > 0 && <Item label="Bottom hem allowance" value={`${numberFmt(bottomHem)}cm`} />}
-        {pooling !== undefined && pooling > 0 && <Item label="Pooling amount" value={`${numberFmt(pooling)}cm`} />}
+        <Item label="Drop measurement" value={fmtLen(dropCm)} />
+        {headerHem !== undefined && Number(headerHem) > 0 && <Item label="Header hem allowance" value={`${fmtLen(headerHem)}`} />}
+        {bottomHem !== undefined && Number(bottomHem) > 0 && <Item label="Bottom hem allowance" value={`${fmtLen(bottomHem)}`} />}
+        {pooling !== undefined && pooling > 0 && <Item label="Pooling amount" value={`${fmtLen(pooling)}`} />}
 
         <Item
           label="Total drop per width"
-          value={totalDropPerWidth !== undefined ? `${numberFmt(totalDropPerWidth)}cm` : undefined}
+          value={fmtLen(totalDropPerWidth)}
         />
 
         {/* Leftovers (offcuts) */}
@@ -296,8 +301,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         />
         <div className="text-xs text-muted-foreground">
           {/* Guard against undefined to avoid NaN */}
-          • Final calculation: {totalDropPerWidth !== undefined ? (metersFmt(totalDropPerWidth / 100, 2) ?? "—") : "—"} drop × {widthsRequired ?? "—"} piece(s)
-          {seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {linearMeters !== undefined ? `${Number(linearMeters).toFixed(2)}m` : "—"} linear
+          • Final calculation: {totalDropPerWidth !== undefined ? (fmtLen(totalDropPerWidth) ?? "—") : "—"} drop × {widthsRequired ?? "—"} piece(s)
+          {seamAllowTotalCm ? ` + ${fmtLen(seamAllowTotalCm)} seam allowances` : ""} = {linearMeters !== undefined ? `${fmtFabric(linearMeters)}` : "—"} linear
         </div>
       </div>
 

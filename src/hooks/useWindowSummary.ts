@@ -42,6 +42,37 @@ export const useWindowSummary = (windowId: string | undefined) => {
         .maybeSingle();
 
       if (error) throw error;
+      if (!data) return null as WindowSummary | null;
+
+      // Attempt gentle backfill if essential worksheet details are missing
+      try {
+        const mdRaw = (data as any).measurements_details;
+        const md = typeof mdRaw === "string" ? JSON.parse(mdRaw) : (mdRaw || {});
+        const fabricDetails = (data as any).fabric_details || {};
+
+        const needsWorksheetEnrichment = (
+          md?.total_width_with_allowances_cm === undefined ||
+          md?.required_width_cm === undefined ||
+          md?.seams_required === undefined ||
+          md?.total_drop_per_width_cm === undefined
+        );
+        const needsFabricWidth = (fabricDetails?.width_cm === undefined);
+
+        if (needsWorksheetEnrichment || needsFabricWidth) {
+          const enriched = enrichSummaryForPersistence(data as any);
+          const { data: saved, error: saveErr } = await supabase
+            .from("windows_summary")
+            .upsert(enriched)
+            .select()
+            .single();
+          if (!saveErr && saved) {
+            return saved as WindowSummary;
+          }
+        }
+      } catch (e) {
+        console.warn("WindowSummary backfill skipped:", e);
+      }
+
       return data as WindowSummary | null;
     },
     enabled: !!windowId,

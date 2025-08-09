@@ -10,6 +10,7 @@ import { formatCurrency } from "@/utils/unitConversion";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
 import WorkshopSendDialog from "@/components/workroom/WorkshopSendDialog";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -35,6 +36,10 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showWorkshop, setShowWorkshop] = useState(false);
   const { compact } = useCompactMode();
+
+  // Unit helpers
+  const { convertToUserUnit, formatFabric } = useMeasurementUnits();
+  const fmtFabric = (m?: number) => (m !== undefined ? formatFabric(convertToUserUnit(m, 'm')) : undefined);
 
   // Debug logging
   console.log('📊 CARD: WindowSummaryCard render:', {
@@ -66,8 +71,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
       id: 'fabric',
       name: summary.fabric_details?.name || 'Fabric',
       description: summary.fabric_details?.name
-        ? `${summary.fabric_details.name} • ${Number(summary.linear_meters).toFixed(2)}m • ${summary.widths_required} width(s)`
-        : `${Number(summary.linear_meters).toFixed(2)}m • ${summary.widths_required} width(s) • ${formatCurrency(summary.price_per_meter, summary.currency)}/m`,
+        ? `${summary.fabric_details.name} • ${fmtFabric(summary.linear_meters) || ''} • ${summary.widths_required} width(s)`
+        : `${fmtFabric(summary.linear_meters) || ''} • ${summary.widths_required} width(s)`,
       quantity: Number(summary.linear_meters) || 0,
       unit: 'm',
       unit_price: Number(summary.price_per_meter) || 0,
@@ -214,8 +219,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                   title="Fabric"
                   main={formatCurrency(summary.fabric_cost, summary.currency)}
                   sub={summary.fabric_details?.name ? 
-                    `${summary.fabric_details.name} • ${Number(summary.linear_meters).toFixed(2)}m • ${summary.widths_required} width(s)` :
-                    `${Number(summary.linear_meters).toFixed(2)}m • ${summary.widths_required} width(s) • ${formatCurrency(summary.price_per_meter, summary.currency)}/m`
+                    `${summary.fabric_details.name} • ${fmtFabric(summary.linear_meters) || ''} • ${summary.widths_required} width(s)` :
+                    `${fmtFabric(summary.linear_meters) || ''} • ${summary.widths_required} width(s)`
                   }
                 />
                 
