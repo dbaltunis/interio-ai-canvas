@@ -258,10 +258,82 @@ export const TreatmentVisualizer = ({
     } else if (coveringId.includes('shutter')) {
       return renderShutterVisualization();
     } else {
+      // Generic visualization with full measurement display
+      const scaledWidth = Math.min(Number(width) * 3, 220);
+      const scaledHeight = Math.min(Number(height) * 2, 160);
+
+      // Build a compact list of provided measurements
+      const entries = Object.entries(measurements || {})
+        .filter(([_, v]) => v !== null && v !== undefined && String(v).trim() !== "")
+        .map(([k, v]) => ({
+          key: k,
+          label: k.replace(/_/g, " "),
+          value: v
+        }));
+
       return (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center text-muted-foreground bg-gray-50">
-          <div className="text-lg mb-2">{covering.name}</div>
-          <div className="text-sm">Visualization coming soon...</div>
+        <div className="panel relative rounded-lg p-6 min-h-[280px]">
+          {/* Scaled window */}
+          <div 
+            className="absolute border-2 border-gray-400 bg-white/70"
+            style={{
+              width: `${scaledWidth}px`,
+              height: `${scaledHeight}px`,
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -60%)'
+            }}
+          >
+            <div className="absolute inset-1 border border-gray-300 bg-gradient-to-b from-sky-100/70 to-sky-200/70" />
+
+            {/* Width label */}
+            <div
+              className="absolute left-1/2 -bottom-6 -translate-x-1/2 text-xs"
+            >
+              <Badge variant="secondary">
+                W: {Number(width).toFixed(1)} {units.length}
+              </Badge>
+            </div>
+
+            {/* Height label */}
+            <div
+              className="absolute -left-6 top-1/2 -translate-y-1/2 origin-center -rotate-90 text-xs"
+            >
+              <Badge variant="secondary">
+                H: {Number(height).toFixed(1)} {units.length}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Labels */}
+          <div className="absolute top-3 left-3">
+            <Badge variant="outline">{covering.name}</Badge>
+          </div>
+          <div className="absolute top-3 right-3">
+            <Badge variant="secondary">{windowType}</Badge>
+          </div>
+
+          {/* Measurements list */}
+          <div className="mt-[calc(160px+2.5rem)]">
+            <div className="text-sm font-medium mb-2">Measurements</div>
+            {entries.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                {entries.map(({ key, label, value }) => (
+                  <div key={key} className="flex items-center justify-between rounded-md px-2 py-1 bg-muted/50">
+                    <span className="text-muted-foreground truncate">{label}</span>
+                    <span className="font-medium ml-2">
+                      {/* Heuristic: append length unit to obvious length fields */}
+                      {/(width|height|drop|pool|repeat|measurement|rail)/i.test(key)
+                        ? `${Number(value)} ${units.length}`
+                        : String(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">No measurements provided.</div>
+            )}
+          </div>
         </div>
       );
     }
