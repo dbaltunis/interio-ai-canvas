@@ -106,10 +106,10 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
   }, [summary]);
 
   return (
-    <Card className="relative overflow-hidden rounded-2xl border border-brand-secondary/30 bg-background shadow-md hover:shadow-lg transition-colors ring-1 ring-brand-secondary/20 animate-enter mb-4">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand-secondary/20" />
-      </div>
+    <Card
+      className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-md hover:shadow-lg transition-shadow ring-1 ring-border animate-enter mb-4"
+    >
+      {/* Removed blue-tinted overlay ring to improve hover clarity */}
       <CardHeader className="relative pb-3">
         <div className="flex justify-between items-start">
           <div>
@@ -246,3 +246,4 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
     </Card>
   );
 }
+
