@@ -121,7 +121,7 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
           onChange={onFileChange}
           className="hidden"
         />
-        <Button variant="secondary" size="xs" className="h-6 px-2" onClick={onPick}>
+        <Button variant="secondary" size="sm" className="h-6 px-2" onClick={onPick}>
           {imageSrc ? "Change" : "Upload"}
         </Button>
         {imageSrc && (
