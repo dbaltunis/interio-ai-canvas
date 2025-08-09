@@ -12,6 +12,7 @@ interface CalculationBreakdownProps {
   costBreakdown?: any[];
   currency?: string;
   totalCost?: number;
+  embedded?: boolean;
 }
 
 const toNumber = (val: any): number | undefined => {
@@ -39,7 +40,8 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
   compact,
   costBreakdown,
   currency,
-  totalCost
+  totalCost,
+  embedded
 }) => {
   // Use only saved worksheet values; do not recompute derived metrics
   const mdRaw = summary?.measurements_details;
@@ -86,6 +88,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
   );
   const fabricName = summary?.fabric_details?.name ?? md.fabric_name;
   const liningType = summary?.lining_details?.type ?? summary?.lining_type ?? md.lining_type;
+  const headingType = summary?.heading_details?.type ?? md.heading_type ?? md.selected_heading;
 
   // Saved derived steps (use only if present)
   const requiredWidthCm = getNum(md.required_width_cm ?? md.required_width);
@@ -149,7 +152,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
   };
 
   return (
-    <div className={compact ? "rounded-lg border p-3 bg-muted/30" : "rounded-lg border p-4 bg-muted/30"}>
+    <div className={embedded ? "" : (compact ? "rounded-lg border p-3 bg-muted/30" : "rounded-lg border p-4 bg-muted/30") }>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Info className="h-4 w-4 text-muted-foreground" />
@@ -182,6 +185,11 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         {liningType && (
           <Badge variant="secondary" className="text-xs">
             Lining: {liningType}
+          </Badge>
+        )}
+        {headingType && (
+          <Badge variant="secondary" className="text-xs">
+            Heading: {headingType}
           </Badge>
         )}
         {fullness !== undefined && (

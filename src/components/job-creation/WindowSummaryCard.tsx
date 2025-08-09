@@ -233,21 +233,26 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                   sub={summary.manufacturing_type}
                 />
               </div>
+
+              {/* Unified embedded breakdown (no extra container) */}
+              {showBreakdown && (
+                <div className="mt-4">
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Measurement and cost breakdown (saved from worksheet):
+                  </div>
+                  <CalculationBreakdown
+                    summary={summary}
+                    surface={surface}
+                    compact={true}
+                    costBreakdown={enrichedBreakdown}
+                    currency={summary.currency}
+                    totalCost={summary.total_cost}
+                    embedded
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Detailed Breakdown */}
-            {showBreakdown && (
-              <div className="mt-4 space-y-4">
-                <CalculationBreakdown
-                  summary={summary}
-                  surface={surface}
-                  compact={true}
-                  costBreakdown={enrichedBreakdown}
-                  currency={summary.currency}
-                  totalCost={summary.total_cost}
-                />
-              </div>
-            )}
           </div>
         )}
       </CardContent>

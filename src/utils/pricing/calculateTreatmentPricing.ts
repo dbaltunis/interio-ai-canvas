@@ -75,18 +75,44 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
 
   const totalCost = fabricCost + liningCost + manufacturingCost;
 
+  const seamsRequired = Math.max(0, widthsRequired - 1);
+  const returnsTotal = returnLeft + returnRight;
+  const totalDropPerWidth = totalDrop;
+  const fabricCapacityWidthTotal = widthsRequired * fabricWidthCm;
+  const leftoverWidthTotal = Math.max(0, fabricCapacityWidthTotal - totalWidthWithAllowances);
+  const leftoverPerPanel = widthsRequired > 0 ? leftoverWidthTotal / widthsRequired : 0;
+  const vRepeatCm = parseFloat(measurements?.vertical_pattern_repeat_cm ?? measurements?.vertical_pattern_repeat ?? '0');
+  const hRepeatCm = parseFloat(measurements?.horizontal_pattern_repeat_cm ?? measurements?.horizontal_pattern_repeat ?? '0');
+
   const calculation_details = {
     widths_required: widthsRequired,
     linear_meters: linearMeters,
     total_drop_cm: totalDrop,
     price_per_meter: pricePerMeter,
+    required_width_cm: requiredWidth,
+    total_width_with_allowances_cm: totalWidthWithAllowances,
+    seams_required: seamsRequired,
+    seam_allow_total_cm: totalSeamAllowance,
+    side_hems_cm: sideHems,
+    header_allowance_cm: headerHem,
+    bottom_hem_cm: bottomHem,
+    return_left_cm: returnLeft,
+    return_right_cm: returnRight,
+    returns_total_cm: returnsTotal,
+    fullness_ratio: fullnessRatio,
+    fabric_width_cm: fabricWidthCm,
+    vertical_pattern_repeat_cm: vRepeatCm || undefined,
+    horizontal_pattern_repeat_cm: hRepeatCm || undefined,
+    total_drop_per_width_cm: totalDropPerWidth,
+    fabric_capacity_width_total_cm: fabricCapacityWidthTotal,
+    leftover_width_total_cm: leftoverWidthTotal,
+    leftover_per_panel_cm: leftoverPerPanel,
     breakdown: [
       { label: 'Fabric', amount: fabricCost },
       { label: 'Lining', amount: liningCost },
       { label: 'Manufacturing', amount: manufacturingCost },
     ],
   };
-
   return {
     linearMeters,
     widthsRequired,
