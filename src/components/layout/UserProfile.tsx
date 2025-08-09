@@ -1,5 +1,5 @@
 
-import { User, Settings, LogOut, LogIn } from "lucide-react";
+import { User, Settings, LogOut, LogIn, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,11 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 
 export const UserProfile = () => {
   const { user, signOut } = useAuth();
   const { data: userProfile } = useCurrentUserProfile();
   const navigate = useNavigate();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,6 +29,9 @@ export const UserProfile = () => {
     navigate("/settings");
   };
 
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
 
   const handleAuth = () => {
     navigate("/auth");
@@ -78,6 +83,14 @@ export const UserProfile = () => {
         <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           Settings
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
+          {resolvedTheme === "dark" ? (
+            <Sun className="mr-2 h-4 w-4" />
+          ) : (
+            <Moon className="mr-2 h-4 w-4" />
+          )}
+          {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">

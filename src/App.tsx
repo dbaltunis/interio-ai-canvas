@@ -12,6 +12,7 @@ import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
+import { ThemeProvider } from "next-themes";
 
 import AcceptInvitation from "./pages/AcceptInvitation";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
@@ -38,9 +39,10 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <EmailRealtimeProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
             <AuthProvider>
               <Routes>
                 {/* Public booking routes */}
@@ -88,6 +90,7 @@ const App = () => (
               </Routes>
             </AuthProvider>
           </BrowserRouter>
+          </ThemeProvider>
         </TooltipProvider>
       </EmailRealtimeProvider>
     </QueryClientProvider>
