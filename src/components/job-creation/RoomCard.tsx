@@ -121,8 +121,8 @@ export const RoomCard = ({
         onChangeRoomType={onChangeRoomType}
       />
 
-      <CardContent className={compact ? "p-4" : "p-6"}>
-        <div className={compact ? "space-y-3" : "space-y-4"}>
+      <CardContent className={compact ? "p-3" : "p-4"}>
+        <div className={compact ? "space-y-2" : "space-y-3"}>
           {/* Room Type Badge */}
 
           {/* Surfaces List */}
@@ -137,7 +137,7 @@ export const RoomCard = ({
               onDeleteSurface={onDeleteSurface}
             />
           ) : (
-            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+            <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
               <div className="text-4xl mb-2">🪟</div>
               <h4 className="font-medium text-foreground mb-1">No measurement worksheets added</h4>
               <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets to get started with treatments</p>
@@ -145,7 +145,7 @@ export const RoomCard = ({
           )}
 
           {/* Add Window Button */}
-          <div className="flex gap-2 pt-4 border-t border-gray-100">
+          <div className="flex gap-2 pt-3 border-t border-gray-100">
             <Button
               onClick={handleSurfaceCreation}
               disabled={isCreatingSurface}

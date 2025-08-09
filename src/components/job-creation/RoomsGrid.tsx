@@ -48,8 +48,8 @@ export const RoomsGrid = ({
   onCreateFromTemplate
 }: RoomsGridProps) => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {!rooms || rooms.length === 0 ? (
           <div className="lg:col-span-2">
             <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
@@ -87,7 +87,7 @@ export const RoomsGrid = ({
             disabled={isCreatingRoom}
             variant="outline"
             size="lg"
-            className="flex items-center space-x-2 px-8 py-4 border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+            className="flex items-center space-x-2 px-6 py-3 border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
           >
             <Plus className="h-5 w-5" />
             <span>{isCreatingRoom ? 'Adding Room...' : 'Add Another Room'}</span>

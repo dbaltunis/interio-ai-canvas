@@ -113,7 +113,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
 
   return (
     <Card
-      className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-md hover:shadow-lg transition-shadow ring-1 ring-border animate-enter mb-4"
+      className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-md hover:shadow-lg transition-shadow ring-1 ring-border animate-enter"
     >
       {/* Removed blue-tinted overlay ring to improve hover clarity */}
       <CardHeader className="relative pb-3">
@@ -166,8 +166,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
         {summary && (
           <div className="space-y-4">
             {/* Summary Header */}
-            <div className="rounded-lg border p-4">
-              <div className="flex items-baseline justify-between mb-4">
+            <div className="rounded-lg border p-3">
+              <div className="flex items-baseline justify-between mb-3">
                 <div>
                   <div className="text-sm text-muted-foreground">Total Cost</div>
                   <div className="text-2xl font-semibold">
@@ -214,7 +214,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
               </div>
 
               {/* Quick Summary Grid */}
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-2 md:grid-cols-3">
                 <SummaryItem
                   title="Fabric"
                   main={formatCurrency(summary.fabric_cost, summary.currency)}
@@ -241,7 +241,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
 
               {/* Unified embedded breakdown (no extra container) */}
               {showBreakdown && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <div className="text-xs text-muted-foreground mb-2">
                     Measurement and cost breakdown (saved from worksheet):
                   </div>
