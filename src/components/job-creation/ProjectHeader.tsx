@@ -262,7 +262,7 @@ export const ProjectHeader = ({
   console.log('ProjectHeader render - displayStatus:', displayStatus, 'currentStatusInfo:', currentStatusInfo);
 
   return (
-    <div className="bg-white border-b px-6 py-4">
+    <header className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
@@ -274,7 +274,7 @@ export const ProjectHeader = ({
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Jobs</span>
           </Button>
-          <div className="h-6 w-px bg-gray-300" />
+          <div className="h-6 w-px bg-border" />
           <div className="flex flex-col">
             <h1 className="text-xl font-semibold">{projectName}</h1>
             <div className="flex items-center space-x-4 mt-1">
@@ -545,6 +545,6 @@ export const ProjectHeader = ({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </header>
   );
 };

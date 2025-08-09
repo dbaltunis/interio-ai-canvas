@@ -36,29 +36,31 @@ export const JobEditPage = ({ jobId, onBack }: JobEditPageProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProjectHeader 
-        projectName={job.quote_number || "Job"} 
-        projectNumber={job.quote_number}
-        projectValue={job.total_amount}
-        currentStatus={job.status}
-        projectId={job} // Pass the whole job object so the component can extract project_id
-        quoteId={job.id}
-        onBack={onBack} 
-      />
-      <ProjectNavigation 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
-      
-      {/* Tab Content */}
-      <div className="min-h-[600px]">
-        <ProjectTabContent 
-          activeTab={activeTab} 
-          project={job} 
+    <div className="min-h-screen bg-background">
+      <main className="container mx-auto max-w-7xl space-y-4 p-4">
+        <ProjectHeader 
+          projectName={job.quote_number || "Job"} 
+          projectNumber={job.quote_number}
+          projectValue={job.total_amount}
+          currentStatus={job.status}
+          projectId={job} // Pass the whole job object so the component can extract project_id
+          quoteId={job.id}
           onBack={onBack} 
         />
-      </div>
+        <ProjectNavigation 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+        
+        {/* Tab Content */}
+        <section aria-label="Job section content" className="min-h-[600px]">
+          <ProjectTabContent 
+            activeTab={activeTab} 
+            project={job} 
+            onBack={onBack} 
+          />
+        </section>
+      </main>
     </div>
   );
 };

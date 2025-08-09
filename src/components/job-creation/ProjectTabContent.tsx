@@ -113,14 +113,28 @@ export const ProjectTabContent = ({
         );
       case "workshop":
         return <ProjectWorkshopTab project={project} />;
+      case "emails":
+        return (
+          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
+            <h2 className="text-lg font-semibold">Emails</h2>
+            <p className="text-muted-foreground mt-1">Email communications for this job will appear here.</p>
+          </div>
+        );
+      case "calendar":
+        return (
+          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
+            <h2 className="text-lg font-semibold">Calendar</h2>
+            <p className="text-muted-foreground mt-1">Schedule and view job-related events here.</p>
+          </div>
+        );
       default:
         return <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />;
     }
   };
 
   return (
-    <div className="p-6">
+    <main className="p-4 md:p-6">
       {renderTabContent()}
-    </div>
+    </main>
   );
 };
