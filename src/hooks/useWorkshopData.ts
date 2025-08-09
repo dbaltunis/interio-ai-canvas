@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { useProject } from "@/hooks/useProjects";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export interface WorkshopRoomItem {
   id: string;
@@ -43,65 +46,84 @@ export interface WorkshopData {
 }
 
 export const useWorkshopData = (projectId?: string) => {
-  const { data, isLoading, error } = useProjectWindowSummaries(projectId);
+  const { data: project, isLoading: loadingProject, error: errorProject } = useProject(projectId || "");
+  const { data: rooms = [], isLoading: loadingRooms, error: errorRooms } = useRooms(projectId);
+  const { data: surfaces = [], isLoading: loadingSurfaces, error: errorSurfaces } = useSurfaces(projectId);
+  const { convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
 
   const workshopData: WorkshopData | undefined = useMemo(() => {
-    if (!data) return undefined;
-
+    // Build sections from rooms and surfaces
     const roomsMap = new Map<string, WorkshopRoomSection>();
 
-    // Gather window summaries in a defensive way since the exact field can vary
-    const rawSummaries: any[] = (data as any)?.windowSummaries ?? (data as any)?.windows ?? [];
-    const items = rawSummaries.map((w: any) => {
-      const item: WorkshopRoomItem = {
-        id: w.window_id || w.id || Math.random().toString(36).slice(2),
-        name: w.window_name || w.name || "Window",
-        roomName: w.room_name || w.room || "Room",
-        location: w.location || undefined,
-        quantity: w.quantity || 1,
-        measurements: {
-          width: w.width_cm || w.width || undefined,
-          height: w.height_cm || w.height || undefined,
-          unit: w.width_cm || w.height_cm ? "cm" : undefined,
-        },
-        treatmentType: w.treatment_type || w.template_name || undefined,
-        notes: w.notes || undefined,
-      };
-      return item;
+    // Seed sections from existing rooms
+    (rooms || []).forEach((r: any) => {
+      roomsMap.set(r.id, { roomName: r.name || "Room", items: [], totals: { count: 0 } });
     });
 
-    items.forEach((item) => {
-      const key = item.roomName || "Room";
+    const getRoomName = (roomId?: string) => {
+      const r = (rooms || []).find((x: any) => x.id === roomId);
+      return r?.name || (roomId ? `Room ${roomId.slice(0, 4)}` : "Unassigned");
+    };
+
+    const ensureSectionByRoomId = (roomId?: string) => {
+      const key = roomId || "unassigned";
       if (!roomsMap.has(key)) {
-        roomsMap.set(key, { roomName: key, items: [], totals: { count: 0 } });
+        roomsMap.set(key, { roomName: getRoomName(roomId), items: [], totals: { count: 0 } });
       }
-      const entry = roomsMap.get(key)!;
-      entry.items.push(item);
-      entry.totals = { count: (entry.totals?.count || 0) + 1 };
+      return roomsMap.get(key)!;
+    };
+
+    (surfaces || []).forEach((s: any) => {
+      const widthIn = typeof s.width === "number" ? s.width : undefined;
+      const heightIn = typeof s.height === "number" ? s.height : undefined;
+      const width = widthIn !== undefined ? Math.round(convertToUserUnit(widthIn, "inches") * 100) / 100 : undefined;
+      const height = heightIn !== undefined ? Math.round(convertToUserUnit(heightIn, "inches") * 100) / 100 : undefined;
+
+      const item: WorkshopRoomItem = {
+        id: s.id,
+        name: s.name || "Window",
+        roomName: getRoomName(s.room_id),
+        location: undefined,
+        quantity: 1,
+        measurements: {
+          width,
+          height,
+          unit: (width || height) ? getLengthUnitLabel() : undefined,
+        },
+        treatmentType: s.surface_type || s.type || undefined,
+        notes: s.notes || undefined,
+      };
+
+      const section = ensureSectionByRoomId(s.room_id);
+      section.items.push(item);
+      section.totals = { count: (section.totals?.count || 0) + 1 };
     });
 
-    const rooms = Array.from(roomsMap.values()).sort((a, b) =>
-      a.roomName.localeCompare(b.roomName)
-    );
+    const sections = Array.from(roomsMap.entries())
+      .map(([key, section]) => ({ key, ...section }))
+      .sort((a, b) => a.roomName.localeCompare(b.roomName))
+      .map(({ key, ...rest }) => rest);
+
+    if (sections.length === 0) return undefined;
 
     return {
       header: {
-        orderNumber: undefined,
+        orderNumber: (project as any)?.job_number ?? undefined,
         clientName: undefined,
-        projectName: undefined,
-        createdDate: new Date().toISOString().slice(0, 10),
-        dueDate: undefined,
+        projectName: (project as any)?.name ?? undefined,
+        createdDate: (project as any)?.created_at ? String((project as any).created_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
+        dueDate: (project as any)?.due_date ?? undefined,
         assignedMaker: undefined,
         shippingAddress: undefined,
       },
-      rooms,
-      projectTotals: { itemsCount: items.length },
+      rooms: sections,
+      projectTotals: { itemsCount: (surfaces || []).length },
     } as WorkshopData;
-  }, [data]);
+  }, [project, rooms, surfaces, convertToUserUnit, getLengthUnitLabel]);
 
   return {
     data: workshopData,
-    isLoading,
-    error,
+    isLoading: loadingProject || loadingRooms || loadingSurfaces,
+    error: errorProject || errorRooms || errorSurfaces,
   } as const;
 };
