@@ -380,9 +380,28 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                              }
                            ];
 
-                          // Add dynamic breakdown components from cost_breakdown
+                          // Add dynamic breakdown components from cost_breakdown (supports legacy and structured formats)
                           if (windowSummary?.cost_breakdown && Array.isArray(windowSummary.cost_breakdown)) {
                             windowSummary.cost_breakdown.forEach((component: any) => {
+                              // Structured format: { name?, category?, description?, quantity?, unit?, unit_price?, total_cost? }
+                              if ((component.total_cost ?? 0) > 0) {
+                                const label = component.name || component.category || 'Item';
+                                const qtyVal = component.quantity ?? 1;
+                                const qty = component.unit ? `${Number(qtyVal).toFixed(2)} ${component.unit}` : (qtyVal ?? 1);
+                                const rate = component.unit_price ?? (Number(component.total_cost) / (Number(component.quantity) || 1));
+                                items.push({
+                                  number: '',
+                                  productService: label,
+                                  description: component.description || '-',
+                                  quantity: qty,
+                                  priceRate: Number(rate) || 0,
+                                  total: Number(component.total_cost) || 0,
+                                  isMain: false
+                                });
+                                return; // proceed to next component
+                              }
+
+                              // Legacy format: { label, amount, description? }
                               if (component.label && component.amount > 0) {
                                 // Determine quantity and rate based on component type
                                 let quantity: string | number = 1;
