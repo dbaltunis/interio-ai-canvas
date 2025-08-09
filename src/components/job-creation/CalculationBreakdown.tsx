@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
@@ -94,10 +95,31 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
 
   const hasCostBreakdown = Array.isArray(costBreakdown) && costBreakdown.length > 0;
 
-  // Simple inline item subcomponent
-  const Item = ({ label, value }: { label: string; value?: string }) => {
-    if (!value) return null;
-    return <div className="text-xs text-muted-foreground">• {label}: {value}</div>;
+  // Make debug info available in console to verify mismatches
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.log("🧮 CalculationBreakdown metrics:", {
+      metrics,
+      requiredWidth,
+      totalWidthWithAllowances,
+      computedWidthsNeeded,
+      seamAllowTotalCm,
+      totalDropPerWidth,
+      linearMeters,
+      activeCurrency
+    });
+  }
+
+  // Robust inline item subcomponent (prevents blank "• :" rows and shows 0s)
+  const Item = ({ label, value }: { label: string; value?: string | number }) => {
+    const hasValue = value !== undefined && value !== null && String(value).length > 0;
+    if (!label || !hasValue) return null;
+    return (
+      <div className="text-xs text-muted-foreground flex items-start justify-between gap-2">
+        <span className="text-muted-foreground/80">{label}</span>
+        <span className="font-medium text-foreground">{value}</span>
+      </div>
+    );
   };
 
   return (
@@ -152,13 +174,13 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         {sideHems !== undefined && curtainCount !== undefined && (
           <Item
             label="Side hems"
-            value={`${numberFmt(sideHems)}cm × 2 sides × ${curtainCount} curtain(s) = ${numberFmt(totalSideHems)}cm total`}
+            value={`${numberFmt(sideHems ?? 0)}cm × 2 sides × ${curtainCount} curtain(s) = ${numberFmt(totalSideHems)}cm total`}
           />
         )}
         {(returnLeft !== undefined || returnRight !== undefined) && (
           <Item
             label="Returns"
-            value={`${numberFmt(returnLeft)}cm + ${numberFmt(returnRight)}cm = ${numberFmt((returnLeft ?? 0) + (returnRight ?? 0))}cm`}
+            value={`${numberFmt(returnLeft ?? 0)}cm + ${numberFmt(returnRight ?? 0)}cm = ${numberFmt((returnLeft ?? 0) + (returnRight ?? 0))}cm`}
           />
         )}
         <Item
@@ -172,7 +194,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
         {seamHems !== undefined && seamsRequired !== undefined && (
           <Item
             label="Seam allowances"
-            value={`${numberFmt(seamHems)}cm × 2 sides × ${seamsRequired} seam(s) = ${numberFmt(seamAllowTotalCm)}cm`}
+            value={`${numberFmt(seamHems ?? 0)}cm × 2 sides × ${seamsRequired} seam(s) = ${numberFmt(seamAllowTotalCm)}cm`}
           />
         )}
         <Item label="Drop measurement" value={dropCm !== undefined ? `${numberFmt(dropCm)}cm` : undefined} />

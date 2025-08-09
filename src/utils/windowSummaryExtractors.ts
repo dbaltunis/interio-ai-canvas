@@ -29,6 +29,21 @@ const parseMeasurementsDetails = (summary: AnySummary): Record<string, any> => {
   return {};
 };
 
+// New: normalize lengths to centimeters based on common unit hints or keyed suffixes.
+const normalizeToCm = (val: any, unitHint?: string): number | undefined => {
+  const n = toFiniteNumber(val);
+  if (n === undefined) return undefined;
+
+  const unit = (unitHint || "").toString().toLowerCase().trim();
+  if (!unit) return n; // assume already cm if no hint
+
+  if (["cm", "centimeter", "centimeters"].includes(unit)) return n;
+  if (["mm", "millimeter", "millimeters"].includes(unit)) return n / 10;
+  if (["in", "inch", "inches"].includes(unit)) return n * 2.54;
+
+  return n; // default: assume cm
+};
+
 const pickNumber = (...vals: any[]): number | undefined => {
   for (const v of vals) {
     const n = toFiniteNumber(v);
@@ -37,94 +52,122 @@ const pickNumber = (...vals: any[]): number | undefined => {
   return undefined;
 };
 
+// New: pick with alternate keys and unit normalization support
+const pickLengthFromMd = (md: Record<string, any>, keys: string[], defaultUnit?: string): number | undefined => {
+  // Try exact cm keys
+  for (const k of keys) {
+    if (k.endsWith("_cm") && md[k] !== undefined) {
+      const cm = normalizeToCm(md[k], "cm");
+      if (cm !== undefined) return cm;
+    }
+  }
+
+  // Try mm and in variants implicitly
+  for (const base of keys.map(k => k.replace(/_cm$/, ""))) {
+    const mmKey = `${base}_mm`;
+    const inKey = `${base}_in`;
+    if (md[mmKey] !== undefined) {
+      const cm = normalizeToCm(md[mmKey], "mm");
+      if (cm !== undefined) return cm;
+    }
+    if (md[inKey] !== undefined) {
+      const cm = normalizeToCm(md[inKey], "in");
+      if (cm !== undefined) return cm;
+    }
+  }
+
+  // Try non-suffixed keys using md.unit hints if present
+  const unitHint = (md.unit || md.units || md.measurement_unit || defaultUnit) as string | undefined;
+  for (const base of keys.map(k => k.replace(/_cm$/, ""))) {
+    if (md[base] !== undefined) {
+      const cm = normalizeToCm(md[base], unitHint);
+      if (cm !== undefined) return cm;
+    }
+  }
+
+  return undefined;
+};
+
 export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) => {
   const md = parseMeasurementsDetails(summary);
 
-  // Core measurements (cm)
-  const railWidthCm = pickNumber(
-    md.rail_width,
-    summary?.rail_width,
-    surface?.rail_width,
-    surface?.width
-  );
+  // Core measurements (cm) with alternate keys + unit normalization
+  const railWidthCm =
+    pickLengthFromMd(md, ["rail_width_cm", "rail_width", "width_cm", "width"]) ??
+    normalizeToCm(summary?.rail_width, (summary as any)?.unit || (summary as any)?.measurement_unit) ??
+    // Last resort: surface; often stored in inches in some datasets
+    normalizeToCm(surface?.rail_width ?? surface?.width, (surface as any)?.unit || "in");
 
-  const dropCm = pickNumber(
-    md.drop,
-    summary?.drop,
-    surface?.drop,
-    surface?.height
-  );
+  const dropCm =
+    pickLengthFromMd(md, ["drop_cm", "drop", "height_cm", "height"]) ??
+    normalizeToCm(summary?.drop, (summary as any)?.unit || (summary as any)?.measurement_unit) ??
+    normalizeToCm(surface?.drop ?? surface?.height, (surface as any)?.unit || "in");
 
-  const pooling = pickNumber(
-    md.pooling_amount,
-    md.pooling,
-    summary?.pooling_amount,
-    summary?.pooling
-  ) ?? 0;
+  const pooling =
+    pickLengthFromMd(md, ["pooling_amount_cm", "pooling_cm", "pooling_amount", "pooling"]) ??
+    pickNumber(md.pooling_amount, md.pooling, summary?.pooling_amount, summary?.pooling) ??
+    0;
 
   // Allowances and ratios (cm)
-  const sideHems = pickNumber(
-    md.side_hems,
-    summary?.side_hems
-  ) ?? 0;
+  const sideHems =
+    pickLengthFromMd(md, ["side_hems_cm", "side_hems"]) ??
+    pickNumber(md.side_hems, summary?.side_hems) ??
+    0;
 
-  const seamHems = pickNumber(
-    md.seam_hems,
-    summary?.seam_hems
-  ) ?? 0;
+  const seamHems =
+    pickLengthFromMd(md, ["seam_hems_cm", "seam_hems"]) ??
+    pickNumber(md.seam_hems, summary?.seam_hems) ??
+    0;
 
-  const headerHem = pickNumber(
-    md.header_allowance,
-    md.header_hem,
-    summary?.header_allowance,
-    summary?.header_hem
-  ) ?? 0;
+  const headerHem =
+    pickLengthFromMd(md, ["header_allowance_cm", "header_hem_cm", "header_allowance", "header_hem"]) ??
+    pickNumber(md.header_allowance, md.header_hem, summary?.header_allowance, summary?.header_hem) ??
+    0;
 
-  const bottomHem = pickNumber(
-    md.bottom_hem,
-    summary?.bottom_hem
-  ) ?? 0;
+  const bottomHem =
+    pickLengthFromMd(md, ["bottom_hem_cm", "bottom_hem"]) ??
+    pickNumber(md.bottom_hem, summary?.bottom_hem) ??
+    0;
 
-  const returnLeft = pickNumber(
-    md.return_left,
-    summary?.return_left
-  ) ?? 0;
+  const returnLeft =
+    pickLengthFromMd(md, ["return_left_cm", "return_left"]) ??
+    pickNumber(md.return_left, summary?.return_left) ??
+    0;
 
-  const returnRight = pickNumber(
-    md.return_right,
-    summary?.return_right
-  ) ?? 0;
+  const returnRight =
+    pickLengthFromMd(md, ["return_right_cm", "return_right"]) ??
+    pickNumber(md.return_right, summary?.return_right) ??
+    0;
 
-  const fullness = pickNumber(
-    md.fullness_ratio,
-    summary?.fullness_ratio,
-    summary?.template_details?.fullness_ratio
-  ) ?? 2.0;
+  const fullness =
+    pickNumber(
+      md.fullness_ratio,
+      md.fullness,
+      summary?.fullness_ratio,
+      summary?.template_details?.fullness_ratio
+    ) ?? 2.0;
 
-  // Fabric and repeats
-  const fabricWidthCm = pickNumber(
-    md.fabric_width_cm,
-    summary?.fabric_details?.width_cm,
-    summary?.fabric_width_cm,
-    summary?.fabric_width
-  ) ?? 137;
+  // Fabric and repeats (cm)
+  const fabricWidthCm =
+    pickLengthFromMd(md, ["fabric_width_cm", "fabric_width"]) ??
+    pickLengthFromMd(summary?.fabric_details || {}, ["width_cm", "width"]) ??
+    pickNumber(summary?.fabric_width_cm, summary?.fabric_width) ??
+    137;
 
-  const vRepeat = pickNumber(
-    md.vertical_pattern_repeat,
-    summary?.vertical_pattern_repeat,
-    summary?.fabric_details?.vertical_repeat_cm
-  ) ?? 0;
+  const vRepeat =
+    pickLengthFromMd(md, ["vertical_pattern_repeat_cm", "vertical_pattern_repeat"]) ??
+    pickLengthFromMd(summary?.fabric_details || {}, ["vertical_repeat_cm", "vertical_repeat"]) ??
+    pickNumber(md.vertical_pattern_repeat, summary?.vertical_pattern_repeat) ??
+    0;
 
-  const hRepeat = pickNumber(
-    md.horizontal_pattern_repeat,
-    summary?.horizontal_pattern_repeat,
-    summary?.fabric_details?.horizontal_repeat_cm
-  ) ?? 0;
+  const hRepeat =
+    pickLengthFromMd(md, ["horizontal_pattern_repeat_cm", "horizontal_pattern_repeat"]) ??
+    pickLengthFromMd(summary?.fabric_details || {}, ["horizontal_repeat_cm", "horizontal_repeat"]) ??
+    pickNumber(md.horizontal_pattern_repeat, summary?.horizontal_pattern_repeat) ??
+    0;
 
-  const wastePercent = pickNumber(
-    md.waste_percent,
-    summary?.waste_percent
-  ) ?? 0;
+  const wastePercent =
+    pickNumber(md.waste_percent, summary?.waste_percent) ?? 0;
 
   // Treatment structure
   const curtainType = md.curtain_type || summary?.curtain_type || "single";
@@ -132,11 +175,12 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
 
   // Pricing/currency
   const currency = summary?.currency || "GBP";
-  const pricePerMeter = pickNumber(
-    summary?.price_per_meter,
-    summary?.fabric_details?.price_per_meter,
-    summary?.fabric_details?.unit_price
-  ) ?? 0;
+  const pricePerMeter =
+    pickNumber(
+      summary?.price_per_meter,
+      summary?.fabric_details?.price_per_meter,
+      summary?.fabric_details?.unit_price
+    ) ?? 0;
 
   // Outputs from calculation (prefer exact worksheet/saved values)
   const widthsRequired = pickNumber(
@@ -153,6 +197,37 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
   const liningType = summary?.lining_details?.type || summary?.lining_type || md.lining_type;
 
   const manufacturingType = summary?.manufacturing_type || summary?.template_details?.manufacturing_type;
+
+  // Debug visibility (non-breaking)
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.log("extractWindowMetrics:", {
+      railWidthCm,
+      dropCm,
+      pooling,
+      sideHems,
+      seamHems,
+      headerHem,
+      bottomHem,
+      returnLeft,
+      returnRight,
+      fullness,
+      fabricWidthCm,
+      vRepeat,
+      hRepeat,
+      wastePercent,
+      curtainType,
+      curtainCount,
+      currency,
+      pricePerMeter,
+      widthsRequired,
+      linearMeters,
+      fabricName,
+      liningType,
+      manufacturingType,
+      rawMdKeys: Object.keys(md || {}),
+    });
+  }
 
   return {
     railWidthCm,
