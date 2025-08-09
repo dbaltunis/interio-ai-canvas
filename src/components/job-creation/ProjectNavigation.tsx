@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { User, Briefcase, FileText, Wrench } from "lucide-react";
+import { Home, Box, FileText, Wrench, Mail, Calendar } from "lucide-react";
 import { useEffect } from "react";
 
 interface ProjectNavigationProps {
@@ -19,10 +19,12 @@ export const ProjectNavigation = ({
   shouldRedirectToQuote = false 
 }: ProjectNavigationProps) => {
   const navItems = [
-    { id: "client", label: "Client", icon: User },
-    { id: "jobs", label: "Jobs", icon: Briefcase },
-    { id: "quote", label: "Quote", icon: FileText },
-    { id: "workshop", label: "Workshop", icon: Wrench },
+    { id: "client", label: "Project Details", icon: Home },
+    { id: "jobs", label: "Rooms & Treatments", icon: Box },
+    { id: "quote", label: "Quotation", icon: FileText },
+    { id: "workshop", label: "Workroom", icon: Wrench },
+    { id: "emails", label: "Emails", icon: Mail },
+    { id: "calendar", label: "Calendar", icon: Calendar },
   ];
 
   // Handle automatic redirect to quote tab when status changes to "Quote"
@@ -57,29 +59,37 @@ export const ProjectNavigation = ({
   };
 
   return (
-    <div className="flex space-x-0 px-6">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const displayLabel = item.id === "client" ? getClientLabel() : item.label;
-        
-        return (
-          <Button
-            key={item.id}
-            variant="ghost"
-            size="sm"
-            onClick={() => onTabChange(item.id)}
-            className={`px-6 py-2 rounded-none border-b-2 ${
-              activeTab === item.id
-                ? "border-blue-600 bg-blue-50 text-blue-700"
-                : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-            }`}
-          >
-            <Icon className="h-4 w-4 mr-2" />
-            <span>{displayLabel}</span>
-            {item.id === "client" && getClientIndicator()}
-          </Button>
-        );
-      })}
+    <div className="w-full px-4 animate-fade-in">
+      <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm">
+        <div className="flex items-center justify-between p-3">
+          <div className="inline-flex items-center rounded-full border border-border/60 bg-background/60 backdrop-blur p-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const displayLabel = item.id === "client" ? getClientLabel() : item.label;
+              const isActive = activeTab === item.id;
+
+              return (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onTabChange(item.id)}
+                  className={`rounded-full px-4 py-2 gap-2 hover-scale ${
+                    isActive
+                      ? "bg-primary/10 text-primary shadow"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{displayLabel}</span>
+                  {item.id === "client" && getClientIndicator()}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
