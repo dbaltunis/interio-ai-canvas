@@ -30,7 +30,7 @@ export const JobsDashboard = () => {
   // Job status distribution for pie chart
   const statusData = [
     { name: 'Completed', value: completedJobs, color: '#10B981' },
-    { name: 'In Progress', value: activeJobs, color: '#3B82F6' },
+    { name: 'In Progress', value: activeJobs, color: 'hsl(var(--primary))' },
     { name: 'Planning', value: planningJobs, color: '#F59E0B' },
     { name: 'On Hold', value: projects?.filter(p => p.status === 'on_hold')?.length || 0, color: '#EF4444' }
   ].filter(item => item.value > 0);
@@ -54,7 +54,7 @@ export const JobsDashboard = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-brand-primary">Jobs Dashboard</h1>
-        <p className="text-gray-600 mt-1">Complete overview of your business performance</p>
+        <p className="text-muted-foreground mt-1">Complete overview of your business performance</p>
       </div>
 
       {/* Key Performance Indicators */}
@@ -62,13 +62,13 @@ export const JobsDashboard = () => {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center">
-              <Target className="w-4 h-4 mr-2 text-blue-600" />
+              <Target className="w-4 h-4 mr-2 text-primary" />
               Total Jobs
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{totalJobs}</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <div className="text-2xl font-bold text-primary">{totalJobs}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {activeJobs} active • {completedJobs} completed
             </p>
           </CardContent>
@@ -114,7 +114,7 @@ export const JobsDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{stats?.totalClients || 0}</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Active customer base
             </p>
           </CardContent>
@@ -170,7 +170,7 @@ export const JobsDashboard = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     No jobs data available
                   </div>
                 )}
@@ -194,7 +194,7 @@ export const JobsDashboard = () => {
                         name === 'revenue' ? 'Revenue' : 'Jobs'
                       ]}
                     />
-                    <Bar dataKey="revenue" fill="#3B82F6" />
+                    <Bar dataKey="revenue" fill="hsl(var(--primary))" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -211,7 +211,7 @@ export const JobsDashboard = () => {
                 {recentProjects.map((project) => (
                   <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-gray-100 rounded-lg">
+                    <div className="p-2 bg-muted rounded-lg">
                         <Target className="h-4 w-4" />
                       </div>
                       <div>
@@ -231,7 +231,7 @@ export const JobsDashboard = () => {
                 ))}
                 
                 {recentProjects.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                     No projects found. Create your first project to see it here.
                   </div>
                 )}

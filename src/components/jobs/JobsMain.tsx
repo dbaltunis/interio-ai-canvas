@@ -28,8 +28,8 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      <div className="panel rounded-xl p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

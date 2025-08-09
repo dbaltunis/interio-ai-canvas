@@ -115,7 +115,7 @@ export const ClientManagementPage = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="panel rounded-xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -158,7 +158,7 @@ export const ClientManagementPage = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="panel p-4 rounded-lg">
           <ClientFilters
             searchTerm={searchTerm}
             setSearchTerm={handleSearchChange}
