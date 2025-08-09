@@ -2,7 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
 import { formatCurrency } from "@/utils/unitConversion";
-import { numberFmt, metersFmt } from "@/utils/windowSummaryExtractors";
+import { numberFmt, metersFmt, extractWindowMetrics } from "@/utils/windowSummaryExtractors";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface CalculationBreakdownProps {
@@ -59,51 +59,23 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
     return Number.isFinite(n as number) ? (n as number) : undefined;
   };
 
-  // Base materials/measurements from saved data with robust fallbacks to template_details
-  const fabricWidthCm = getNum(
-    md.fabric_width_cm ?? md.fabric_width ?? summary?.fabric_details?.width_cm ?? summary?.fabric_details?.width
-  );
-  const railWidthCm = getNum(
-    md.rail_width_cm ?? md.rail_width ?? md.width_cm ?? md.width ?? summary?.rail_width
-  );
-  const fullness = getNum(
-    md.fullness_ratio ?? md.fullness ?? summary?.fullness_ratio ?? summary?.template_details?.fullness_ratio
-  );
-  const sideHems = getNum(
-    md.side_hems_cm ?? md.side_hems ?? summary?.template_details?.side_hems
-  );
-  const headerHem = getNum(
-    md.header_allowance_cm ?? md.header_hem_cm ?? md.header_allowance ?? md.header_hem ?? summary?.template_details?.header_allowance
-  );
-  const bottomHem = getNum(
-    md.bottom_hem_cm ?? md.bottom_hem ?? summary?.template_details?.bottom_hem
-  );
-  const seamHems = getNum(
-    md.seam_hems_cm ?? md.seam_hems ?? summary?.template_details?.seam_hems
-  );
-  const dropCm = getNum(
-    md.drop_cm ?? md.height_cm ?? md.drop ?? md.height ?? summary?.drop
-  );
-  const pooling = getNum(
-    md.pooling_amount_cm ?? md.pooling_cm ?? md.pooling_amount ?? md.pooling
-  );
-  const returnLeft = getNum(
-    md.return_left_cm ?? md.return_left ?? summary?.template_details?.return_left
-  );
-  const returnRight = getNum(
-    md.return_right_cm ?? md.return_right ?? summary?.template_details?.return_right
-  );
-  const vRepeat = getNum(
-    md.vertical_pattern_repeat_cm ?? md.vertical_pattern_repeat ?? md.vertical_repeat_cm ?? md.vertical_repeat
-  );
-  const hRepeat = getNum(
-    md.horizontal_pattern_repeat_cm ?? md.horizontal_pattern_repeat ?? md.horizontal_repeat_cm ?? md.horizontal_repeat
-  );
-  const wastePercent = getNum(
-    md.waste_percent ?? summary?.waste_percent
-  );
-  const curtainCount = getNum(md.curtain_count) ?? (md.curtain_type === "pair" ? 2 : md.curtain_type ? 1 : undefined);
-
+  // Use normalized, unit-safe metrics
+  const xm = extractWindowMetrics(summary, surface);
+  const fabricWidthCm = xm.fabricWidthCm;
+  const railWidthCm = xm.railWidthCm;
+  const fullness = xm.fullness;
+  const sideHems = xm.sideHems;
+  const headerHem = xm.headerHem;
+  const bottomHem = xm.bottomHem;
+  const seamHems = xm.seamHems;
+  const dropCm = xm.dropCm;
+  const pooling = xm.pooling;
+  const returnLeft = xm.returnLeft;
+  const returnRight = xm.returnRight;
+  const vRepeat = xm.vRepeat;
+  const hRepeat = xm.hRepeat;
+  const wastePercent = xm.wastePercent;
+  const curtainCount = xm.curtainCount;
   // Saved outputs from worksheet
   const widthsRequired = getNum(summary?.widths_required ?? md.widths_required);
   const linearMeters = getNum(summary?.linear_meters ?? md.linear_meters);
