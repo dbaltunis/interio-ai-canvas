@@ -15,7 +15,7 @@
     --primary: var(--company-primary);
     --primary-foreground: var(--company-secondary);
     --secondary: var(--company-secondary);
-    --secondary-foreground: 65 94 107;
+    --secondary-foreground: var(--company-primary);
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
     
@@ -44,21 +44,21 @@
   .dark {
     /* Dark mode with company colors */
     --background: var(--company-primary);
-    --foreground: 255 255 255;
+    --foreground: 0 0% 100%;
     --card: hsl(var(--company-primary) / 0.8);
-    --card-foreground: 255 255 255;
+    --card-foreground: 0 0% 100%;
     --popover: var(--company-primary);
-    --popover-foreground: 255 255 255;
+    --popover-foreground: 0 0% 100%;
     --primary: var(--company-secondary);
     --primary-foreground: var(--company-primary);
     --secondary: hsl(var(--company-primary) / 0.6);
-    --secondary-foreground: 255 255 255;
+    --secondary-foreground: 0 0% 100%;
     --muted: hsl(var(--company-primary) / 0.4);
     --muted-foreground: var(--company-secondary);
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 255 255 255;
+    --destructive-foreground: 0 0% 100%;
     --border: var(--company-secondary);
     --input: hsl(var(--company-primary) / 0.6);
     --ring: var(--company-secondary);

@@ -39,7 +39,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <EmailRealtimeProvider>
         <TooltipProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             <Toaster />
             <Sonner />
             <BrowserRouter>
