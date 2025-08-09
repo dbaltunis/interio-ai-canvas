@@ -1,8 +1,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas";
-import { TreatmentVisualizer } from "@/components/measurements/TreatmentVisualizer";
-import { toTreatmentVisualizerData } from "./utils/visual-adapter";
+import { WorksheetVisual } from "@/components/worksheet/WorksheetVisual";
+import { toWorksheetVisualData } from "./utils/worksheet-visual-adapter";
 import type { WorkshopRoomItem } from "@/hooks/useWorkshopData";
 
 interface VisualSnapshotProps {
@@ -15,7 +15,7 @@ export const VisualSnapshot: React.FC<VisualSnapshotProps> = ({ item, width = 42
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const captureRef = useRef<HTMLDivElement | null>(null);
 
-  const visProps = useMemo(() => toTreatmentVisualizerData(item), [item]);
+  const wsProps = useMemo(() => toWorksheetVisualData(item), [item]);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +53,7 @@ export const VisualSnapshot: React.FC<VisualSnapshotProps> = ({ item, width = 42
     return () => {
       cancelled = true;
     };
-  }, [visProps, scale]);
+  }, [wsProps, scale]);
 
   const captureWidth = width;
   const offscreenId = useMemo(() => `visual-snap-${item.id}`, [item.id]);
@@ -89,11 +89,10 @@ export const VisualSnapshot: React.FC<VisualSnapshotProps> = ({ item, width = 42
         }}
       >
         <div className="w-[420px] max-w-none">
-          <TreatmentVisualizer
-            windowType={visProps.windowType}
-            measurements={visProps.measurements}
-            covering={visProps.covering}
-            treatmentData={visProps.treatmentData}
+          <WorksheetVisual
+            windowType={wsProps.windowType}
+            measurements={wsProps.measurements}
+            selectedTemplate={wsProps.selectedTemplate}
           />
         </div>
       </div>

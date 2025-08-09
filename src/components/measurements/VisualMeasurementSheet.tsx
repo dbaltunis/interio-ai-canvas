@@ -11,6 +11,7 @@ import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
+import { WorksheetVisual } from "../worksheet/WorksheetVisual";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
