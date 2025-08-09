@@ -90,15 +90,86 @@
 }
 
 .glass-morphism {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid hsl(var(--company-secondary) / 0.3);
-  box-shadow: 0 2px 8px rgba(65, 94, 107, 0.1);
+  background: linear-gradient(180deg,
+    hsl(var(--background) / 0.60) 0%,
+    hsl(var(--background) / 0.50) 100%
+  );
+  border: 1px solid hsl(var(--border) / 0.40);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: 0 8px 24px hsl(var(--company-primary) / 0.10);
+}
+
+.dark .glass-morphism {
+  background: linear-gradient(180deg,
+    hsl(var(--background) / 0.18) 0%,
+    hsl(var(--background) / 0.14) 100%
+  );
+  border-color: hsl(var(--border) / 0.25);
+  box-shadow: 0 10px 30px hsl(var(--company-primary) / 0.35);
 }
 
 .glass-morphism-strong {
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid hsl(var(--company-secondary) / 0.4);
-  box-shadow: 0 4px 12px rgba(65, 94, 107, 0.15);
+  background: linear-gradient(180deg,
+    hsl(var(--background) / 0.75) 0%,
+    hsl(var(--background) / 0.60) 100%
+  );
+  border: 1px solid hsl(var(--border) / 0.50);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 12px 36px hsl(var(--company-primary) / 0.18);
+}
+
+.dark .glass-morphism-strong {
+  background: linear-gradient(180deg,
+    hsl(var(--background) / 0.22) 0%,
+    hsl(var(--background) / 0.18) 100%
+  );
+  border-color: hsl(var(--border) / 0.35);
+  box-shadow: 0 16px 40px hsl(var(--company-primary) / 0.45);
+}
+
+/* Premium liquid glass variant */
+.liquid-glass {
+  position: relative;
+  background: linear-gradient(180deg,
+    hsl(var(--background) / 0.65) 0%,
+    hsl(var(--background) / 0.50) 100%
+  );
+  border: 1px solid hsl(var(--border) / 0.45);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  box-shadow:
+    0 12px 30px hsl(var(--company-primary) / 0.20),
+    inset 0 1px 0 hsl(var(--company-secondary) / 0.35);
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.25), transparent 40%),
+    radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.15), transparent 45%);
+  pointer-events: none;
+}
+
+.dark .liquid-glass {
+  background: linear-gradient(180deg,
+    hsl(var(--background) / 0.22) 0%,
+    hsl(var(--background) / 0.16) 100%
+  );
+  border-color: hsl(var(--border) / 0.30);
+  box-shadow:
+    0 16px 40px hsl(var(--company-primary) / 0.45),
+    inset 0 1px 0 hsl(var(--company-secondary) / 0.25);
+}
+
+.dark .liquid-glass::before {
+  background:
+    radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.20), transparent 40%),
+    radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.12), transparent 45%);
 }
 
 .company-gradient {
