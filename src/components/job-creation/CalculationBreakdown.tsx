@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
@@ -263,7 +262,7 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
           value={wastePercent !== undefined ? `${numberFmt(wastePercent)}%` : undefined}
         />
         <div className="text-xs text-muted-foreground">
-          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {computedWidthsNeeded ?? "—"} piece(s)
+          • Final calculation: {metersFmt(totalDropPerWidth / 100, 2) ?? "—"} drop × {widthsRequired ?? "—"} piece(s)
           {seamAllowTotalCm ? ` + ${metersFmt(seamAllowTotalCm / 100, 2)} seam allowances` : ""} = {linearMeters !== undefined ? `${Number(linearMeters).toFixed(2)}m` : "—"} linear
         </div>
       </div>
@@ -322,4 +321,3 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
 };
 
 export default CalculationBreakdown;
-
