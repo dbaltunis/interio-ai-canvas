@@ -40,7 +40,19 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <EmailRealtimeProvider>
         <TooltipProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={['light','dark','midnight','apple-graphite']} value={{ light: 'light', dark: 'dark', midnight: 'midnight', 'apple-graphite': 'apple-graphite' }}>
+          {/* Ensure custom themes also apply the dark class */}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            themes={['light','dark','midnight','apple-graphite']}
+            value={{
+              light: 'light',
+              dark: 'dark',
+              midnight: 'midnight dark',
+              'apple-graphite': 'apple-graphite dark',
+            }}
+          >
             <ThemeDarkSync />
             <Toaster />
             <Sonner />
