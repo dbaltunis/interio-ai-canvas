@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 
 interface BrandHeaderProps {
   className?: string;
@@ -24,11 +25,17 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
 
   return (
     <div className={`flex items-center ${className}`}>
-      <img 
-        src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-        alt="InterioApp Logo" 
-        className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
-      />
+      <div className="relative inline-flex items-center">
+        <img 
+          src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+          alt="InterioApp Logo" 
+          className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
+        />
+        <Sparkles 
+          className="pointer-events-none absolute -top-1 -right-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary/60 dark:text-primary/70 drop-shadow-sm opacity-0 animate-sparkle-minute" 
+          aria-hidden="true" 
+        />
+      </div>
       {showTagline && (
         <>
           <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />

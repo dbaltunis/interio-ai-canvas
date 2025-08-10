@@ -114,6 +114,12 @@ export default {
 				'scale-in': {
 					'0%': { opacity: '0', transform: 'scale(0.95)' },
 					'100%': { opacity: '1', transform: 'scale(1)' }
+				},
+				'sparkle-minute': {
+					'0%, 96%, 100%': { opacity: '0', transform: 'scale(0.85)' },
+					'97%': { opacity: '0.35', transform: 'scale(0.95)' },
+					'98%': { opacity: '0.8', transform: 'scale(1)' },
+					'99%': { opacity: '0.35', transform: 'scale(0.95)' }
 				}
 			},
 			animation: {
@@ -122,7 +128,8 @@ export default {
 				'shimmer': 'shimmer 2s ease-in-out infinite',
 				'wave': 'wave 2s ease-in-out infinite',
 				'fade-in': 'fade-in 0.3s ease-out',
-				'scale-in': 'scale-in 0.2s ease-out'
+				'scale-in': 'scale-in 0.2s ease-out',
+				'sparkle-minute': 'sparkle-minute 60s ease-in-out infinite'
 			}
 		}
 	},
