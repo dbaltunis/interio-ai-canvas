@@ -53,7 +53,7 @@ export const EmailManagement = () => {
             <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="border-border"
+              className="bg-muted/30 hover:bg-muted/50 border-border"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -74,7 +74,7 @@ export const EmailManagement = () => {
       
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1 p-1 bg-muted/30">
+        <TabsList className="liquid-glass rounded-xl border p-1 grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
           <TabsTrigger 
             value="dashboard" 
             className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"

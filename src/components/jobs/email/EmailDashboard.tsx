@@ -18,6 +18,7 @@ import { FollowUpComposer } from "../email-components/FollowUpComposer";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { EmailDashboardSkeleton } from "./skeleton/EmailDashboardSkeleton";
 
 interface EmailDashboardProps {
   showFilters?: boolean;
@@ -33,10 +34,10 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const [showEmailDetail, setShowEmailDetail] = useState(false);
   const [followUpEmailId, setFollowUpEmailId] = useState<string | null>(null);
 
-  const { data: emails = [] } = useEmails();
-  const { data: kpis } = useEmailKPIs();
-  const { data: clients = [] } = useClients();
-  const { data: projects = [] } = useProjects();
+  const { data: emails = [], isLoading: emailsLoading } = useEmails();
+  const { data: kpis, isLoading: kpiLoading } = useEmailKPIs();
+  const { data: clients = [], isLoading: clientsLoading } = useClients();
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -109,37 +110,6 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
         return "bg-destructive/10 text-destructive";
       default:
         return "bg-muted/30 text-muted-foreground";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'queued':
-        return "⏳ Queued";
-      case 'sent':
-        return "📤 Sent";
-      case 'processed':
-        return "⚙️ Processing";
-      case 'delivered':
-        return "✅ Delivered";
-      case 'opened':
-        return "👀 Opened";
-      case 'clicked':
-        return "👆 Clicked";
-      case 'bounced':
-        return "↩️ Bounced";
-      case 'dropped':
-        return "🚫 Dropped/Spam";
-      case 'spam_reported':
-        return "⚠️ Spam Report";
-      case 'unsubscribed':
-        return "🚪 Unsubscribed";
-      case 'deferred':
-        return "⏸️ Deferred";
-      case 'failed':
-        return "❌ Failed";
-      default:
-        return status;
     }
   };
 
@@ -236,10 +206,16 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
     }
   };
 
+  const loading = emailsLoading || kpiLoading || clientsLoading || projectsLoading;
+
+  if (loading) {
+    return <EmailDashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       {/* KPI Dashboard - Compact View */}
-      <Card className="p-2">{/* reduced from p-4 to p-2 */}
+      <Card className="liquid-glass p-2 rounded-xl border">{/* reduced from p-4 to p-2 */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
           <div 
             className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
@@ -304,7 +280,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
 
       {/* Filters */}
       {showFilters && (
-        <Card>
+        <Card className="liquid-glass rounded-xl border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -378,7 +354,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
       )}
 
       {/* Email List */}
-      <Card>
+      <Card className="liquid-glass rounded-xl border overflow-hidden">
         <CardContent className="p-0">
           {filteredEmails.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -427,9 +403,9 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                       </button>
                     </TableCell>
                      <TableCell>
-                       <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
-                         {getStatusLabel(email.status)}
-                       </Badge>
+                    <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
+                      {email.status}
+                    </Badge>
                      </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
