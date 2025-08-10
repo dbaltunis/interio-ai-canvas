@@ -16,15 +16,15 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-accent/10 text-accent border-accent/20';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-primary/10 text-primary border-primary/20';
       case 'planning':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-secondary/10 text-secondary border-secondary/20';
       case 'on_hold':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-muted/30 text-muted-foreground border-border';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted/30 text-muted-foreground border-border';
     }
   };
 
@@ -44,13 +44,13 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-secondary/10 text-secondary border-secondary/20';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-accent/10 text-accent border-accent/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted/30 text-muted-foreground border-border';
     }
   };
 

@@ -31,7 +31,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
       <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="text-gray-600">Loading client profile...</p>
+          <p className="text-muted-foreground">Loading client profile...</p>
         </div>
       </div>
     );
@@ -40,7 +40,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
   if (!client) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Client not found</p>
+        <p className="text-muted-foreground">Client not found</p>
         <Button onClick={onBack} className="mt-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Clients
@@ -50,8 +50,8 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
   }
 
   const getTypeColor = (type: string) => {
-    return type === "B2B" 
-      ? "bg-blue-100 text-blue-800 border-blue-200" 
+    return type === "B2B"
+      ? "bg-primary/10 text-primary border-primary/20"
       : "bg-secondary text-secondary-foreground border-secondary";
   };
 
@@ -62,14 +62,14 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
   const clientDisplayName = client.client_type === 'B2B' ? client.company_name : client.name;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="liquid-glass rounded-xl p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button 
             variant="outline" 
             onClick={onBack}
-            className="border-gray-300"
+            className=""
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to CRM
@@ -84,7 +84,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
                 <span>{client.client_type || 'B2C'}</span>
               </Badge>
               {client.client_type === 'B2B' && client.contact_person && (
-                <span className="text-gray-600">Contact: {client.contact_person}</span>
+                <span className="text-muted-foreground">Contact: {client.contact_person}</span>
               )}
             </div>
           </div>
@@ -115,9 +115,9 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold text-green-600">$0</p>
+                <p className="text-2xl font-bold text-accent">$0</p>
               </div>
-              <FileText className="h-8 w-8 text-green-600 opacity-75" />
+              <FileText className="h-8 w-8 text-accent opacity-75" />
             </div>
           </CardContent>
         </Card>
@@ -127,9 +127,9 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Last Contact</p>
-                <p className="text-2xl font-bold text-blue-600">--</p>
+                <p className="text-2xl font-bold text-primary">--</p>
               </div>
-              <Mail className="h-8 w-8 text-blue-600 opacity-75" />
+              <Mail className="h-8 w-8 text-primary opacity-75" />
             </div>
           </CardContent>
         </Card>
@@ -139,9 +139,9 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <p className="text-2xl font-bold text-yellow-600">Active</p>
+                <p className="text-2xl font-bold text-secondary">Active</p>
               </div>
-              <Activity className="h-8 w-8 text-yellow-600 opacity-75" />
+              <Activity className="h-8 w-8 text-secondary opacity-75" />
             </div>
           </CardContent>
         </Card>
@@ -169,7 +169,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-gray-400" />
+                    <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Email</p>
                       <p className="font-medium">{client.email || 'Not provided'}</p>
@@ -177,7 +177,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-gray-400" />
+                    <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Phone</p>
                       <p className="font-medium">{client.phone || 'Not provided'}</p>
@@ -187,7 +187,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
                 
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-gray-400 mt-1" />
+                    <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                     <div>
                       <p className="text-sm text-muted-foreground">Address</p>
                       <div className="font-medium">
@@ -212,7 +212,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
               {client.notes && (
                 <div className="mt-6 pt-6 border-t">
                   <p className="text-sm text-muted-foreground mb-2">Notes</p>
-                  <p className="text-gray-700">{client.notes}</p>
+                  <p className="text-foreground">{client.notes}</p>
                 </div>
               )}
             </CardContent>

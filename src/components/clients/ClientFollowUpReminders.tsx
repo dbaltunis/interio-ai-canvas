@@ -143,12 +143,12 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
   const getStatusInfo = (reminder: Reminder) => {
     const now = new Date();
     if (reminder.status === 'completed') {
-      return { color: 'bg-green-100 text-green-800', icon: CheckCircle2 };
+      return { color: 'bg-accent/10 text-accent', icon: CheckCircle2 };
     }
     if (isBefore(reminder.dueDate, now)) {
-      return { color: 'bg-red-100 text-red-800', icon: AlertTriangle };
+      return { color: 'bg-destructive/10 text-destructive', icon: AlertTriangle };
     }
-    return { color: 'bg-yellow-100 text-yellow-800', icon: Clock };
+    return { color: 'bg-secondary/10 text-secondary', icon: Clock };
   };
 
   const getPriorityColor = (priority: string) => {
@@ -204,7 +204,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
       </CardHeader>
       <CardContent>
         {showCreateForm && (
-          <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+          <div className="mb-6 p-4 rounded-xl border liquid-glass">
             <h4 className="font-medium mb-3">Create New Reminder</h4>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -295,10 +295,10 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
 
               <div>
                 <Label className="text-sm font-medium mb-3 block">Notification Settings</Label>
-                <div className="space-y-3 p-3 bg-white rounded border">
+                <div className="space-y-3 p-3 rounded-xl border liquid-glass">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-blue-500" />
+                      <Mail className="h-4 w-4 text-primary" />
                       <Label htmlFor="email-notification" className="text-sm">Email Notification</Label>
                     </div>
                     <Switch
@@ -312,7 +312,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Bell className="h-4 w-4 text-green-500" />
+                      <Bell className="h-4 w-4 text-accent" />
                       <Label htmlFor="app-notification" className="text-sm">App Notification</Label>
                     </div>
                     <Switch
@@ -343,7 +343,7 @@ export const ClientFollowUpReminders = ({ clientId, clientName }: ClientFollowUp
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Smartphone className="h-4 w-4 text-orange-500" />
+                      <Smartphone className="h-4 w-4 text-secondary" />
                       <Label htmlFor="sms-notification" className="text-sm">SMS Notification</Label>
                     </div>
                     <Switch
