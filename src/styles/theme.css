@@ -57,6 +57,26 @@
   --ring: var(--interio-sage);
 }
 
+.midnight {
+  --background: #0b0f14;
+  --foreground: var(--interio-white);
+  --card: #0f1a21;
+  --card-foreground: var(--interio-white);
+  --popover: #0f1a21;
+  --popover-foreground: var(--interio-white);
+  --primary: var(--interio-sage);
+  --primary-foreground: #0b0f14;
+  --secondary: var(--interio-dark-teal);
+  --secondary-foreground: var(--interio-white);
+  --muted: #0d141a;
+  --muted-foreground: var(--interio-sage);
+  --accent: var(--interio-dark-teal);
+  --accent-foreground: var(--interio-white);
+  --border: #0d141a;
+  --input: #0d141a;
+  --ring: var(--interio-sage);
+}
+
 /* Brand-specific utility classes */
 .bg-brand-primary { background-color: var(--interio-dark-teal); }
 .bg-brand-secondary { background-color: var(--interio-sage); }

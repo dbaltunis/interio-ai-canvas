@@ -10,6 +10,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -22,7 +24,7 @@ export const UserProfile = () => {
   const { user, signOut } = useAuth();
   const { data: userProfile } = useCurrentUserProfile();
   const navigate = useNavigate();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const { compact, toggleCompact } = useCompactMode();
 
   const handleSignOut = async () => {
@@ -34,9 +36,6 @@ export const UserProfile = () => {
     navigate("/settings");
   };
 
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
 
   const handleAuth = () => {
     navigate("/auth");
@@ -78,7 +77,7 @@ export const UserProfile = () => {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="z-50 w-56 bg-popover border shadow-md" align="end" forceMount>
         <div className="flex items-center justify-start gap-2 p-2">
           <div className="flex flex-col space-y-1 leading-none">
             <p className="font-medium text-sm">{user.email}</p>
@@ -92,21 +91,30 @@ export const UserProfile = () => {
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Appearance</DropdownMenuLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
-            {resolvedTheme === "dark" ? (
+          <DropdownMenuRadioGroup
+            value={theme ?? resolvedTheme ?? "light"}
+            onValueChange={(v) => setTheme(v)}
+          >
+            <DropdownMenuRadioItem value="light">
               <Sun className="mr-2 h-4 w-4" />
-            ) : (
+              Light mode
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="dark">
               <Moon className="mr-2 h-4 w-4" />
-            )}
-            {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-          </DropdownMenuItem>
+              InterioApp dark
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="midnight">
+              <Moon className="mr-2 h-4 w-4" />
+              Midnight dark
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
           <DropdownMenuCheckboxItem
             checked={compact}
             onCheckedChange={() => toggleCompact()}
             className="cursor-pointer"
           >
             <Palette className="mr-2 h-4 w-4" />
-            Interio mode
+            Compact mode
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

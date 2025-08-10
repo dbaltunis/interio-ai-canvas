@@ -39,7 +39,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <EmailRealtimeProvider>
         <TooltipProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={['light','dark','apple-graphite']}>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={['light','dark','midnight','apple-graphite']} value={{ light: 'light', dark: 'dark', midnight: 'dark midnight', 'apple-graphite': 'dark apple-graphite' }}>
             <Toaster />
             <Sonner />
             <BrowserRouter>
