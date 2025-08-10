@@ -74,10 +74,10 @@ export const EmailManagement = () => {
       
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="liquid-glass rounded-xl border p-1 bg-muted/30 grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
+        <TabsList className="rounded-xl border border-border/60 bg-muted/40 p-1 grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1 shadow-sm backdrop-blur supports-[backdrop-filter]:backdrop-blur">
           <TabsTrigger 
             value="dashboard" 
-            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md data-[state=active]:bg-muted/60 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md transition-colors hover:bg-muted/50 data-[state=active]:bg-muted/70 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <Home className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -85,7 +85,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="composer" 
-            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md data-[state=active]:bg-muted/60 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md transition-colors hover:bg-muted/50 data-[state=active]:bg-muted/70 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <Mail className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Compose</span>
@@ -93,7 +93,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="campaigns" 
-            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md data-[state=active]:bg-muted/60 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md transition-colors hover:bg-muted/50 data-[state=active]:bg-muted/70 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Campaigns</span>
@@ -101,7 +101,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
-            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md data-[state=active]:bg-muted/60 data-[state=active]:text-foreground data-[state=active]:shadow-sm lg:flex"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md transition-colors hover:bg-muted/50 data-[state=active]:bg-muted/70 data-[state=active]:text-foreground data-[state=active]:shadow-sm lg:flex"
           >
             <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Analytics</span>
@@ -109,7 +109,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md data-[state=active]:bg-muted/60 data-[state=active]:text-foreground data-[state=active]:shadow-sm lg:flex"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm text-muted-foreground rounded-md transition-colors hover:bg-muted/50 data-[state=active]:bg-muted/70 data-[state=active]:text-foreground data-[state=active]:shadow-sm lg:flex"
           >
             <Settings className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Settings</span>
