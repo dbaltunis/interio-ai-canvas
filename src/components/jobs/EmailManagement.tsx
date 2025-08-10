@@ -74,7 +74,7 @@ export const EmailManagement = () => {
       
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="liquid-glass rounded-xl border p-1 grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
+        <TabsList className="liquid-glass rounded-xl border p-1 bg-muted/30 grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
           <TabsTrigger 
             value="dashboard" 
             className="flex items-center gap-1.5 px-2 py-2 text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
