@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
+import { Resend } from "npm:resend@2.0.0"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -85,26 +85,37 @@ serve(async (req) => {
       </html>
     `
 
-    // For now, just log the email content since SendGrid isn't configured
-    console.log('Invitation email content:', {
-      to: invitedEmail,
-      subject: `Invitation to join ${inviterName}'s team`,
-      html: emailContent
-    })
+    // Try sending with Resend if API key is configured
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const fromAddress = Deno.env.get('EMAIL_FROM') || 'InterioApp <onboarding@resend.dev>';
 
-    // TODO: Implement actual email sending when SendGrid is configured
-    // This would use the SENDGRID_API_KEY environment variable
+    if (!resendApiKey) {
+      console.log('RESEND_API_KEY not set. Email preview only.');
+      console.log('Invitation email content:', {
+        to: invitedEmail,
+        subject: `Invitation to join ${inviterName}'s team`,
+        html: emailContent
+      });
+      return new Response(
+        JSON.stringify({ success: true, message: 'Email preview only (RESEND_API_KEY not set)' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
+    const sendResult = await resend.emails.send({
+      from: fromAddress,
+      to: [invitedEmail],
+      subject: `Invitation to join ${inviterName}'s team`,
+      html: emailContent,
+    });
+
+    console.log('Resend send result:', sendResult);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Invitation email prepared (email service not configured)' 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    )
+      JSON.stringify({ success: true, message: 'Invitation email sent', result: sendResult }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
   } catch (error) {
     console.error('Error in send-invitation function:', error)
     return new Response(
