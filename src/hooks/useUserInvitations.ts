@@ -150,6 +150,22 @@ export const useResendInvitation = () => {
         .eq("user_id", user.id)
         .single();
 
+      // Ensure we have a valid token; fetch from DB if missing
+      let token = invitation.invitation_token;
+      if (!token) {
+        const { data: tokenRow, error: tokenError } = await supabase
+          .from("user_invitations")
+          .select("invitation_token")
+          .eq("id", invitation.id)
+          .single();
+        if (tokenError) throw tokenError;
+        token = tokenRow?.invitation_token;
+      }
+
+      if (!token) {
+        throw new Error("Invitation token not found for this invite.");
+      }
+
       const { error } = await supabase.functions.invoke("send-invitation", {
         body: {
           invitedEmail: invitation.invited_email,
@@ -157,7 +173,7 @@ export const useResendInvitation = () => {
           inviterName: profile?.display_name || user.email || "Team Member",
           inviterEmail: user.email || "",
           role: invitation.role,
-          invitationToken: invitation.invitation_token,
+          invitationToken: token,
         },
       });
 
