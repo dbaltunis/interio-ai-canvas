@@ -107,7 +107,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
                 {/* Header */}
-                <div className="p-6 border-b border-white/20">
+                <div className="p-6 glass-morphism border-b">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
