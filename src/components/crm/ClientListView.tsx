@@ -187,7 +187,7 @@ export const ClientListView = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-card">
+      <div className="liquid-glass rounded-xl border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -320,13 +320,13 @@ export const ClientListView = ({
                   </TableCell>
 
                   <TableCell>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-muted-foreground">
                       {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
                     </span>
                   </TableCell>
 
                   <TableCell>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-muted-foreground">
                       {new Date(client.created_at).toLocaleDateString()}
                     </span>
                   </TableCell>

@@ -84,70 +84,70 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+    <div className="liquid-glass rounded-xl border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-50 hover:bg-gray-50">
-            <TableHead className="font-semibold text-gray-900 w-32">Job Number</TableHead>
-            <TableHead className="font-semibold text-gray-900">Job Title</TableHead>
-            <TableHead className="font-semibold text-gray-900">Client</TableHead>
-            <TableHead className="font-semibold text-gray-900">Owner</TableHead>
-            <TableHead className="font-semibold text-gray-900 w-24">Status</TableHead>
-            <TableHead className="font-semibold text-gray-900 w-24">Priority</TableHead>
-            <TableHead className="font-semibold text-gray-900 w-32">Value</TableHead>
-            <TableHead className="font-semibold text-gray-900 w-32">Date Created</TableHead>
-            <TableHead className="font-semibold text-gray-900 w-32">Due Date</TableHead>
-            <TableHead className="font-semibold text-gray-900 w-20 text-center">Actions</TableHead>
+          <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableHead className="font-semibold text-foreground w-32">Job Number</TableHead>
+            <TableHead className="font-semibold text-foreground">Job Title</TableHead>
+            <TableHead className="font-semibold text-foreground">Client</TableHead>
+            <TableHead className="font-semibold text-foreground">Owner</TableHead>
+            <TableHead className="font-semibold text-foreground w-24">Status</TableHead>
+            <TableHead className="font-semibold text-foreground w-24">Priority</TableHead>
+            <TableHead className="font-semibold text-foreground w-32">Value</TableHead>
+            <TableHead className="font-semibold text-foreground w-32">Date Created</TableHead>
+            <TableHead className="font-semibold text-foreground w-32">Due Date</TableHead>
+            <TableHead className="font-semibold text-foreground w-20 text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {jobs.map((job) => (
-            <TableRow key={job.id} className="hover:bg-gray-50 cursor-pointer group">
+            <TableRow key={job.id} className="hover:bg-muted/50 cursor-pointer group">
               <TableCell 
-                className="font-medium text-brand-primary hover:underline"
+                className="font-medium text-primary hover:underline"
                 onClick={() => onJobView(job.id)}
               >
                 #{job.job_number}
               </TableCell>
               
               <TableCell 
-                className="font-medium text-gray-900 group-hover:text-brand-primary"
+                className="font-medium text-foreground group-hover:text-primary"
                 onClick={() => onJobView(job.id)}
               >
                 <div className="flex flex-col">
                   <span className="font-medium">{job.name}</span>
                   {job.description && (
-                    <span className="text-xs text-gray-500 truncate max-w-xs">
+                    <span className="text-xs text-muted-foreground truncate max-w-xs">
                       {job.description}
                     </span>
                   )}
                 </div>
               </TableCell>
               
-              <TableCell className="text-gray-900">
+              <TableCell className="text-foreground">
                 {job.client ? (
                   <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-col">
                       <span className="font-medium">{job.client.name}</span>
                       {job.client.company_name && (
-                        <span className="text-xs text-gray-500">{job.client.company_name}</span>
+                        <span className="text-xs text-muted-foreground">{job.client.company_name}</span>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <span className="text-gray-500 italic">No client</span>
+                  <span className="text-muted-foreground italic">No client</span>
                 )}
               </TableCell>
 
-              <TableCell className="text-gray-900">
+              <TableCell className="text-foreground">
                 {job.owner ? (
                   <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{job.owner.name}</span>
                   </div>
                 ) : (
-                  <span className="text-gray-500 italic">No owner</span>
+                  <span className="text-muted-foreground italic">No owner</span>
                 )}
               </TableCell>
               
@@ -159,28 +159,28 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
                 {getPriorityBadge(job.priority || 'medium')}
               </TableCell>
               
-              <TableCell className="font-medium text-gray-900">
+              <TableCell className="font-medium text-foreground">
                 <div className="flex items-center space-x-1">
-                  <DollarSign className="h-4 w-4 text-gray-400" />
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <span>{formatCurrency(job.total_amount || 0)}</span>
                 </div>
               </TableCell>
               
-              <TableCell className="text-gray-600">
+              <TableCell className="text-muted-foreground">
                 <div className="flex items-center space-x-1">
-                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{formatDate(job.created_at)}</span>
                 </div>
               </TableCell>
               
-              <TableCell className="text-gray-600">
+              <TableCell className="text-muted-foreground">
                 {job.due_date ? (
                   <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">{formatDate(job.due_date)}</span>
                   </div>
                 ) : (
-                  <span className="text-gray-400 text-sm">No due date</span>
+                  <span className="text-muted-foreground text-sm">No due date</span>
                 )}
               </TableCell>
               

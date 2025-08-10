@@ -194,7 +194,7 @@ export const JobsListView = ({
 
       {/* Filters Section */}
       {showFilters && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="panel p-6 rounded-xl border">
           <JobsFilters
             searchClient={searchClient}
             setSearchClient={() => {}}
