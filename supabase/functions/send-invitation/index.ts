@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Resend } from "npm:resend@2.0.0"
+import sgMail from "npm:@sendgrid/mail@8.1.2"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -85,35 +85,26 @@ serve(async (req) => {
       </html>
     `
 
-    // Try sending with Resend if API key is configured
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const fromAddress = Deno.env.get('EMAIL_FROM') || 'InterioApp <onboarding@resend.dev>';
+    // Send with SendGrid if API key is configured
+    const sgApiKey = Deno.env.get('SENDGRID_API_KEY');
+    const fromAddress = Deno.env.get('EMAIL_FROM') || 'InterioApp <noreply@appinterio.app>';
 
-    if (!resendApiKey) {
-      console.log('RESEND_API_KEY not set. Email preview only.');
-      console.log('Invitation email content:', {
-        to: invitedEmail,
-        subject: `Invitation to join ${inviterName}'s team`,
-        html: emailContent
-      });
+    if (!sgApiKey) {
+      console.log('SENDGRID_API_KEY not set. Email preview only.');
+      console.log('Invitation email content:', { to: invitedEmail, subject: `Invitation to join ${inviterName}'s team`, html: emailContent });
       return new Response(
-        JSON.stringify({ success: true, message: 'Email preview only (RESEND_API_KEY not set)' }),
+        JSON.stringify({ success: true, message: 'Email preview only (SENDGRID_API_KEY not set)' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
-    const resend = new Resend(resendApiKey);
-    const sendResult = await resend.emails.send({
-      from: fromAddress,
-      to: [invitedEmail],
-      subject: `Invitation to join ${inviterName}'s team`,
-      html: emailContent,
-    });
-
-    console.log('Resend send result:', sendResult);
+    sgMail.setApiKey(sgApiKey);
+    const msg = { to: invitedEmail, from: fromAddress, subject: `Invitation to join ${inviterName}'s team`, html: emailContent };
+    const [sendResult] = await sgMail.send(msg);
+    console.log('SendGrid send result:', sendResult?.statusCode, sendResult?.headers);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Invitation email sent', result: sendResult }),
+      JSON.stringify({ success: true, message: 'Invitation email sent via SendGrid' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
