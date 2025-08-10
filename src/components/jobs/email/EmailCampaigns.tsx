@@ -15,17 +15,17 @@ export const EmailCampaigns = () => {
     switch (status) {
       case "sent":
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-accent/10 text-accent";
       case "sending":
-        return "bg-blue-100 text-blue-800";
+        return "bg-primary/10 text-primary";
       case "scheduled":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-secondary/10 text-secondary";
       case "paused":
-        return "bg-orange-100 text-orange-800";
+        return "bg-muted/30 text-muted-foreground";
       case "draft":
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted/30 text-muted-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted/30 text-muted-foreground";
     }
   };
 
@@ -35,7 +35,7 @@ export const EmailCampaigns = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Email Campaigns</h2>
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Create and manage bulk email campaigns
           </p>
         </div>
@@ -52,12 +52,12 @@ export const EmailCampaigns = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer">
               <div className="flex items-center gap-2 mb-2">
-                <Send className="h-5 w-5 text-blue-600" />
+                <Send className="h-5 w-5 text-primary" />
                 <h3 className="font-medium">Newsletter</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Send updates and news to all your clients
               </p>
               <Button variant="outline" size="sm">
@@ -65,12 +65,12 @@ export const EmailCampaigns = () => {
               </Button>
             </div>
 
-            <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-5 w-5 text-green-600" />
+                <Calendar className="h-5 w-5 text-accent" />
                 <h3 className="font-medium">Follow-up</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Follow up on quotes and project updates
               </p>
               <Button variant="outline" size="sm">
@@ -78,12 +78,12 @@ export const EmailCampaigns = () => {
               </Button>
             </div>
 
-            <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-5 w-5 text-primary" />
                 <h3 className="font-medium">Promotion</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Promote special offers and services
               </p>
               <Button variant="outline" size="sm">
@@ -102,9 +102,9 @@ export const EmailCampaigns = () => {
         <CardContent className="p-0">
           {campaigns.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <Send className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+              <Send className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">No campaigns yet</h3>
-              <p className="text-gray-500 mb-4">Create your first email campaign to get started.</p>
+              <p className="text-muted-foreground mb-4">Create your first email campaign to get started.</p>
               <Button className="bg-brand-primary hover:bg-brand-accent text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Campaign
@@ -113,7 +113,7 @@ export const EmailCampaigns = () => {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
+                <TableRow className="bg-muted/30">
                   <TableHead className="font-semibold">Campaign Name</TableHead>
                   <TableHead className="font-semibold">Subject</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
@@ -124,13 +124,13 @@ export const EmailCampaigns = () => {
               </TableHeader>
               <TableBody>
                 {campaigns.map((campaign) => (
-                  <TableRow key={campaign.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="font-medium text-gray-900">{campaign.name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">{campaign.subject}</span>
-                    </TableCell>
+                  <TableRow key={campaign.id} className="hover:bg-muted/50">
+                  <TableCell>
+                    <div className="font-medium text-foreground">{campaign.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">{campaign.subject}</span>
+                  </TableCell>
                     <TableCell>
                       <Badge className={`${getStatusColor(campaign.status)} border-0`} variant="secondary">
                         {campaign.status}
@@ -139,11 +139,11 @@ export const EmailCampaigns = () => {
                     <TableCell>
                       <span className="text-sm text-gray-600">{campaign.recipient_count || 0}</span>
                     </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {format(new Date(campaign.created_at), 'MMM d, yyyy')}
-                      </span>
-                    </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {format(new Date(campaign.created_at), 'MMM d, yyyy')}
+                    </span>
+                  </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

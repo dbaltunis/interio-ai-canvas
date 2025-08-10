@@ -50,7 +50,7 @@ export const EmailAnalytics = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Email Analytics</h2>
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Track performance and engagement metrics
           </p>
         </div>
@@ -80,8 +80,8 @@ export const EmailAnalytics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{sentEmails}</div>
-            <p className="text-xs text-gray-600 mt-1">
+            <div className="text-2xl font-bold text-primary">{sentEmails}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {totalOpens} total opens
             </p>
           </CardContent>
@@ -95,15 +95,15 @@ export const EmailAnalytics = () => {
                 Open Rate
               </div>
               {openRate > 20 ? (
-                <TrendingUp className="w-4 h-4 text-green-600" />
+                <TrendingUp className="w-4 h-4 text-accent" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-red-600" />
+                <TrendingDown className="w-4 h-4 text-destructive" />
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{openRate}%</div>
-            <p className="text-xs text-gray-600 mt-1">
+            <div className="text-2xl font-bold text-accent">{openRate}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {openedEmails} of {deliveredEmails} delivered
             </p>
           </CardContent>
@@ -139,15 +139,15 @@ export const EmailAnalytics = () => {
                 Bounce Rate
               </div>
               {bounceRate < 5 ? (
-                <TrendingDown className="w-4 h-4 text-green-600" />
+                <TrendingDown className="w-4 h-4 text-accent" />
               ) : (
-                <TrendingUp className="w-4 h-4 text-red-600" />
+                <TrendingUp className="w-4 h-4 text-destructive" />
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{bounceRate}%</div>
-            <p className="text-xs text-gray-600 mt-1">
+            <div className="text-2xl font-bold text-destructive">{bounceRate}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {bouncedEmails} bounced/failed
             </p>
           </CardContent>
@@ -241,15 +241,15 @@ export const EmailAnalytics = () => {
                     <div key={email.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium text-sm truncate">{email.subject}</div>
-                        <div className="flex gap-4 text-xs text-gray-600 mt-1">
+                        <div className="flex gap-4 text-xs text-muted-foreground mt-1">
                           <span>Opens: {email.open_count || 0}</span>
                           <span>Clicks: {email.click_count || 0}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div className="w-16 bg-muted rounded-full h-2">
                           <div 
-                            className="bg-green-600 h-2 rounded-full" 
+                            className="bg-accent h-2 rounded-full" 
                             style={{ width: `${Math.min(emailOpenRate, 100)}%` }}
                           ></div>
                         </div>
@@ -258,7 +258,7 @@ export const EmailAnalytics = () => {
                   );
                 })}
               {emails.filter(email => email.status === 'delivered').length === 0 && (
-                <p className="text-gray-500 text-sm">No delivered emails to show performance data.</p>
+                <p className="text-muted-foreground text-sm">No delivered emails to show performance data.</p>
               )}
             </div>
           </CardContent>

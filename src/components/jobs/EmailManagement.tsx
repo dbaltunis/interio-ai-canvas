@@ -124,25 +124,25 @@ export const EmailManagement = () => {
     switch (activeTab) {
       case "composer":
         return (
-          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
+          <div className="liquid-glass rounded-xl border p-6">
             <EmailComposer onClose={() => setActiveTab("dashboard")} />
           </div>
         );
       case "campaigns":
         return (
-          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
+          <div className="liquid-glass rounded-xl border p-6">
             <EmailCampaigns />
           </div>
         );
       case "analytics":
         return (
-          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
+          <div className="liquid-glass rounded-xl border p-6">
             <EmailAnalytics />
           </div>
         );
       case "settings":
         return (
-          <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
+          <div className="liquid-glass rounded-xl border p-6">
             <EmailSettings />
           </div>
         );

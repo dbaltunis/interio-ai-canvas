@@ -84,31 +84,31 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'queued':
-        return "bg-gray-100 text-gray-700";
+        return "bg-muted/30 text-muted-foreground";
       case 'sent':
-        return "bg-blue-100 text-blue-700";
+        return "bg-primary/10 text-primary";
       case 'processed':
-        return "bg-indigo-100 text-indigo-700";
+        return "bg-secondary/10 text-secondary";
       case 'delivered':
-        return "bg-green-100 text-green-700";
+        return "bg-accent/10 text-accent";
       case 'opened':
         return "bg-primary/10 text-primary";
       case 'clicked':
-        return "bg-cyan-100 text-cyan-700";
+        return "bg-primary/10 text-primary";
       case 'bounced':
-        return "bg-red-100 text-red-700";
+        return "bg-destructive/10 text-destructive";
       case 'dropped':
-        return "bg-orange-100 text-orange-700";
+        return "bg-secondary/10 text-secondary";
       case 'spam_reported':
-        return "bg-red-100 text-red-700";
+        return "bg-secondary/10 text-secondary";
       case 'unsubscribed':
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-secondary/10 text-secondary";
       case 'deferred':
-        return "bg-amber-100 text-amber-700";
+        return "bg-muted/30 text-muted-foreground";
       case 'failed':
-        return "bg-red-100 text-red-700";
+        return "bg-destructive/10 text-destructive";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-muted/30 text-muted-foreground";
     }
   };
 
@@ -315,7 +315,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search emails..."
                     value={searchTerm}
@@ -382,14 +382,14 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
         <CardContent className="p-0">
           {filteredEmails.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <Mail className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+              <Mail className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">No emails found</h3>
-              <p className="text-gray-500 mb-4">No emails match your current filters.</p>
+              <p className="text-muted-foreground mb-4">No emails match your current filters.</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Subject</TableHead>
                   <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Recipient</TableHead>
                   <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Status</TableHead>
@@ -402,13 +402,13 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                 {filteredEmails.map((email) => (
                   <TableRow 
                     key={email.id} 
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className="hover:bg-muted/50 cursor-pointer"
                     onClick={() => handleViewEmail(email)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleViewEmail(email)}
-                        className="font-medium text-gray-900 hover:text-blue-600 text-left"
+                        className="font-medium text-foreground hover:text-primary text-left"
                       >
                         {email.subject}
                       </button>
@@ -416,11 +416,11 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleViewEmail(email)}
-                        className="text-sm hover:text-blue-600 text-left"
+                        className="text-sm hover:text-primary text-left"
                       >
                         <div>{email.recipient_email}</div>
                         {email.client_id && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             {clients.find(c => c.id === email.client_id)?.name}
                           </div>
                         )}
@@ -432,7 +432,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                        </Badge>
                      </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-muted-foreground">
                         {email.sent_at ? format(new Date(email.sent_at), 'MMM d, yyyy HH:mm') : '-'}
                       </span>
                     </TableCell>
@@ -442,17 +442,17 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                         {['sent', 'delivered', 'opened'].includes(email.status) && (
                           <div className="flex items-center space-x-1">
                             <Eye className="h-3 w-3 text-primary" />
-                            <span className={`font-medium ${email.open_count > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                              {email.open_count} {email.open_count === 1 ? 'open' : 'opens'}
-                            </span>
+                              <span className={`font-medium ${email.open_count > 0 ? 'text-accent' : 'text-muted-foreground'}`}>
+                                {email.open_count} {email.open_count === 1 ? 'open' : 'opens'}
+                              </span>
                           </div>
                         )}
                         
                         {/* Show clicks if any */}
                         {email.click_count > 0 && (
                           <div className="flex items-center space-x-1">
-                            <MousePointer className="h-3 w-3 text-blue-500" />
-                            <span className="text-blue-600 font-medium">
+                            <MousePointer className="h-3 w-3 text-primary" />
+                            <span className="text-primary font-medium">
                               {email.click_count} {email.click_count === 1 ? 'click' : 'clicks'}
                             </span>
                           </div>
@@ -460,13 +460,13 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                         
                         {/* Status indicators for non-trackable emails */}
                         {email.status === 'failed' && (
-                          <span className="text-red-500 text-xs">❌ Failed to send</span>
+                          <span className="text-destructive text-xs">❌ Failed to send</span>
                         )}
                         {email.status === 'queued' && (
-                          <span className="text-gray-400 text-xs">⏳ Queued</span>
+                          <span className="text-muted-foreground text-xs">⏳ Queued</span>
                         )}
                         {email.status === 'bounced' && (
-                          <span className="text-red-500 text-xs">↩️ Bounced</span>
+                          <span className="text-destructive text-xs">↩️ Bounced</span>
                         )}
                       </div>
                     </TableCell>
