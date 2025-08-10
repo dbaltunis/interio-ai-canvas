@@ -9,6 +9,7 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Users, MessageCircle, Zap, Circle, Send, X } from 'lucide-react';
 import { DirectMessageDialog } from './DirectMessageDialog';
+import { cn } from '@/lib/utils';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -104,14 +105,16 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-background/70 dark:bg-background/60 backdrop-blur-[2px]"
-              onClick={onToggle}
-            />
+            {/* Backdrop (disabled when message dialog is open) */}
+            {!messageDialogOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] bg-background/70 dark:bg-background/60 backdrop-blur-[2px]"
+                onClick={onToggle}
+              />
+            )}
             
             {/* Panel */}
             <motion.div
@@ -119,7 +122,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-96 z-[101] liquid-glass panel shadow-2xl overflow-hidden border-l border-border pointer-events-auto"
+              className={cn("fixed right-0 top-0 h-full w-96 z-[101] liquid-glass panel shadow-2xl overflow-hidden border-l border-border", messageDialogOpen ? "pointer-events-none" : "pointer-events-auto")}
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
