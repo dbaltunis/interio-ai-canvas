@@ -17,7 +17,8 @@ import {
   Calendar,
   Menu,
   X,
-  MessageCircle
+  MessageCircle,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +53,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   return (
     <>
       {/* Desktop Header */}
-      <header className="bg-background border-b border-border sticky top-0 z-40">
+      <header className="bg-background border-b border-border sticky top-0 z-40 relative overflow-hidden">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Left side - Logo (made twice bigger) */}
@@ -64,7 +65,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
             <div className="flex items-center space-x-3">
               {/* Navigation (hidden on mobile, made 3px bigger) */}
               <nav className="hidden md:flex items-center space-x-1">
-                {navItems.map((item) => {
+                {navItems.map((item, idx) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
                   return (
@@ -81,7 +82,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       )}
                     >
                       <Icon className="h-5 w-5 mr-2" />
-                      {item.label}
+                      <span className="relative inline-flex items-center">
+                        {item.label}
+                        <span
+                          className="pointer-events-none absolute -bottom-[2px] right-0 h-1 w-1 rounded-full bg-primary/60 dark:bg-primary/70 shadow-[0_0_6px_hsl(var(--primary)/0.5)] opacity-0 animate-button-blink"
+                          style={{ animationDelay: `${1 + idx * 0.25}s` }}
+                          aria-hidden="true"
+                        />
+                      </span>
                     </Button>
                   );
                 })}
@@ -134,6 +142,19 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* AI sweep overlay across header after 1s */}
+        <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
+          <div
+            className="absolute -inset-y-8 -left-1/3 h-[200%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-primary/30 blur-[2px] animate-header-sweep"
+            style={{ animationDelay: '1s' }}
+          />
+          <Sparkles
+            className="absolute top-2 left-4 h-3 w-3 text-primary/80 opacity-0 animate-stars-travel"
+            style={{ animationDelay: '1s' }}
+            aria-hidden="true"
+          />
         </div>
 
         {/* Mobile Navigation */}

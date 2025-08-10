@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+
 
 interface BrandHeaderProps {
   className?: string;
@@ -31,10 +31,10 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           alt="InterioApp Logo" 
           className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
         />
-        <Sparkles 
-          className="pointer-events-none absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 text-primary/80 dark:text-primary/90 drop-shadow-md opacity-0 animate-sparkle-minute" 
-          aria-hidden="true" 
-          style={{ animationDelay: '10s' }}
+        {/* Tiny blink near the "i" of Interio every 10s */}
+        <span 
+          className="pointer-events-none absolute bottom-1 left-[12%] h-1.5 w-1.5 rounded-full bg-primary/60 dark:bg-primary/70 shadow-[0_0_8px_hsl(var(--primary)/0.5)] opacity-0 animate-i-blink-10s" 
+          aria-hidden="true"
         />
       </div>
       {showTagline && (
@@ -52,18 +52,6 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           </div>
         </>
       )}
-      {/* AI-like sweep across logo and slogan after 10s */}
-      <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
-        <div className="absolute -inset-y-4 -left-1/3 h-[200%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-primary/40 blur-[2px] animate-[logo-sweep_3s_ease-in-out_10s_1_both]" />
-        <Sparkles
-          className="absolute top-0 left-0 h-4 w-4 text-primary/90 opacity-0 animate-[stars-travel_3s_ease-in-out_10s_1_both]"
-          aria-hidden="true"
-        />
-        <Sparkles
-          className="absolute bottom-0 left-1/4 h-3 w-3 text-primary/70 opacity-0 animate-[stars-travel_3s_ease-in-out_10s_1_both]"
-          aria-hidden="true"
-        />
-      </div>
     </div>
   );
 };
