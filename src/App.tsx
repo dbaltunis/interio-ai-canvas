@@ -15,6 +15,9 @@ import Settings from "./pages/Settings";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 
+// Ensure theme variables and custom classes are loaded globally
+import "@/styles/theme.css";
+
 import AcceptInvitation from "./pages/AcceptInvitation";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 

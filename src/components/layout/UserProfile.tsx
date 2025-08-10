@@ -36,7 +36,6 @@ export const UserProfile = () => {
     navigate("/settings");
   };
 
-
   const handleAuth = () => {
     navigate("/auth");
   };
@@ -106,6 +105,10 @@ export const UserProfile = () => {
             <DropdownMenuRadioItem value="midnight">
               <Moon className="mr-2 h-4 w-4" />
               Midnight dark
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="apple-graphite">
+              <Moon className="mr-2 h-4 w-4" />
+              Apple Graphite
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuCheckboxItem

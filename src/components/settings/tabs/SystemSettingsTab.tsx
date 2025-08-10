@@ -47,7 +47,7 @@ export const SystemSettingsTab = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Theme</Label>
-              <Select value={theme} onValueChange={setTheme}>
+              <Select value={theme ?? 'system'} onValueChange={setTheme}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>
