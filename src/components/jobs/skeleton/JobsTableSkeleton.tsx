@@ -10,10 +10,10 @@ import {
 
 export const JobsTableSkeleton = () => {
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="liquid-glass rounded-xl border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
+          <TableRow className="bg-muted/30 hover:bg-muted/30">
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Job Number</TableHead>
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Emails</TableHead>
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Client</TableHead>

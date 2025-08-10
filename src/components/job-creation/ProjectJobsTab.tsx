@@ -7,11 +7,9 @@ interface ProjectJobsTabProps {
 
 export const ProjectJobsTab = ({ project, onProjectUpdate }: ProjectJobsTabProps) => {
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Project Jobs - {project?.name}</h2>
-      <div className="text-center text-muted-foreground">
-        Project jobs management coming soon...
-      </div>
+    <div className="liquid-glass rounded-xl p-6 space-y-2">
+      <h2 className="text-xl font-semibold text-foreground">Project Jobs - {project?.name}</h2>
+      <p className="text-muted-foreground">Jobs management coming soon…</p>
     </div>
   );
 };

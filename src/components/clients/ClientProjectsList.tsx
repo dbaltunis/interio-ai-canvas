@@ -85,7 +85,7 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead>Project Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Priority</TableHead>

@@ -190,7 +190,7 @@ export const ClientListView = ({
       <div className="liquid-glass rounded-xl border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent">
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => handleSort('name')}
