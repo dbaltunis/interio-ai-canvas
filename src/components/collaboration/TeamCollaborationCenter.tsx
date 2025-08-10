@@ -148,7 +148,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="team" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
+                    <TabsContent value="team" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0 glass-morphism rounded-lg border">
                       {/* Current User */}
                       {currentUser && (
                         <div>
