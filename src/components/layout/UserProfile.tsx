@@ -27,6 +27,11 @@ export const UserProfile = () => {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { compact, toggleCompact } = useCompactMode();
 
+  const currentTheme = theme ?? resolvedTheme ?? "light";
+  const ActiveDot = () => (
+    <span className="ml-2 inline-block h-2 w-2 rounded-full bg-secondary" aria-hidden="true" />
+  );
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
@@ -94,30 +99,26 @@ export const UserProfile = () => {
             value={theme ?? resolvedTheme ?? "light"}
             onValueChange={(v) => setTheme(v)}
           >
-            <DropdownMenuRadioItem value="light">
-              <Sun className="mr-2 h-4 w-4" />
-              Light mode
+            <DropdownMenuRadioItem value="light" className="flex items-center justify-between">
+              <span className="flex items-center"><Sun className="mr-2 h-4 w-4" />Light mode</span>
+              {currentTheme === 'light' && <ActiveDot />}
             </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="dark">
-              <Moon className="mr-2 h-4 w-4" />
-              InterioApp dark
+            <DropdownMenuRadioItem value="dark" className="flex items-center justify-between">
+              <span className="flex items-center"><Moon className="mr-2 h-4 w-4" />InterioApp dark</span>
+              {currentTheme === 'dark' && <ActiveDot />}
             </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="midnight">
-              <Moon className="mr-2 h-4 w-4" />
-              Midnight dark
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="apple-graphite">
-              <Moon className="mr-2 h-4 w-4" />
-              Apple Graphite
+            <DropdownMenuRadioItem value="apple-graphite" className="flex items-center justify-between">
+              <span className="flex items-center"><Moon className="mr-2 h-4 w-4" />Graphite dark</span>
+              {currentTheme === 'apple-graphite' && <ActiveDot />}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuCheckboxItem
             checked={compact}
             onCheckedChange={() => toggleCompact()}
-            className="cursor-pointer"
+            className="cursor-pointer flex items-center justify-between"
           >
-            <Palette className="mr-2 h-4 w-4" />
-            Compact mode
+            <span className="flex items-center"><Palette className="mr-2 h-4 w-4" />Compact mode</span>
+            {compact && <ActiveDot />}
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

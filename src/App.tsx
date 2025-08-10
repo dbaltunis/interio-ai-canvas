@@ -48,7 +48,7 @@ const App = () => (
             attribute="class"
             defaultTheme="dark"
             enableSystem
-            themes={['light','dark','midnight','apple-graphite']}
+            themes={['light','dark','apple-graphite']}
             value={{
               light: 'light',
               dark: 'dark',
