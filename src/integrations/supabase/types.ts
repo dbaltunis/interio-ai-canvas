@@ -3279,6 +3279,18 @@ export type Database = {
         Args: { user_role: string }
         Returns: string[]
       }
+      get_invitation_by_token: {
+        Args: { invitation_token_param: string }
+        Returns: {
+          invited_email: string
+          invited_name: string
+          role: string
+          invited_by_name: string
+          invited_by_email: string
+          expires_at: string
+          status: string
+        }[]
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: string

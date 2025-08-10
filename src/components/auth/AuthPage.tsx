@@ -33,14 +33,13 @@ export const AuthPage = () => {
       
       const loadInvitation = async () => {
         try {
+          console.log('[AuthPage] Loading invitation via RPC:', invitationToken);
           const { data: invitationData, error } = await supabase
-            .from('user_invitations')
-            .select('*')
-            .eq('invitation_token', invitationToken)
-            .eq('status', 'pending')
-            .single();
+            .rpc('get_invitation_by_token', { invitation_token_param: invitationToken })
+            .maybeSingle();
 
-          if (error || !invitationData) {
+          if (error) {
+            console.error('[AuthPage] RPC error:', error);
             toast({
               title: "Error",
               description: "Invalid or expired invitation",
@@ -50,7 +49,18 @@ export const AuthPage = () => {
             return;
           }
 
-          // Check if invitation has expired
+          if (!invitationData) {
+            console.warn('[AuthPage] No invitation returned (invalid/expired/used).');
+            toast({
+              title: "Error",
+              description: "Invalid or expired invitation",
+              variant: "destructive"
+            });
+            navigate('/auth');
+            return;
+          }
+
+          // Check if invitation has expired (extra safety)
           const expiresAt = new Date(invitationData.expires_at);
           if (expiresAt < new Date()) {
             toast({
@@ -114,6 +124,7 @@ export const AuthPage = () => {
             });
 
           if (acceptError || !(acceptResult as any)?.success) {
+            console.error('[AuthPage] accept_user_invitation error/result:', acceptError, acceptResult);
             toast({
               title: "Error",
               description: acceptError?.message || (acceptResult as any)?.error || "Failed to accept invitation",
@@ -151,6 +162,7 @@ export const AuthPage = () => {
         }
       }
     } catch (err) {
+      console.error('[AuthPage] unexpected error:', err);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

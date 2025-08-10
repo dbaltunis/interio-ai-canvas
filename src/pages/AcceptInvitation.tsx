@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,21 +25,26 @@ const AcceptInvitation = () => {
 
     const checkInvitation = async () => {
       try {
-        // Check if invitation exists and is valid
+        console.log('[AcceptInvitation] Verifying token via RPC:', token);
         const { data: invitationData, error } = await supabase
-          .from('user_invitations')
-          .select('*')
-          .eq('invitation_token', token)
-          .eq('status', 'pending')
-          .single();
+          .rpc('get_invitation_by_token', { invitation_token_param: token })
+          .maybeSingle();
 
-        if (error || !invitationData) {
+        if (error) {
+          console.error('[AcceptInvitation] RPC error:', error);
           setStatus('error');
           setMessage('Invitation not found or has already been used');
           return;
         }
 
-        // Check if invitation has expired
+        if (!invitationData) {
+          console.warn('[AcceptInvitation] No invitation returned (invalid/expired/used).');
+          setStatus('error');
+          setMessage('Invitation not found or has already been used');
+          return;
+        }
+
+        // Extra safety: check expiration even though RPC filters it
         const expiresAt = new Date(invitationData.expires_at);
         if (expiresAt < new Date()) {
           setStatus('expired');
