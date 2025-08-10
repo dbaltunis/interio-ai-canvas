@@ -84,8 +84,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       <span className="relative inline-flex items-center">
                         {item.label}
                         <span
-                          className="pointer-events-none absolute -bottom-[3px] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/90 to-transparent dark:via-primary/80 opacity-0 animate-underline-flash"
-                          style={{ animationDelay: `${1.2 + idx * 0.18}s` }}
+                          className="pointer-events-none absolute -bottom-[3px] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/95 to-transparent dark:via-primary/80 opacity-0 animate-[underline-flash_1.2s_ease-out_both]"
+                          style={{ animationDelay: `${1.3 + idx * 0.25}s` }}
                           aria-hidden="true"
                         />
                       </span>
@@ -145,14 +145,18 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
         {/* AI sweep overlay across header after 1s */}
         <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
-          {/* Stronger twin sweeps across header after 1s, no stars */}
+          {/* Bold, glossy AI sweep across header after 1s (no stars) */}
           <div
-            className="absolute -inset-y-10 -left-1/2 h-[240%] w-2/3 rotate-12 bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-primary/70 blur-[6px] mix-blend-screen animate-ai-sweep"
+            className="absolute -inset-y-10 -left-1/2 h-[240%] w-2/3 rotate-12 bg-gradient-to-r from-transparent via-primary/75 to-transparent dark:via-primary/60 opacity-90 blur-[6px] backdrop-blur-[1.5px] mix-blend-overlay shadow-[0_0_40px_hsl(var(--primary)/0.25)] animate-[ai-sweep_4.5s_cubic-bezier(0.22,0.61,0.36,1)_1_both]"
             style={{ animationDelay: '1s' }}
           />
           <div
-            className="absolute -inset-y-12 -left-2/3 h-[260%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-primary/50 blur-[4px] mix-blend-screen animate-ai-sweep"
-            style={{ animationDelay: '1.15s' }}
+            className="absolute -inset-y-12 -left-2/3 h-[260%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-primary/60 to-transparent dark:via-primary/50 opacity-80 blur-[4px] backdrop-blur-[1px] mix-blend-overlay animate-[ai-sweep_5s_cubic-bezier(0.22,0.61,0.36,1)_1_both]"
+            style={{ animationDelay: '1.25s' }}
+          />
+          <div
+            className="absolute -inset-y-8 -left-1/3 h-[220%] w-1/6 rotate-12 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-70 blur-[2px] animate-[ai-sweep_5.2s_cubic-bezier(0.22,0.61,0.36,1)_1_both]"
+            style={{ animationDelay: '1.8s' }}
           />
         </div>
 
