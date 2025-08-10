@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,23 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { activeUsers = [] } = useUserPresence();
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+
+  // Lock background scroll when panel is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalTouch = document.body.style.touchAction as string;
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = originalOverflow || '';
+      document.body.style.touchAction = originalTouch || '';
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow || '';
+      document.body.style.touchAction = originalTouch || '';
+    };
+  }, [isOpen]);
 
   // Separate current user and others
   const currentUser = activeUsers.find(u => u.user_id === user?.id);
@@ -92,7 +109,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+              className="fixed inset-0 z-[100] bg-background/70 dark:bg-background/60 backdrop-blur-[2px]"
               onClick={onToggle}
             />
             
@@ -102,7 +119,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-96 z-50 liquid-glass panel shadow-2xl overflow-hidden border-l border-border"
+              className="fixed right-0 top-0 h-full w-96 z-[101] liquid-glass panel shadow-2xl overflow-hidden border-l border-border pointer-events-auto"
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
