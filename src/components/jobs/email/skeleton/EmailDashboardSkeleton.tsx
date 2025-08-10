@@ -16,21 +16,16 @@ export const EmailDashboardSkeleton: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters skeleton (compact chips) */}
-      <div className="liquid-glass rounded-xl border p-3">
-        <div className="flex flex-wrap gap-3">
-          <div className="h-8 w-40 bg-muted/30 rounded" />
-          <div className="h-8 w-36 bg-muted/30 rounded" />
-          <div className="h-8 w-36 bg-muted/30 rounded" />
-          <div className="h-8 w-36 bg-muted/30 rounded" />
-        </div>
+      {/* Filters skeleton bar */}
+      <div className="liquid-glass rounded-xl border p-4">
+        <div className="h-8 w-full bg-muted/30 rounded" />
       </div>
 
       {/* Table skeleton */}
       <div className="liquid-glass rounded-xl border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/20">
+            <TableRow className="bg-muted/30">
               {Array.from({ length: 6 }).map((_, i) => (
                 <TableHead key={i}>
                   <div className="h-4 w-24 bg-muted rounded" />
@@ -39,11 +34,11 @@ export const EmailDashboardSkeleton: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: 4 }).map((_, r) => (
+            {Array.from({ length: 6 }).map((_, r) => (
               <TableRow key={r} className="hover:bg-muted/50">
                 {Array.from({ length: 6 }).map((_, c) => (
                   <TableCell key={c}>
-                    <div className="h-3 w-full bg-muted/30 rounded" />
+                    <div className="h-4 w-full bg-muted/30 rounded" />
                   </TableCell>
                 ))}
               </TableRow>
