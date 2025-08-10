@@ -1,5 +1,5 @@
 
-import { User, Settings, LogOut, LogIn, Moon, Sun } from "lucide-react";
+import { User, Settings, LogOut, LogIn, Moon, Sun, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,10 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
+import { useCompactMode } from "@/hooks/useCompactMode";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 
@@ -19,6 +23,7 @@ export const UserProfile = () => {
   const { data: userProfile } = useCurrentUserProfile();
   const navigate = useNavigate();
   const { resolvedTheme, setTheme } = useTheme();
+  const { compact, toggleCompact } = useCompactMode();
 
   const handleSignOut = async () => {
     await signOut();
@@ -84,14 +89,26 @@ export const UserProfile = () => {
           <Settings className="mr-2 h-4 w-4" />
           Settings
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
-          {resolvedTheme === "dark" ? (
-            <Sun className="mr-2 h-4 w-4" />
-          ) : (
-            <Moon className="mr-2 h-4 w-4" />
-          )}
-          {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
+            {resolvedTheme === "dark" ? (
+              <Sun className="mr-2 h-4 w-4" />
+            ) : (
+              <Moon className="mr-2 h-4 w-4" />
+            )}
+            {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+          </DropdownMenuItem>
+          <DropdownMenuCheckboxItem
+            checked={compact}
+            onCheckedChange={() => toggleCompact()}
+            className="cursor-pointer"
+          >
+            <Palette className="mr-2 h-4 w-4" />
+            Interio mode
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
