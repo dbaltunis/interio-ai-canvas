@@ -110,11 +110,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 <div className="p-6 glass-morphism border-b">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                      <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
                         <Zap className="h-6 w-6 text-yellow-400" />
                         Team Hub
                       </h2>
-                      <p className="text-white/70 text-sm">
+                      <p className="text-muted-foreground text-sm">
                         {onlineUsers.length} of {totalUsers} online
                       </p>
                     </div>
@@ -122,7 +122,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       variant="ghost"
                       size="sm"
                       onClick={onToggle}
-                      className="text-white/70 hover:text-white hover:bg-white/10"
+                      className="text-muted-foreground hover:text-foreground hover:bg-accent/30"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -152,15 +152,15 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       {/* Current User */}
                       {currentUser && (
                         <div>
-                          <p className="text-white/80 text-sm mb-3 font-medium flex items-center gap-2">
-                            You <span className="text-xs bg-white/10 px-2 py-1 rounded-full">Currently Active</span>
+                          <p className="text-muted-foreground text-sm mb-3 font-medium flex items-center gap-2">
+                            You <span className="text-xs bg-accent/30 text-foreground border border-border px-2 py-1 rounded-full">Currently Active</span>
                           </p>
                           <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="group relative"
                           >
-                            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                            <div className="glass-morphism rounded-xl p-4 border border-border">
                               
                               {/* Status indicator gradient line */}
                               <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-500 rounded-l-xl" />
@@ -184,19 +184,19 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                 
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-semibold text-white truncate">
+                                    <p className="font-semibold text-foreground truncate">
                                       {currentUser.user_profile?.display_name}
                                     </p>
-                                    <Badge 
+                                      <Badge 
                                       variant="secondary" 
-                                      className="text-xs bg-white/10 text-white/80 border-white/20"
+                                      className="text-xs bg-accent/30 text-foreground border border-border"
                                     >
                                       {currentUser.user_profile?.role}
                                     </Badge>
                                   </div>
                                   
-                                  {currentUser.current_activity && (
-                                    <p className="text-sm text-white/60 truncate">
+                                    {currentUser.current_activity && (
+                                      <p className="text-sm text-muted-foreground truncate">
                                       🎯 {currentUser.current_activity}
                                     </p>
                                   )}
@@ -219,7 +219,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               transition={{ delay: index * 0.1 }}
                               className="group relative"
                             >
-                               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
+                               <div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openConversation(user.user_id);
@@ -253,14 +253,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       </p>
                                       <Badge 
                                         variant="secondary" 
-                                        className="text-xs bg-white/10 text-white/80 border-white/20"
+                                        className="text-xs bg-accent/30 text-foreground border border-border"
                                       >
                                         {user.user_profile?.role}
                                       </Badge>
                                     </div>
                                     
                                     {user.current_activity && (
-                                      <p className="text-sm text-white/60 truncate">
+                                      <p className="text-sm text-muted-foreground truncate">
                                         🎯 {user.current_activity}
                                       </p>
                                     )}
@@ -274,7 +274,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-10 w-10 p-0"
+                                      className="text-muted-foreground hover:text-foreground hover:bg-accent/30 rounded-full h-10 w-10 p-0"
                                     >
                                       <MessageCircle className="h-4 w-4" />
                                     </Button>
@@ -293,12 +293,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           animate={{ opacity: 1 }}
                           transition={{ delay: onlineUsers.length * 0.1 + 0.3 }}
                         >
-                          <div className="pt-4 border-t border-white/20">
-                            <p className="text-white/70 text-sm mb-3 font-medium">Offline/Away</p>
+                          <div className="pt-4 border-t border-border">
+                            <p className="text-muted-foreground text-sm mb-3 font-medium">Offline/Away</p>
                             <div className="space-y-2">
                               {offlineUsers.map((user) => (
                                  <div key={user.user_id} 
-                                      className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                                      className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border cursor-pointer hover:bg-accent/30 transition-colors"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openConversation(user.user_id);
@@ -306,20 +306,20 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       }}>
                                   <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.user_profile?.avatar_url} />
-                                    <AvatarFallback className="bg-gray-500/50 text-white text-sm">
+                                    <AvatarFallback className="bg-muted text-foreground text-sm">
                                       {user.user_profile?.display_name?.charAt(0) || 'U'}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm text-white/80 truncate">
+                                      <p className="text-sm text-foreground truncate">
                                         {user.user_profile?.display_name}
                                       </p>
-                                      <Badge variant="outline" className="text-xs text-white/60 border-white/20">
+                                      <Badge variant="outline" className="text-xs text-muted-foreground border-border">
                                         {user.user_profile?.role}
                                       </Badge>
                                     </div>
-                                     <p className="text-xs text-white/60 capitalize">
+                                     <p className="text-xs text-muted-foreground capitalize">
                                        {user.status === 'never_logged_in' ? 'Never signed up' : 
                                         user.status === 'away' ? 'Away' : 'Offline'}
                                        {user.last_seen && user.status !== 'never_logged_in' && (
@@ -352,7 +352,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               initial={{ opacity: 0, y: 20 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.1 }}
-                              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all duration-300 cursor-pointer border border-white/20"
+                              className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
                               onClick={() => {
                                 openConversation(conversation.user_id);
                                 setMessageDialogOpen(true);
@@ -368,7 +368,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                 
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
-                                    <p className="font-medium text-white truncate">
+                                    <p className="font-medium text-foreground truncate">
                                       {conversation.user_profile?.display_name || 'Unknown User'}
                                     </p>
                                     {conversation.unread_count > 0 && (
@@ -377,11 +377,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       </Badge>
                                     )}
                                   </div>
-                                  <p className="text-sm text-white/60 truncate">
+                                  <p className="text-sm text-muted-foreground truncate">
                                     {conversation.last_message?.content || 'No messages yet'}
                                   </p>
                                   {conversation.last_message?.created_at && (
-                                    <p className="text-xs text-white/50 mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1">
                                       {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
                                         day: 'numeric', 
                                         month: 'short',
@@ -392,24 +392,24 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   )}
                                 </div>
                                 
-                                <MessageCircle className="h-4 w-4 text-white/50" />
+                                <MessageCircle className="h-4 w-4 text-muted-foreground" />
                               </div>
                             </motion.div>
                           ))}
                         </div>
                       ) : (
                         <div className="text-center py-8 space-y-4">
-                          <MessageCircle className="mx-auto h-16 w-16 text-white/40 mb-4" />
-                          <div className="space-y-2">
-                            <h3 className="text-lg font-semibold text-white">No Conversations Yet</h3>
-                            <p className="text-white/70 text-sm max-w-xs mx-auto leading-relaxed">
+                            <MessageCircle className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                            <div className="space-y-2">
+                              <h3 className="text-lg font-semibold text-foreground">No Conversations Yet</h3>
+                              <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
                               You haven't started any conversations yet. 
                             </p>
                           </div>
                           
-                          <div className="bg-white/5 rounded-lg p-4 border border-white/10 max-w-sm mx-auto">
-                            <p className="text-white/80 text-sm mb-3 font-medium">💡 How to start a conversation:</p>
-                            <p className="text-white/60 text-xs text-left">
+                          <div className="glass-morphism rounded-lg p-4 border border-border max-w-sm mx-auto">
+                            <p className="text-foreground text-sm mb-3 font-medium">💡 How to start a conversation:</p>
+                            <p className="text-muted-foreground text-xs text-left">
                               1. Go to the <strong>Team</strong> tab above<br/>
                               2. Click on any team member's profile<br/>
                               3. Start messaging them directly
@@ -418,7 +418,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           
                           <Button 
                             onClick={() => setMessageDialogOpen(true)}
-                            className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                            className="bg-accent/30 hover:bg-accent/50 text-foreground border border-border"
                           >
                             <Send className="h-4 w-4 mr-2" />
                             Open Message Center
