@@ -38,6 +38,7 @@ import { EmailStatusDisplay } from "./EmailStatusDisplay";
 import { JobsPagination } from "./JobsPagination";
 import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
+import { JobStatusBadge } from "./JobStatusBadge";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -364,20 +365,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant="secondary" 
-                      className={getStatusColor(currentStatus)}
-                    >
-                      {(() => {
-                        // Find the custom status to get the proper display name
-                        const customStatus = jobStatuses.find(s => s.name.toLowerCase() === currentStatus?.toLowerCase());
-                        if (customStatus) {
-                          return customStatus.name;
-                        }
-                        // Fallback to formatted version
-                        return currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ');
-                      })()}
-                    </Badge>
+                    <JobStatusBadge status={currentStatus} />
                   </TableCell>
                   <TableCell>
                     {formatCurrency(quote.total_amount || 0, userCurrency)}
