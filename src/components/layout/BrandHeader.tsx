@@ -33,7 +33,7 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
         />
         {/* Tiny blink near the "i" of Interio every 10s */}
         <span 
-          className="pointer-events-none absolute bottom-1 left-[12%] h-1.5 w-1.5 rounded-full bg-primary/60 dark:bg-primary/70 shadow-[0_0_8px_hsl(var(--primary)/0.5)] opacity-0 animate-i-blink-10s" 
+          className="pointer-events-none absolute top-1/2 left-[13%] -translate-y-1/2 h-2 w-2 rounded-full bg-primary/80 dark:bg-primary/90 shadow-[0_0_10px_hsl(var(--primary)/0.7)] opacity-0 animate-i-blink-10s" 
           aria-hidden="true"
         />
       </div>

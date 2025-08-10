@@ -142,13 +142,13 @@ export default {
 					'100%': { transform: 'translateX(120%) scale(1.05)', opacity: '0' }
 				},
 				'button-blink': {
-					'0%, 100%': { opacity: '0', transform: 'translateY(1px) scale(0.8)' },
-					'50%': { opacity: '0.7', transform: 'translateY(0) scale(1)' }
+					'0%, 100%': { opacity: '0', transform: 'translateY(1px) scale(0.85)' },
+					'50%': { opacity: '0.95', transform: 'translateY(0) scale(1.1)' }
 				},
 				'i-blink-10s': {
-					'0%, 97%, 100%': { opacity: '0', transform: 'scale(0.8)' },
-					'98%': { opacity: '0.6', transform: 'scale(1)' },
-					'99%': { opacity: '0.2', transform: 'scale(0.95)' }
+					'0%, 97%, 100%': { opacity: '0', transform: 'scale(0.85)' },
+					'98%': { opacity: '0.9', transform: 'scale(1.1)' },
+					'99%': { opacity: '0.35', transform: 'scale(0.95)' }
 				}
 			},
 			animation: {
