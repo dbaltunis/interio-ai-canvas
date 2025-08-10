@@ -32,7 +32,7 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
         />
         <Sparkles 
-          className="pointer-events-none absolute -top-1 -right-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary/60 dark:text-primary/70 drop-shadow-sm opacity-0 animate-sparkle-minute" 
+          className="pointer-events-none absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 text-primary/80 dark:text-primary/90 drop-shadow-md opacity-0 animate-sparkle-minute" 
           aria-hidden="true" 
         />
       </div>
@@ -41,10 +41,10 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />
           <div className="hidden lg:block">
             <div className="flex flex-col">
-              <p className={`text-foreground ${sloganSizeClasses[size]} font-semibold leading-tight`}>
+              <p className={`text-foreground ${sloganSizeClasses[size]} leading-tight`}>
                 The future of window décor
               </p>
-              <p className={`text-foreground ${sloganSizeClasses[size]} font-semibold leading-tight`}>
+              <p className={`text-foreground ${sloganSizeClasses[size]} leading-tight`}>
                 is online and bespoke
               </p>
             </div>
