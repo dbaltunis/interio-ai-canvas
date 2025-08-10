@@ -77,7 +77,12 @@ export const SystemSettingsTab = () => {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Compact mode</Label>
+                <Label className="flex items-center gap-2">
+                  Compact mode
+                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] leading-none ${compact ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    {compact ? 'ON' : 'OFF'}
+                  </span>
+                </Label>
                 <p className="text-xs text-muted-foreground">Denser layout with tighter spacing</p>
               </div>
               <Switch checked={compact} onCheckedChange={() => toggleCompact()} />
