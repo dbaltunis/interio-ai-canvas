@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Mail, X, RefreshCw } from "lucide-react";
-import { UserInvitation, useDeleteInvitation } from "@/hooks/useUserInvitations";
+import { UserInvitation, useDeleteInvitation, useResendInvitation } from "@/hooks/useUserInvitations";
 import { formatDistanceToNow } from "date-fns";
 
 interface PendingInvitationsProps {
@@ -11,6 +11,7 @@ interface PendingInvitationsProps {
 
 export const PendingInvitations = ({ invitations }: PendingInvitationsProps) => {
   const deleteInvitation = useDeleteInvitation();
+  const resendInvitation = useResendInvitation();
   
   const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
 
@@ -60,6 +61,19 @@ export const PendingInvitations = ({ invitations }: PendingInvitationsProps) => 
                 <Badge variant="outline">
                   {invitation.role}
                 </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => resendInvitation.mutate(invitation)}
+                  disabled={resendInvitation.isPending}
+                  aria-label="Resend invitation"
+                >
+                  {resendInvitation.isPending ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4" />
+                  )}
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="sm"

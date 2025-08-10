@@ -13,6 +13,7 @@ export interface UserInvitation {
   invited_by_name?: string;
   invited_by_email?: string;
   created_at: string;
+  invitation_token?: string;
 }
 
 export const useUserInvitations = () => {
@@ -129,6 +130,49 @@ export const useDeleteInvitation = () => {
       toast({
         title: "Error",
         description: "Failed to cancel invitation.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useResendInvitation = () => {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (invitation: UserInvitation) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .single();
+
+      const { error } = await supabase.functions.invoke("send-invitation", {
+        body: {
+          invitedEmail: invitation.invited_email,
+          invitedName: invitation.invited_name || "",
+          inviterName: profile?.display_name || user.email || "Team Member",
+          inviterEmail: user.email || "",
+          role: invitation.role,
+          invitationToken: invitation.invitation_token,
+        },
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitation re-sent",
+        description: "We have re-sent the invitation email.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend invitation.",
         variant: "destructive",
       });
     },
