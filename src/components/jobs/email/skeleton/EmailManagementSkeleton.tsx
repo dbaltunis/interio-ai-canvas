@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const EmailManagementSkeleton = () => {
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="min-h-screen bg-background w-full">
       <div className="w-full px-6 py-6 space-y-6">
         {/* Header skeleton */}
         <div className="space-y-4">
@@ -54,7 +54,7 @@ export const EmailManagementSkeleton = () => {
           </div>
           
           {/* Dashboard content skeleton */}
-          <div className="bg-white rounded-lg p-6">
+          <div className="liquid-glass rounded-xl border p-6">
             {/* Stats cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
               {Array.from({ length: 4 }).map((_, i) => (

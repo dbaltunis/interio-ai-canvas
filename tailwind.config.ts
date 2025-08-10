@@ -120,6 +120,19 @@ export default {
 					'97%': { opacity: '0.35', transform: 'scale(0.95)' },
 					'98%': { opacity: '0.8', transform: 'scale(1)' },
 					'99%': { opacity: '0.35', transform: 'scale(0.95)' }
+				},
+				'logo-sweep': {
+					'0%': { transform: 'translateX(-120%) rotate(12deg)', opacity: '0' },
+					'10%': { opacity: '0.35' },
+					'50%': { opacity: '0.6' },
+					'90%': { opacity: '0.35' },
+					'100%': { transform: 'translateX(120%) rotate(12deg)', opacity: '0' }
+				},
+				'stars-travel': {
+					'0%': { transform: 'translateX(-20%) scale(0.85)', opacity: '0' },
+					'20%': { opacity: '0.6' },
+					'60%': { opacity: '0.9' },
+					'100%': { transform: 'translateX(120%) scale(1.05)', opacity: '0' }
 				}
 			},
 			animation: {
@@ -129,7 +142,9 @@ export default {
 				'wave': 'wave 2s ease-in-out infinite',
 				'fade-in': 'fade-in 0.3s ease-out',
 				'scale-in': 'scale-in 0.2s ease-out',
-				'sparkle-minute': 'sparkle-minute 60s ease-in-out infinite'
+				'sparkle-minute': 'sparkle-minute 60s ease-in-out infinite',
+				'logo-sweep': 'logo-sweep 3s ease-in-out both',
+				'stars-travel': 'stars-travel 3s ease-in-out both'
 			}
 		}
 	},

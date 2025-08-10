@@ -24,7 +24,7 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
   };
 
   return (
-    <div className={`flex items-center ${className}`}>
+    <div className={`relative flex items-center ${className}`}>
       <div className="relative inline-flex items-center">
         <img 
           src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
@@ -34,6 +34,7 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
         <Sparkles 
           className="pointer-events-none absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 text-primary/80 dark:text-primary/90 drop-shadow-md opacity-0 animate-sparkle-minute" 
           aria-hidden="true" 
+          style={{ animationDelay: '10s' }}
         />
       </div>
       {showTagline && (
@@ -51,6 +52,18 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           </div>
         </>
       )}
+      {/* AI-like sweep across logo and slogan after 10s */}
+      <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+        <div className="absolute -inset-y-4 -left-1/3 h-[200%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-primary/40 blur-[2px] animate-[logo-sweep_3s_ease-in-out_10s_1_both]" />
+        <Sparkles
+          className="absolute top-0 left-0 h-4 w-4 text-primary/90 opacity-0 animate-[stars-travel_3s_ease-in-out_10s_1_both]"
+          aria-hidden="true"
+        />
+        <Sparkles
+          className="absolute bottom-0 left-1/4 h-3 w-3 text-primary/70 opacity-0 animate-[stars-travel_3s_ease-in-out_10s_1_both]"
+          aria-hidden="true"
+        />
+      </div>
     </div>
   );
 };
