@@ -79,16 +79,17 @@
 
 /* Compact mode density */
 .compact {
-  font-size: 15px; /* scale down rem-based sizing globally */
-  --radius: 0.6rem; /* slightly tighter rounding */
+  font-size: 15px; /* slightly smaller base for rem scaling */
+  line-height: 1.35;
+  --radius: 0.6rem;
 }
 
+/* Controls */
 .compact button {
   height: 2.25rem !important;
   padding: 0.375rem 0.75rem !important;
   border-radius: calc(var(--radius) - 2px) !important;
 }
-
 .compact input,
 .compact select,
 .compact textarea {
@@ -97,15 +98,36 @@
   border-radius: calc(var(--radius) - 2px) !important;
 }
 
+/* Menus & popovers */
+.compact [data-radix-popper-content-wrapper] { font-size: 0.9rem; }
+.compact [role='menuitem'],
+.compact [data-radix-collection-item] {
+  min-height: 1.75rem;
+  padding: 0.375rem 0.5rem !important;
+}
+
+/* Tabs */
+.compact [role='tab'] {
+  min-height: 1.75rem;
+  padding: 0.375rem 0.5rem !important;
+}
+
+/* Tables */
 .compact table th,
 .compact table td {
   padding-top: 0.5rem !important;
   padding-bottom: 0.5rem !important;
 }
 
-.compact [data-radix-popper-content-wrapper] {
-  font-size: 0.9rem; /* denser menus */
-}
+/* Common Tailwind utility overrides (best‑effort) */
+.compact [class*="p-6"] { padding: 1rem !important; }
+.compact [class*="px-6"] { padding-left: 1rem !important; padding-right: 1rem !important; }
+.compact [class*="py-6"] { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+.compact [class*="p-4"] { padding: 0.75rem !important; }
+.compact [class*="px-4"] { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+.compact [class*="py-4"] { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+.compact [class*="gap-6"] { gap: 1rem !important; }
+.compact [class*="gap-4"] { gap: 0.75rem !important; }
 
 /* Brand-specific utility classes */
 .bg-brand-primary { background-color: var(--interio-dark-teal); }
