@@ -27,17 +27,17 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
       <img 
         src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
         alt="InterioApp Logo" 
-        className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all`}
+        className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
       />
       {showTagline && (
         <>
-          <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden sm:block" />
-          <div className="hidden sm:block">
+          <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />
+          <div className="hidden lg:block">
             <div className="flex flex-col">
-              <p className={`text-brand-neutral/80 ${sloganSizeClasses[size]} font-medium leading-tight`}>
+              <p className={`text-foreground ${sloganSizeClasses[size]} font-semibold leading-tight`}>
                 The future of window décor
               </p>
-              <p className={`text-brand-neutral/80 ${sloganSizeClasses[size]} font-medium leading-tight`}>
+              <p className={`text-foreground ${sloganSizeClasses[size]} font-semibold leading-tight`}>
                 is online and bespoke
               </p>
             </div>
