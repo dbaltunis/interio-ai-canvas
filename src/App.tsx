@@ -52,8 +52,8 @@ const App = () => (
             value={{
               light: 'light',
               dark: 'dark',
-              midnight: 'midnight dark',
-              'apple-graphite': 'apple-graphite dark',
+              midnight: 'midnight',
+              'apple-graphite': 'apple-graphite',
             }}
           >
             <ThemeDarkSync />

@@ -78,6 +78,30 @@
   color-scheme: dark;
 }
 
+.apple-graphite {
+  --background: 220 8% 10%;
+  --foreground: 0 0% 98%;
+  --card: 220 10% 14%;
+  --card-foreground: 0 0% 98%;
+  --popover: 220 10% 14%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 192 24% 67%;
+  --primary-foreground: 220 8% 10%;
+  --secondary: 200 26% 34%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 220 10% 16%;
+  --muted-foreground: 192 24% 67%;
+  --accent: 200 26% 34%;
+  --accent-foreground: 0 0% 98%;
+  --border: 220 10% 18%;
+  --input: 220 10% 18%;
+  --ring: 192 24% 67%;
+  color-scheme: dark;
+}
+
+/* Ensure dropdowns/popovers are above other UI */
+[data-radix-popper-content-wrapper] { z-index: 50; }
+
 /* Compact mode density */
 .compact {
   font-size: 15px; /* slightly smaller base for rem scaling */
