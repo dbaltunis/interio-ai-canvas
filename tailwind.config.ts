@@ -135,6 +135,18 @@ export default {
 					'90%': { opacity: '0.2' },
 					'100%': { transform: 'translateX(120%) rotate(12deg)', opacity: '0' }
 				},
+				'ai-sweep': {
+					'0%': { transform: 'translateX(-120%) rotate(12deg)', opacity: '0' },
+					'20%': { opacity: '0.5' },
+					'60%': { opacity: '0.9' },
+					'85%': { opacity: '0.45' },
+					'100%': { transform: 'translateX(130%) rotate(12deg)', opacity: '0' }
+				},
+				'underline-flash': {
+					'0%, 100%': { opacity: '0', transform: 'scaleX(0)' },
+					'40%': { opacity: '0.9', transform: 'scaleX(1.05)' },
+					'60%': { opacity: '0.7', transform: 'scaleX(1)' }
+				},
 				'stars-travel': {
 					'0%': { transform: 'translateX(-20%) scale(0.85)', opacity: '0' },
 					'20%': { opacity: '0.6' },
@@ -161,6 +173,8 @@ export default {
 				'sparkle-minute': 'sparkle-minute 60s ease-in-out infinite',
 				'logo-sweep': 'logo-sweep 3s ease-in-out both',
 				'header-sweep': 'header-sweep 3s ease-in-out both',
+				'ai-sweep': 'ai-sweep 1.8s cubic-bezier(0.22,0.61,0.36,1) both',
+				'underline-flash': 'underline-flash 0.7s ease-out both',
 				'stars-travel': 'stars-travel 3s ease-in-out both',
 				'button-blink': 'button-blink 0.6s ease-out both',
 				'i-blink-10s': 'i-blink-10s 10s ease-in-out infinite'

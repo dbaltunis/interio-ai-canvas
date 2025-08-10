@@ -17,8 +17,7 @@ import {
   Calendar,
   Menu,
   X,
-  MessageCircle,
-  Sparkles
+  MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -85,8 +84,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       <span className="relative inline-flex items-center">
                         {item.label}
                         <span
-                          className="pointer-events-none absolute -bottom-[3px] right-0 h-1.5 w-1.5 rounded-full bg-primary/80 dark:bg-primary/90 shadow-[0_0_8px_hsl(var(--primary)/0.6)] opacity-0 animate-button-blink"
-                          style={{ animationDelay: `${2 + idx * 0.2}s` }}
+                          className="pointer-events-none absolute -bottom-[3px] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/90 to-transparent dark:via-primary/80 opacity-0 animate-underline-flash"
+                          style={{ animationDelay: `${1.2 + idx * 0.18}s` }}
                           aria-hidden="true"
                         />
                       </span>
@@ -146,29 +145,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
         {/* AI sweep overlay across header after 1s */}
         <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
-          {/* Stronger twin sweeps with subtle star escorts */}
+          {/* Stronger twin sweeps across header after 1s, no stars */}
           <div
-            className="absolute -inset-y-8 -left-1/3 h-[220%] w-1/2 rotate-12 bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-primary/60 blur-[3px] animate-header-sweep"
+            className="absolute -inset-y-10 -left-1/2 h-[240%] w-2/3 rotate-12 bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-primary/70 blur-[6px] mix-blend-screen animate-ai-sweep"
             style={{ animationDelay: '1s' }}
           />
           <div
-            className="absolute -inset-y-10 -left-1/2 h-[220%] w-1/4 rotate-12 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-primary/40 blur-[2px] animate-header-sweep"
+            className="absolute -inset-y-12 -left-2/3 h-[260%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-primary/50 blur-[4px] mix-blend-screen animate-ai-sweep"
             style={{ animationDelay: '1.15s' }}
-          />
-          <Sparkles
-            className="absolute top-3 left-6 h-4 w-4 text-primary/90 opacity-0 animate-stars-travel"
-            style={{ animationDelay: '1.05s' }}
-            aria-hidden="true"
-          />
-          <Sparkles
-            className="absolute bottom-3 left-24 h-3 w-3 text-primary/80 opacity-0 animate-stars-travel"
-            style={{ animationDelay: '1.2s' }}
-            aria-hidden="true"
-          />
-          <Sparkles
-            className="absolute top-1/2 left-1/3 -translate-y-1/2 h-3 w-3 text-primary/70 opacity-0 animate-stars-travel"
-            style={{ animationDelay: '1.35s' }}
-            aria-hidden="true"
           />
         </div>
 
