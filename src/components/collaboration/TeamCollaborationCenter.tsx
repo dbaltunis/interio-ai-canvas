@@ -102,7 +102,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-96 z-50 bg-gradient-to-br from-primary/95 to-secondary/95 backdrop-blur-lg shadow-2xl overflow-hidden border-l-2 border-white/20"
+              className="fixed right-0 top-0 h-full w-96 z-50 liquid-glass panel shadow-2xl overflow-hidden border-l border-border"
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
@@ -132,12 +132,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden">
                   <Tabs defaultValue="team" className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 bg-white/10 border border-white/20">
-                      <TabsTrigger value="team" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">
+                    <TabsList className="mx-4 mt-4 glass-morphism rounded-xl border">
+                      <TabsTrigger value="team" className="rounded-full text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <Users className="h-4 w-4 mr-2" />
                         Team ({totalUsers})
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">
+                      <TabsTrigger value="messages" className="rounded-full text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Messages
                         {totalUnreadCount > 0 && (
