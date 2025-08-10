@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import { ThemeProvider } from "next-themes";
+import { ThemeClassBridge } from "./components/system/ThemeClassBridge";
 
 import AcceptInvitation from "./pages/AcceptInvitation";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
@@ -40,6 +41,7 @@ const App = () => (
       <EmailRealtimeProvider>
         <TooltipProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={['light','dark','midnight','apple-graphite']} value={{ light: 'light', dark: 'dark', midnight: 'midnight', 'apple-graphite': 'apple-graphite' }}>
+            <ThemeClassBridge />
             <Toaster />
             <Sonner />
             <BrowserRouter>
