@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -94,34 +93,34 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     const customStatus = jobStatuses.find(s => s.name.toLowerCase() === status.toLowerCase());
     if (customStatus) {
       const colorMap: Record<string, string> = {
-        'gray': 'bg-muted/30 text-muted-foreground border-border',
-        'blue': 'bg-primary/10 text-primary border-primary/20', 
-        'green': 'bg-accent/10 text-accent border-accent/20',
-        'yellow': 'bg-secondary/10 text-secondary border-secondary/20',
-        'orange': 'bg-secondary/10 text-secondary border-secondary/20',
-        'red': 'bg-destructive/10 text-destructive border-destructive/20',
-        'primary': 'bg-primary/10 text-primary border-primary/20',
+        'gray': 'bg-muted/30 text-muted-foreground border border-border dark:bg-muted/40 dark:text-muted-foreground dark:border-border/60',
+        'blue': 'bg-primary/15 text-primary border border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/40', 
+        'green': 'bg-accent/15 text-accent border border-accent/30 dark:bg-accent/25 dark:text-accent dark:border-accent/40',
+        'yellow': 'bg-secondary/15 text-secondary border border-secondary/30 dark:bg-secondary/25 dark:text-secondary dark:border-secondary/40',
+        'orange': 'bg-secondary/15 text-secondary border border-secondary/30 dark:bg-secondary/25 dark:text-secondary dark:border-secondary/40',
+        'red': 'bg-destructive/15 text-destructive border border-destructive/30 dark:bg-destructive/25 dark:text-destructive dark:border-destructive/40',
+        'primary': 'bg-primary/15 text-primary border border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/40',
       };
-      return colorMap[customStatus.color] || 'bg-muted/30 text-muted-foreground border-border';
+      return colorMap[customStatus.color] || 'bg-muted/30 text-muted-foreground border border-border dark:bg-muted/40 dark:text-muted-foreground dark:border-border/60';
     }
     
-    // Fallback to default status colors
+    // Fallback to default status colors (with improved dark-mode contrast)
     switch (status) {
       case 'draft':
-        return 'bg-muted/30 text-muted-foreground';
+        return 'bg-muted/30 text-muted-foreground border border-border dark:bg-muted/40 dark:text-muted-foreground dark:border-border/60';
       case 'sent':
       case 'planning':
-        return 'bg-primary/10 text-primary';
+        return 'bg-primary/15 text-primary border border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/40';
       case 'approved':
       case 'completed':
-        return 'bg-accent/10 text-accent';
+        return 'bg-accent/15 text-accent border border-accent/30 dark:bg-accent/25 dark:text-accent dark:border-accent/40';
       case 'rejected':
       case 'cancelled':
-        return 'bg-destructive/10 text-destructive';
+        return 'bg-destructive/15 text-destructive border border-destructive/30 dark:bg-destructive/25 dark:text-destructive dark:border-destructive/40';
       case 'in_progress':
-        return 'bg-secondary/10 text-secondary';
+        return 'bg-secondary/15 text-secondary border border-secondary/30 dark:bg-secondary/25 dark:text-secondary dark:border-secondary/40';
       default:
-        return 'bg-muted/30 text-muted-foreground';
+        return 'bg-muted/30 text-muted-foreground border border-border dark:bg-muted/40 dark:text-muted-foreground dark:border-border/60';
     }
   };
 
