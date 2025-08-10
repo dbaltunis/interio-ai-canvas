@@ -170,8 +170,8 @@ export const JobsListView = ({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
-          <p className="text-red-600">Error loading jobs</p>
-          <p className="text-sm text-gray-500">Please try refreshing the page</p>
+          <p className="text-destructive">Error loading jobs</p>
+          <p className="text-sm text-muted-foreground">Please try refreshing the page</p>
         </div>
       </div>
     );
@@ -194,7 +194,7 @@ export const JobsListView = ({
 
       {/* Filters Section */}
       {showFilters && (
-        <div className="panel p-6 rounded-xl border">
+        <div className="liquid-glass p-6 rounded-xl border">
           <JobsFilters
             searchClient={searchClient}
             setSearchClient={() => {}}
@@ -219,7 +219,7 @@ export const JobsListView = ({
           <div className="space-y-4">
             <div className="text-6xl mb-4">📋</div>
             <h3 className="text-lg font-medium">No jobs found</h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               {searchTerm || searchClient || searchJobNumber ? 
                 'No jobs match your current filters.' : 
                 'Get started by creating your first job.'

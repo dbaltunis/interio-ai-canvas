@@ -94,34 +94,34 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     const customStatus = jobStatuses.find(s => s.name.toLowerCase() === status.toLowerCase());
     if (customStatus) {
       const colorMap: Record<string, string> = {
-        'gray': 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
-        'blue': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800', 
-        'green': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
-        'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
-        'orange': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800',
-        'red': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+        'gray': 'bg-muted/30 text-muted-foreground border-border',
+        'blue': 'bg-primary/10 text-primary border-primary/20', 
+        'green': 'bg-accent/10 text-accent border-accent/20',
+        'yellow': 'bg-secondary/10 text-secondary border-secondary/20',
+        'orange': 'bg-secondary/10 text-secondary border-secondary/20',
+        'red': 'bg-destructive/10 text-destructive border-destructive/20',
         'primary': 'bg-primary/10 text-primary border-primary/20',
       };
-      return colorMap[customStatus.color] || 'bg-gray-100 text-gray-800 border-border';
+      return colorMap[customStatus.color] || 'bg-muted/30 text-muted-foreground border-border';
     }
     
     // Fallback to default status colors
     switch (status) {
       case 'draft':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted/30 text-muted-foreground';
       case 'sent':
       case 'planning':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'approved':
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-accent/10 text-accent';
       case 'rejected':
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-destructive';
       case 'in_progress':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-secondary/10 text-secondary';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted/30 text-muted-foreground';
     }
   };
 
@@ -301,17 +301,17 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   if (filteredQuotes.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No jobs found matching your criteria.</p>
+        <p className="text-muted-foreground">No jobs found matching your criteria.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="rounded-lg border bg-card">
+      <div className="liquid-glass rounded-xl border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent">
+            <TableRow className="bg-muted/30 hover:bg-transparent">
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Job Number</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Emails</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Client</TableHead>
@@ -402,7 +402,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           );
                         })()}
                       </Avatar>
-                      <span className="text-sm text-gray-600 truncate">{ownerInfo.firstName}</span>
+                      <span className="text-sm text-muted-foreground truncate">{ownerInfo.firstName}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -416,7 +416,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
+                        <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
                           <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Job
