@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, AlertTriangle, TrendingUp, Package } from "lucide-react";
 import { useInventory, useLowStockItems } from "@/hooks/useInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { InventoryImportDialog } from "./InventoryImportDialog";
 
 export const InventoryManagement = () => {
   // Permission checks
@@ -52,10 +53,13 @@ export const InventoryManagement = () => {
           </p>
         </div>
         {canManageInventory && (
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
-          </Button>
+          <div className="flex items-center gap-2">
+            <InventoryImportDialog />
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Item
+            </Button>
+          </div>
         )}
       </div>
 

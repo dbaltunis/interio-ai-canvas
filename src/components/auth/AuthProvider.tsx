@@ -53,8 +53,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setTimeout(() => {
             try {
               if (session?.user?.id) {
-                // 1) Ensure the user is linked to the account (seeds defaults if missing)
-                linkUserToAccount(session.user.id).catch(() => {});
+                const userId = session.user.id;
+                // 1) Only link if parent_account_id is missing
+                (async () => {
+                  try {
+                    const { data: profile } = await supabase
+                      .from('user_profiles')
+                      .select('parent_account_id')
+                      .eq('user_id', userId)
+                      .maybeSingle();
+
+                    if (!profile || !profile.parent_account_id) {
+                      await linkUserToAccount(userId).catch(() => {});
+                    }
+                  } catch (e) {
+                    console.warn('[AuthProvider] profile check failed:', e);
+                  }
+                })();
 
                 // 2) Auto-accept any pending invitation for this email (seeds role-based permissions)
                 const email = session.user.email;
@@ -74,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                         if (token) {
                           const { error: acceptError } = await supabase.rpc('accept_user_invitation', {
                             invitation_token_param: token,
-                            user_id_param: session.user.id,
+                            user_id_param: userId,
                           });
                           if (acceptError) {
                             console.warn('[AuthProvider] Auto-accept invitation failed:', acceptError);
