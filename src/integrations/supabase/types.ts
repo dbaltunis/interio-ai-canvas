@@ -3318,6 +3318,22 @@ export type Database = {
           status: string
         }[]
       }
+      get_public_scheduler: {
+        Args: { slug_param: string }
+        Returns: {
+          id: string
+          slug: string
+          name: string
+          description: string
+          duration: number
+          buffer_time: number
+          max_advance_booking: number
+          min_advance_notice: number
+          image_url: string
+          availability: Json
+          locations: Json
+        }[]
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: string

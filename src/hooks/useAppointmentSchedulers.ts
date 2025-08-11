@@ -38,19 +38,30 @@ export const useAppointmentSchedulers = () => {
   });
 };
 
+export interface PublicScheduler {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  duration: number;
+  buffer_time: number;
+  max_advance_booking: number;
+  min_advance_notice: number;
+  image_url?: string;
+  availability: any;
+  locations: any;
+}
+
 export const usePublicScheduler = (slug: string) => {
   return useQuery({
     queryKey: ["public-scheduler", slug],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointment_schedulers")
-        .select("*")
-        .eq("slug", slug)
-        .eq("active", true)
-        .maybeSingle();
+        .rpc("get_public_scheduler", { slug_param: slug });
 
       if (error) throw error;
-      return data as AppointmentScheduler;
+      const scheduler = Array.isArray(data) ? data[0] : data;
+      return (scheduler || null) as PublicScheduler | null;
     },
     enabled: !!slug,
   });
