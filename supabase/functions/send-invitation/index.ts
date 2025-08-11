@@ -32,6 +32,13 @@ serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173'
     const invitationLink = `${siteUrl}/auth?invitation=${invitationToken}`
 
+    // Brand settings (customize via Function secrets)
+    const brandName = Deno.env.get('BRAND_NAME') || 'InterioApp';
+    const primaryColor = Deno.env.get('BRAND_PRIMARY_COLOR') || '#0ea5e9'; // sky-500
+    const secondaryColor = Deno.env.get('BRAND_SECONDARY_COLOR') || '#22c55e'; // green-500
+    const logoUrl = Deno.env.get('BRAND_LOGO_URL') || `${siteUrl}/favicon.ico`;
+    const gradient = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+
     // Email content
     const emailContent = `
       <!DOCTYPE html>
@@ -39,48 +46,58 @@ serve(async (req) => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Team Invitation</title>
+        <title>${brandName} – Team Invitation</title>
+        <meta name="color-scheme" content="light only">
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">You're Invited!</h1>
+      <body style="margin:0; padding:0; background:#f6f7f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; color:#111827;">
+        <div style="display:none; max-height:0; overflow:hidden;">
+          You're invited to join ${brandName}. Accept to get started.
         </div>
-        
-        <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
-          <h2 style="color: #495057; margin-top: 0;">Join our team</h2>
-          
-          <p style="font-size: 16px; margin: 20px 0;">
-            Hi ${invitedName || invitedEmail},
-          </p>
-          
-          <p style="font-size: 16px; margin: 20px 0;">
-            <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their team as a <strong>${role}</strong>.
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${invitationLink}" 
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                      color: white; 
-                      padding: 15px 30px; 
-                      text-decoration: none; 
-                      border-radius: 5px; 
-                      font-weight: bold; 
-                      display: inline-block;">
-              Accept Invitation
-            </a>
-          </div>
-          
-          <p style="font-size: 14px; color: #6c757d; margin: 20px 0;">
-            If the button doesn't work, copy and paste this link into your browser:
-          </p>
-          <p style="font-size: 14px; color: #6c757d; word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 3px;">
-            ${invitationLink}
-          </p>
-          
-          <p style="font-size: 14px; color: #6c757d; margin: 30px 0 0 0;">
-            This invitation will expire in 7 days. If you have any questions, please contact ${inviterEmail}.
-          </p>
-        </div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7f9; padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.06); overflow:hidden;">
+                <tr>
+                  <td style="padding:28px 24px; background:${gradient};">
+                    <table width="100%" role="presentation">
+                      <tr>
+                        <td align="left" style="vertical-align:middle;">
+                          <img src="${logoUrl}" alt="${brandName} logo" style="height:40px; width:auto; display:block; border:0; outline:none; text-decoration:none;" />
+                        </td>
+                        <td align="right" style="vertical-align:middle;">
+                          <span style="color:#ffffff; font-weight:600; font-size:14px; letter-spacing:0.4px; text-transform:uppercase;">Invitation</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <h1 style="margin:20px 0 0; color:#ffffff; font-size:28px; line-height:1.2;">You're invited to ${brandName}</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 24px;">
+                    <p style="margin:0 0 12px; font-size:16px; color:#374151;">Hi ${invitedName || invitedEmail},</p>
+                    <p style="margin:0 0 12px; font-size:16px; color:#374151;">
+                      <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their team as a <strong>${role}</strong>.
+                    </p>
+                    <div style="text-align:center; margin:28px 0;">
+                      <a href="${invitationLink}"
+                         style="background:${primaryColor}; color:#ffffff; padding:14px 22px; border-radius:10px; text-decoration:none; font-weight:600; display:inline-block; box-shadow:0 10px 20px rgba(14,165,233,0.24);">
+                        Accept invitation
+                      </a>
+                    </div>
+                    <p style="margin:0 0 8px; font-size:14px; color:#6b7280;">Or copy and paste this URL into your browser:</p>
+                    <p style="margin:0; font-size:13px; color:#6b7280; background:#f3f4f6; padding:10px; border-radius:8px; word-break:break-all;">${invitationLink}</p>
+                    <p style="margin:16px 0 0; font-size:12px; color:#9ca3af;">This invitation expires in 7 days. If you have questions, contact ${inviterEmail}.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background:#f9fafb; padding:20px 24px; text-align:center; font-size:12px; color:#6b7280;">
+                    © ${new Date().getFullYear()} ${brandName}. All rights reserved.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `

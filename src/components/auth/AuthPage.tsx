@@ -120,31 +120,10 @@ export const AuthPage = () => {
             variant: "destructive"
           });
         } else if (signUpData?.user) {
-          // Call the database function to handle invitation acceptance
-          const { data: acceptResult, error: acceptError } = await supabase
-            .rpc('accept_user_invitation', {
-              invitation_token_param: invitationToken,
-              user_id_param: signUpData.user.id
-            });
-
-          if (acceptError || !(acceptResult as any)?.success) {
-            console.error('[AuthPage] accept_user_invitation error/result:', acceptError, acceptResult);
-            toast({
-              title: "Error",
-              description: acceptError?.message || (acceptResult as any)?.error || "Failed to accept invitation",
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "Success",
-              description: `Welcome to the team! You've been assigned the ${(acceptResult as any).role} role. Please check your email to confirm your account.`,
-            });
-            
-            // Redirect to main app after successful signup with invitation
-            setTimeout(() => {
-              navigate('/');
-            }, 2000);
-          }
+          toast({
+            title: "Almost there",
+            description: "Please check your email to confirm your account and complete the invitation. After confirming, you'll be redirected automatically.",
+          });
         }
       } else {
         // Handle regular login/signup
