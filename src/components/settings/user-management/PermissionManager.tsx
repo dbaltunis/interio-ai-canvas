@@ -18,6 +18,7 @@ import { BulkPermissionManager } from "./BulkPermissionManager";
 import { PermissionTemplates } from "./PermissionTemplates";
 import { PermissionComparison } from "./PermissionComparison";
 import { RealtimePermissionUpdates } from "./RealtimePermissionUpdates";
+import { linkUserToAccount } from "@/hooks/useAccountLinking";
 
 const ROLE_PERMISSIONS = {
   Owner: [
@@ -103,6 +104,20 @@ export const PermissionManager = () => {
 
   const selectedUser = users.find(user => user.id === selectedUserId);
   
+  // Ensure user is linked when selected so RLS and visibility work as expected
+  useEffect(() => {
+    const link = async () => {
+      if (selectedUserId) {
+        try {
+          await linkUserToAccount(selectedUserId);
+        } catch (e) {
+          console.warn("Failed to link selected user:", selectedUserId, e);
+        }
+      }
+    };
+    link();
+  }, [selectedUserId]);
+
   // Initialize custom permissions when user is selected
   useEffect(() => {
     if (selectedUser) {
@@ -146,14 +161,27 @@ export const PermissionManager = () => {
     setHasChanges(true);
   };
 
-  const handleSaveCustomPermissions = () => {
+  const handleSaveCustomPermissions = async () => {
     if (!selectedUser) return;
-    
-    updateCustomPermissions({
-      userId: selectedUser.id,
-      permissions: customPermissions
-    });
-    setHasChanges(false);
+
+    try {
+      // Link first to ensure permissions are scoped to the account and seeded if needed
+      await linkUserToAccount(selectedUser.id);
+
+      updateCustomPermissions({
+        userId: selectedUser.id,
+        permissions: customPermissions
+      });
+
+      setHasChanges(false);
+    } catch (e) {
+      console.error("Failed to save permissions:", e);
+      toast({
+        title: "Error",
+        description: "Could not link user to account to save permissions.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleResetToRole = () => {

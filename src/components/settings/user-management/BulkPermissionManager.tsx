@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useUsers } from "@/hooks/useUsers";
 import { useUpdateCustomPermissions } from "@/hooks/useCustomPermissions";
@@ -8,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Save, RotateCcw } from "lucide-react";
+import { linkUserToAccount } from "@/hooks/useAccountLinking";
 
 const PERMISSION_GROUPS = {
   basic: {
@@ -72,6 +74,15 @@ export const BulkPermissionManager = () => {
     }
 
     try {
+      // Ensure each user is linked to account (and seeded) before applying custom permissions
+      for (const userId of selectedUsers) {
+        try {
+          await linkUserToAccount(userId);
+        } catch (e) {
+          console.warn("Failed to link user prior to applying permissions:", userId, e);
+        }
+      }
+
       // Apply permissions to each selected user
       for (const userId of selectedUsers) {
         await new Promise((resolve, reject) => {

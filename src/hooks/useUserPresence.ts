@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,18 +96,26 @@ export const useUserPresence = () => {
         }
       }, 30000);
 
-      // Set user offline when page unloads
-      const handleBeforeUnload = () => {
-        if (user) {
-          // Use sendBeacon for reliable offline marking during page unload
-          navigator.sendBeacon('/api/mark-offline', JSON.stringify({ user_id: user.id }));
+      // Handle tab visibility changes to set online/offline more reliably
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          updatePresenceMutation.mutate({ status: 'offline' });
+        } else {
+          updatePresenceMutation.mutate({ status: 'online' });
         }
       };
 
+      document.addEventListener('visibilitychange', onVisibilityChange);
+
+      // Attempt to mark user offline before unload (may not always complete)
+      const handleBeforeUnload = () => {
+        updatePresenceMutation.mutate({ status: 'offline' });
+      };
       window.addEventListener('beforeunload', handleBeforeUnload);
       
       return () => {
         clearInterval(activityInterval);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         updatePresenceMutation.mutate({ status: 'offline' });
       };
@@ -125,7 +134,7 @@ export const useUserPresence = () => {
         activity: getActivityFromPath(path)
       });
     }
-  }, [window.location.pathname, user]);
+  }, [user, currentPage]);
 
   // Set up real-time subscriptions
   useEffect(() => {

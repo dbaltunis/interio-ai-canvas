@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -22,7 +23,7 @@ export interface Conversation {
   user_profile: {
     display_name: string;
     avatar_url?: string;
-    status: string;
+    status: string; // online | away | busy | offline | never_logged_in
   };
   last_message?: DirectMessage;
   unread_count: number;
@@ -33,82 +34,102 @@ export const useDirectMessages = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [localMessages, setLocalMessages] = useState<DirectMessage[]>([]);
 
-  // Get all conversations for current user
+  // Conversations: use presence view for consistent status
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
     queryKey: ['conversations', user?.id],
     queryFn: async (): Promise<Conversation[]> => {
       if (!user) return [];
 
-      // This is a simplified query - you'd need to create a more complex query
-      // to get actual message data. For now, we'll get user profiles
-      const { data: profiles, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          user_id,
-          display_name,
-          avatar_url,
-          status
-        `)
-        .neq('user_id', user.id)
-        .eq('is_active', true);
+      // Get visible team (presence-enabled) - RLS ensures same account access
+      const { data: presenceRows, error: presenceError } = await supabase
+        .from('user_presence_view')
+        .select('user_id, display_name, avatar_url, role, status, last_seen')
+        .neq('user_id', user.id);
 
-      if (error) throw error;
+      if (presenceError) throw presenceError;
 
-      return profiles.map(profile => ({
-        user_id: profile.user_id,
-        user_profile: {
-          display_name: profile.display_name || 'Unknown User',
-          avatar_url: profile.avatar_url,
-          status: profile.status || 'offline'
-        },
-        unread_count: 0 // TODO: Calculate actual unread count
-      }));
+      // Build conversations with unread counts (simple per-user count)
+      const results: Conversation[] = [];
+
+      for (const row of presenceRows || []) {
+        // Count unread
+        const { count, error: countError } = await supabase
+          .from('direct_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('recipient_id', user.id)
+          .eq('sender_id', row.user_id)
+          .is('read_at', null);
+
+        if (countError) {
+          console.warn('Unread count error:', countError);
+        }
+
+        // Optionally fetch last message between the two users (lightweight)
+        const { data: lastMsgs, error: lastError } = await supabase
+          .from('direct_messages')
+          .select('*')
+          .or(`and(sender_id.eq.${user.id},recipient_id.eq.${row.user_id}),and(sender_id.eq.${row.user_id},recipient_id.eq.${user.id})`)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (lastError) {
+          console.warn('Last message fetch error:', lastError);
+        }
+
+        results.push({
+          user_id: row.user_id,
+          user_profile: {
+            display_name: row.display_name || 'Unknown User',
+            avatar_url: row.avatar_url || undefined,
+            status: (row.status as string) || 'offline',
+          },
+          last_message: lastMsgs?.[0] as DirectMessage | undefined,
+          unread_count: count || 0,
+        });
+      }
+
+      return results;
     },
     enabled: !!user,
   });
 
-  // Get messages for active conversation (using local messages for now)
+  // Fetch messages for active conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', activeConversation, user?.id],
     queryFn: async (): Promise<DirectMessage[]> => {
       if (!user || !activeConversation) return [];
 
-      // Filter local messages for the active conversation
-      return localMessages.filter(msg => 
-        (msg.sender_id === user.id && msg.recipient_id === activeConversation) ||
-        (msg.sender_id === activeConversation && msg.recipient_id === user.id)
-      );
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${activeConversation}),and(sender_id.eq.${activeConversation},recipient_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as DirectMessage[];
     },
     enabled: !!user && !!activeConversation,
   });
 
-  // Send message mutation
+  // Send message using DB table
   const sendMessageMutation = useMutation({
     mutationFn: async ({ recipientId, content }: { recipientId: string; content: string }) => {
       if (!user) throw new Error('Not authenticated');
+      if (!content?.trim()) throw new Error('Message cannot be empty');
 
-      // Create a new local message
-      const newMessage: DirectMessage = {
-        id: `temp-${Date.now()}-${Math.random()}`,
-        sender_id: user.id,
-        recipient_id: recipientId,
-        content,
-        created_at: new Date().toISOString(),
-        sender_profile: {
-          display_name: user.email || 'You',
-          avatar_url: undefined
-        }
-      };
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: recipientId,
+          content: content.trim(),
+        })
+        .select()
+        .single();
 
-      // Add to local messages immediately
-      setLocalMessages(prev => [...prev, newMessage]);
-      
-      // TODO: Send to actual database when table exists
-      console.log('Would send message to database:', newMessage);
-      
-      return newMessage;
+      if (error) throw error;
+      return data as DirectMessage;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -123,34 +144,60 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Mark messages as read
+  // Mark messages as read for a specific conversation
   const markAsReadMutation = useMutation({
     mutationFn: async (conversationUserId: string) => {
       if (!user) return;
-      
-      // TODO: Implement marking messages as read
-      console.log('Would mark messages as read for conversation with', conversationUserId);
+
+      const { error } = await supabase
+        .from('direct_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('recipient_id', user.id)
+        .eq('sender_id', conversationUserId)
+        .is('read_at', null);
+
+      if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     }
   });
 
-  // Set up real-time subscriptions for new messages
+  // Realtime subscription for direct messages
   useEffect(() => {
     if (!user) return;
 
-    // Create unique channel name to avoid conflicts
-    const channelName = `messages-${user.id}-${Date.now()}`;
-    
-    console.log('Setting up message subscription for user', user.id);
-    
-    // TODO: Set up real-time subscription for messages table when it exists
-    // For now, just log that we would set it up
-    
+    const channel = supabase
+      .channel(`direct-messages-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['messages'] });
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `sender_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['messages'] });
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['messages'] });
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      )
+      .subscribe();
+
     return () => {
-      // Cleanup subscription when implemented
-      console.log('Cleaning up message subscription');
+      supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
 
@@ -160,6 +207,7 @@ export const useDirectMessages = () => {
 
   const openConversation = (userId: string) => {
     setActiveConversation(userId);
+    // mark unread as read
     markAsReadMutation.mutate(userId);
   };
 
@@ -167,9 +215,9 @@ export const useDirectMessages = () => {
     setActiveConversation(null);
   };
 
-  const getTotalUnreadCount = () => {
-    return conversations.reduce((total, conv) => total + conv.unread_count, 0);
-  };
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((total, conv) => total + (conv.unread_count || 0), 0);
+  }, [conversations]);
 
   return {
     conversations,
@@ -181,6 +229,6 @@ export const useDirectMessages = () => {
     openConversation,
     closeConversation,
     sendingMessage: sendMessageMutation.isPending,
-    totalUnreadCount: getTotalUnreadCount()
+    totalUnreadCount
   };
 };
