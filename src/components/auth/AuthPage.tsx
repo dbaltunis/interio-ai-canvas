@@ -125,25 +125,34 @@ export const AuthPage = () => {
             description: "Please check your email to confirm your account and complete the invitation. After confirming, you'll be redirected automatically.",
           });
         }
-      } else {
-        // Handle regular login/signup
-        const { error } = isSignUp 
-          ? await signUp(email, password)
-          : await signIn(email, password);
+        } else {
+          // Handle regular login/signup
+          const { error } = isSignUp 
+            ? await signUp(email, password)
+            : await signIn(email, password);
 
-        if (error) {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive"
-          });
-        } else if (isSignUp) {
-          toast({
-            title: "Success",
-            description: "Check your email to confirm your account"
-          });
+          if (error) {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive"
+            });
+          } else {
+            if (isSignUp) {
+              toast({
+                title: "Success",
+                description: "Check your email to confirm your account"
+              });
+            } else {
+              // Successful sign-in: navigate to the app immediately
+              try {
+                navigate('/');
+              } catch {
+                window.location.href = '/';
+              }
+            }
+          }
         }
-      }
     } catch (err) {
       console.error('[AuthPage] unexpected error:', err);
       toast({
@@ -343,23 +352,30 @@ export const AuthPage = () => {
                         )}
                       </div>
                       {(isSignUp && invitation) && (
-                      <div className="relative">
-                        <Input
-                          type={showConfirm ? 'text' : 'password'}
-                          placeholder="Confirm Password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                        />
-                        <button
-                          type="button"
-                          aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowConfirm((v) => !v)}
-                        >
-                          {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
+                        <>
+                          <div className="relative">
+                            <Input
+                              type={showConfirm ? 'text' : 'password'}
+                              placeholder="Confirm Password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              required
+                            />
+                            <button
+                              type="button"
+                              aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowConfirm((v) => !v)}
+                            >
+                              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          {confirmPassword.length > 0 && (
+                            <p className={`text-xs mt-1 ${password === confirmPassword ? 'text-muted-foreground' : 'text-destructive'}`}>
+                              {password === confirmPassword ? 'Passwords match' : 'Passwords do not match'}
+                            </p>
+                          )}
+                        </>
                       )}
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Loading...' : (
