@@ -43,9 +43,7 @@ export const useDirectMessages = () => {
 
       // Get visible team (presence-enabled) - RLS ensures same account access
       const { data: presenceRows, error: presenceError } = await supabase
-        .from('user_presence_view')
-        .select('user_id, display_name, avatar_url, role, status, last_seen')
-        .neq('user_id', user.id);
+        .rpc('get_team_presence', { search_param: null });
 
       if (presenceError) throw presenceError;
 
@@ -81,7 +79,7 @@ export const useDirectMessages = () => {
           user_id: row.user_id,
           user_profile: {
             display_name: row.display_name || 'Unknown User',
-            avatar_url: row.avatar_url || undefined,
+            avatar_url: undefined,
             status: (row.status as string) || 'offline',
           },
           last_message: lastMsgs?.[0] as DirectMessage | undefined,

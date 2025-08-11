@@ -27,8 +27,7 @@ export const useUserPresence = () => {
     queryKey: ['user-presence'],
     queryFn: async (): Promise<UserPresence[]> => {
       const { data, error } = await supabase
-        .from('user_presence_view')
-        .select('*');
+        .rpc('get_team_presence', { search_param: null });
 
       if (error) throw error;
 
@@ -38,10 +37,10 @@ export const useUserPresence = () => {
         last_seen: profile.last_seen,
         user_profile: {
           display_name: profile.display_name || 'Unknown User',
-          avatar_url: profile.avatar_url,
+          avatar_url: undefined,
           role: profile.role
         },
-        current_activity: profile.status_message
+        current_activity: undefined
       }));
     },
     refetchInterval: 30000, // Refresh every 30 seconds

@@ -3242,39 +3242,27 @@ export type Database = {
     Views: {
       user_presence_view: {
         Row: {
-          avatar_url: string | null
           display_name: string | null
-          has_logged_in: boolean | null
           is_online: boolean | null
           last_seen: string | null
           role: string | null
           status: string | null
-          status_message: string | null
-          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          display_name?: string | null
-          has_logged_in?: boolean | null
-          is_online?: boolean | null
+          display_name?: never
+          is_online?: never
           last_seen?: string | null
-          role?: string | null
+          role?: never
           status?: never
-          status_message?: string | null
-          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          display_name?: string | null
-          has_logged_in?: boolean | null
-          is_online?: boolean | null
+          display_name?: never
+          is_online?: never
           last_seen?: string | null
-          role?: string | null
+          role?: never
           status?: never
-          status_message?: string | null
-          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -3332,6 +3320,17 @@ export type Database = {
           image_url: string
           availability: Json
           locations: Json
+        }[]
+      }
+      get_team_presence: {
+        Args: { search_param?: string }
+        Returns: {
+          user_id: string
+          display_name: string
+          role: string
+          last_seen: string
+          is_online: boolean
+          status: string
         }[]
       }
       get_user_email: {

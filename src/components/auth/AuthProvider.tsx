@@ -50,11 +50,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               setTheme('light');
             }
           } catch {}
-          // Defer navigation and account linking to avoid callback deadlocks
           setTimeout(() => {
             try {
               if (session?.user?.id) {
+                // 1) Ensure the user is linked to the account (seeds defaults if missing)
                 linkUserToAccount(session.user.id).catch(() => {});
+
+                // 2) Auto-accept any pending invitation for this email (seeds role-based permissions)
+                const email = session.user.email;
+                if (email) {
+                  (async () => {
+                    try {
+                      const { data: invites, error: invErr } = await supabase
+                        .from('user_invitations')
+                        .select('invitation_token, invited_email, status, expires_at')
+                        .eq('invited_email', email)
+                        .eq('status', 'pending')
+                        .gt('expires_at', new Date().toISOString())
+                        .limit(1);
+
+                      if (!invErr && invites && invites.length > 0) {
+                        const token = invites[0].invitation_token;
+                        if (token) {
+                          const { error: acceptError } = await supabase.rpc('accept_user_invitation', {
+                            invitation_token_param: token,
+                            user_id_param: session.user.id,
+                          });
+                          if (acceptError) {
+                            console.warn('[AuthProvider] Auto-accept invitation failed:', acceptError);
+                          } else {
+                            console.log('[AuthProvider] Auto-accepted pending invitation for', email);
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      console.warn('[AuthProvider] Invitation auto-accept check error:', e);
+                    }
+                  })();
+                }
               }
               navigate('/');
             } catch {
