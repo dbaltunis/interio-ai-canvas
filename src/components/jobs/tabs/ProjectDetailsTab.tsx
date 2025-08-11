@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, User, Edit, Save, X, Search } from "lucide-react";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
+import { ProjectNotesCard } from "../ProjectNotesCard";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -381,6 +382,9 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
           </div>
         </CardContent>
       </Card>
+
+      {/* Project Notes */}
+      <ProjectNotesCard projectId={project.id} />
 
       {/* Products to Order Section */}
       <ProductsToOrderSection 
