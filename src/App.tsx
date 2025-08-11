@@ -41,7 +41,7 @@ const queryClient = new QueryClient({
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      
+      <EmailRealtimeProvider>
         <TooltipProvider>
           {/* Ensure custom themes also apply the dark class */}
           <ThemeProvider
@@ -61,57 +61,55 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
             <AuthProvider>
-              <EmailRealtimeProvider>
-                <Routes>
-                  {/* Public booking routes */}
-                  <Route path="/book/:slug" element={
+              <Routes>
+                {/* Public booking routes */}
+                <Route path="/book/:slug" element={
+                  <ErrorBoundary>
+                    <PublicBookingPage />
+                  </ErrorBoundary>
+                } />
+                
+                {/* Invitation acceptance route */}
+                <Route path="/accept-invitation" element={
+                  <ErrorBoundary>
+                    <AcceptInvitation />
+                  </ErrorBoundary>
+                } />
+                
+                {/* Authentication route */}
+                <Route path="/auth" element={
+                  <ErrorBoundary>
+                    <AuthPage />
+                  </ErrorBoundary>
+                } />
+                
+                {/* Settings page - requires authentication */}
+                <Route path="/settings" element={
+                  <ProtectedRoute>
                     <ErrorBoundary>
-                      <PublicBookingPage />
+                      <Settings />
                     </ErrorBoundary>
-                  } />
-                  
-                  {/* Invitation acceptance route */}
-                  <Route path="/accept-invitation" element={
+                  </ProtectedRoute>
+                } />
+                
+                
+                {/* Main application - all functionality handled through tabs */}
+                <Route path="/" element={
+                  <ProtectedRoute>
                     <ErrorBoundary>
-                      <AcceptInvitation />
+                      <Index />
                     </ErrorBoundary>
-                  } />
-                  
-                  {/* Authentication route */}
-                  <Route path="/auth" element={
-                    <ErrorBoundary>
-                      <AuthPage />
-                    </ErrorBoundary>
-                  } />
-                  
-                  {/* Settings page - requires authentication */}
-                  <Route path="/settings" element={
-                    <ProtectedRoute>
-                      <ErrorBoundary>
-                        <Settings />
-                      </ErrorBoundary>
-                    </ProtectedRoute>
-                  } />
-                  
-                  
-                  {/* Main application - all functionality handled through tabs */}
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <ErrorBoundary>
-                        <Index />
-                      </ErrorBoundary>
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Catch all other routes */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </EmailRealtimeProvider>
+                  </ProtectedRoute>
+                } />
+                
+                {/* Catch all other routes */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </AuthProvider>
           </BrowserRouter>
           </ThemeProvider>
         </TooltipProvider>
-      
+      </EmailRealtimeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

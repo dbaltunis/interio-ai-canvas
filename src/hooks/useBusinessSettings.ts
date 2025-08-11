@@ -45,18 +45,10 @@ export const useBusinessSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Resolve account owner so child users read parent settings
-      const { data: ownerIdData, error: ownerErr } = await supabase
-        .rpc('get_account_owner', { user_id_param: user.id });
-      if (ownerErr) {
-        console.warn('get_account_owner RPC failed, falling back to current user:', ownerErr);
-      }
-      const ownerId = (ownerIdData as string) || user.id;
-
       const { data, error } = await supabase
         .from('business_settings')
         .select('*')
-        .eq('user_id', ownerId)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) {

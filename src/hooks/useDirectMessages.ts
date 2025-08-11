@@ -49,22 +49,21 @@ export const useDirectMessages = () => {
           user_id,
           display_name,
           avatar_url,
-          is_online,
-          role
+          status
         `)
         .neq('user_id', user.id)
         .eq('is_active', true);
 
       if (error) throw error;
 
-      return profiles.map((profile: any) => ({
+      return profiles.map(profile => ({
         user_id: profile.user_id,
         user_profile: {
           display_name: profile.display_name || 'Unknown User',
           avatar_url: profile.avatar_url,
-          status: profile.is_online ? 'online' : 'offline'
+          status: profile.status || 'offline'
         },
-        unread_count: 0
+        unread_count: 0 // TODO: Calculate actual unread count
       }));
     },
     enabled: !!user,
@@ -76,17 +75,11 @@ export const useDirectMessages = () => {
     queryFn: async (): Promise<DirectMessage[]> => {
       if (!user || !activeConversation) return [];
 
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(
-          `and(sender_id.eq.${user.id},recipient_id.eq.${activeConversation}),` +
-          `and(sender_id.eq.${activeConversation},recipient_id.eq.${user.id})`
-        )
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      // Filter local messages for the active conversation
+      return localMessages.filter(msg => 
+        (msg.sender_id === user.id && msg.recipient_id === activeConversation) ||
+        (msg.sender_id === activeConversation && msg.recipient_id === user.id)
+      );
     },
     enabled: !!user && !!activeConversation,
   });
@@ -96,14 +89,26 @@ export const useDirectMessages = () => {
     mutationFn: async ({ recipientId, content }: { recipientId: string; content: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .insert({ sender_id: user.id, recipient_id: recipientId, content })
-        .select()
-        .single();
+      // Create a new local message
+      const newMessage: DirectMessage = {
+        id: `temp-${Date.now()}-${Math.random()}`,
+        sender_id: user.id,
+        recipient_id: recipientId,
+        content,
+        created_at: new Date().toISOString(),
+        sender_profile: {
+          display_name: user.email || 'You',
+          avatar_url: undefined
+        }
+      };
 
-      if (error) throw error;
-      return data as DirectMessage;
+      // Add to local messages immediately
+      setLocalMessages(prev => [...prev, newMessage]);
+      
+      // TODO: Send to actual database when table exists
+      console.log('Would send message to database:', newMessage);
+      
+      return newMessage;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -122,40 +127,29 @@ export const useDirectMessages = () => {
   const markAsReadMutation = useMutation({
     mutationFn: async (conversationUserId: string) => {
       if (!user) return;
-      const { error } = await supabase
-        .from('direct_messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('sender_id', conversationUserId)
-        .eq('recipient_id', user.id)
-        .is('read_at', null);
-      if (error) throw error;
+      
+      // TODO: Implement marking messages as read
+      console.log('Would mark messages as read for conversation with', conversationUserId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
     }
   });
 
+  // Set up real-time subscriptions for new messages
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel(`dm-${user.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'direct_messages',
-        filter: `recipient_id=eq.${user.id}`
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['messages'] });
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      })
-      .subscribe();
-
+    // Create unique channel name to avoid conflicts
+    const channelName = `messages-${user.id}-${Date.now()}`;
+    
     console.log('Setting up message subscription for user', user.id);
-
+    
+    // TODO: Set up real-time subscription for messages table when it exists
+    // For now, just log that we would set it up
+    
     return () => {
-      supabase.removeChannel(channel);
+      // Cleanup subscription when implemented
       console.log('Cleaning up message subscription');
     };
   }, [user, queryClient]);
