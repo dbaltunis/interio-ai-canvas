@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Mail } from 'lucide-react';
+import { UserPlus, Mail, Eye, EyeOff } from 'lucide-react';
 
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +22,8 @@ export const AuthPage = () => {
   const [loadingInvitation, setLoadingInvitation] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -333,13 +335,23 @@ export const AuthPage = () => {
                           required
                         />
                       </div>
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        <button
+                          type="button"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowPassword((v) => !v)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                       <div className="text-right -mt-2">
                         {!invitation && (
                           <button
@@ -352,13 +364,23 @@ export const AuthPage = () => {
                         )}
                       </div>
                       {(isSignUp && invitation) && (
+                      <div className="relative">
                         <Input
-                          type="password"
+                          type={showConfirm ? 'text' : 'password'}
                           placeholder="Confirm Password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
                         />
+                        <button
+                          type="button"
+                          aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowConfirm((v) => !v)}
+                        >
+                          {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                       )}
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Loading...' : (

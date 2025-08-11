@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
+import { linkUserToAccount } from '@/hooks/useAccountLinking';
 
 interface AuthContextType {
   user: User | null;
@@ -49,6 +50,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               setTheme('light');
             }
           } catch {}
+          // Defer navigation and account linking to avoid callback deadlocks
+          setTimeout(() => {
+            try {
+              if (session?.user?.id) {
+                linkUserToAccount(session.user.id).catch(() => {});
+              }
+              navigate('/');
+            } catch {
+              window.location.href = '/';
+            }
+          }, 0);
         }
 
         if (event === 'PASSWORD_RECOVERY') {
@@ -97,8 +109,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    // Use the custom domain for email redirects
-    const redirectUrl = 'https://appinterio.app/';
+    // Use current origin for email redirects to work across environments
+    const redirectUrl = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
