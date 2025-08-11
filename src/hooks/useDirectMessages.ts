@@ -49,21 +49,22 @@ export const useDirectMessages = () => {
           user_id,
           display_name,
           avatar_url,
-          status
+          is_online,
+          role
         `)
         .neq('user_id', user.id)
         .eq('is_active', true);
 
       if (error) throw error;
 
-      return profiles.map(profile => ({
+      return profiles.map((profile: any) => ({
         user_id: profile.user_id,
         user_profile: {
           display_name: profile.display_name || 'Unknown User',
           avatar_url: profile.avatar_url,
-          status: profile.status || 'offline'
+          status: profile.is_online ? 'online' : 'offline'
         },
-        unread_count: 0 // TODO: Calculate actual unread count
+        unread_count: 0
       }));
     },
     enabled: !!user,
