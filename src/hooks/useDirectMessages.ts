@@ -168,8 +168,9 @@ export const useDirectMessages = () => {
   useEffect(() => {
     if (!user) return;
 
+    const channelName = `direct-messages-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const channel = supabase
-      .channel(`direct-messages-${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
