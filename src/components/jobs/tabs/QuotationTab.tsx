@@ -19,6 +19,7 @@ import { LivePreview } from "@/components/settings/templates/visual-editor/LiveP
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
 import { formatCurrency } from "@/utils/currency";
+import { ProjectNotesCard } from "../ProjectNotesCard";
 
 interface QuotationTabProps {
   projectId: string;
@@ -348,6 +349,9 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           </CardContent>
         </Card>
       )}
+
+      {/* Project Notes */}
+      <ProjectNotesCard projectId={projectId} />
 
       {/* Items Editor (optional) */}
       {showItemsEditor && (
