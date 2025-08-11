@@ -12,8 +12,8 @@ export const EmailRealtimeProvider = ({ children }: { children: React.ReactNode 
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Use a stable channel name to avoid excessive socket churn
-    const channelName = 'emails_changes';
+    // Use a unique channel name per mount to avoid duplicate subscribe in StrictMode
+    const channelName = `emails_changes-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     
     const subscription = supabase
       .channel(channelName)

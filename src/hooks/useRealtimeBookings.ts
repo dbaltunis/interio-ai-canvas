@@ -11,9 +11,9 @@ export const useRealtimeBookings = () => {
   useEffect(() => {
     console.log('Setting up realtime listeners for bookings...');
     
-    // Listen for new bookings
+    const bookingsChannelName = `booking-updates-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const bookingsChannel = supabase
-      .channel('booking-updates')
+      .channel(bookingsChannelName)
       .on(
         'postgres_changes',
         {
@@ -65,9 +65,9 @@ export const useRealtimeBookings = () => {
       )
       .subscribe();
 
-    // Listen for scheduler changes
+    const schedulersChannelName = `scheduler-updates-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const schedulersChannel = supabase
-      .channel('scheduler-updates')
+      .channel(schedulersChannelName)
       .on(
         'postgres_changes',
         {

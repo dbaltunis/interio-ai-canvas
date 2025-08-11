@@ -44,8 +44,9 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
 
   // Set up real-time subscriptions for email updates
   useEffect(() => {
+    const channelName = `email-updates-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const emailChannel = supabase
-      .channel('email-updates')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

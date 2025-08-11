@@ -27,8 +27,9 @@ export const RealtimePermissionUpdates = () => {
   useEffect(() => {
     if (!isEnabled) return;
 
+    const channelName = `permission-updates-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const channel = supabase
-      .channel('permission-updates')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
