@@ -1,4 +1,4 @@
-import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useHasAnyPermission, useHasAllPermissions } from "@/hooks/usePermissions";
 import { ReactNode } from "react";
 
 interface PermissionGuardProps {
@@ -22,13 +22,7 @@ export const PermissionGuard = ({
     hasPermission = useHasPermission(permission);
   } else if (permissions) {
     if (requireAll) {
-      // For requireAll, check if any permission is still loading
-      const permissionChecks = permissions.map(p => useHasPermission(p));
-      if (permissionChecks.some(check => check === undefined)) {
-        hasPermission = undefined; // Still loading
-      } else {
-        hasPermission = permissionChecks.every(check => check === true);
-      }
+      hasPermission = useHasAllPermissions(permissions);
     } else {
       hasPermission = useHasAnyPermission(permissions);
     }

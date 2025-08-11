@@ -100,12 +100,16 @@ export const useHasPermission = (permission: string) => {
 
 export const useHasAnyPermission = (permissionList: string[]) => {
   const { data: permissions, isLoading } = useUserPermissions();
-  
-  // Return false only if we're done loading and don't have any permissions
-  // While loading, return undefined to prevent premature denials
   if (isLoading) return undefined;
-  
   return permissionList.some(permission => 
     permissions?.some(p => p.permission_name === permission)
   ) || false;
+};
+
+export const useHasAllPermissions = (permissionList: string[]) => {
+  const { data: permissions, isLoading } = useUserPermissions();
+  if (isLoading) return undefined;
+  return permissionList.every(permission => 
+    permissions?.some(p => p.permission_name === permission)
+  );
 };
