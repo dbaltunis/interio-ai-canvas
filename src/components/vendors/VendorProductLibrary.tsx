@@ -150,25 +150,37 @@ export const VendorProductLibrary = () => {
               case 'colour':
                 product.color = value;
                 break;
+              case 'finish':
+                product.finish = value;
+                break;
+              case 'material finish':
+              case 'hardware finish':
+              case 'hardware_finish':
+                product.hardware_finish = value;
+                break;
               case 'collection':
               case 'fabric collection':
                 product.fabric_collection = value;
                 break;
               case 'care instructions':
               case 'care':
-                product.care_instructions = value;
+                product.fabric_care_instructions = value;
                 break;
               case 'origin':
               case 'country of origin':
-                product.origin_country = value;
+                product.fabric_origin = value;
                 break;
               case 'weight':
               case 'fabric weight':
-                product.fabric_weight = parseFloat(value) || 0;
+                product.weight = parseFloat(value) || 0;
                 break;
-              case 'fire rating':
+              case 'fire rating': {
+                const l = value.toLowerCase();
+                product.is_flame_retardant = l.includes('inherently') || l.includes('fr') || l.includes('flame');
+                break;
+              }
               case 'flame retardant':
-                product.fire_rating = value;
+                product.is_flame_retardant = value.toLowerCase() === 'yes' || value.toLowerCase() === 'true';
                 break;
               case 'unit':
               case 'sold by':

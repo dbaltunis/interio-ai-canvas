@@ -104,18 +104,52 @@ export const useCreateEnhancedInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (item: any) => {
+    mutationFn: async (raw: any) => {
+      // Ensure user is authenticated and attach user_id for RLS
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+      if (authError || !userId) {
+        throw new Error('You must be logged in to add inventory items.');
+      }
+
+      // Whitelist fields to match enhanced_inventory_items schema
+      const allowedKeys = [
+        'name','description','sku','category','quantity','unit','cost_price','selling_price','unit_price','supplier','vendor_id','location','reorder_point','active',
+        'fabric_width','fabric_composition','fabric_care_instructions','fabric_origin','pattern_repeat_horizontal','pattern_repeat_vertical','fabric_grade','fabric_collection','is_flame_retardant',
+        'hardware_finish','hardware_material','hardware_dimensions','hardware_weight','hardware_mounting_type','hardware_load_capacity',
+        'price_per_yard','price_per_meter','price_per_unit','markup_percentage',
+        'width','height','depth','weight','color','finish','collection_name','image_url',
+        'labor_hours','fullness_ratio','service_rate'
+      ] as const;
+
+      const item: Record<string, any> = { user_id: userId, active: true };
+      for (const key of allowedKeys) {
+        const val = raw[key as typeof allowedKeys[number]];
+        if (val !== undefined && val !== null && val !== '') item[key] = val;
+      }
+
+      // Derive sensible defaults
+      if (item.unit_price == null) {
+        if (typeof item.selling_price === 'number' && !isNaN(item.selling_price)) item.unit_price = item.selling_price;
+        else if (typeof item.price_per_unit === 'number' && !isNaN(item.price_per_unit)) item.unit_price = item.price_per_unit;
+        else if (typeof item.cost_price === 'number' && !isNaN(item.cost_price)) item.unit_price = item.cost_price;
+        else item.unit_price = 0;
+      }
+
       const { data, error } = await supabase
-        .from("enhanced_inventory_items")
-        .insert(item)
+        .from('enhanced_inventory_items')
+        .insert([item] as any)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Surface Postgres error message to the UI
+        throw new Error(error.message);
+      }
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
       toast.success('Item created successfully');
     },
     onError: (error) => {
