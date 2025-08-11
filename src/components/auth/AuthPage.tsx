@@ -20,6 +20,8 @@ export const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [invitation, setInvitation] = useState<any>(null);
   const [loadingInvitation, setLoadingInvitation] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -250,68 +252,132 @@ export const AuthPage = () => {
                 )}
                 
                 <CardTitle className="text-2xl font-semibold">
-                  {invitation ? 'Complete Your Registration' : (isSignUp ? 'Create Account' : 'Welcome Back')}
+                  {showResetForm
+                    ? 'Reset your password'
+                    : invitation
+                      ? 'Complete Your Registration'
+                      : (isSignUp ? 'Create Account' : 'Welcome Back')}
                 </CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  {invitation 
-                    ? 'Set up your password to access your account'
-                    : (isSignUp 
-                      ? 'Start managing your window treatment business' 
-                      : 'Sign in to your InterioApp account'
-                    )
-                  }
+                  {showResetForm
+                    ? 'Enter your email to receive a password reset link'
+                    : invitation 
+                      ? 'Set up your password to access your account'
+                      : (isSignUp 
+                        ? 'Start managing your window treatment business' 
+                        : 'Sign in to your InterioApp account'
+                      )}
                 </p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={!!invitation}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                  
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  
-                  {(isSignUp && invitation) && (
-                    <Input
-                      type="password"
-                      placeholder="Confirm Password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                  )}
-                  
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Loading...' : (
-                      invitation ? 'Complete Registration' : (isSignUp ? 'Sign Up' : 'Sign In')
+                {showResetForm ? (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setResetLoading(true);
+                      try {
+                        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                          redirectTo: `${window.location.origin}/reset-password`,
+                        });
+                        if (error) {
+                          toast({ title: 'Error', description: error.message, variant: 'destructive' });
+                        } else {
+                          toast({ title: 'Email sent', description: 'Check your inbox for the reset link.' });
+                          setShowResetForm(false);
+                        }
+                      } catch (err) {
+                        console.error('[AuthPage] resetPassword error:', err);
+                        toast({ title: 'Error', description: 'Could not send reset email.', variant: 'destructive' });
+                      } finally {
+                        setResetLoading(false);
+                      }
+                    }}
+                    className="space-y-4"
+                  >
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={resetLoading}>
+                      {resetLoading ? 'Sending...' : 'Send reset link'}
+                    </Button>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowResetForm(false)}
+                        className="text-primary hover:underline"
+                      >
+                        Back to sign in
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="Email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          disabled={!!invitation}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <div className="text-right -mt-2">
+                        {!invitation && (
+                          <button
+                            type="button"
+                            onClick={() => setShowResetForm(true)}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            Forgot password?
+                          </button>
+                        )}
+                      </div>
+                      {(isSignUp && invitation) && (
+                        <Input
+                          type="password"
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                        />
+                      )}
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? 'Loading...' : (
+                          invitation ? 'Complete Registration' : (isSignUp ? 'Sign Up' : 'Sign In')
+                        )}
+                      </Button>
+                    </form>
+                    {!invitation && (
+                      <div className="mt-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setIsSignUp(!isSignUp)}
+                          className="text-primary hover:underline"
+                        >
+                          {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                        </button>
+                      </div>
                     )}
-                  </Button>
-                </form>
-                
-                {!invitation && (
-                  <div className="mt-4 text-center">
-                    <button
-                      type="button"
-                      onClick={() => setIsSignUp(!isSignUp)}
-                      className="text-primary hover:underline"
-                    >
-                      {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-                    </button>
-                  </div>
+                  </>
                 )}
               </CardContent>
             </Card>

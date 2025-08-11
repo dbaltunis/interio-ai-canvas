@@ -19,6 +19,7 @@ import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import "@/styles/theme.css";
 
 import AcceptInvitation from "./pages/AcceptInvitation";
+import ResetPassword from "./pages/ResetPassword";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 
 const queryClient = new QueryClient({
@@ -80,6 +81,13 @@ const App = () => (
                 <Route path="/auth" element={
                   <ErrorBoundary>
                     <AuthPage />
+                  </ErrorBoundary>
+                } />
+
+                {/* Reset password route */}
+                <Route path="/reset-password" element={
+                  <ErrorBoundary>
+                    <ResetPassword />
                   </ErrorBoundary>
                 } />
                 

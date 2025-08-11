@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener
@@ -38,6 +40,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        if (event === 'PASSWORD_RECOVERY') {
+          // Defer navigation to avoid potential deadlocks
+          setTimeout(() => {
+            try {
+              navigate('/reset-password');
+            } catch (e) {
+              // Fallback to hard redirect if navigation hook isn't ready
+              window.location.href = '/reset-password';
+            }
+          }, 0);
+        }
       }
     );
 
