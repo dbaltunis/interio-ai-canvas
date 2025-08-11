@@ -2055,6 +2055,85 @@ export type Database = {
         }
         Relationships: []
       }
+      project_note_mentions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          mentioned_user_id: string
+          note_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          mentioned_user_id: string
+          note_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          mentioned_user_id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_note_mentions_mentioned_user_fk"
+            columns: ["mentioned_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_presence_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_note_mentions_mentioned_user_fk"
+            columns: ["mentioned_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_note_mentions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "project_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          project_id: string | null
+          quote_id: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          quote_id?: string | null
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          quote_id?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           client_id: string | null

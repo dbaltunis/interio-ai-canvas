@@ -3,9 +3,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useProjectNotes } from "@/hooks/useProjectNotes";
-import { StickyNote, Trash2, Save } from "lucide-react";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { StickyNote, Trash2, Save, X, AtSign } from "lucide-react";
 
 interface ProjectNotesCardProps {
   projectId: string;
@@ -13,9 +15,11 @@ interface ProjectNotesCardProps {
 
 export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const { notes, addNote, deleteNote, loading } = useProjectNotes({ projectId });
+  const { data: teamMembers = [] } = useTeamMembers();
   const { toast } = useToast();
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
 
   const handleAdd = async () => {
     if (!note.trim()) {
@@ -24,8 +28,9 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
     }
     setSaving(true);
     try {
-      await addNote(note.trim(), "general");
+      await addNote(note.trim(), "general", selectedMentions);
       setNote("");
+      setSelectedMentions([]);
       toast({ title: "Saved", description: "Note added" });
     } catch (e: any) {
       toast({ title: "Error", description: e?.message || "Unable to add note", variant: "destructive" });
@@ -62,6 +67,41 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
               disabled={saving}
               className="min-h-[96px]"
             />
+            <div className="flex items-center gap-2">
+              <AtSign className="h-4 w-4 text-muted-foreground" />
+              <Select onValueChange={(val) => {
+                if (!selectedMentions.includes(val)) {
+                  setSelectedMentions((prev) => [...prev, val]);
+                }
+              }}>
+                <SelectTrigger className="w-56 z-50">
+                  <SelectValue placeholder="Mention teammate" />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-background">
+                  {teamMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex flex-wrap gap-2">
+                {selectedMentions.map((uid) => {
+                  const tm = teamMembers.find((t) => t.id === uid);
+                  return (
+                    <span key={uid} className="inline-flex items-center gap-1 rounded border bg-muted/40 px-2 py-1 text-xs">
+                      {tm?.name || 'User'}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMentions((prev) => prev.filter((id) => id !== uid))}
+                        className="opacity-70 hover:opacity-100"
+                        aria-label="Remove mention"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
             <div className="flex justify-end">
               <Button onClick={handleAdd} disabled={saving || !note.trim()} className="bg-brand-primary hover:bg-brand-accent">
                 <Save className="h-4 w-4 mr-2" />

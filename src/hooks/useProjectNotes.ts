@@ -11,6 +11,8 @@ export type ProjectNote = {
   type: string;
   created_at: string;
   updated_at: string;
+  // Enriched at runtime
+  mentions?: { mentioned_user_id: string }[];
 };
 
 interface UseProjectNotesParams {
@@ -22,6 +24,7 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
   const [notes, setNotes] = useState<ProjectNote[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [mentionsByNote, setMentionsByNote] = useState<Record<string, { id: string; mentioned_user_id: string }[]>>({});
 
   // Bypass strict typing since Supabase types are not generated for new tables yet
   const sb: any = supabase as any;
@@ -37,14 +40,34 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await sb
+      const { data: notesData, error: notesErr } = await sb
         .from("project_notes")
         .select("*")
         .eq(filter.column, filter.value)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      setNotes(((data ?? []) as unknown) as ProjectNote[]);
+      if (notesErr) throw notesErr;
+      const baseNotes = ((notesData ?? []) as unknown) as ProjectNote[];
+
+      // Load mentions for these notes
+      const ids = baseNotes.map((n) => n.id);
+      if (ids.length > 0) {
+        const { data: mentionsData, error: mErr } = await sb
+          .from("project_note_mentions")
+          .select("id, note_id, mentioned_user_id")
+          .in("note_id", ids);
+        if (mErr) throw mErr;
+        const map: Record<string, { id: string; mentioned_user_id: string }[]> = {};
+        (mentionsData || []).forEach((m: any) => {
+          map[m.note_id] = map[m.note_id] || [];
+          map[m.note_id].push({ id: m.id, mentioned_user_id: m.mentioned_user_id });
+        });
+        setMentionsByNote(map);
+        setNotes(baseNotes.map(n => ({ ...n, mentions: (map[n.id] || []).map(mm => ({ mentioned_user_id: mm.mentioned_user_id })) })));
+      } else {
+        setMentionsByNote({});
+        setNotes(baseNotes);
+      }
     } catch (e: any) {
       setError(e?.message || "Failed to load notes");
     } finally {
@@ -52,7 +75,7 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
     }
   };
 
-  const addNote = async (content: string, type: string = "general") => {
+  const addNote = async (content: string, type: string = "general", mentionedUserIds: string[] = []) => {
     if (!filter) throw new Error("Missing project or quote context");
     const { data: { user } } = await sb.auth.getUser();
     if (!user?.id) throw new Error("Not authenticated");
@@ -73,6 +96,31 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
 
     if (error) throw error;
     const inserted = (data as unknown) as ProjectNote;
+
+    // Insert mentions if any
+    if (mentionedUserIds.length > 0) {
+      const mentionRows = mentionedUserIds.map((uid) => ({
+        note_id: inserted.id,
+        mentioned_user_id: uid,
+        created_by: user.id,
+      }));
+      const { error: mErr } = await sb
+        .from("project_note_mentions")
+        .insert(mentionRows);
+      if (mErr) {
+        // Don't fail note creation if mentions fail; just log
+        console.warn("Failed to insert mentions", mErr);
+      } else {
+        inserted.mentions = mentionedUserIds.map((uid) => ({ mentioned_user_id: uid }));
+        setMentionsByNote((prev) => ({
+          ...prev,
+          [inserted.id]: (prev[inserted.id] || []).concat(
+            mentionedUserIds.map((uid) => ({ id: crypto.randomUUID?.() || uid, mentioned_user_id: uid }))
+          )
+        }));
+      }
+    }
+
     // Optimistic update (realtime will also sync)
     setNotes(prev => [...prev, inserted]);
     return inserted;
