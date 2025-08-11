@@ -3330,6 +3330,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      link_user_to_account: {
+        Args: { child_user_id: string; parent_user_id?: string }
+        Returns: Json
+      }
       mark_user_offline: {
         Args: { user_id: string }
         Returns: undefined
