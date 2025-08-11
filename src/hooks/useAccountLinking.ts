@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const linkUserToAccount = async (childUserId: string, parentUserId?: string) => {
   if (!childUserId) return { success: false };
 
-  const { data, error } = await supabase.rpc('link_user_to_account', {
+  // Cast to any to allow calling an RPC that isn't present in the generated types yet.
+  const { data, error } = await (supabase as any).rpc('link_user_to_account', {
     child_user_id: childUserId,
     parent_user_id: parentUserId ?? null,
   });
