@@ -1,0 +1,10 @@
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_views
+    WHERE schemaname = 'public' AND viewname = 'user_presence_view'
+  ) THEN
+    EXECUTE 'ALTER VIEW public.user_presence_view SET (security_invoker = on)';
+  END IF;
+END $$;
