@@ -9,6 +9,7 @@ export const linkUserToAccount = async (childUserId: string, parentUserId?: stri
   if (!childUserId) return { success: false };
 
   // Cast to any to allow calling an RPC that isn't present in the generated types yet.
+  // @ts-ignore - RPC not present in generated Supabase types yet; safe to ignore until types are regenerated.
   const { data, error } = await (supabase as any).rpc('link_user_to_account', {
     child_user_id: childUserId,
     parent_user_id: parentUserId ?? null,
