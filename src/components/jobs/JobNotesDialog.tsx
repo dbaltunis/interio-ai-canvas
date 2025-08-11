@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, StickyNote } from "lucide-react";
+import { Save, StickyNote, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useProjectNotes } from "@/hooks/useProjectNotes";
 
 interface JobNotesDialogProps {
   open: boolean;
@@ -16,29 +16,13 @@ interface JobNotesDialogProps {
 
 export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesDialogProps) => {
   const [note, setNote] = useState("");
-  const [existingNotes, setExistingNotes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Load existing notes when dialog opens
-  useEffect(() => {
-    if (open && quote?.id) {
-      loadExistingNotes();
-    }
-  }, [open, quote?.id]);
-
-  const loadExistingNotes = async () => {
-    try {
-      // For now, we'll simulate loading notes from localStorage
-      // In a real implementation, this would fetch from Supabase
-      const savedNotes = localStorage.getItem(`job_notes_${quote.id}`);
-      if (savedNotes) {
-        setExistingNotes(JSON.parse(savedNotes));
-      }
-    } catch (error) {
-      console.error('Error loading notes:', error);
-    }
-  };
+  const { notes, addNote, deleteNote } = useProjectNotes({
+    quoteId: quote?.id,
+    projectId: project?.id,
+  });
 
   const handleSaveNote = async () => {
     if (!note.trim()) {
@@ -49,36 +33,34 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesD
       });
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      // For now, we'll save to localStorage
-      // In a real implementation, this would save to Supabase
-      const timestamp = new Date().toISOString();
-      const newNote = `${timestamp}: ${note.trim()}`;
-      const updatedNotes = [...existingNotes, newNote];
-      
-      localStorage.setItem(`job_notes_${quote.id}`, JSON.stringify(updatedNotes));
-      setExistingNotes(updatedNotes);
-      
-      console.log('Saving note for job:', quote?.id, 'Note:', note);
-      
+      await addNote(note.trim(), "general");
       toast({
         title: "Note Saved",
-        description: "Your note has been added to the job successfully",
+        description: "Your note has been added successfully",
       });
-      
       setNote("");
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving note:', error);
       toast({
         title: "Error",
-        description: "Failed to save note. Please try again.",
+        description: error?.message || "Failed to save note. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteNote(id);
+      toast({ title: "Deleted", description: "Note removed" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Unable to delete note", variant: "destructive" });
     }
   };
 
@@ -98,24 +80,31 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesD
             <span>Add Note - {quote.quote_number || quote.name}</span>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
-          {/* Show existing notes */}
-          {existingNotes.length > 0 && (
+          {notes.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">Previous Notes:</h4>
-              <div className="max-h-32 overflow-y-auto space-y-1">
-                {existingNotes.map((existingNote, index) => (
-                  <div key={index} className="text-xs bg-gray-50 p-2 rounded border">
-                    {existingNote}
+              <h4 className="text-sm font-medium text-muted-foreground">Previous Notes</h4>
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {notes.map((n) => (
+                  <div key={n.id} className="text-xs bg-muted/40 p-2 rounded border flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="whitespace-pre-wrap text-foreground">{n.content}</div>
+                      <div className="mt-1 text-[10px] text-muted-foreground">
+                        {new Date(n.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleDelete(n.id)} title="Delete note">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 ))}
               </div>
             </div>
           )}
-          
+
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">New Note:</label>
+            <label className="text-sm font-medium">New Note</label>
             <Textarea
               placeholder="Add your note here..."
               value={note}
@@ -124,7 +113,7 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesD
               disabled={isLoading}
             />
           </div>
-          
+
           <div className="flex justify-end space-x-2">
             <Button 
               variant="outline" 
