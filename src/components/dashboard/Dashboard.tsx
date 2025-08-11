@@ -12,6 +12,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { ProtectedAnalytics } from "./ProtectedAnalytics";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
+import { TeamPresenceCard } from "@/components/team/TeamPresenceCard";
 
 const Dashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
@@ -143,6 +144,8 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </PermissionGuard>
+
+        <TeamPresenceCard />
 
         <ProtectedAnalytics>
           <Card>

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { linkUserToAccount } from '@/hooks/useAccountLinking';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {
   user: User | null;
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { setTheme } = useTheme();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Set up auth state listener
@@ -104,6 +106,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                   })();
                 }
               }
+              // Refresh permission-dependent UI
+              try {
+                queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+                queryClient.invalidateQueries({ queryKey: ['team-presence'] });
+              } catch {}
               navigate('/');
             } catch {
               window.location.href = '/';
