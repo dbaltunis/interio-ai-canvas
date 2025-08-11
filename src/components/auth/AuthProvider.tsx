@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 
 interface AuthContextType {
   user: User | null;
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     // Set up auth state listener
@@ -40,6 +42,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        if (event === 'SIGNED_IN') {
+          try {
+            if (!localStorage.getItem('theme')) {
+              setTheme('light');
+            }
+          } catch {}
+        }
+
         if (event === 'PASSWORD_RECOVERY') {
           // Defer navigation to avoid potential deadlocks
           setTimeout(() => {

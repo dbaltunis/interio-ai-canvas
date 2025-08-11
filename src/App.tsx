@@ -47,8 +47,8 @@ const App = () => (
           {/* Ensure custom themes also apply the dark class */}
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             themes={['light','dark','apple-graphite']}
             value={{
               light: 'light',

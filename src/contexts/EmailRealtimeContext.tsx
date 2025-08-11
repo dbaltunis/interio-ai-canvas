@@ -12,8 +12,8 @@ export const EmailRealtimeProvider = ({ children }: { children: React.ReactNode 
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Create a unique channel name to avoid conflicts
-    const channelName = `emails_changes_${Date.now()}`;
+    // Use a stable channel name to avoid excessive socket churn
+    const channelName = 'emails_changes';
     
     const subscription = supabase
       .channel(channelName)
@@ -33,7 +33,11 @@ export const EmailRealtimeProvider = ({ children }: { children: React.ReactNode 
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      try {
+        supabase.removeChannel(subscription);
+      } catch {
+        try { subscription.unsubscribe(); } catch {}
+      }
     };
   }, [queryClient]);
 

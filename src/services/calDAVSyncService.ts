@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { createDAVClient } from 'tsdav';
+
 
 export interface SyncConflict {
   id: string;
@@ -64,6 +64,7 @@ class CalDAVSyncService {
   }
 
   private async createCalDAVClient(account: any) {
+    const { createDAVClient } = await import('tsdav');
     const client = await createDAVClient({
       serverUrl: account.server_url,
       credentials: {
