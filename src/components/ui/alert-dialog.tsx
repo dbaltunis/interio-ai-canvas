@@ -34,8 +34,15 @@ const AlertDialogContent = React.forwardRef<
     return () => {
       try {
         const root = document.getElementById('root');
+        // Clear pointer-events locks
         root?.classList.remove('pointer-events-none');
         document.body.classList.remove('pointer-events-none');
+
+        // Explicitly clear inert/aria-hidden on root and body themselves
+        if (root?.hasAttribute('inert')) root.removeAttribute('inert');
+        if (root?.getAttribute('aria-hidden') === 'true') root.removeAttribute('aria-hidden');
+        if (document.body.hasAttribute('inert')) document.body.removeAttribute('inert');
+        if (document.body.getAttribute('aria-hidden') === 'true') document.body.removeAttribute('aria-hidden');
 
         // Remove any leftover inert/aria-hidden attributes that could block clicks
         const container = document.getElementById('root') ?? document.body;
