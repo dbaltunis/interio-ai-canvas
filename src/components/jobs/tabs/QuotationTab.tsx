@@ -14,12 +14,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus } from "lucide-react";
+import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus, StickyNote } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
 import { formatCurrency } from "@/utils/currency";
 import { ProjectNotesCard } from "../ProjectNotesCard";
+import { JobNotesDialog } from "../JobNotesDialog";
 
 interface QuotationTabProps {
   projectId: string;
@@ -79,6 +80,8 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const [showItemsEditor, setShowItemsEditor] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const project = projects?.find(p => p.id === projectId);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
 
   // Filter quotes for this specific project (already filtered by hook)
   const projectQuotes = quotes;
@@ -337,6 +340,10 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
                           View
                         </Button>
                       </QuoteViewer>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedQuote(quote); setNotesOpen(true); }}>
+                        <StickyNote className="h-3 w-3 mr-1" />
+                        Notes
+                      </Button>
                       <Button variant="outline" size="sm" className="flex-1">
                         <Mail className="h-3 w-3 mr-1" />
                         Send
@@ -397,6 +404,12 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           />
         </section>
       )}
+      <JobNotesDialog
+        open={notesOpen}
+        onOpenChange={(open) => { setNotesOpen(open); if (!open) setSelectedQuote(null); }}
+        quote={selectedQuote}
+        project={project}
+      />
     </div>
   );
 };

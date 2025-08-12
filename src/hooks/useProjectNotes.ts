@@ -155,7 +155,10 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
           filter: `${filter.column}=eq.${filter.value}`,
         },
         (payload: any) => {
-          setNotes(prev => [...prev, (payload.new as unknown) as ProjectNote]);
+          setNotes((prev) => {
+            const incoming = (payload.new as unknown) as ProjectNote;
+            return prev.some((n) => n.id === incoming.id) ? prev : [...prev, incoming];
+          });
         }
       )
       .on(

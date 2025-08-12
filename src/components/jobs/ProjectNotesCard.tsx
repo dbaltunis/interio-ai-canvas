@@ -14,7 +14,7 @@ interface ProjectNotesCardProps {
 }
 
 export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
-  const { notes, addNote, deleteNote, loading } = useProjectNotes({ projectId });
+  const { notes, addNote, deleteNote, loading, error } = useProjectNotes({ projectId });
   const { data: teamMembers = [] } = useTeamMembers();
   const { toast } = useToast();
   const [note, setNote] = useState("");
@@ -117,6 +117,7 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
             {loading && (
               <div className="text-sm text-muted-foreground">Loading notes...</div>
             )}
+            {error && <div className="text-sm text-destructive">Error: {error}</div>}
             {!loading && notes.length === 0 && (
               <div className="text-sm text-muted-foreground">No notes yet.</div>
             )}

@@ -19,7 +19,7 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesD
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const { notes, addNote, deleteNote } = useProjectNotes({
+  const { notes, addNote, deleteNote, loading, error } = useProjectNotes({
     quoteId: quote?.id,
     projectId: project?.id,
   });
