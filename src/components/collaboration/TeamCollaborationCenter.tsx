@@ -10,6 +10,10 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Users, MessageCircle, Zap, Circle, Send, X } from 'lucide-react';
 import { DirectMessageDialog } from './DirectMessageDialog';
 import { cn } from '@/lib/utils';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { Switch } from '@/components/ui/switch';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -21,21 +25,42 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { activeUsers = [] } = useUserPresence();
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const { data: teamMembers = [] } = useTeamMembers();
+  const queryClient = useQueryClient();
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ is_active })
+        .eq('user_id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['user-presence'] });
+      queryClient.invalidateQueries({ queryKey: ['team-presence'] });
+    },
+  });
 
   // Lock background scroll when panel is open
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    const originalTouch = document.body.style.touchAction as string;
+    const html = document.documentElement;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyTouch = document.body.style.touchAction as string;
+    const originalHtmlOverflow = html.style.overflow;
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
+      html.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = originalOverflow || '';
-      document.body.style.touchAction = originalTouch || '';
+      document.body.style.overflow = originalBodyOverflow || '';
+      document.body.style.touchAction = originalBodyTouch || '';
+      html.style.overflow = originalHtmlOverflow || '';
     }
     return () => {
-      document.body.style.overflow = originalOverflow || '';
-      document.body.style.touchAction = originalTouch || '';
+      document.body.style.overflow = originalBodyOverflow || '';
+      document.body.style.touchAction = originalBodyTouch || '';
+      html.style.overflow = originalHtmlOverflow || '';
     };
   }, [isOpen]);
 
@@ -360,6 +385,64 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           </div>
                         </motion.div>
                       )}
+
+                      {/* Account Users - manage status */}
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-muted-foreground text-sm mb-3 font-medium">Account Users</p>
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                          {teamMembers.map((m) => (
+                            <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="bg-muted text-foreground text-xs">
+                                    {m.name?.charAt(0) || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{m.role}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={m.active ? 'default' : 'outline'} className="text-xs">
+                                  {m.active ? 'Active' : 'Inactive'}
+                                </Badge>
+                                <Switch
+                                  checked={!!m.active}
+                                  onCheckedChange={(checked) => toggleActive.mutate({ id: m.id, is_active: checked })}
+                                  aria-label={`Set ${m.name} ${m.active ? 'inactive' : 'active'}`}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          {teamMembers.length === 0 && (
+                            <p className="text-xs text-muted-foreground">No users found.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Team Members Directory */}
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-muted-foreground text-sm mb-3 font-medium">Team Members</p>
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
+                          {teamMembers.map((m) => (
+                            <div key={`dir-${m.id}`} className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-muted text-foreground text-xs">
+                                  {m.name?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="text-sm text-foreground truncate">{m.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                              </div>
+                              <div className="ml-auto">
+                                <Badge variant="outline" className="text-xs">{m.role}</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </TabsContent>
 
                     <TabsContent value="messages" className="flex-1 overflow-y-auto p-4 mt-0">
