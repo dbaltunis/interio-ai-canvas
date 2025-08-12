@@ -32,13 +32,25 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  // Defensive cleanup: ensure no lingering pointer-events-none on unmount
+  // Defensive cleanup: ensure no lingering focus/interaction lock on unmount
   React.useEffect(() => {
     return () => {
       try {
         const root = document.getElementById('root');
         root?.classList.remove('pointer-events-none');
         document.body.classList.remove('pointer-events-none');
+
+        // Remove any leftover inert/aria-hidden attributes that could block clicks
+        const container = document.getElementById('root') ?? document.body;
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT);
+        const toCheck: Element[] = [];
+        while (walker.nextNode()) {
+          toCheck.push(walker.currentNode as Element);
+        }
+        for (const el of toCheck) {
+          if (el.hasAttribute('inert')) el.removeAttribute('inert');
+          if (el.getAttribute('aria-hidden') === 'true') el.removeAttribute('aria-hidden');
+        }
       } catch {}
     };
   }, []);
