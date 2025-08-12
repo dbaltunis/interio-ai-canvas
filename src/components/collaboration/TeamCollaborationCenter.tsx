@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -25,6 +27,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { activeUsers = [] } = useUserPresence();
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'team' | 'messages'>('team');
+  const [messageInput, setMessageInput] = useState('');
+  const [showAccountUsers, setShowAccountUsers] = useState(false);
   const { data: teamMembers = [] } = useTeamMembers();
   const queryClient = useQueryClient();
   const toggleActive = useMutation({
@@ -176,7 +181,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden">
-                  <Tabs defaultValue="team" className="h-full flex flex-col">
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
                     <TabsList className="mx-4 mt-4 glass-morphism rounded-xl border">
                       <TabsTrigger value="team" className="rounded-full text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <Users className="h-4 w-4 mr-2" />
@@ -347,7 +352,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openConversation(user.user_id);
-                                        setMessageDialogOpen(true);
+                                        setActiveTab('messages');
                                       }}>
                                   <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.user_profile?.avatar_url} />
@@ -386,39 +391,47 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         </motion.div>
                       )}
 
-                      {/* Account Users - manage status */}
+                      {/* Account Users - manage status (collapsed by default) */}
                       <div className="pt-4 border-t border-border">
-                        <p className="text-muted-foreground text-sm mb-3 font-medium">Account Users</p>
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                          {teamMembers.map((m) => (
-                            <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback className="bg-muted text-foreground text-xs">
-                                    {m.name?.charAt(0) || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
-                                  <p className="text-xs text-muted-foreground truncate">{m.role}</p>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-muted-foreground text-sm font-medium">Account Users</p>
+                          <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
+                            {showAccountUsers ? 'Hide' : 'Manage'}
+                          </Button>
+                        </div>
+                        {showAccountUsers && (
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                            {teamMembers.map((m) => (
+                              <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={m.avatar_url} />
+                                    <AvatarFallback className="bg-muted text-foreground text-xs">
+                                      {m.name?.charAt(0) || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{m.role}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={m.active ? 'default' : 'outline'} className="text-xs">
+                                    {m.active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                  <Switch
+                                    checked={!!m.active}
+                                    onCheckedChange={(checked) => toggleActive.mutate({ id: m.id, is_active: checked })}
+                                    aria-label={`Set ${m.name} ${m.active ? 'inactive' : 'active'}`}
+                                  />
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={m.active ? 'default' : 'outline'} className="text-xs">
-                                  {m.active ? 'Active' : 'Inactive'}
-                                </Badge>
-                                <Switch
-                                  checked={!!m.active}
-                                  onCheckedChange={(checked) => toggleActive.mutate({ id: m.id, is_active: checked })}
-                                  aria-label={`Set ${m.name} ${m.active ? 'inactive' : 'active'}`}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                          {teamMembers.length === 0 && (
-                            <p className="text-xs text-muted-foreground">No users found.</p>
-                          )}
-                        </div>
+                            ))}
+                            {teamMembers.length === 0 && (
+                              <p className="text-xs text-muted-foreground">No users found.</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Team Members Directory */}
@@ -428,6 +441,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           {teamMembers.map((m) => (
                             <div key={`dir-${m.id}`} className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border">
                               <Avatar className="h-8 w-8">
+                                <AvatarImage src={m.avatar_url} />
                                 <AvatarFallback className="bg-muted text-foreground text-xs">
                                   {m.name?.charAt(0) || 'U'}
                                 </AvatarFallback>
@@ -458,7 +472,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
                               onClick={() => {
                                 openConversation(conversation.user_id);
-                                setMessageDialogOpen(true);
+                                setActiveTab('messages');
                               }}
                             >
                               <div className="flex items-center gap-3">

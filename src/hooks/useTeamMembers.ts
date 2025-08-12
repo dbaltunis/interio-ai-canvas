@@ -11,6 +11,7 @@ export interface TeamMember {
   skills?: string[];
   active?: boolean;
   hourly_rate?: number;
+  avatar_url?: string;
 }
 
 export const useTeamMembers = () => {
@@ -30,17 +31,18 @@ export const useTeamMembers = () => {
       if (error) throw error;
       if (!profiles) return [];
 
-      // Map to TeamMember shape
-      return profiles
-        .filter((p) => !!p.user_id && !!p.display_name)
-        .map((p) => ({
-          id: p.user_id,
-          name: p.display_name,
-          email: p.user_id === user.id ? (user.email ?? "") : "Hidden",
-          role: p.role || "Staff",
-          phone: (p as any).phone_number || undefined,
-          active: p.is_active,
-        }));
+// Map to TeamMember shape
+return profiles
+  .filter((p) => !!p.user_id && !!p.display_name)
+  .map((p) => ({
+    id: p.user_id,
+    name: p.display_name,
+    email: p.user_id === user.id ? (user.email ?? "") : "Hidden",
+    role: p.role || "Staff",
+    phone: (p as any).phone_number || undefined,
+    active: p.is_active,
+    avatar_url: (p as any).avatar_url || undefined,
+  }));
     },
   });
 };
