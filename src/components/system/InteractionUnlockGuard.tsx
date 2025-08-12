@@ -6,10 +6,16 @@ export function InteractionUnlockGuard() {
     const root = () => document.getElementById("root");
 
     const hasOpenOverlays = () => {
-      // Radix portals/dialogs, alert-dialogs, sheets/drawers (common patterns)
+      // Only consider true blocking overlays (dialogs, alert dialogs, drawers)
       return Boolean(
         document.querySelector(
-          '[data-radix-portal] [data-state="open"], [role="dialog"][data-state="open"], [data-vaul-drawer][data-state="open"], .vaul-drawer[data-state="open"]'
+          [
+            '[role="dialog"][data-state="open"]',
+            '[data-radix-portal] [role="dialog"][data-state="open"]',
+            '[role="alertdialog"][data-state="open"]',
+            '[data-vaul-drawer][data-state="open"]',
+            '.vaul-drawer[data-state="open"]',
+          ].join(', ')
         )
       );
     };
@@ -18,12 +24,23 @@ export function InteractionUnlockGuard() {
       try {
         if (hasOpenOverlays()) return; // do not unlock while something is open
 
-        // Clear pointer-events locks
+        // Clear pointer-events locks (classes and inline styles)
         root()?.classList.remove("pointer-events-none");
         document.body.classList.remove("pointer-events-none");
-
-        // Explicitly clear inert/aria-hidden on root and body
         const r = root();
+        if (r) {
+          (r as HTMLElement).style.pointerEvents = "";
+          (r as HTMLElement).style.removeProperty("pointer-events");
+        }
+        document.body.style.pointerEvents = "";
+        document.body.style.removeProperty("pointer-events");
+        document.body.style.overflow = "";
+        document.body.style.removeProperty("overflow");
+
+        // Explicitly clear inert/aria-hidden on html, root and body
+        const html = document.documentElement;
+        if (html.hasAttribute("inert")) html.removeAttribute("inert");
+        if (html.getAttribute("aria-hidden") === "true") html.removeAttribute("aria-hidden");
         if (r?.hasAttribute("inert")) r.removeAttribute("inert");
         if (r?.getAttribute("aria-hidden") === "true") r.removeAttribute("aria-hidden");
         if (document.body.hasAttribute("inert")) document.body.removeAttribute("inert");
@@ -37,6 +54,9 @@ export function InteractionUnlockGuard() {
           if (el.hasAttribute("inert")) el.removeAttribute("inert");
           if (el.getAttribute("aria-hidden") === "true") el.removeAttribute("aria-hidden");
         }
+
+        // Debug: log once per unlock execution
+        console.info("[InteractionUnlockGuard] unlock executed");
       } catch {}
     };
 
