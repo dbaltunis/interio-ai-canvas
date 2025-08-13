@@ -8,6 +8,7 @@ import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceList } from "./SurfaceList";
 import { useCompactMode } from "@/hooks/useCompactMode";
+import { WindowManagementDialog } from "./WindowManagementDialog";
 
 
 interface RoomCardProps {
@@ -64,10 +65,15 @@ export const RoomCard = ({
 
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
   
+  const [showWorksheetDialog, setShowWorksheetDialog] = useState(false);
+  const [newSurface, setNewSurface] = useState<any>(null);
+
   const handleSurfaceCreation = async () => {
     setIsCreatingSurface(true);
     try {
-      await onCreateSurface(room.id, 'window');
+      const surface = await onCreateSurface(room.id, 'window');
+      setNewSurface(surface);
+      setShowWorksheetDialog(true);
     } catch (error) {
       console.error("Surface creation failed:", error);
     } finally {
@@ -159,6 +165,26 @@ export const RoomCard = ({
           </div>
         </div>
       </CardContent>
+
+      {/* Auto-open worksheet dialog for new surfaces */}
+      {newSurface && (
+        <WindowManagementDialog
+          isOpen={showWorksheetDialog}
+          onClose={() => {
+            setShowWorksheetDialog(false);
+            setNewSurface(null);
+          }}
+          surface={{
+            ...newSurface,
+            room_name: room.name
+          }}
+          clientId={clientId}
+          projectId={projectId}
+          existingMeasurement={undefined}
+          existingTreatments={[]}
+          onSaveTreatment={(treatmentData) => handleAddTreatment(newSurface.id, treatmentData.treatment_type, treatmentData)}
+        />
+      )}
     </Card>
   );
 };

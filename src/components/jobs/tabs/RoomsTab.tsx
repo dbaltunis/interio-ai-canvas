@@ -51,29 +51,27 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   console.log('RoomsTab: Final total:', total);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {/* Compact Header - Reduced spacing and size */}
+      <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
         <div>
-          <h2 className="text-2xl font-bold">Rooms & Measurement Worksheets</h2>
-          <p className="text-muted-foreground">
-            Manage rooms and create measurement worksheets for this project
+          <h2 className="text-lg font-semibold">Rooms & Worksheets</h2>
+          <p className="text-sm text-muted-foreground">
+            {roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-bold text-primary">
+          <div className="text-xl font-bold text-primary">
             {formatCurrency(total)}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Total Project Cost ({roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''})
+          <p className="text-xs text-muted-foreground">
+            Total Project Cost
           </p>
         </div>
       </div>
 
       {/* Enhanced Room Management - This handles all room display and management */}
-      <div>
-        <EnhancedRoomView project={project} clientId={project.client_id} />
-      </div>
+      <EnhancedRoomView project={project} clientId={project.client_id} />
     </div>
   );
 };

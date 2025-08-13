@@ -127,6 +127,8 @@ export const useJobHandlers = (project: any) => {
         title: "Success",
         description: `Window added successfully`,
       });
+
+      return surface; // Return the created surface
     } catch (error) {
       console.error("Failed to create window:", error);
       toast({
@@ -134,6 +136,7 @@ export const useJobHandlers = (project: any) => {
         description: "Failed to create window. Please try again.",
         variant: "destructive",
       });
+      throw error; // Re-throw so calling code can handle the error
     }
   };
 
