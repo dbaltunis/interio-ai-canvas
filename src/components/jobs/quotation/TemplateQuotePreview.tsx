@@ -153,25 +153,40 @@ export const TemplateQuotePreview = ({
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left p-3 text-sm font-medium text-gray-700">Item</th>
-                      <th className="text-left p-3 text-sm font-medium text-gray-700">Category</th>
+                      <th className="text-left p-3 text-sm font-medium text-gray-700">Description</th>
                       <th className="text-center p-3 text-sm font-medium text-gray-700">Qty</th>
                       <th className="text-right p-3 text-sm font-medium text-gray-700">Unit Price</th>
                       <th className="text-right p-3 text-sm font-medium text-gray-700">Total</th>
                     </tr>
                   </thead>
                   <tbody>
+                    <tr className="border-t">
+                      <td className="p-3">
+                        <div className="font-medium">{item.title}</div>
+                        <div className="text-xs text-gray-600">{item.room} • {item.window}</div>
+                      </td>
+                      <td className="p-3 text-center">{item.quantity}</td>
+                      <td className="p-3 text-right">{formatCurrencyWithSettings(item.unitPrice)}</td>
+                      <td className="p-3 text-right font-medium">{formatCurrencyWithSettings(item.totalPrice)}</td>
+                    </tr>
                     {item.breakdown.map((breakdownItem, bIndex) => (
                       <tr key={bIndex} className="border-t">
-                        <td className="p-3">{breakdownItem.name || breakdownItem.category}</td>
                         <td className="p-3">
-                          <Badge variant="outline" className="text-xs">
-                            {breakdownItem.category || 'Item'}
-                          </Badge>
+                          <div>{breakdownItem.name || breakdownItem.category || 'Item'}</div>
+                          {breakdownItem.description && (
+                            <div className="text-xs text-gray-600">{breakdownItem.description}</div>
+                          )}
                         </td>
-                        <td className="p-3 text-center">{breakdownItem.quantity ?? ''}</td>
-                        <td className="p-3 text-right">{formatCurrencyWithSettings(breakdownItem.unit_price || 0)}</td>
-                        <td className="p-3 text-right font-medium">{formatCurrencyWithSettings(breakdownItem.total_cost || 0)}</td>
+                        <td className="p-3 text-center">
+                          {breakdownItem.quantity ? (
+                            <>
+                              {Number(breakdownItem.quantity).toFixed(1)}
+                              {breakdownItem.unit ? ` ${breakdownItem.unit}` : ''}
+                            </>
+                          ) : ''}
+                        </td>
+                        <td className="p-3 text-right">{formatCurrencyWithSettings(Number(breakdownItem.unit_price || 0))}</td>
+                        <td className="p-3 text-right font-medium">{formatCurrencyWithSettings(Number(breakdownItem.total_cost || 0))}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -268,7 +283,7 @@ export const TemplateQuotePreview = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="bg-white p-8 border rounded-lg shadow-sm max-w-4xl mx-auto">
+        <div className="document-surface bg-document text-document-foreground p-8 border rounded-lg shadow-sm max-w-4xl mx-auto">
           {renderHeader()}
           {renderClientInfo()}
           {renderProductsTable()}

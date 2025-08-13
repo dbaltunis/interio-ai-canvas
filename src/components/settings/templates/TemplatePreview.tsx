@@ -49,7 +49,7 @@ export const TemplatePreview = ({ template }: TemplatePreviewProps) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white border shadow-lg">
+    <div className="document-surface max-w-4xl mx-auto bg-document text-document-foreground border shadow-lg">
       <div
         className="p-8 space-y-6"
         style={{
