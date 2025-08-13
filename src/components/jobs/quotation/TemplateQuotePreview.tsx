@@ -291,7 +291,7 @@ export const TemplateQuotePreview = ({
     ...(businessSettings as any)?.templateStyling
   };
 
-  // Get document styling classes based on template settings
+  // Get document styling classes based on template settings - Always ensure document has white background
   const getDocumentClasses = () => {
     const shadowClasses = {
       none: '',
@@ -319,18 +319,8 @@ export const TemplateQuotePreview = ({
       wide: 'p-12'
     };
 
-    const backgroundClasses = {
-      white: 'bg-white',
-      subtle: 'bg-gray-50',
-      transparent: 'bg-transparent'
-    };
-
-    return `document-surface text-black break-inside-avoid print:max-w-none print:mx-0 print:bg-white print:text-black print:shadow-none print:border-none print:rounded-none print:p-8 ${shadowClasses[templateStyling.documentShadow]} ${borderClasses[templateStyling.documentBorder]} ${cornerClasses[templateStyling.documentCorners]} ${marginClasses[templateStyling.margins]} ${backgroundClasses[templateStyling.documentBackground]}`;
+    return `document-surface bg-white text-black break-inside-avoid print:max-w-none print:mx-0 print:bg-white print:text-black print:shadow-none print:border-none print:rounded-none print:p-8 ${shadowClasses[templateStyling.documentShadow]} ${borderClasses[templateStyling.documentBorder]} ${cornerClasses[templateStyling.documentCorners]} ${marginClasses[templateStyling.margins]}`;
   };
-
-  // Check if we're in a full-screen context (no Card wrapper needed)
-  const isInFullView = typeof window !== 'undefined' && 
-    document.getElementById('quote-full-view')?.contains(document.querySelector('.document-surface'));
 
   const documentContent = (
     <div 
@@ -339,8 +329,8 @@ export const TemplateQuotePreview = ({
         fontFamily: templateStyling.fontFamily,
         fontSize: templateStyling.fontSize,
         lineHeight: templateStyling.lineHeight,
-        color: templateStyling.textColor,
-        backgroundColor: isFullScreen ? '#ffffff' : templateStyling.backgroundColor
+        color: '#000000',
+        backgroundColor: '#ffffff'
       }}
     >
       {renderHeader()}
@@ -351,20 +341,20 @@ export const TemplateQuotePreview = ({
     </div>
   );
 
-  if (isFullScreen || isInFullView) {
+  if (isFullScreen) {
     return documentContent;
   }
 
   return (
-    <Card>
-      <CardHeader className="no-print">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="no-print flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <span>Quote Preview - {templateId} Template</span>
           <Badge variant="outline">{templateId}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="max-w-4xl mx-auto border border-gray-200 rounded-lg shadow-sm">
+      <CardContent className="p-0 flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto">
           {documentContent}
         </div>
       </CardContent>
