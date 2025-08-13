@@ -310,7 +310,7 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[999] bg-background border shadow-lg">
                   {fontFamilies.map((font) => (
                     <SelectItem key={font.value} value={font.value}>
                       <span style={{ fontFamily: font.value }}>{font.name}</span>
@@ -426,7 +426,7 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
                         <SelectTrigger className="w-24">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[999] bg-background border shadow-lg">
                           <SelectItem value="auto">Auto</SelectItem>
                           <SelectItem value="25%">25%</SelectItem>
                           <SelectItem value="50%">50%</SelectItem>
@@ -457,7 +457,7 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[999] bg-background border shadow-lg">
                         <SelectItem value="contain">Fit Entire Image</SelectItem>
                         <SelectItem value="cover">Fill Container</SelectItem>
                         <SelectItem value="fill">Stretch to Fill</SelectItem>
@@ -576,7 +576,7 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
                       <SelectTrigger className="h-8">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[999] bg-background border shadow-lg">
                         <SelectItem value="solid">Solid</SelectItem>
                         <SelectItem value="dashed">Dashed</SelectItem>
                         <SelectItem value="dotted">Dotted</SelectItem>
