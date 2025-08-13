@@ -402,6 +402,117 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
           </TabsContent>
 
           <TabsContent value="layout" className="space-y-4 mt-4">
+            {/* Image-specific controls */}
+            {block.type === 'image' && (
+              <>
+                {/* Image Dimensions */}
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+                  <Label className="text-sm font-medium text-blue-900 block">Image Settings</Label>
+                  
+                  {/* Width */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Width</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={block.content?.width || ''}
+                        onChange={(e) => onUpdate({ width: e.target.value })}
+                        placeholder="e.g. 300px, 50%, auto"
+                        className="flex-1"
+                      />
+                      <Select
+                        value={block.content?.width || 'auto'}
+                        onValueChange={(value) => onUpdate({ width: value })}
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Auto</SelectItem>
+                          <SelectItem value="25%">25%</SelectItem>
+                          <SelectItem value="50%">50%</SelectItem>
+                          <SelectItem value="75%">75%</SelectItem>
+                          <SelectItem value="100%">100%</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Height */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Height</Label>
+                    <Input
+                      value={block.content?.height || ''}
+                      onChange={(e) => onUpdate({ height: e.target.value })}
+                      placeholder="e.g. 200px, auto"
+                    />
+                  </div>
+
+                  {/* Object Fit */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Image Fit</Label>
+                    <Select
+                      value={block.content?.objectFit || 'contain'}
+                      onValueChange={(value) => onUpdate({ objectFit: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="contain">Fit Entire Image</SelectItem>
+                        <SelectItem value="cover">Fill Container</SelectItem>
+                        <SelectItem value="fill">Stretch to Fill</SelectItem>
+                        <SelectItem value="scale-down">Scale Down</SelectItem>
+                        <SelectItem value="none">Original Size</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Alignment */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Alignment</Label>
+                    <div className="flex gap-1">
+                      <Button
+                        variant={block.content?.alignment === 'left' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => onUpdate({ alignment: 'left' })}
+                        className="flex-1"
+                      >
+                        Left
+                      </Button>
+                      <Button
+                        variant={block.content?.alignment === 'center' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => onUpdate({ alignment: 'center' })}
+                        className="flex-1"
+                      >
+                        Center
+                      </Button>
+                      <Button
+                        variant={block.content?.alignment === 'right' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => onUpdate({ alignment: 'right' })}
+                        className="flex-1"
+                      >
+                        Right
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Alt Text */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Alt Text</Label>
+                    <Input
+                      value={block.content?.alt || ''}
+                      onChange={(e) => onUpdate({ alt: e.target.value })}
+                      placeholder="Describe the image for accessibility..."
+                    />
+                  </div>
+                </div>
+                
+                <Separator />
+              </>
+            )}
+
             {/* Padding */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Padding</Label>

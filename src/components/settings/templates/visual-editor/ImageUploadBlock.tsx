@@ -69,73 +69,29 @@ export const ImageUploadBlock = ({ content, onUpdate }: ImageUploadBlockProps) =
 
   if (content.src) {
     return (
-      <div className="space-y-4">
-        <div className="relative">
-          <img
-            src={content.src}
-            alt={content.alt || 'Uploaded image'}
-            className={`max-w-full h-auto rounded ${
-              content.alignment === 'left' ? 'mr-auto' :
-              content.alignment === 'right' ? 'ml-auto' :
-              'mx-auto'
-            }`}
-            style={{ width: content.width || 'auto' }}
-          />
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={removeImage}
-            className="absolute top-2 right-2"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Width</Label>
-            <Select
-              value={content.width || '100%'}
-              onValueChange={(value) => onUpdate({ ...content, width: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="25%">25%</SelectItem>
-                <SelectItem value="50%">50%</SelectItem>
-                <SelectItem value="75%">75%</SelectItem>
-                <SelectItem value="100%">100%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Alignment</Label>
-            <Select
-              value={content.alignment || 'center'}
-              onValueChange={(value) => onUpdate({ ...content, alignment: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">Left</SelectItem>
-                <SelectItem value="center">Center</SelectItem>
-                <SelectItem value="right">Right</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label>Alt Text</Label>
-          <Input
-            value={content.alt || ''}
-            onChange={(e) => onUpdate({ ...content, alt: e.target.value })}
-            placeholder="Describe the image..."
-          />
-        </div>
+      <div className="relative">
+        <img
+          src={content.src}
+          alt={content.alt || 'Uploaded image'}
+          className={`max-w-full h-auto rounded ${
+            content.alignment === 'left' ? 'mr-auto' :
+            content.alignment === 'right' ? 'ml-auto' :
+            'mx-auto'
+          }`}
+          style={{ 
+            width: content.width || 'auto',
+            height: content.height || 'auto',
+            objectFit: content.objectFit || 'contain'
+          }}
+        />
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={removeImage}
+          className="absolute top-2 right-2"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
     );
   }
