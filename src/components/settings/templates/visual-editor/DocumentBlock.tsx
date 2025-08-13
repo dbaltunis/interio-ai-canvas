@@ -386,24 +386,70 @@ const SpacerContent = ({ content, onUpdate }: any) => (
   <div style={{ height: content.height || '20px' }} className="bg-transparent" />
 );
 
-const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => (
-  <div className="space-y-4 border border-gray-300 p-4 bg-gray-50">
-    <div className="text-sm font-medium text-gray-700">
-      {content.signatureLabel || 'Authorized Signature'}
-    </div>
-    <div className="h-16 border-b border-gray-400 relative">
-      <div className="absolute bottom-0 left-0 text-xs text-gray-500">
-        Signature Line
+const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
+  const [showSignaturePopup, setShowSignaturePopup] = useState(false);
+  const [signatureData, setSignatureData] = useState(content.signatureData || null);
+
+  const handleSignatureSave = (dataUrl: string) => {
+    setSignatureData(dataUrl);
+    onUpdate({ ...content, signatureData: dataUrl });
+    setShowSignaturePopup(false);
+  };
+
+  return (
+    <>
+      <div className="space-y-4 border border-gray-300 p-4 bg-gray-50">
+        <div className="text-sm font-medium text-gray-700">
+          {content.signatureLabel || 'Authorized Signature'}
+        </div>
+        <div 
+          className="h-16 border-b border-gray-400 relative cursor-pointer hover:bg-gray-100 transition-colors"
+          onClick={() => setShowSignaturePopup(true)}
+        >
+          {signatureData ? (
+            <img 
+              src={signatureData} 
+              alt="Signature" 
+              className="h-full object-contain"
+            />
+          ) : (
+            <div className="absolute bottom-0 left-0 text-xs text-gray-500">
+              Click to sign
+            </div>
+          )}
+        </div>
+        {content.showDate && (
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">{content.dateLabel || 'Date'}:</span>
+            <div className="border-b border-gray-400 w-32"></div>
+          </div>
+        )}
       </div>
-    </div>
-    {content.showDate && (
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-700">{content.dateLabel || 'Date'}:</span>
-        <div className="border-b border-gray-400 w-32"></div>
-      </div>
-    )}
-  </div>
-);
+
+      {showSignaturePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Digital Signature</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSignaturePopup(false)}
+              >
+                ✕
+              </Button>
+            </div>
+            <SignatureCanvas 
+              onSignatureSave={handleSignatureSave}
+              width={400}
+              height={200}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 const DividerContent = ({ content, onUpdate }: any) => (
   <hr 
