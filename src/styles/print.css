@@ -17,7 +17,7 @@
     margin: 0 !important;
   }
   
-  /* Document surface clean print styling */
+  /* Document surface clean print styling - NO BORDERS */
   .document-surface {
     background: white !important;
     box-shadow: none !important;
@@ -29,20 +29,39 @@
     width: 100% !important;
   }
   
+  /* Remove any wrapper borders and rounded corners */
+  .document-surface * {
+    border-radius: 0 !important;
+  }
+  
   /* Clean table styling for print */
   .document-surface table {
     border-collapse: collapse;
     width: 100%;
+    border: none !important;
   }
   
   .document-surface th,
   .document-surface td {
-    border: 1px solid #000 !important;
+    border: 1px solid #ddd !important;
     padding: 8px !important;
   }
   
   /* Ensure text is black for print */
   .document-surface * {
     color: black !important;
+  }
+  
+  /* Remove any page borders or lines */
+  @page {
+    margin: 0;
+    border: none;
+  }
+  
+  /* Remove any bottom borders or lines from sections */
+  .document-surface .border-b,
+  .document-surface .border-b-2,
+  .document-surface [class*="border-b"] {
+    border-bottom: none !important;
   }
 }

@@ -73,7 +73,7 @@ export const TemplateQuotePreview = ({
   };
 
   const renderHeader = () => (
-    <div className="flex items-start justify-between mb-8 p-6 border-b-2 border-gray-200">
+    <div className="flex items-start justify-between mb-8 p-6 print:border-none">
       <div className="flex items-start gap-4">
         {businessSettings?.company_logo_url && (
           <img 
@@ -257,7 +257,7 @@ export const TemplateQuotePreview = ({
   );
 
   const renderFooter = () => (
-    <div className="border-t pt-6 mt-8">
+    <div className="pt-6 mt-8 print:border-none">
       <div className="text-center text-gray-600 space-y-2">
         <p className="font-medium">
           Thank you for choosing {businessSettings?.company_name || 'our services'}!
@@ -274,7 +274,7 @@ export const TemplateQuotePreview = ({
     </div>
   );
 
-  // Get template styling with defaults
+  // Get template styling with defaults - NO BORDERS/CORNERS by default
   const templateStyling = {
     fontFamily: 'Arial, sans-serif',
     fontSize: '14px',
@@ -361,8 +361,8 @@ export const TemplateQuotePreview = ({
           <Badge variant="outline">{templateId}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="max-w-4xl mx-auto">
+      <CardContent className="p-0">
+        <div className="max-w-4xl mx-auto border border-gray-200 rounded-lg shadow-sm">
           {documentContent}
         </div>
       </CardContent>
