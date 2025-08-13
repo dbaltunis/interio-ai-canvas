@@ -348,13 +348,15 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                             <p className="text-muted-foreground text-sm mb-3 font-medium">Offline/Away</p>
                             <div className="space-y-2">
                               {offlineUsers.map((user) => (
-                                 <div key={user.user_id} 
-                                      className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border cursor-pointer hover:bg-accent/30 transition-colors"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openConversation(user.user_id);
-                                        setActiveTab('messages');
-                                      }}>
+                                  <div key={user.user_id} 
+                                       className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border cursor-pointer hover:bg-accent/30 transition-colors"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         openConversation(user.user_id);
+                                         setActiveTab('messages');
+                                         setMessageDialogOpen(true);
+                                       }}>
+
                                   <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.user_profile?.avatar_url} />
                                     <AvatarFallback className="bg-muted text-foreground text-sm">
@@ -471,10 +473,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.1 }}
                               className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
-                              onClick={() => {
-                                openConversation(conversation.user_id);
-                                setActiveTab('messages');
-                              }}
+                               onClick={() => {
+                                 openConversation(conversation.user_id);
+                                 setActiveTab('messages');
+                                 setMessageDialogOpen(true);
+                               }}
                             >
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
