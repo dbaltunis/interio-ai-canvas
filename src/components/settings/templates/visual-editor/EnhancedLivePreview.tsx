@@ -385,8 +385,8 @@ export const EnhancedLivePreview = ({
         return (
           <div 
             key={block.id}
-            className={applyStyles("border-t pt-6 mt-8 text-center", block.styles)}
-            style={getInlineStyles(block.styles)}
+            className={applyStyles("border-t pt-6 mt-8 text-center document-surface", block.styles)}
+            style={{ ...getInlineStyles(block.styles), background: 'transparent', backgroundColor: 'transparent', color: 'inherit' }}
           >
             <div className="space-y-2">
               <p className="font-medium">{replaceTokens(block.content.text)}</p>
@@ -408,7 +408,7 @@ export const EnhancedLivePreview = ({
   };
 
   return (
-    <div className={`bg-white ${isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : 'border rounded-lg shadow-sm'}`}>
+    <div className={`document-surface bg-document text-document-foreground ${isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : 'border rounded-lg shadow-sm'}`}>
       {/* Preview Controls */}
       <div className="border-b p-4 flex justify-between items-center bg-gray-50">
         <div className="flex items-center gap-2">
