@@ -170,26 +170,28 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         {onlineUsers.length} of {totalUsers} online
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onToggle}
-                      className="text-muted-foreground hover:text-foreground hover:bg-accent/30"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {!messageDialogOpen && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onToggle}
+                        className="text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 glass-morphism rounded-xl border">
-                      <TabsTrigger value="team" className="rounded-full text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
+                    <TabsList className="mx-4 mt-4 glass-morphism rounded-lg border p-1 grid grid-cols-2">
+                      <TabsTrigger value="team" className="rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <Users className="h-4 w-4 mr-2" />
                         Team ({totalUsers})
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="rounded-full text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
+                      <TabsTrigger value="messages" className="rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Messages
                         {totalUnreadCount > 0 && (
@@ -200,7 +202,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="team" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0 glass-morphism rounded-lg border">
+                    <TabsContent value="team" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
                       {/* Current User */}
                       {currentUser && (
                         <div>
@@ -399,9 +401,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       {/* Account Users - manage status (collapsed by default) */}
                       <div className="pt-4 border-t border-border">
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-muted-foreground text-sm font-medium">Account Users</p>
+                          <p className="text-muted-foreground text-sm font-medium">Manage users</p>
                           <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
-                            {showAccountUsers ? 'Hide' : 'Manage'}
+                            {showAccountUsers ? 'Hide' : 'Open'}
                           </Button>
                         </div>
                         {showAccountUsers && (
@@ -439,29 +441,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         )}
                       </div>
 
-                      {/* Team Members Directory */}
-                      <div className="pt-4 border-t border-border">
-                        <p className="text-muted-foreground text-sm mb-3 font-medium">Team Members</p>
-                        <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
-                          {teamMembers.map((m) => (
-                            <div key={`dir-${m.id}`} className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={m.avatar_url} />
-                                <AvatarFallback className="bg-muted text-foreground text-xs">
-                                  {m.name?.charAt(0) || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="min-w-0">
-                                <p className="text-sm text-foreground truncate">{m.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{m.email}</p>
-                              </div>
-                              <div className="ml-auto">
-                                <Badge variant="outline" className="text-xs">{m.role}</Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </TabsContent>
 
                     <TabsContent value="messages" className="flex-1 overflow-y-auto p-4 mt-0">
@@ -561,6 +540,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       <DirectMessageDialog 
         isOpen={messageDialogOpen}
         onClose={() => setMessageDialogOpen(false)}
+        selectedUserId={selectedUserId}
       />
     </>
   , document.body);
