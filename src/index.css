@@ -115,6 +115,11 @@
   }
 }
 
+  /* Document tokens: always white across themes */
+  :root { --document: 0 0% 100%; --document-foreground: 222 47% 11%; }
+  .dark { --document: 0 0% 100%; --document-foreground: 222 47% 11%; }
+  .apple-graphite { --document: 0 0% 100%; --document-foreground: 222 47% 11%; }
+
 /* Accent switcher (applies across all themes) */
 :root[data-accent='primary'] {
   --primary: var(--company-primary);
@@ -273,6 +278,13 @@
 }
 .dark .text-black, .apple-graphite .text-black {
   color: hsl(var(--foreground)) !important;
+}
+
+/* Document surface - keep pure white regardless of theme */
+.document-surface,
+.document-surface .bg-white {
+  background-color: hsl(var(--document)) !important;
+  color: hsl(var(--document-foreground)) !important;
 }
 
 /* Make logo white in dark themes */

@@ -900,7 +900,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
         </Select>
       </div>
 
-      <div className="bg-white border rounded-lg shadow-sm max-w-4xl mx-auto">
+      <div className="document-surface bg-document text-document-foreground border rounded-lg shadow-sm max-w-4xl mx-auto">
         <div className="p-8">
           {blocks.map((block) => {
           switch (block.type) {
