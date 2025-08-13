@@ -133,14 +133,20 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onEditSurface?.(surface)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditSurface?.(surface);
+              }}
             >
               <Edit className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onDeleteSurface?.(surface.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteSurface?.(surface.id);
+              }}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -191,7 +197,10 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setShowBreakdown(!showBreakdown)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowBreakdown(!showBreakdown);
+                    }}
                   >
                     {showBreakdown ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     Breakdown
@@ -199,13 +208,19 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onViewDetails?.(surface)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails?.(surface);
+                    }}
                   >
                     Edit
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => setShowWorkshop(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowWorkshop(true);
+                    }}
                     title="Open workshop sheet"
                   >
                     Send to workshop

@@ -57,17 +57,65 @@ export const SurfaceList = ({
     return treatments.filter(t => t.window_id === surfaceId);
   };
 
+  // Group surfaces by window/treatment logic
+  const groupedSurfaces = surfaces.reduce((groups, surface) => {
+    // Check if this is a duplicate window (same room + similar name pattern)
+    const existingWindow = groups.find(group => 
+      group.roomId === surface.room_id && 
+      group.baseWindowName === surface.name.replace(/\s+\d+$/, '') // Remove trailing numbers
+    );
+    
+    if (existingWindow) {
+      // This is additional treatment for the same window
+      existingWindow.treatments.push(surface);
+    } else {
+      // This is a new window
+      groups.push({
+        id: surface.id,
+        roomId: surface.room_id,
+        baseWindowName: surface.name.replace(/\s+\d+$/, ''),
+        mainSurface: surface,
+        treatments: []
+      });
+    }
+    
+    return groups;
+  }, [] as Array<{
+    id: string;
+    roomId: string;
+    baseWindowName: string;
+    mainSurface: any;
+    treatments: any[];
+  }>);
+
   return (
     <>
       <div className={compact ? "space-y-2" : "space-y-3"}>
-        {surfaces.map((surface) => (
-          <WindowSummaryCard 
-            key={surface.id} 
-            surface={surface} 
-            onEditSurface={() => handleViewWindow(surface)}
-            onDeleteSurface={onDeleteSurface}
-            onViewDetails={() => handleViewWindow(surface)}
-          />
+        {groupedSurfaces.map((group) => (
+          <div key={group.id} className="space-y-2">
+            {/* Main window surface */}
+            <WindowSummaryCard 
+              surface={group.mainSurface} 
+              onEditSurface={() => handleViewWindow(group.mainSurface)}
+              onDeleteSurface={onDeleteSurface}
+              onViewDetails={() => handleViewWindow(group.mainSurface)}
+            />
+            
+            {/* Additional treatments for the same window */}
+            {group.treatments.map((treatment) => (
+              <div key={treatment.id} className="ml-4 pl-4 border-l-2 border-muted">
+                <WindowSummaryCard 
+                  surface={{
+                    ...treatment,
+                    name: `${group.baseWindowName} - Treatment ${group.treatments.indexOf(treatment) + 2}`
+                  }} 
+                  onEditSurface={() => handleViewWindow(treatment)}
+                  onDeleteSurface={onDeleteSurface}
+                  onViewDetails={() => handleViewWindow(treatment)}
+                />
+              </div>
+            ))}
+          </div>
         ))}
       </div>
 
