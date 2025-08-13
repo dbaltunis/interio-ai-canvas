@@ -195,7 +195,7 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
       <DialogContent className="z-[200] max-w-5xl h-[700px] p-0 overflow-hidden">
         <div className="flex h-full bg-background">
           {/* Hidden file input */}
