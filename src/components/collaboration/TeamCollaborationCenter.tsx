@@ -153,7 +153,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={cn("fixed inset-y-0 right-0 w-96 z-[101] liquid-glass panel shadow-2xl overflow-hidden border-l border-border", messageDialogOpen ? "pointer-events-none" : "pointer-events-auto")}
+              className={cn("!fixed inset-y-0 right-0 w-96 z-[101] liquid-glass shadow-2xl overflow-hidden border-l border-border", messageDialogOpen ? "pointer-events-none" : "pointer-events-auto")}
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
