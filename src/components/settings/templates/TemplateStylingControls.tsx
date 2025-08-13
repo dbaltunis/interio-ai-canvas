@@ -185,6 +185,76 @@ export const TemplateStylingControls = ({ data, onChange }: TemplateStylingContr
         </CardContent>
       </Card>
 
+      {/* Document Layout */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Document Layout</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Document Shadow</Label>
+              <Select value={data.documentShadow || "none"} onValueChange={(value) => updateField('documentShadow', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="strong">Strong</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Document Borders</Label>
+              <Select value={data.documentBorder || "none"} onValueChange={(value) => updateField('documentBorder', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="thin">Thin</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="thick">Thick</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Document Corners</Label>
+              <Select value={data.documentCorners || "square"} onValueChange={(value) => updateField('documentCorners', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="square">Square</SelectItem>
+                  <SelectItem value="slightly-rounded">Slightly Rounded</SelectItem>
+                  <SelectItem value="rounded">Rounded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Document Background</Label>
+              <Select value={data.documentBackground || "white"} onValueChange={(value) => updateField('documentBackground', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="white">Pure White</SelectItem>
+                  <SelectItem value="subtle">Subtle</SelectItem>
+                  <SelectItem value="transparent">Transparent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Page Layout */}
       <Card>
         <CardHeader>

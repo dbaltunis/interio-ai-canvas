@@ -1,9 +1,48 @@
 /* Hide elements marked as no-print in print output */
 @media print {
   .no-print { display: none !important; }
+  
   /* Avoid breaking cards across pages */
   .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+  
   /* Improve print readability */
-  body { background: white !important; }
-  main { padding: 0 !important; }
+  body { 
+    background: white !important; 
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  main { 
+    padding: 0 !important; 
+    margin: 0 !important;
+  }
+  
+  /* Document surface clean print styling */
+  .document-surface {
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  
+  /* Clean table styling for print */
+  .document-surface table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  .document-surface th,
+  .document-surface td {
+    border: 1px solid #000 !important;
+    padding: 8px !important;
+  }
+  
+  /* Ensure text is black for print */
+  .document-surface * {
+    color: black !important;
+  }
 }

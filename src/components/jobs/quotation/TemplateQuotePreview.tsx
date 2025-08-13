@@ -274,12 +274,73 @@ export const TemplateQuotePreview = ({
     </div>
   );
 
+  // Get template styling with defaults
+  const templateStyling = {
+    fontFamily: 'Arial, sans-serif',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    textColor: '#000000',
+    backgroundColor: '#FFFFFF',
+    documentShadow: 'none',
+    documentBorder: 'none',
+    documentCorners: 'square',
+    documentBackground: 'white',
+    margins: 'normal',
+    ...(businessSettings as any)?.templateStyling
+  };
+
+  // Get document styling classes based on template settings
+  const getDocumentClasses = () => {
+    const shadowClasses = {
+      none: '',
+      light: 'shadow-sm',
+      medium: 'shadow-md',
+      strong: 'shadow-lg'
+    };
+
+    const borderClasses = {
+      none: '',
+      thin: 'border border-gray-200',
+      medium: 'border-2 border-gray-300',
+      thick: 'border-4 border-gray-400'
+    };
+
+    const cornerClasses = {
+      square: '',
+      'slightly-rounded': 'rounded-sm',
+      rounded: 'rounded-lg'
+    };
+
+    const marginClasses = {
+      narrow: 'p-4',
+      normal: 'p-8',
+      wide: 'p-12'
+    };
+
+    const backgroundClasses = {
+      white: 'bg-white',
+      subtle: 'bg-gray-50',
+      transparent: 'bg-transparent'
+    };
+
+    return `document-surface text-black break-inside-avoid print:max-w-none print:mx-0 print:bg-white print:text-black print:shadow-none print:border-none print:rounded-none print:p-8 ${shadowClasses[templateStyling.documentShadow]} ${borderClasses[templateStyling.documentBorder]} ${cornerClasses[templateStyling.documentCorners]} ${marginClasses[templateStyling.margins]} ${backgroundClasses[templateStyling.documentBackground]}`;
+  };
+
   // Check if we're in a full-screen context (no Card wrapper needed)
   const isFullScreen = typeof window !== 'undefined' && 
     document.getElementById('quote-full-view')?.contains(document.querySelector('.document-surface'));
 
   const documentContent = (
-    <div className="document-surface bg-white text-black p-8 break-inside-avoid">
+    <div 
+      className={getDocumentClasses()}
+      style={{
+        fontFamily: templateStyling.fontFamily,
+        fontSize: templateStyling.fontSize,
+        lineHeight: templateStyling.lineHeight,
+        color: templateStyling.textColor,
+        backgroundColor: templateStyling.backgroundColor
+      }}
+    >
       {renderHeader()}
       {renderClientInfo()}
       {renderProductsTable()}
@@ -301,7 +362,7 @@ export const TemplateQuotePreview = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg shadow-sm max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {documentContent}
         </div>
       </CardContent>
