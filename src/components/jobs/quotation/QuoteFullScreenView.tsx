@@ -36,7 +36,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   templateId
 }) => {
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('quote-full-view');
+    const element = document.querySelector('.document-surface') as HTMLElement;
     if (!element) return;
 
     try {
@@ -44,7 +44,13 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        removeContainer: true,
+        logging: false,
+        ignoreElements: (element) => {
+          return element.classList.contains('no-print') || 
+                 element.closest('.no-print') !== null;
+        }
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -102,9 +108,9 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           </div>
         </DialogHeader>
         
-        <div className="overflow-auto flex-1 bg-white">
-          <div className="max-h-[calc(90vh-80px)] overflow-y-auto">
-            <div id="quote-full-view" className="bg-white min-h-full p-8 print:p-0">
+        <div className="overflow-auto flex-1 bg-gray-100">
+          <div className="max-h-[calc(90vh-80px)] overflow-y-auto p-8">
+            <div className="max-w-4xl mx-auto bg-white shadow-lg">
               <TemplateQuotePreview
                 project={project}
                 treatments={treatments}
