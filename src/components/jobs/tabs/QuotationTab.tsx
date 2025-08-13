@@ -21,6 +21,7 @@ import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineIte
 import { formatCurrency } from "@/utils/currency";
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
+import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
 
 interface QuotationTabProps {
   projectId: string;
@@ -82,6 +83,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const project = projects?.find(p => p.id === projectId);
   const [notesOpen, setNotesOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
+  const [showFullQuoteView, setShowFullQuoteView] = useState(false);
 
   // Filter quotes for this specific project (already filtered by hook)
   const projectQuotes = quotes;
@@ -382,8 +384,19 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         <section className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold">Quote Document Preview</h3>
-            <div className="text-sm text-muted-foreground">
-              Using: <strong>{selectedTemplate.name}</strong>
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFullQuoteView(true)}
+                className="flex items-center space-x-2"
+              >
+                <Eye className="h-4 w-4" />
+                <span>View Quote</span>
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Using: <strong>{selectedTemplate.name}</strong>
+              </div>
             </div>
           </div>
           <LivePreview
@@ -409,6 +422,21 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         onOpenChange={(open) => { setNotesOpen(open); if (!open) setSelectedQuote(null); }}
         quote={selectedQuote}
         project={project}
+      />
+      
+      <QuoteFullScreenView
+        isOpen={showFullQuoteView}
+        onClose={() => setShowFullQuoteView(false)}
+        project={project}
+        treatments={sourceTreatments}
+        rooms={rooms || []}
+        surfaces={surfaces || []}
+        subtotal={subtotal}
+        taxRate={taxRate}
+        taxAmount={taxAmount}
+        total={total}
+        markupPercentage={markupPercentage}
+        templateId={selectedTemplate?.template_style || 'itemized'}
       />
     </div>
   );
