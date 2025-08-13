@@ -144,8 +144,11 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
   useEffect(() => {
     if (!filter) return;
 
+    // Use a unique channel name per instance to avoid duplicate subscribe errors
+    const channelName = `project-notes-${filter.column}-${filter.value}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+
     const channel = sb
-      .channel("project-notes-realtime")
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
@@ -188,7 +191,11 @@ export const useProjectNotes = ({ projectId, quoteId }: UseProjectNotesParams) =
       .subscribe();
 
     return () => {
-      sb.removeChannel(channel);
+      try {
+        sb.removeChannel(channel);
+      } catch {
+        try { channel.unsubscribe?.(); } catch {}
+      }
     };
   }, [filter?.column, filter?.value]);
 
