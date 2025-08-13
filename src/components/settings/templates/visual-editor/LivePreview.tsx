@@ -500,69 +500,93 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
             })()}
           </div>
         ) : layout === 'detailed' ? (
-          // Detailed breakdown view
+          // Detailed breakdown view (unified with Itemized headers)
           <div className="space-y-6">
-            {treatments.map((treatment, index) => {
+            {treatments.map((treatment, treatmentIndex) => {
               const room = rooms.find(r => r.id === treatment.room_id);
               const surface = surfaces.find(s => s.id === treatment.window_id);
 
-              const breakdownItems = [
+              // Get window summary data for dynamic breakdown
+              const windowSummary = projectData?.windowSummaries?.find(
+                (ws: any) => ws.window_id === treatment.window_id
+              );
+              const ws: any = (windowSummary && (windowSummary as any).summary)
+                ? (windowSummary as any).summary
+                : windowSummary;
+
+              const items: Array<{ number: string | number; productService: string; description: string; quantity: string | number; priceRate: number; total: number; isMain: boolean; }> = [
                 {
-                  description: `${treatment.treatment_type} - ${treatment.product_name || 'Custom Treatment'}`,
-                  category: 'Product',
+                  number: treatmentIndex + 1,
+                  productService: treatment.treatment_type || ws?.template_name || 'Treatment',
+                  description: surface?.name || 'Window',
                   quantity: treatment.quantity || 1,
-                  unit_price: treatment.unit_price || 0,
-                  total: treatment.total_price || 0
-                },
-                ...(treatment.fabric_type ? [{
-                  description: `Fabric: ${treatment.fabric_type}`,
-                  category: 'Materials',
-                  quantity: treatment.quantity || 1,
-                  unit_price: ((treatment.material_cost || 0) * 0.7),
-                  total: ((treatment.material_cost || 0) * 0.7) * (treatment.quantity || 1)
-                }] : []),
-                ...(treatment.labor_cost && treatment.labor_cost > 0 ? [{
-                  description: 'Installation & Labor',
-                  category: 'Labor',
-                  quantity: 1,
-                  unit_price: treatment.labor_cost,
-                  total: treatment.labor_cost
-                }] : []),
-                ...(treatment.hardware ? [{
-                  description: `Hardware: ${treatment.hardware}`,
-                  category: 'Hardware',
-                  quantity: treatment.quantity || 1,
-                  unit_price: ((treatment.material_cost || 0) * 0.3),
-                  total: ((treatment.material_cost || 0) * 0.3) * (treatment.quantity || 1)
-                }] : [])
+                  priceRate: treatment.unit_price || 0,
+                  total: treatment.total_price || ws?.total_cost || 0,
+                  isMain: true
+                }
               ];
 
+              if (ws?.cost_breakdown && Array.isArray(ws.cost_breakdown)) {
+                ws.cost_breakdown.forEach((component: any) => {
+                  if ((component.total_cost ?? 0) > 0) {
+                    const label = component.name || component.category || 'Item';
+                    const qtyVal = component.quantity ?? 1;
+                    const qty = component.unit ? `${Number(qtyVal).toFixed(2)} ${component.unit}` : (qtyVal ?? 1);
+                    const rate = component.unit_price ?? (Number(component.total_cost) / (Number(component.quantity) || 1));
+                    items.push({ number: '', productService: label, description: component.description || '-', quantity: qty, priceRate: Number(rate) || 0, total: Number(component.total_cost) || 0, isMain: false });
+                    return;
+                  }
+
+                  if (component.label && component.amount > 0) {
+                    let quantity: string | number = 1;
+                    let priceRate = component.amount;
+
+                    if (component.label.toLowerCase().includes('fabric')) {
+                      const meters = ws?.linear_meters || treatment.width || 0;
+                      if (meters > 0) { quantity = `${meters.toFixed(1)} m`; priceRate = component.amount / meters; }
+                    } else if (component.label.toLowerCase().includes('lining')) {
+                      const meters = ws?.linear_meters || treatment.width || 0;
+                      if (meters > 0) { quantity = `${meters.toFixed(1)} m`; priceRate = component.amount / meters; }
+                    } else if (component.label.toLowerCase().includes('heading')) {
+                      const width = treatment.width || ws?.measurements_details?.rail_width || 0;
+                      if (width > 0) { quantity = `${(width * 100).toFixed(0)} cm`; priceRate = component.amount / (width * 100); }
+                    } else if (component.label.toLowerCase().includes('manufacturing')) {
+                      quantity = treatment.quantity || 1;
+                      priceRate = component.amount / (treatment.quantity || 1);
+                    }
+
+                    items.push({ number: '', productService: component.label, description: component.description || '-', quantity, priceRate, total: component.amount, isMain: false });
+                  }
+                });
+              }
+
               return (
-                <div key={treatment.id || index} className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-2 border-b">
-                    <h4 className="font-medium text-brand-primary">{room?.name || 'Room'} - {surface?.name || 'Window'}</h4>
+                <div key={treatment.id || treatmentIndex} className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-3 border-b">
+                    <h4 className="font-medium text-gray-900">{room?.name || 'Room'}</h4>
                   </div>
+
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="text-left p-3 text-sm font-medium text-gray-700">Item</th>
-                          <th className="text-left p-3 text-sm font-medium text-gray-700">Category</th>
-                          <th className="text-center p-3 text-sm font-medium text-gray-700">Qty</th>
-                          <th className="text-right p-3 text-sm font-medium text-gray-700">Unit Price</th>
-                          <th className="text-right p-3 text-sm font-medium text-gray-700">Total</th>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700 w-12">#</th>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700">Product/Service</th>
+                          <th className="text-left p-3 text-sm font-medium text-gray-700">Description</th>
+                          <th className="text-center p-3 text-sm font-medium text-gray-700">Quantity</th>
+                          <th className="text-right p-3 text-sm font-medium text-gray-700">Price rate</th>
+                          <th className="text-right p-3 text-sm font-medium text-gray-700">Total without GST</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {breakdownItems.map((item, bIndex) => (
-                          <tr key={bIndex} className="border-t">
-                            <td className="p-3">{item.description}</td>
-                            <td className="p-3">
-                              <Badge variant="outline" className="text-xs">{item.category}</Badge>
-                            </td>
-                            <td className="p-3 text-center">{item.quantity}</td>
-                            <td className="p-3 text-right">{formatCurrency(item.unit_price)}</td>
-                            <td className="p-3 text-right font-medium">{formatCurrency(item.total)}</td>
+                        {items.map((row, i) => (
+                          <tr key={`${treatmentIndex}-${i}`} className={`${row.isMain ? 'bg-white' : 'bg-gray-50'} border-t`}>
+                            <td className="p-3 text-sm font-medium">{row.number}</td>
+                            <td className="p-3 text-sm">{row.productService}</td>
+                            <td className="p-3 text-sm text-gray-600">{row.description}</td>
+                            <td className="p-3 text-sm text-center">{typeof row.quantity === 'number' ? row.quantity : row.quantity}</td>
+                            <td className="p-3 text-sm text-right">{formatCurrency(typeof row.priceRate === 'number' ? row.priceRate : 0)}</td>
+                            <td className="p-3 text-sm text-right font-medium">{formatCurrency(typeof row.total === 'number' ? row.total : 0)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -662,13 +686,14 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     
     return (
       <div 
-        className="border-t pt-6 mt-8"
+        className="border-t pt-6 mt-8 text-center document-surface"
         style={{ 
-          backgroundColor: styles?.backgroundColor || '#f8fafc',
-          color: styles?.textColor || '#6b7280'
+          background: 'transparent',
+          backgroundColor: 'transparent',
+          color: 'inherit'
         }}
       >
-        <div className="text-center space-y-2">
+        <div className="space-y-2">
           {isEditable ? (
             <Input
               value={getEditableValue(block.id, 'text', content.text)}
