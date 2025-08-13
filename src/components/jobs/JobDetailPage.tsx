@@ -81,7 +81,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   return (
     <div className="min-h-screen bg-background w-full">
       {/* Compact Header Bar */}
-      <div className="bg-card border-b shadow-sm">
+      <div className="bg-background border-b shadow-sm">
         <div className="px-4 py-3">
           {/* Navigation & Main Info in Single Row */}
           <div className="flex items-center justify-between">
@@ -159,7 +159,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Tab Navigation */}
-          <div className="bg-card border-b">
+          <div className="bg-background border-b">
             <div className="px-4">
               <TabsList className="bg-transparent p-0 h-auto border-b-0">
                 {tabs.map((tab) => {
@@ -180,52 +180,30 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-background min-h-[calc(100vh-160px)]">
+          <div className="bg-background min-h-[calc(100vh-160px)] text-foreground">
             <div className="p-4">
-              <TabsContent value="details" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border p-6">
-                  <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
-                </div>
+              <TabsContent value="details" className="mt-0 p-6">
+                <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
               </TabsContent>
 
-              <TabsContent value="rooms" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <RoomsTab projectId={jobId} />
-                  </div>
-                </div>
+              <TabsContent value="rooms" className="mt-0 p-6">
+                <RoomsTab projectId={jobId} />
               </TabsContent>
 
-              <TabsContent value="quotation" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <QuotationTab projectId={jobId} />
-                  </div>
-                </div>
+              <TabsContent value="quotation" className="mt-0 p-6">
+                <QuotationTab projectId={jobId} />
               </TabsContent>
 
-              <TabsContent value="workroom" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <WorkroomTab projectId={jobId} />
-                  </div>
-                </div>
+              <TabsContent value="workroom" className="mt-0 p-6">
+                <WorkroomTab projectId={jobId} />
               </TabsContent>
 
-              <TabsContent value="emails" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <EmailsTab projectId={jobId} />
-                  </div>
-                </div>
+              <TabsContent value="emails" className="mt-0 p-6">
+                <EmailsTab projectId={jobId} />
               </TabsContent>
 
-              <TabsContent value="calendar" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <CalendarTab projectId={jobId} />
-                  </div>
-                </div>
+              <TabsContent value="calendar" className="mt-0 p-6">
+                <CalendarTab projectId={jobId} />
               </TabsContent>
             </div>
           </div>
