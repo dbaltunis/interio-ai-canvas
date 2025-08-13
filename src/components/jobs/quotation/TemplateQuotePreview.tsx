@@ -73,20 +73,20 @@ export const TemplateQuotePreview = ({
   };
 
   const renderHeader = () => (
-    <div className="flex items-start justify-between mb-8 p-6 bg-gradient-to-r from-brand-primary to-brand-accent text-white rounded-lg">
+    <div className="flex items-start justify-between mb-8 p-6 border-b-2 border-gray-200">
       <div className="flex items-start gap-4">
         {businessSettings?.company_logo_url && (
           <img 
             src={businessSettings.company_logo_url} 
             alt="Company Logo" 
-            className="h-16 w-16 object-contain bg-white rounded p-1"
+            className="h-16 w-16 object-contain"
           />
         )}
         <div>
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-3xl font-bold mb-2 text-gray-900">
             {businessSettings?.company_name || 'Your Company Name'}
           </h1>
-          <div className="space-y-1 text-brand-primary-foreground">
+          <div className="space-y-1 text-gray-600">
             {businessSettings?.address && <p>{businessSettings.address}</p>}
             {(businessSettings?.city || businessSettings?.state || businessSettings?.zip_code) && (
               <p>
@@ -103,17 +103,17 @@ export const TemplateQuotePreview = ({
         </div>
       </div>
       <div className="text-right">
-        <h2 className="text-2xl font-semibold mb-2">QUOTE</h2>
-        <p className="text-sm">Quote #: QT-{String(Math.floor(Math.random() * 10000)).padStart(4, '0')}</p>
-        <p className="text-sm">Date: {new Date().toLocaleDateString()}</p>
-        <p className="text-sm">Valid Until: {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
+        <h2 className="text-2xl font-semibold mb-2 text-gray-900">QUOTE</h2>
+        <p className="text-sm text-gray-600">Quote #: QT-{String(Math.floor(Math.random() * 10000)).padStart(4, '0')}</p>
+        <p className="text-sm text-gray-600">Date: {new Date().toLocaleDateString()}</p>
+        <p className="text-sm text-gray-600">Valid Until: {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
       </div>
     </div>
   );
 
   const renderClientInfo = () => (
     <div className="mb-6">
-      <h3 className="text-lg font-semibold mb-3 text-brand-primary">Bill To:</h3>
+      <h3 className="text-lg font-semibold mb-3 text-gray-900">Bill To:</h3>
       {client ? (
         <div className="space-y-1">
           <p className="font-medium">{client.name}</p>
@@ -137,7 +137,7 @@ export const TemplateQuotePreview = ({
 
   const renderProductsTable = () => (
     <div className="mb-8">
-      <h3 className="text-lg font-semibold mb-4 text-brand-primary">Quote Items</h3>
+      <h3 className="text-lg font-semibold mb-4 text-gray-900">Quote Items</h3>
       
       {templateId === 'detailed' ? (
         // Detailed breakdown view
@@ -145,7 +145,7 @@ export const TemplateQuotePreview = ({
           {quoteItems.map((item, index) => (
             <div key={index} className="border rounded-lg overflow-hidden">
               <div className="bg-gray-50 px-4 py-2 border-b">
-                <h4 className="font-medium text-brand-primary">
+                <h4 className="font-medium text-gray-900">
                   {item.room} - {item.window}
                 </h4>
               </div>
@@ -250,7 +250,7 @@ export const TemplateQuotePreview = ({
         </div>
         <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-3">
           <span>Total:</span>
-          <span className="text-brand-primary">{formatCurrencyWithSettings(total)}</span>
+          <span className="text-gray-900">{formatCurrencyWithSettings(total)}</span>
         </div>
       </div>
     </div>
@@ -274,21 +274,35 @@ export const TemplateQuotePreview = ({
     </div>
   );
 
+  // Check if we're in a full-screen context (no Card wrapper needed)
+  const isFullScreen = typeof window !== 'undefined' && 
+    document.getElementById('quote-full-view')?.contains(document.querySelector('.document-surface'));
+
+  const documentContent = (
+    <div className="document-surface bg-white text-black p-8 break-inside-avoid">
+      {renderHeader()}
+      {renderClientInfo()}
+      {renderProductsTable()}
+      {renderTotals()}
+      {renderFooter()}
+    </div>
+  );
+
+  if (isFullScreen) {
+    return documentContent;
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="no-print">
         <CardTitle className="flex items-center justify-between">
           <span>Quote Preview - {templateId} Template</span>
           <Badge variant="outline">{templateId}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="document-surface bg-document text-document-foreground p-8 border rounded-lg shadow-sm max-w-4xl mx-auto">
-          {renderHeader()}
-          {renderClientInfo()}
-          {renderProductsTable()}
-          {renderTotals()}
-          {renderFooter()}
+        <div className="border rounded-lg shadow-sm max-w-4xl mx-auto">
+          {documentContent}
         </div>
       </CardContent>
     </Card>

@@ -102,9 +102,9 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           </div>
         </DialogHeader>
         
-        <div className="overflow-auto flex-1 bg-gray-50">
-          <div className="p-8">
-            <div id="quote-full-view" className="bg-white shadow-lg">
+        <div className="overflow-auto flex-1 bg-white">
+          <div className="max-h-[calc(90vh-80px)] overflow-y-auto">
+            <div id="quote-full-view" className="bg-white min-h-full p-8 print:p-0">
               <TemplateQuotePreview
                 project={project}
                 treatments={treatments}
