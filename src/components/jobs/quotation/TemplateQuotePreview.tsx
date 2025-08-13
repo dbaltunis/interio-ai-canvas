@@ -18,6 +18,7 @@ interface TemplateQuotePreviewProps {
   total: number;
   markupPercentage: number;
   templateId: string;
+  isFullScreen?: boolean;
 }
 
 export const TemplateQuotePreview = ({
@@ -30,7 +31,8 @@ export const TemplateQuotePreview = ({
   taxAmount,
   total,
   markupPercentage,
-  templateId
+  templateId,
+  isFullScreen = false
 }: TemplateQuotePreviewProps) => {
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
@@ -327,18 +329,18 @@ export const TemplateQuotePreview = ({
   };
 
   // Check if we're in a full-screen context (no Card wrapper needed)
-  const isFullScreen = typeof window !== 'undefined' && 
+  const isInFullView = typeof window !== 'undefined' && 
     document.getElementById('quote-full-view')?.contains(document.querySelector('.document-surface'));
 
   const documentContent = (
     <div 
-      className={getDocumentClasses()}
+      className={isFullScreen ? "pdf-document-content bg-white text-black p-8 max-w-none mx-0" : getDocumentClasses()}
       style={{
         fontFamily: templateStyling.fontFamily,
         fontSize: templateStyling.fontSize,
         lineHeight: templateStyling.lineHeight,
         color: templateStyling.textColor,
-        backgroundColor: templateStyling.backgroundColor
+        backgroundColor: isFullScreen ? '#ffffff' : templateStyling.backgroundColor
       }}
     >
       {renderHeader()}
@@ -349,7 +351,7 @@ export const TemplateQuotePreview = ({
     </div>
   );
 
-  if (isFullScreen) {
+  if (isFullScreen || isInFullView) {
     return documentContent;
   }
 

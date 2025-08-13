@@ -36,22 +36,39 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   templateId
 }) => {
   const handleDownloadPDF = async () => {
-    const element = document.querySelector('.document-surface') as HTMLElement;
+    const element = document.querySelector('.pdf-document-content') as HTMLElement;
     if (!element) return;
 
     try {
-      const canvas = await html2canvas(element, {
+      // Create a clean clone for PDF generation
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.className = 'pdf-document-content bg-white text-black p-8 max-w-none mx-0';
+      
+      // Temporarily add to body for capture
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = '794px'; // A4 width in pixels at 96dpi
+      clone.style.background = 'white';
+      document.body.appendChild(clone);
+
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         removeContainer: true,
         logging: false,
+        width: 794,
+        height: clone.scrollHeight,
         ignoreElements: (element) => {
           return element.classList.contains('no-print') || 
                  element.closest('.no-print') !== null;
         }
       });
+
+      // Remove the clone
+      document.body.removeChild(clone);
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -122,6 +139,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
                 total={total}
                 markupPercentage={markupPercentage}
                 templateId={templateId}
+                isFullScreen={true}
               />
             </div>
           </div>

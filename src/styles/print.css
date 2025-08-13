@@ -18,7 +18,8 @@
   }
   
   /* Document surface clean print styling - NO BORDERS */
-  .document-surface {
+  .document-surface,
+  .pdf-document-content {
     background: white !important;
     box-shadow: none !important;
     border: none !important;
@@ -30,7 +31,20 @@
   }
   
   /* Remove any wrapper borders and rounded corners */
-  .document-surface * {
+  .document-surface *,
+  .pdf-document-content * {
+    border-radius: 0 !important;
+  }
+  
+  /* Remove card wrappers and containers */
+  .document-surface .border,
+  .pdf-document-content .border,
+  .document-surface .shadow-sm,
+  .pdf-document-content .shadow-sm,
+  .document-surface .rounded-lg,
+  .pdf-document-content .rounded-lg {
+    border: none !important;
+    box-shadow: none !important;
     border-radius: 0 !important;
   }
   
