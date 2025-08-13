@@ -95,6 +95,107 @@ export const DraggableBlock = ({
     }
   };
 
+  const getContentBorderClasses = () => {
+    const borderStyle = block.content?.borderStyle || 'none';
+    const borderWidth = block.content?.borderWidth || 'thin';
+    const borderColor = block.content?.borderColor || 'gray';
+    
+    if (borderStyle === 'none') return '';
+    
+    const borderStyles = {
+      solid: 'border-solid',
+      dashed: 'border-dashed',
+      dotted: 'border-dotted'
+    };
+    
+    const borderWidths = {
+      thin: 'border',
+      medium: 'border-2',
+      thick: 'border-4'
+    };
+    
+    const borderColors = {
+      gray: 'border-gray-300',
+      primary: 'border-primary',
+      secondary: 'border-secondary',
+      black: 'border-black',
+      blue: 'border-blue-500',
+      green: 'border-green-500',
+      red: 'border-red-500'
+    };
+    
+    return `${borderStyles[borderStyle]} ${borderWidths[borderWidth]} ${borderColors[borderColor]} rounded-md`;
+  };
+
+  const renderBorderControls = () => {
+    if (!isSelected) return null;
+    
+    return (
+      <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-b-lg shadow-lg p-3 mt-1">
+        <div className="text-xs font-medium text-gray-700 mb-2">Border Options</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Style</Label>
+            <Select
+              value={block.content?.borderStyle || 'none'}
+              onValueChange={(value) => onUpdateContent({ ...block.content, borderStyle: value })}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="solid">Solid</SelectItem>
+                <SelectItem value="dashed">Dashed</SelectItem>
+                <SelectItem value="dotted">Dotted</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label className="text-xs">Width</Label>
+            <Select
+              value={block.content?.borderWidth || 'thin'}
+              onValueChange={(value) => onUpdateContent({ ...block.content, borderWidth: value })}
+              disabled={block.content?.borderStyle === 'none'}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="thin">Thin</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="thick">Thick</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="col-span-2">
+            <Label className="text-xs">Color</Label>
+            <Select
+              value={block.content?.borderColor || 'gray'}
+              onValueChange={(value) => onUpdateContent({ ...block.content, borderColor: value })}
+              disabled={block.content?.borderStyle === 'none'}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gray">Gray</SelectItem>
+                <SelectItem value="primary">Primary</SelectItem>
+                <SelectItem value="secondary">Secondary</SelectItem>
+                <SelectItem value="black">Black</SelectItem>
+                <SelectItem value="blue">Blue</SelectItem>
+                <SelectItem value="green">Green</SelectItem>
+                <SelectItem value="red">Red</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div ref={setNodeRef} style={style}>
       <Card 
@@ -132,9 +233,12 @@ export const DraggableBlock = ({
         </div>
 
         {/* Block Content */}
-        <div className="p-4 md:p-6">
+        <div className={`p-4 md:p-6 ${getContentBorderClasses()}`}>
           {renderBlockContent()}
         </div>
+        
+        {/* Border Controls */}
+        {renderBorderControls()}
       </Card>
     </div>
   );
