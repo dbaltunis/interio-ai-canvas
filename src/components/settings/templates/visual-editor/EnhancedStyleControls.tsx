@@ -438,18 +438,85 @@ export const EnhancedStyleControls = ({ block, onUpdate }: EnhancedStyleControls
               </div>
             </div>
 
-            {/* Border */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Border</Label>
+            {/* Border Controls */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium block">Border</Label>
+              
+              {/* Border Toggle */}
               <div className="flex items-center gap-2">
                 <Switch
-                  checked={!!currentStyle.border}
+                  checked={currentStyle.borderStyle !== 'none' && !!currentStyle.borderStyle}
                   onCheckedChange={(checked) => 
-                    updateStyle('border', checked ? '1px solid #e2e8f0' : '')
+                    updateStyle('borderStyle', checked ? 'solid' : 'none')
                   }
                 />
                 <span className="text-sm">Enable Border</span>
               </div>
+
+              {/* Border Style */}
+              {currentStyle.borderStyle !== 'none' && currentStyle.borderStyle && (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Style</Label>
+                    <Select
+                      value={currentStyle.borderStyle || 'solid'}
+                      onValueChange={(value) => updateStyle('borderStyle', value)}
+                    >
+                      <SelectTrigger className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="solid">Solid</SelectItem>
+                        <SelectItem value="dashed">Dashed</SelectItem>
+                        <SelectItem value="dotted">Dotted</SelectItem>
+                        <SelectItem value="double">Double</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Border Width */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Width</Label>
+                    <div className="flex items-center gap-3">
+                      <Slider
+                        value={[parseInt(currentStyle.borderWidth?.replace('px', '') || '1')]}
+                        onValueChange={([value]) => updateStyle('borderWidth', `${value}px`)}
+                        max={10}
+                        min={1}
+                        step={1}
+                        className="flex-1"
+                      />
+                      <Badge variant="secondary" className="min-w-[50px] text-center">
+                        {currentStyle.borderWidth || '1px'}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Border Color */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-8 h-8 rounded border-2 border-gray-200 cursor-pointer"
+                        style={{ backgroundColor: currentStyle.borderColor || '#e2e8f0' }}
+                        onClick={() => setActiveColorPicker('border')}
+                      />
+                      <Input
+                        type="color"
+                        value={currentStyle.borderColor || '#e2e8f0'}
+                        onChange={(e) => updateStyle('borderColor', e.target.value)}
+                        className="w-12 h-8 p-0 border-0 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={currentStyle.borderColor || '#e2e8f0'}
+                        onChange={(e) => updateStyle('borderColor', e.target.value)}
+                        placeholder="#e2e8f0"
+                        className="flex-1 h-8 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </TabsContent>
 

@@ -118,6 +118,62 @@ export const BlockStyleControls = ({ block, onUpdate }: BlockStyleControlsProps)
         <CardTitle>Styling</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Border Controls */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Border</Label>
+          
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Style</Label>
+            <Select 
+              value={block.content.style?.borderStyle || 'none'} 
+              onValueChange={(value) => updateStyle('borderStyle', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="solid">Solid</SelectItem>
+                <SelectItem value="dashed">Dashed</SelectItem>
+                <SelectItem value="dotted">Dotted</SelectItem>
+                <SelectItem value="double">Double</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {block.content.style?.borderStyle && block.content.style?.borderStyle !== 'none' && (
+            <>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Width</Label>
+                <Slider
+                  value={[parseInt(block.content.style?.borderWidth?.replace('px', '') || '1')]}
+                  onValueChange={([value]) => updateStyle('borderWidth', `${value}px`)}
+                  max={10}
+                  min={1}
+                  step={1}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Color</Label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={block.content.style?.borderColor || "#e2e8f0"}
+                    onChange={(e) => updateStyle('borderColor', e.target.value)}
+                    className="w-12 h-10 border rounded cursor-pointer"
+                  />
+                  <Input
+                    value={block.content.style?.borderColor || "#e2e8f0"}
+                    onChange={(e) => updateStyle('borderColor', e.target.value)}
+                    placeholder="#e2e8f0"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label>Primary Color</Label>
           <div className="flex gap-2 items-center">

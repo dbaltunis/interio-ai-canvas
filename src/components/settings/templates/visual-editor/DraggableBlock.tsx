@@ -96,25 +96,42 @@ export const DraggableBlock = ({
   };
 
   const getContentBorderClasses = () => {
+    // Check for style-based borders (from EnhancedStyleControls)
+    const style = block.content?.style;
+    if (style?.borderStyle && style.borderStyle !== 'none') {
+      const borderStyles = {
+        solid: 'border-solid',
+        dashed: 'border-dashed',
+        dotted: 'border-dotted',
+        double: 'border-double'
+      };
+      
+      const borderWidth = style.borderWidth ? `border-[${style.borderWidth}]` : 'border';
+      const borderStyle = borderStyles[style.borderStyle] || 'border-solid';
+      
+      return `${borderStyle} ${borderWidth} rounded-md`;
+    }
+    
+    // Fallback to legacy border controls (from old implementation)
     const borderStyle = block.content?.borderStyle || 'none';
     const borderWidth = block.content?.borderWidth || 'thin';
     const borderColor = block.content?.borderColor || 'gray';
     
     if (borderStyle === 'none') return '';
     
-    const borderStyles = {
+    const legacyBorderStyles = {
       solid: 'border-solid',
       dashed: 'border-dashed',
       dotted: 'border-dotted'
     };
     
-    const borderWidths = {
+    const legacyBorderWidths = {
       thin: 'border',
       medium: 'border-2',
       thick: 'border-4'
     };
     
-    const borderColors = {
+    const legacyBorderColors = {
       gray: 'border-gray-300',
       primary: 'border-primary',
       secondary: 'border-secondary',
@@ -124,7 +141,36 @@ export const DraggableBlock = ({
       red: 'border-red-500'
     };
     
-    return `${borderStyles[borderStyle]} ${borderWidths[borderWidth]} ${borderColors[borderColor]} rounded-md`;
+    return `${legacyBorderStyles[borderStyle]} ${legacyBorderWidths[borderWidth]} ${legacyBorderColors[borderColor]} rounded-md`;
+  };
+
+  const getContentStyles = () => {
+    const style = block.content?.style || {};
+    const dynamicStyles: React.CSSProperties = {};
+
+    // Apply style-based border
+    if (style.borderStyle && style.borderStyle !== 'none') {
+      dynamicStyles.borderStyle = style.borderStyle;
+      dynamicStyles.borderWidth = style.borderWidth || '1px';
+      dynamicStyles.borderColor = style.borderColor || '#e2e8f0';
+    }
+
+    // Apply other styles
+    if (style.backgroundColor) dynamicStyles.backgroundColor = style.backgroundColor;
+    if (style.color) dynamicStyles.color = style.color;
+    if (style.fontSize) dynamicStyles.fontSize = style.fontSize;
+    if (style.fontFamily) dynamicStyles.fontFamily = style.fontFamily;
+    if (style.fontWeight) dynamicStyles.fontWeight = style.fontWeight;
+    if (style.fontStyle) dynamicStyles.fontStyle = style.fontStyle;
+    if (style.textAlign) dynamicStyles.textAlign = style.textAlign as any;
+    if (style.textDecoration) dynamicStyles.textDecoration = style.textDecoration;
+    if (style.padding) dynamicStyles.padding = style.padding;
+    if (style.borderRadius) dynamicStyles.borderRadius = style.borderRadius;
+    if (style.boxShadow) dynamicStyles.boxShadow = style.boxShadow;
+    if (style.opacity) dynamicStyles.opacity = style.opacity;
+    if (style.transform) dynamicStyles.transform = style.transform;
+
+    return dynamicStyles;
   };
 
   const renderBorderControls = () => {
@@ -233,7 +279,10 @@ export const DraggableBlock = ({
         </div>
 
         {/* Block Content */}
-        <div className={`p-4 md:p-6 ${getContentBorderClasses()}`}>
+        <div 
+          className={`p-4 md:p-6 ${getContentBorderClasses()}`}
+          style={getContentStyles()}
+        >
           {renderBlockContent()}
         </div>
         
