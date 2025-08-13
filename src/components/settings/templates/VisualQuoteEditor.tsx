@@ -7,7 +7,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, Eye, EyeOff, Palette } from "lucide-react";
+import { Save, Plus, Eye, EyeOff, Palette, FileText } from "lucide-react";
 import { DraggableBlock } from "./visual-editor/DraggableBlock";
 import { BlockToolbar } from "./visual-editor/BlockToolbar";
 import { LivePreview } from "./visual-editor/LivePreview";
@@ -20,6 +20,7 @@ import { ComponentLibrary } from "./visual-editor/ComponentLibrary";
 import { CanvasGrid } from "./visual-editor/CanvasGrid";
 import { CanvaToolbar } from "./visual-editor/CanvaToolbar";
 import { EnhancedStyleControls } from "./visual-editor/EnhancedStyleControls";
+import { TrueWYSIWYGEditor } from "./visual-editor/TrueWYSIWYGEditor";
 
 interface VisualQuoteEditorProps {
   isOpen: boolean;
@@ -132,6 +133,7 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
   const [showGrid, setShowGrid] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedTool, setSelectedTool] = useState<'select' | 'move' | 'text' | 'shape'>('select');
+  const [useWYSIWYG, setUseWYSIWYG] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -248,6 +250,14 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
             </div>
             <div className="flex items-center gap-2">
               <Button
+                variant={useWYSIWYG ? "default" : "outline"}
+                onClick={() => setUseWYSIWYG(!useWYSIWYG)}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                {useWYSIWYG ? 'True WYSIWYG' : 'Legacy Editor'}
+              </Button>
+              <Button
                 variant="outline"
                 onClick={() => setShowPreview(!showPreview)}
                 className="flex items-center gap-2"
@@ -284,7 +294,16 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
         )}
 
         <div className="flex h-full overflow-hidden">
-          {!showPreview ? (
+          {useWYSIWYG ? (
+            <TrueWYSIWYGEditor
+              blocks={blocks}
+              onBlocksChange={setBlocks}
+              templateName={templateName}
+              onTemplateNameChange={setTemplateName}
+              selectedBlockId={selectedBlockId}
+              onSelectBlock={setSelectedBlockId}
+            />
+          ) : !showPreview ? (
             <>
               {/* Component Library Sidebar */}
               <div className="w-72 border-r bg-white">
