@@ -389,11 +389,19 @@ const SpacerContent = ({ content, onUpdate }: any) => (
 const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   const [showSignaturePopup, setShowSignaturePopup] = useState(false);
   const [signatureData, setSignatureData] = useState(content.signatureData || null);
+  const [tempSignatureData, setTempSignatureData] = useState<string | null>(null);
 
   const handleSignatureSave = (dataUrl: string) => {
-    setSignatureData(dataUrl);
-    onUpdate({ ...content, signatureData: dataUrl });
-    setShowSignaturePopup(false);
+    setTempSignatureData(dataUrl);
+  };
+
+  const confirmSignature = () => {
+    if (tempSignatureData) {
+      setSignatureData(tempSignatureData);
+      onUpdate({ ...content, signatureData: tempSignatureData });
+      setShowSignaturePopup(false);
+      setTempSignatureData(null);
+    }
   };
 
   const openSignaturePopup = () => {
@@ -461,6 +469,20 @@ const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) =
                   width={400}
                   height={200}
                 />
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSignaturePopup(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={confirmSignature}
+                    disabled={!tempSignatureData}
+                  >
+                    Save Signature
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
