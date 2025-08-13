@@ -189,16 +189,30 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
 
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      // Try to get session first as it's more reliable
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      let userId = null;
+      if (session?.user) {
+        userId = session.user.id;
+      } else {
+        // Fallback to getUser
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          throw new Error('Please log in to save templates');
+        }
+        userId = user.id;
+      }
 
       const templateData = {
         name: templateName,
         description: `Template with ${blocks.length} blocks`,
         template_style: templateStyle,
         blocks,
-        user_id: user.id
+        user_id: userId
       };
+
+      console.log('Saving template with blocks:', blocks.length, blocks.map(b => ({ id: b.id, type: b.type })));
 
       if (template?.id) {
         // Update existing template
