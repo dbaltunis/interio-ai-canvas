@@ -17,9 +17,10 @@ import { useQueryClient } from '@tanstack/react-query';
 interface DirectMessageDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedUserId?: string | null;
 }
 
-export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProps) => {
+export const DirectMessageDialog = ({ isOpen, onClose, selectedUserId }: DirectMessageDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { conversations = [], messages = [], activeConversation, sendMessage, sendingMessage, closeConversation, openConversation } = useDirectMessages();
@@ -41,9 +42,16 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+useEffect(() => {
+  scrollToBottom();
+}, [messages]);
+
+// Ensure the correct conversation opens when dialog is triggered
+useEffect(() => {
+  if (isOpen && selectedUserId) {
+    openConversation(selectedUserId);
+  }
+}, [isOpen, selectedUserId]);
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeConversation) return;
@@ -305,10 +313,6 @@ export const DirectMessageDialog = ({ isOpen, onClose }: DirectMessageDialogProp
                       </p>
                     </div>
                   </div>
-                  
-                  <Button variant="ghost" size="sm" onClick={handleClose}>
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
 
                  {/* Messages */}

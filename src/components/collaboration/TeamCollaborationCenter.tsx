@@ -28,6 +28,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { activeUsers = [] } = useUserPresence();
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'team' | 'messages'>('team');
   const [messageInput, setMessageInput] = useState('');
   const [showAccountUsers, setShowAccountUsers] = useState(false);
@@ -270,10 +271,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               transition={{ delay: index * 0.1 }}
                               className="group relative"
                             >
-                               <div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
+<div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      openConversation(user.user_id);
+                                      setSelectedUserId(user.user_id);
+                                      setActiveTab('messages');
                                       setMessageDialogOpen(true);
                                     }}>
                                 
@@ -351,11 +353,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   <div key={user.user_id} 
                                        className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border cursor-pointer hover:bg-accent/30 transition-colors"
                                        onClick={(e) => {
-                                         e.stopPropagation();
-                                         openConversation(user.user_id);
-                                         setActiveTab('messages');
-                                         setMessageDialogOpen(true);
-                                       }}>
+       e.stopPropagation();
+       setSelectedUserId(user.user_id);
+       setActiveTab('messages');
+       setMessageDialogOpen(true);
+     }}>
 
                                   <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.user_profile?.avatar_url} />
