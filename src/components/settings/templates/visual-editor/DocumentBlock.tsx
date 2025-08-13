@@ -396,6 +396,17 @@ const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) =
     setShowSignaturePopup(false);
   };
 
+  const openSignaturePopup = () => {
+    setShowSignaturePopup(true);
+    // Scroll to center of screen after popup opens
+    setTimeout(() => {
+      const popup = document.querySelector('[data-signature-popup]');
+      if (popup) {
+        popup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
   return (
     <>
       <div className="space-y-4 border border-gray-300 p-4 bg-gray-50">
@@ -404,7 +415,7 @@ const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) =
         </div>
         <div 
           className="h-16 border-b border-gray-400 relative cursor-pointer hover:bg-gray-100 transition-colors"
-          onClick={() => setShowSignaturePopup(true)}
+          onClick={openSignaturePopup}
         >
           {signatureData ? (
             <img 
@@ -427,23 +438,31 @@ const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) =
       </div>
 
       {showSignaturePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Digital Signature</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSignaturePopup(false)}
-              >
-                ✕
-              </Button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" data-signature-popup>
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">Digital Signature</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSignaturePopup(false)}
+                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                >
+                  ✕
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Please sign in the box below using your mouse or finger on touch devices.
+                </p>
+                <SignatureCanvas 
+                  onSignatureSave={handleSignatureSave}
+                  width={400}
+                  height={200}
+                />
+              </div>
             </div>
-            <SignatureCanvas 
-              onSignatureSave={handleSignatureSave}
-              width={400}
-              height={200}
-            />
           </div>
         </div>
       )}
