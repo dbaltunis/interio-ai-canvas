@@ -99,35 +99,25 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="px-6 py-4 border-b bg-background">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0 bg-white">
+        <DialogHeader className="px-6 py-4 border-b bg-white flex-shrink-0">
           <div className="flex items-center justify-between">
-            <DialogTitle>Quote Full View</DialogTitle>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadPDF}
-                className="flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Download PDF</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-black">Quote Full View</DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPDF}
+              className="flex items-center space-x-2 bg-white text-black border-gray-300 hover:bg-gray-50"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download PDF</span>
+            </Button>
           </div>
         </DialogHeader>
         
-        <div className="overflow-auto flex-1 bg-gray-100">
-          <div className="max-h-[calc(90vh-80px)] overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto">
+        <div className="flex-1 overflow-hidden bg-white">
+          <div className="h-full overflow-y-auto p-8">
+            <div className="max-w-4xl mx-auto bg-white">
               <TemplateQuotePreview
                 project={project}
                 treatments={treatments}
