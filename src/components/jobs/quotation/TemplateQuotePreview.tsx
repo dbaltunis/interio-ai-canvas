@@ -294,35 +294,9 @@ export const TemplateQuotePreview = ({
     ...(businessSettings as any)?.templateStyling
   };
 
-  // Get document styling classes based on template settings - Always ensure document has white background
+  // Always force white background and black text for documents
   const getDocumentClasses = () => {
-    const shadowClasses = {
-      none: '',
-      light: 'shadow-sm',
-      medium: 'shadow-md',
-      strong: 'shadow-lg'
-    };
-
-    const borderClasses = {
-      none: '',
-      thin: 'border border-gray-200',
-      medium: 'border-2 border-gray-300',
-      thick: 'border-4 border-gray-400'
-    };
-
-    const cornerClasses = {
-      square: '',
-      'slightly-rounded': 'rounded-sm',
-      rounded: 'rounded-lg'
-    };
-
-    const marginClasses = {
-      narrow: 'p-4',
-      normal: 'p-8',
-      wide: 'p-12'
-    };
-
-    return `document-surface bg-white text-black break-inside-avoid print:max-w-none print:mx-0 print:bg-white print:text-black print:shadow-none print:border-none print:rounded-none print:p-8 ${shadowClasses[templateStyling.documentShadow]} ${borderClasses[templateStyling.documentBorder]} ${cornerClasses[templateStyling.documentCorners]} ${marginClasses[templateStyling.margins]}`;
+    return 'document-surface bg-white text-black break-inside-avoid print:max-w-none print:mx-0 print:bg-white print:text-black print:shadow-none print:border-none print:rounded-none print:p-8';
   };
 
   // Find the selected template
@@ -411,13 +385,14 @@ export const TemplateQuotePreview = ({
 
   const documentContent = (
     <div 
-      className={`pdf-document-content ${getDocumentClasses()}`}
+      className="pdf-document-content bg-white text-black p-8 min-h-full"
       style={{
         fontFamily: templateStyling.fontFamily,
         fontSize: templateStyling.fontSize,
         lineHeight: templateStyling.lineHeight,
         color: '#000000',
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        minHeight: '100vh'
       }}
     >
       {selectedTemplate ? renderTemplateBlocks() : renderLegacyContent()}

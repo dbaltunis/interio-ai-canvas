@@ -99,15 +99,15 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0 bg-white">
-        <DialogHeader className="px-6 py-4 border-b bg-white flex-shrink-0">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0 bg-background text-foreground">
+        <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-black">Quote Full View</DialogTitle>
+            <DialogTitle>Quote Full View</DialogTitle>
             <Button
               variant="outline"
               size="sm"
               onClick={handleDownloadPDF}
-              className="flex items-center space-x-2 bg-white text-black border-gray-300 hover:bg-gray-50"
+              className="flex items-center space-x-2"
             >
               <Download className="h-4 w-4" />
               <span>Download PDF</span>
@@ -116,22 +116,20 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden bg-white">
-          <div className="h-full overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto bg-white">
-              <TemplateQuotePreview
-                project={project}
-                treatments={treatments}
-                rooms={rooms}
-                surfaces={surfaces}
-                subtotal={subtotal}
-                taxRate={taxRate}
-                taxAmount={taxAmount}
-                total={total}
-                markupPercentage={markupPercentage}
-                templateId={templateId}
-                isFullScreen={true}
-              />
-            </div>
+          <div className="h-full overflow-y-auto">
+            <TemplateQuotePreview
+              project={project}
+              treatments={treatments}
+              rooms={rooms}
+              surfaces={surfaces}
+              subtotal={subtotal}
+              taxRate={taxRate}
+              taxAmount={taxAmount}
+              total={total}
+              markupPercentage={markupPercentage}
+              templateId={templateId}
+              isFullScreen={true}
+            />
           </div>
         </div>
       </DialogContent>
