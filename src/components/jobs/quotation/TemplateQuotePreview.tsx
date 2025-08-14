@@ -349,11 +349,12 @@ export const TemplateQuotePreview = ({
     }
 
     return selectedTemplate.blocks.map((block) => {
-      // Process block content with variable replacements
+      // Process block content with variable replacements and inject actual data
       const processedBlock = {
         ...block,
         content: {
           ...block.content,
+          // Replace template variables
           companyName: replaceTemplateVariables(block.content.companyName || ''),
           address: replaceTemplateVariables(block.content.address || ''),
           phone: replaceTemplateVariables(block.content.phone || ''),
@@ -363,6 +364,23 @@ export const TemplateQuotePreview = ({
           validUntil: replaceTemplateVariables(block.content.validUntil || ''),
           text: replaceTemplateVariables(block.content.text || ''),
           companyInfo: replaceTemplateVariables(block.content.companyInfo || ''),
+          // Inject actual client data for client blocks
+          ...(block.type === 'client' && client ? {
+            clientName: client.name || '',
+            clientEmail: client.email || '',
+            clientAddress: client.address || '',
+            clientPhone: client.phone || ''
+          } : {}),
+          // Set default values for products table
+          ...(block.type === 'products' ? {
+            showProduct: true,
+            showDescription: true,
+            showQuantity: true,
+            showUnitPrice: true,
+            showTotal: true,
+            showTax: true,
+            title: block.content.title || 'Quote Items'
+          } : {})
         }
       };
 

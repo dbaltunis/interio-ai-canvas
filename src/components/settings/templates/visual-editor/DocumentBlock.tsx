@@ -52,6 +52,7 @@ export const DocumentBlock = ({
       case 'header':
         return <HeaderContent content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
       case 'client-info':
+      case 'client':
         return <ClientInfoContent content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
       case 'text':
         return <TextContent content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
@@ -306,35 +307,44 @@ const TextContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   );
 };
 
-const ProductsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => (
-  <div className="space-y-4">
-    <h3 className="font-semibold text-gray-900">Products & Services</h3>
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-50">
-            {content.showProduct && <th className="border border-gray-300 p-2 text-left">Product</th>}
-            {content.showDescription && <th className="border border-gray-300 p-2 text-left">Description</th>}
-            {content.showQuantity && <th className="border border-gray-300 p-2 text-left">Qty</th>}
-            {content.showUnitPrice && <th className="border border-gray-300 p-2 text-left">Unit Price</th>}
-            {content.showTotal && <th className="border border-gray-300 p-2 text-left">Total</th>}
-            {content.showTax && <th className="border border-gray-300 p-2 text-left">Tax</th>}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            {content.showProduct && <td className="border border-gray-300 p-2">Sample Product</td>}
-            {content.showDescription && <td className="border border-gray-300 p-2">Product description</td>}
-            {content.showQuantity && <td className="border border-gray-300 p-2">1</td>}
-            {content.showUnitPrice && <td className="border border-gray-300 p-2">$100.00</td>}
-            {content.showTotal && <td className="border border-gray-300 p-2">$100.00</td>}
-            {content.showTax && <td className="border border-gray-300 p-2">$10.00</td>}
-          </tr>
-        </tbody>
-      </table>
+const ProductsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
+  const mockQuoteItems = [
+    { description: 'Sample Product', qty: 1, unit_price: 100, total: 100 },
+    { description: 'Another Item', qty: 2, unit_price: 50, total: 100 }
+  ];
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-semibold text-gray-900">{content.title || 'Products & Services'}</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-50">
+              {content.showProduct && <th className="border border-gray-300 p-2 text-left">Product</th>}
+              {content.showDescription && <th className="border border-gray-300 p-2 text-left">Description</th>}
+              {content.showQuantity && <th className="border border-gray-300 p-2 text-left">Qty</th>}
+              {content.showUnitPrice && <th className="border border-gray-300 p-2 text-left">Unit Price</th>}
+              {content.showTotal && <th className="border border-gray-300 p-2 text-left">Total</th>}
+              {content.showTax && <th className="border border-gray-300 p-2 text-left">Tax</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {mockQuoteItems.map((item, index) => (
+              <tr key={index}>
+                {content.showProduct && <td className="border border-gray-300 p-2">{item.description}</td>}
+                {content.showDescription && <td className="border border-gray-300 p-2">Product description</td>}
+                {content.showQuantity && <td className="border border-gray-300 p-2">{item.qty}</td>}
+                {content.showUnitPrice && <td className="border border-gray-300 p-2">${item.unit_price.toFixed(2)}</td>}
+                {content.showTotal && <td className="border border-gray-300 p-2">${item.total.toFixed(2)}</td>}
+                {content.showTax && <td className="border border-gray-300 p-2">$10.00</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TotalsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => (
   <div className="space-y-2 max-w-xs ml-auto">
