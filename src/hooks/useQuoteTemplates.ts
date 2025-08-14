@@ -8,6 +8,9 @@ export interface QuoteTemplate {
   name: string;
   status: 'active' | 'draft';
   blocks: any[];
+  blockSettings?: any;
+  template_type?: string;
+  styling?: any;
   created_at: string;
   updated_at: string;
 }
@@ -16,8 +19,36 @@ export const useQuoteTemplates = () => {
   return useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
-      // For now, return mock data since we don't have templates in the database yet
-      // This should be replaced with actual database queries when templates table is created
+      try {
+        // Try to fetch from the database first
+        const { data: dbTemplates, error } = await supabase
+          .from('quote_templates')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "table not found"
+          console.error('Error fetching quote templates:', error);
+        }
+
+        // If we have database templates, return them
+        if (dbTemplates && dbTemplates.length > 0) {
+          return dbTemplates.map(template => ({
+            id: template.id,
+            name: template.name,
+            status: 'active' as const,
+            blocks: (template.blocks as any) || [],
+            blockSettings: (template as any).blockSettings,
+            template_type: (template as any).template_type || template.template_style,
+            styling: (template as any).styling,
+            created_at: template.created_at,
+            updated_at: template.updated_at || template.created_at,
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+      }
+
+      // Fallback to mock data
       const mockTemplates: QuoteTemplate[] = [
         {
           id: 'standard',

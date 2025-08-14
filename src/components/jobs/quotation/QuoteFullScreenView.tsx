@@ -118,17 +118,15 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         <div className="flex-1 overflow-hidden bg-white">
           <div className="h-full overflow-y-auto">
             <TemplateQuotePreview
-              project={project}
-              treatments={treatments}
-              rooms={rooms}
-              surfaces={surfaces}
-              subtotal={subtotal}
-              taxRate={taxRate}
-              taxAmount={taxAmount}
-              total={total}
-              markupPercentage={markupPercentage}
-              templateId={templateId}
-              isFullScreen={true}
+          project={project}
+          treatments={treatments}
+          subtotal={subtotal}
+          taxRate={taxRate}
+          taxAmount={taxAmount}
+          total={total}
+          markupPercentage={markupPercentage}
+          templateId={templateId}
+          isFullScreen={true}
             />
           </div>
         </div>
