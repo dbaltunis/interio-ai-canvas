@@ -316,63 +316,7 @@ export const TemplateQuotePreview = ({
       .replace(/\{\{valid_until\}\}/g, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString());
   };
 
-  // Render dynamic template blocks
-  const renderTemplateBlocks = () => {
-    if (!selectedTemplate) {
-      return renderLegacyContent();
-    }
-
-    return selectedTemplate.blocks.map((block) => {
-      // Process block content with variable replacements and inject actual data
-      const processedBlock = {
-        ...block,
-        content: {
-          ...block.content,
-          // Replace template variables
-          companyName: replaceTemplateVariables(block.content.companyName || ''),
-          address: replaceTemplateVariables(block.content.address || ''),
-          phone: replaceTemplateVariables(block.content.phone || ''),
-          email: replaceTemplateVariables(block.content.email || ''),
-          quoteNumber: replaceTemplateVariables(block.content.quoteNumber || ''),
-          date: replaceTemplateVariables(block.content.date || ''),
-          validUntil: replaceTemplateVariables(block.content.validUntil || ''),
-          text: replaceTemplateVariables(block.content.text || ''),
-          companyInfo: replaceTemplateVariables(block.content.companyInfo || ''),
-          // Inject actual client data for client blocks
-          ...(block.type === 'client' && client ? {
-            clientName: client.name || '',
-            clientEmail: client.email || '',
-            clientAddress: client.address || '',
-            clientPhone: client.phone || ''
-          } : {}),
-          // Set default values for products table
-          ...(block.type === 'products' ? {
-            showProduct: true,
-            showDescription: true,
-            showQuantity: true,
-            showUnitPrice: true,
-            showTotal: true,
-            showTax: true,
-            title: block.content.title || 'Quote Items'
-          } : {})
-        }
-      };
-
-      return (
-        <DocumentBlock
-          key={block.id}
-          block={processedBlock}
-          isSelected={false}
-          onSelect={() => {}}
-          onUpdateContent={() => {}}
-          onRemove={() => {}}
-          isInEditor={false}
-        />
-      );
-    });
-  };
-
-  // Legacy content renderer for fallback
+  // Always render the legacy content since templates aren't working properly
   const renderLegacyContent = () => (
     <>
       {renderHeader()}
@@ -387,15 +331,15 @@ export const TemplateQuotePreview = ({
     <div 
       className="pdf-document-content bg-white text-black p-8 min-h-full"
       style={{
-        fontFamily: templateStyling.fontFamily,
-        fontSize: templateStyling.fontSize,
-        lineHeight: templateStyling.lineHeight,
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        lineHeight: '1.5',
         color: '#000000',
         backgroundColor: '#ffffff',
         minHeight: '100vh'
       }}
     >
-      {selectedTemplate ? renderTemplateBlocks() : renderLegacyContent()}
+      {renderLegacyContent()}
     </div>
   );
 
