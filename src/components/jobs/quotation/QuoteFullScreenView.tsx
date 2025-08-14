@@ -36,7 +36,11 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   templateId
 }) => {
   const handleDownloadPDF = async () => {
-    const element = document.querySelector('.pdf-document-content') as HTMLElement;
+    // Try to find LivePreview content first, then fallback to pdf-document-content
+    let element = document.querySelector('.document-surface') as HTMLElement;
+    if (!element) {
+      element = document.querySelector('.pdf-document-content') as HTMLElement;
+    }
     if (!element) return;
 
     try {

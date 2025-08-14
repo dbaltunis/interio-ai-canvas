@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useClients } from '@/hooks/useClients';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+import { LivePreview } from '@/components/settings/templates/visual-editor/LivePreview';
 
 interface TemplateQuotePreviewProps {
   project: any;
@@ -43,10 +43,73 @@ export const TemplateQuotePreview = ({
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
   const { data: templates } = useQuoteTemplates();
-  const client = clients?.find(c => c.id === project.client_id);
-  
-  // Check if template uses blockSettings (Simple Editor) or blocks (Visual Editor)
   const selectedTemplate = templates?.find(t => t.id === templateId);
+  
+  // Use LivePreview for visual templates or if blocks exist
+  if (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) {
+    const projectData = {
+      project,
+      treatments,
+      rooms: [], // Add rooms data if available
+      surfaces: [], // Add surfaces data if available
+      subtotal,
+      taxRate,
+      taxAmount,
+      total,
+      markupPercentage
+    };
+
+    if (isFullScreen) {
+      return (
+        <div 
+          className="pdf-document-content"
+          style={{
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            lineHeight: '1.5',
+            color: '#000000',
+            backgroundColor: '#ffffff',
+            minHeight: '100vh',
+            width: '100%',
+            padding: '32px'
+          }}
+        >
+          <div className="p-8">
+            <LivePreview 
+              blocks={selectedTemplate.blocks} 
+              projectData={projectData}
+              isEditable={false}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#000000' }}>
+              Quote Preview - {selectedTemplate?.name || templateId} Template
+            </h3>
+            <Badge variant="outline" style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #d1d5db' }}>
+              {selectedTemplate?.name || templateId}
+            </Badge>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: 0 }}>
+          <LivePreview 
+            blocks={selectedTemplate.blocks} 
+            projectData={projectData}
+            isEditable={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback to legacy rendering for simple templates
+  const client = clients?.find(c => c.id === project.client_id);
   const isSimpleTemplate = selectedTemplate?.template_type === 'simple' || selectedTemplate?.blockSettings;
   const blockSettings = selectedTemplate?.blockSettings;
 
