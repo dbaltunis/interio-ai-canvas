@@ -316,61 +316,47 @@ export const TemplateQuotePreview = ({
     </>
   );
 
-  const documentContent = (
-    <div 
-      className="pdf-document-content w-full bg-white text-black p-8"
-      style={{
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        lineHeight: '1.5',
-        color: '#000000',
-        backgroundColor: '#ffffff',
-        minHeight: '100vh'
-      }}
-    >
-      {isSimpleTemplate ? renderSimpleTemplateContent() : renderLegacyContent()}
-    </div>
-  );
-
   if (isFullScreen) {
     return (
       <div 
-        className="pdf-document-content w-full bg-white text-black p-8"
         style={{
           fontFamily: 'Arial, sans-serif',
           fontSize: '14px',
           lineHeight: '1.5',
           color: '#000000',
           backgroundColor: '#ffffff',
-          minHeight: '100vh'
+          minHeight: '100vh',
+          width: '100%',
+          padding: '32px'
         }}
       >
-        {isSimpleTemplate ? renderSimpleTemplateContent() : renderLegacyContent()}
+        {renderLegacyContent()}
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="no-print flex-shrink-0 px-6 py-4 border-b bg-white">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-black">Quote Preview - {selectedTemplate?.name || templateId} Template</h3>
-          <Badge variant="outline" className="bg-white text-black border-gray-300">{selectedTemplate?.name || templateId}</Badge>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }}>
+      <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#000000' }}>Quote Preview - {selectedTemplate?.name || templateId} Template</h3>
+          <Badge variant="outline" style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #d1d5db' }}>{selectedTemplate?.name || templateId}</Badge>
         </div>
       </div>
-      <div className="flex-1 overflow-auto bg-white p-0">
+      <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', padding: 0 }}>
         <div 
-          className="pdf-document-content w-full bg-white text-black p-8"
           style={{
             fontFamily: 'Arial, sans-serif',
             fontSize: '14px',
             lineHeight: '1.5',
             color: '#000000',
             backgroundColor: '#ffffff',
-            minHeight: '100vh'
+            minHeight: '100vh',
+            width: '100%',
+            padding: '32px'
           }}
         >
-          {isSimpleTemplate ? renderSimpleTemplateContent() : renderLegacyContent()}
+          {renderLegacyContent()}
         </div>
       </div>
     </div>
