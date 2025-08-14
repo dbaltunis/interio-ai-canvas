@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings, formatCurrency } from "@/hooks/useBusinessSettings";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
+import { DocumentBlock } from "@/components/settings/templates/visual-editor/DocumentBlock";
 
 interface TemplateQuotePreviewProps {
   project: any;
@@ -36,6 +38,7 @@ export const TemplateQuotePreview = ({
 }: TemplateQuotePreviewProps) => {
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
+  const { data: templates } = useQuoteTemplates();
   const client = clients?.find(c => c.id === project.client_id);
 
   const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
@@ -322,9 +325,75 @@ export const TemplateQuotePreview = ({
     return `document-surface bg-white text-black break-inside-avoid print:max-w-none print:mx-0 print:bg-white print:text-black print:shadow-none print:border-none print:rounded-none print:p-8 ${shadowClasses[templateStyling.documentShadow]} ${borderClasses[templateStyling.documentBorder]} ${cornerClasses[templateStyling.documentCorners]} ${marginClasses[templateStyling.margins]}`;
   };
 
+  // Find the selected template
+  const selectedTemplate = templates?.find(t => t.id === templateId);
+
+  // Replace template variables with actual data
+  const replaceTemplateVariables = (text: string) => {
+    if (!text) return '';
+    
+    return text
+      .replace(/\{\{company_name\}\}/g, businessSettings?.company_name || 'Your Company')
+      .replace(/\{\{company_address\}\}/g, businessSettings?.address || '')
+      .replace(/\{\{company_phone\}\}/g, businessSettings?.business_phone || '')
+      .replace(/\{\{company_email\}\}/g, businessSettings?.business_email || '')
+      .replace(/\{\{quote_number\}\}/g, `QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`)
+      .replace(/\{\{date\}\}/g, new Date().toLocaleDateString())
+      .replace(/\{\{valid_until\}\}/g, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString());
+  };
+
+  // Render dynamic template blocks
+  const renderTemplateBlocks = () => {
+    if (!selectedTemplate) {
+      return renderLegacyContent();
+    }
+
+    return selectedTemplate.blocks.map((block) => {
+      // Process block content with variable replacements
+      const processedBlock = {
+        ...block,
+        content: {
+          ...block.content,
+          companyName: replaceTemplateVariables(block.content.companyName || ''),
+          address: replaceTemplateVariables(block.content.address || ''),
+          phone: replaceTemplateVariables(block.content.phone || ''),
+          email: replaceTemplateVariables(block.content.email || ''),
+          quoteNumber: replaceTemplateVariables(block.content.quoteNumber || ''),
+          date: replaceTemplateVariables(block.content.date || ''),
+          validUntil: replaceTemplateVariables(block.content.validUntil || ''),
+          text: replaceTemplateVariables(block.content.text || ''),
+          companyInfo: replaceTemplateVariables(block.content.companyInfo || ''),
+        }
+      };
+
+      return (
+        <DocumentBlock
+          key={block.id}
+          block={processedBlock}
+          isSelected={false}
+          onSelect={() => {}}
+          onUpdateContent={() => {}}
+          onRemove={() => {}}
+          isInEditor={false}
+        />
+      );
+    });
+  };
+
+  // Legacy content renderer for fallback
+  const renderLegacyContent = () => (
+    <>
+      {renderHeader()}
+      {renderClientInfo()}
+      {renderProductsTable()}
+      {renderTotals()}
+      {renderFooter()}
+    </>
+  );
+
   const documentContent = (
     <div 
-      className={isFullScreen ? "pdf-document-content bg-white text-black p-8 max-w-none mx-0" : getDocumentClasses()}
+      className={`pdf-document-content ${getDocumentClasses()}`}
       style={{
         fontFamily: templateStyling.fontFamily,
         fontSize: templateStyling.fontSize,
@@ -333,11 +402,7 @@ export const TemplateQuotePreview = ({
         backgroundColor: '#ffffff'
       }}
     >
-      {renderHeader()}
-      {renderClientInfo()}
-      {renderProductsTable()}
-      {renderTotals()}
-      {renderFooter()}
+      {selectedTemplate ? renderTemplateBlocks() : renderLegacyContent()}
     </div>
   );
 
@@ -349,8 +414,8 @@ export const TemplateQuotePreview = ({
     <Card className="h-full flex flex-col">
       <CardHeader className="no-print flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
-          <span>Quote Preview - {templateId} Template</span>
-          <Badge variant="outline">{templateId}</Badge>
+          <span>Quote Preview - {selectedTemplate?.name || templateId} Template</span>
+          <Badge variant="outline">{selectedTemplate?.name || templateId}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex-1 overflow-auto">

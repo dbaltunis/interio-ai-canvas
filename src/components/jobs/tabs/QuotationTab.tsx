@@ -436,7 +436,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         taxAmount={taxAmount}
         total={total}
         markupPercentage={markupPercentage}
-        templateId={selectedTemplate?.template_style || 'itemized'}
+        templateId={selectedTemplateId || 'standard'}
       />
     </div>
   );
