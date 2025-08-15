@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
@@ -25,6 +25,7 @@ interface VisualMeasurementSheetProps {
   onLiningChange?: (liningType: string) => void;
   selectedHeading?: string;
   onHeadingChange?: (headingId: string) => void;
+  onFabricCalculationChange?: (calculation: any) => void;
 }
 
 export const VisualMeasurementSheet = ({ 
@@ -38,7 +39,8 @@ export const VisualMeasurementSheet = ({
   selectedLining,
   onLiningChange,
   selectedHeading,
-  onHeadingChange
+  onHeadingChange,
+  onFabricCalculationChange
 }: VisualMeasurementSheetProps) => {
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
@@ -177,6 +179,13 @@ export const VisualMeasurementSheet = ({
 
     return null;
   }, [selectedFabric, measurements.rail_width, measurements.drop, selectedTemplate, inventory]);
+
+  // Notify parent when fabric calculation changes
+  useEffect(() => {
+    if (onFabricCalculationChange) {
+      onFabricCalculationChange(fabricCalculation);
+    }
+  }, [fabricCalculation, onFabricCalculationChange]);
   
   // Helper function to check if measurement has value
   const hasValue = (value: any) => {

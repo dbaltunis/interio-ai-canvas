@@ -96,6 +96,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   );
   const [activeTab, setActiveTab] = useState("measurements");
   const [calculatedCost, setCalculatedCost] = useState(0);
+  const [fabricCalculation, setFabricCalculation] = useState(null);
   
   // Dynamic options state - isolated per window
   const [selectedHeading, setSelectedHeading] = useState(() => 
@@ -547,9 +548,16 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               handleMeasurementChange('selected_fabric', fabricId);
             }}
             selectedLining={selectedLining}
-            onLiningChange={setSelectedLining}
+            onLiningChange={(liningType) => {
+              setSelectedLining(liningType);
+              handleMeasurementChange('selected_lining', liningType);
+            }}
             selectedHeading={selectedHeading}
-            onHeadingChange={setSelectedHeading}
+            onHeadingChange={(headingId) => {
+              setSelectedHeading(headingId);
+              handleMeasurementChange('selected_heading', headingId);
+            }}
+            onFabricCalculationChange={setFabricCalculation}
           />
 
           {/* Treatment-Specific Sections - Only show when treatment is selected */}
@@ -566,6 +574,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 selectedHeading={selectedHeading}
                 selectedLining={selectedLining}
                 inventory={inventoryItems}
+                fabricCalculation={fabricCalculation}
               />
             </div>
           )}

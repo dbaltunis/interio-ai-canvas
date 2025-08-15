@@ -52,6 +52,7 @@ interface CostCalculationSummaryProps {
   selectedLining?: string;
   selectedHeading?: string;
   inventory: any[];
+  fabricCalculation?: any;
 }
 
 export const CostCalculationSummary = ({
@@ -60,7 +61,8 @@ export const CostCalculationSummary = ({
   selectedFabric,
   selectedLining,
   selectedHeading,
-  inventory
+  inventory,
+  fabricCalculation
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
 
@@ -352,7 +354,17 @@ export const CostCalculationSummary = ({
     });
   }
   
-  const totalCost = effectiveFabricCost + liningCost + headingCost + manufacturingCost;
+  // Use fabric calculation if available for more accurate costs
+  let finalFabricCost = effectiveFabricCost;
+  let finalLinearMeters = fabricUsage.linearMeters;
+  
+  if (fabricCalculation) {
+    console.log('Using enhanced fabric calculation from VisualMeasurementSheet:', fabricCalculation);
+    finalFabricCost = fabricCalculation.totalCost || effectiveFabricCost;
+    finalLinearMeters = fabricCalculation.linearMeters || fabricUsage.linearMeters;
+  }
+
+  const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost;
 
   return (
     <div className="bg-card border border-border rounded-lg p-6 space-y-6">
@@ -372,10 +384,10 @@ export const CostCalculationSummary = ({
             <CurtainIcon className="h-4 w-4 text-primary" />
             <span className="text-card-foreground font-medium">Fabric</span>
             <span className="text-muted-foreground">
-              {fabricUsage.linearMeters.toFixed(2)}m × {formatPrice(fabricPriceDisplay)}/m
+              {finalLinearMeters.toFixed(2)}m × {formatPrice(fabricPriceDisplay)}/m
             </span>
           </div>
-          <span className="font-medium text-card-foreground">{formatPrice(effectiveFabricCost)}</span>
+          <span className="font-medium text-card-foreground">{formatPrice(finalFabricCost)}</span>
         </div>
 
         {/* Lining */}
