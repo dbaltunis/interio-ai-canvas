@@ -107,11 +107,10 @@ export const RoomCard = ({
   }
 
   return (
-      <Card className="relative overflow-hidden rounded-3xl border border-brand-secondary/30 bg-gradient-to-br from-background/90 to-background/70 supports-[backdrop-filter]:bg-background/80 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 hover:scale-[1.01] ring-1 ring-brand-secondary/20 hover:ring-brand-primary/30 animate-enter">
-      {/* Ambient water-drop/glass layers */}
+      <Card className="relative overflow-hidden rounded-lg border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/20">
+      {/* Simplified subtle background */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Subtle inner border only for crispness */}
-        <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-brand-secondary/20" />
+        <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-border/50" />
       </div>
       <RoomHeader
         room={room}

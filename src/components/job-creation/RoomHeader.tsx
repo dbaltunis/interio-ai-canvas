@@ -35,15 +35,12 @@ export const RoomHeader = ({
 }: RoomHeaderProps) => {
   const { compact } = useCompactMode();
   return (
-    <CardHeader className={`relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-background/40 via-background/20 to-background/10 border-b border-brand-secondary/30 backdrop-blur-md ${compact ? 'pb-2' : 'pb-4'}`}>
-      {/* Water-drop blobs & gloss like Team Hub */}
+    <CardHeader className={`relative bg-muted/30 border-b border-border ${compact ? 'py-3 px-4' : 'py-4 px-6'}`}>
+      {/* Simplified background */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-16 -left-20 w-72 h-72 bg-brand-primary/20 rounded-full blur-3xl animate-enter" />
-        <div className="absolute -bottom-24 -right-10 w-80 h-80 bg-brand-secondary/20 rounded-full blur-3xl animate-enter" />
-        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-brand-light/25 to-transparent" />
-        <div className="absolute inset-0 ring-1 ring-inset ring-brand-secondary/20 rounded-b-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
       </div>
-      <div className="flex items-center justify-between relative animate-fade-in">
+      <div className="flex items-center justify-between relative z-10">
         <div className="flex-1">
           {editingRoomId === room.id ? (
             <Input
@@ -51,13 +48,13 @@ export const RoomHeader = ({
               onChange={(e) => setEditingRoomName(e.target.value)}
               onKeyDown={onKeyPress}
               onBlur={() => onRenameRoom(room.id, editingRoomName)}
-              className="text-xl font-semibold bg-brand-light border-brand-secondary focus:border-brand-primary"
+              className="text-lg font-semibold bg-background border border-input focus:border-primary"
               autoFocus
             />
           ) : (
-            <CardTitle className="text-xl text-brand-primary">{room.name}</CardTitle>
+            <CardTitle className="text-lg font-semibold text-foreground">{room.name}</CardTitle>
           )}
-          <p className="text-2xl font-bold text-brand-accent mt-1">{formatCurrency(roomTotal)}</p>
+          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(roomTotal)}</p>
         </div>
         <div className="flex items-center gap-2">
           <RoomActionsMenu
