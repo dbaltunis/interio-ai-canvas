@@ -77,7 +77,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
     existingMeasurement?.window_covering_id || "no_covering"
   );
-  const [selectedActualWindowCovering, setSelectedActualWindowCovering] = useState<any>(null);
+  
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => 
     existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
@@ -481,33 +481,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="treatment">Treatment</Label>
-              <Select value={selectedWindowCovering} onValueChange={setSelectedWindowCovering} disabled={readOnly}>
-                <SelectTrigger>
-                  <SelectValue placeholder={curtainTemplates.length > 0 ? "Select treatment" : "No treatments available - Create in Settings"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no_covering">No Treatment</SelectItem>
-                  {curtainTemplates.length > 0 ? (
-                    curtainTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium">{template.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {template.curtain_type} • Fullness: {template.fullness_ratio}x • {template.manufacturing_type}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="create_treatment" disabled>
-                      Create treatments in Settings → Window Coverings
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Remove the old treatment select - using WindowCoveringSelector instead */}
 
             {projectId && (
               <div>
@@ -532,11 +506,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             <div>
               <Label htmlFor="windowCovering">Window Covering</Label>
               <WindowCoveringSelector
-                selectedCoveringId={selectedActualWindowCovering?.id}
+                selectedCoveringId={selectedWindowCovering !== "no_covering" ? selectedWindowCovering : undefined}
                 onCoveringSelect={(covering) => {
-                  setSelectedActualWindowCovering(covering);
-                  // Optionally sync with the legacy selectedWindowCovering state
-                  // setSelectedWindowCovering(covering?.id || "no_covering");
+                  // Connect to the existing working system
+                  setSelectedWindowCovering(covering?.id || "no_covering");
                 }}
                 disabled={readOnly}
               />
