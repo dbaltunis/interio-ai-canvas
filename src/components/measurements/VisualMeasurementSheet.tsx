@@ -752,24 +752,24 @@ export const VisualMeasurementSheet = ({
             </div>
 
             {/* Main Measurements - Compact Design */}
-            <div className="bg-white border-2 border-green-200 rounded-lg p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="container-level-1 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l3-3 9.5-9.5a1.5 1.5 0 000-2.121L18.379 5.257a1.5 1.5 0 00-2.121 0L6.5 14.5 7 21z" />
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground">Essential Measurements</h4>
-                  <p className="text-xs text-muted-foreground">Required for accurate calculations</p>
+                  <h4 className="text-lg font-bold text-card-foreground">Essential Measurements</h4>
+                  <p className="text-sm text-card-foreground">Required for accurate calculations</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">W</span>
-                    <Label htmlFor="rail_width" className="text-sm font-medium text-gray-900">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">W</span>
+                    <Label htmlFor="rail_width" className="text-sm font-semibold text-card-foreground">
                       {hardwareType === "track" ? "Track" : "Rail"} Width
                     </Label>
                   </div>

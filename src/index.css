@@ -335,6 +335,34 @@
   .no-print {
     display: none !important;
   }
+
+/* Dropdown and Select component fixes for dark mode */
+.dark [data-radix-select-content],
+.apple-graphite [data-radix-select-content] {
+  background: hsl(var(--card)) !important;
+  border: 2px solid hsl(var(--border)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  z-index: 1000 !important;
+}
+
+.dark [data-radix-select-item],
+.apple-graphite [data-radix-select-item] {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
+.dark [data-radix-select-item]:hover,
+.apple-graphite [data-radix-select-item]:hover {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
+.dark [data-radix-select-trigger],
+.apple-graphite [data-radix-select-trigger] {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
   
   body {
     print-color-adjust: exact;
