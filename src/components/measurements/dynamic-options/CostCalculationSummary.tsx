@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calculator, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 // Simple black outline SVG icons
@@ -65,6 +66,7 @@ export const CostCalculationSummary = ({
   fabricCalculation
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
+  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
 
   const width = parseFloat(measurements.rail_width || measurements.measurement_a || '0');
   const height = parseFloat(measurements.drop || measurements.measurement_b || '0');
@@ -192,14 +194,36 @@ export const CostCalculationSummary = ({
       cost += template.heading_upcharge_per_curtain * (template.curtain_type === 'pair' ? 2 : 1);
     }
 
-    // Selected heading from inventory
+    // Selected heading from settings
     if (selectedHeading && selectedHeading !== 'standard') {
-      const headingItem = inventory.find(item => item.id === selectedHeading);
-      if (headingItem) {
-        cost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+      // First check heading options from settings
+      const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+      if (headingOptionFromSettings) {
+        cost += headingOptionFromSettings.price * width / 100; // Convert cm to m
+        console.log('Adding heading cost from settings:', {
+          headingName: headingOptionFromSettings.name,
+          price: headingOptionFromSettings.price,
+          width: width,
+          widthInMeters: width / 100,
+          headingCost: headingOptionFromSettings.price * width / 100
+        });
+      } else {
+        // Fall back to inventory items
+        const headingItem = inventory.find(item => item.id === selectedHeading);
+        if (headingItem) {
+          cost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+          console.log('Adding heading cost from inventory:', {
+            headingName: headingItem.name,
+            pricePerMeter: headingItem.price_per_meter || headingItem.unit_price || 0,
+            width: width,
+            widthInMeters: width / 100,
+            headingCost: (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100
+          });
+        }
       }
     }
 
+    console.log('Total heading cost calculated:', cost);
     return cost;
   };
 
