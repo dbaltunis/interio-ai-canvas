@@ -72,8 +72,11 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         };
       });
   
-  const subtotal = quoteItems.reduce((sum, item) => sum + (item.total || 0), 0);
-  const tax = subtotal * 0.1; // 10% tax
+  const markupPercentage = 25; // Default 25% markup to match QuotationTab
+  const taxRate = 0.08; // 8% tax rate to match QuotationTab
+  const baseSubtotal = quoteItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  const subtotal = baseSubtotal * (1 + markupPercentage / 100);
+  const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
 
@@ -125,7 +128,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           <div className="flex items-center space-x-2">
             <DollarSign className="h-5 w-5 text-yellow-600" />
             <div>
-              <p className="text-sm text-gray-600">Tax (10%)</p>
+              <p className="text-sm text-gray-600">Tax (8%)</p>
               <p className="text-lg font-semibold">{formatCurrency(tax)}</p>
             </div>
           </div>
