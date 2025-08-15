@@ -77,7 +77,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
     existingMeasurement?.window_covering_id || "no_covering"
   );
-  const [selectedActualWindowCovering, setSelectedActualWindowCovering] = useState<WindowCovering | null>(null);
+  const [selectedActualWindowCovering, setSelectedActualWindowCovering] = useState<any>(null);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => 
     existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
