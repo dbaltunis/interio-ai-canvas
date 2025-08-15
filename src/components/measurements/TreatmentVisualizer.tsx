@@ -273,10 +273,10 @@ export const TreatmentVisualizer = ({
         }));
 
       return (
-        <div className="panel relative rounded-lg p-6 min-h-[280px]">
+        <div className="container-level-1 relative rounded-lg p-6 min-h-[280px]">
           {/* Scaled window with glass effect */}
           <div 
-            className="absolute rounded-md border border-border bg-card/70 backdrop-blur-sm shadow-sm"
+            className="absolute rounded-md border-2 border-border bg-card shadow-lg"
             style={{
               width: `${scaledWidth}px`,
               height: `${scaledHeight}px`,
@@ -285,7 +285,7 @@ export const TreatmentVisualizer = ({
               transform: 'translate(-50%, -60%)'
             }}
           >
-            <div className="absolute inset-1 rounded-md border border-border/50 bg-primary/5" />
+            <div className="absolute inset-1 rounded-md border border-border/60 bg-muted/30" />
             
             {/* Subtle pane detail */}
             <div className="absolute inset-3 rounded-sm grid grid-cols-2 gap-2 opacity-60">
@@ -343,24 +343,26 @@ export const TreatmentVisualizer = ({
             <Badge variant="secondary">{windowType}</Badge>
           </div>
 
-          {/* Measurements list */}
+            {/* Measurements list */}
           <div className="mt-[calc(160px+2.5rem)]">
-            <div className="text-sm font-medium mb-2">Measurements</div>
+            <div className="text-lg font-semibold mb-3 text-card-foreground">Measurements</div>
             {entries.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 {entries.map(({ key, label, value }) => (
-                  <div key={key} className="flex items-center justify-between rounded-md px-2 py-1 bg-muted/50">
-                    <span className="text-muted-foreground truncate">{label}</span>
-                    <span className="font-medium ml-2">
-                      {/(width|height|drop|pool|repeat|measurement|rail)/i.test(key)
-                        ? `${Number(value)} ${units.length}`
-                        : String(value)}
-                    </span>
+                  <div key={key} className="container-level-2 rounded-md px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-card-foreground font-medium capitalize">{label}</span>
+                      <span className="font-bold text-primary">
+                        {/(width|height|drop|pool|repeat|measurement|rail)/i.test(key)
+                          ? `${Number(value)} ${units.length}`
+                          : String(value)}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">No measurements provided.</div>
+              <div className="text-base text-card-foreground">No measurements provided.</div>
             )}
           </div>
         </div>

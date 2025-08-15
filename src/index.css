@@ -43,24 +43,24 @@
   
   .dark {
     /* Ultra high contrast professional dark mode */
-    --background: 0 0% 3%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
+    --background: 0 0% 2%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 100%;
     --primary: 220 100% 85%;
-    --primary-foreground: 0 0% 3%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 85%;
+    --primary-foreground: 0 0% 2%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 90%;
     --accent: 220 100% 85%;
-    --accent-foreground: 0 0% 3%;
+    --accent-foreground: 0 0% 2%;
     --destructive: 0 85% 65%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 18%;
-    --input: 0 0% 12%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 25%;
+    --input: 0 0% 15%;
     --ring: 220 100% 85%;
     
     --chart-1: 220 70% 50%;
@@ -268,7 +268,7 @@
   border-color: hsl(var(--border));
 }
 
-/* Reduce harsh white hovers and rows in dark themes */
+/* Force high contrast text and backgrounds in dark themes */
 .dark .bg-white, .apple-graphite .bg-white {
   background-color: hsl(var(--muted)) !important;
   color: hsl(var(--foreground)) !important;
@@ -278,6 +278,43 @@
 }
 .dark .text-black, .apple-graphite .text-black {
   color: hsl(var(--foreground)) !important;
+}
+
+/* Force high contrast for all text elements in dark themes */
+.dark .text-muted-foreground, .apple-graphite .text-muted-foreground {
+  color: hsl(var(--foreground) / 0.9) !important;
+}
+.dark .text-gray-500, .apple-graphite .text-gray-500,
+.dark .text-gray-600, .apple-graphite .text-gray-600,
+.dark .text-slate-500, .apple-graphite .text-slate-500 {
+  color: hsl(var(--foreground) / 0.85) !important;
+}
+
+/* Container hierarchy with clear contrast levels */
+.container-level-1 {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+.container-level-2 {
+  background: hsl(var(--muted) / 0.8);
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+.container-level-3 {
+  background: hsl(var(--muted) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.4);
+}
+
+.dark .container-level-1 {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+.dark .container-level-2 {
+  background: hsl(0 0% 10%);
+  border: 1px solid hsl(var(--border));
+}
+.dark .container-level-3 {
+  background: hsl(0 0% 8%);
+  border: 1px solid hsl(var(--border) / 0.8);
 }
 
 /* Document surface - keep pure white regardless of theme */

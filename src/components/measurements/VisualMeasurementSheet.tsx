@@ -202,19 +202,19 @@ export const VisualMeasurementSheet = ({
   };
 
   return (
-    <div className="w-full bg-card border border-border rounded-lg overflow-hidden">
+    <div className="w-full container-level-1 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="bg-muted/30 border-b border-border px-6 py-4">
-        <h2 className="text-xl font-semibold text-card-foreground text-center">Window Measurement Worksheet</h2>
+      <div className="container-level-2 border-b-2 border-border px-6 py-4">
+        <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
       <div className="p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Visual Diagram - Always visible on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible z-10">
-            <div className="relative bg-gradient-to-br from-muted/50 to-muted border-2 border-border rounded-lg p-8 min-h-[400px] shadow-inner overflow-visible">
+            <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
               {/* Ceiling Line */}
-              <div className="absolute top-4 left-8 right-8 border-t-2 border-foreground">
-                <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
+              <div className="absolute top-4 left-8 right-8 border-t-4 border-card-foreground">
+                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-base font-bold text-card-foreground">
                   Ceiling Line
                 </span>
               </div>
