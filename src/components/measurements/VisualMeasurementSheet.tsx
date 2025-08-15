@@ -210,9 +210,9 @@ export const VisualMeasurementSheet = ({
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Visual Diagram - Always visible on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible z-10">
-            <div className="relative bg-gradient-to-br from-blue-50 to-gray-50 border-2 border-gray-300 rounded-lg p-8 min-h-[400px] shadow-inner overflow-visible">
+            <div className="relative bg-gradient-to-br from-muted/50 to-muted border-2 border-border rounded-lg p-8 min-h-[400px] shadow-inner overflow-visible">
               {/* Ceiling Line */}
-              <div className="absolute top-4 left-8 right-8 border-t-2 border-gray-800">
+              <div className="absolute top-4 left-8 right-8 border-t-2 border-foreground">
                 <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
                   Ceiling Line
                 </span>
@@ -221,17 +221,17 @@ export const VisualMeasurementSheet = ({
               {/* Hardware - Track (on ceiling) or Rod (below ceiling) */}
               <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12 flex items-center`}>
                 {hardwareType === "track" ? (
-                  <div className="w-full h-3 bg-gray-500 relative">
-                    <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-gray-600"></div>
-                    <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-gray-600"></div>
+                  <div className="w-full h-3 bg-muted-foreground relative">
+                    <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                    <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
                       Curtain Track
                     </span>
                   </div>
                 ) : (
-                  <div className="w-full h-2 bg-gray-600 rounded-full relative">
-                    <div className="absolute -left-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
-                    <div className="absolute -right-2 -top-1 w-4 h-4 bg-gray-700 rounded-full"></div>
+                  <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                    <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                    <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
                       Curtain Rod
                     </span>
@@ -241,11 +241,11 @@ export const VisualMeasurementSheet = ({
 
               {/* Window Frame */}
               <div className="absolute top-24 left-16 right-16 bottom-16">
-                <div className="w-full h-full border-4 border-gray-400 bg-white relative">
+                <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
                   {/* Window Panes */}
                   <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="bg-gray-100 border border-gray-300"></div>
+                      <div key={i} className="bg-muted border border-border"></div>
                     ))}
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export const VisualMeasurementSheet = ({
                 <>
                   {/* Left Panel */}
                   <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
@@ -272,7 +272,7 @@ export const VisualMeasurementSheet = ({
                   
                   {/* Right Panel */}
                   <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
                     <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
@@ -289,7 +289,7 @@ export const VisualMeasurementSheet = ({
               ) : (
                 /* Single Panel */
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gray-800 rounded-full"></div>
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
                   <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
@@ -322,8 +322,8 @@ export const VisualMeasurementSheet = ({
               {/* Rail Width placeholder when empty */}
               {!hasValue(measurements.rail_width) && (
                 <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center opacity-50 z-20`}>
-                  <div className="flex-1 border-t-2 border-dashed border-gray-400 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-400 text-white px-2 py-1 rounded text-xs font-medium z-30 whitespace-nowrap">
+                  <div className="flex-1 border-t-2 border-dashed border-muted-foreground relative">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium z-30 whitespace-nowrap">
                       Enter Rail Width →
                     </span>
                   </div>
@@ -359,8 +359,8 @@ export const VisualMeasurementSheet = ({
               {/* Drop placeholder when empty */}
               {!hasValue(measurements.drop) && (
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-2 flex flex-col items-center opacity-50 z-15`}>
-                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-dashed border-gray-400 relative`}>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-gray-400 text-white px-2 py-1 rounded text-xs font-medium whitespace-nowrap z-30">
+                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-dashed border-muted-foreground relative`}>
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium whitespace-nowrap z-30">
                       Enter Drop Height ↓
                     </span>
                   </div>
@@ -394,7 +394,7 @@ export const VisualMeasurementSheet = ({
               )}
 
               {/* Floor Line */}
-              <div className="absolute bottom-4 left-8 right-8 border-t-2 border-gray-800">
+              <div className="absolute bottom-4 left-8 right-8 border-t-2 border-foreground">
                 <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
                   Floor
                 </span>
@@ -470,7 +470,7 @@ export const VisualMeasurementSheet = ({
             {/* Additional Measurements for Curtain Makers - Collapsible */}
             <div className="mt-4">
               <details className="group">
-                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors p-2 bg-gray-50 rounded border">
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-foreground hover:text-muted-foreground transition-colors p-2 bg-muted rounded border">
                   <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -480,7 +480,7 @@ export const VisualMeasurementSheet = ({
                 
                 <div className="mt-3 space-y-4">
                   {/* Professional Extension Measurements */}
-                  <div className="p-3 bg-gray-50/50 rounded-lg border border-gray-200">
+                  <div className="p-3 bg-muted/50 rounded-lg border border-border">
                     <h6 className="font-medium text-gray-800 mb-3 text-sm">Hardware Extensions & Overlaps</h6>
                     <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
@@ -678,7 +678,7 @@ export const VisualMeasurementSheet = ({
           {/* Measurement Inputs - Scrollable on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-120px)] lg:pr-2 space-y-4">
             {/* Hardware Type */}
-            <div className="border rounded-lg p-4 bg-gray-50">
+            <div className="border rounded-lg p-4 bg-muted/30">
               <h4 className="font-medium mb-3 text-gray-800">Hardware Type</h4>
               <RadioGroup 
                 value={hardwareType} 
