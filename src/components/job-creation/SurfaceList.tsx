@@ -80,67 +80,103 @@ export const SurfaceList = ({
     return treatments.filter(t => t.window_id === surfaceId);
   };
 
-  // Group surfaces by window/treatment logic
-  const groupedSurfaces = surfaces.reduce((groups, surface) => {
-    // Check if this is a duplicate window (same room + similar name pattern)
-    const existingWindow = groups.find(group => 
-      group.roomId === surface.room_id && 
-      group.baseWindowName === surface.name.replace(/\s+\d+$/, '') // Remove trailing numbers
-    );
-    
-    if (existingWindow) {
-      // This is additional treatment for the same window
-      existingWindow.treatments.push(surface);
-    } else {
-      // This is a new window
-      groups.push({
-        id: surface.id,
-        roomId: surface.room_id,
-        baseWindowName: surface.name.replace(/\s+\d+$/, ''),
-        mainSurface: surface,
-        treatments: []
-      });
-    }
-    
-    return groups;
-  }, [] as Array<{
-    id: string;
-    roomId: string;
+  // Define types for the hierarchical structure
+  type WindowGroup = {
+    windowId: string;
     baseWindowName: string;
     mainSurface: any;
     treatments: any[];
-  }>);
+  };
+
+  type RoomGroup = {
+    roomId: string;
+    roomName: string;
+    windows: Record<string, WindowGroup>;
+  };
+
+  // Group surfaces by room first, then by window, then by treatments
+  const hierarchicalSurfaces = surfaces.reduce((rooms, surface) => {
+    const roomId = surface.room_id || 'no-room';
+    const roomName = surface.room_name || 'Unassigned Room';
+    
+    // Initialize room if it doesn't exist
+    if (!rooms[roomId]) {
+      rooms[roomId] = {
+        roomId,
+        roomName,
+        windows: {}
+      };
+    }
+    
+    // Extract base window name (remove treatment suffixes like "Window 1 - 2", "Window 1 - Blinds")
+    const baseWindowName = surface.name.replace(/\s+-\s+(Treatment\s+\d+|\w+)$/i, '').trim();
+    const windowKey = `${roomId}-${baseWindowName}`;
+    
+    // Initialize window if it doesn't exist
+    if (!rooms[roomId].windows[windowKey]) {
+      rooms[roomId].windows[windowKey] = {
+        windowId: windowKey,
+        baseWindowName,
+        mainSurface: surface,
+        treatments: []
+      };
+    } else {
+      // This is an additional treatment for existing window
+      rooms[roomId].windows[windowKey].treatments.push(surface);
+    }
+    
+    return rooms;
+  }, {} as Record<string, RoomGroup>);
+
+  // Convert to arrays with proper typing
+  const roomGroups: RoomGroup[] = Object.values(hierarchicalSurfaces);
 
   return (
     <>
-      <div className={compact ? "space-y-2" : "space-y-3"}>
-        {groupedSurfaces.map((group) => (
-          <div key={group.id} className="space-y-2">
-            {/* Main window surface */}
-            <WindowSummaryCard 
-              surface={group.mainSurface} 
-              onEditSurface={() => handleViewWindow(group.mainSurface)}
-              onDeleteSurface={onDeleteSurface}
-              onViewDetails={() => handleViewWindow(group.mainSurface)}
-              onRenameSurface={handleRenameSurface}
-              onAddTreatment={handleAddTreatment}
-              isMainWindow={true}
-            />
-            
-            {/* Additional treatments for the same window */}
-            {group.treatments.map((treatment, index) => (
-              <div key={treatment.id} className="border-l-2 border-primary/20 ml-6 pl-4">
-                <WindowSummaryCard 
-                  surface={treatment}
-                  onEditSurface={() => handleViewWindow(treatment)}
-                  onDeleteSurface={onDeleteSurface}
-                  onViewDetails={() => handleViewWindow(treatment)}
-                  isMainWindow={false}
-                  treatmentLabel={`${group.baseWindowName} - Treatment ${index + 2}`}
-                  treatmentType="curtains"
-                />
+      <div className={compact ? "space-y-3" : "space-y-4"}>
+         {roomGroups.map((room) => (
+          <div key={room.roomId} className="space-y-3">
+            {/* Room Header */}
+            <div className="flex items-center gap-2 px-1">
+              <div className="h-px bg-border flex-1" />
+              <div className="text-sm font-semibold text-muted-foreground bg-background px-2">
+                {room.roomName}
               </div>
-            ))}
+              <div className="h-px bg-border flex-1" />
+            </div>
+            
+            {/* Windows in this room */}
+            <div className="space-y-2 pl-2">
+              {Object.values(room.windows).map((window: WindowGroup) => (
+                <div key={window.windowId} className="space-y-2">
+                  {/* Main window surface */}
+                  <WindowSummaryCard 
+                    surface={window.mainSurface} 
+                    onEditSurface={() => handleViewWindow(window.mainSurface)}
+                    onDeleteSurface={onDeleteSurface}
+                    onViewDetails={() => handleViewWindow(window.mainSurface)}
+                    onRenameSurface={handleRenameSurface}
+                    onAddTreatment={handleAddTreatment}
+                    isMainWindow={true}
+                  />
+                  
+                  {/* Additional treatments for the same window */}
+                  {window.treatments.map((treatment, index) => (
+                    <div key={treatment.id} className="border-l-2 border-primary/20 ml-6 pl-4">
+                      <WindowSummaryCard 
+                        surface={treatment}
+                        onEditSurface={() => handleViewWindow(treatment)}
+                        onDeleteSurface={onDeleteSurface}
+                        onViewDetails={() => handleViewWindow(treatment)}
+                        isMainWindow={false}
+                        treatmentLabel={`${window.baseWindowName} - Treatment ${index + 2}`}
+                        treatmentType={treatment.treatment_type || "curtains"}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
