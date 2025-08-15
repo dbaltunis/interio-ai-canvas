@@ -11,6 +11,7 @@ import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown
 import WorkshopSendDialog from "@/components/workroom/WorkshopSendDialog";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
+import { TreatmentTypeIndicator } from "../measurements/TreatmentTypeIndicator";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -21,6 +22,7 @@ interface WindowSummaryCardProps {
   onAddTreatment?: (surfaceId: string) => void;
   isMainWindow?: boolean;
   treatmentLabel?: string;
+  treatmentType?: string;
 }
 
 function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: string }) {
@@ -41,7 +43,8 @@ export function WindowSummaryCard({
   onRenameSurface, 
   onAddTreatment,
   isMainWindow = true,
-  treatmentLabel
+  treatmentLabel,
+  treatmentType
 }: WindowSummaryCardProps) {
   // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
@@ -152,10 +155,15 @@ export function WindowSummaryCard({
                 </CardTitle>
               </div>
             )}
-            {!isMainWindow && treatmentLabel && (
-              <Badge variant="outline" className="mt-1 text-xs">
-                Additional Treatment
-              </Badge>
+            {!isMainWindow && (
+              <div className="flex items-center gap-2 mt-1">
+                {treatmentType && (
+                  <TreatmentTypeIndicator treatmentType={treatmentType} size="sm" />
+                )}
+                <Badge variant="outline" className="text-xs">
+                  Additional Treatment
+                </Badge>
+              </div>
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">

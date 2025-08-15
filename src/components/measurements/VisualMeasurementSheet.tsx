@@ -946,16 +946,16 @@ export const VisualMeasurementSheet = ({
 
                 {/* Lining Options - Compact */}
                 {selectedTemplate?.lining_types && selectedTemplate.lining_types.length > 0 && (
-                  <div className="bg-white border-2 border-purple-200 rounded-lg p-3 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
-                        <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="container-level-2 border-2 border-purple-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-foreground text-sm">Lining Options</h4>
-                        <p className="text-xs text-muted-foreground">Interior backing</p>
+                        <h4 className="font-bold text-card-foreground text-base">Lining Options</h4>
+                        <p className="text-sm text-card-foreground/70">Interior backing</p>
                       </div>
                     </div>
                     <LiningOptionsSection

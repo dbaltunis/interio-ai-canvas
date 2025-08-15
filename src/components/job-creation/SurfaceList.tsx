@@ -2,6 +2,7 @@ import { useState } from "react";
 import { WindowSummaryCard } from "./WindowSummaryCard";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { WindowManagementDialog } from "./WindowManagementDialog";
+import { AddTreatmentDialog } from "../measurements/AddTreatmentDialog";
 import { useCompactMode } from "@/hooks/useCompactMode";
 
 
@@ -26,6 +27,8 @@ export const SurfaceList = ({
 }: SurfaceListProps) => {
   const [selectedSurface, setSelectedSurface] = useState<any>(null);
   const [showWindowDialog, setShowWindowDialog] = useState(false);
+  const [showAddTreatmentDialog, setShowAddTreatmentDialog] = useState(false);
+  const [addTreatmentWindow, setAddTreatmentWindow] = useState<any>(null);
   const { compact } = useCompactMode();
   
   const { data: clientMeasurements } = useClientMeasurements(clientId);
@@ -45,12 +48,19 @@ export const SurfaceList = ({
   };
 
   const handleAddTreatment = (surfaceId: string) => {
-    // Find the surface and open the dialog for adding a new treatment
     const surface = surfaces.find(s => s.id === surfaceId);
     if (surface) {
-      setSelectedSurface(surface);
-      setShowWindowDialog(true);
+      setAddTreatmentWindow(surface);
+      setShowAddTreatmentDialog(true);
     }
+  };
+
+  const handleConfirmAddTreatment = (treatmentData: any) => {
+    if (addTreatmentWindow) {
+      onAddTreatment(addTreatmentWindow.id, treatmentData.type, treatmentData);
+    }
+    setShowAddTreatmentDialog(false);
+    setAddTreatmentWindow(null);
   };
 
   const getClientMeasurementForSurface = (surface: any) => {
@@ -127,6 +137,7 @@ export const SurfaceList = ({
                   onViewDetails={() => handleViewWindow(treatment)}
                   isMainWindow={false}
                   treatmentLabel={`${group.baseWindowName} - Treatment ${index + 2}`}
+                  treatmentType="curtains"
                 />
               </div>
             ))}
@@ -148,6 +159,20 @@ export const SurfaceList = ({
           existingMeasurement={getClientMeasurementForSurface(selectedSurface)}
           existingTreatments={getSurfaceTreatments(selectedSurface.id)}
           onSaveTreatment={(treatmentData) => onAddTreatment(selectedSurface.id, treatmentData.treatment_type, treatmentData)}
+        />
+      )}
+
+      {/* Add Treatment Dialog */}
+      {addTreatmentWindow && (
+        <AddTreatmentDialog
+          isOpen={showAddTreatmentDialog}
+          onClose={() => {
+            setShowAddTreatmentDialog(false);
+            setAddTreatmentWindow(null);
+          }}
+          onAddTreatment={handleConfirmAddTreatment}
+          windowName={addTreatmentWindow.name}
+          existingTreatmentCount={getSurfaceTreatments(addTreatmentWindow.id).length}
         />
       )}
     </>
