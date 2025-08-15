@@ -48,7 +48,7 @@ export const HeadingOptionsSection = ({
           <SelectTrigger className="h-10 text-sm container-level-2 border-border">
             <SelectValue placeholder="Choose heading style" />
           </SelectTrigger>
-          <SelectContent className="container-level-1 border-2 border-border z-[1000]">
+          <SelectContent className="container-level-1 border-2 border-border z-50">
             {isLoading ? (
               <SelectItem value="loading" disabled className="text-card-foreground">
                 Loading heading options...

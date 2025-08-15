@@ -51,7 +51,7 @@ export const LiningOptionsSection = ({
           <SelectTrigger className="h-10 text-sm container-level-2 border-border">
             <SelectValue placeholder="Choose lining type" />
           </SelectTrigger>
-          <SelectContent className="container-level-1 border-2 border-border z-[1000]">
+          <SelectContent className="container-level-1 border-2 border-border z-50">
             <SelectItem value="none" className="text-card-foreground">
               <div className="flex items-center justify-between w-full">
                 <span className="text-sm font-medium">No Lining</span>
