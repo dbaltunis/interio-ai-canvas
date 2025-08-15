@@ -454,8 +454,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
-      <Card>
-        <CardContent className="space-y-6">
+      <Card className="bg-card border-border shadow-lg">
+        <CardContent className="space-y-6 p-6 bg-card">
           {/* Basic Setup */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>

@@ -45,13 +45,13 @@ export const MeasurementSummary = ({
             {measurementType.replace('_', ' ')}
           </Badge>
           {roomName && (
-            <div className="flex items-center gap-1 text-sm text-gray-600">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-3 w-3" />
               {roomName}
             </div>
           )}
           {windowCoveringName && (
-            <div className="flex items-center gap-1 text-sm text-gray-600">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Layers className="h-3 w-3" />
               {windowCoveringName}
             </div>
@@ -62,7 +62,7 @@ export const MeasurementSummary = ({
         <div className="grid grid-cols-2 gap-4">
           {keyMeasurements.map(({ key, label, unit }) => (
             <div key={key} className="space-y-1">
-              <p className="text-sm font-medium text-gray-700">{label}</p>
+              <p className="text-sm font-medium text-foreground">{label}</p>
               <p className="text-lg font-mono">
                 {measurements[key] ? `${measurements[key]}" ${unit}` : 'Not recorded'}
               </p>
@@ -73,21 +73,21 @@ export const MeasurementSummary = ({
         {/* Additional Info */}
         <div className="border-t pt-4 space-y-2">
           {measuredBy && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
               Measured by {measuredBy}
             </div>
           )}
           {measuredAt && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               {format(new Date(measuredAt), 'PPP')}
             </div>
           )}
           {notes && (
             <div className="pt-2">
-              <p className="text-sm font-medium text-gray-700 mb-1">Notes:</p>
-              <p className="text-sm text-gray-600">{notes}</p>
+              <p className="text-sm font-medium text-foreground mb-1">Notes:</p>
+              <p className="text-sm text-muted-foreground">{notes}</p>
             </div>
           )}
         </div>

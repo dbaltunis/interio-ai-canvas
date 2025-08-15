@@ -42,25 +42,25 @@
   }
   
   .dark {
-    /* Dark mode with company colors - keep HSL triplets only */
-    --background: var(--company-primary);
-    --foreground: 0 0% 100%;
-    --card: var(--company-primary);
-    --card-foreground: 0 0% 100%;
-    --popover: var(--company-primary);
-    --popover-foreground: 0 0% 100%;
+    /* Improved dark mode with better contrast */
+    --background: 220 13% 9%;
+    --foreground: 0 0% 98%;
+    --card: 220 13% 14%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 13% 14%;
+    --popover-foreground: 0 0% 98%;
     --primary: var(--company-secondary);
-    --primary-foreground: var(--company-primary);
-    --secondary: var(--company-primary);
-    --secondary-foreground: 0 0% 100%;
-    --muted: var(--company-primary);
-    --muted-foreground: var(--company-secondary);
+    --primary-foreground: 220 13% 9%;
+    --secondary: 220 13% 19%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 220 13% 19%;
+    --muted-foreground: 0 0% 70%;
     --accent: var(--company-secondary);
-    --accent-foreground: var(--company-primary);
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-    --border: var(--company-secondary);
-    --input: var(--company-primary);
+    --accent-foreground: 220 13% 9%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 24%;
+    --input: 220 13% 19%;
     --ring: var(--company-secondary);
     
     --chart-1: 220 70% 50%;

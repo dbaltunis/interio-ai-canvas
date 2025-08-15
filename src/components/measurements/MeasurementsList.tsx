@@ -49,8 +49,8 @@ export const MeasurementsList = ({
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <Ruler className="h-8 w-8 mx-auto mb-3 text-gray-400" />
-          <p className="text-gray-500">No measurements recorded yet</p>
+          <Ruler className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+          <p className="text-muted-foreground">No measurements recorded yet</p>
         </CardContent>
       </Card>
     );
@@ -68,19 +68,19 @@ export const MeasurementsList = ({
                     {measurement.measurement_type.replace('_', ' ')}
                   </Badge>
                   {measurement.room_id && measurement.room_id !== "no_room" && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <MapPin className="h-3 w-3" />
                       {getRoomName(measurement.room_id)}
                     </div>
                   )}
                   {measurement.window_covering_id && measurement.window_covering_id !== "no_covering" && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Layers className="h-3 w-3" />
                       {getWindowCoveringName(measurement.window_covering_id)}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
                   {measurement.measured_at ? 
                     format(new Date(measurement.measured_at), 'PPP') : 
@@ -110,7 +110,7 @@ export const MeasurementsList = ({
                   size="sm" 
                   variant="ghost"
                   onClick={() => handleDeleteMeasurement(measurement.id)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-destructive hover:text-destructive/80"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -119,7 +119,7 @@ export const MeasurementsList = ({
           </CardHeader>
           {measurement.notes && (
             <CardContent className="pt-0">
-              <p className="text-sm text-gray-600">{measurement.notes}</p>
+              <p className="text-sm text-muted-foreground">{measurement.notes}</p>
             </CardContent>
           )}
         </Card>

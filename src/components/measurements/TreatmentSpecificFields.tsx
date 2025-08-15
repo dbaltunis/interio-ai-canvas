@@ -26,7 +26,7 @@ export const TreatmentSpecificFields = ({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Curtain Configuration</CardTitle>
+          <CardTitle className="text-lg text-foreground">Curtain Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -148,7 +148,7 @@ export const TreatmentSpecificFields = ({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Blind Configuration</CardTitle>
+          <CardTitle className="text-lg text-foreground">Blind Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -235,7 +235,7 @@ export const TreatmentSpecificFields = ({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Roman Shade Configuration</CardTitle>
+          <CardTitle className="text-lg text-foreground">Roman Shade Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -325,7 +325,7 @@ export const TreatmentSpecificFields = ({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Shutter Configuration</CardTitle>
+          <CardTitle className="text-lg text-foreground">Shutter Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
