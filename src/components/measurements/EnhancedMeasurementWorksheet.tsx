@@ -12,6 +12,7 @@ import { useCreateClientMeasurement, useUpdateClientMeasurement } from "@/hooks/
 import { useRooms } from "@/hooks/useRooms";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useInventory } from "@/hooks/useInventory";
+import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { TreatmentSpecificFields } from "./TreatmentSpecificFields";
@@ -19,6 +20,7 @@ import { TreatmentVisualizer } from "./TreatmentVisualizer";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
+import { WindowCoveringSelector } from "./WindowCoveringSelector";
 
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { useSaveWindowSummary } from "@/hooks/useWindowSummary";
@@ -75,6 +77,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
     existingMeasurement?.window_covering_id || "no_covering"
   );
+  const [selectedActualWindowCovering, setSelectedActualWindowCovering] = useState<WindowCovering | null>(null);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => 
     existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
@@ -110,6 +113,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const { data: rooms = [] } = useRooms(projectId);
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: inventoryItems = [] } = useInventory();
+  const { data: windowCoverings = [] } = useWindowCoverings();
   const { units } = useMeasurementUnits();
   const saveWindowSummary = useSaveWindowSummary();
 
@@ -523,6 +527,20 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 </Select>
               </div>
             )}
+
+            {/* Window Covering Selector */}
+            <div>
+              <Label htmlFor="windowCovering">Window Covering</Label>
+              <WindowCoveringSelector
+                selectedCoveringId={selectedActualWindowCovering?.id}
+                onCoveringSelect={(covering) => {
+                  setSelectedActualWindowCovering(covering);
+                  // Optionally sync with the legacy selectedWindowCovering state
+                  // setSelectedWindowCovering(covering?.id || "no_covering");
+                }}
+                disabled={readOnly}
+              />
+            </div>
 
             <div>
               <Label htmlFor="measuredBy">Measured By</Label>
