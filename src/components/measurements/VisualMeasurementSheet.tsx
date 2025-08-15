@@ -773,11 +773,11 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">W</span>
-                    <Label htmlFor="rail_width" className="text-sm font-semibold text-card-foreground">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">W</span>
+                    <Label htmlFor="rail_width" className="text-base font-bold text-card-foreground">
                       {hardwareType === "track" ? "Track" : "Rail"} Width
                     </Label>
                   </div>
@@ -790,19 +790,19 @@ export const VisualMeasurementSheet = ({
                       onChange={(e) => handleInputChange("rail_width", e.target.value)}
                       placeholder="0.00"
                       readOnly={readOnly}
-                      className="pr-16 font-semibold text-center border-2 focus:border-blue-500"
+                      className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
                     />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
+                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
                        {units.length}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Total {hardwareType === "track" ? "track" : "rail"} length</p>
+                  <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs">H</span>
-                    <Label htmlFor="drop" className="text-sm font-medium text-gray-900">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold text-sm">H</span>
+                    <Label htmlFor="drop" className="text-base font-bold text-card-foreground">
                       Curtain Drop
                     </Label>
                   </div>
@@ -815,13 +815,13 @@ export const VisualMeasurementSheet = ({
                       onChange={(e) => handleInputChange("drop", e.target.value)}
                       placeholder="0.00"
                       readOnly={readOnly}
-                      className="pr-16 font-semibold text-center border-2 focus:border-primary"
+                      className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
                     />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
+                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
                       {units.length}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Length to curtain bottom</p>
+                  <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
                 </div>
               </div>
             </div>
