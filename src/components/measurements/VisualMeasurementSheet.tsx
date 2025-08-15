@@ -210,7 +210,7 @@ export const VisualMeasurementSheet = ({
       <div className="p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Visual Diagram - Always visible on large screens */}
-          <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible z-10">
+          <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
               {/* Ceiling Line */}
               <div className="absolute top-4 left-8 right-8 border-t-4 border-card-foreground">
@@ -309,10 +309,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Rail Width measurement - positioned near the hardware */}
               {hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-20`}>
+                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-10`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -322,9 +322,9 @@ export const VisualMeasurementSheet = ({
               
               {/* Rail Width placeholder when empty */}
               {!hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center opacity-50 z-20`}>
+                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center opacity-50 z-10`}>
                   <div className="flex-1 border-t-2 border-dashed border-muted-foreground relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium z-30 whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium z-20 whitespace-nowrap">
                       Enter Rail Width →
                     </span>
                   </div>

@@ -32,35 +32,6 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  // Defensive cleanup: ensure no lingering focus/interaction lock on unmount
-  React.useEffect(() => {
-    return () => {
-      try {
-        const root = document.getElementById('root');
-        // Clear pointer-events locks
-        root?.classList.remove('pointer-events-none');
-        document.body.classList.remove('pointer-events-none');
-
-        // Explicitly clear inert/aria-hidden on root and body themselves
-        if (root?.hasAttribute('inert')) root.removeAttribute('inert');
-        if (root?.getAttribute('aria-hidden') === 'true') root.removeAttribute('aria-hidden');
-        if (document.body.hasAttribute('inert')) document.body.removeAttribute('inert');
-        if (document.body.getAttribute('aria-hidden') === 'true') document.body.removeAttribute('aria-hidden');
-
-        // Remove any leftover inert/aria-hidden attributes that could block clicks
-        const container = document.getElementById('root') ?? document.body;
-        const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT);
-        const toCheck: Element[] = [];
-        while (walker.nextNode()) {
-          toCheck.push(walker.currentNode as Element);
-        }
-        for (const el of toCheck) {
-          if (el.hasAttribute('inert')) el.removeAttribute('inert');
-          if (el.getAttribute('aria-hidden') === 'true') el.removeAttribute('aria-hidden');
-        }
-      } catch {}
-    };
-  }, []);
 
   return (
     <DialogPortal>
