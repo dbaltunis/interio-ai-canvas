@@ -120,11 +120,6 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">{surface.name}</CardTitle>
-            {surface.width && surface.height && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Dimensions: {surface.width} × {surface.height} cm
-              </p>
-            )}
           </div>
           <div className="flex gap-2">
             <Button
