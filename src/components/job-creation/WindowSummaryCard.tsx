@@ -120,11 +120,8 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">{surface.name}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Type: {surface.type} | Room: {surface.room_name}
-            </p>
             {surface.width && surface.height && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 Dimensions: {surface.width} × {surface.height} cm
               </p>
             )}
