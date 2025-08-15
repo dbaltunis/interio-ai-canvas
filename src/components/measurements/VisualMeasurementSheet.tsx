@@ -698,13 +698,13 @@ export const VisualMeasurementSheet = ({
               </RadioGroup>
             </div>
 
-            {/* Curtain Configuration - Compact Design */}
-            <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/30">
-              <h4 className="font-medium text-blue-800 mb-3 text-sm">Curtain Configuration</h4>
+            {/* Curtain Configuration - Professional Design */}
+            <div className="container-level-1 rounded-lg p-4">
+              <h4 className="text-lg font-bold text-card-foreground mb-4">Curtain Configuration</h4>
               
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs font-medium mb-1 block text-foreground">Curtain Type</Label>
+                  <Label className="text-sm font-semibold mb-3 block text-card-foreground">Curtain Type</Label>
                   <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
@@ -712,22 +712,26 @@ export const VisualMeasurementSheet = ({
                       handleInputChange("curtain_type", value);
                     }}
                     disabled={readOnly}
-                    className="flex flex-row gap-4"
+                    className="grid grid-cols-2 gap-3"
                   >
-                    <div className="flex items-center space-x-1.5">
-                      <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
-                      <Label htmlFor="pair" className="text-sm">Pair (Two panels)</Label>
+                    <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
+                        <Label htmlFor="pair" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Pair (Two panels)</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1.5">
-                      <RadioGroupItem value="single" id="single" className="w-4 h-4" />
-                      <Label htmlFor="single" className="text-sm">Single (One panel)</Label>
+                    <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem value="single" id="single" className="w-4 h-4" />
+                        <Label htmlFor="single" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Single (One panel)</Label>
+                      </div>
                     </div>
                   </RadioGroup>
                 </div>
 
                 {curtainType === "single" && (
                   <div>
-                    <Label className="text-xs font-medium mb-1 block text-foreground">Panel Position</Label>
+                    <Label className="text-sm font-semibold mb-3 block text-card-foreground">Panel Position</Label>
                     <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
@@ -735,15 +739,19 @@ export const VisualMeasurementSheet = ({
                         handleInputChange("curtain_side", value);
                       }}
                       disabled={readOnly}
-                      className="flex flex-row gap-4"
+                      className="grid grid-cols-2 gap-3"
                     >
-                      <div className="flex items-center space-x-1.5">
-                        <RadioGroupItem value="left" id="left" className="w-4 h-4" />
-                        <Label htmlFor="left" className="text-sm">Left side</Label>
+                      <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <RadioGroupItem value="left" id="left" className="w-4 h-4" />
+                          <Label htmlFor="left" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Left side</Label>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1.5">
-                        <RadioGroupItem value="right" id="right" className="w-4 h-4" />
-                        <Label htmlFor="right" className="text-sm">Right side</Label>
+                      <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <RadioGroupItem value="right" id="right" className="w-4 h-4" />
+                          <Label htmlFor="right" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Right side</Label>
+                        </div>
                       </div>
                     </RadioGroup>
                   </div>
