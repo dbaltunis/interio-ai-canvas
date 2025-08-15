@@ -2,21 +2,25 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Edit, Trash2, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
 import { formatCurrency } from "@/utils/unitConversion";
-// Removed: import { CostBreakdownDisplay } from "@/components/cost-breakdown/CostBreakdownDisplay";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
 import WorkshopSendDialog from "@/components/workroom/WorkshopSendDialog";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { WindowRenameButton } from "./WindowRenameButton";
 
 interface WindowSummaryCardProps {
   surface: any;
   onEditSurface?: (surface: any) => void;
   onDeleteSurface?: (id: string) => void;
   onViewDetails?: (surface: any) => void;
+  onRenameSurface?: (id: string, newName: string) => void;
+  onAddTreatment?: (surfaceId: string) => void;
+  isMainWindow?: boolean;
+  treatmentLabel?: string;
 }
 
 function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: string }) {
@@ -29,7 +33,16 @@ function SummaryItem({ title, main, sub }: { title: string; main: string; sub?: 
   );
 }
 
-export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onViewDetails }: WindowSummaryCardProps) {
+export function WindowSummaryCard({ 
+  surface, 
+  onEditSurface, 
+  onDeleteSurface, 
+  onViewDetails, 
+  onRenameSurface, 
+  onAddTreatment,
+  isMainWindow = true,
+  treatmentLabel
+}: WindowSummaryCardProps) {
   // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
@@ -111,27 +124,55 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
     return items;
   }, [summary]);
 
+  const displayName = treatmentLabel || surface.name;
+
   return (
     <Card
-      className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-md hover:shadow-lg transition-shadow ring-1 ring-border animate-enter"
+      className={`group relative overflow-hidden rounded-xl border transition-all duration-200 hover:shadow-lg ${
+        isMainWindow 
+          ? 'bg-card border-border shadow-md hover:border-primary/30' 
+          : 'bg-muted/30 border-muted-foreground/20 ml-4 shadow-sm hover:bg-muted/50'
+      }`}
     >
-      {/* Removed blue-tinted overlay ring to improve hover clarity */}
-      <CardHeader className="relative pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{surface.name}</CardTitle>
+      <CardHeader className={`relative ${isMainWindow ? 'pb-3' : 'pb-2 py-3'}`}>
+        <div className="flex justify-between items-start gap-3">
+          <div className="min-w-0 flex-1">
+            {isMainWindow && onRenameSurface ? (
+              <WindowRenameButton
+                windowName={displayName}
+                onRename={(newName) => onRenameSurface(surface.id, newName)}
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                {!isMainWindow && (
+                  <div className="w-2 h-2 rounded-full bg-primary/40 flex-shrink-0" />
+                )}
+                <CardTitle className={`${isMainWindow ? 'text-lg' : 'text-base'} truncate`}>
+                  {displayName}
+                </CardTitle>
+              </div>
+            )}
+            {!isMainWindow && treatmentLabel && (
+              <Badge variant="outline" className="mt-1 text-xs">
+                Additional Treatment
+              </Badge>
+            )}
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditSurface?.(surface);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
+          <div className="flex gap-2 flex-shrink-0">
+            {isMainWindow && onAddTreatment && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddTreatment(surface.id);
+                }}
+                className="text-muted-foreground hover:text-primary hover:border-primary/30"
+                title="Add another treatment to this window"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -139,6 +180,7 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                 e.stopPropagation();
                 onDeleteSurface?.(surface.id);
               }}
+              className="text-destructive hover:text-destructive hover:border-destructive/30"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -204,8 +246,10 @@ export function WindowSummaryCard({ surface, onEditSurface, onDeleteSurface, onV
                       e.stopPropagation();
                       onViewDetails?.(surface);
                     }}
+                    className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
                   >
-                    Edit
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit Treatment
                   </Button>
                   <Button 
                     size="sm"

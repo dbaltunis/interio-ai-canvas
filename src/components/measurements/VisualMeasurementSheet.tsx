@@ -970,16 +970,16 @@ export const VisualMeasurementSheet = ({
                 {/* Heading Options - Compact */}
 
                 {/* Heading Options - Compact */}
-                <div className="bg-white border-2 border-orange-200 rounded-lg p-3 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-orange-100 rounded-md flex items-center justify-center">
-                      <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="container-level-2 border-2 border-orange-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-foreground text-sm">Heading Style</h4>
-                      <p className="text-xs text-muted-foreground">Top treatment</p>
+                      <h4 className="font-bold text-card-foreground text-base">Heading Style</h4>
+                      <p className="text-sm text-card-foreground/70">Top treatment</p>
                     </div>
                   </div>
                    <HeadingOptionsSection

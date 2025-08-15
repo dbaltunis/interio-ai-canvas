@@ -40,6 +40,19 @@ export const SurfaceList = ({
     setShowWindowDialog(false);
   };
 
+  const handleRenameSurface = (surfaceId: string, newName: string) => {
+    onUpdateSurface(surfaceId, { name: newName });
+  };
+
+  const handleAddTreatment = (surfaceId: string) => {
+    // Find the surface and open the dialog for adding a new treatment
+    const surface = surfaces.find(s => s.id === surfaceId);
+    if (surface) {
+      setSelectedSurface(surface);
+      setShowWindowDialog(true);
+    }
+  };
+
   const getClientMeasurementForSurface = (surface: any) => {
     return clientMeasurements?.find(measurement => {
       const roomMatch = measurement.room_id === surface.room_id;
@@ -99,19 +112,21 @@ export const SurfaceList = ({
               onEditSurface={() => handleViewWindow(group.mainSurface)}
               onDeleteSurface={onDeleteSurface}
               onViewDetails={() => handleViewWindow(group.mainSurface)}
+              onRenameSurface={handleRenameSurface}
+              onAddTreatment={handleAddTreatment}
+              isMainWindow={true}
             />
             
             {/* Additional treatments for the same window */}
-            {group.treatments.map((treatment) => (
-              <div key={treatment.id} className="ml-4 pl-4 border-l-2 border-muted">
+            {group.treatments.map((treatment, index) => (
+              <div key={treatment.id} className="border-l-2 border-primary/20 ml-6 pl-4">
                 <WindowSummaryCard 
-                  surface={{
-                    ...treatment,
-                    name: `${group.baseWindowName} - Treatment ${group.treatments.indexOf(treatment) + 2}`
-                  }} 
+                  surface={treatment}
                   onEditSurface={() => handleViewWindow(treatment)}
                   onDeleteSurface={onDeleteSurface}
                   onViewDetails={() => handleViewWindow(treatment)}
+                  isMainWindow={false}
+                  treatmentLabel={`${group.baseWindowName} - Treatment ${index + 2}`}
                 />
               </div>
             ))}
