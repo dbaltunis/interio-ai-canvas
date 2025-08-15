@@ -38,7 +38,7 @@ export const AINotificationToast = ({ notifications, onDismiss, onAction }: AINo
   };
 
   return (
-    <div className="fixed top-4 right-4 z-[100] space-y-3 max-w-sm">
+    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm pointer-events-none">
       <AnimatePresence>
         {notifications.map((notification, index) => {
           const Icon = getIcon(notification.type);
@@ -61,7 +61,7 @@ export const AINotificationToast = ({ notifications, onDismiss, onAction }: AINo
               <div className="ai-orb absolute -top-2 -right-2 w-6 h-6 opacity-40" />
               <div className="ai-orb absolute -bottom-1 -left-1 w-4 h-4 opacity-30" style={{ animationDelay: '1s' }} />
               
-              <div className="glass-morphism rounded-2xl p-4 shadow-2xl border border-white/20 backdrop-blur-xl">
+              <div className="glass-morphism rounded-2xl p-4 shadow-2xl border border-white/20 backdrop-blur-xl pointer-events-auto">
                 {/* Gradient line indicator */}
                 <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getGradient(notification.type)} rounded-l-2xl`} />
                 
