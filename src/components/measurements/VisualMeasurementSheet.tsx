@@ -311,7 +311,7 @@ export const VisualMeasurementSheet = ({
                 <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-20`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       Rail Width: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -335,7 +335,7 @@ export const VisualMeasurementSheet = ({
                 <div className="absolute top-16 left-16 right-16 flex items-center z-15">
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
                   <div className="flex-1 border-t-2 border-green-600 relative">
-                    <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
+                    <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       A: {displayValue(measurements.measurement_a)}
                     </span>
                   </div>
@@ -454,13 +454,13 @@ export const VisualMeasurementSheet = ({
             </div>
 
             {/* Measurement Guide - More User-Friendly */}
-            <div className="mt-4 p-3 bg-blue-50/50 border border-blue-200 rounded-lg">
-              <h5 className="font-medium text-blue-800 mb-2 text-sm">What to Measure</h5>
-              <div className="text-sm text-blue-700 space-y-1">
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <h5 className="font-medium text-primary mb-2 text-sm">What to Measure</h5>
+              <div className="text-sm text-foreground space-y-1">
                 <p><strong>Width (W):</strong> {hardwareType === "track" ? "Track" : "Rail"} width - how wide your curtain needs to be</p>
                 <p><strong>Drop (H):</strong> Height from {hardwareType === "track" ? "track" : "rod"} to where curtain should end</p>
                 {hasValue(measurements.rail_width) && hasValue(measurements.drop) && (
-                  <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-green-800">
+                  <div className="mt-2 p-2 bg-secondary/20 border border-secondary/30 rounded text-foreground">
                     ✓ Great! These measurements will update the visual above as you type
                   </div>
                 )}
@@ -475,16 +475,16 @@ export const VisualMeasurementSheet = ({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                   More Details for Curtain Makers
-                  <span className="text-xs text-gray-500 ml-auto">Optional measurements - Click to expand</span>
+                  <span className="text-xs text-muted-foreground ml-auto">Optional measurements - Click to expand</span>
                 </summary>
                 
                 <div className="mt-3 space-y-4">
                   {/* Professional Extension Measurements */}
                   <div className="p-3 bg-muted/50 rounded-lg border border-border">
-                    <h6 className="font-medium text-gray-800 mb-3 text-sm">Hardware Extensions & Overlaps</h6>
+                    <h6 className="font-medium text-foreground mb-3 text-sm">Hardware Extensions & Overlaps</h6>
                     <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="rod_extension_left" className="text-xs font-medium text-gray-700">
+                        <Label htmlFor="rod_extension_left" className="text-xs font-medium text-foreground">
                           Left Extension
                         </Label>
                         <Input
@@ -497,10 +497,10 @@ export const VisualMeasurementSheet = ({
                           readOnly={readOnly}
                           className="h-8 text-sm"
                         />
-                        <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends left</p>
+                        <p className="text-xs text-muted-foreground">How far {hardwareType === "track" ? "track" : "rod"} extends left</p>
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="rod_extension_right" className="text-xs font-medium text-gray-700">
+                        <Label htmlFor="rod_extension_right" className="text-xs font-medium text-foreground">
                           Right Extension
                         </Label>
                         <Input
@@ -513,10 +513,10 @@ export const VisualMeasurementSheet = ({
                           readOnly={readOnly}
                           className="h-8 text-sm"
                         />
-                        <p className="text-xs text-gray-500">How far {hardwareType === "track" ? "track" : "rod"} extends right</p>
+                        <p className="text-xs text-muted-foreground">How far {hardwareType === "track" ? "track" : "rod"} extends right</p>
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="panel_overlap" className="text-xs font-medium text-gray-700">
+                        <Label htmlFor="panel_overlap" className="text-xs font-medium text-foreground">
                           Panel Overlap
                         </Label>
                         <Input
@@ -529,10 +529,10 @@ export const VisualMeasurementSheet = ({
                           readOnly={readOnly}
                           className="h-8 text-sm"
                         />
-                        <p className="text-xs text-gray-500">Overlap in center</p>
+                        <p className="text-xs text-muted-foreground">Overlap in center</p>
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="floor_clearance" className="text-xs font-medium text-gray-700">
+                        <Label htmlFor="floor_clearance" className="text-xs font-medium text-foreground">
                           Floor Clearance
                         </Label>
                         <Input
@@ -545,7 +545,7 @@ export const VisualMeasurementSheet = ({
                           readOnly={readOnly}
                           className="h-8 text-sm"
                         />
-                        <p className="text-xs text-gray-500">Gap from floor</p>
+                        <p className="text-xs text-muted-foreground">Gap from floor</p>
                       </div>
                     </div>
                   </div>
@@ -573,7 +573,7 @@ export const VisualMeasurementSheet = ({
                               <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xs">A</span>
                               Window Width (Inside Frame)
                             </Label>
-                            <p className="text-xs text-gray-600 mb-1">Measure inside the window frame from side to side</p>
+                            <p className="text-xs text-muted-foreground mb-1">Measure inside the window frame from side to side</p>
                             <Input
                               id="measurement_a"
                               type="number"
@@ -589,7 +589,7 @@ export const VisualMeasurementSheet = ({
                               <span className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-xs">B</span>
                               Window Height (Inside Frame)
                             </Label>
-                            <p className="text-xs text-gray-600 mb-1">Measure inside the window frame from top to bottom</p>
+                            <p className="text-xs text-muted-foreground mb-1">Measure inside the window frame from top to bottom</p>
                             <Input
                               id="measurement_b"
                               type="number"
@@ -606,7 +606,7 @@ export const VisualMeasurementSheet = ({
                                 <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xs">C</span>
                                 Rod to Ceiling Distance
                               </Label>
-                              <p className="text-xs text-gray-600 mb-1">Distance from curtain rod to ceiling</p>
+                              <p className="text-xs text-muted-foreground mb-1">Distance from curtain rod to ceiling</p>
                               <Input
                                 id="measurement_c"
                                 type="number"
@@ -623,7 +623,7 @@ export const VisualMeasurementSheet = ({
                               <span className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs">D</span>
                               Window Bottom to Floor
                             </Label>
-                            <p className="text-xs text-gray-600 mb-1">Distance from bottom of window to floor</p>
+                            <p className="text-xs text-muted-foreground mb-1">Distance from bottom of window to floor</p>
                             <Input
                               id="measurement_d"
                               type="number"
@@ -639,7 +639,7 @@ export const VisualMeasurementSheet = ({
                               <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xs">E</span>
                               Total Height ({hardwareType === "track" ? "Track" : "Rod"} to Floor)
                             </Label>
-                            <p className="text-xs text-gray-600 mb-1">Full height from {hardwareType === "track" ? "track" : "rod"} to floor</p>
+                            <p className="text-xs text-muted-foreground mb-1">Full height from {hardwareType === "track" ? "track" : "rod"} to floor</p>
                             <Input
                               id="measurement_e"
                               type="number"
@@ -655,7 +655,7 @@ export const VisualMeasurementSheet = ({
                               <span className="w-5 h-5 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 font-bold text-xs">F</span>
                               Total Width (Including Extensions)
                             </Label>
-                            <p className="text-xs text-gray-600 mb-1">Full width including {hardwareType === "track" ? "track" : "rod"} extensions</p>
+                            <p className="text-xs text-muted-foreground mb-1">Full width including {hardwareType === "track" ? "track" : "rod"} extensions</p>
                             <Input
                               id="measurement_f"
                               type="number"
@@ -679,7 +679,7 @@ export const VisualMeasurementSheet = ({
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-120px)] lg:pr-2 space-y-4">
             {/* Hardware Type */}
             <div className="border rounded-lg p-4 bg-muted/30">
-              <h4 className="font-medium mb-3 text-gray-800">Hardware Type</h4>
+              <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
               <RadioGroup 
                 value={hardwareType} 
                 onValueChange={(value) => handleInputChange("hardware_type", value)}
@@ -703,7 +703,7 @@ export const VisualMeasurementSheet = ({
               
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs font-medium mb-1 block text-gray-700">Curtain Type</Label>
+                  <Label className="text-xs font-medium mb-1 block text-foreground">Curtain Type</Label>
                   <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
@@ -726,7 +726,7 @@ export const VisualMeasurementSheet = ({
 
                 {curtainType === "single" && (
                   <div>
-                    <Label className="text-xs font-medium mb-1 block text-gray-700">Panel Position</Label>
+                    <Label className="text-xs font-medium mb-1 block text-foreground">Panel Position</Label>
                     <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
@@ -759,8 +759,8 @@ export const VisualMeasurementSheet = ({
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Essential Measurements</h4>
-                  <p className="text-xs text-gray-500">Required for accurate calculations</p>
+                  <h4 className="font-semibold text-foreground">Essential Measurements</h4>
+                  <p className="text-xs text-muted-foreground">Required for accurate calculations</p>
                 </div>
               </div>
 
@@ -787,7 +787,7 @@ export const VisualMeasurementSheet = ({
                        {units.length}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">Total {hardwareType === "track" ? "track" : "rail"} length</p>
+                  <p className="text-xs text-muted-foreground">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                 </div>
 
                 <div className="space-y-2">
@@ -812,7 +812,7 @@ export const VisualMeasurementSheet = ({
                       {units.length}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">Length to curtain bottom</p>
+                  <p className="text-xs text-muted-foreground">Length to curtain bottom</p>
                 </div>
               </div>
             </div>
@@ -869,7 +869,7 @@ export const VisualMeasurementSheet = ({
                       <div className="space-y-3">
                         <div>
                           <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
-                          <p className="text-xs text-gray-600 mb-1">How much fabric pools on the floor</p>
+                          <p className="text-xs text-muted-foreground mb-1">How much fabric pools on the floor</p>
                           <Input
                             id="pooling_amount"
                             type="number"
@@ -922,8 +922,8 @@ export const VisualMeasurementSheet = ({
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 text-sm">Fabric Selection</h4>
-                      <p className="text-xs text-gray-500">Choose material</p>
+                      <h4 className="font-semibold text-foreground text-sm">Fabric Selection</h4>
+                      <p className="text-xs text-muted-foreground">Choose material</p>
                     </div>
                   </div>
                   <FabricSelectionSection
@@ -945,8 +945,8 @@ export const VisualMeasurementSheet = ({
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-sm">Lining Options</h4>
-                        <p className="text-xs text-gray-500">Interior backing</p>
+                        <h4 className="font-semibold text-foreground text-sm">Lining Options</h4>
+                        <p className="text-xs text-muted-foreground">Interior backing</p>
                       </div>
                     </div>
                     <LiningOptionsSection
@@ -969,8 +969,8 @@ export const VisualMeasurementSheet = ({
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 text-sm">Heading Style</h4>
-                      <p className="text-xs text-gray-500">Top treatment</p>
+                      <h4 className="font-semibold text-foreground text-sm">Heading Style</h4>
+                      <p className="text-xs text-muted-foreground">Top treatment</p>
                     </div>
                   </div>
                    <HeadingOptionsSection

@@ -29,10 +29,10 @@ export const TreatmentVisualizer = ({
 
     return (
       <div className="space-y-4">
-        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 bg-blue-50 min-h-[200px]">
+        <div className="relative border-2 border-dashed border-border rounded-lg p-4 bg-muted/50 min-h-[200px]">
           {/* Window representation */}
           <div 
-            className="absolute border-2 border-gray-400 bg-white/80"
+            className="absolute border-2 border-border bg-card/80"
             style={{
               width: `${Math.min(width * 3, 200)}px`,
               height: `${Math.min(height * 2, 150)}px`,
@@ -42,7 +42,7 @@ export const TreatmentVisualizer = ({
             }}
           >
             {/* Window panes */}
-            <div className="absolute inset-1 border border-gray-300 bg-gradient-to-b from-sky-100 to-sky-200" />
+            <div className="absolute inset-1 border border-border bg-gradient-to-b from-primary/10 to-primary/20" />
           </div>
 
           {/* Curtain representation */}
@@ -73,10 +73,10 @@ export const TreatmentVisualizer = ({
           </div>
 
           {/* Labels */}
-          <div className="absolute bottom-2 left-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
             <Badge variant="outline">Curtains</Badge>
           </div>
-          <div className="absolute bottom-2 right-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 right-2 text-xs text-foreground font-semibold">
             {treatmentData.heading_type && (
               <Badge variant="secondary">{treatmentData.heading_type.replace('_', ' ')}</Badge>
             )}
@@ -93,10 +93,10 @@ export const TreatmentVisualizer = ({
 
     return (
       <div className="space-y-4">
-        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 bg-amber-50 min-h-[200px]">
+        <div className="relative border-2 border-dashed border-border rounded-lg p-4 bg-muted/50 min-h-[200px]">
           {/* Window representation */}
           <div 
-            className="absolute border-2 border-gray-400 bg-white/80"
+            className="absolute border-2 border-border bg-card/80"
             style={{
               width: `${Math.min(width * 3, 200)}px`,
               height: `${Math.min(height * 2, 150)}px`,
@@ -118,13 +118,13 @@ export const TreatmentVisualizer = ({
             ))}
 
             {/* Control cord */}
-            <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-gray-400" />
+            <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-foreground" />
           </div>
 
-          <div className="absolute bottom-2 left-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
             <Badge variant="outline">Blinds</Badge>
           </div>
-          <div className="absolute bottom-2 right-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 right-2 text-xs text-foreground font-semibold">
             {treatmentData.slat_size && (
               <Badge variant="secondary">{treatmentData.slat_size}" slats</Badge>
             )}
@@ -141,10 +141,10 @@ export const TreatmentVisualizer = ({
 
     return (
       <div className="space-y-4">
-        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 bg-green-50 min-h-[200px]">
+        <div className="relative border-2 border-dashed border-border rounded-lg p-4 bg-muted/50 min-h-[200px]">
           {/* Window representation */}
           <div 
-            className="absolute border-2 border-gray-400 bg-white/80"
+            className="absolute border-2 border-border bg-card/80"
             style={{
               width: `${Math.min(width * 3, 200)}px`,
               height: `${Math.min(height * 2, 150)}px`,
@@ -171,10 +171,10 @@ export const TreatmentVisualizer = ({
             </div>
           </div>
 
-          <div className="absolute bottom-2 left-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
             <Badge variant="outline">Roman Shade</Badge>
           </div>
-          <div className="absolute bottom-2 right-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 right-2 text-xs text-foreground font-semibold">
             {treatmentData.fold_style && (
               <Badge variant="secondary">{treatmentData.fold_style.replace('_', ' ')}</Badge>
             )}
@@ -193,10 +193,10 @@ export const TreatmentVisualizer = ({
 
     return (
       <div className="space-y-4">
-        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 bg-amber-50 min-h-[200px]">
+        <div className="relative border-2 border-dashed border-border rounded-lg p-4 bg-muted/50 min-h-[200px]">
           {/* Window representation */}
           <div 
-            className="absolute border-2 border-gray-400 bg-white/80"
+            className="absolute border-2 border-border bg-card/80"
             style={{
               width: `${Math.min(width * 3, 200)}px`,
               height: `${Math.min(height * 2, 150)}px`,
@@ -235,10 +235,10 @@ export const TreatmentVisualizer = ({
             ))}
           </div>
 
-          <div className="absolute bottom-2 left-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
             <Badge variant="outline">Shutters</Badge>
           </div>
-          <div className="absolute bottom-2 right-2 text-xs text-gray-600">
+          <div className="absolute bottom-2 right-2 text-xs text-foreground font-semibold">
             <Badge variant="secondary">{numPanels} panels</Badge>
           </div>
         </div>
