@@ -42,26 +42,26 @@
   }
   
   .dark {
-    /* High contrast dark mode for maximum visibility */
-    --background: 0 0% 8%;
+    /* Maximum contrast dark mode - 10/10 visibility */
+    --background: 0 0% 5%;
     --foreground: 0 0% 100%;
-    --card: 0 0% 12%;
+    --card: 0 0% 15%;
     --card-foreground: 0 0% 100%;
-    --popover: 0 0% 12%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 100%;
-    --primary: 200 100% 70%;
+    --primary: 210 100% 80%;
     --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 18%;
+    --secondary: 0 0% 25%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 85%;
-    --accent: 200 100% 70%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 90%;
+    --accent: 210 100% 75%;
     --accent-foreground: 0 0% 0%;
-    --destructive: 0 75% 60%;
+    --destructive: 0 85% 65%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 25%;
-    --input: 0 0% 16%;
-    --ring: 200 100% 70%;
+    --border: 0 0% 35%;
+    --input: 0 0% 20%;
+    --ring: 210 100% 80%;
     
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;

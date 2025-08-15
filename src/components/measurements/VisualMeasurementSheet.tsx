@@ -202,7 +202,7 @@ export const VisualMeasurementSheet = ({
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border-2 border-border bg-card shadow-lg">
       <CardHeader>
         <CardTitle className="text-center">Window Measurement Worksheet</CardTitle>
       </CardHeader>
@@ -255,53 +255,53 @@ export const VisualMeasurementSheet = ({
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
-                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
-                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
                     
                     {/* Pooling visual effect */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-red-500 opacity-60 rounded-b-lg"></div>
+                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
                     )}
                   </div>
                   
                   {/* Right Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
-                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
-                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
                     
                     {/* Pooling visual effect */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-red-500 opacity-60 rounded-b-lg"></div>
+                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
                     )}
                   </div>
                 </>
               ) : (
                 /* Single Panel */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-red-500 opacity-80 rounded-sm shadow-lg`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-red-800 opacity-60"></div>
-                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-red-700 opacity-40"></div>
-                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-red-600 opacity-30"></div>
-                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-red-500 opacity-25"></div>
-                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-red-400 opacity-20"></div>
-                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-red-300 opacity-15"></div>
-                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-red-200 opacity-10"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-red-100 opacity-5"></div>
+                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
                   
                   {/* Pooling visual effect */}
                   {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-red-500 opacity-60 rounded-b-lg"></div>
+                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
                   )}
                 </div>
               )}
@@ -384,8 +384,8 @@ export const VisualMeasurementSheet = ({
               {hasValue(measurements.measurement_c) && hardwareType === "rod" && (
                 <div className="absolute top-4 right-4 flex flex-col items-center">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-red-600"></div>
-                  <div className="h-12 border-l-2 border-red-600 relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                  <div className="h-12 border-l-2 border-primary relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                       C: {displayValue(measurements.measurement_c)}
                     </span>
                   </div>
@@ -603,7 +603,7 @@ export const VisualMeasurementSheet = ({
                           {hardwareType === "rod" && (
                             <div>
                               <Label htmlFor="measurement_c" className="text-sm font-medium flex items-center gap-2">
-                                <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xs">C</span>
+                                <span className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">C</span>
                                 Rod to Ceiling Distance
                               </Label>
                               <p className="text-xs text-muted-foreground mb-1">Distance from curtain rod to ceiling</p>
@@ -678,7 +678,7 @@ export const VisualMeasurementSheet = ({
           {/* Measurement Inputs - Scrollable on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-120px)] lg:pr-2 space-y-4">
             {/* Hardware Type */}
-            <div className="border rounded-lg p-4 bg-muted/30">
+            <div className="border-2 border-border rounded-lg p-4 bg-card shadow-md">
               <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
               <RadioGroup 
                 value={hardwareType} 

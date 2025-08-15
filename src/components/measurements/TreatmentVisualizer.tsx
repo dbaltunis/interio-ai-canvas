@@ -47,7 +47,7 @@ export const TreatmentVisualizer = ({
 
           {/* Curtain representation */}
           <div 
-            className="absolute border-l-4 border-r-4 border-red-300 bg-gradient-to-r from-red-100 to-red-200 opacity-80"
+            className="absolute border-l-4 border-r-4 border-primary bg-gradient-to-r from-primary/20 to-primary/30"
             style={{
               width: `${Math.min(width * 3.5, 220)}px`,
               height: `${Math.min(totalDrop * 2, 180)}px`,
@@ -60,13 +60,13 @@ export const TreatmentVisualizer = ({
             }}
           >
             {/* Heading representation */}
-            <div className="absolute top-0 left-0 right-0 h-3 bg-red-400 opacity-60" />
+            <div className="absolute top-0 left-0 right-0 h-3 bg-primary/60" />
             
             {/* Fabric folds */}
             {[...Array(Math.floor(fullness))].map((_, i) => (
               <div 
                 key={i}
-                className="absolute top-4 bottom-0 w-0.5 bg-red-400 opacity-40"
+                className="absolute top-4 bottom-0 w-0.5 bg-primary/60"
                 style={{ left: `${(i + 1) * (100 / (fullness + 1))}%` }}
               />
             ))}
@@ -109,7 +109,7 @@ export const TreatmentVisualizer = ({
             {[...Array(Math.min(numSlats, 15))].map((_, i) => (
               <div 
                 key={i}
-                className="absolute left-0 right-0 bg-amber-200 border-b border-amber-300"
+                className="absolute left-0 right-0 bg-accent/30 border-b border-accent/50"
                 style={{
                   height: `${Math.min(slatSize * 2, 10)}px`,
                   top: `${i * Math.min(slatSize * 2, 10)}px`
@@ -154,12 +154,12 @@ export const TreatmentVisualizer = ({
             }}
           >
             {/* Roman shade fabric */}
-            <div className="absolute inset-1 bg-gradient-to-b from-green-100 to-green-200">
+            <div className="absolute inset-1 bg-gradient-to-b from-secondary/20 to-secondary/30">
               {/* Fold lines */}
               {[...Array(Math.min(numFolds, 8))].map((_, i) => (
                 <div 
                   key={i}
-                  className="absolute left-0 right-0 border-b-2 border-green-400 opacity-60"
+                  className="absolute left-0 right-0 border-b-2 border-secondary/80"
                   style={{
                     top: `${(i + 1) * (100 / (numFolds + 1))}%`
                   }}
@@ -167,7 +167,7 @@ export const TreatmentVisualizer = ({
               ))}
               
               {/* Control mechanism */}
-              <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-brown-400" />
+              <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-foreground" />
             </div>
           </div>
 
@@ -209,7 +209,7 @@ export const TreatmentVisualizer = ({
             {[...Array(numPanels)].map((_, panelIndex) => (
               <div 
                 key={panelIndex}
-                className="absolute top-0 bottom-0 border-2 border-amber-400 bg-gradient-to-r from-amber-100 to-amber-200"
+                className="absolute top-0 bottom-0 border-2 border-accent bg-gradient-to-r from-accent/20 to-accent/30"
                 style={{
                   width: `${100 / numPanels}%`,
                   left: `${panelIndex * (100 / numPanels)}%`,
@@ -219,7 +219,7 @@ export const TreatmentVisualizer = ({
                 {[...Array(Math.min(numLouvers, 10))].map((_, i) => (
                   <div 
                     key={i}
-                    className="absolute left-1 right-1 bg-amber-300 rounded-sm"
+                    className="absolute left-1 right-1 bg-accent/40 rounded-sm"
                     style={{
                       height: `${Math.min(louverSize * 1.5, 8)}px`,
                       top: `${i * Math.min(louverSize * 1.5, 8) + 4}px`
@@ -229,7 +229,7 @@ export const TreatmentVisualizer = ({
 
                 {/* Panel divider */}
                 {panelIndex < numPanels - 1 && (
-                  <div className="absolute top-0 bottom-0 right-0 w-0.5 bg-amber-600" />
+                  <div className="absolute top-0 bottom-0 right-0 w-0.5 bg-accent" />
                 )}
               </div>
             ))}
