@@ -340,192 +340,84 @@ export const CostCalculationSummary = ({
   const totalCost = effectiveFabricCost + liningCost + headingCost + manufacturingCost;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="h-5 w-5" />
-          Cost Calculation
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {/* Products & Services List */}
-        <div className="space-y-2">
-          {/* Fabric - Always show even if no fabric selected */}
-          <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+    <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center gap-2">
+          <Calculator className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold text-card-foreground">Cost Calculation</h3>
+        </div>
+      </div>
+
+      {/* Cost Breakdown */}
+      <div className="space-y-1">
+        {/* Fabric */}
+        <div className="flex items-center justify-between py-2 text-sm">
+          <div className="flex items-center gap-3">
+            <CurtainIcon className="h-4 w-4 text-primary" />
+            <span className="text-card-foreground font-medium">Fabric</span>
+            <span className="text-muted-foreground">
+              {fabricUsage.linearMeters.toFixed(2)}m × {formatPrice(fabricPriceDisplay)}/m
+            </span>
+          </div>
+          <span className="font-medium text-card-foreground">{formatPrice(effectiveFabricCost)}</span>
+        </div>
+
+        {/* Lining */}
+        {selectedLining && selectedLining !== 'none' && (
+          <div className="flex items-center justify-between py-2 text-sm">
             <div className="flex items-center gap-3">
-              <CurtainIcon className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="font-medium">Fabric</div>
-                <div className="text-sm text-gray-600">
-                  {fabricUsage.linearMeters.toFixed(2)}m linear ({fabricUsage.widthsRequired} width(s) × {(fabricUsage.totalDrop/100).toFixed(2)}m drop)
-                </div>
-                {effectiveFabricCost === 0 ? (
-                  <div className="text-xs text-red-500">
-                    No fabric selected - Click to select fabric from inventory
-                  </div>
-                ) : (
-                  <div className="text-xs text-gray-500">
-                    {fabricName} • {formatPrice(fabricPriceDisplay)}/m
-                  </div>
-                )}
-              </div>
+              <FabricSwatchIcon className="h-4 w-4 text-primary" />
+              <span className="text-card-foreground font-medium">Lining</span>
+              <span className="text-muted-foreground">{selectedLining}</span>
             </div>
-            <div className="text-right">
-              <div className="font-semibold text-lg">{formatPrice(effectiveFabricCost)}</div>
-              {effectiveFabricCost === 0 && (
-                <div className="text-xs text-red-500">£0.00</div>
-              )}
-            </div>
-          </div>
-
-          {/* Lining */}
-          {selectedLining && selectedLining !== 'none' && (
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FabricSwatchIcon className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="font-medium">Lining</div>
-                  <div className="text-sm text-gray-600">{selectedLining}</div>
-                </div>
-              </div>
-              <div className="font-semibold text-lg">{formatPrice(liningCost)}</div>
-            </div>
-          )}
-
-          {/* Heading */}
-          {headingCost > 0 && (
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <span className="w-5 h-5 border-b-2 border-gray-600" />
-                <div>
-                  <div className="font-medium">Heading</div>
-                  <div className="text-sm text-gray-600">{template.heading_name}</div>
-                </div>
-              </div>
-              <div className="font-semibold text-lg">{formatPrice(headingCost)}</div>
-            </div>
-          )}
-
-          {/* Manufacturing */}
-          {manufacturingCost > 0 && (
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <SewingMachineIcon className="h-5 w-5 text-orange-600" />
-                <div>
-                  <div className="font-medium">Manufacturing</div>
-                  <div className="text-sm text-gray-600">{template.manufacturing_type}</div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button 
-                        className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
-                        onClick={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        type="button"
-                      >
-                        View calculation details
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-80 p-4" 
-                      side="top" 
-                      align="start"
-                      onOpenAutoFocus={(e) => e.preventDefault()}
-                    >
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-sm">Manufacturing Cost Calculation</h4>
-                        <div className="text-xs space-y-2">
-                          <div>
-                            <strong>Fabric Required:</strong> {fabricUsage.linearMeters.toFixed(2)}m linear ({fabricUsage.squareMeters.toFixed(2)}m²)
-                             <div className="text-muted-foreground">
-                               • Required Width: {width}cm × Fullness: {template.fullness_ratio}x = {(width * template.fullness_ratio).toFixed(0)}cm
-                               <br />
-                               • Side Hems: {template.side_hems || 0}cm × 2 sides × {curtainCount} curtain(s) = {totalSideHems}cm (added to width)
-                               <br />
-                               • Returns: {template.return_left || 0}cm + {template.return_right || 0}cm = {(template.return_left || 0) + (template.return_right || 0)}cm (added to width)
-                               <br />
-                               • Total Width: {totalWidthWithAllowances}cm requiring {fabricUsage.widthsRequired} fabric width(s)
-                               <br />
-                               • Drop: {height}cm + Header: {template.header_allowance || 8}cm + Bottom: {template.bottom_hem || 8}cm{pooling > 0 ? ` + Pooling: ${pooling}cm` : ''} = {fabricUsage.totalDrop}cm
-                               {totalSeamAllowance > 0 && (
-                                 <>
-                                   <br />
-                                   • Seam Allowances: {template.seam_hems || 0}cm × 2 sides × {fabricUsage.widthsRequired - 1} seam(s) = {totalSeamAllowance}cm (added to drop)
-                                 </>
-                               )}
-                               <br />
-                               • Waste Factor: {template.waste_percent || 0}%
-                               <br />
-                               • <strong>✓ Manufacturing price includes ALL hems, seams & returns</strong>
-                             </div>
-                          </div>
-                          
-                          {template.machine_price_per_metre && (
-                            <div>
-                              <strong>Per Metre:</strong> {formatPrice(template.machine_price_per_metre)} × {fabricUsage.linearMeters.toFixed(2)}m = {formatPrice(template.machine_price_per_metre * fabricUsage.linearMeters)}
-                            </div>
-                          )}
-                          
-                          {template.machine_price_per_drop && (
-                            <div>
-                              <strong>Per Drop:</strong> {formatPrice(template.machine_price_per_drop)} × {template.curtain_type === 'pair' ? 2 : 1} curtain(s) = {formatPrice(template.machine_price_per_drop * (template.curtain_type === 'pair' ? 2 : 1))}
-                            </div>
-                          )}
-                          
-                          {template.machine_price_per_panel && (
-                            <div>
-                              <strong>Per Panel:</strong> {formatPrice(template.machine_price_per_panel)} × {template.curtain_type === 'pair' ? 2 : 1} panel(s) = {formatPrice(template.machine_price_per_panel * (template.curtain_type === 'pair' ? 2 : 1))}
-                            </div>
-                          )}
-                          
-                          <div className="pt-2 border-t">
-                            <strong>Total Manufacturing:</strong> {formatPrice(manufacturingCost)}
-                          </div>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              <div className="font-semibold text-lg">{formatPrice(manufacturingCost)}</div>
-            </div>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Total */}
-        <div className="flex items-center justify-between text-lg font-semibold">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            <span>Total Cost</span>
-          </div>
-          <div>{formatPrice(totalCost)}</div>
-        </div>
-
-        {/* Cost per curtain */}
-        {template.curtain_type === 'pair' && (
-          <div className="text-sm text-muted-foreground text-center">
-            {formatPrice(totalCost / 2)} per curtain
+            <span className="font-medium text-card-foreground">{formatPrice(liningCost)}</span>
           </div>
         )}
 
-        {/* Template info */}
-        <div className="p-3 bg-muted rounded-lg">
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div>Template: {template.name}</div>
-            <div>Pricing: {template.pricing_type}</div>
-            {template.waste_percent && <div>Waste factor: {template.waste_percent}%</div>}
-          </div>
-        </div>
-
-        {(!width || !height) && (
-          <div className="p-3 border-2 border-dashed border-amber-200 bg-amber-50 rounded-lg">
-            <div className="text-sm text-amber-800">
-              Enter width and drop measurements to see accurate pricing
+        {/* Heading */}
+        {headingCost > 0 && (
+          <div className="flex items-center justify-between py-2 text-sm">
+            <div className="flex items-center gap-3">
+              <span className="w-4 h-4 border-b-2 border-primary" />
+              <span className="text-card-foreground font-medium">Heading</span>
+              <span className="text-muted-foreground">{template.heading_name}</span>
             </div>
+            <span className="font-medium text-card-foreground">{formatPrice(headingCost)}</span>
           </div>
         )}
-      </CardContent>
-    </Card>
+
+        {/* Manufacturing */}
+        {manufacturingCost > 0 && (
+          <div className="flex items-center justify-between py-2 text-sm">
+            <div className="flex items-center gap-3">
+              <SewingMachineIcon className="h-4 w-4 text-primary" />
+              <span className="text-card-foreground font-medium">Manufacturing</span>
+              <span className="text-muted-foreground">{template.manufacturing_type}</span>
+            </div>
+            <span className="font-medium text-card-foreground">{formatPrice(manufacturingCost)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Total */}
+      <div className="border-t border-border pt-4">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-semibold text-card-foreground">Total Cost</span>
+          <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm text-muted-foreground mt-1">
+          <span>Cost per panel</span>
+          <span>{formatPrice(totalCost / 2)}</span>
+        </div>
+      </div>
+
+      {/* Additional Notes */}
+      <div className="text-xs text-muted-foreground space-y-1">
+        <div>Template: {template.name}</div>
+        <div>Pricing: {template.pricing_type}</div>
+        <div>Waste factor: 5%</div>
+      </div>
+    </div>
   );
 };

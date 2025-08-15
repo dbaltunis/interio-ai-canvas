@@ -202,11 +202,12 @@ export const VisualMeasurementSheet = ({
   };
 
   return (
-    <Card className="w-full border-2 border-border bg-card shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-center">Window Measurement Worksheet</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="w-full bg-card border border-border rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="bg-muted/30 border-b border-border px-6 py-4">
+        <h2 className="text-xl font-semibold text-card-foreground text-center">Window Measurement Worksheet</h2>
+      </div>
+      <div className="p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Visual Diagram - Always visible on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible z-10">
@@ -678,7 +679,7 @@ export const VisualMeasurementSheet = ({
           {/* Measurement Inputs - Scrollable on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-120px)] lg:pr-2 space-y-4">
             {/* Hardware Type */}
-            <div className="border-2 border-border rounded-lg p-4 bg-card shadow-md">
+            <div className="bg-muted/20 border border-border rounded-lg p-4">
               <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
               <RadioGroup 
                 value={hardwareType} 
@@ -986,7 +987,7 @@ export const VisualMeasurementSheet = ({
 
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
