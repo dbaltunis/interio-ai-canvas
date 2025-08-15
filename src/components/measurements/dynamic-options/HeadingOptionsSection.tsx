@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 interface HeadingOptionsSectionProps {
@@ -20,9 +21,10 @@ export const HeadingOptionsSection = ({
 }: HeadingOptionsSectionProps) => {
   const { units } = useMeasurementUnits();
   const { data: inventory = [], isLoading } = useEnhancedInventory();
+  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
 
   // Filter heading options from inventory - looking for heading/hardware items
-  const headingOptions = inventory.filter(item => 
+  const inventoryHeadingOptions = inventory.filter(item => 
     item.category?.toLowerCase().includes('heading') || 
     item.category?.toLowerCase().includes('hardware') ||
     item.category?.toLowerCase().includes('pleat') ||
@@ -34,6 +36,20 @@ export const HeadingOptionsSection = ({
       style: 'currency',
       currency: units.currency
     }).format(price);
+  };
+
+  // Get fullness ratio from selected heading option or fallback to template
+  const getSelectedFullnessRatio = () => {
+    if (selectedHeading === 'standard') {
+      return template.fullness_ratio;
+    }
+    
+    const selectedHeadingOption = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+    if (selectedHeadingOption) {
+      return selectedHeadingOption.fullness;
+    }
+
+    return template.fullness_ratio;
   };
 
   return (
@@ -61,7 +77,17 @@ export const HeadingOptionsSection = ({
                     <span className="text-xs text-primary ml-2 font-semibold">No upcharge</span>
                   </div>
                 </SelectItem>
-                {headingOptions.map((option) => (
+                {headingOptionsFromSettings.map((option) => (
+                  <SelectItem key={option.id} value={option.id} className="text-card-foreground">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-sm font-medium">{option.name}</span>
+                      <span className="text-xs text-primary ml-2 font-semibold">
+                        {formatPrice(option.price)}/m
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+                {inventoryHeadingOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id} className="text-card-foreground">
                     <div className="flex items-center justify-between w-full">
                       <span className="text-sm font-medium">{option.name}</span>
@@ -71,7 +97,7 @@ export const HeadingOptionsSection = ({
                     </div>
                   </SelectItem>
                 ))}
-                {headingOptions.length === 0 && (
+                {headingOptionsFromSettings.length === 0 && inventoryHeadingOptions.length === 0 && (
                   <SelectItem value="no-options" disabled className="text-card-foreground">
                     No heading options in inventory - Add heading items in Settings
                   </SelectItem>
@@ -87,7 +113,7 @@ export const HeadingOptionsSection = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="font-semibold text-card-foreground text-xs mb-1">Fullness</div>
-            <div className="text-primary font-bold text-sm">{template.fullness_ratio}x</div>
+            <div className="text-primary font-bold text-sm">{getSelectedFullnessRatio()}x</div>
           </div>
           <div>
             <div className="font-semibold text-card-foreground text-xs mb-1">Type</div>
