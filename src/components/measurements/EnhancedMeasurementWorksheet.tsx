@@ -105,7 +105,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     existingTreatments?.[0]?.selected_lining || "none"
   );
   const [selectedFabric, setSelectedFabric] = useState(() => 
-    existingTreatments?.[0]?.fabric_code || ""
+    existingTreatments?.[0]?.fabric_details?.fabric_id || 
+    existingMeasurement?.measurements?.selected_fabric || 
+    ""
   );
 
   const createMeasurement = useCreateClientMeasurement();
@@ -179,7 +181,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   // Define which fields are string-based (not numeric)
   const stringFields = ['curtain_type', 'curtain_side', 'hardware_type', 'pooling_option', 'heading_type', 'mounting_type'];
 
-  const handleMeasurementChange = (field: string, value: string) => {
+  const handleMeasurementChange = (field: string, value: string | number) => {
     if (readOnly) return;
     
     setMeasurements(prev => {
@@ -188,11 +190,16 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       if (stringFields.includes(field)) {
         newMeasurements[field] = value;
       } else {
-        newMeasurements[field] = parseFloat(value) || 0;
+        newMeasurements[field] = parseFloat(String(value)) || 0;
       }
       
       return newMeasurements;
     });
+    
+    // Sync fabric selection state when measurement changes
+    if (field === 'selected_fabric') {
+      setSelectedFabric(String(value));
+    }
   };
 
   const handleTreatmentDataChange = (field: string, value: any) => {
@@ -535,7 +542,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             windowType={windowType}
             selectedTemplate={selectedCovering}
             selectedFabric={selectedFabric}
-            onFabricChange={setSelectedFabric}
+            onFabricChange={(fabricId) => {
+              setSelectedFabric(fabricId);
+              handleMeasurementChange('selected_fabric', fabricId);
+            }}
             selectedLining={selectedLining}
             onLiningChange={setSelectedLining}
             selectedHeading={selectedHeading}

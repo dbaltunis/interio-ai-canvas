@@ -268,7 +268,7 @@ export const CostCalculationSummary = ({
     });
     
     for (const fabricId of fabricSources) {
-      if (fabricId && typeof fabricId === 'string') {
+      if (fabricId && typeof fabricId === 'string' && fabricId !== 'undefined') {
         fabricItem = inventory.find(item => 
           item.id === fabricId || 
           item.name === fabricId ||
@@ -286,6 +286,21 @@ export const CostCalculationSummary = ({
           break;
         } else {
           console.log('Fabric not found for ID:', fabricId, 'in inventory:', inventory.map(i => ({id: i.id, name: i.name})));
+        }
+      } else if (typeof fabricId === 'number') {
+        // Handle numeric index case - convert to fabric from inventory
+        const numericIndex = Number(fabricId);
+        if (numericIndex >= 0 && numericIndex < inventory.length) {
+          fabricItem = inventory[numericIndex];
+          console.log('Found fabric by index:', {
+            index: numericIndex,
+            foundItem: {
+              id: fabricItem.id,
+              name: fabricItem.name,
+              selling_price: fabricItem.selling_price
+            }
+          });
+          break;
         }
       }
     }
