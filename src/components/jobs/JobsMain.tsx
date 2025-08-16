@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { JobsDashboard } from "./JobsDashboard";
+import { SimplifiedJobsDashboard } from "./SimplifiedJobsDashboard";
 import { JobsAnalytics } from "./JobsAnalytics";
 import { JobsPerformanceMetrics } from "./JobsPerformanceMetrics";
 import { JobDetailPage } from "./JobDetailPage";
@@ -109,7 +110,7 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <JobsDashboard />
+            <SimplifiedJobsDashboard />
           </TabsContent>
 
           <TabsContent value="jobs" className="space-y-4">

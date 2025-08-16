@@ -25,6 +25,7 @@ import { useProject } from "@/hooks/useProjects";
 import { useRooms } from "@/hooks/useRooms";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useInventory } from "@/hooks/useInventory";
+import { useCreateQuoteVersion } from "@/hooks/useQuoteVersions";
 
 interface QuoteVersionManagerProps {
   projectId: string;
@@ -45,6 +46,7 @@ export const QuoteVersionManager = ({
   const { data: rooms = [] } = useRooms(projectId);
   const { data: treatments = [] } = useTreatments(projectId);
   const { data: inventoryItems = [] } = useInventory();
+  const createQuoteVersion = useCreateQuoteVersion();
 
   const [quoteConfig, setQuoteConfig] = useState({
     name: quoteData?.name || `Quote Version ${Date.now()}`,
@@ -262,9 +264,17 @@ export const QuoteVersionManager = ({
             Preview
           </Button>
           
-          <Button onClick={() => onSave(quoteConfig)}>
+          <Button 
+            onClick={() => {
+              createQuoteVersion.mutateAsync({ 
+                projectId, 
+                quoteConfig 
+              }).then(() => onSave(quoteConfig));
+            }}
+            disabled={createQuoteVersion.isPending}
+          >
             <Save className="h-4 w-4 mr-2" />
-            Save Quote Version
+            {createQuoteVersion.isPending ? 'Creating...' : 'Save Quote Version'}
           </Button>
         </div>
       </div>

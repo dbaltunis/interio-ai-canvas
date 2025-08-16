@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
+import { useCreateQuoteVersion, useSendQuotes } from "@/hooks/useQuoteVersions";
 
 interface JobsListWithQuotesProps {
   onJobSelect: (jobId: string) => void;
@@ -43,6 +44,7 @@ export const JobsListWithQuotes = ({
   const { data: quotes = [] } = useQuotes();
   const { data: clients = [] } = useClients();
   const userCurrency = useUserCurrency();
+  const sendQuotes = useSendQuotes();
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
 
@@ -110,12 +112,18 @@ export const JobsListWithQuotes = ({
     return `Q-${(index + 1).toString().padStart(2, '0')}`;
   };
 
-  const sendSelectedQuotes = () => {
+  const sendSelectedQuotes = async () => {
     if (selectedQuotes.size === 0) return;
     
-    // Implementation for sending multiple quotes
-    console.log('Sending quotes:', Array.from(selectedQuotes));
-    // TODO: Implement batch quote sending
+    try {
+      await sendQuotes.mutateAsync({ 
+        quoteIds: Array.from(selectedQuotes),
+        clientEmail: undefined // TODO: Get client email from selected quotes
+      });
+      setSelectedQuotes(new Set());
+    } catch (error) {
+      console.error('Error sending quotes:', error);
+    }
   };
 
   return (
@@ -131,9 +139,13 @@ export const JobsListWithQuotes = ({
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <Button onClick={sendSelectedQuotes} size="sm">
+                <Button 
+                  onClick={sendSelectedQuotes} 
+                  size="sm"
+                  disabled={sendQuotes.isPending}
+                >
                   <Send className="h-4 w-4 mr-2" />
-                  Send Selected Quotes
+                  {sendQuotes.isPending ? 'Sending...' : 'Send Selected Quotes'}
                 </Button>
                 <Button 
                   variant="outline" 
