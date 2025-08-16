@@ -8,7 +8,6 @@ import { useWindowSummary } from "@/hooks/useWindowSummary";
 import { formatCurrency } from "@/utils/unitConversion";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-import WorkshopSendDialog from "@/components/workroom/WorkshopSendDialog";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { TreatmentTypeIndicator } from "../measurements/TreatmentTypeIndicator";
@@ -48,7 +47,6 @@ export function WindowSummaryCard({
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [showWorkshop, setShowWorkshop] = useState(false);
   const { compact } = useCompactMode();
 
   // Unit helpers
@@ -171,6 +169,17 @@ export function WindowSummaryCard({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
+                onViewDetails?.(surface);
+              }}
+              className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
                 onDeleteSurface?.(surface.id);
               }}
               className="text-destructive hover:text-destructive hover:border-destructive/30"
@@ -244,39 +253,19 @@ export function WindowSummaryCard({
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1"></div>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowBreakdown(!showBreakdown);
                     }}
+                    className="text-secondary hover:text-secondary/80 hover:bg-secondary/10 border-secondary/20"
                   >
                     {showBreakdown ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    Breakdown
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewDetails?.(surface);
-                    }}
-                    className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit Treatment
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowWorkshop(true);
-                    }}
-                    title="Open workshop sheet"
-                  >
-                    Send to workshop
+                    Details
                   </Button>
                 </div>
               </div>
@@ -330,17 +319,6 @@ export function WindowSummaryCard({
         )}
       </CardContent>
 
-      {/* Workshop sheet dialog (print-ready, dynamic per treatment) */}
-      {summary && (
-        <WorkshopSendDialog
-          open={showWorkshop}
-          onOpenChange={setShowWorkshop}
-          summary={summary}
-          surface={surface}
-          breakdown={enrichedBreakdown}
-          currency={summary.currency}
-        />
-      )}
     </Card>
   );
 }
