@@ -105,26 +105,43 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => {
-    let initialMeasurements = {};
+    let initialMeasurements: any = {};
     
-    // Priority 1: Use saved summary data if available
-    if (shouldUseSavedData && savedSummary) {
-      console.log("🔄 Loading measurements from saved summary:", savedSummary);
-      initialMeasurements = { ...savedSummary };
+    // Priority 1: Use saved summary measurement details if available
+    if (shouldUseSavedData && savedSummary?.measurements_details) {
+      console.log("🔄 INITIAL: Loading measurements from saved summary:", savedSummary.measurements_details);
+      initialMeasurements = {
+        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        window_width: savedSummary.measurements_details.window_width || 0,
+        window_height: savedSummary.measurements_details.window_height || 0,
+        pooling_amount: savedSummary.measurements_details.pooling_amount_cm || 0,
+        selected_fabric: savedSummary.fabric_details?.fabric_id || savedSummary.measurements_details.selected_fabric,
+        fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm || 140,
+        price_per_meter: savedSummary.price_per_meter || 0,
+        surface_id: surfaceId,
+        surface_name: surfaceData?.name,
+        curtain_type: savedSummary.measurements_details.curtain_type || savedSummary.template_details?.curtain_type,
+        ...savedSummary.measurements_details
+      };
     }
     // Priority 2: Use existing measurement data
     else if (safeExistingMeasurement?.measurements) {
-      console.log("🔄 Loading measurements from existing measurement:", safeExistingMeasurement.measurements);
+      console.log("🔄 INITIAL: Loading measurements from existing measurement:", safeExistingMeasurement.measurements);
       initialMeasurements = { ...safeExistingMeasurement.measurements };
     }
     
     // Priority 3: Merge any existing treatment measurements
     if (safeExistingTreatments?.[0]?.measurements) {
-      console.log("🔄 Merging treatment measurements:", safeExistingTreatments[0].measurements);
+      console.log("🔄 INITIAL: Merging treatment measurements:", safeExistingTreatments[0].measurements);
       Object.assign(initialMeasurements, safeExistingTreatments[0].measurements);
     }
     
-    console.log("✅ Final initial measurements loaded:", initialMeasurements);
+    console.log("✅ INITIAL: Final measurements loaded with values:", {
+      rail_width: initialMeasurements.rail_width,
+      drop: initialMeasurements.drop,
+      total_keys: Object.keys(initialMeasurements).length
+    });
     return initialMeasurements;
   });
   const [treatmentData, setTreatmentData] = useState<any>(() => 
