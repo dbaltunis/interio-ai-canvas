@@ -66,6 +66,16 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
+  const toggleJobExpansion = (jobId: string) => {
+    const newExpanded = new Set(expandedJobs);
+    if (newExpanded.has(jobId)) {
+      newExpanded.delete(jobId);
+    } else {
+      newExpanded.add(jobId);
+    }
+    setExpandedJobs(newExpanded);
+  };
+
   // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
@@ -376,12 +386,20 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">
-                          {formatCurrency(quotes.reduce((sum, q) => sum + (q.total_amount || 0), 0), userCurrency)}
+                          {quotes.length > 0 ? formatCurrency(quotes[0].total_amount || 0, userCurrency) : formatCurrency(0, userCurrency)}
                         </span>
-                        {quotes.length > 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            {quotes.length} quote{quotes.length !== 1 ? 's' : ''}
-                          </Badge>
+                        {quotes.length > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-xs px-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleJobExpansion(project.id);
+                            }}
+                          >
+                            {expandedJobs.has(project.id) ? '−' : '+'} {quotes.length} quotes
+                          </Button>
                         )}
                       </div>
                     </TableCell>
@@ -432,8 +450,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     </TableCell>
                   </TableRow>
                   
-                  {/* Quote Rows */}
-                  {quotes.map((quote, index) => (
+                  {/* Quote Rows - only show if expanded */}
+                  {expandedJobs.has(project.id) && quotes.map((quote, index) => (
                     <TableRow 
                       key={`${project.id}-quote-${index}`}
                       className="cursor-pointer hover:bg-muted/30 border-l-4 border-primary/30 bg-muted/10"
