@@ -158,26 +158,47 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   // Effect to load saved summary data when available
   useEffect(() => {
-    if (shouldUseSavedData && savedSummary) {
+    if (shouldUseSavedData && savedSummary && savedSummary.measurements_details) {
       console.log(`✅ Loading EXACT saved data for treatment ${surfaceId}`, savedSummary);
       
-      // Update measurements with exact saved data
+      // Update measurements with exact saved data - using actual numeric values
       const savedMeasurements = {
-        rail_width: savedSummary.measurements_details?.rail_width_cm || savedSummary.measurements_details?.rail_width,
-        drop: savedSummary.measurements_details?.drop_cm || savedSummary.measurements_details?.drop,
-        window_width: savedSummary.measurements_details?.window_width,
-        window_height: savedSummary.measurements_details?.window_height,
-        selected_fabric: savedSummary.fabric_details?.fabric_id,
-        fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm,
-        price_per_meter: savedSummary.price_per_meter,
+        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        window_width: savedSummary.measurements_details.window_width || 0,
+        window_height: savedSummary.measurements_details.window_height || 0,
+        pooling_amount: savedSummary.measurements_details.pooling_amount_cm || 0,
+        selected_fabric: savedSummary.fabric_details?.fabric_id || savedSummary.measurements_details.selected_fabric,
+        fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm || 140,
+        price_per_meter: savedSummary.price_per_meter || 0,
         surface_id: surfaceId,
         surface_name: surfaceData?.name,
-        // Include any other saved measurements
-        ...savedSummary.measurements_details
+        // Include all measurement details with proper field mapping
+        curtain_type: savedSummary.measurements_details.curtain_type || savedSummary.template_details?.curtain_type,
+        curtain_count: savedSummary.measurements_details.curtain_count || 1,
+        fullness_ratio: savedSummary.measurements_details.fullness_ratio || 2,
+        seam_hems_cm: savedSummary.measurements_details.seam_hems_cm || 1.5,
+        side_hems_cm: savedSummary.measurements_details.side_hems_cm || 7.5,
+        bottom_hem_cm: savedSummary.measurements_details.bottom_hem_cm || 15,
+        header_allowance_cm: savedSummary.measurements_details.header_allowance_cm || 8,
+        return_left_cm: savedSummary.measurements_details.return_left_cm || 7.5,
+        return_right_cm: savedSummary.measurements_details.return_right_cm || 7.5,
+        widths_required: savedSummary.measurements_details.widths_required || 0,
+        required_width_cm: savedSummary.measurements_details.required_width_cm || 0,
+        fabric_width_cm: savedSummary.measurements_details.fabric_width_cm || 140,
+        selected_heading: savedSummary.measurements_details.selected_heading || savedSummary.heading_details?.id,
+        selected_lining: savedSummary.measurements_details.selected_lining || 0
       };
       
-      console.log("🔄 Setting measurements from saved summary:", savedMeasurements);
-      setMeasurements(savedMeasurements);
+      console.log("🔄 Setting measurements from saved summary (with numeric values):", savedMeasurements);
+      console.log("🎯 Key values - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
+      
+      // Force state update
+      setMeasurements(prevMeasurements => {
+        console.log("📊 Previous measurements:", prevMeasurements);
+        console.log("📊 New measurements:", savedMeasurements);
+        return savedMeasurements;
+      });
       
       // Update treatment data
       setTreatmentData({
@@ -192,11 +213,20 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       });
       
       // Update fabric and lining selections
-      setSelectedFabric(savedSummary.fabric_details?.fabric_id || "");
-      setSelectedHeading(savedSummary.heading_details?.heading_name || "standard");
-      setSelectedLining(savedSummary.lining_type || "none");
+      if (savedSummary.fabric_details?.fabric_id) {
+        console.log("🎨 Setting selected fabric to:", savedSummary.fabric_details.fabric_id);
+        setSelectedFabric(String(savedSummary.fabric_details.fabric_id));
+      }
+      if (savedSummary.heading_details?.heading_name) {
+        console.log("📌 Setting selected heading to:", savedSummary.heading_details.heading_name);
+        setSelectedHeading(savedSummary.heading_details.heading_name);
+      }
+      if (savedSummary.lining_type) {
+        console.log("🧵 Setting selected lining to:", savedSummary.lining_type);
+        setSelectedLining(savedSummary.lining_type);
+      }
       
-      console.log("✅ Data loaded from saved summary successfully");
+      console.log("✅ Data loaded from saved summary successfully - measurements state updated");
     }
   }, [shouldUseSavedData, savedSummary, surfaceId, surfaceData?.name]);
 
