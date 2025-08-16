@@ -205,18 +205,34 @@ export function WindowSummaryCard({
                   <div className="text-2xl font-semibold">
                     {formatCurrency(summary.total_cost, summary.currency)}
                   </div>
-                  <div className="text-xs flex items-center gap-2">
-                    <span>{summary.pricing_type}</span>
-                    <span>•</span>
-                    <span>waste {summary.waste_percent ?? 0}%</span>
-                    {summary.template_name && (
-                      <>
-                        <span>•</span>
-                        <Badge variant="outline" className="text-xs">
-                          {summary.template_name}
-                        </Badge>
-                      </>
-                    )}
+                  <div className="text-xs space-y-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-medium text-foreground">
+                        {treatmentType || surface.treatment_type || 'Curtains'}
+                      </span>
+                      {summary.fabric_details?.name && (
+                        <span className="text-muted-foreground">
+                          Fabric: {summary.fabric_details.name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 flex-wrap text-muted-foreground">
+                      {(summary as any).rail_width && (
+                        <span>Rail: {fmtFabric((summary as any).rail_width)}</span>
+                      )}
+                      {(summary as any).drop_measurement && (
+                        <span>Drop: {fmtFabric((summary as any).drop_measurement)}</span>
+                      )}
+                      {summary.fabric_details?.width && (
+                        <span>Fabric Width: {fmtFabric(summary.fabric_details.width)}</span>
+                      )}
+                      {summary.price_per_meter && (
+                        <span>£{Number(summary.price_per_meter).toFixed(2)}/m</span>
+                      )}
+                      {summary.widths_required && (
+                        <span>{summary.widths_required} width(s)</span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
