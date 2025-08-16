@@ -23,6 +23,9 @@ import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
 import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
+import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
+import { CompactProjectNotes } from "../quotation/CompactProjectNotes";
+import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
 
 interface QuotationTabProps {
   projectId: string;
@@ -324,67 +327,15 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         </div>
       </div>
 
-      {/* Active Quotes Display */}
-      {projectQuotes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Active Quotes for this Project</span>
-              <Badge variant="secondary">{projectQuotes.length} quote{projectQuotes.length > 1 ? 's' : ''}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projectQuotes.map((quote) => (
-                <Card key={quote.id} className="border-2 hover:border-brand-primary/20 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">{quote.quote_number}</h3>
-                      <Badge 
-                        variant="outline" 
-                        className={`
-                          ${quote.status === 'draft' ? 'bg-gray-100 text-gray-800' : ''}
-                          ${quote.status === 'sent' ? 'bg-blue-100 text-blue-800' : ''}
-                          ${quote.status === 'approved' ? 'bg-green-100 text-green-800' : ''}
-                          ${quote.status === 'rejected' ? 'bg-red-100 text-red-800' : ''}
-                        `}
-                      >
-                        {quote.status}
-                      </Badge>
-                    </div>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                       <p>Total: {formatCurrency(quote.total_amount || 0)}</p>
-                      <p>Created: {new Date(quote.created_at).toLocaleDateString()}</p>
-                      {quote.valid_until && (
-                        <p>Valid until: {new Date(quote.valid_until).toLocaleDateString()}</p>
-                      )}
-                    </div>
-                    <div className="mt-3 flex space-x-2">
-                      <QuoteViewer quote={quote} isEditable={true}>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </Button>
-                      </QuoteViewer>
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedQuote(quote); setNotesOpen(true); }}>
-                        <StickyNote className="h-3 w-3 mr-1" />
-                        Notes
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Mail className="h-3 w-3 mr-1" />
-                        Send
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Compact Active Quotes */}
+      <CompactQuotesSection 
+        quotes={projectQuotes}
+        onSelectQuote={setSelectedQuote}
+        onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
+      />
 
-      {/* Project Notes */}
-      <ProjectNotesCard projectId={projectId} />
+      {/* Compact Project Notes */}
+      <CompactProjectNotes projectId={projectId} />
 
       {/* Items Editor (optional) */}
       {showItemsEditor && (
@@ -403,6 +354,14 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           </CardContent>
         </Card>
       )}
+      {/* Detailed Quotation Table */}
+      <DetailedQuotationTable 
+        quotationData={quotationData}
+        groupByRoom={true}
+        showDetailedView={true}
+        currency="GBP"
+      />
+
       {/* Quote Document Preview */}
       {selectedTemplate && (
         <section className="mt-6">

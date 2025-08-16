@@ -94,6 +94,7 @@ export const useQuotationSync = ({
             total: window.summary.total_cost,
             breakdown,
             currency: window.summary.currency || 'USD',
+            room_name: roomGroups[roomId]?.room?.name || 'Unassigned Room',
           });
         }
       });
@@ -117,6 +118,7 @@ export const useQuotationSync = ({
           unit_price: treatment.total_price || 0,
           total: treatment.total_price || 0,
           currency: 'USD',
+          room_name: 'Unassigned Room',
         });
       });
     }

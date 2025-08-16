@@ -13,6 +13,7 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
+import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuotationTable";
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -113,60 +114,13 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         </Card>
       </div>
 
-      {/* Quote Items */}
-      <Card>
-        <div className="p-4 border-b">
-          <h3 className="font-semibold">Quote Items</h3>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item & Location</TableHead>
-              <TableHead className="text-center">Qty</TableHead>
-              <TableHead className="text-right">Unit Price</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayQuoteItems.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                  No treatments added yet. Add treatments in the Jobs tab to generate quote items.
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayQuoteItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">{item.description}</div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {item.location} • {item.window}
-                      </div>
-                      {item.fabric_type && (
-                        <div className="text-xs text-gray-500">
-                          {item.fabric_type} • {item.treatment_type}
-                        </div>
-                      )}
-                      {Array.isArray(item.breakdown) && item.breakdown.length > 0 && (
-                        <QuoteItemBreakdown
-                          breakdown={item.breakdown}
-                          currency={item.currency || 'GBP'}
-                          formatCurrencyFn={(n) => formatCurrency(n, item.currency || 'GBP')}
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">{item.quantity}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(item.total)}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
+      {/* Detailed Quotation Table */}
+      <DetailedQuotationTable 
+        quotationData={quotationData}
+        groupByRoom={true}
+        showDetailedView={true}
+        currency="GBP"
+      />
 
       {/* Client Information */}
       {client && (
