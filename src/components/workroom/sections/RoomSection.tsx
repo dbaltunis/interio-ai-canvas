@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Camera, Trash2 } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-import { TreatmentVisualizer } from "@/components/measurements/TreatmentVisualizer";
+import { VisualSnapshot } from "@/components/workroom/VisualSnapshot";
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
-import { toTreatmentVisualizerData } from "@/components/workroom/utils/visual-adapter";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -174,11 +173,23 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
                     <WorkItemPhotoGallery itemId={item.id} />
                   </div>
 
-                  {/* Right: Treatment Details */}
+                  {/* Right: Treatment Visual Details */}
                   <div className="space-y-3">
-                    <div className="text-sm font-medium text-muted-foreground">Treatment Specifications</div>
+                    <div className="text-sm font-medium text-muted-foreground">Treatment Visualization</div>
                     <div className="rounded-lg border bg-background p-4">
-                      <TreatmentVisualizer {...toTreatmentVisualizerData(item)} />
+                      <VisualSnapshot item={item} width={350} scale={1.5} />
+                      <div className="mt-3 pt-3 border-t text-center">
+                        <div className="text-xs text-muted-foreground">
+                          {item.measurements?.width && item.measurements?.height ? (
+                            <span>
+                              {item.measurements.width} × {item.measurements.height}{" "}
+                              {item.measurements.unit || "cm"}
+                            </span>
+                          ) : (
+                            <span>No measurements available</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
