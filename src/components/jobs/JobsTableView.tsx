@@ -454,24 +454,25 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   {expandedJobs.has(project.id) && quotes.map((quote, index) => (
                     <TableRow 
                       key={`${project.id}-quote-${index}`}
-                      className="cursor-pointer hover:bg-muted/20 border-l-2 border-primary/20 bg-muted/5"
+                      className="cursor-pointer hover:bg-muted/20 border-l-2 border-primary/20 bg-muted/5 h-12"
                       onClick={() => onJobSelect(quote)}
+                      style={{ marginLeft: '10px' }}
                     >
-                      <TableCell className="pl-8">
+                      <TableCell className="pl-6 py-2">
                         <span className="font-mono text-sm text-muted-foreground">
                           ├─ Q-{(index + 1).toString().padStart(2, '0')}
                         </span>
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell className="py-2" onClick={(e) => e.stopPropagation()}>
                         <EmailStatusDisplay 
                           jobId={quote.id}
                           clientEmail={getClientForQuote(quote)?.email}
                         />
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="text-muted-foreground text-sm py-2">
                         Quote #{index + 1}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center gap-2">
                           <JobStatusBadge status={quote.status || 'draft'} />
                           {quote.status === 'sent' && (
@@ -481,10 +482,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         {formatCurrency(quote.total_amount || 0, userCurrency)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div className="flex items-center space-x-2">
                           <Avatar className="h-6 w-6">
                             {(() => {
@@ -509,10 +510,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="text-muted-foreground text-sm py-2">
                         {new Date(quote.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
