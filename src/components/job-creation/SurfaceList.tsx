@@ -152,7 +152,7 @@ export const SurfaceList = ({
             {/* Room Header */}
             
             {/* Windows in this room */}
-            <div className="space-y-2 pl-2">
+            <div className="space-y-2 pl-2 p-[7px]">
               {Object.values(room.windows).map((window: WindowGroup) => (
                 <div key={window.windowId} className="space-y-2">
                   {/* Main window surface */}
