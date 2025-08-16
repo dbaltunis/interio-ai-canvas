@@ -73,45 +73,53 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     existingMeasurement?.use_saved_summary ? surfaceId : undefined
   );
   
+  // Add defensive programming to prevent null reference errors
+  const safeExistingMeasurement = existingMeasurement || {};
+  const safeExistingTreatments = existingTreatments || [];
+  const safeSurfaceData = surfaceData || {};
+  
   // Determine if we should use saved summary data
-  const shouldUseSavedData = existingMeasurement?.use_saved_summary && savedSummary;
+  const shouldUseSavedData = safeExistingMeasurement?.use_saved_summary && savedSummary;
   
   console.log(`🔍 EnhancedMeasurementWorksheet for ${surfaceId}:`, {
     shouldUseSavedData,
     hasSavedSummary: !!savedSummary,
-    useSavedSummaryFlag: existingMeasurement?.use_saved_summary
+    useSavedSummaryFlag: safeExistingMeasurement?.use_saved_summary,
+    clientId,
+    projectId,
+    existingMeasurement: safeExistingMeasurement
   });
   const [windowType, setWindowType] = useState(() => 
-    existingMeasurement?.measurement_type || "standard"
+    safeExistingMeasurement?.measurement_type || "standard"
   );
   const [selectedRoom, setSelectedRoom] = useState(() => 
-    existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room"
+    safeExistingMeasurement?.room_id || safeSurfaceData?.room_id || currentRoomId || "no_room"
   );
   const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
-    existingMeasurement?.window_covering_id || "no_covering"
+    safeExistingMeasurement?.window_covering_id || "no_covering"
   );
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => {
-    const initialMeasurements = existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {};
+    const initialMeasurements = safeExistingMeasurement?.measurements ? { ...safeExistingMeasurement.measurements } : {};
     // Also merge any existing treatment measurements
-    if (existingTreatments?.[0]?.measurements) {
-      Object.assign(initialMeasurements, existingTreatments[0].measurements);
+    if (safeExistingTreatments?.[0]?.measurements) {
+      Object.assign(initialMeasurements, safeExistingTreatments[0].measurements);
     }
     console.log("Initial measurements:", initialMeasurements);
     return initialMeasurements;
   });
   const [treatmentData, setTreatmentData] = useState<any>(() => 
-    existingTreatments?.[0] ? { ...existingTreatments[0] } : {}
+    safeExistingTreatments?.[0] ? { ...safeExistingTreatments[0] } : {}
   );
   const [notes, setNotes] = useState(() => 
-    existingMeasurement?.notes || ""
+    safeExistingMeasurement?.notes || ""
   );
   const [measuredBy, setMeasuredBy] = useState(() => 
-    existingMeasurement?.measured_by || ""
+    safeExistingMeasurement?.measured_by || ""
   );
   const [photos, setPhotos] = useState<string[]>(() => 
-    existingMeasurement?.photos || []
+    safeExistingMeasurement?.photos || []
   );
   const [activeTab, setActiveTab] = useState("measurements");
   const [calculatedCost, setCalculatedCost] = useState(0);
@@ -119,14 +127,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   
   // Dynamic options state - isolated per window
   const [selectedHeading, setSelectedHeading] = useState(() => 
-    existingTreatments?.[0]?.selected_heading || "standard"
+    safeExistingTreatments?.[0]?.selected_heading || "standard"
   );
   const [selectedLining, setSelectedLining] = useState(() => 
-    existingTreatments?.[0]?.selected_lining || "none"
+    safeExistingTreatments?.[0]?.selected_lining || "none"
   );
   const [selectedFabric, setSelectedFabric] = useState(() => 
-    existingTreatments?.[0]?.fabric_details?.fabric_id || 
-    existingMeasurement?.measurements?.selected_fabric || 
+    safeExistingTreatments?.[0]?.fabric_details?.fabric_id || 
+    safeExistingMeasurement?.measurements?.selected_fabric || 
     ""
   );
 

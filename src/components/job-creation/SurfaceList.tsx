@@ -79,6 +79,7 @@ export const SurfaceList = ({
         id: surface.id,
         room_id: surface.room_id,
         project_id: surface.project_id,
+        client_id: clientId, // Add missing client_id
         use_saved_summary: true, // Special flag to indicate we should use saved data
         measurements: {
           surface_id: surface.id,
