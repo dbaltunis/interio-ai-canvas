@@ -96,13 +96,8 @@ export const SurfaceList = ({
 
   // Group surfaces by room first, then by window, then by treatments
   const hierarchicalSurfaces = surfaces.reduce((rooms, surface) => {
-    // Only process surfaces that have valid room assignment
-    if (!surface.room_id || !surface.room_name) {
-      return rooms;
-    }
-    
-    const roomId = surface.room_id;
-    const roomName = surface.room_name;
+    const roomId = surface.room_id || 'no-room';
+    const roomName = surface.room_name || 'Unassigned Room';
     
     // Initialize room if it doesn't exist
     if (!rooms[roomId]) {
