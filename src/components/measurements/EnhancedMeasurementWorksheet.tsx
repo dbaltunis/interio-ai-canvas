@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef, useImperativeHandle, useCallback, useRef } from "react";
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,6 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     hasSavedSummary: !!savedSummary,
     useSavedSummaryFlag: existingMeasurement?.use_saved_summary
   });
-  
   const [windowType, setWindowType] = useState(() => 
     existingMeasurement?.measurement_type || "standard"
   );
@@ -93,40 +92,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   );
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
-  const [measurements, setMeasurements] = useState(() => {
-    if (shouldUseSavedData && savedSummary) {
-      console.log(`✅ Loading EXACT saved data for treatment ${surfaceId}`);
-      // Load the exact saved measurements from the window summary
-      return {
-        rail_width: savedSummary.measurements_details?.rail_width,
-        drop: savedSummary.measurements_details?.drop,
-        window_width: savedSummary.measurements_details?.window_width,
-        window_height: savedSummary.measurements_details?.window_height,
-        selected_fabric: savedSummary.fabric_details?.fabric_id,
-        fabric_width: savedSummary.fabric_details?.fabric_width,
-        price_per_meter: savedSummary.price_per_meter,
-        surface_id: surfaceId,
-        surface_name: surfaceData?.name
-      };
-    }
-    return existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {};
-  });
-  const [treatmentData, setTreatmentData] = useState<any>(() => {
-    if (shouldUseSavedData && savedSummary) {
-      console.log(`✅ Loading EXACT saved treatment data for ${surfaceId}`);
-      return {
-        treatment_type: savedSummary.template_details?.curtain_type || "curtains",
-        fabric_details: savedSummary.fabric_details,
-        lining_type: savedSummary.lining_type,
-        manufacturing_type: savedSummary.manufacturing_type,
-        selected_heading: savedSummary.heading_details?.heading_name,
-        selected_lining: savedSummary.lining_type,
-        total_cost: savedSummary.total_cost,
-        pricing_breakdown: savedSummary.cost_breakdown
-      };
-    }
-    return existingTreatments?.[0] ? { ...existingTreatments[0] } : {};
-  });
+  const [measurements, setMeasurements] = useState(() => 
+    existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
+  );
+  const [treatmentData, setTreatmentData] = useState<any>(() => 
+    existingTreatments?.[0] ? { ...existingTreatments[0] } : {}
+  );
   const [notes, setNotes] = useState(() => 
     existingMeasurement?.notes || ""
   );
@@ -141,26 +112,56 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [fabricCalculation, setFabricCalculation] = useState(null);
   
   // Dynamic options state - isolated per window
-  const [selectedHeading, setSelectedHeading] = useState(() => {
-    if (shouldUseSavedData && savedSummary) {
-      return savedSummary.heading_details?.heading_name || "standard";
+  const [selectedHeading, setSelectedHeading] = useState(() => 
+    existingTreatments?.[0]?.selected_heading || "standard"
+  );
+  const [selectedLining, setSelectedLining] = useState(() => 
+    existingTreatments?.[0]?.selected_lining || "none"
+  );
+  const [selectedFabric, setSelectedFabric] = useState(() => 
+    existingTreatments?.[0]?.fabric_details?.fabric_id || 
+    existingMeasurement?.measurements?.selected_fabric || 
+    ""
+  );
+
+  // Effect to load saved summary data when available
+  useEffect(() => {
+    if (existingMeasurement?.use_saved_summary && savedSummary) {
+      console.log(`✅ Loading EXACT saved data for treatment ${surfaceId}`, savedSummary);
+      
+      // Update measurements with exact saved data
+      const savedMeasurements = {
+        rail_width: savedSummary.measurements_details?.rail_width_cm || savedSummary.measurements_details?.rail_width,
+        drop: savedSummary.measurements_details?.drop_cm || savedSummary.measurements_details?.drop,
+        window_width: savedSummary.measurements_details?.window_width,
+        window_height: savedSummary.measurements_details?.window_height,
+        selected_fabric: savedSummary.fabric_details?.fabric_id,
+        fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm,
+        price_per_meter: savedSummary.price_per_meter,
+        surface_id: surfaceId,
+        surface_name: surfaceData?.name
+      };
+      
+      setMeasurements(savedMeasurements);
+      
+      // Update treatment data
+      setTreatmentData({
+        treatment_type: savedSummary.template_details?.curtain_type || "curtains",
+        fabric_details: savedSummary.fabric_details,
+        lining_type: savedSummary.lining_type,
+        manufacturing_type: savedSummary.manufacturing_type,
+        selected_heading: savedSummary.heading_details?.heading_name,
+        selected_lining: savedSummary.lining_type,
+        total_cost: savedSummary.total_cost,
+        pricing_breakdown: savedSummary.cost_breakdown
+      });
+      
+      // Update fabric and lining selections
+      setSelectedFabric(savedSummary.fabric_details?.fabric_id || "");
+      setSelectedHeading(savedSummary.heading_details?.heading_name || "standard");
+      setSelectedLining(savedSummary.lining_type || "none");
     }
-    return existingTreatments?.[0]?.selected_heading || "standard";
-  });
-  const [selectedLining, setSelectedLining] = useState(() => {
-    if (shouldUseSavedData && savedSummary) {
-      return savedSummary.lining_type || "none";
-    }
-    return existingTreatments?.[0]?.selected_lining || "none";
-  });
-  const [selectedFabric, setSelectedFabric] = useState(() => {
-    if (shouldUseSavedData && savedSummary) {
-      return savedSummary.fabric_details?.fabric_id || "";
-    }
-    return existingTreatments?.[0]?.fabric_details?.fabric_id || 
-           existingMeasurement?.measurements?.selected_fabric || 
-           "";
-  });
+  }, [savedSummary, existingMeasurement?.use_saved_summary, surfaceId]);
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();

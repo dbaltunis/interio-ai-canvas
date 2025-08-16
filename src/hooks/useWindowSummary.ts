@@ -64,7 +64,7 @@ export const useWindowSummary = (windowId: string | undefined) => {
             .from("windows_summary")
             .upsert(enriched)
             .select()
-            .single();
+            .maybeSingle();
           if (!saveErr && saved) {
             return saved as WindowSummary;
           }
@@ -216,7 +216,7 @@ export const useSaveWindowSummary = () => {
         .from("windows_summary")
         .upsert(enriched)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
