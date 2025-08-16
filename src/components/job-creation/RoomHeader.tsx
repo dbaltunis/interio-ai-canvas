@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RoomActionsMenu } from "./RoomActionsMenu";
 import { formatCurrency } from "@/utils/currency";
 import { useCompactMode } from "@/hooks/useCompactMode";
-import { Edit } from "lucide-react";
+import { Edit2 } from "lucide-react";
 
 
 interface RoomHeaderProps {
@@ -60,9 +60,9 @@ export const RoomHeader = ({
                 size="sm"
                 variant="ghost"
                 onClick={onStartEditing}
-                className="h-6 w-6 p-0 hover:bg-muted"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
               >
-                <Edit className="h-3 w-3" />
+                <Edit2 className="h-3 w-3" />
               </Button>
             </div>
           )}
