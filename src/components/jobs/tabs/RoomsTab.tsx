@@ -31,18 +31,16 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const windowsWithPricing = projectSummaries?.windows?.filter(w => w.summary && w.summary.total_cost > 0) || [];
   const treatmentCount = windowsWithPricing.length;
 
-  // Project pricing calculation - use windows_summary data as primary source since it contains actual calculated costs
+  // Project pricing calculation - show base cost without automatic markups
   const summariesTotal = projectSummaries?.projectTotal || 0;
   
   // Use windows_summary data if available (more accurate as it includes fabric calculations)
   // Fall back to treatments table data only if no window summaries exist
-  const subtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
+  const baseSubtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
   
-  const markupPercentage = 25;
-  const taxRate = 0.08;
-  const finalSubtotal = subtotal * (1 + markupPercentage / 100);
-  const taxAmount = finalSubtotal * taxRate;
-  const total = finalSubtotal + taxAmount;
+  // TODO: Markup and tax should be configurable in settings, not hardcoded
+  // For now, show the base cost without automatic markup/tax to provide clarity
+  const displayTotal = baseSubtotal;
 
   if (!project) {
     return (
@@ -57,10 +55,8 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   console.log('RoomsTab: Treatments count:', treatmentCount);
   console.log('RoomsTab: Treatment total (from treatments table):', treatmentTotal);
   console.log('RoomsTab: Summaries total (from windows_summary table):', summariesTotal);
-  console.log('RoomsTab: Subtotal used:', subtotal);
-  console.log('RoomsTab: After 25% markup:', finalSubtotal);
-  console.log('RoomsTab: Tax amount (8%):', taxAmount);
-  console.log('RoomsTab: Final total displayed:', total);
+  console.log('RoomsTab: Base subtotal used:', baseSubtotal);
+  console.log('RoomsTab: Display total (no markup/tax):', displayTotal);
   console.log('RoomsTab: Price source:', summariesTotal > 0 ? 'windows_summary table' : 'treatments table');
 
   return (
@@ -75,10 +71,10 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
         </div>
         <div className="text-right">
           <div className="text-xl font-bold text-primary">
-            {formatCurrency(total)}
+            {formatCurrency(displayTotal)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Total Project Cost
+            Base Project Cost
           </p>
         </div>
       </div>
