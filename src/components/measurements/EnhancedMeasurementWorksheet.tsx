@@ -372,7 +372,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           currency: units.currency,
           template_name: selectedCovering.name,
           template_details: selectedCovering as any,
-          fabric_details: { id: fabricItem.id, name: fabricItem.name, price_per_meter: pricePerMeter },
+          fabric_details: { 
+            id: fabricItem.id, 
+            name: fabricItem.name, 
+            price_per_meter: pricePerMeter,
+            width: (fabricItem as any).fabric_width,
+            width_cm: (fabricItem as any).fabric_width,
+            fabric_width: (fabricItem as any).fabric_width
+          },
           lining_details: liningDetails,
           heading_details: { id: selectedHeading },
           extras_details: [],
