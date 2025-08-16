@@ -6,6 +6,8 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { formatCurrency } from "@/utils/currency";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { useQuotationSync } from "@/hooks/useQuotationSync";
+import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 
 interface RoomsTabProps {
   projectId: string;
@@ -18,6 +20,20 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const { data: surfaces } = useSurfaces(projectId);
 const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const project = projects?.find(p => p.id === projectId);
+
+  // Auto-sync room and treatment data to quotations and workroom
+  const quotationSync = useQuotationSync({
+    projectId,
+    clientId: project?.client_id,
+    autoCreateQuote: true,
+    markupPercentage: 25,
+    taxRate: 0.08
+  });
+
+  const workroomSync = useWorkroomSync({
+    projectId,
+    autoCreateWorkshopItems: true
+  });
 
   // Calculate comprehensive project total - prioritize windows_summary over treatments table
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
@@ -75,7 +91,13 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
           </div>
           <p className="text-xs text-muted-foreground">
             Base Project Cost
+            {quotationSync.isLoading && ' • Syncing...'}
           </p>
+          {(quotationSync.error || workroomSync) && (
+            <p className="text-xs text-yellow-600">
+              Auto-sync active for quotations & workroom
+            </p>
+          )}
         </div>
       </div>
 
