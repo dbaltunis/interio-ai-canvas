@@ -110,7 +110,12 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <SimplifiedJobsDashboard />
+            <JobsListWithQuotes 
+              onJobSelect={setSelectedJobId}
+              onCreateQuoteVersion={handleCreateQuoteVersion}
+              searchTerm=""
+              statusFilter="all"
+            />
           </TabsContent>
 
           <TabsContent value="jobs" className="space-y-4">

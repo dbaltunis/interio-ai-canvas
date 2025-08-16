@@ -19,7 +19,7 @@ export const useProjects = () => {
 
       let query = supabase
         .from("projects")
-        .select("*");
+        .select("*, clients(name)");
       
       // If user doesn't have view_all_projects permission, filter by user_id
       if (!canViewAllProjects) {
