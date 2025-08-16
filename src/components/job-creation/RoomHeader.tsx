@@ -35,7 +35,7 @@ export const RoomHeader = ({
 }: RoomHeaderProps) => {
   const { compact } = useCompactMode();
   return (
-    <CardHeader className={`relative bg-muted/30 border-b border-border ${compact ? 'py-3 px-4' : 'py-4 px-6'}`}>
+    <CardHeader className={`relative bg-muted/30 border-b border-border p-[14px] ${compact ? 'py-3 px-4' : 'py-4 px-6'}`}>
       {/* Simplified background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
