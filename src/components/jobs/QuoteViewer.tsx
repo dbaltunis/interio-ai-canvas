@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Edit, Mail, Download, Save, X } from "lucide-react";
+import { Eye, Edit, Mail, Download, Save, X, Copy, User, MapPin, Calendar, FileText, Package } from "lucide-react";
 
 interface Quote {
   id: string;
@@ -23,6 +25,18 @@ interface Quote {
   notes?: string;
   created_at: string;
   updated_at: string;
+  clients?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  projects?: {
+    id: string;
+    name: string;
+    address?: string;
+  };
 }
 
 interface QuoteViewerProps {
@@ -85,6 +99,13 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
     setIsEditing(false);
   };
 
+  const handleCopyQuote = () => {
+    toast({
+      title: "Copy Quote",
+      description: "Create a new quote based on this one - functionality would be implemented here",
+    });
+  };
+
   const handleEmailQuote = () => {
     toast({
       title: "Email Quote",
@@ -109,11 +130,12 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl">
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <FileText className="h-5 w-5" />
                 Quote {quote.quote_number}
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
@@ -139,12 +161,66 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Quote Details */}
+          {/* Client & Project Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Client Information */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Client Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div>
+                  <p className="font-medium">{quote.clients?.name || 'No client assigned'}</p>
+                  {quote.clients?.email && (
+                    <p className="text-sm text-muted-foreground">{quote.clients.email}</p>
+                  )}
+                  {quote.clients?.phone && (
+                    <p className="text-sm text-muted-foreground">{quote.clients.phone}</p>
+                  )}
+                </div>
+                {quote.clients?.address && (
+                  <div className="flex items-start gap-2 mt-2">
+                    <MapPin className="h-3 w-3 mt-1 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">{quote.clients.address}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Project Information */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Project Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div>
+                  <p className="font-medium">{quote.projects?.name || 'No project assigned'}</p>
+                  {quote.projects?.address && (
+                    <div className="flex items-start gap-2 mt-2">
+                      <MapPin className="h-3 w-3 mt-1 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">{quote.projects.address}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quote Status & Validity */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quote Details</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Quote Status & Validity
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               {isEditing ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -172,6 +248,60 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
                       onChange={(e) => setEditData({ ...editData, valid_until: e.target.value })}
                     />
                   </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge className={getStatusColor(quote.status)}>
+                      {quote.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valid Until</p>
+                    <p className="font-medium">
+                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quote Line Items */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Quote Line Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Unit Price</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      Quote line items would be displayed here
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Financial Summary */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Financial Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Subtotal ($)</label>
                     <Input
@@ -219,57 +349,57 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
                       className="bg-muted font-bold"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium">Notes</label>
-                    <Textarea
-                      value={editData.notes}
-                      onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valid Until</p>
-                    <p className="font-medium">
-                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'Not set'}
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span className="font-medium">${quote.subtotal?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <Badge className={getStatusColor(quote.status)}>
-                      {quote.status}
-                    </Badge>
+                  <div className="flex justify-between">
+                    <span>Tax ({((quote.tax_rate || 0) * 100).toFixed(1)}%):</span>
+                    <span className="font-medium">${quote.tax_amount?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Subtotal</p>
-                    <p className="font-medium">${quote.subtotal?.toFixed(2) || '0.00'}</p>
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total Amount:</span>
+                    <span className="text-primary">${quote.total_amount?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Tax ({((quote.tax_rate || 0) * 100).toFixed(1)}%)</p>
-                    <p className="font-medium">${quote.tax_amount?.toFixed(2) || '0.00'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground">Total Amount</p>
-                    <p className="text-2xl font-bold text-primary">${quote.total_amount?.toFixed(2) || '0.00'}</p>
-                  </div>
-                  {quote.notes && (
-                    <div className="col-span-2">
-                      <p className="text-sm text-muted-foreground">Notes</p>
-                      <p className="text-sm">{quote.notes}</p>
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
+          {/* Notes */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <Textarea
+                  value={editData.notes}
+                  onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+                  rows={3}
+                  placeholder="Add notes about this quote..."
+                />
+              ) : (
+                <p className="text-sm">
+                  {quote.notes || 'No notes added to this quote.'}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Actions */}
-          <div className="flex justify-between">
+          <div className="flex justify-between border-t pt-4">
             <div className="flex space-x-2">
               {!isEditing && (
                 <>
+                  <Button variant="outline" size="sm" onClick={handleCopyQuote}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Quote
+                  </Button>
                   <Button variant="outline" size="sm" onClick={handleEmailQuote}>
                     <Mail className="h-4 w-4 mr-2" />
                     Email Quote
