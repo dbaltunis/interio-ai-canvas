@@ -291,6 +291,17 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             </SelectContent>
           </Select>
 
+          {/* New Quote Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCreateNewQuote}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Quote</span>
+          </Button>
+
           {/* View Quote Button */}
           <Button
             variant="outline"
@@ -301,41 +312,9 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             <Eye className="h-4 w-4" />
             <span>View Quote</span>
           </Button>
-        </div>
-      </div>
 
-      {/* Quote Display Options */}
-      <div className="flex items-center justify-center space-x-4 p-4 bg-muted/30 rounded-lg">
-        <div className="text-sm font-medium text-muted-foreground">Quote Display:</div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="default" 
-            size="sm"
-            className="rounded-full px-4"
-          >
-            Simple
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="rounded-full px-4"
-          >
-            Detailed
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="rounded-full px-4"
-          >
-            Itemised
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="rounded-full px-4"
-          >
-            Visual
-          </Button>
+          {/* Actions Menu */}
+          <ThreeDotMenu items={actionMenuItems} />
         </div>
       </div>
 
@@ -362,9 +341,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
       {/* Quote Document Preview */}
       {selectedTemplate && (
         <section className="mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold">Quote Document Preview</h3>
-          </div>
           <LivePreview
             blocks={templateBlocks}
             projectData={{
