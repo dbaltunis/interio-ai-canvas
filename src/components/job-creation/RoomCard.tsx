@@ -126,42 +126,40 @@ export const RoomCard = ({
         onChangeRoomType={onChangeRoomType}
       />
 
-      <CardContent className={compact ? "p-3 space-y-2" : "p-4 space-y-3"}>
-        {/* Room Type Badge */}
+      {/* Room Type Badge */}
 
-        {/* Surfaces List */}
-        {roomSurfaces.length > 0 ? (
-          <SurfaceList
-            surfaces={roomSurfaces}
-            treatments={roomTreatments}
-            clientId={clientId}
-            projectId={projectId}
-            onAddTreatment={handleAddTreatment}
-            onUpdateSurface={onUpdateSurface}
-            onDeleteSurface={onDeleteSurface}
-          />
-        ) : (
-          <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
-            <div className="text-4xl mb-2">🪟</div>
-            <h4 className="font-medium text-foreground mb-1">No measurement worksheets added</h4>
-            <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets to get started with treatments</p>
-          </div>
-        )}
-
-        {/* Add Window Button */}
-        <div className="flex gap-2 pt-3 border-t border-gray-100">
-          <Button
-            onClick={handleSurfaceCreation}
-            disabled={isCreatingSurface}
-            variant="outline"
-            size={compact ? "sm" : "sm"}
-            className="flex-1"
-          >
-            <RectangleHorizontal className="h-4 w-4 mr-2" />
-            Add Measurement Worksheet
-          </Button>
+      {/* Surfaces List */}
+      {roomSurfaces.length > 0 ? (
+        <SurfaceList
+          surfaces={roomSurfaces}
+          treatments={roomTreatments}
+          clientId={clientId}
+          projectId={projectId}
+          onAddTreatment={handleAddTreatment}
+          onUpdateSurface={onUpdateSurface}
+          onDeleteSurface={onDeleteSurface}
+        />
+      ) : (
+        <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="text-4xl mb-2">🪟</div>
+          <h4 className="font-medium text-foreground mb-1">No measurement worksheets added</h4>
+          <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets to get started with treatments</p>
         </div>
-      </CardContent>
+      )}
+
+      {/* Add Window Button */}
+      <div className="flex gap-2 pt-3 border-t border-gray-100">
+        <Button
+          onClick={handleSurfaceCreation}
+          disabled={isCreatingSurface}
+          variant="outline"
+          size={compact ? "sm" : "sm"}
+          className="flex-1"
+        >
+          <RectangleHorizontal className="h-4 w-4 mr-2" />
+          Add Measurement Worksheet
+        </Button>
+      </div>
 
       {/* Auto-open worksheet dialog for new surfaces */}
       {newSurface && (
