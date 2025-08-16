@@ -25,7 +25,7 @@ import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreen
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 
 
-import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
+
 
 interface QuotationTabProps {
   projectId: string;
@@ -349,13 +349,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           </CardContent>
         </Card>
       )}
-      {/* Detailed Quotation Table */}
-      <DetailedQuotationTable 
-        quotationData={quotationData}
-        groupByRoom={true}
-        showDetailedView={true}
-        currency="GBP"
-      />
 
       {/* Quote Document Preview */}
       {selectedTemplate && (
