@@ -34,26 +34,30 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
   
   const roomTotal = useMemo(() => {
     console.log(`=== ROOM TOTAL CALCULATION FOR ${room.name} ===`);
-    // Prefer authoritative window summaries when available
+    
+    let total = 0;
+
+    // First priority: Sum all window summaries for this room
     const summaryRoomTotal = (projectSummaries?.windows || [])
       .filter((w) => w.room_id === room.id)
       .reduce((sum, w) => sum + Number(w.summary?.total_cost || 0), 0);
 
     if (summaryRoomTotal > 0) {
-      console.log(`ROOM CALC using windows_summary total: £${summaryRoomTotal.toFixed(2)}`);
-      console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${summaryRoomTotal.toFixed(2)} ===`);
-      return summaryRoomTotal;
+      console.log(`Found ${(projectSummaries?.windows || []).filter((w) => w.room_id === room.id).length} window summaries`);
+      console.log(`Window summaries total: £${summaryRoomTotal.toFixed(2)}`);
+      total += summaryRoomTotal;
     }
 
-    let total = 0;
-
-    // Fallback: use treatments with pricing
+    // Second priority: Add all treatment totals for this room
     const treatmentTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
     if (treatmentTotal > 0) {
-      console.log(`Using treatment total: £${treatmentTotal}`);
-      total = treatmentTotal;
-    } else if (clientMeasurements) {
-      // Fallback: estimate from raw measurements (legacy)
+      console.log(`Found ${roomTreatments.length} treatments`);
+      console.log(`Treatment total: £${treatmentTotal.toFixed(2)}`);
+      total += treatmentTotal;
+    }
+
+    // Third priority: If no summaries or treatments, use legacy measurement calculations
+    if (total === 0 && clientMeasurements) {
       const roomMeasurements = clientMeasurements.filter(
         (measurement) => measurement.project_id === projectId && measurement.room_id === room.id
       );
@@ -111,7 +115,7 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
       });
     }
 
-    console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total} ===`);
+    console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total.toFixed(2)} ===`);
     return total;
   }, [projectSummaries, roomTreatments, clientMeasurements, projectId, room.id, room.name]);
 
