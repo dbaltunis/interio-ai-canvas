@@ -61,5 +61,11 @@ export const useProjectWindowSummaries = (projectId?: string) => {
       return { windows, totalsByRoom, projectTotal };
     },
     enabled: !!projectId,
+    // Critical: Refresh every 3 seconds to catch new summaries immediately
+    refetchInterval: 3000,
+    // Ensure it refetches when user focuses the tab
+    refetchOnWindowFocus: true,
+    // Keep previous data while refetching to prevent flashing
+    placeholderData: (prev) => prev
   });
 };
