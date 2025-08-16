@@ -63,13 +63,13 @@ export const JobsDashboard = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center">
               <Target className="w-4 h-4 mr-2 text-primary" />
-              Total Jobs
+              Active Projects
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{totalJobs}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {activeJobs} active • {completedJobs} completed
+              {activeJobs} in progress • {completedJobs} completed
             </p>
           </CardContent>
         </Card>
@@ -85,7 +85,7 @@ export const JobsDashboard = () => {
             <div className="text-2xl font-bold text-green-600">${totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-gray-500 mt-1 flex items-center">
               <TrendingUp className="w-3 h-3 mr-1" />
-              From {acceptedQuotes} accepted quotes
+              From accepted quotes
             </p>
           </CardContent>
         </Card>
@@ -94,13 +94,13 @@ export const JobsDashboard = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center">
               <FileText className="w-4 h-4 mr-2 text-primary" />
-              Quotes
+              Quote Versions
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{totalQuotes}</div>
             <p className="text-xs text-gray-500 mt-1">
-              {pendingQuotes} pending • {acceptedQuotes} accepted
+              Across all projects
             </p>
           </CardContent>
         </Card>
