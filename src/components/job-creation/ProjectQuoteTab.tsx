@@ -44,10 +44,12 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   
   const markupPercentage = 25; // Default 25% markup to match QuotationTab
   const taxRate = 0.08; // 8% tax rate to match QuotationTab
-  const baseSubtotal = quotationData.subtotal || 0;
-  const subtotal = baseSubtotal * (1 + markupPercentage / 100);
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  
+  // Use the same calculation approach as QuotationTab
+  const baseSubtotal = quotationData.baseSubtotal || 0;
+  const subtotal = quotationData.subtotal || 0;
+  const tax = quotationData.taxAmount || 0;
+  const total = quotationData.total || 0;
 
 
   const handleEmailQuote = () => {

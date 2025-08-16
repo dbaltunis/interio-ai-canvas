@@ -76,9 +76,13 @@ export const useQuotationSync = ({
         if (window.summary && window.summary.total_cost > 0) {
           const roomId = window.room_id || 'no-room';
           
+          // Find the actual room data
+          const roomData = rooms.find(r => r.id === roomId);
+          const roomName = roomData?.name || 'Unassigned Room';
+          
           if (!roomGroups[roomId]) {
             roomGroups[roomId] = {
-              room: { id: roomId, name: 'Unassigned Room' },
+              room: { id: roomId, name: roomName },
               items: []
             };
           }
@@ -93,8 +97,11 @@ export const useQuotationSync = ({
             unit_price: window.summary.total_cost,
             total: window.summary.total_cost,
             breakdown,
-            currency: window.summary.currency || 'USD',
-            room_name: roomGroups[roomId]?.room?.name || 'Unassigned Room',
+            currency: window.summary.currency || 'GBP',
+            room_name: roomName,
+            room_id: roomId,
+            surface_name: window.surface_name,
+            treatment_type: window.summary.template_name,
           });
         }
       });
@@ -103,9 +110,13 @@ export const useQuotationSync = ({
       treatments.forEach((treatment) => {
         const roomId = treatment.room_id || 'no-room';
         
+        // Find the actual room data  
+        const roomData = rooms.find(r => r.id === roomId);
+        const roomName = roomData?.name || 'Unassigned Room';
+        
         if (!roomGroups[roomId]) {
           roomGroups[roomId] = {
-            room: { id: roomId, name: 'Unassigned Room' },
+            room: { id: roomId, name: roomName },
             items: []
           };
         }
@@ -117,8 +128,10 @@ export const useQuotationSync = ({
           quantity: 1,
           unit_price: treatment.total_price || 0,
           total: treatment.total_price || 0,
-          currency: 'USD',
-          room_name: 'Unassigned Room',
+          currency: 'GBP',
+          room_name: roomName,
+          room_id: roomId,
+          treatment_type: treatment.treatment_type,
         });
       });
     }

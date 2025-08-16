@@ -27,6 +27,16 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
+  // Debug logging
+  console.log('🔍 DetailedQuotationTable Debug:', {
+    quotationData,
+    itemsCount: quotationData.items?.length,
+    baseSubtotal: quotationData.baseSubtotal,
+    subtotal: quotationData.subtotal,
+    taxAmount: quotationData.taxAmount,
+    total: quotationData.total
+  });
+
   const toggleRoom = (roomId: string) => {
     const newExpanded = new Set(expandedRooms);
     if (newExpanded.has(roomId)) {
@@ -172,13 +182,18 @@ const QuotationItemRow: React.FC<{
           <div className="flex-1">
             <div className="font-medium text-sm">{item.name}</div>
             <div className="text-xs text-muted-foreground">{item.description}</div>
+            {item.quantity && item.unit_price && (
+              <div className="text-xs text-muted-foreground">
+                Qty: {item.quantity} × {formatCurrency(item.unit_price, currency)} each
+              </div>
+            )}
           </div>
         </div>
         <div className="text-right">
           <div className="font-medium">{formatCurrency(item.total || 0, currency)}</div>
           {item.quantity && item.unit_price && (
             <div className="text-xs text-muted-foreground">
-              {item.quantity} × {formatCurrency(item.unit_price, currency)}
+              {formatCurrency(item.unit_price, currency)} per unit
             </div>
           )}
         </div>

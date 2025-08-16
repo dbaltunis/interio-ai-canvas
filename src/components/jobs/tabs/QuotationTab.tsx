@@ -115,41 +115,44 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   // Use quotation data from sync
   const hasQuotationItems = (quotationData.items || []).length > 0;
-  const treatmentTotal = treatments?.reduce((sum, treatment) => {
-    return sum + (treatment.total_price || 0);
-  }, 0) || 0;
-
-  const summariesTotal = projectSummaries?.projectTotal || 0;
-  const quotationItemsTotal = quotationData.subtotal || 0;
   
-  const hasTreatments = (treatments?.length || 0) > 0;
-  const syntheticTreatments = !hasTreatments && !hasQuotationItems
-    ? (projectSummaries?.windows || []).map((w) => ({
-        id: `${w.window_id}-synthetic`,
-        room_id: w.room_id,
-        window_id: w.window_id,
-        treatment_type: w.summary?.template_name || 'Window Treatment',
-        product_name: w.surface_name || 'Window',
-        total_price: Number(w.summary?.total_cost || 0),
-      }))
-    : [];
-  const sourceTreatments = hasQuotationItems 
-    ? (quotationData.items || []).map(item => ({
-        id: item.id,
-        room_id: item.room_id || '',
-        window_id: item.surface_id || '',
-        treatment_type: item.treatment_type || '',
-        product_name: item.description,
-        total_price: item.total || 0,
-      }))
-    : hasTreatments ? (treatments || []) : syntheticTreatments;
-
-  const [markupPercentage, setMarkupPercentage] = useState<number>(25);
+  // Use the same base data for all calculations
+  const baseSubtotal = quotationData.baseSubtotal || 0;
+  const subtotal = quotationData.subtotal || 0;
+  const taxAmount = quotationData.taxAmount || 0;
+  const total = quotationData.total || 0;
   const taxRate = 0.08;
-  const baseSubtotal = hasQuotationItems ? quotationItemsTotal : hasTreatments ? treatmentTotal : summariesTotal;
-  const subtotal = baseSubtotal * (1 + markupPercentage / 100);
-  const taxAmount = subtotal * taxRate;
-  const total = subtotal + taxAmount;
+  const markupPercentage = 25;
+  const [, setMarkupPercentage] = useState<number>(25);
+
+  // Transform quotation items to match expected format for backward compatibility
+  const sourceTreatments = (quotationData.items || [])
+    .filter(item => !item.isHeader)
+    .map(item => ({
+      id: item.id,
+      room_id: item.room_id || '',
+      window_id: item.surface_id || '',
+      treatment_type: item.treatment_type || item.name,
+      product_name: item.name,
+      total_price: item.total || 0,
+      currency: item.currency || 'GBP',
+      breakdown: item.breakdown || [],
+      quantity: item.quantity || 1,
+      unit_price: item.unit_price || 0,
+      room_name: item.room_name,
+      surface_name: item.surface_name,
+      description: item.description,
+    }));
+
+  console.log('🔍 QuotationTab Debug:', {
+    hasQuotationItems,
+    itemsCount: quotationData.items?.length,
+    baseSubtotal,
+    subtotal,
+    taxAmount,
+    total,
+    sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
+  });
 
   const handleEmailQuote = () => {
     toast({
@@ -389,11 +392,11 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
               treatments: sourceTreatments,
               rooms: rooms || [],
               surfaces: surfaces || [],
-              subtotal,
-              taxRate,
-              taxAmount,
-              total,
-              markupPercentage,
+              subtotal: quotationData.subtotal || 0,
+              taxRate: 0.08,
+              taxAmount: quotationData.taxAmount || 0,
+              total: quotationData.total || 0,
+              markupPercentage: 25,
               windowSummaries: projectSummaries?.windows || []
             }}
             isEditable={true}
