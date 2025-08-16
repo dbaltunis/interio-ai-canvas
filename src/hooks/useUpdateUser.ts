@@ -24,6 +24,36 @@ export const useUpdateUser = () => {
         .single();
 
       if (error) throw error;
+
+      // If role was updated, update permissions accordingly
+      if (updateData.role) {
+        // Get current user for created_by field
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        
+        // Get default permissions for the new role
+        const { data: defaultPerms, error: permsError } = await supabase
+          .rpc('get_default_permissions_for_role', { user_role: updateData.role });
+
+        if (!permsError && defaultPerms) {
+          // Clear existing permissions
+          await supabase
+            .from('user_permissions')
+            .delete()
+            .eq('user_id', userId);
+
+          // Insert new permissions
+          const permissionsToInsert = defaultPerms.map((perm: string) => ({
+            user_id: userId,
+            permission_name: perm,
+            created_by: currentUser?.id
+          }));
+
+          await supabase
+            .from('user_permissions')
+            .insert(permissionsToInsert);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
