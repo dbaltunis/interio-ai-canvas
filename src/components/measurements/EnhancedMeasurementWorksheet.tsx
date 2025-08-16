@@ -92,9 +92,15 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   );
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
-  const [measurements, setMeasurements] = useState(() => 
-    existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {}
-  );
+  const [measurements, setMeasurements] = useState(() => {
+    const initialMeasurements = existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {};
+    // Also merge any existing treatment measurements
+    if (existingTreatments?.[0]?.measurements) {
+      Object.assign(initialMeasurements, existingTreatments[0].measurements);
+    }
+    console.log("Initial measurements:", initialMeasurements);
+    return initialMeasurements;
+  });
   const [treatmentData, setTreatmentData] = useState<any>(() => 
     existingTreatments?.[0] ? { ...existingTreatments[0] } : {}
   );
@@ -237,6 +243,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const handleMeasurementChange = (field: string, value: string | number) => {
     if (readOnly) return;
     
+    console.log(`📏 Measurement change: ${field} = ${value}`);
+    
     setMeasurements(prev => {
       const newMeasurements = { ...prev };
       
@@ -246,6 +254,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         newMeasurements[field] = parseFloat(String(value)) || 0;
       }
       
+      console.log("Updated measurements:", newMeasurements);
       return newMeasurements;
     });
     
