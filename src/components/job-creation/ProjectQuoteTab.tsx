@@ -12,6 +12,7 @@ import { formatCurrency } from "@/utils/currency";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
+import { useQuotationSync } from "@/hooks/useQuotationSync";
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -23,58 +24,26 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: rooms = [] } = useRooms(project?.id);
   const { data: surfaces = [] } = useSurfaces(project?.id);
   const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
+  const { buildQuotationItems } = useQuotationSync({
+    projectId: project?.id || "",
+    clientId: project?.client_id || "",
+    autoCreateQuote: false,
+    markupPercentage: 25,
+    taxRate: 0.08,
+  });
+
+  // Build quotation items from sync data
+  const quotationData = buildQuotationItems();
   const { toast } = useToast();
 
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Generate quote items from treatments or fallback to window summaries
-  const hasTreatments = (treatments?.length || 0) > 0;
-  const quoteItems = hasTreatments
-    ? treatments.map(treatment => {
-        const room = rooms.find(r => r.id === treatment.room_id);
-        const surface = surfaces.find(s => s.id === treatment.window_id);
-        const summary = (projectSummaries?.windows || []).find(w => w.window_id === treatment.window_id)?.summary;
-        const breakdown = summary ? buildClientBreakdown(summary) : [];
-        const currency = summary?.currency;
-        return {
-          id: treatment.id,
-          description: `${room?.name || 'Room'} - ${treatment.product_name || treatment.treatment_type}`,
-          location: room?.name || 'Unknown Room',
-          window: surface?.name || 'Window',
-          quantity: treatment.quantity || 1,
-          unitPrice: treatment.unit_price || 0,
-          total: treatment.total_price || 0,
-          treatment_type: treatment.treatment_type,
-          fabric_type: treatment.fabric_type,
-          measurements: treatment.measurements || {},
-          breakdown,
-          currency,
-        };
-      })
-    : (projectSummaries?.windows || []).map((w) => {
-        const room = rooms.find(r => r.id === w.room_id);
-        const summary = w.summary;
-        const breakdown = summary ? buildClientBreakdown(summary) : [];
-        const currency = summary?.currency;
-        return {
-          id: `${w.window_id}-summary`,
-          description: `${room?.name || 'Room'} - ${summary?.template_name || 'Window Treatment'}`,
-          location: room?.name || 'Unknown Room',
-          window: w.surface_name || 'Window',
-          quantity: 1,
-          unitPrice: Number(summary?.total_cost || 0),
-          total: Number(summary?.total_cost || 0),
-          treatment_type: summary?.manufacturing_type,
-          fabric_type: summary?.fabric_details?.name,
-          measurements: summary?.measurements_details || {},
-          breakdown,
-          currency,
-        };
-      });
+  // Use built quotation items
+  const displayQuoteItems = quotationData.items || [];
   
   const markupPercentage = 25; // Default 25% markup to match QuotationTab
   const taxRate = 0.08; // 8% tax rate to match QuotationTab
-  const baseSubtotal = quoteItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  const baseSubtotal = quotationData.subtotal || 0;
   const subtotal = baseSubtotal * (1 + markupPercentage / 100);
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
@@ -159,14 +128,14 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
             </TableRow>
           </TableHeader>
           <TableBody>
-            {quoteItems.length === 0 ? (
+            {displayQuoteItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-gray-500">
                   No treatments added yet. Add treatments in the Jobs tab to generate quote items.
                 </TableCell>
               </TableRow>
             ) : (
-              quoteItems.map((item) => (
+              displayQuoteItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="space-y-1">

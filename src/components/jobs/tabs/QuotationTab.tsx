@@ -22,6 +22,7 @@ import { formatCurrency } from "@/utils/currency";
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
 import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
+import { useQuotationSync } from "@/hooks/useQuotationSync";
 
 interface QuotationTabProps {
   projectId: string;
@@ -85,6 +86,17 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
   const [showFullQuoteView, setShowFullQuoteView] = useState(false);
 
+  const { buildQuotationItems } = useQuotationSync({
+    projectId: projectId,
+    clientId: project?.client_id || "",
+    autoCreateQuote: false,
+    markupPercentage: 25,
+    taxRate: 0.08,
+  });
+
+  // Build quotation items from sync data
+  const quotationData = buildQuotationItems();
+
   // Filter quotes for this specific project (already filtered by hook)
   const projectQuotes = quotes;
 
@@ -98,14 +110,17 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   // Get selected template
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
 
-  // Calculate totals with fallback to window summaries
+  // Use quotation data from sync
+  const hasQuotationItems = (quotationData.items || []).length > 0;
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
 
   const summariesTotal = projectSummaries?.projectTotal || 0;
+  const quotationItemsTotal = quotationData.subtotal || 0;
+  
   const hasTreatments = (treatments?.length || 0) > 0;
-  const syntheticTreatments = !hasTreatments
+  const syntheticTreatments = !hasTreatments && !hasQuotationItems
     ? (projectSummaries?.windows || []).map((w) => ({
         id: `${w.window_id}-synthetic`,
         room_id: w.room_id,
@@ -115,11 +130,20 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         total_price: Number(w.summary?.total_cost || 0),
       }))
     : [];
-  const sourceTreatments = hasTreatments ? (treatments || []) : syntheticTreatments;
+  const sourceTreatments = hasQuotationItems 
+    ? (quotationData.items || []).map(item => ({
+        id: item.id,
+        room_id: item.room_id || '',
+        window_id: item.surface_id || '',
+        treatment_type: item.treatment_type || '',
+        product_name: item.description,
+        total_price: item.total || 0,
+      }))
+    : hasTreatments ? (treatments || []) : syntheticTreatments;
 
   const [markupPercentage, setMarkupPercentage] = useState<number>(25);
   const taxRate = 0.08;
-  const baseSubtotal = hasTreatments ? treatmentTotal : summariesTotal;
+  const baseSubtotal = hasQuotationItems ? quotationItemsTotal : hasTreatments ? treatmentTotal : summariesTotal;
   const subtotal = baseSubtotal * (1 + markupPercentage / 100);
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
