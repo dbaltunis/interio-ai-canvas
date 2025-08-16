@@ -193,11 +193,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       console.log("🔄 Setting measurements from saved summary (with numeric values):", savedMeasurements);
       console.log("🎯 Key values - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
       
-      // Force state update
+      // Force state update with debugging
       setMeasurements(prevMeasurements => {
         console.log("📊 Previous measurements:", prevMeasurements);
         console.log("📊 New measurements:", savedMeasurements);
-        return savedMeasurements;
+        console.log("🎯 Key values being set - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
+        
+        // Force re-render by creating completely new object with timestamp
+        const newMeasurements = { 
+          ...savedMeasurements,
+          _forceUpdate: Date.now() // Use a different property name to avoid TS issues
+        };
+        
+        return newMeasurements;
       });
       
       // Update treatment data
