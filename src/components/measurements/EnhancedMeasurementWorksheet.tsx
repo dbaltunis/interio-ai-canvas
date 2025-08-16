@@ -378,7 +378,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             price_per_meter: pricePerMeter,
             width: (fabricItem as any).fabric_width,
             width_cm: (fabricItem as any).fabric_width,
-            fabric_width: (fabricItem as any).fabric_width
+            fabric_width: (fabricItem as any).fabric_width,
+            pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
+            pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal
           },
           lining_details: liningDetails,
           heading_details: { id: selectedHeading },
