@@ -328,18 +328,18 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   return (
     <>
-      <div className="liquid-glass rounded-xl border overflow-hidden">
+      <div className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-transparent">
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Job Number</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Emails</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Client</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Status</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Total</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Owner</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Created</TableHead>
-              <TableHead className="w-[70px]">Actions</TableHead>
+            <TableRow className="border-b border-border/20">
+              <TableHead className="font-medium text-muted-foreground">Job Number</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Emails</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Client</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Status</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Total</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Owner</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Created</TableHead>
+              <TableHead className="text-right font-medium text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -353,7 +353,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                 <React.Fragment key={project.id}>
                   {/* Main Job Row */}
                   <TableRow 
-                    className="cursor-pointer hover:bg-muted/50 border-b-2 bg-muted/20"
+                    className="cursor-pointer hover:bg-muted/30 border-b border-border/10"
                     onClick={() => onJobSelect({ id: project.id, projects: project })}
                   >
                     <TableCell className="font-medium">
@@ -454,7 +454,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                   {expandedJobs.has(project.id) && quotes.map((quote, index) => (
                     <TableRow 
                       key={`${project.id}-quote-${index}`}
-                      className="cursor-pointer hover:bg-muted/30 border-l-4 border-primary/30 bg-muted/10"
+                      className="cursor-pointer hover:bg-muted/20 border-l-2 border-primary/20 bg-muted/5"
                       onClick={() => onJobSelect(quote)}
                     >
                       <TableCell className="pl-8">
