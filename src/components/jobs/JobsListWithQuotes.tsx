@@ -48,6 +48,20 @@ export const JobsListWithQuotes = ({
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
 
+  // Debug logging
+  console.log('JobsListWithQuotes - Projects:', projects);
+  console.log('JobsListWithQuotes - Quotes:', quotes);
+  console.log('JobsListWithQuotes - Filtered projects:', projects?.filter((project) => {
+    const matchesSearch = 
+      project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getClientName(project).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }));
+
   // Filter projects based on search and status
   const filteredProjects = projects.filter((project) => {
     const matchesSearch = 

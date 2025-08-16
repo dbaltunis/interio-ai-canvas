@@ -6,14 +6,17 @@ import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { JobsTableView } from "./JobsTableView";
+import { JobsListWithQuotes } from "./JobsListWithQuotes";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
+import { QuoteVersionManager } from "./QuoteVersionManager";
 
 const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showQuoteManager, setShowQuoteManager] = useState(false);
+  const [selectedProjectForQuote, setSelectedProjectForQuote] = useState<string | null>(null);
   
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
@@ -159,6 +162,37 @@ const JobsPage = () => {
     setStatusFilter("all");
   };
 
+  const handleCreateQuoteVersion = (projectId: string) => {
+    setSelectedProjectForQuote(projectId);
+    setShowQuoteManager(true);
+  };
+
+  // If showing quote manager
+  if (showQuoteManager && selectedProjectForQuote) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="liquid-glass rounded-xl p-6">
+          <QuoteVersionManager
+            projectId={selectedProjectForQuote}
+            onSave={(config) => {
+              console.log('Saving quote config:', config);
+              setShowQuoteManager(false);
+              setSelectedProjectForQuote(null);
+              refetchQuotes();
+            }}
+            onCancel={() => {
+              setShowQuoteManager(false);
+              setSelectedProjectForQuote(null);
+            }}
+            onPreview={() => {
+              console.log('Preview quote');
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // Direct rendering - no intermediate pages
   if (selectedJobId) {
     return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
@@ -197,8 +231,9 @@ const JobsPage = () => {
       </div>
 
       {/* Jobs List */}
-      <JobsTableView 
-        onJobSelect={handleJobSelect} 
+      <JobsListWithQuotes 
+        onJobSelect={setSelectedJobId}
+        onCreateQuoteVersion={handleCreateQuoteVersion}
         searchTerm={searchTerm}
         statusFilter={statusFilter}
       />
