@@ -224,18 +224,18 @@ export function WindowSummaryCard({
                         <span>Drop: {fmtFabric((summary as any).drop_measurement)}</span>
                       )}
                       {(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width) && (
-                        <span>Fabric Width: {
-                          Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)
-                        }cm</span>
+                        <span>
+                          {Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm
+                          {summary.price_per_meter && (
+                            <span className="ml-1">@ £{Number(summary.price_per_meter).toFixed(2)}/m</span>
+                          )}
+                        </span>
                       )}
                       {summary.fabric_details?.pattern_repeat_vertical && Number(summary.fabric_details.pattern_repeat_vertical) > 0 && (
                         <span>V.Repeat: {Math.round(Number(summary.fabric_details.pattern_repeat_vertical))}cm</span>
                       )}
                       {summary.fabric_details?.pattern_repeat_horizontal && Number(summary.fabric_details.pattern_repeat_horizontal) > 0 && (
                         <span>H.Repeat: {Math.round(Number(summary.fabric_details.pattern_repeat_horizontal))}cm</span>
-                      )}
-                      {summary.price_per_meter && (
-                        <span>£{Number(summary.price_per_meter).toFixed(2)}/m</span>
                       )}
                       {summary.widths_required && (
                         <span>{summary.widths_required} width(s)</span>
