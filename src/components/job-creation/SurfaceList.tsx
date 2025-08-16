@@ -65,14 +65,27 @@ export const SurfaceList = ({
 
   const getClientMeasurementForSurface = (surface: any) => {
     return clientMeasurements?.find(measurement => {
-      const roomMatch = measurement.room_id === surface.room_id;
       const measurementData = typeof measurement.measurements === 'object' && measurement.measurements !== null 
         ? measurement.measurements as Record<string, any> 
         : {};
-      const surfaceIdMatch = measurementData.surface_id === surface.id;
-      const surfaceNameMatch = measurementData.surface_name === surface.name;
       
-      return roomMatch || surfaceIdMatch || surfaceNameMatch;
+      // First priority: exact surface ID match
+      if (measurementData.surface_id === surface.id) {
+        return true;
+      }
+      
+      // Second priority: exact surface name match within the same room
+      if (measurement.room_id === surface.room_id && measurementData.surface_name === surface.name) {
+        return true;
+      }
+      
+      // Third priority: room match only if no surface-specific data exists
+      const hasSpecificSurfaceData = measurementData.surface_id || measurementData.surface_name;
+      if (measurement.room_id === surface.room_id && !hasSpecificSurfaceData) {
+        return true;
+      }
+      
+      return false;
     });
   };
 
