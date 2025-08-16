@@ -44,10 +44,14 @@ export const VisualMeasurementSheet = ({
 }: VisualMeasurementSheetProps) => {
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
-      console.log(`Changing ${field} to:`, value);
+      console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
       onMeasurementChange(field, value);
     }
   };
+
+  // Debug measurements prop
+  console.log("🎯 VisualMeasurementSheet received measurements:", measurements);
+  console.log("🎯 Specific values - rail_width:", measurements.rail_width, "drop:", measurements.drop);
 
   // Use template data if available, fallback to measurements
   const curtainType = selectedTemplate?.curtain_type || measurements.curtain_type || "pair";
@@ -796,7 +800,10 @@ export const VisualMeasurementSheet = ({
                       type="number"
                       step="0.25"
                       value={measurements.rail_width || ""}
-                      onChange={(e) => handleInputChange("rail_width", e.target.value)}
+                      onChange={(e) => {
+                        console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
+                        handleInputChange("rail_width", e.target.value);
+                      }}
                       placeholder="0.00"
                       readOnly={readOnly}
                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
@@ -821,7 +828,10 @@ export const VisualMeasurementSheet = ({
                       type="number"
                       step="0.25"
                       value={measurements.drop || ""}
-                      onChange={(e) => handleInputChange("drop", e.target.value)}
+                      onChange={(e) => {
+                        console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
+                        handleInputChange("drop", e.target.value);
+                      }}
                       placeholder="0.00"
                       readOnly={readOnly}
                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
