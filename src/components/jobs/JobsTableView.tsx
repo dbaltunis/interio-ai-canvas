@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
+import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useUsers } from "@/hooks/useUsers";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
@@ -50,6 +51,7 @@ const ITEMS_PER_PAGE = 20;
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
   const { data: quotes = [], isLoading, refetch } = useQuotes();
+  const { data: projects = [] } = useProjects();
   const { data: clients = [] } = useClients();
   const { data: users = [] } = useUsers();
   const { data: jobStatuses = [] } = useJobStatuses();
@@ -62,27 +64,35 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  const filteredQuotes = quotes.filter((quote) => {
-    const matchesSearch = 
-      quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getClientName(quote).toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || quote.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+  // Group quotes by project and filter
+  const groupedData = projects.map(project => {
+    const projectQuotes = quotes.filter(quote => quote.project_id === project.id);
+    return {
+      project,
+      quotes: projectQuotes,
+      isMatch: 
+        project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getClientName({ projects: project, client_id: project.client_id }).toLowerCase().includes(searchTerm.toLowerCase())
+    };
+  }).filter(group => {
+    if (!group.isMatch && searchTerm) return false;
+    if (statusFilter === 'all') return true;
+    return group.project.status === statusFilter;
   });
 
-  // Pagination logic
-  const totalItems = filteredQuotes.length;
+  // Pagination logic  
+  const totalItems = groupedData.length;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedQuotes = filteredQuotes.slice(startIndex, endIndex);
+  const paginatedGroups = groupedData.slice(startIndex, endIndex);
 
   // Reset to first page when filters change
   const handlePageChange = (page: number) => {
@@ -298,7 +308,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     return <JobsTableSkeleton />;
   }
 
-  if (filteredQuotes.length === 0) {
+  if (groupedData.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">No jobs found matching your criteria.</p>
@@ -323,121 +333,163 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedQuotes.map((quote) => {
-              const clientName = getClientName(quote);
-              const client = getClientForQuote(quote);
-              const currentStatus = getCurrentStatus(quote);
-              const ownerInfo = getOwnerInfo(quote);
+            {paginatedGroups.map((group) => {
+              const project = group.project;
+              const quotes = group.quotes;
+              const clientName = getClientName({ projects: project, client_id: project.client_id });
+              const client = clients.find(c => c.id === project.client_id);
               
               return (
-                <TableRow 
-                  key={quote.id} 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => onJobSelect(quote)}
-                >
-                  <TableCell className="font-medium">
-                    <span 
-                      title={quote.quote_number}
-                      className="font-mono text-sm"
+                <React.Fragment key={project.id}>
+                  {/* Main Job Row */}
+                  <TableRow 
+                    className="cursor-pointer hover:bg-muted/50 border-b-2 bg-muted/20"
+                    onClick={() => onJobSelect({ id: project.id, projects: project })}
+                  >
+                    <TableCell className="font-medium">
+                      <span 
+                        title={project.job_number}
+                        className="font-mono text-sm font-bold"
+                      >
+                        {project.job_number || `JOB-${project.id.slice(-4)}`}
+                      </span>
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <EmailStatusDisplay 
+                        jobId={project.id}
+                        clientEmail={client?.email}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className={`${getClientAvatarColor(clientName)} text-white text-xs font-medium`}>
+                            {getClientInitials(clientName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">{clientName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <JobStatusBadge status={project.status || 'draft'} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">
+                          {formatCurrency(quotes.reduce((sum, q) => sum + (q.total_amount || 0), 0), userCurrency)}
+                        </span>
+                        {quotes.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            {quotes.length} quote{quotes.length !== 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-6 w-6">
+                          {(() => {
+                            const owner = users.find(user => user.id === project.user_id);
+                            const ownerInfo = getOwnerInfo({ user_id: project.user_id });
+                            const avatarUrl = owner?.avatar_url;
+                            return avatarUrl ? (
+                              <img 
+                                src={avatarUrl} 
+                                alt={ownerInfo.firstName}
+                                className="h-6 w-6 rounded-full object-cover"
+                              />
+                            ) : (
+                              <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
+                                {ownerInfo.initials}
+                              </AvatarFallback>
+                            );
+                          })()}
+                        </Avatar>
+                        <span className="text-sm text-muted-foreground truncate">
+                          {getOwnerInfo({ user_id: project.user_id }).firstName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
+                            <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Job
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Quote Rows */}
+                  {quotes.map((quote, index) => (
+                    <TableRow 
+                      key={`${project.id}-quote-${index}`}
+                      className="cursor-pointer hover:bg-muted/30 border-l-4 border-primary/30 bg-muted/10"
+                      onClick={() => onJobSelect(quote)}
                     >
-                      {(() => {
-                        // Extract number from quote_number and format as Job-XXXX
-                        const match = quote.quote_number?.match(/(\d+)/);
-                        const number = match ? match[1] : '0000';
-                        return `Job-${number.padStart(4, '0')}`;
-                      })()}
-                    </span>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <EmailStatusDisplay 
-                      jobId={quote.id}
-                      clientEmail={client?.email}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className={`${getClientAvatarColor(clientName)} text-white text-xs font-medium`}>
-                          {getClientInitials(clientName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{clientName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <JobStatusBadge status={currentStatus} />
-                  </TableCell>
-                  <TableCell>
-                    {formatCurrency(quote.total_amount || 0, userCurrency)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-6 w-6">
-                        {(() => {
-                          const owner = users.find(user => user.id === quote.user_id);
-                          const avatarUrl = owner?.avatar_url;
-                          return avatarUrl ? (
-                            <img 
-                              src={avatarUrl} 
-                              alt={ownerInfo.firstName}
-                              className="h-6 w-6 rounded-full object-cover"
-                            />
-                          ) : (
-                            <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
-                              {ownerInfo.initials}
-                            </AvatarFallback>
-                          );
-                        })()}
-                      </Avatar>
-                      <span className="text-sm text-muted-foreground truncate">{ownerInfo.firstName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(quote.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => handleJobView(quote.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Job
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem onClick={() => handleJobEdit(quote.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Edit Job
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem onClick={() => handleJobCopy(quote.id)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copy Job
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
-                            <StickyNote className="mr-2 h-4 w-4" />
-                            Add Note
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          <DropdownMenuItem onClick={() => {
-                            setQuoteToDelete(quote);
-                            setDeleteDialogOpen(true);
-                          }}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Job
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                      <TableCell className="pl-8">
+                        <span className="font-mono text-sm text-muted-foreground">
+                          ├─ Q-{(index + 1).toString().padStart(2, '0')}
+                        </span>
+                      </TableCell>
+                      <TableCell></TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        Quote #{index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <JobStatusBadge status={quote.status || 'draft'} />
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(quote.total_amount || 0, userCurrency)}
+                      </TableCell>
+                      <TableCell></TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(quote.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
+                              <DropdownMenuItem onClick={() => onJobSelect(quote)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Quote
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
+                                <StickyNote className="mr-2 h-4 w-4" />
+                                Add Note
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => {
+                                setQuoteToDelete(quote);
+                                setDeleteDialogOpen(true);
+                              }}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Quote
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </React.Fragment>
               );
             })}
           </TableBody>
