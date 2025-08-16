@@ -137,13 +137,6 @@ export const SurfaceList = ({
          {roomGroups.map((room) => (
           <div key={room.roomId} className="space-y-3">
             {/* Room Header */}
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-px bg-border flex-1" />
-              <div className="text-sm font-semibold text-muted-foreground bg-background px-2">
-                {room.roomName}
-              </div>
-              <div className="h-px bg-border flex-1" />
-            </div>
             
             {/* Windows in this room */}
             <div className="space-y-2 pl-2">
