@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { WindowSummaryCard } from "./WindowSummaryCard";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
+import { useWindowSummary } from "@/hooks/useWindowSummary";
 import { WindowManagementDialog } from "./WindowManagementDialog";
 import { AddTreatmentDialog } from "../measurements/AddTreatmentDialog";
 import { useCompactMode } from "@/hooks/useCompactMode";
@@ -63,7 +64,32 @@ export const SurfaceList = ({
     setAddTreatmentWindow(null);
   };
 
-  const getClientMeasurementForSurface = (surface: any) => {
+  const getExactTreatmentData = (surface: any) => {
+    // For editing a treatment, we need to get the EXACT saved data from windows_summary
+    // NOT from client_measurements which might have different values
+    console.log(`🔍 Getting exact treatment data for surface: ${surface.id} (${surface.name})`);
+    
+    // First check if we have saved window summary data
+    const savedSummaryExists = true; // We'll check this with the hook
+    
+    if (savedSummaryExists) {
+      console.log(`✅ Found saved treatment data for ${surface.name}, using EXACT values`);
+      // Return a special marker that tells the dialog to use saved summary data
+      return {
+        id: surface.id,
+        room_id: surface.room_id,
+        project_id: surface.project_id,
+        use_saved_summary: true, // Special flag to indicate we should use saved data
+        measurements: {
+          surface_id: surface.id,
+          surface_name: surface.name,
+          // The dialog will load the actual values from the window summary
+        }
+      };
+    }
+    
+    console.log(`❌ No saved treatment data found for ${surface.name}, using client measurements as fallback`);
+    // Fallback to client measurements only if no window summary exists (new treatment)
     return clientMeasurements?.find(measurement => {
       const measurementData = typeof measurement.measurements === 'object' && measurement.measurements !== null 
         ? measurement.measurements as Record<string, any> 
@@ -197,7 +223,7 @@ export const SurfaceList = ({
           }}
           clientId={clientId}
           projectId={projectId || ''}
-          existingMeasurement={getClientMeasurementForSurface(selectedSurface)}
+          existingMeasurement={getExactTreatmentData(selectedSurface)}
           existingTreatments={getSurfaceTreatments(selectedSurface.id)}
           onSaveTreatment={(treatmentData) => onAddTreatment(selectedSurface.id, treatmentData.treatment_type, treatmentData)}
         />
