@@ -83,10 +83,11 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
           <div className="grid gap-2">
             <Label htmlFor="role">Role</Label>
             <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border-border shadow-lg z-50">
+                <SelectItem value="Owner">Owner</SelectItem>
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>
