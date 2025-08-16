@@ -19,7 +19,6 @@ interface WindowSummaryCardProps {
   onDeleteSurface?: (id: string) => void;
   onViewDetails?: (surface: any) => void;
   onRenameSurface?: (id: string, newName: string) => void;
-  onAddTreatment?: (surfaceId: string) => void;
   isMainWindow?: boolean;
   treatmentLabel?: string;
   treatmentType?: string;
@@ -41,7 +40,6 @@ export function WindowSummaryCard({
   onDeleteSurface, 
   onViewDetails, 
   onRenameSurface, 
-  onAddTreatment,
   isMainWindow = true,
   treatmentLabel,
   treatmentType
@@ -167,20 +165,6 @@ export function WindowSummaryCard({
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            {isMainWindow && onAddTreatment && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddTreatment(surface.id);
-                }}
-                className="text-muted-foreground hover:text-primary hover:border-primary/30"
-                title="Add another treatment to this window"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"

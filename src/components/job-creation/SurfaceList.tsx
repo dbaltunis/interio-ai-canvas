@@ -150,15 +150,14 @@ export const SurfaceList = ({
               {Object.values(room.windows).map((window: WindowGroup) => (
                 <div key={window.windowId} className="space-y-2">
                   {/* Main window surface */}
-                  <WindowSummaryCard 
-                    surface={window.mainSurface} 
-                    onEditSurface={() => handleViewWindow(window.mainSurface)}
-                    onDeleteSurface={onDeleteSurface}
-                    onViewDetails={() => handleViewWindow(window.mainSurface)}
-                    onRenameSurface={handleRenameSurface}
-                    onAddTreatment={handleAddTreatment}
-                    isMainWindow={true}
-                  />
+                   <WindowSummaryCard 
+                     surface={window.mainSurface} 
+                     onEditSurface={() => handleViewWindow(window.mainSurface)}
+                     onDeleteSurface={onDeleteSurface}
+                     onViewDetails={() => handleViewWindow(window.mainSurface)}
+                     onRenameSurface={handleRenameSurface}
+                     isMainWindow={true}
+                   />
                   
                   {/* Additional treatments for the same window */}
                   {window.treatments.map((treatment, index) => (
