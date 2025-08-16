@@ -173,10 +173,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     ""
   );
 
-  // Effect to load saved summary data when available
+  // Effect to load saved summary data when available - CRITICAL FIX
   useEffect(() => {
     if (shouldUseSavedData && savedSummary && savedSummary.measurements_details) {
-      console.log(`✅ Loading EXACT saved data for treatment ${surfaceId}`, savedSummary);
+      console.log(`✅ EFFECT: Loading EXACT saved data for treatment ${surfaceId}`, savedSummary);
       
       // Update measurements with exact saved data - using actual numeric values
       const savedMeasurements = {
@@ -207,22 +207,13 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         selected_lining: savedSummary.measurements_details.selected_lining || 0
       };
       
-      console.log("🔄 Setting measurements from saved summary (with numeric values):", savedMeasurements);
-      console.log("🎯 Key values - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
+      console.log("🔄 EFFECT: Setting measurements from saved summary (with numeric values):", savedMeasurements);
+      console.log("🎯 EFFECT: Key values - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
       
-      // Force state update with debugging
-      setMeasurements(prevMeasurements => {
-        console.log("📊 Previous measurements:", prevMeasurements);
-        console.log("📊 New measurements:", savedMeasurements);
-        console.log("🎯 Key values being set - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
-        
-        // Force re-render by creating completely new object with timestamp
-        const newMeasurements = { 
-          ...savedMeasurements,
-          _forceUpdate: Date.now() // Use a different property name to avoid TS issues
-        };
-        
-        return newMeasurements;
+      // FORCE UPDATE - Set measurements immediately and completely replace state
+      setMeasurements(() => {
+        console.log("📊 EFFECT: Forcing complete measurements update");
+        return savedMeasurements;
       });
       
       // Update treatment data
@@ -239,19 +230,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       
       // Update fabric and lining selections
       if (savedSummary.fabric_details?.fabric_id) {
-        console.log("🎨 Setting selected fabric to:", savedSummary.fabric_details.fabric_id);
+        console.log("🎨 EFFECT: Setting selected fabric to:", savedSummary.fabric_details.fabric_id);
         setSelectedFabric(String(savedSummary.fabric_details.fabric_id));
       }
       if (savedSummary.heading_details?.heading_name) {
-        console.log("📌 Setting selected heading to:", savedSummary.heading_details.heading_name);
+        console.log("📌 EFFECT: Setting selected heading to:", savedSummary.heading_details.heading_name);
         setSelectedHeading(savedSummary.heading_details.heading_name);
       }
       if (savedSummary.lining_type) {
-        console.log("🧵 Setting selected lining to:", savedSummary.lining_type);
+        console.log("🧵 EFFECT: Setting selected lining to:", savedSummary.lining_type);
         setSelectedLining(savedSummary.lining_type);
       }
       
-      console.log("✅ Data loaded from saved summary successfully - measurements state updated");
+      console.log("✅ EFFECT: Data loaded from saved summary successfully - measurements state FORCE UPDATED");
     }
   }, [shouldUseSavedData, savedSummary, surfaceId, surfaceData?.name]);
 
