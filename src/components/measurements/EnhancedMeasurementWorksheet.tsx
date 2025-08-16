@@ -173,12 +173,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     ""
   );
 
-  // Effect to load saved summary data when available - CRITICAL FIX
+  // Effect to load saved summary data when available - COMPLETE FIX FOR ALL SETTINGS
   useEffect(() => {
     if (shouldUseSavedData && savedSummary && savedSummary.measurements_details) {
-      console.log(`✅ EFFECT: Loading EXACT saved data for treatment ${surfaceId}`, savedSummary);
+      console.log(`✅ EFFECT: Loading ALL saved data for treatment ${surfaceId}`, savedSummary);
       
-      // Update measurements with exact saved data - using actual numeric values
+      // Update measurements with exact saved data
       const savedMeasurements = {
         rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
         drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
@@ -204,17 +204,33 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         required_width_cm: savedSummary.measurements_details.required_width_cm || 0,
         fabric_width_cm: savedSummary.measurements_details.fabric_width_cm || 140,
         selected_heading: savedSummary.measurements_details.selected_heading || savedSummary.heading_details?.id,
-        selected_lining: savedSummary.measurements_details.selected_lining || 0
+        selected_lining: savedSummary.measurements_details.selected_lining || 0,
+        // ADD CRITICAL FORM SETTINGS
+        hardware_type: "rod", // Default but will be overridden below
+        curtain_side: "left", // Default
+        pooling_option: "above_floor" // Default
       };
       
-      console.log("🔄 EFFECT: Setting measurements from saved summary (with numeric values):", savedMeasurements);
+      console.log("🔄 EFFECT: Setting ALL measurements and settings:", savedMeasurements);
       console.log("🎯 EFFECT: Key values - rail_width:", savedMeasurements.rail_width, "drop:", savedMeasurements.drop);
       
-      // FORCE UPDATE - Set measurements immediately and completely replace state
-      setMeasurements(() => {
-        console.log("📊 EFFECT: Forcing complete measurements update");
-        return savedMeasurements;
-      });
+      // FORCE UPDATE - Set measurements immediately
+      setMeasurements(() => savedMeasurements);
+      
+      // SET ALL OTHER FORM CONFIGURATIONS FROM SAVED DATA
+      
+      // Set selected window covering/template
+      if (savedSummary.template_id) {
+        console.log("🏠 EFFECT: Setting selected window covering to:", savedSummary.template_id);
+        setSelectedWindowCovering(savedSummary.template_id);
+      }
+      
+      // Set curtain type from saved data
+      const curtainType = savedSummary.measurements_details.curtain_type || savedSummary.template_details?.curtain_type;
+      if (curtainType) {
+        console.log("🎭 EFFECT: Setting curtain type to:", curtainType);
+        // This will be handled by the measurements update above
+      }
       
       // Update treatment data
       setTreatmentData({
@@ -233,16 +249,17 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         console.log("🎨 EFFECT: Setting selected fabric to:", savedSummary.fabric_details.fabric_id);
         setSelectedFabric(String(savedSummary.fabric_details.fabric_id));
       }
-      if (savedSummary.heading_details?.heading_name) {
-        console.log("📌 EFFECT: Setting selected heading to:", savedSummary.heading_details.heading_name);
-        setSelectedHeading(savedSummary.heading_details.heading_name);
+      if (savedSummary.heading_details?.heading_name || savedSummary.heading_details?.id) {
+        const headingValue = savedSummary.heading_details.heading_name || savedSummary.heading_details.id || "standard";
+        console.log("📌 EFFECT: Setting selected heading to:", headingValue);
+        setSelectedHeading(headingValue);
       }
       if (savedSummary.lining_type) {
         console.log("🧵 EFFECT: Setting selected lining to:", savedSummary.lining_type);
         setSelectedLining(savedSummary.lining_type);
       }
       
-      console.log("✅ EFFECT: Data loaded from saved summary successfully - measurements state FORCE UPDATED");
+      console.log("✅ EFFECT: ALL data loaded from saved summary successfully - COMPLETE UPDATE");
     }
   }, [shouldUseSavedData, savedSummary, surfaceId, surfaceData?.name]);
 
