@@ -87,8 +87,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     useSavedSummaryFlag: safeExistingMeasurement?.use_saved_summary,
     clientId,
     projectId,
-    existingMeasurement: safeExistingMeasurement
+    existingMeasurement: safeExistingMeasurement,
+    existingTreatments: safeExistingTreatments,
+    surfaceData: safeSurfaceData
   });
+  
+  console.log("🚀 WORKSHEET OPENING: Component mounted successfully");
   const [windowType, setWindowType] = useState(() => 
     safeExistingMeasurement?.measurement_type || "standard"
   );

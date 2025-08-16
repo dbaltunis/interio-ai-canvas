@@ -74,7 +74,7 @@ export const useCreateClientMeasurement = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
-      queryClient.invalidateQueries({ queryKey: ["client-measurements", data.client_id || null] });
+      queryClient.invalidateQueries({ queryKey: ["client-measurements", data?.client_id || null] });
       toast({
         title: "Success",
         description: "Measurements saved successfully",
@@ -109,7 +109,7 @@ export const useUpdateClientMeasurement = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
-      queryClient.invalidateQueries({ queryKey: ["client-measurements", data.client_id || null] });
+      queryClient.invalidateQueries({ queryKey: ["client-measurements", data?.client_id || null] });
       toast({
         title: "Success",
         description: "Measurements updated successfully",
