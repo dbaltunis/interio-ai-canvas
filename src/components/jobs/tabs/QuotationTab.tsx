@@ -274,7 +274,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         
         {/* Compact Action Bar */}
         <div className="flex items-center space-x-2">
-           {/* Template Selector - Compact */}
+          {/* Template Selector - Compact */}
           <Select
             value={selectedTemplateId}
             onValueChange={setSelectedTemplateId}
@@ -291,42 +291,51 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             </SelectContent>
           </Select>
 
-          {/* Create New Quote Button */}
+          {/* View Quote Button */}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleCreateNewQuote}
+            onClick={() => setShowFullQuoteView(true)}
             className="flex items-center space-x-2"
           >
-            <Plus className="h-4 w-4" />
-            <span>New Quote</span>
+            <Eye className="h-4 w-4" />
+            <span>View Quote</span>
           </Button>
+        </div>
+      </div>
 
-          {/* Template Settings Button */}
-          <Button
-            variant="outline"
+      {/* Quote Display Options */}
+      <div className="flex items-center justify-center space-x-4 p-4 bg-muted/30 rounded-lg">
+        <div className="text-sm font-medium text-muted-foreground">Quote Display:</div>
+        <div className="flex space-x-2">
+          <Button 
+            variant="default" 
             size="sm"
-            onClick={() => window.open('/settings?tab=documents', '_blank')}
-            className="flex items-center space-x-2"
+            className="rounded-full px-4"
           >
-            <Settings className="h-4 w-4" />
-            <span>Templates</span>
+            Simple
           </Button>
-
-          {/* Items Editor Toggle */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowItemsEditor(!showItemsEditor)}
-              className="flex items-center space-x-1"
-            >
-              {showItemsEditor ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span>{showItemsEditor ? 'Hide Items Editor' : 'Show Items Editor'}</span>
-            </Button>
-          </div>
-          {/* Actions Menu */}
-          <ThreeDotMenu items={actionMenuItems} />
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="rounded-full px-4"
+          >
+            Detailed
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="rounded-full px-4"
+          >
+            Itemised
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="rounded-full px-4"
+          >
+            Visual
+          </Button>
         </div>
       </div>
 
@@ -355,20 +364,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         <section className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold">Quote Document Preview</h3>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFullQuoteView(true)}
-                className="flex items-center space-x-2"
-              >
-                <Eye className="h-4 w-4" />
-                <span>View Quote</span>
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Using: <strong>{selectedTemplate.name}</strong>
-              </div>
-            </div>
           </div>
           <LivePreview
             blocks={templateBlocks}
