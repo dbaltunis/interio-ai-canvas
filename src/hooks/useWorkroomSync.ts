@@ -120,24 +120,53 @@ export const useWorkroomSync = ({
     });
 
     try {
-      // Store workshop data in project notes for now until workshop_items table is created
-      const workshopNotes = {
-        type: 'workshop_sync',
-        timestamp: new Date().toISOString(),
-        items: newItems,
-        count: newItems.length
-      };
+      // Create workshop items in the database
+      for (const item of newItems) {
+        // Check if workshop item already exists
+        const { data: existingItem } = await supabase
+          .from('workshop_items')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('window_id', item.window_id)
+          .maybeSingle();
 
-      console.log('✅ WorkroomSync: Workshop items data prepared:', workshopNotes);
-      
-      // For now, we'll just log the data structure that would be saved
-      // When workshop_items table is created, this can be properly implemented
-      
+        if (!existingItem) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) continue;
+
+          const { error } = await supabase
+            .from('workshop_items')
+            .insert({
+              project_id: item.project_id,
+              window_id: item.window_id,
+              room_name: item.room_name,
+              surface_name: item.surface_name,
+              treatment_type: item.treatment_type,
+              fabric_details: item.fabric_details,
+              measurements: item.measurements,
+              manufacturing_details: item.manufacturing_details,
+              linear_meters: item.linear_meters,
+              widths_required: item.widths_required,
+              total_cost: item.total_cost,
+              priority: item.priority,
+              status: item.status,
+              notes: item.notes,
+              user_id: user.id
+            });
+
+          if (error) {
+            console.error('WorkroomSync: Error creating workshop item:', error);
+          } else {
+            console.log('✅ WorkroomSync: Created workshop item for', item.surface_name);
+          }
+        }
+      }
+
       // Update processed IDs
       previousDataRef.current.processedTreatmentIds = currentIds;
       
     } catch (error) {
-      console.error('WorkroomSync: Error preparing workshop items:', error);
+      console.error('WorkroomSync: Error syncing workshop items:', error);
     }
   };
 

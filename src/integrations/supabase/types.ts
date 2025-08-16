@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -2210,6 +2210,54 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          breakdown: Json | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          name: string
+          product_details: Json | null
+          quantity: number
+          quote_id: string
+          sort_order: number | null
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          breakdown?: Json | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          product_details?: Json | null
+          quantity?: number
+          quote_id: string
+          sort_order?: number | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          breakdown?: Json | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          product_details?: Json | null
+          quantity?: number
+          quote_id?: string
+          sort_order?: number | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quote_templates: {
         Row: {
           active: boolean | null
@@ -3317,6 +3365,78 @@ export type Database = {
         }
         Relationships: []
       }
+      workshop_items: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          fabric_details: Json | null
+          id: string
+          linear_meters: number | null
+          manufacturing_details: Json | null
+          measurements: Json | null
+          notes: string | null
+          priority: string | null
+          project_id: string
+          room_name: string | null
+          status: string | null
+          surface_name: string
+          total_cost: number | null
+          treatment_type: string
+          updated_at: string
+          user_id: string
+          widths_required: number | null
+          window_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          fabric_details?: Json | null
+          id?: string
+          linear_meters?: number | null
+          manufacturing_details?: Json | null
+          measurements?: Json | null
+          notes?: string | null
+          priority?: string | null
+          project_id: string
+          room_name?: string | null
+          status?: string | null
+          surface_name: string
+          total_cost?: number | null
+          treatment_type?: string
+          updated_at?: string
+          user_id: string
+          widths_required?: number | null
+          window_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          fabric_details?: Json | null
+          id?: string
+          linear_meters?: number | null
+          manufacturing_details?: Json | null
+          measurements?: Json | null
+          notes?: string | null
+          priority?: string | null
+          project_id?: string
+          room_name?: string | null
+          status?: string | null
+          surface_name?: string
+          total_cost?: number | null
+          treatment_type?: string
+          updated_at?: string
+          user_id?: string
+          widths_required?: number | null
+          window_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       user_presence_view: {
@@ -3354,10 +3474,10 @@ export type Database = {
       }
       can_edit_record: {
         Args: {
-          record_user_id: string
           record_created_by: string
-          record_type: string
           record_id: string
+          record_type: string
+          record_user_id: string
         }
         Returns: boolean
       }
@@ -3376,40 +3496,40 @@ export type Database = {
       get_invitation_by_token: {
         Args: { invitation_token_param: string }
         Returns: {
+          expires_at: string
+          invited_by_email: string
+          invited_by_name: string
           invited_email: string
           invited_name: string
           role: string
-          invited_by_name: string
-          invited_by_email: string
-          expires_at: string
           status: string
         }[]
       }
       get_public_scheduler: {
         Args: { slug_param: string }
         Returns: {
-          id: string
-          slug: string
-          name: string
+          availability: Json
+          buffer_time: number
           description: string
           duration: number
-          buffer_time: number
+          id: string
+          image_url: string
+          locations: Json
           max_advance_booking: number
           min_advance_notice: number
-          image_url: string
-          availability: Json
-          locations: Json
+          name: string
+          slug: string
         }[]
       }
       get_team_presence: {
         Args: { search_param?: string }
         Returns: {
-          user_id: string
           display_name: string
-          role: string
-          last_seen: string
           is_online: boolean
+          last_seen: string
+          role: string
           status: string
+          user_id: string
         }[]
       }
       get_user_email: {
@@ -3441,14 +3561,14 @@ export type Database = {
         Returns: undefined
       }
       validate_permission_dependencies: {
-        Args: { user_id_param: string; permissions_param: string[] }
+        Args: { permissions_param: string[]; user_id_param: string }
         Returns: Json
       }
       validate_role_hierarchy: {
         Args: {
           current_user_id: string
-          target_user_id: string
           new_role: string
+          target_user_id: string
         }
         Returns: boolean
       }
