@@ -55,8 +55,13 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   console.log('RoomsTab: Project ID:', projectId);
   console.log('RoomsTab: Rooms count:', roomCount);
   console.log('RoomsTab: Treatments count:', treatmentCount);
-  console.log('RoomsTab: Treatment total:', treatmentTotal);
-  console.log('RoomsTab: Final total:', total);
+  console.log('RoomsTab: Treatment total (from treatments table):', treatmentTotal);
+  console.log('RoomsTab: Summaries total (from windows_summary table):', summariesTotal);
+  console.log('RoomsTab: Subtotal used:', subtotal);
+  console.log('RoomsTab: After 25% markup:', finalSubtotal);
+  console.log('RoomsTab: Tax amount (8%):', taxAmount);
+  console.log('RoomsTab: Final total displayed:', total);
+  console.log('RoomsTab: Price source:', summariesTotal > 0 ? 'windows_summary table' : 'treatments table');
 
   return (
     <div className="space-y-4">
