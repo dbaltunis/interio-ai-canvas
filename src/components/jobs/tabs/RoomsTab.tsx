@@ -19,7 +19,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
 const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const project = projects?.find(p => p.id === projectId);
 
-  // Calculate comprehensive project total
+  // Calculate comprehensive project total - prioritize windows_summary over treatments table
   const treatmentTotal = treatments?.reduce((sum, treatment) => {
     return sum + (treatment.total_price || 0);
   }, 0) || 0;
@@ -27,9 +27,13 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const roomCount = rooms?.length || 0;
   const treatmentCount = treatments?.length || 0;
 
-  // Project pricing calculation
+  // Project pricing calculation - use windows_summary data as primary source since it contains actual calculated costs
   const summariesTotal = projectSummaries?.projectTotal || 0;
+  
+  // Use windows_summary data if available (more accurate as it includes fabric calculations)
+  // Fall back to treatments table data only if no window summaries exist
   const subtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
+  
   const markupPercentage = 25;
   const taxRate = 0.08;
   const finalSubtotal = subtotal * (1 + markupPercentage / 100);
