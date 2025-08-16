@@ -43,27 +43,11 @@ export const RoomActionsMenu = ({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={onEditName}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit Room Name
-        </DropdownMenuItem>
+      <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
         <DropdownMenuItem onClick={onCopyRoom}>
           <Copy className="mr-2 h-4 w-4" />
           Copy Room
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {roomTypes.map((type) => (
-          <DropdownMenuItem 
-            key={type.value}
-            onClick={() => onChangeRoomType(type.value)}
-            className={room.room_type === type.value ? "bg-brand-light" : ""}
-          >
-            <type.icon className="mr-2 h-4 w-4" />
-            {type.label}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={onDeleteRoom}
           className="text-red-600 hover:text-red-800"

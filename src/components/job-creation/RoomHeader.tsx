@@ -1,9 +1,11 @@
 
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { RoomActionsMenu } from "./RoomActionsMenu";
 import { formatCurrency } from "@/utils/currency";
 import { useCompactMode } from "@/hooks/useCompactMode";
+import { Edit } from "lucide-react";
 
 
 interface RoomHeaderProps {
@@ -52,7 +54,17 @@ export const RoomHeader = ({
               autoFocus
             />
           ) : (
-            <CardTitle className="text-lg font-semibold text-foreground">{room.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold text-foreground">{room.name}</CardTitle>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onStartEditing}
+                className="h-6 w-6 p-0 hover:bg-muted"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            </div>
           )}
           <p className="text-xl font-bold text-primary mt-1">{formatCurrency(roomTotal)}</p>
         </div>
