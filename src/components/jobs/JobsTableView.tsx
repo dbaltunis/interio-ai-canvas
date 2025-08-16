@@ -462,17 +462,53 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           ├─ Q-{(index + 1).toString().padStart(2, '0')}
                         </span>
                       </TableCell>
-                      <TableCell></TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <EmailStatusDisplay 
+                          jobId={quote.id}
+                          clientEmail={getClientForQuote(quote)?.email}
+                        />
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         Quote #{index + 1}
                       </TableCell>
                       <TableCell>
-                        <JobStatusBadge status={quote.status || 'draft'} />
+                        <div className="flex items-center gap-2">
+                          <JobStatusBadge status={quote.status || 'draft'} />
+                          {quote.status === 'sent' && (
+                            <Badge variant="outline" className="text-xs">
+                              Sent
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {formatCurrency(quote.total_amount || 0, userCurrency)}
                       </TableCell>
-                      <TableCell></TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Avatar className="h-6 w-6">
+                            {(() => {
+                              const owner = users.find(user => user.id === quote.user_id);
+                              const ownerInfo = getOwnerInfo(quote);
+                              const avatarUrl = owner?.avatar_url;
+                              return avatarUrl ? (
+                                <img 
+                                  src={avatarUrl} 
+                                  alt={ownerInfo.firstName}
+                                  className="h-6 w-6 rounded-full object-cover"
+                                />
+                              ) : (
+                                <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
+                                  {ownerInfo.initials}
+                                </AvatarFallback>
+                              );
+                            })()}
+                          </Avatar>
+                          <span className="text-sm text-muted-foreground truncate">
+                            {getOwnerInfo(quote).firstName}
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {new Date(quote.created_at).toLocaleDateString()}
                       </TableCell>
