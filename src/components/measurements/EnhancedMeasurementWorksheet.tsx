@@ -685,7 +685,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
           {/* Visual Measurement Sheet */}
           <VisualMeasurementSheet
-            measurements={measurements}
+            measurements={{
+              ...measurements,
+              // FORCE the correct values if they exist in savedSummary
+              rail_width: measurements.rail_width || (shouldUseSavedData && savedSummary?.measurements_details?.rail_width_cm) || (shouldUseSavedData && savedSummary?.measurements_details?.rail_width) || measurements.rail_width || "",
+              drop: measurements.drop || (shouldUseSavedData && savedSummary?.measurements_details?.drop_cm) || (shouldUseSavedData && savedSummary?.measurements_details?.drop) || measurements.drop || ""
+            }}
             onMeasurementChange={handleMeasurementChange}
             readOnly={readOnly}
             key={`measurements-${measurements.rail_width || 0}-${measurements.drop || 0}-${Date.now()}`} // Force re-render when measurements change
