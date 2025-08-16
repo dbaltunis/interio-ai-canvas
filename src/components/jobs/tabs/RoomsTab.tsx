@@ -25,7 +25,11 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   }, 0) || 0;
 
   const roomCount = rooms?.length || 0;
-  const treatmentCount = treatments?.length || 0;
+  
+  // Count actual windows with pricing data, not raw treatment records
+  // This ensures the count matches what's displayed in the UI
+  const windowsWithPricing = projectSummaries?.windows?.filter(w => w.summary && w.summary.total_cost > 0) || [];
+  const treatmentCount = windowsWithPricing.length;
 
   // Project pricing calculation - use windows_summary data as primary source since it contains actual calculated costs
   const summariesTotal = projectSummaries?.projectTotal || 0;
